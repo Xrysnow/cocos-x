@@ -70,7 +70,32 @@ public:
         backend::BufferGFX* ib = nullptr;
         bool used = false;
     };
-    TriangleBuffer getBuffer(uint32_t vnum, uint32_t inum)
+    struct VertexBuffer
+    {
+        std::vector<V3F_C4B_T2F> data;
+        size_t used = 0;
+    };
+    struct IndexBuffer
+    {
+        std::vector<uint16_t> data;
+        size_t used = 0;
+    };
+private:
+    const size_t dataBlockSize = 16384;
+    std::multimap<size_t, TriangleBuffer> buffers;
+    std::multimap<size_t, VertexBuffer> vDatas;
+    std::multimap<size_t, IndexBuffer> iDatas;
+    size_t tbVTotal = 0;
+    size_t tbITotal = 0;
+    size_t tbVUsed = 0;
+    size_t tbIUsed = 0;
+
+    size_t vbTotal = 0;
+    size_t vbUsed = 0;
+    size_t ibTotal = 0;
+    size_t ibUsed = 0;
+public:
+    TriangleBuffer nextBuffer(size_t vnum, size_t inum)
     {
         constexpr auto vstride = sizeof(V3F_C4B_T2F);
         constexpr auto istride = sizeof(uint16_t);
@@ -84,14 +109,14 @@ public:
                 && it.second.ib->getSize() >= isize)
             {
                 it.second.used = true;
-                vUsed += it.second.vb->getSize();
-                iUsed += it.second.ib->getSize();
+                tbVUsed += it.second.vb->getSize();
+                tbIUsed += it.second.ib->getSize();
                 return it.second;
             }
         }
         TriangleBuffer b;
-        auto device = backend::Device::getInstance();
-        auto d = dynamic_cast<backend::DeviceGFX*>(device);
+        const auto device = backend::Device::getInstance();
+        const auto d = dynamic_cast<backend::DeviceGFX*>(device);
         CC_ASSERT(d);
         b.vb = static_cast<backend::BufferGFX*>(d->newBuffer(
             vsize, vstride,
@@ -105,18 +130,64 @@ public:
         CC_ASSERT(b.ib);
         b.used = true;
         buffers.insert(std::pair(vnum + inum, b));
-        vTotal += vsize;
-        iTotal += isize;
-        vUsed += vsize;
-        iUsed += isize;
+        tbVTotal += vsize;
+        tbITotal += isize;
+        tbVUsed += vsize;
+        tbIUsed += isize;
         return b;
     }
-    void reuse()
+    V3F_C4B_T2F* nextVertexData(size_t vnum)
     {
-        if (vTotal > 4096
-            && iTotal > 4096
-            && vUsed < vTotal * 0.5
-            && iUsed < iTotal * 0.5)
+        for (auto& it : vDatas)
+        {
+	        if (it.first < vnum)
+		        continue;
+	        const auto used = it.second.used;
+            const auto unused = (ssize_t)it.second.data.size() - (ssize_t)used;
+            if (unused >= vnum)
+            {
+                it.second.used += vnum;
+                vbUsed += vnum;
+                return it.second.data.data() + used;
+            }
+        }
+        const auto size = std::min(vnum, dataBlockSize);
+        auto it = vDatas.insert(std::pair(size, VertexBuffer{}));
+        it->second.data.resize(size);
+        it->second.used = vnum;
+        vbTotal += size;
+        vbUsed += vnum;
+        return it->second.data.data();
+    }
+    uint16_t* nextIndexData(size_t inum)
+    {
+        for (auto& it : iDatas)
+        {
+	        if (it.first < inum)
+		        continue;
+	        const auto used = it.second.used;
+            const auto unused = (ssize_t)it.second.data.size() - (ssize_t)used;
+            if (unused >= inum)
+            {
+                it.second.used += inum;
+                ibUsed += inum;
+                return it.second.data.data() + used;
+            }
+        }
+        const auto size = std::min(inum, dataBlockSize);
+        auto it = iDatas.insert(std::pair(size, IndexBuffer{}));
+        it->second.data.resize(size);
+        it->second.used = inum;
+        ibTotal += size;
+        ibUsed += inum;
+        return it->second.data.data();
+    }
+	void reuse()
+    {
+        if (tbVTotal > 4096
+            && tbITotal > 4096
+            && tbVUsed < tbVTotal * 0.5
+            && tbIUsed < tbITotal * 0.5)
         {
             // remove unused
             for (auto it = buffers.begin(); it != buffers.end();)
@@ -133,6 +204,34 @@ public:
         }
         for (auto& it : buffers)
             it.second.used = false;
+        //
+        if (vbUsed < vbTotal * 0.5)
+        {
+            // remove unused
+            for (auto it = vDatas.begin(); it != vDatas.end();)
+            {
+                if (it->second.used == 0)
+	                it = vDatas.erase(it);
+                else
+                    ++it;
+            }
+        }
+        for (auto& it : vDatas)
+            it.second.used = 0;
+        //
+        if (ibUsed < ibTotal * 0.5)
+        {
+            // remove unused
+            for (auto it = iDatas.begin(); it != iDatas.end();)
+            {
+                if (it->second.used == 0)
+	                it = iDatas.erase(it);
+                else
+                    ++it;
+            }
+        }
+        for (auto& it : iDatas)
+            it.second.used = 0;
     }
     void reset()
     {
@@ -142,13 +241,9 @@ public:
             CC_SAFE_RELEASE(it.second.ib);
         }
         buffers.clear();
+        vDatas.clear();
+        iDatas.clear();
     }
-private:
-    std::multimap<uint32_t, TriangleBuffer> buffers;
-    size_t vTotal = 0;
-    size_t iTotal = 0;
-    size_t vUsed = 0;
-    size_t iUsed = 0;
 };
 static TriangleBufferPool GlobalTriangleBufferPool;
 #endif // CC_USE_GFX
@@ -808,60 +903,45 @@ void Renderer::drawBatchedTriangles()
     for (int i = 0; i < batchesTotal; ++i)
     {
         const auto& tb = _triBatchesToDraw[i];
-        size_t vnum = 0;
-        size_t inum = 0;
-        //TODO: remove usage of '_verts' and '_indices'
+        size_t vTotal = 0;
+        size_t iTotal = 0;
+        for (auto& c : tb.cmds)
+        {
+            vTotal += c->getVertexCount();
+            iTotal += c->getIndexCount();
+        }
+        const auto vbuffer = GlobalTriangleBufferPool.nextVertexData(vTotal);
+        const auto ibuffer = GlobalTriangleBufferPool.nextIndexData(iTotal);
+        size_t vCurrent = 0;
+        size_t iCurrent = 0;
         for (auto& c : tb.cmds)
         {
 	        const auto vcount = c->getVertexCount();
 	        const auto icount = c->getIndexCount();
-            memcpy(&_verts[_filledVertex + vnum],
+            memcpy(vbuffer + vCurrent,
                 c->getVertices(),
                 sizeof(V3F_C4B_T2F) * vcount);
-            const Mat4& modelView = c->getModelView();
+            const auto& modelView = c->getModelView();
             for (size_t j = 0; j < vcount; ++j)
-                modelView.transformPoint(&(_verts[j + _filledVertex + vnum].vertices));
+                modelView.transformPoint(&((vbuffer + vCurrent + j)->vertices));
             const auto indices = c->getIndices();
             for (size_t j = 0; j < icount; ++j)
-	            _indices[_filledIndex + inum + j] = vnum + indices[j];
-	        vnum += vcount;
-            inum += icount;
+                ibuffer[iCurrent + j] = vCurrent + indices[j];
+            vCurrent += vcount;
+            iCurrent += icount;
         }
-        auto b = GlobalTriangleBufferPool.getBuffer(vnum, inum);
-#ifdef CC_DEBUG
-        auto dbgVert = &_verts[_filledVertex + vnum];
-        for (size_t j = 0; j < vnum; j++)
-        {
-            const auto& vert = dbgVert[j];
-            if (std::isnan(vert.vertices.x) || std::isnan(vert.vertices.y))
-            {
-                CC_ASSERT(false);
-            }
-        }
-#endif // CC_DEBUG
-        b.vb->updateData(&_verts[_filledVertex], sizeof(V3F_C4B_T2F) * vnum);
-        b.ib->updateData(&_indices[_filledIndex], sizeof(_indices[0]) * inum);
-        _filledVertex += vnum;
-        _filledIndex += inum;
-        CC_ASSERT(inum == tb.indicesToDraw);
+        auto b = GlobalTriangleBufferPool.nextBuffer(vTotal, iTotal);
+        b.vb->updateData(vbuffer, sizeof(V3F_C4B_T2F) * vTotal);
+        b.ib->updateData(ibuffer, sizeof(uint16_t) * iTotal);
+        _filledVertex += vTotal;
+        _filledIndex += iTotal;
+        CC_ASSERT(iTotal == tb.indicesToDraw);
 
         //beginRenderPass(tb.cmd);
         _commandBuffer->setVertexBuffer(b.vb);
         _commandBuffer->setIndexBuffer(b.ib);
         auto& pipelineDescriptor = tb.cmd->getPipelineDescriptor();
         _commandBuffer->updatePipelineState(_currentRT, tb.cmd->getPipelineDescriptor());
-#ifdef CC_DEBUG
-        const auto layout = pipelineDescriptor.programState->getVertexLayout();
-        auto attrs = layout->getAttributes();
-        if (attrs["a_position"].format != backend::VertexFormat::FLOAT3)
-        {
-            for (auto&& it : attrs)
-            {
-                log("%s: %d", it.first.c_str(), (int)it.second.format);
-            }
-            CC_ASSERT(false);
-        }
-#endif // CC_DEBUG
     	_commandBuffer->setProgramState(pipelineDescriptor.programState);
         _commandBuffer->drawElements(
             backend::PrimitiveType::TRIANGLE,
