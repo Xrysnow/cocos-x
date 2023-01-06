@@ -27,10 +27,6 @@ THE SOFTWARE.
 #include "CCBone.h"
 #include "CCArmature.h"
 #include "CCTransformHelp.h"
-#ifndef CC_HALF_PI
-#define CC_HALF_PI (M_PI / 2)
-#endif // !CC_HALF_PI
-
 
 namespace cocostudio
 {

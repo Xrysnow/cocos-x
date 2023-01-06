@@ -27,8 +27,8 @@
 
 #if CC_USE_NAVMESH
 
-#    include "scripting/lua-bindings/manual/tolua_fix.h"
-#    include "platform/CCPlatformMacros.h"
+    #include "scripting/lua-bindings/manual/tolua_fix.h"
+    #include "platform/CCPlatformMacros.h"
 
 NS_CC_BEGIN
 struct NavMeshAgentParam;

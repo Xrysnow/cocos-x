@@ -9,9 +9,9 @@
 
 // TODO: mac metal
 #if defined(CC_USE_GL)
-#    define CC_IMGUI_ENABLE_MULTI_VIEWPORT 1
+    #define CC_IMGUI_ENABLE_MULTI_VIEWPORT 1
 #else
-#    define CC_IMGUI_ENABLE_MULTI_VIEWPORT 0
+    #define CC_IMGUI_ENABLE_MULTI_VIEWPORT 0
 #endif
 
 NS_CC_EXT_BEGIN

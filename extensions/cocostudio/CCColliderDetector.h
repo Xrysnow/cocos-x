@@ -30,13 +30,13 @@ THE SOFTWARE.
 #include "CocosStudioExport.h"
 
 #ifndef PT_RATIO
-#    define PT_RATIO 32
+    #define PT_RATIO 32
 #endif
 
 #if ENABLE_PHYSICS_CHIPMUNK_DETECT
-#    include "chipmunk/chipmunk.h"
+    #include "chipmunk/chipmunk.h"
 #elif ENABLE_PHYSICS_BOX2D_DETECT
-#    include "box2d/box2d.h"
+    #include "box2d/box2d.h"
 #endif
 
 namespace cocostudio

@@ -85,7 +85,7 @@ static int axlua_AssetsManager_setDelegate(lua_State* L)
     int argc            = 0;
     AssetsManager* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "cc.AssetsManager", 0, &tolua_err))
         goto tolua_lerror;
@@ -93,7 +93,7 @@ static int axlua_AssetsManager_setDelegate(lua_State* L)
 
     self = (AssetsManager*)tolua_tousertype(L, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_AssetsManager_setDelegate'\n", nullptr);
@@ -105,7 +105,7 @@ static int axlua_AssetsManager_setDelegate(lua_State* L)
 
     if (2 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err) || !tolua_isnumber(L, 3, 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -132,7 +132,7 @@ static int axlua_AssetsManager_setDelegate(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n", "cc.AssetsManager:setDelegate", argc, 2);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_AssetsManager_setDelegate'.", &tolua_err);
     return 0;
@@ -164,7 +164,7 @@ static int axlua_Extension_EventListenerAssetsManagerEx_create(lua_State* L)
 
     int argc = 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertable(L, 1, "cc.EventListenerAssetsManagerEx", 0, &tolua_err))
         goto tolua_lerror;
@@ -175,7 +175,7 @@ static int axlua_Extension_EventListenerAssetsManagerEx_create(lua_State* L)
     if (argc == 2)
     {
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isusertype(L, 2, "cc.AssetsManagerEx", 0, &tolua_err) ||
             !toluafix_isfunction(L, 3, "LUA_FUNCTION", 0, &tolua_err))
             goto tolua_lerror;
@@ -204,7 +204,7 @@ static int axlua_Extension_EventListenerAssetsManagerEx_create(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "create", argc, 2);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_Extension_EventListenerAssetsManagerEx_create'.", &tolua_err);
     return 0;
@@ -228,18 +228,18 @@ int axlua_extension_ParticleSystem3D_getParticlePool(lua_State* tolua_S)
     cocos2d::ParticleSystem3D* cobj = nullptr;
     bool ok                         = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S, 1, "cc.ParticleSystem3D", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ParticleSystem3D*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_extension_ParticleSystem3D_getParticlePool'",
@@ -266,7 +266,7 @@ int axlua_extension_ParticleSystem3D_getParticlePool(lua_State* tolua_S)
                "cc.ParticleSystem3D:getParticlePool", argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_extension_ParticleSystem3D_getParticlePool'.", &tolua_err);
 #endif
@@ -291,18 +291,18 @@ int axlua_extension_ParticlePool_getActiveDataList(lua_State* tolua_S)
     cocos2d::ParticlePool* cobj = nullptr;
     bool ok                     = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S, 1, "cc.ParticlePool", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ParticlePool*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_extension_ParticlePool_getActiveDataList'",
@@ -345,7 +345,7 @@ int axlua_extension_ParticlePool_getActiveDataList(lua_State* tolua_S)
                "cc.ParticlePool:getActiveParticleList", argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_extension_ParticlePool_getActiveParticleList'.",
                 &tolua_err);

@@ -169,11 +169,11 @@ bool DBCCSprite::_checkVisibility(const cocos2d::Mat4& transform, const cocos2d:
 void DBCCSprite::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
 #if CC_USE_CULLING
-#    if COCOS2D_VERSION >= 0x00031400
+    #if COCOS2D_VERSION >= 0x00031400
     const auto& rect = _polyInfo.getRect();
-#    else
+    #else
     const auto& rect = _polyInfo.rect;
-#    endif
+    #endif
 
     // Don't do calculate the culling if the transform was not updated
     auto visitingCamera = cocos2d::Camera::getVisitingCamera();

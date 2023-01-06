@@ -9,18 +9,18 @@ int lua_ax_video_VideoPlayer_getFileName(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_getFileName'", nullptr);
@@ -40,10 +40,10 @@ int lua_ax_video_VideoPlayer_getFileName(lua_State* tolua_S)
         lua_pushlstring(tolua_S,ret.data(),ret.length());
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:getFileName",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:getFileName",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_getFileName'.",&tolua_err);
 #endif
@@ -56,18 +56,18 @@ int lua_ax_video_VideoPlayer_getURL(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_getURL'", nullptr);
@@ -87,10 +87,10 @@ int lua_ax_video_VideoPlayer_getURL(lua_State* tolua_S)
         lua_pushlstring(tolua_S,ret.data(),ret.length());
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:getURL",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:getURL",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_getURL'.",&tolua_err);
 #endif
@@ -103,18 +103,18 @@ int lua_ax_video_VideoPlayer_play(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_play'", nullptr);
@@ -134,10 +134,10 @@ int lua_ax_video_VideoPlayer_play(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:play",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:play",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_play'.",&tolua_err);
 #endif
@@ -150,18 +150,18 @@ int lua_ax_video_VideoPlayer_isUserInputEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_isUserInputEnabled'", nullptr);
@@ -181,10 +181,10 @@ int lua_ax_video_VideoPlayer_isUserInputEnabled(lua_State* tolua_S)
         tolua_pushboolean(tolua_S,(bool)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:isUserInputEnabled",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:isUserInputEnabled",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_isUserInputEnabled'.",&tolua_err);
 #endif
@@ -197,18 +197,18 @@ int lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled'", nullptr);
@@ -221,7 +221,7 @@ int lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled(lua_State* tolua_S)
     {
         bool arg0;
 
-        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "axui.VideoPlayer:setKeepAspectRatioEnabled");
+        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "ccui.VideoPlayer:setKeepAspectRatioEnabled");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled'", nullptr);
@@ -231,10 +231,10 @@ int lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setKeepAspectRatioEnabled",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setKeepAspectRatioEnabled",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setKeepAspectRatioEnabled'.",&tolua_err);
 #endif
@@ -247,18 +247,18 @@ int lua_ax_video_VideoPlayer_stop(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_stop'", nullptr);
@@ -278,10 +278,10 @@ int lua_ax_video_VideoPlayer_stop(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:stop",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:stop",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_stop'.",&tolua_err);
 #endif
@@ -294,18 +294,18 @@ int lua_ax_video_VideoPlayer_setFullScreenEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setFullScreenEnabled'", nullptr);
@@ -318,7 +318,7 @@ int lua_ax_video_VideoPlayer_setFullScreenEnabled(lua_State* tolua_S)
     {
         bool arg0;
 
-        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "axui.VideoPlayer:setFullScreenEnabled");
+        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "ccui.VideoPlayer:setFullScreenEnabled");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setFullScreenEnabled'", nullptr);
@@ -328,10 +328,10 @@ int lua_ax_video_VideoPlayer_setFullScreenEnabled(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setFullScreenEnabled",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setFullScreenEnabled",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setFullScreenEnabled'.",&tolua_err);
 #endif
@@ -344,18 +344,18 @@ int lua_ax_video_VideoPlayer_setPlayRate(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setPlayRate'", nullptr);
@@ -368,7 +368,7 @@ int lua_ax_video_VideoPlayer_setPlayRate(lua_State* tolua_S)
     {
         double arg0;
 
-        ok &= luaval_to_number(tolua_S, 2,&arg0, "axui.VideoPlayer:setPlayRate");
+        ok &= luaval_to_number(tolua_S, 2,&arg0, "ccui.VideoPlayer:setPlayRate");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setPlayRate'", nullptr);
@@ -378,10 +378,10 @@ int lua_ax_video_VideoPlayer_setPlayRate(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setPlayRate",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setPlayRate",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setPlayRate'.",&tolua_err);
 #endif
@@ -394,18 +394,18 @@ int lua_ax_video_VideoPlayer_setFileName(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setFileName'", nullptr);
@@ -418,7 +418,7 @@ int lua_ax_video_VideoPlayer_setFileName(lua_State* tolua_S)
     {
         std::string_view arg0;
 
-        ok &= luaval_to_std_string_view(tolua_S, 2,&arg0, "axui.VideoPlayer:setFileName");
+        ok &= luaval_to_std_string_view(tolua_S, 2,&arg0, "ccui.VideoPlayer:setFileName");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setFileName'", nullptr);
@@ -428,10 +428,10 @@ int lua_ax_video_VideoPlayer_setFileName(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setFileName",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setFileName",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setFileName'.",&tolua_err);
 #endif
@@ -444,18 +444,18 @@ int lua_ax_video_VideoPlayer_setURL(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setURL'", nullptr);
@@ -468,7 +468,7 @@ int lua_ax_video_VideoPlayer_setURL(lua_State* tolua_S)
     {
         std::string_view arg0;
 
-        ok &= luaval_to_std_string_view(tolua_S, 2,&arg0, "axui.VideoPlayer:setURL");
+        ok &= luaval_to_std_string_view(tolua_S, 2,&arg0, "ccui.VideoPlayer:setURL");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setURL'", nullptr);
@@ -478,10 +478,10 @@ int lua_ax_video_VideoPlayer_setURL(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setURL",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setURL",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setURL'.",&tolua_err);
 #endif
@@ -494,18 +494,18 @@ int lua_ax_video_VideoPlayer_setStyle(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setStyle'", nullptr);
@@ -518,7 +518,7 @@ int lua_ax_video_VideoPlayer_setStyle(lua_State* tolua_S)
     {
         cocos2d::ui::VideoPlayer::StyleType arg0;
 
-        ok &= luaval_to_int32(tolua_S, 2,(int *)&arg0, "axui.VideoPlayer:setStyle");
+        ok &= luaval_to_int32(tolua_S, 2,(int *)&arg0, "ccui.VideoPlayer:setStyle");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setStyle'", nullptr);
@@ -528,10 +528,10 @@ int lua_ax_video_VideoPlayer_setStyle(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setStyle",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setStyle",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setStyle'.",&tolua_err);
 #endif
@@ -544,18 +544,18 @@ int lua_ax_video_VideoPlayer_seekTo(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_seekTo'", nullptr);
@@ -568,7 +568,7 @@ int lua_ax_video_VideoPlayer_seekTo(lua_State* tolua_S)
     {
         double arg0;
 
-        ok &= luaval_to_number(tolua_S, 2,&arg0, "axui.VideoPlayer:seekTo");
+        ok &= luaval_to_number(tolua_S, 2,&arg0, "ccui.VideoPlayer:seekTo");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_seekTo'", nullptr);
@@ -578,10 +578,10 @@ int lua_ax_video_VideoPlayer_seekTo(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:seekTo",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:seekTo",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_seekTo'.",&tolua_err);
 #endif
@@ -594,18 +594,18 @@ int lua_ax_video_VideoPlayer_isKeepAspectRatioEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_isKeepAspectRatioEnabled'", nullptr);
@@ -625,10 +625,10 @@ int lua_ax_video_VideoPlayer_isKeepAspectRatioEnabled(lua_State* tolua_S)
         tolua_pushboolean(tolua_S,(bool)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:isKeepAspectRatioEnabled",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:isKeepAspectRatioEnabled",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_isKeepAspectRatioEnabled'.",&tolua_err);
 #endif
@@ -641,18 +641,18 @@ int lua_ax_video_VideoPlayer_onPlayEvent(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_onPlayEvent'", nullptr);
@@ -665,7 +665,7 @@ int lua_ax_video_VideoPlayer_onPlayEvent(lua_State* tolua_S)
     {
         int arg0;
 
-        ok &= luaval_to_int32(tolua_S, 2,(int *)&arg0, "axui.VideoPlayer:onPlayEvent");
+        ok &= luaval_to_int32(tolua_S, 2,(int *)&arg0, "ccui.VideoPlayer:onPlayEvent");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_onPlayEvent'", nullptr);
@@ -675,10 +675,10 @@ int lua_ax_video_VideoPlayer_onPlayEvent(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:onPlayEvent",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:onPlayEvent",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_onPlayEvent'.",&tolua_err);
 #endif
@@ -691,18 +691,18 @@ int lua_ax_video_VideoPlayer_isFullScreenEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_isFullScreenEnabled'", nullptr);
@@ -722,10 +722,10 @@ int lua_ax_video_VideoPlayer_isFullScreenEnabled(lua_State* tolua_S)
         tolua_pushboolean(tolua_S,(bool)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:isFullScreenEnabled",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:isFullScreenEnabled",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_isFullScreenEnabled'.",&tolua_err);
 #endif
@@ -738,18 +738,18 @@ int lua_ax_video_VideoPlayer_isLooping(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_isLooping'", nullptr);
@@ -769,10 +769,10 @@ int lua_ax_video_VideoPlayer_isLooping(lua_State* tolua_S)
         tolua_pushboolean(tolua_S,(bool)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:isLooping",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:isLooping",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_isLooping'.",&tolua_err);
 #endif
@@ -785,18 +785,18 @@ int lua_ax_video_VideoPlayer_isPlaying(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_isPlaying'", nullptr);
@@ -816,10 +816,10 @@ int lua_ax_video_VideoPlayer_isPlaying(lua_State* tolua_S)
         tolua_pushboolean(tolua_S,(bool)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:isPlaying",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:isPlaying",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_isPlaying'.",&tolua_err);
 #endif
@@ -832,18 +832,18 @@ int lua_ax_video_VideoPlayer_setLooping(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setLooping'", nullptr);
@@ -856,7 +856,7 @@ int lua_ax_video_VideoPlayer_setLooping(lua_State* tolua_S)
     {
         bool arg0;
 
-        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "axui.VideoPlayer:setLooping");
+        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "ccui.VideoPlayer:setLooping");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setLooping'", nullptr);
@@ -866,10 +866,10 @@ int lua_ax_video_VideoPlayer_setLooping(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setLooping",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setLooping",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setLooping'.",&tolua_err);
 #endif
@@ -882,18 +882,18 @@ int lua_ax_video_VideoPlayer_setUserInputEnabled(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::ui::VideoPlayer*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_video_VideoPlayer_setUserInputEnabled'", nullptr);
@@ -906,7 +906,7 @@ int lua_ax_video_VideoPlayer_setUserInputEnabled(lua_State* tolua_S)
     {
         bool arg0;
 
-        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "axui.VideoPlayer:setUserInputEnabled");
+        ok &= luaval_to_boolean(tolua_S, 2,&arg0, "ccui.VideoPlayer:setUserInputEnabled");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_ax_video_VideoPlayer_setUserInputEnabled'", nullptr);
@@ -916,10 +916,10 @@ int lua_ax_video_VideoPlayer_setUserInputEnabled(lua_State* tolua_S)
         lua_settop(tolua_S, 1);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:setUserInputEnabled",argc, 1);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:setUserInputEnabled",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_setUserInputEnabled'.",&tolua_err);
 #endif
@@ -931,12 +931,12 @@ int lua_ax_video_VideoPlayer_create(lua_State* tolua_S)
     int argc = 0;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S,1,"axui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
+#if CC_DEBUG >= 1
+    if (!tolua_isusertable(tolua_S,1,"ccui.VideoPlayer",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     argc = lua_gettop(tolua_S) - 1;
@@ -949,12 +949,12 @@ int lua_ax_video_VideoPlayer_create(lua_State* tolua_S)
             return 0;
         }
         auto&& ret = cocos2d::ui::VideoPlayer::create();
-        object_to_luaval<cocos2d::ui::VideoPlayer>(tolua_S, "axui.VideoPlayer",(cocos2d::ui::VideoPlayer*)ret);
+        object_to_luaval<cocos2d::ui::VideoPlayer>(tolua_S, "ccui.VideoPlayer",(cocos2d::ui::VideoPlayer*)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "axui.VideoPlayer:create",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "ccui.VideoPlayer:create",argc, 0);
     return 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_create'.",&tolua_err);
 #endif
@@ -966,7 +966,7 @@ int lua_ax_video_VideoPlayer_constructor(lua_State* tolua_S)
     cocos2d::ui::VideoPlayer* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
@@ -984,13 +984,13 @@ int lua_ax_video_VideoPlayer_constructor(lua_State* tolua_S)
         cobj->autorelease();
         int ID =  (int)cobj->_ID ;
         int* luaID =  &cobj->_luaID ;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"axui.VideoPlayer");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"ccui.VideoPlayer");
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "axui.VideoPlayer:VideoPlayer",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.VideoPlayer:VideoPlayer",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_error(tolua_S,"#ferror in function 'lua_ax_video_VideoPlayer_constructor'.",&tolua_err);
 #endif
 
@@ -1005,8 +1005,8 @@ static int lua_ax_video_VideoPlayer_finalize(lua_State* tolua_S)
 
 int lua_register_ax_video_VideoPlayer(lua_State* tolua_S)
 {
-    tolua_usertype(tolua_S,"axui.VideoPlayer");
-    tolua_cclass(tolua_S,"VideoPlayer","axui.VideoPlayer","axui.Widget",nullptr);
+    tolua_usertype(tolua_S,"ccui.VideoPlayer");
+    tolua_cclass(tolua_S,"VideoPlayer","ccui.VideoPlayer","ccui.Widget",nullptr);
 
     tolua_beginmodule(tolua_S,"VideoPlayer");
         tolua_function(tolua_S,"new",lua_ax_video_VideoPlayer_constructor);
@@ -1032,8 +1032,8 @@ int lua_register_ax_video_VideoPlayer(lua_State* tolua_S)
         tolua_function(tolua_S,"create", lua_ax_video_VideoPlayer_create);
     tolua_endmodule(tolua_S);
     auto typeName = typeid(cocos2d::ui::VideoPlayer).name(); // rtti is literal storage
-    g_luaType[reinterpret_cast<uintptr_t>(typeName)] = "axui.VideoPlayer";
-    g_typeCast[typeName] = "axui.VideoPlayer";
+    g_luaType[reinterpret_cast<uintptr_t>(typeName)] = "ccui.VideoPlayer";
+    g_typeCast[typeName] = "ccui.VideoPlayer";
     return 1;
 }
 TOLUA_API int register_all_ax_video(lua_State* tolua_S)

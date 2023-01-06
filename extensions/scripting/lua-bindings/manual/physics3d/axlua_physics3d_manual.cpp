@@ -25,12 +25,12 @@
 #include "platform/CCPlatformConfig.h"
 #include "base/ccConfig.h"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-#    include "scripting/lua-bindings/manual/physics3d/axlua_physics3d_manual.h"
-#    include "scripting/lua-bindings/auto/axlua_physics3d_auto.hpp"
-#    include "scripting/lua-bindings/manual/tolua_fix.h"
-#    include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#    include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#    include "physics3d/CCPhysics3D.h"
+    #include "scripting/lua-bindings/manual/physics3d/axlua_physics3d_manual.h"
+    #include "scripting/lua-bindings/auto/axlua_physics3d_auto.hpp"
+    #include "scripting/lua-bindings/manual/tolua_fix.h"
+    #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+    #include "scripting/lua-bindings/manual/CCLuaEngine.h"
+    #include "physics3d/CCPhysics3D.h"
 
 bool luaval_to_Physics3DRigidBodyDes(lua_State* L,
                                      int lo,
@@ -45,9 +45,9 @@ bool luaval_to_Physics3DRigidBodyDes(lua_State* L,
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#    endif
+    #endif
         ok = false;
     }
 
@@ -115,9 +115,9 @@ bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#    endif
+    #endif
         ok = false;
     }
 
@@ -191,14 +191,14 @@ int axlua_physics3d_PhysicsMeshRenderer_create(lua_State* L)
     int argc = 0;
     bool ok  = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.PhysicsMeshRenderer", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -255,10 +255,10 @@ int axlua_physics3d_PhysicsMeshRenderer_create(lua_State* L)
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.PhysicsMeshRenderer:create", argc, 2);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_PhysicsMeshRenderer_create'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -278,14 +278,14 @@ int axlua_physics3d_Physics3DRigidBody_create(lua_State* L)
     int argc = 0;
     bool ok  = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.Physics3DRigidBody", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -304,10 +304,10 @@ int axlua_physics3d_Physics3DRigidBody_create(lua_State* L)
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DRigidBody:create", argc, 1);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DRigidBody_create'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -326,14 +326,14 @@ int axlua_physics3d_Physics3DComponent_create(lua_State* L)
 {
     int argc = 0;
     bool ok  = true;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.Physics3DComponent", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -419,10 +419,10 @@ int axlua_physics3d_Physics3DComponent_create(lua_State* L)
     ok = true;
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d", "cc.Physics3DComponent:create", argc, 0);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DComponent_create'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -443,24 +443,24 @@ int axlua_physics3d_Physics3DWorld_rayCast(lua_State* L)
     cocos2d::Physics3DWorld* cobj = nullptr;
     bool ok                       = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertype(L, 1, "cc.Physics3DWorld", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     cobj = (cocos2d::Physics3DWorld*)tolua_tousertype(L, 1, 0);
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(L, "invalid 'cobj' in function 'axlua_physics3d_Physics3DWorld_rayCast'", nullptr);
         return 0;
     }
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
     if (argc == 3)
@@ -488,10 +488,10 @@ int axlua_physics3d_Physics3DWorld_rayCast(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Physics3DWorld:rayCast", argc, 3);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DWorld_rayCast'.", &tolua_err);
-#    endif
+    #endif
 
     return 0;
 }
@@ -512,14 +512,14 @@ int axlua_physics3d_Physics3DShape_createMesh(lua_State* L)
     int argc = 0;
     bool ok  = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.Physics3DShape", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -540,10 +540,10 @@ int axlua_physics3d_Physics3DShape_createMesh(lua_State* L)
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createMesh", argc, 2);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DShape_createMesh'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -552,14 +552,14 @@ int axlua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
     int argc = 0;
     bool ok  = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.Physics3DShape", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -626,10 +626,10 @@ int axlua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createHeightfield",
                argc, 8);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DShape_createHeightfield'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -640,10 +640,10 @@ int axlua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
 
     tolua_Error tolua_err;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "cc.Physics3DShape", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
 
@@ -653,9 +653,9 @@ int axlua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
         std::vector<std::pair<cocos2d::Physics3DShape*, cocos2d::Mat4>> shapes;
         if (!tolua_istable(L, 2, 0, &tolua_err))
         {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
             luaval_to_native_err(L, "#ferror:", &tolua_err, "cc.Physics3DShape:createCompoundShape");
-#    endif
+    #endif
             ok = false;
         }
 
@@ -693,10 +693,10 @@ int axlua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createCompoundShape",
                argc, 1);
     return 0;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DShape_createCompoundShape'.", &tolua_err);
-#    endif
+    #endif
     return 0;
 }
 
@@ -741,35 +741,35 @@ int axlua_physics3d_Physics3DObject_setCollisionCallback(lua_State* L)
     int argc                       = 0;
     cocos2d::Physics3DObject* cobj = nullptr;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertype(L, 1, "cc.Physics3DObject", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     cobj = (cocos2d::Physics3DObject*)tolua_tousertype(L, 1, 0);
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(L, "invalid 'cobj' in function 'axlua_physics3d_Physics3DObject_setCollisionCallback'",
                     nullptr);
         return 0;
     }
-#    endif
+    #endif
 
     argc = lua_gettop(L) - 1;
     if (argc == 1)
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
         }
-#    endif
+    #endif
         LUA_FUNCTION handler = toluafix_ref_function(L, 2, 0);
         cobj->setCollisionCallback([=](const cocos2d::Physics3DCollisionInfo& ci) {
             auto stack = LuaEngine::getInstance()->getLuaStack();
@@ -823,10 +823,10 @@ int axlua_physics3d_Physics3DObject_setCollisionCallback(lua_State* L)
                "cc.Physics3DObject:setCollisionCallback", argc, 1);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_physics3d_Physics3DObject_setCollisionCallback'.", &tolua_err);
-#    endif
+    #endif
 
     return 0;
 }

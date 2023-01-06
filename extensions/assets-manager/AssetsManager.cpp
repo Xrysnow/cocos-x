@@ -33,9 +33,9 @@
 #include "platform/CCFileUtils.h"
 
 #ifdef MINIZIP_FROM_SYSTEM
-#    include <minizip/unzip.h>
+    #include <minizip/unzip.h>
 #else  // from our embedded sources
-#    include "unzip.h"
+    #include "unzip.h"
 #endif
 #include <ioapi.h>
 

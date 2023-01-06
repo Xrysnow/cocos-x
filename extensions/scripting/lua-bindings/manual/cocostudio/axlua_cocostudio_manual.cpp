@@ -75,7 +75,7 @@ static int axlua_ArmatureAnimation_setMovementEventCallFunc(lua_State* L)
     int argc                = 0;
     ArmatureAnimation* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.ArmatureAnimation", 0, &tolua_err))
         goto tolua_lerror;
@@ -83,7 +83,7 @@ static int axlua_ArmatureAnimation_setMovementEventCallFunc(lua_State* L)
 
     self = static_cast<ArmatureAnimation*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ArmatureAnimation_setMovementEventCallFunc'\n", NULL);
@@ -94,7 +94,7 @@ static int axlua_ArmatureAnimation_setMovementEventCallFunc(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -135,7 +135,7 @@ static int axlua_ArmatureAnimation_setMovementEventCallFunc(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'setMovementEventCallFunc'.", &tolua_err);
     return 0;
@@ -150,7 +150,7 @@ static int axlua_ArmatureAnimation_setFrameEventCallFunc(lua_State* L)
     int argc                = 0;
     ArmatureAnimation* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.ArmatureAnimation", 0, &tolua_err))
         goto tolua_lerror;
@@ -158,7 +158,7 @@ static int axlua_ArmatureAnimation_setFrameEventCallFunc(lua_State* L)
 
     self = static_cast<ArmatureAnimation*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ArmatureAnimation_setFrameEventCallFunc'\n", NULL);
@@ -169,7 +169,7 @@ static int axlua_ArmatureAnimation_setFrameEventCallFunc(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -212,7 +212,7 @@ static int axlua_ArmatureAnimation_setFrameEventCallFunc(lua_State* L)
         "'setFrameEventCallFunc' function of ArmatureAnimation has wrong number of arguments: %d, was expecting %d\n",
         argc, 1);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'setFrameEventCallFunc'.", &tolua_err);
 #endif
@@ -239,7 +239,7 @@ static int axlua_ArmatureDataManager_addArmatureFileInfoAsyncCallFunc(lua_State*
     int argc                  = 0;
     ArmatureDataManager* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.ArmatureDataManager", 0, &tolua_err))
         goto tolua_lerror;
@@ -247,7 +247,7 @@ static int axlua_ArmatureDataManager_addArmatureFileInfoAsyncCallFunc(lua_State*
 
     self = static_cast<ArmatureDataManager*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L,
@@ -260,7 +260,7 @@ static int axlua_ArmatureDataManager_addArmatureFileInfoAsyncCallFunc(lua_State*
 
     if (2 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isstring(L, 2, 0, &tolua_err) || !toluafix_isfunction(L, 3, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -282,7 +282,7 @@ static int axlua_ArmatureDataManager_addArmatureFileInfoAsyncCallFunc(lua_State*
     }
     else if (4 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isstring(L, 2, 0, &tolua_err) || !tolua_isstring(L, 3, 0, &tolua_err) ||
             !tolua_isstring(L, 4, 0, &tolua_err) || !toluafix_isfunction(L, 5, "LUA_FUNCTION", 0, &tolua_err))
         {
@@ -312,7 +312,7 @@ static int axlua_ArmatureDataManager_addArmatureFileInfoAsyncCallFunc(lua_State*
                "expecting %d\n",
                argc, 1);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addArmatureFileInfoAsync'.", &tolua_err);
 #endif
@@ -339,7 +339,7 @@ static int axlua_extension_Bone_setIgnoreMovementBoneData(lua_State* L)
     int argc               = 0;
     cocostudio::Bone* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.Bone", 0, &tolua_err))
         goto tolua_lerror;
@@ -347,7 +347,7 @@ static int axlua_extension_Bone_setIgnoreMovementBoneData(lua_State* L)
 
     self = static_cast<cocostudio::Bone*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_extension_Bone_setIgnoreMovementBoneData'\n", NULL);
@@ -359,7 +359,7 @@ static int axlua_extension_Bone_setIgnoreMovementBoneData(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isboolean(L, 2, 0, &tolua_err))
             goto tolua_lerror;
 #endif
@@ -372,7 +372,7 @@ static int axlua_extension_Bone_setIgnoreMovementBoneData(lua_State* L)
                argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'setIgnoreMovementBoneData'.", &tolua_err);
     return 0;
@@ -387,7 +387,7 @@ static int axlua_extension_Bone_getIgnoreMovementBoneData(lua_State* L)
     int argc               = 0;
     cocostudio::Bone* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.Bone", 0, &tolua_err))
         goto tolua_lerror;
@@ -395,7 +395,7 @@ static int axlua_extension_Bone_getIgnoreMovementBoneData(lua_State* L)
 
     self = static_cast<cocostudio::Bone*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_extension_Bone_getIgnoreMovementBoneData'\n", NULL);
@@ -415,7 +415,7 @@ static int axlua_extension_Bone_getIgnoreMovementBoneData(lua_State* L)
                argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'getIgnoreMovementBoneData'.", &tolua_err);
     return 0;
@@ -439,11 +439,11 @@ int axlua_studio_ActionTimelineCache_getInstance(lua_State* L)
     int argc = 0;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "ccs.ActionTimelineCache", 0, &tolua_err))
         goto tolua_lerror;
 #endif
@@ -461,7 +461,7 @@ int axlua_studio_ActionTimelineCache_getInstance(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "ccs.ActionTimelineCache:getInstance",
                argc, 0);
     return 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_studio_ActionTimelineCache_getInstance'.", &tolua_err);
 #endif
@@ -487,7 +487,7 @@ static int axlua_ActionTimeline_setFrameEventCallFunc(lua_State* L)
     int argc                                   = 0;
     cocostudio::timeline::ActionTimeline* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "ccs.ActionTimeline", 0, &tolua_err))
         goto tolua_lerror;
@@ -495,7 +495,7 @@ static int axlua_ActionTimeline_setFrameEventCallFunc(lua_State* L)
 
     self = static_cast<cocostudio::timeline::ActionTimeline*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ActionTimeline_setFrameEventCallFunc'\n", NULL);
@@ -506,7 +506,7 @@ static int axlua_ActionTimeline_setFrameEventCallFunc(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -528,7 +528,7 @@ static int axlua_ActionTimeline_setFrameEventCallFunc(lua_State* L)
         L, "'setFrameEventCallFunc' function of ActionTimeline has wrong number of arguments: %d, was expecting %d\n",
         argc, 1);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'setFrameEventCallFunc'.", &tolua_err);
 #endif
@@ -550,11 +550,11 @@ int axlua_CustomGUIReader_create(lua_State* L)
 {
     int argc = 0;
     bool ok  = true;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertable(L, 1, "ccs.CustomGUIReader", 0, &tolua_err))
         goto tolua_lerror;
 #endif
@@ -571,14 +571,14 @@ int axlua_CustomGUIReader_create(lua_State* L)
             {
                 break;
             }
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
             if (!toluafix_isfunction(L, 3, "LUA_FUNCTION", 0, &tolua_err))
             {
                 goto tolua_lerror;
             }
 #endif
             LUA_FUNCTION arg1 = toluafix_ref_function(L, 3, 0);
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
             if (!toluafix_isfunction(L, 4, "LUA_FUNCTION", 0, &tolua_err))
             {
                 goto tolua_lerror;
@@ -593,7 +593,7 @@ int axlua_CustomGUIReader_create(lua_State* L)
     } while (0);
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d", "ccs.CustomGUIReader:create", argc, 1);
     return 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_CustomGUIReader_create'.", &tolua_err);
 #endif

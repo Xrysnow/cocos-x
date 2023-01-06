@@ -8,7 +8,7 @@
 #include "WidgetReader/ArmatureNodeReader/CSArmatureNode_generated.h"
 #include "CCArmature.h"
 #if defined(CC_BUILD_WITH_DRANGBONES) && CC_BUILD_WITH_DRANGBONES
-#    include "DragonBones/CCDragonBonesHeaders.h"
+    #include "DragonBones/CCDragonBonesHeaders.h"
 #endif
 
 USING_NS_CC;

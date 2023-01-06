@@ -46,7 +46,7 @@
 #include "renderer/backend/VertexLayout.h"
 #include "ui/GUIDefine.h"
 
-#include "yasio/cxx17/string_view.hpp"
+#include "yasio/stl/string_view.hpp"
 #include <thread>
 
 USING_NS_CC;
@@ -54,7 +54,7 @@ USING_NS_CC;
 extern std::unordered_map<uintptr_t, const char*> g_luaType;
 extern std::unordered_map<std::string, const char*> g_typeCast;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 void luaval_to_native_err(lua_State* L, const char* msg, tolua_Error* err, const char* funcName = "");
 #endif
 
@@ -628,7 +628,7 @@ bool luaval_to_ccmap_string_key(lua_State* L, int lo, cocos2d::Map<std::string, 
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err);
 #endif
         ok = false;
@@ -1371,7 +1371,6 @@ CC_LUA_DLL void program_activeattrs_to_luaval(lua_State* L,
 
 CC_LUA_DLL void program_activeattrs_to_luaval(lua_State* L,
                                               const std::unordered_map<std::string, cocos2d::backend::AttributeBindInfo>& map);
-
 
 /**
  * convert cocos2d::ResourceData to lua object

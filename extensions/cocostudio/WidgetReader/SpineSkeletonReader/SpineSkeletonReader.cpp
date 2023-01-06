@@ -25,17 +25,17 @@
 #include "WidgetReader/SpineSkeletonReader/SpineSkeletonReader.h"
 
 #if defined(CC_BUILD_WITH_SPINE)
-#    include "SpineSkeletonDataCache.h"
+    #include "SpineSkeletonDataCache.h"
 
-#    include "2d/CCSprite.h"
-#    include "2d/CCSpriteFrameCache.h"
-#    include "platform/CCFileUtils.h"
+    #include "2d/CCSprite.h"
+    #include "2d/CCSpriteFrameCache.h"
+    #include "platform/CCFileUtils.h"
 
-#    include "CSParseBinary_generated.h"
-#    include "FlatBuffersSerialize.h"
-#    include "WidgetReader/NodeReader/NodeReader.h"
+    #include "CSParseBinary_generated.h"
+    #include "FlatBuffersSerialize.h"
+    #include "WidgetReader/NodeReader/NodeReader.h"
 
-#    include "flatbuffers/flatbuffers.h"
+    #include "flatbuffers/flatbuffers.h"
 
 USING_NS_CC;
 using namespace flatbuffers;
@@ -119,7 +119,7 @@ Offset<Table> SpineSkeletonReader::createOptionsWithFlatBuffers(pugi::xml_node o
 
         attribute = attribute.next_attribute();
     }
-#    if 0
+    #if 0
         // FileData
         auto child = objectData.first_child();
         while (child)
@@ -185,7 +185,7 @@ Offset<Table> SpineSkeletonReader::createOptionsWithFlatBuffers(pugi::xml_node o
 
             child = child.next_sibling();
         }
-#    endif
+    #endif
 
     flatbuffers::BlendFunc f_blendFunc(utils::toGLBlendFactor(blendFunc.src), utils::toGLBlendFactor(blendFunc.dst));
 

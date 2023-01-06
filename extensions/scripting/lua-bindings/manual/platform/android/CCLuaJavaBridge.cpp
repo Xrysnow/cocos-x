@@ -24,15 +24,15 @@
 
 #include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
 #if defined(__ANDROID__)
-#    include "platform/android/jni/JniHelper.h"
-#    include <android/log.h>
-#    include "base/ccUTF8.h"
+    #include "platform/android/jni/JniHelper.h"
+    #include <android/log.h>
+    #include "base/ccUTF8.h"
 
-#    define LOG_TAG "luajc"
-#    define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+    #define LOG_TAG "luajc"
+    #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 extern "C" {
-#    include "scripting/lua-bindings/manual/tolua_fix.h"
+    #include "scripting/lua-bindings/manual/tolua_fix.h"
 }
 
 LuaJavaBridge::CallInfo::~CallInfo()

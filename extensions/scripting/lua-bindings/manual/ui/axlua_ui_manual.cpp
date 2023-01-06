@@ -25,19 +25,19 @@
 #include "scripting/lua-bindings/manual/ui/axlua_ui_manual.hpp"
 #include "scripting/lua-bindings/auto/axlua_ui_auto.hpp"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
-#    include "scripting/lua-bindings/auto/axlua_video_auto.hpp"
-#    include "scripting/lua-bindings/manual/ui/axlua_video_manual.hpp"
-#    include "scripting/lua-bindings/auto/axlua_webview_auto.hpp"
-#    include "scripting/lua-bindings/manual/ui/axlua_webview_manual.hpp"
+    #include "scripting/lua-bindings/auto/axlua_video_auto.hpp"
+    #include "scripting/lua-bindings/manual/ui/axlua_video_manual.hpp"
+    #include "scripting/lua-bindings/auto/axlua_webview_auto.hpp"
+    #include "scripting/lua-bindings/manual/ui/axlua_webview_manual.hpp"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#    if defined(CC_ENABLE_MFMEDIA)
-#        include "scripting/lua-bindings/auto/axlua_video_auto.hpp"
-#        include "scripting/lua-bindings/manual/ui/axlua_video_manual.hpp"
-#    endif
-#    if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
-#        include "scripting/lua-bindings/auto/axlua_webview_auto.hpp"
-#        include "scripting/lua-bindings/manual/ui/axlua_webview_manual.hpp"
-#    endif
+    #if defined(CC_ENABLE_MFMEDIA)
+        #include "scripting/lua-bindings/auto/axlua_video_auto.hpp"
+        #include "scripting/lua-bindings/manual/ui/axlua_video_manual.hpp"
+    #endif
+    #if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
+        #include "scripting/lua-bindings/auto/axlua_webview_auto.hpp"
+        #include "scripting/lua-bindings/manual/ui/axlua_webview_manual.hpp"
+    #endif
 #endif
 
 #include "scripting/lua-bindings/manual/tolua_fix.h"
@@ -71,15 +71,15 @@ static int axlua_Widget_addTouchEventListener(lua_State* L)
     int argc     = 0;
     Widget* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.Widget", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.Widget", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<Widget*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_Widget_addTouchEventListener'\n", NULL);
@@ -91,7 +91,7 @@ static int axlua_Widget_addTouchEventListener(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -111,7 +111,7 @@ static int axlua_Widget_addTouchEventListener(lua_State* L)
                argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addTouchEventListener'.", &tolua_err);
     return 0;
@@ -126,15 +126,15 @@ static int axlua_Widget_addClickEventListener(lua_State* L)
     int argc     = 0;
     Widget* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.Widget", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.Widget", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<Widget*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_Widget_addClickEventListener'\n", NULL);
@@ -146,7 +146,7 @@ static int axlua_Widget_addClickEventListener(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -170,7 +170,7 @@ static int axlua_Widget_addClickEventListener(lua_State* L)
                argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addClickEventListener'.", &tolua_err);
     return 0;
@@ -179,7 +179,7 @@ tolua_lerror:
 
 static void extendWidget(lua_State* L)
 {
-    lua_pushstring(L, "axui.Widget");
+    lua_pushstring(L, "ccui.Widget");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -197,15 +197,15 @@ static int axlua_CheckBox_addEventListener(lua_State* L)
     int argc       = 0;
     CheckBox* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.CheckBox", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.CheckBox", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<CheckBox*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_CheckBox_addEventListener'\n", NULL);
@@ -215,7 +215,7 @@ static int axlua_CheckBox_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -234,7 +234,7 @@ static int axlua_CheckBox_addEventListener(lua_State* L)
                1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -243,7 +243,7 @@ tolua_lerror:
 
 static void extendCheckBox(lua_State* L)
 {
-    lua_pushstring(L, "axui.CheckBox");
+    lua_pushstring(L, "ccui.CheckBox");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -260,15 +260,15 @@ static int axlua_RadioButton_addEventListener(lua_State* L)
     int argc          = 0;
     RadioButton* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.RadioButton", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.RadioButton", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<RadioButton*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_RadioButton_addEventListener'\n", NULL);
@@ -278,7 +278,7 @@ static int axlua_RadioButton_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -288,7 +288,7 @@ static int axlua_RadioButton_addEventListener(lua_State* L)
 
         self->addEventListener([=](RadioButton* radioButton, RadioButton::EventType eventType) {
             LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-            stack->pushObject(radioButton, "axui.RadioButton");
+            stack->pushObject(radioButton, "ccui.RadioButton");
             stack->pushInt((int)eventType);
 
             stack->executeFunctionByHandler(handler, 2);
@@ -303,7 +303,7 @@ static int axlua_RadioButton_addEventListener(lua_State* L)
                1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -312,7 +312,7 @@ tolua_lerror:
 
 static void extendRadioButton(lua_State* L)
 {
-    lua_pushstring(L, "axui.RadioButton");
+    lua_pushstring(L, "ccui.RadioButton");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -329,15 +329,15 @@ static int axlua_RadioButtonGroup_addEventListener(lua_State* L)
     int argc               = 0;
     RadioButtonGroup* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.RadioButtonGroup", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.RadioButtonGroup", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<RadioButtonGroup*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_RadioButtonGroup_addEventListener'\n", NULL);
@@ -347,7 +347,7 @@ static int axlua_RadioButtonGroup_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -358,7 +358,7 @@ static int axlua_RadioButtonGroup_addEventListener(lua_State* L)
         self->addEventListener([=](RadioButton* radioButton, int index, RadioButtonGroup::EventType eventType) {
             LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
 
-            stack->pushObject(radioButton, "axui.RadioButton");
+            stack->pushObject(radioButton, "ccui.RadioButton");
             stack->pushInt(index);
             stack->pushInt((int)eventType);
 
@@ -375,7 +375,7 @@ static int axlua_RadioButtonGroup_addEventListener(lua_State* L)
                argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -384,7 +384,7 @@ tolua_lerror:
 
 static void extendRadioButtonGroup(lua_State* L)
 {
-    lua_pushstring(L, "axui.RadioButtonGroup");
+    lua_pushstring(L, "ccui.RadioButtonGroup");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -401,15 +401,15 @@ static int axlua_Slider_addEventListener(lua_State* L)
     int argc     = 0;
     Slider* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.Slider", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.Slider", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<Slider*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_Slider_addEventListener'\n", NULL);
@@ -419,7 +419,7 @@ static int axlua_Slider_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -439,7 +439,7 @@ static int axlua_Slider_addEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -448,7 +448,7 @@ tolua_lerror:
 
 static void extendSlider(lua_State* L)
 {
-    lua_pushstring(L, "axui.Slider");
+    lua_pushstring(L, "ccui.Slider");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -465,15 +465,15 @@ static int axlua_TextField_addEventListener(lua_State* L)
     int argc        = 0;
     TextField* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.TextField", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.TextField", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<TextField*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_TextField_addEventListener'\n", NULL);
@@ -483,7 +483,7 @@ static int axlua_TextField_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -503,7 +503,7 @@ static int axlua_TextField_addEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -512,7 +512,7 @@ tolua_lerror:
 
 static void extendTextField(lua_State* L)
 {
-    lua_pushstring(L, "axui.TextField");
+    lua_pushstring(L, "ccui.TextField");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -529,15 +529,15 @@ static int axlua_PageView_addEventListener(lua_State* L)
     int argc       = 0;
     PageView* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.PageView", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.PageView", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<PageView*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_PageView_addEventListener'\n", NULL);
@@ -547,7 +547,7 @@ static int axlua_PageView_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -568,7 +568,7 @@ static int axlua_PageView_addEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -577,7 +577,7 @@ tolua_lerror:
 
 static void extendPageView(lua_State* L)
 {
-    lua_pushstring(L, "axui.PageView");
+    lua_pushstring(L, "ccui.PageView");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -594,15 +594,15 @@ static int axlua_ScrollView_addEventListener(lua_State* L)
     int argc         = 0;
     ScrollView* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.ScrollView", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.ScrollView", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<ScrollView*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ScrollView_addEventListener'\n", NULL);
@@ -612,7 +612,7 @@ static int axlua_ScrollView_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -632,7 +632,7 @@ static int axlua_ScrollView_addEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -641,7 +641,7 @@ tolua_lerror:
 
 static void extendScrollView(lua_State* L)
 {
-    lua_pushstring(L, "axui.ScrollView");
+    lua_pushstring(L, "ccui.ScrollView");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -658,15 +658,15 @@ static int axlua_ListView_addEventListener(lua_State* L)
     int argc       = 0;
     ListView* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.ListView", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.ListView", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<ListView*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ListView_addEventListener'\n", NULL);
@@ -676,7 +676,7 @@ static int axlua_ListView_addEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -698,7 +698,7 @@ static int axlua_ListView_addEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addEventListener'.", &tolua_err);
     return 0;
@@ -713,15 +713,15 @@ static int axlua_ListView_addScrollViewEventListener(lua_State* L)
     int argc       = 0;
     ListView* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.ListView", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.ListView", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<ListView*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_ListView_addScrollViewEventListener'\n", NULL);
@@ -731,7 +731,7 @@ static int axlua_ListView_addScrollViewEventListener(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -754,7 +754,7 @@ static int axlua_ListView_addScrollViewEventListener(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'addScrollViewEventListener'.", &tolua_err);
     return 0;
@@ -763,7 +763,7 @@ tolua_lerror:
 
 static void extendListView(lua_State* L)
 {
-    lua_pushstring(L, "axui.ListView");
+    lua_pushstring(L, "ccui.ListView");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -781,15 +781,15 @@ static int axlua_LayoutParameter_setMargin(lua_State* L)
     int argc              = 0;
     LayoutParameter* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.LayoutParameter", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.LayoutParameter", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<LayoutParameter*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_LayoutParameter_setMargin'\n", NULL);
@@ -800,7 +800,7 @@ static int axlua_LayoutParameter_setMargin(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_istable(L, 2, 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -837,7 +837,7 @@ static int axlua_LayoutParameter_setMargin(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'setMargin'.", &tolua_err);
     return 0;
@@ -852,15 +852,15 @@ static int axlua_LayoutParameter_getMargin(lua_State* L)
     int argc              = 0;
     LayoutParameter* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.LayoutParameter", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.LayoutParameter", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<LayoutParameter*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'axlua_LayoutParameter_getMargin'\n", NULL);
@@ -899,7 +899,7 @@ static int axlua_LayoutParameter_getMargin(lua_State* L)
 
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'getMargin'.", &tolua_err);
     return 0;
@@ -908,7 +908,7 @@ tolua_lerror:
 
 static void extendLayoutParameter(lua_State* L)
 {
-    lua_pushstring(L, "axui.LayoutParameter");
+    lua_pushstring(L, "ccui.LayoutParameter");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -926,15 +926,15 @@ static int tolua_cocos2d_EditBox_registerScriptEditBoxHandler(lua_State* L)
     int argc      = 0;
     EditBox* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.EditBox", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.EditBox", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<EditBox*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'tolua_cocos2d_EditBox_registerScriptEditBoxHandler'\n", NULL);
@@ -946,7 +946,7 @@ static int tolua_cocos2d_EditBox_registerScriptEditBoxHandler(lua_State* L)
 
     if (1 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -958,10 +958,10 @@ static int tolua_cocos2d_EditBox_registerScriptEditBoxHandler(lua_State* L)
     }
 
     luaL_error(L, "%s function of EditBox  has wrong number of arguments: %d, was expecting %d\n",
-               "axui.EditBox:registerScriptEditBoxHandler", argc, 1);
+               "ccui.EditBox:registerScriptEditBoxHandler", argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'tolua_cocos2d_EditBox_registerScriptEditBoxHandler'.", &tolua_err);
     return 0;
@@ -977,15 +977,15 @@ static int tolua_cocos2d_EditBox_unregisterScriptEditBoxHandler(lua_State* L)
     int argc      = 0;
     EditBox* self = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "axui.EditBox", 0, &tolua_err))
+    if (!tolua_isusertype(L, 1, "ccui.EditBox", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<EditBox*>(tolua_tousertype(L, 1, 0));
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'tolua_cocos2d_EditBox_unregisterScriptEditBoxHandler'\n", NULL);
@@ -1002,10 +1002,10 @@ static int tolua_cocos2d_EditBox_unregisterScriptEditBoxHandler(lua_State* L)
     }
 
     luaL_error(L, "%s function of EditBox  has wrong number of arguments: %d, was expecting %d\n",
-               "axui.EditBox:unregisterScriptEditBoxHandler", argc, 0);
+               "ccui.EditBox:unregisterScriptEditBoxHandler", argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'tolua_cocos2d_EditBox_unregisterScriptEditBoxHandler'.", &tolua_err);
     return 0;
@@ -1014,7 +1014,7 @@ tolua_lerror:
 
 static void extendEditBox(lua_State* L)
 {
-    lua_pushstring(L, "axui.EditBox");
+    lua_pushstring(L, "ccui.EditBox");
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
@@ -1053,7 +1053,7 @@ static int toaxlua_EventListenerFocus_create(lua_State* L)
         return 0;
 
     int argc = 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertable(L, 1, "cc.EventListenerFocus", 0, &tolua_err))
         goto tolua_lerror;
@@ -1077,7 +1077,7 @@ static int toaxlua_EventListenerFocus_create(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n", "cc.EventListenerFocus:create", argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'toaxlua_EventListenerFocus_create'.", &tolua_err);
     return 0;
@@ -1103,10 +1103,10 @@ static void cloneFocusHandler(const EventListenerFocus* src, EventListenerFocus*
             lua_State* L = stack->getLuaState();
             int id       = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
             int* luaID   = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetLostFocus, "axui.Widget");
+            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
             id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
             luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetGetFocus, "axui.Widget");
+            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
             stack->executeFunctionByHandler(handler, 2);
         };
     }
@@ -1119,14 +1119,14 @@ static int toaxlua_EventListenerFocus_clone(lua_State* L)
 
     int argc                 = 0;
     EventListenerFocus* self = nullptr;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "cc.EventListenerFocus", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<EventListenerFocus*>(tolua_tousertype(L, 1, 0));
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'toaxlua_EventListenerFocus_clone'\n", nullptr);
@@ -1154,7 +1154,7 @@ static int toaxlua_EventListenerFocus_clone(lua_State* L)
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n", "cc.EventListenerFocus:clone", argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'toaxlua_EventListenerFocus_clone'.", &tolua_err);
     return 0;
@@ -1168,14 +1168,14 @@ static int toaxlua_EventListenerFocus_registerScriptHandler(lua_State* L)
 
     int argc                 = 0;
     EventListenerFocus* self = nullptr;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(L, 1, "cc.EventListenerFocus", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     self = static_cast<EventListenerFocus*>(tolua_tousertype(L, 1, 0));
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(L, "invalid 'self' in function 'toaxlua_EventListenerFocus_registerScriptHandler'\n",
@@ -1187,7 +1187,7 @@ static int toaxlua_EventListenerFocus_registerScriptHandler(lua_State* L)
 
     if (argc == 1)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!toluafix_isfunction(L, 2, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -1203,10 +1203,10 @@ static int toaxlua_EventListenerFocus_registerScriptHandler(lua_State* L)
             auto Ls    = stack->getLuaState();
             int id     = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
             int* luaID = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetLostFocus, "axui.Widget");
+            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
             id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
             luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetGetFocus, "axui.Widget");
+            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
             stack->executeFunctionByHandler(handler, 2);
         };
         return 0;
@@ -1216,7 +1216,7 @@ static int toaxlua_EventListenerFocus_registerScriptHandler(lua_State* L)
                "cc.EventListenerFocus:registerScriptHandler", argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'toaxlua_EventListenerFocus_registerScriptHandler'.", &tolua_err);
     return 0;
@@ -1249,14 +1249,14 @@ int register_ui_module(lua_State* L)
         register_all_ax_webview(L);
         register_all_ax_webview_manual(L);
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#    if defined(CC_ENABLE_MFMEDIA)
+    #if defined(CC_ENABLE_MFMEDIA)
         register_all_ax_video(L);
         register_all_ax_video_manual(L);
-#    endif
-#    if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
+    #endif
+    #if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
         register_all_ax_webview(L);
         register_all_ax_webview_manual(L);
-#    endif
+    #endif
 #endif
         extendEventListenerFocusEvent(L);
     }

@@ -27,12 +27,12 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
 
-#    include "scripting/lua-bindings/manual/tolua_fix.h"
-#    include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#    include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
-#    include "scripting/lua-bindings/manual/CCLuaValue.h"
-#    include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#    include "base/CCGameController.h"
+    #include "scripting/lua-bindings/manual/tolua_fix.h"
+    #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+    #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
+    #include "scripting/lua-bindings/manual/CCLuaValue.h"
+    #include "scripting/lua-bindings/manual/CCLuaEngine.h"
+    #include "base/CCGameController.h"
 
 static void cloneEventListenerControllerHandler(const cocos2d::EventListenerController* src,
                                                 cocos2d::EventListenerController* dst,
@@ -100,20 +100,20 @@ static int toaxlua_EventListenerController_clone(lua_State* tolua_S)
 
     int argc                               = 0;
     cocos2d::EventListenerController* self = nullptr;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(tolua_S, 1, "cc.EventListenerController", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     self = static_cast<cocos2d::EventListenerController*>(tolua_tousertype(tolua_S, 1, 0));
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(tolua_S, "invalid 'self' in function 'toaxlua_EventListenerController_clone'\n", nullptr);
         return 0;
     }
-#    endif
+    #endif
 
     argc = lua_gettop(tolua_S) - 1;
 
@@ -141,11 +141,11 @@ static int toaxlua_EventListenerController_clone(lua_State* tolua_S)
     CCLOG("'clone' has wrong number of arguments: %d, was expecting %d\n", argc, 0);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'clone'.", &tolua_err);
     return 0;
-#    endif
+    #endif
 }
 
 static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolua_S)
@@ -155,14 +155,14 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
 
     int argc                               = 0;
     cocos2d::EventListenerController* self = nullptr;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(tolua_S, 1, "cc.EventListenerController", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     self = static_cast<cocos2d::EventListenerController*>(tolua_tousertype(tolua_S, 1, 0));
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(tolua_S,
@@ -170,18 +170,18 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
                     nullptr);
         return 0;
     }
-#    endif
+    #endif
     argc = lua_gettop(tolua_S) - 1;
 
     if (argc == 2)
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         if (!toluafix_isfunction(tolua_S, 2, "LUA_FUNCTION", 0, &tolua_err) ||
             !tolua_isnumber(tolua_S, 3, 0, &tolua_err))
         {
             goto tolua_lerror;
         }
-#    endif
+    #endif
         LUA_FUNCTION handler = toluafix_ref_function(tolua_S, 2, 0);
         ScriptHandlerMgr::HandlerType type =
             static_cast<ScriptHandlerMgr::HandlerType>((int)tolua_tonumber(tolua_S, 3, 0));
@@ -283,11 +283,11 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
     CCLOG("'registerScriptHandler' has wrong number of arguments: %d, was expecting %d\n", argc, 2);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'registerScriptHandler'.", &tolua_err);
     return 0;
-#    endif
+    #endif
 }
 
 static void extendEventListenerController(lua_State* L)
@@ -309,29 +309,29 @@ static int toaxlua_Controller_getKeyStatus(lua_State* tolua_S)
 
     int argc                  = 0;
     cocos2d::Controller* self = nullptr;
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(tolua_S, 1, "cc.Controller", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     self = static_cast<cocos2d::Controller*>(tolua_tousertype(tolua_S, 1, 0));
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (nullptr == self)
     {
         tolua_error(tolua_S, "invalid 'self' in function 'toaxlua_Controller_getKeyStatus'\n", nullptr);
         return 0;
     }
-#    endif
+    #endif
 
     argc = lua_gettop(tolua_S) - 1;
 
     if (argc == 1)
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         if (!tolua_isnumber(tolua_S, 2, 0, &tolua_err))
             goto tolua_lerror;
-#    endif
+    #endif
         int keyCode                              = (int)tolua_tonumber(tolua_S, 2, 0);
         cocos2d::Controller::KeyStatus keyStatus = self->getKeyStatus(keyCode);
 
@@ -352,11 +352,11 @@ static int toaxlua_Controller_getKeyStatus(lua_State* tolua_S)
     CCLOG("'clone' has wrong number of arguments: %d, was expecting %d\n", argc, 0);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'getKeyStatus'.", &tolua_err);
     return 0;
-#    endif
+    #endif
 }
 
 static void extendController(lua_State* L)

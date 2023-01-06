@@ -43,7 +43,7 @@ static int axlua_CCSkeletonAnimation_createWithFile(lua_State* L)
 
     int argc = 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertable(L, 1, "sp.SkeletonAnimation", 0, &tolua_err))
         goto tolua_lerror;
@@ -53,7 +53,7 @@ static int axlua_CCSkeletonAnimation_createWithFile(lua_State* L)
 
     if (2 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isstring(L, 2, 0, &tolua_err) || !tolua_isstring(L, 3, 0, &tolua_err))
         {
             goto tolua_lerror;
@@ -71,7 +71,7 @@ static int axlua_CCSkeletonAnimation_createWithFile(lua_State* L)
     }
     else if (3 == argc)
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         if (!tolua_isstring(L, 2, 0, &tolua_err) || !tolua_isstring(L, 3, 0, &tolua_err) ||
             !tolua_isnumber(L, 4, 0, &tolua_err))
         {
@@ -94,7 +94,7 @@ static int axlua_CCSkeletonAnimation_createWithFile(lua_State* L)
                "'createWithFile' function of SkeletonAnimation has wrong number of arguments: %d, was expecting %d\n",
                argc, 2);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'createWithFile'.", &tolua_err);
 #endif
@@ -330,18 +330,18 @@ static int axlua_spine_SkeletonAnimation_addAnimation(lua_State* tolua_S)
     spine::SkeletonAnimation* cobj = nullptr;
     bool ok                        = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S, 1, "sp.SkeletonAnimation", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     cobj = (spine::SkeletonAnimation*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_spine_SkeletonAnimation_addAnimation'", nullptr);
@@ -397,7 +397,7 @@ static int axlua_spine_SkeletonAnimation_addAnimation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "addAnimation", argc, 3);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_spine_SkeletonAnimation_addAnimation'.", &tolua_err);
 #endif
@@ -411,18 +411,18 @@ static int axlua_spine_SkeletonAnimation_setAnimation(lua_State* tolua_S)
     spine::SkeletonAnimation* cobj = nullptr;
     bool ok                        = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S, 1, "sp.SkeletonAnimation", 0, &tolua_err))
         goto tolua_lerror;
 #endif
 
     cobj = (spine::SkeletonAnimation*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_spine_SkeletonAnimation_setAnimation'", nullptr);
@@ -455,7 +455,7 @@ static int axlua_spine_SkeletonAnimation_setAnimation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "setAnimation", argc, 3);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_spine_SkeletonAnimation_setAnimation'.", &tolua_err);
 #endif
@@ -468,7 +468,7 @@ static int axlua_spine_SkeletonAnimation_getBoundingBox(lua_State* tolua_S)
 {
     spine::SkeletonAnimation* cobj = (spine::SkeletonAnimation*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_spine_SkeletonAnimation_getBoundingBox'", nullptr);
@@ -498,7 +498,7 @@ static int axlua_spine_SkeletonAnimation_findBone(lua_State* tolua_S)
     int argc                       = 0;
     spine::SkeletonAnimation* cobj = nullptr;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
     if (!tolua_isusertype(tolua_S, 1, "sp.SkeletonAnimation", 0, &tolua_err))
         goto tolua_lerror;
@@ -506,7 +506,7 @@ static int axlua_spine_SkeletonAnimation_findBone(lua_State* tolua_S)
 
     cobj = (spine::SkeletonAnimation*)tolua_tousertype(tolua_S, 1, 0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_spine_SkeletonAnimation_findBone'", nullptr);
@@ -561,7 +561,7 @@ static int axlua_spine_SkeletonAnimation_findBone(lua_State* tolua_S)
     luaL_error(tolua_S, "findBone has wrong number of arguments: %d, was expecting %d \n", argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_spine_SkeletonAnimation_findBone'.", &tolua_err);
 #endif

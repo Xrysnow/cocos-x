@@ -26,44 +26,44 @@
 #define SCRIPT_LUA_PLATFORM_ANDROID_JNI_JAVA_ORG_CCMOL_LIB_CCLUA_JAVA_BRIDEG_H
 #if defined(__ANDROID__)
 
-#    include <jni.h>
+    #include <jni.h>
 
 extern "C" {
 
 /// @cond
 /*
- * Class:     Java_org_axmol_lib_LuaBridge
+ * Class:     Java_org_cocos2dx_lib_LuaBridge
  * Method:    callLuaFunctionWithString
  * Signature: (ILjava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_callLuaFunctionWithString(JNIEnv*,
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_callLuaFunctionWithString(JNIEnv*,
                                                                                              jclass,
                                                                                              jint,
                                                                                              jstring);
 
 /*
- * Class:     Java_org_axmol_lib_LuaBridge
+ * Class:     Java_org_cocos2dx_lib_LuaBridge
  * Method:    callLuaGlobalFunctionWithString
  * Signature: (Ljava/lang/String;Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
                                                                                                    jclass,
                                                                                                    jstring,
                                                                                                    jstring);
 
 /*
- * Class:     Java_org_axmol_lib_LuaBridge
+ * Class:     Java_org_cocos2dx_lib_LuaBridge
  * Method:    retainLuaFunction
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_retainLuaFunction(JNIEnv* env, jclass, jint);
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_retainLuaFunction(JNIEnv* env, jclass, jint);
 
 /*
- * Class:     Java_org_axmol_lib_LuaBridge
+ * Class:     Java_org_cocos2dx_lib_LuaBridge
  * Method:    releaseLuaFunction
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_releaseLuaFunction(JNIEnv* env, jclass, jint);
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_releaseLuaFunction(JNIEnv* env, jclass, jint);
 
 }  // extern "C"
 

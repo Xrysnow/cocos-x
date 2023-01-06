@@ -487,11 +487,11 @@ void FUIContainer::visit(cocos2d::Renderer * renderer, const cocos2d::Mat4 & par
         renderer->addCommand(rectClippingGroupCommand);
         renderer->pushGroup(rectClippingGroupCommand->getRenderQueueID());
 #else
-#    if COCOS2D_VERSION >= 0x00040000
+    #if COCOS2D_VERSION >= 0x00040000
         _rectClippingSupport->_groupCommand.init(_globalZOrder);
         renderer->addCommand(&_rectClippingSupport->_groupCommand);
         renderer->pushGroup(_rectClippingSupport->_groupCommand.getRenderQueueID());
-#    endif
+    #endif
 #endif
 
         auto beforeVisitCmdScissor = renderer->nextCallbackCommand();

@@ -27,12 +27,12 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
-#    include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#    include "navmesh/CCNavMeshAgent.h"
+    #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+    #include "navmesh/CCNavMeshAgent.h"
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 extern void luaval_to_native_err(lua_State* L, const char* msg, tolua_Error* err, const char* funcName);
-#    endif
+    #endif
 
 bool luaval_to_navmeshagentparam(lua_State* L, int lo, cocos2d::NavMeshAgentParam* outValue, const char* funcName)
 {
@@ -44,9 +44,9 @@ bool luaval_to_navmeshagentparam(lua_State* L, int lo, cocos2d::NavMeshAgentPara
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#    endif
+    #endif
         ok = false;
     }
 
@@ -120,9 +120,9 @@ bool luaval_to_offmeshlinkdata(lua_State* L, int lo, cocos2d::OffMeshLinkData* o
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#    endif
+    #endif
         ok = false;
     }
 

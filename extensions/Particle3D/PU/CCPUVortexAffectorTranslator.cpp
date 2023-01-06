@@ -39,10 +39,10 @@ bool PUVortexAffectorTranslator::translateChildProperty(PUScriptCompiler* compil
     PUAffector* af               = static_cast<PUAffector*>(prop->parent->context);
     PUVortexAffector* affector   = static_cast<PUVortexAffector*>(af);
 
-    if (prop->name == token[TOKEN_ROTATION_CCIS])
+    if (prop->name == token[TOKEN_ROTATION_AXIS])
     {
         // Property: rotation_axis
-        if (passValidateProperty(compiler, prop, token[TOKEN_ROTATION_CCIS], VAL_VECTOR3))
+        if (passValidateProperty(compiler, prop, token[TOKEN_ROTATION_AXIS], VAL_VECTOR3))
         {
             Vec3 val;
             if (getVector3(prop->values.begin(), prop->values.end(), &val))

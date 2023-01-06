@@ -26,27 +26,27 @@
 #define COCOS2DX_SCRIPT_LUA_COCOS2DX_SUPPORT_PLATFORM_ANDROID_LUA_JAVA_BRIDGE_H
 #if defined(__ANDROID__)
 
-#    include <jni.h>
-#    include <string.h>
-#    include <string>
-#    include <vector>
+    #include <jni.h>
+    #include <string.h>
+    #include <string>
+    #include <vector>
 
 using namespace std;
 
 extern "C" {
-#    include "lua.h"
+    #include "lua.h"
 }
 
-#    define LUAJ_ERR_OK 0
-#    define LUAJ_ERR_TYPE_NOT_SUPPORT (-1)
-#    define LUAJ_ERR_INVALID_SIGNATURES (-2)
-#    define LUAJ_ERR_METHOD_NOT_FOUND (-3)
-#    define LUAJ_ERR_EXCEPTION_OCCURRED (-4)
-#    define LUAJ_ERR_VM_THREAD_DETACHED (-5)
-#    define LUAJ_ERR_VM_FAILURE (-6)
+    #define LUAJ_ERR_OK 0
+    #define LUAJ_ERR_TYPE_NOT_SUPPORT (-1)
+    #define LUAJ_ERR_INVALID_SIGNATURES (-2)
+    #define LUAJ_ERR_METHOD_NOT_FOUND (-3)
+    #define LUAJ_ERR_EXCEPTION_OCCURRED (-4)
+    #define LUAJ_ERR_VM_THREAD_DETACHED (-5)
+    #define LUAJ_ERR_VM_FAILURE (-6)
 
-#    define LUAJ_REGISTRY_FUNCTION "luaj_function_id"       // table[function] = id
-#    define LUAJ_REGISTRY_RETAIN "luaj_function_id_retain"  // table[id] = retain count
+    #define LUAJ_REGISTRY_FUNCTION "luaj_function_id"       // table[function] = id
+    #define LUAJ_REGISTRY_RETAIN "luaj_function_id_retain"  // table[id] = retain count
 
 /**
  * @addtogroup lua

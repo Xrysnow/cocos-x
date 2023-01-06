@@ -47,7 +47,7 @@ int tolua_iscppstring(lua_State* L, int lo, int def, tolua_Error* err)
 }
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
 void luaval_to_native_err(lua_State* L, const char* msg, tolua_Error* err, const char* funcName)
 {
     if (NULL == L || NULL == err || NULL == msg || 0 == strlen(msg))
@@ -108,7 +108,7 @@ bool luaval_to_ushort(lua_State* L, int lo, unsigned short* outValue, const char
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -132,7 +132,7 @@ bool luaval_to_float(lua_State* L, int lo, float* outValue, const char* funcName
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -156,7 +156,7 @@ bool luaval_to_int32(lua_State* L, int lo, int* outValue, const char* funcName)
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -196,7 +196,7 @@ bool luaval_to_uint32(lua_State* L, int lo, unsigned int* outValue, const char* 
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -220,7 +220,7 @@ bool luaval_to_uint16(lua_State* L, int lo, uint16_t* outValue, const char* func
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -244,7 +244,7 @@ bool luaval_to_boolean(lua_State* L, int lo, bool* outValue, const char* funcNam
     tolua_Error tolua_err;
     if (!tolua_isboolean(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -268,7 +268,7 @@ bool luaval_to_number(lua_State* L, int lo, double* outValue, const char* funcNa
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -292,7 +292,7 @@ bool luaval_to_long_long(lua_State* L, int lo, long long* outValue, const char* 
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -316,7 +316,7 @@ bool luaval_to_std_string(lua_State* L, int lo, std::string* outValue, const cha
     tolua_Error tolua_err;
     if (!tolua_iscppstring(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -342,7 +342,7 @@ bool luaval_to_std_string_view(lua_State* L, int lo, cxx17::string_view* outValu
     tolua_Error tolua_err;
     if (!tolua_iscppstring(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -368,7 +368,7 @@ bool luaval_to_vec2(lua_State* L, int lo, cocos2d::Vec2* outValue, const char* f
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -417,7 +417,7 @@ bool luaval_to_vec3(lua_State* L, int lo, cocos2d::Vec3* outValue, const char* f
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -453,7 +453,7 @@ bool luaval_to_vec4(lua_State* L, int lo, cocos2d::Vec4* outValue, const char* f
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -494,7 +494,7 @@ bool luaval_to_blendfunc(lua_State* L, int lo, cocos2d::BlendFunc* outValue, con
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -532,9 +532,9 @@ bool luaval_to_physics_material(lua_State* L, int lo, PhysicsMaterial* outValue,
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#    endif
+    #endif
         ok = false;
     }
 
@@ -569,7 +569,7 @@ bool luaval_to_ssize_t(lua_State* L, int lo, ssize_t* outValue, const char* func
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -593,7 +593,7 @@ bool luaval_to_size_t(lua_State* L, int lo, size_t* outValue, const char* funcNa
     tolua_Error tolua_err;
     if (!tolua_isnumber(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -617,7 +617,7 @@ bool luaval_to_size(lua_State* L, int lo, Size* outValue, const char* funcName)
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -649,7 +649,7 @@ bool luaval_to_rect(lua_State* L, int lo, Rect* outValue, const char* funcName)
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -691,7 +691,7 @@ bool luaval_to_color4b(lua_State* L, int lo, Color4B* outValue, const char* func
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -733,7 +733,7 @@ bool luaval_to_color4f(lua_State* L, int lo, Color4F* outValue, const char* func
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -775,7 +775,7 @@ bool luaval_to_color3b(lua_State* L, int lo, Color3B* outValue, const char* func
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -812,7 +812,7 @@ bool luaval_to_affinetransform(lua_State* L, int lo, AffineTransform* outValue, 
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1018,7 +1018,7 @@ bool luaval_to_fontdefinition(lua_State* L, int lo, FontDefinition* outValue, co
         }
         lua_pop(L, 1);
     }
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     else
     {
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
@@ -1038,7 +1038,7 @@ bool luaval_to_ttfconfig(lua_State* L, int lo, cocos2d::TTFConfig* outValue, con
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1093,7 +1093,7 @@ bool luaval_to_mat4(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* f
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
         ok = false;
 #endif
@@ -1140,7 +1140,7 @@ bool luaval_to_array_of_vec2(lua_State* L, int lo, cocos2d::Vec2** points, int* 
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1160,7 +1160,7 @@ bool luaval_to_array_of_vec2(lua_State* L, int lo, cocos2d::Vec2** points, int* 
                 lua_gettable(L, lo);
                 if (!tolua_istable(L, -1, 0, &tolua_err))
                 {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
                     luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
                     lua_pop(L, 1);
@@ -1308,7 +1308,7 @@ bool luaval_to_ccvaluemap(lua_State* L, int lo, cocos2d::ValueMap* ret, const ch
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1395,7 +1395,7 @@ bool luaval_to_ccvaluemapintkey(lua_State* L, int lo, cocos2d::ValueMapIntKey* r
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1483,7 +1483,7 @@ bool luaval_to_ccvaluevector(lua_State* L, int lo, cocos2d::ValueVector* ret, co
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1565,7 +1565,7 @@ bool luaval_to_std_vector_string(lua_State* L, int lo, std::vector<std::string>*
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1606,7 +1606,7 @@ bool luaval_to_std_vector_string_view(lua_State* L, int lo, std::vector<std::str
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1647,7 +1647,7 @@ bool luaval_to_std_vector_int(lua_State* L, int lo, std::vector<int>* ret, const
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1686,7 +1686,7 @@ bool luaval_to_mesh_vertex_attrib(lua_State* L, int lo, cocos2d::MeshVertexAttri
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1719,7 +1719,7 @@ bool luaval_to_std_vector_float(lua_State* L, int lo, std::vector<float>* ret, c
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1758,7 +1758,7 @@ bool luaval_to_std_vector_ushort(lua_State* L, int lo, std::vector<unsigned shor
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1797,7 +1797,7 @@ bool luaval_to_quaternion(lua_State* L, int lo, cocos2d::Quaternion* outValue, c
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1838,7 +1838,7 @@ bool luaval_to_texparams(lua_State* L, int lo, cocos2d::Texture2D::TexParams* ou
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1879,7 +1879,7 @@ bool luaval_to_tex2f(lua_State* L, int lo, cocos2d::Tex2F* outValue, const char*
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1910,7 +1910,7 @@ bool luaval_to_v3f_c4b_t2f(lua_State* L, int lo, cocos2d::V3F_C4B_T2F* outValue,
     tolua_Error tolua_err;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -1977,7 +1977,7 @@ bool luaval_to_std_vector_vec2(lua_State* L, int lo, std::vector<cocos2d::Vec2>*
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -2020,7 +2020,7 @@ bool luaval_to_std_vector_vec3(lua_State* L, int lo, std::vector<cocos2d::Vec3>*
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -2066,7 +2066,7 @@ bool luaval_to_std_vector_v3f_c4b_t2f(lua_State* L,
 
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;
@@ -3004,7 +3004,7 @@ bool luaval_to_std_map_string_string(lua_State* L, int lo, hlookup::string_map<s
     bool ok = true;
     if (!tolua_istable(L, lo, 0, &tolua_err))
     {
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
         luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
 #endif
         ok = false;

@@ -38,7 +38,7 @@ public:
     // Constants
     static const bool DEFAULT_USE_OWN;
     static const float DEFAULT_ROTATION_SPEED;
-    static const Vec3 DEFAULT_ROTATION_CCIS;
+    static const Vec3 DEFAULT_ROTATION_AXIS;
 
     static PUGeometryRotator* create();
 

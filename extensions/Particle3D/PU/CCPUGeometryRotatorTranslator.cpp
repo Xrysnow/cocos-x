@@ -95,10 +95,10 @@ bool PUGeometryRotatorTranslator::translateChildProperty(PUScriptCompiler* compi
             }
         }
     }
-    else if (prop->name == token[TOKEN_ROTATION_CCIS])
+    else if (prop->name == token[TOKEN_ROTATION_AXIS])
     {
         // Property: rotation_axis
-        if (passValidateProperty(compiler, prop, token[TOKEN_ROTATION_CCIS], VAL_VECTOR3))
+        if (passValidateProperty(compiler, prop, token[TOKEN_ROTATION_AXIS], VAL_VECTOR3))
         {
             Vec3 val;
             if (getVector3(prop->values.begin(), prop->values.end(), &val))
@@ -108,10 +108,10 @@ bool PUGeometryRotatorTranslator::translateChildProperty(PUScriptCompiler* compi
             }
         }
     }
-    else if (prop->name == token[TOKEN_GEOMROT_ROTATION_CCIS])
+    else if (prop->name == token[TOKEN_GEOMROT_ROTATION_AXIS])
     {
         // Property: geom_rot_axis (deprecated and replaced by 'rotation_axis')
-        if (passValidateProperty(compiler, prop, token[TOKEN_GEOMROT_ROTATION_CCIS], VAL_VECTOR3))
+        if (passValidateProperty(compiler, prop, token[TOKEN_GEOMROT_ROTATION_AXIS], VAL_VECTOR3))
         {
             Vec3 val;
             if (getVector3(prop->values.begin(), prop->values.end(), &val))

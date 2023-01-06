@@ -25,12 +25,12 @@
 #include "platform/CCPlatformConfig.h"
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
-#    include "scripting/lua-bindings/manual/navmesh/axlua_navmesh_manual.h"
-#    include "scripting/lua-bindings/auto/axlua_navmesh_auto.hpp"
-#    include "scripting/lua-bindings/manual/tolua_fix.h"
-#    include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#    include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#    include "navmesh/CCNavMesh.h"
+    #include "scripting/lua-bindings/manual/navmesh/axlua_navmesh_manual.h"
+    #include "scripting/lua-bindings/auto/axlua_navmesh_auto.hpp"
+    #include "scripting/lua-bindings/manual/tolua_fix.h"
+    #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+    #include "scripting/lua-bindings/manual/CCLuaEngine.h"
+    #include "navmesh/CCNavMesh.h"
 
 int axlua_navmesh_NavMeshAgent_move(lua_State* tolua_S)
 {
@@ -38,24 +38,24 @@ int axlua_navmesh_NavMeshAgent_move(lua_State* tolua_S)
     cocos2d::NavMeshAgent* cobj = nullptr;
     bool ok                     = true;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     tolua_Error tolua_err;
-#    endif
+    #endif
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S, 1, "cc.NavMeshAgent", 0, &tolua_err))
         goto tolua_lerror;
-#    endif
+    #endif
 
     cobj = (cocos2d::NavMeshAgent*)tolua_tousertype(tolua_S, 1, 0);
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S, "invalid 'cobj' in function 'axlua_navmesh_NavMeshAgent_move'", nullptr);
         return 0;
     }
-#    endif
+    #endif
 
     argc = lua_gettop(tolua_S) - 1;
     if (argc == 1)
@@ -79,12 +79,12 @@ int axlua_navmesh_NavMeshAgent_move(lua_State* tolua_S)
 
         ok &= luaval_to_vec3(tolua_S, 2, &arg0, "cc.NavMeshAgent:move");
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
         if (!toluafix_isfunction(tolua_S, 3, "LUA_FUNCTION", 0, &tolua_err))
         {
             goto tolua_lerror;
         }
-#    endif
+    #endif
         handler = toluafix_ref_function(tolua_S, 3, 0);
 
         if (!ok)
@@ -106,10 +106,10 @@ int axlua_navmesh_NavMeshAgent_move(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.NavMeshAgent:move", argc, 1);
     return 0;
 
-#    if _CC_DEBUG >= 1
+    #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(tolua_S, "#ferror in function 'axlua_navmesh_NavMeshAgent_move'.", &tolua_err);
-#    endif
+    #endif
 
     return 0;
 }

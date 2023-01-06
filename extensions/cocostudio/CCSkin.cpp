@@ -38,9 +38,9 @@ namespace cocostudio
 {
 
 #if CC_SPRITEBATCHNODE_RENDER_SUBPIXEL
-#    define RENDER_IN_SUBPIXEL
+    #define RENDER_IN_SUBPIXEL
 #else
-#    define RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
+    #define RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
 #endif
 
 Skin* Skin::create()

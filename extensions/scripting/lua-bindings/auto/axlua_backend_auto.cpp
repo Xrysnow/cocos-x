@@ -402,18 +402,18 @@ int lua_ax_backend_Program_getMaxVertexLocation(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getMaxVertexLocation'", nullptr);
@@ -436,7 +436,7 @@ int lua_ax_backend_Program_getMaxVertexLocation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getMaxVertexLocation",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getMaxVertexLocation'.",&tolua_err);
 #endif
@@ -449,18 +449,18 @@ int lua_ax_backend_Program_getVertexLayout(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getVertexLayout'", nullptr);
@@ -483,7 +483,7 @@ int lua_ax_backend_Program_getVertexLayout(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getVertexLayout",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getVertexLayout'.",&tolua_err);
 #endif
@@ -496,18 +496,18 @@ int lua_ax_backend_Program_getMaxFragmentLocation(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getMaxFragmentLocation'", nullptr);
@@ -530,7 +530,7 @@ int lua_ax_backend_Program_getMaxFragmentLocation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getMaxFragmentLocation",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getMaxFragmentLocation'.",&tolua_err);
 #endif
@@ -543,18 +543,18 @@ int lua_ax_backend_Program_setProgramType(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_setProgramType'", nullptr);
@@ -580,7 +580,7 @@ int lua_ax_backend_Program_setProgramType(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:setProgramType",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_setProgramType'.",&tolua_err);
 #endif
@@ -593,18 +593,18 @@ int lua_ax_backend_Program_getFragmentShader(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getFragmentShader'", nullptr);
@@ -627,7 +627,7 @@ int lua_ax_backend_Program_getFragmentShader(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getFragmentShader",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getFragmentShader'.",&tolua_err);
 #endif
@@ -640,18 +640,18 @@ int lua_ax_backend_Program_getUniformBufferSize(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getUniformBufferSize'", nullptr);
@@ -677,7 +677,7 @@ int lua_ax_backend_Program_getUniformBufferSize(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getUniformBufferSize",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getUniformBufferSize'.",&tolua_err);
 #endif
@@ -689,15 +689,15 @@ int lua_ax_backend_Program_getUniformLocation(lua_State* tolua_S)
     int argc = 0;
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getUniformLocation'", nullptr);
@@ -732,7 +732,7 @@ int lua_ax_backend_Program_getUniformLocation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n",  "ccb.Program:getUniformLocation",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getUniformLocation'.",&tolua_err);
 #endif
@@ -745,18 +745,18 @@ int lua_ax_backend_Program_getProgramType(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getProgramType'", nullptr);
@@ -779,7 +779,7 @@ int lua_ax_backend_Program_getProgramType(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getProgramType",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getProgramType'.",&tolua_err);
 #endif
@@ -792,18 +792,18 @@ int lua_ax_backend_Program_getActiveAttributes(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getActiveAttributes'", nullptr);
@@ -826,7 +826,7 @@ int lua_ax_backend_Program_getActiveAttributes(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getActiveAttributes",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getActiveAttributes'.",&tolua_err);
 #endif
@@ -838,15 +838,15 @@ int lua_ax_backend_Program_getAttributeLocation(lua_State* tolua_S)
     int argc = 0;
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getAttributeLocation'", nullptr);
@@ -881,7 +881,7 @@ int lua_ax_backend_Program_getAttributeLocation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n",  "ccb.Program:getAttributeLocation",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getAttributeLocation'.",&tolua_err);
 #endif
@@ -894,18 +894,18 @@ int lua_ax_backend_Program_getVertexShader(lua_State* tolua_S)
     cocos2d::backend::Program* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Program*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Program_getVertexShader'", nullptr);
@@ -928,7 +928,7 @@ int lua_ax_backend_Program_getVertexShader(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Program:getVertexShader",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getVertexShader'.",&tolua_err);
 #endif
@@ -940,11 +940,11 @@ int lua_ax_backend_Program_getBuiltinProgram(lua_State* tolua_S)
     int argc = 0;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertable(tolua_S,1,"ccb.Program",0,&tolua_err)) goto tolua_lerror;
 #endif
 
@@ -965,7 +965,7 @@ int lua_ax_backend_Program_getBuiltinProgram(lua_State* tolua_S)
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "ccb.Program:getBuiltinProgram",argc, 1);
     return 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Program_getBuiltinProgram'.",&tolua_err);
 #endif
@@ -1008,18 +1008,18 @@ int lua_ax_backend_VertexLayout_getVertexStepMode(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.VertexLayout",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::VertexLayout*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_VertexLayout_getVertexStepMode'", nullptr);
@@ -1042,7 +1042,7 @@ int lua_ax_backend_VertexLayout_getVertexStepMode(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:getVertexStepMode",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_getVertexStepMode'.",&tolua_err);
 #endif
@@ -1055,18 +1055,18 @@ int lua_ax_backend_VertexLayout_isValid(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.VertexLayout",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::VertexLayout*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_VertexLayout_isValid'", nullptr);
@@ -1089,7 +1089,7 @@ int lua_ax_backend_VertexLayout_isValid(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:isValid",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_isValid'.",&tolua_err);
 #endif
@@ -1102,18 +1102,18 @@ int lua_ax_backend_VertexLayout_setAttribute(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.VertexLayout",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::VertexLayout*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_VertexLayout_setAttribute'", nullptr);
@@ -1151,7 +1151,7 @@ int lua_ax_backend_VertexLayout_setAttribute(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:setAttribute",argc, 5);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_setAttribute'.",&tolua_err);
 #endif
@@ -1164,18 +1164,18 @@ int lua_ax_backend_VertexLayout_getStride(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.VertexLayout",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::VertexLayout*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_VertexLayout_getStride'", nullptr);
@@ -1198,7 +1198,7 @@ int lua_ax_backend_VertexLayout_getStride(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:getStride",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_getStride'.",&tolua_err);
 #endif
@@ -1211,18 +1211,18 @@ int lua_ax_backend_VertexLayout_setStride(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.VertexLayout",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::VertexLayout*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_VertexLayout_setStride'", nullptr);
@@ -1248,7 +1248,7 @@ int lua_ax_backend_VertexLayout_setStride(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:setStride",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_setStride'.",&tolua_err);
 #endif
@@ -1261,7 +1261,7 @@ int lua_ax_backend_VertexLayout_constructor(lua_State* tolua_S)
     cocos2d::backend::VertexLayout* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
@@ -1283,7 +1283,7 @@ int lua_ax_backend_VertexLayout_constructor(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.VertexLayout:VertexLayout",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_VertexLayout_constructor'.",&tolua_err);
 #endif
 
@@ -1320,15 +1320,15 @@ int lua_ax_backend_ProgramState_setTexture(lua_State* tolua_S)
     int argc = 0;
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_setTexture'", nullptr);
@@ -1395,7 +1395,7 @@ int lua_ax_backend_ProgramState_setTexture(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n",  "ccb.ProgramState:setTexture",argc, 4);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_setTexture'.",&tolua_err);
 #endif
@@ -1408,18 +1408,18 @@ int lua_ax_backend_ProgramState_updateUniformID(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_updateUniformID'", nullptr);
@@ -1456,7 +1456,7 @@ int lua_ax_backend_ProgramState_updateUniformID(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:updateUniformID",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_updateUniformID'.",&tolua_err);
 #endif
@@ -1468,15 +1468,15 @@ int lua_ax_backend_ProgramState_getAttributeLocation(lua_State* tolua_S)
     int argc = 0;
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj)
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_getAttributeLocation'", nullptr);
@@ -1511,7 +1511,7 @@ int lua_ax_backend_ProgramState_getAttributeLocation(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n",  "ccb.ProgramState:getAttributeLocation",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_getAttributeLocation'.",&tolua_err);
 #endif
@@ -1524,18 +1524,18 @@ int lua_ax_backend_ProgramState_getProgram(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_getProgram'", nullptr);
@@ -1558,7 +1558,7 @@ int lua_ax_backend_ProgramState_getProgram(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:getProgram",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_getProgram'.",&tolua_err);
 #endif
@@ -1571,18 +1571,18 @@ int lua_ax_backend_ProgramState_setParameterAutoBinding(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_setParameterAutoBinding'", nullptr);
@@ -1611,7 +1611,7 @@ int lua_ax_backend_ProgramState_setParameterAutoBinding(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:setParameterAutoBinding",argc, 2);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_setParameterAutoBinding'.",&tolua_err);
 #endif
@@ -1624,18 +1624,18 @@ int lua_ax_backend_ProgramState_setVertexLayout(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_setVertexLayout'", nullptr);
@@ -1661,7 +1661,7 @@ int lua_ax_backend_ProgramState_setVertexLayout(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:setVertexLayout",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_setVertexLayout'.",&tolua_err);
 #endif
@@ -1674,18 +1674,18 @@ int lua_ax_backend_ProgramState_setVertexStride(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_setVertexStride'", nullptr);
@@ -1711,7 +1711,7 @@ int lua_ax_backend_ProgramState_setVertexStride(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:setVertexStride",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_setVertexStride'.",&tolua_err);
 #endif
@@ -1724,18 +1724,18 @@ int lua_ax_backend_ProgramState_clone(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_clone'", nullptr);
@@ -1758,7 +1758,7 @@ int lua_ax_backend_ProgramState_clone(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:clone",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_clone'.",&tolua_err);
 #endif
@@ -1771,18 +1771,18 @@ int lua_ax_backend_ProgramState_setVertexAttrib(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_setVertexAttrib'", nullptr);
@@ -1820,7 +1820,7 @@ int lua_ax_backend_ProgramState_setVertexAttrib(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:setVertexAttrib",argc, 5);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_setVertexAttrib'.",&tolua_err);
 #endif
@@ -1833,18 +1833,18 @@ int lua_ax_backend_ProgramState_validateSharedVertexLayout(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_validateSharedVertexLayout'", nullptr);
@@ -1874,7 +1874,7 @@ int lua_ax_backend_ProgramState_validateSharedVertexLayout(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:validateSharedVertexLayout",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_validateSharedVertexLayout'.",&tolua_err);
 #endif
@@ -1887,18 +1887,18 @@ int lua_ax_backend_ProgramState_getUniformID(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.ProgramState",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::ProgramState*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_ProgramState_getUniformID'", nullptr);
@@ -1921,7 +1921,7 @@ int lua_ax_backend_ProgramState_getUniformID(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:getUniformID",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_getUniformID'.",&tolua_err);
 #endif
@@ -1934,7 +1934,7 @@ int lua_ax_backend_ProgramState_constructor(lua_State* tolua_S)
     cocos2d::backend::ProgramState* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
@@ -1961,7 +1961,7 @@ int lua_ax_backend_ProgramState_constructor(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.ProgramState:ProgramState",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_ProgramState_constructor'.",&tolua_err);
 #endif
 
@@ -2005,18 +2005,18 @@ int lua_ax_backend_TextureBackend_getTextureFormat(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getTextureFormat'", nullptr);
@@ -2039,7 +2039,7 @@ int lua_ax_backend_TextureBackend_getTextureFormat(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getTextureFormat",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getTextureFormat'.",&tolua_err);
 #endif
@@ -2052,18 +2052,18 @@ int lua_ax_backend_TextureBackend_generateMipmaps(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_generateMipmaps'", nullptr);
@@ -2086,7 +2086,7 @@ int lua_ax_backend_TextureBackend_generateMipmaps(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:generateMipmaps",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_generateMipmaps'.",&tolua_err);
 #endif
@@ -2099,18 +2099,18 @@ int lua_ax_backend_TextureBackend_updateSamplerDescriptor(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_updateSamplerDescriptor'", nullptr);
@@ -2136,7 +2136,7 @@ int lua_ax_backend_TextureBackend_updateSamplerDescriptor(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:updateSamplerDescriptor",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_updateSamplerDescriptor'.",&tolua_err);
 #endif
@@ -2149,18 +2149,18 @@ int lua_ax_backend_TextureBackend_getHeight(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getHeight'", nullptr);
@@ -2183,7 +2183,7 @@ int lua_ax_backend_TextureBackend_getHeight(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getHeight",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getHeight'.",&tolua_err);
 #endif
@@ -2196,18 +2196,18 @@ int lua_ax_backend_TextureBackend_updateTextureDescriptor(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_updateTextureDescriptor'", nullptr);
@@ -2252,7 +2252,7 @@ int lua_ax_backend_TextureBackend_updateTextureDescriptor(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:updateTextureDescriptor",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_updateTextureDescriptor'.",&tolua_err);
 #endif
@@ -2265,18 +2265,18 @@ int lua_ax_backend_TextureBackend_getTextureUsage(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getTextureUsage'", nullptr);
@@ -2299,7 +2299,7 @@ int lua_ax_backend_TextureBackend_getTextureUsage(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getTextureUsage",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getTextureUsage'.",&tolua_err);
 #endif
@@ -2312,18 +2312,18 @@ int lua_ax_backend_TextureBackend_getWidth(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getWidth'", nullptr);
@@ -2346,7 +2346,7 @@ int lua_ax_backend_TextureBackend_getWidth(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getWidth",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getWidth'.",&tolua_err);
 #endif
@@ -2359,18 +2359,18 @@ int lua_ax_backend_TextureBackend_hasMipmaps(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_hasMipmaps'", nullptr);
@@ -2393,7 +2393,7 @@ int lua_ax_backend_TextureBackend_hasMipmaps(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:hasMipmaps",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_hasMipmaps'.",&tolua_err);
 #endif
@@ -2406,18 +2406,18 @@ int lua_ax_backend_TextureBackend_getCount(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getCount'", nullptr);
@@ -2440,7 +2440,7 @@ int lua_ax_backend_TextureBackend_getCount(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getCount",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getCount'.",&tolua_err);
 #endif
@@ -2453,18 +2453,18 @@ int lua_ax_backend_TextureBackend_getHandler(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getHandler'", nullptr);
@@ -2501,7 +2501,7 @@ int lua_ax_backend_TextureBackend_getHandler(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getHandler",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getHandler'.",&tolua_err);
 #endif
@@ -2514,18 +2514,18 @@ int lua_ax_backend_TextureBackend_getTextureType(lua_State* tolua_S)
     cocos2d::backend::TextureBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureBackend_getTextureType'", nullptr);
@@ -2548,7 +2548,7 @@ int lua_ax_backend_TextureBackend_getTextureType(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureBackend:getTextureType",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureBackend_getTextureType'.",&tolua_err);
 #endif
@@ -2591,18 +2591,18 @@ int lua_ax_backend_Texture2DBackend_getHeight(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_getHeight'", nullptr);
@@ -2625,7 +2625,7 @@ int lua_ax_backend_Texture2DBackend_getHeight(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:getHeight",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_getHeight'.",&tolua_err);
 #endif
@@ -2638,18 +2638,18 @@ int lua_ax_backend_Texture2DBackend_getWidth(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_getWidth'", nullptr);
@@ -2672,7 +2672,7 @@ int lua_ax_backend_Texture2DBackend_getWidth(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:getWidth",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_getWidth'.",&tolua_err);
 #endif
@@ -2685,18 +2685,18 @@ int lua_ax_backend_Texture2DBackend_updateData(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_updateData'", nullptr);
@@ -2759,7 +2759,7 @@ int lua_ax_backend_Texture2DBackend_updateData(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:updateData",argc, 4);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_updateData'.",&tolua_err);
 #endif
@@ -2772,18 +2772,18 @@ int lua_ax_backend_Texture2DBackend_updateCompressedData(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_updateCompressedData'", nullptr);
@@ -2852,7 +2852,7 @@ int lua_ax_backend_Texture2DBackend_updateCompressedData(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:updateCompressedData",argc, 5);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_updateCompressedData'.",&tolua_err);
 #endif
@@ -2865,18 +2865,18 @@ int lua_ax_backend_Texture2DBackend_updateSubData(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_updateSubData'", nullptr);
@@ -2951,7 +2951,7 @@ int lua_ax_backend_Texture2DBackend_updateSubData(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:updateSubData",argc, 6);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_updateSubData'.",&tolua_err);
 #endif
@@ -2964,18 +2964,18 @@ int lua_ax_backend_Texture2DBackend_updateCompressedSubData(lua_State* tolua_S)
     cocos2d::backend::Texture2DBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Texture2DBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Texture2DBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Texture2DBackend_updateCompressedSubData'", nullptr);
@@ -3056,7 +3056,7 @@ int lua_ax_backend_Texture2DBackend_updateCompressedSubData(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Texture2DBackend:updateCompressedSubData",argc, 7);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Texture2DBackend_updateCompressedSubData'.",&tolua_err);
 #endif
@@ -3094,18 +3094,18 @@ int lua_ax_backend_TextureCubemapBackend_updateFaceData(lua_State* tolua_S)
     cocos2d::backend::TextureCubemapBackend* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.TextureCubemapBackend",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::TextureCubemapBackend*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_TextureCubemapBackend_updateFaceData'", nullptr);
@@ -3156,7 +3156,7 @@ int lua_ax_backend_TextureCubemapBackend_updateFaceData(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.TextureCubemapBackend:updateFaceData",argc, 2);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_TextureCubemapBackend_updateFaceData'.",&tolua_err);
 #endif
@@ -3189,18 +3189,18 @@ int lua_ax_backend_Device_newDefaultRenderTarget(lua_State* tolua_S)
     cocos2d::backend::Device* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Device",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Device*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Device_newDefaultRenderTarget'", nullptr);
@@ -3226,7 +3226,7 @@ int lua_ax_backend_Device_newDefaultRenderTarget(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Device:newDefaultRenderTarget",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Device_newDefaultRenderTarget'.",&tolua_err);
 #endif
@@ -3239,18 +3239,18 @@ int lua_ax_backend_Device_newProgram(lua_State* tolua_S)
     cocos2d::backend::Device* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Device",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Device*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Device_newProgram'", nullptr);
@@ -3279,7 +3279,7 @@ int lua_ax_backend_Device_newProgram(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Device:newProgram",argc, 2);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Device_newProgram'.",&tolua_err);
 #endif
@@ -3292,18 +3292,18 @@ int lua_ax_backend_Device_newRenderTarget(lua_State* tolua_S)
     cocos2d::backend::Device* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Device",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Device*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Device_newRenderTarget'", nullptr);
@@ -3389,7 +3389,7 @@ int lua_ax_backend_Device_newRenderTarget(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Device:newRenderTarget",argc, 1);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Device_newRenderTarget'.",&tolua_err);
 #endif
@@ -3402,18 +3402,18 @@ int lua_ax_backend_Device_newDepthStencilState(lua_State* tolua_S)
     cocos2d::backend::Device* cobj = nullptr;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertype(tolua_S,1,"ccb.Device",0,&tolua_err)) goto tolua_lerror;
 #endif
 
     cobj = (cocos2d::backend::Device*)tolua_tousertype(tolua_S,1,0);
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!cobj) 
     {
         tolua_error(tolua_S,"invalid 'cobj' in function 'lua_ax_backend_Device_newDepthStencilState'", nullptr);
@@ -3436,7 +3436,7 @@ int lua_ax_backend_Device_newDepthStencilState(lua_State* tolua_S)
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccb.Device:newDepthStencilState",argc, 0);
     return 0;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Device_newDepthStencilState'.",&tolua_err);
 #endif
@@ -3448,11 +3448,11 @@ int lua_ax_backend_Device_getInstance(lua_State* tolua_S)
     int argc = 0;
     bool ok  = true;
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_Error tolua_err;
 #endif
 
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     if (!tolua_isusertable(tolua_S,1,"ccb.Device",0,&tolua_err)) goto tolua_lerror;
 #endif
 
@@ -3471,7 +3471,7 @@ int lua_ax_backend_Device_getInstance(lua_State* tolua_S)
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "ccb.Device:getInstance",argc, 0);
     return 0;
-#if _CC_DEBUG >= 1
+#if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_ax_backend_Device_getInstance'.",&tolua_err);
 #endif

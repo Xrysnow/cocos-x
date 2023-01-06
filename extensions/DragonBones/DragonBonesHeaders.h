@@ -71,12 +71,12 @@
 #ifndef EGRET_WASM
 
 // parser
-#    include "parser/DataParser.h"
-#    include "parser/JSONDataParser.h"
-#    include "parser/BinaryDataParser.h"
+    #include "parser/DataParser.h"
+    #include "parser/JSONDataParser.h"
+    #include "parser/BinaryDataParser.h"
 
 // factory
-#    include "factory/BaseFactory.h"
+    #include "factory/BaseFactory.h"
 #endif  // EGRET_WASM
 
 #endif  // DRAGONBONES_HEADERS_H

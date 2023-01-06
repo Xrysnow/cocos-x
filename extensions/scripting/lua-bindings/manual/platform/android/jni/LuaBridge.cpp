@@ -25,18 +25,18 @@
 #include "scripting/lua-bindings/manual/platform/android/jni/LuaBridge.h"
 
 #if defined(__ANDROID__)
-#    include <android/log.h>
+    #include <android/log.h>
 
-#    include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
+    #include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
 
-#    include "base/ccUTF8.h"
+    #include "base/ccUTF8.h"
 
-#    define LOG_TAG "LuaBridge_java"
-#    define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+    #define LOG_TAG "LuaBridge_java"
+    #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_callLuaFunctionWithString(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_callLuaFunctionWithString(JNIEnv* env,
                                                                                              jclass,
                                                                                              jint functionId,
                                                                                              jstring value)
@@ -47,7 +47,7 @@ JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_callLuaFunctionWithString(JN
 }
 
 JNIEXPORT jint JNICALL
-Java_org_axmol_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
+Java_org_cocos2dx_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
                                                                             jclass,
                                                                             jstring luaFunctionName,
                                                                             jstring value)
@@ -59,14 +59,14 @@ Java_org_axmol_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
     return ret;
 }
 
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_retainLuaFunction(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_retainLuaFunction(JNIEnv* env,
                                                                                      jclass,
                                                                                      jint luaFunctionId)
 {
     return LuaJavaBridge::retainLuaFunctionById(luaFunctionId);
 }
 
-JNIEXPORT jint JNICALL Java_org_axmol_lib_LuaBridge_releaseLuaFunction(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_org_cocos2dx_lib_LuaBridge_releaseLuaFunction(JNIEnv* env,
                                                                                       jclass,
                                                                                       jint luaFunctionId)
 {

@@ -32,7 +32,7 @@ NS_CC_BEGIN
 // Constants
 const bool PUGeometryRotator::DEFAULT_USE_OWN         = false;
 const float PUGeometryRotator::DEFAULT_ROTATION_SPEED = 10.0f;
-const Vec3 PUGeometryRotator::DEFAULT_ROTATION_CCIS(0, 0, 0);
+const Vec3 PUGeometryRotator::DEFAULT_ROTATION_AXIS(0, 0, 0);
 
 //-----------------------------------------------------------------------
 PUGeometryRotator::PUGeometryRotator()
@@ -41,7 +41,7 @@ PUGeometryRotator::PUGeometryRotator()
     , _useOwnRotationSpeed(DEFAULT_USE_OWN)
     ,
     // mQ(Quaternion::IDENTITY),
-    _rotationAxis(DEFAULT_ROTATION_CCIS)
+    _rotationAxis(DEFAULT_ROTATION_AXIS)
     , _rotationAxisSet(false)
 {
     _dynRotationSpeed = new PUDynamicAttributeFixed();

@@ -31,7 +31,7 @@ THE SOFTWARE.
 #include "CocosStudioExport.h"
 
 #if ENABLE_PHYSICS_BOX2D_DETECT || ENABLE_PHYSICS_CHIPMUNK_DETECT || ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
-#    include "CCColliderDetector.h"
+    #include "CCColliderDetector.h"
 #endif
 
 NS_CC_BEGIN

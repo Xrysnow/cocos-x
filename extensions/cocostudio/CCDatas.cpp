@@ -24,10 +24,6 @@ THE SOFTWARE.
 
 #include "CCDatas.h"
 #include "CCTransformHelp.h"
-#ifndef CC_DOUBLE_PI
-#define CC_DOUBLE_PI (M_PI * 2)
-#endif // !CC_DOUBLE_PI
-
 
 USING_NS_CC;
 

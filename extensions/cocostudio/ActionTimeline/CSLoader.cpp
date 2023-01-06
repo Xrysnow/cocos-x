@@ -80,7 +80,7 @@
 #include "WidgetReader/SkeletonReader/SkeletonNodeReader.h"
 
 #if defined(CC_BUILD_WITH_SPINE) && CC_BUILD_WITH_SPINE
-#    include "WidgetReader/SpineSkeletonReader/SpineSkeletonReader.h"
+    #include "WidgetReader/SpineSkeletonReader/SpineSkeletonReader.h"
 #endif
 #include "WidgetReader/RichTextReader/RichTextReader.h"
 #include "WidgetReader/RadioButtonReader/RadioButtonReader.h"

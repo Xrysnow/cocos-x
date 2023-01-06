@@ -63,10 +63,10 @@ ColliderBody::ColliderBody(ContourData* contourData) : _fixture(nullptr), _conto
     CC_SAFE_RETAIN(_contourData);
     _filter = new ColliderFilter();
 
-#    if ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
+    #if ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
     _calculatedVertexList = Array::create();
     CC_SAFE_RETAIN(_calculatedVertexList);
-#    endif
+    #endif
 }
 #elif ENABLE_PHYSICS_CHIPMUNK_DETECT
 
@@ -75,10 +75,10 @@ ColliderBody::ColliderBody(ContourData* contourData) : _shape(nullptr), _contour
     CC_SAFE_RETAIN(_contourData);
     _filter               = new ColliderFilter();
 
-#    if ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
+    #if ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
     _calculatedVertexList = Array::create();
     CC_SAFE_RETAIN(_calculatedVertexList);
-#    endif
+    #endif
 }
 #elif ENABLE_PHYSICS_SAVE_CALCULATED_VERTEX
 ColliderBody::ColliderBody(ContourData* contourData) : _contourData(contourData)
@@ -294,17 +294,17 @@ void ColliderDetector::setColliderFilter(ColliderFilter* filter)
         ColliderBody* colliderBody = (ColliderBody*)object;
         colliderBody->setColliderFilter(filter);
 
-#    if ENABLE_PHYSICS_BOX2D_DETECT
+    #if ENABLE_PHYSICS_BOX2D_DETECT
         if (colliderBody->getB2Fixture())
         {
             colliderBody->getColliderFilter()->updateShape(colliderBody->getB2Fixture());
         }
-#    elif ENABLE_PHYSICS_CHIPMUNK_DETECT
+    #elif ENABLE_PHYSICS_CHIPMUNK_DETECT
         if (colliderBody->getShape())
         {
             colliderBody->getColliderFilter()->updateShape(colliderBody->getShape());
         }
-#    endif
+    #endif
     }
 }
 ColliderFilter* ColliderDetector::getColliderFilter()

@@ -38,11 +38,11 @@ extern "C" {
 #include "scripting/lua-bindings/manual/AxluaLoader.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-#    include "scripting/lua-bindings/manual/platform/ios/CCLuaObjcBridge.h"
+    #include "scripting/lua-bindings/manual/platform/ios/CCLuaObjcBridge.h"
 #endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
+    #include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
 #endif
 
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
@@ -712,7 +712,7 @@ int LuaStack::luaLoadBuffer(lua_State* L, const char* chunk, int chunkSize, cons
     skipBOM(chunk, chunkSize);
     r = luaL_loadbuffer(L, chunk, chunkSize, chunkName);
 
-#if defined(_CC_DEBUG) && _CC_DEBUG > 0
+#if defined(CC_DEBUG) && CC_DEBUG > 0
     if (r)
     {
         switch (r)
