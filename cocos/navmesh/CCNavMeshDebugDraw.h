@@ -28,17 +28,17 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
-#    include "renderer/CCRenderState.h"
-#    include "renderer/backend/ProgramState.h"
-#    include "renderer/backend/Types.h"
-#    include "renderer/backend/Buffer.h"
-#    include "math/Vec3.h"
-#    include "recast/DebugDraw.h"
-#    include "renderer/CCGroupCommand.h"
-#    include "renderer/CCCallbackCommand.h"
-#    include "renderer/CCCustomCommand.h"
-#    include <string>
-#    include <vector>
+    #include "renderer/CCRenderState.h"
+    #include "renderer/backend/ProgramState.h"
+    #include "renderer/backend/Types.h"
+    #include "renderer/backend/Buffer.h"
+    #include "math/Vec3.h"
+    #include "recast/DebugDraw.h"
+    #include "renderer/CCGroupCommand.h"
+    #include "renderer/CCCallbackCommand.h"
+    #include "renderer/CCCustomCommand.h"
+    #include <string>
+    #include <vector>
 
 NS_CC_BEGIN
 

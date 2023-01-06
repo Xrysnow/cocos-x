@@ -243,10 +243,10 @@ Rect GLViewImpl::getSafeAreaRect() const
     float version = [[UIDevice currentDevice].systemVersion floatValue];
     if (version >= 11.0f)
     {
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpartial-availability"
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wpartial-availability"
         UIEdgeInsets safeAreaInsets = eaglView.safeAreaInsets;
-#    pragma clang diagnostic pop
+    #pragma clang diagnostic pop
 
         // Multiply contentScaleFactor since safeAreaInsets return points.
         safeAreaInsets.left *= eaglView.contentScaleFactor;

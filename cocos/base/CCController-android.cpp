@@ -27,11 +27,11 @@
 #include "base/CCController.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    include <functional>
-#    include "base/ccMacros.h"
-#    include "base/CCDirector.h"
-#    include "platform/android/jni/JniHelper.h"
-#    include "base/CCEventController.h"
+    #include <functional>
+    #include "base/ccMacros.h"
+    #include "base/CCDirector.h"
+    #include "platform/android/jni/JniHelper.h"
+    #include "base/CCEventController.h"
 
 NS_CC_BEGIN
 
@@ -157,8 +157,10 @@ Controller::Controller()
     init();
 }
 
-void Controller::receiveExternalKeyEvent(int externalKeyCode,bool receive) {
-    JniHelper::callStaticVoidMethod("org.cocos2dx.lib.GameControllerHelper", "receiveExternalKeyEvent", _deviceId, externalKeyCode, receive);
+void Controller::receiveExternalKeyEvent(int externalKeyCode, bool receive)
+{
+    JniHelper::callStaticVoidMethod("org.cocos2dx.lib.GameControllerHelper", "receiveExternalKeyEvent", _deviceId,
+                                    externalKeyCode, receive);
 }
 
 NS_CC_END

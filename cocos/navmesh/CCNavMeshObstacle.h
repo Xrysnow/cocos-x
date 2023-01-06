@@ -29,12 +29,12 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
-#    include "2d/CCComponent.h"
+    #include "2d/CCComponent.h"
 
-#    include "base/CCRef.h"
-#    include "math/Vec3.h"
-#    include "recast/DetourNavMesh.h"
-#    include "recast/DetourTileCache.h"
+    #include "base/CCRef.h"
+    #include "math/Vec3.h"
+    #include "recast/DetourNavMesh.h"
+    #include "recast/DetourTileCache.h"
 
 NS_CC_BEGIN
 

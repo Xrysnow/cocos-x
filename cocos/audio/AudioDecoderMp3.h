@@ -30,7 +30,7 @@
 #include <memory>
 
 #if !defined(CC_USE_MPG123)
-#    define CC_USE_MPG123 0
+    #define CC_USE_MPG123 0
 #endif
 
 #if !CC_USE_MPG123

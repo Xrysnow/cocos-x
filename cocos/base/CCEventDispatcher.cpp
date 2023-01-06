@@ -35,7 +35,7 @@
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS || \
      CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX ||   \
      CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    include "base/CCEventListenerController.h"
+    #include "base/CCEventListenerController.h"
 #endif
 #include "2d/CCScene.h"
 #include "base/CCDirector.h"
@@ -502,7 +502,7 @@ void EventDispatcher::addEventListenerWithSceneGraphPriority(EventListener* list
     addEventListener(listener);
 }
 
-#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && _CC_DEBUG > 0
+#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && CC_DEBUG > 0
 
 void EventDispatcher::debugCheckNodeHasNoEventListenersOnDestruction(Node* node)
 {
@@ -559,7 +559,7 @@ void EventDispatcher::debugCheckNodeHasNoEventListenersOnDestruction(Node* node)
     }
 }
 
-#endif  // #if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && _CC_DEBUG > 0
+#endif  // #if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && CC_DEBUG > 0
 
 void EventDispatcher::addEventListenerWithFixedPriority(EventListener* listener, int fixedPriority)
 {

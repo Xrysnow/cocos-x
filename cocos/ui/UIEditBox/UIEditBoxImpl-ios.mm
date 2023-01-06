@@ -28,11 +28,11 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
 
-#    define kLabelZOrder 9999
+    #define kLabelZOrder 9999
 
-#    include "ui/UIEditBox/UIEditBox.h"
-#    include "base/CCDirector.h"
-#    include "2d/CCLabel.h"
+    #include "ui/UIEditBox/UIEditBox.h"
+    #include "base/CCDirector.h"
+    #include "2d/CCLabel.h"
 #    import "platform/ios/CCEAGLView-ios.h"
 
 #    import <Foundation/Foundation.h>
@@ -40,7 +40,7 @@
 
 #    import "ui/UIEditBox/iOS/CCUIEditBoxIOS.h"
 
-#    define getEditBoxImplIOS() ((cocos2d::ui::EditBoxImplIOS*)_editBox)
+    #define getEditBoxImplIOS() ((cocos2d::ui::EditBoxImplIOS*)_editBox)
 
 NS_CC_BEGIN
 

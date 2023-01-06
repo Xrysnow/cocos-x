@@ -20,9 +20,9 @@
 NS_CC_BEGIN
 
 #ifdef _WIN32
-#    define nxbeep(t) MessageBeep(t)
+    #define nxbeep(t) MessageBeep(t)
 #else
-#    define nxbeep(t)
+    #define nxbeep(t)
 #endif
 
 static Label* createLabel(std::string_view text,
@@ -396,7 +396,7 @@ void TextFieldEx::enableIME(Node* control)
             if (this->_continuousTouchCallback)
             {
                 this->_continuousTouchDelayTimerID = stimer::delay(
-                    this->_continuousTouchDelayTime, [=, this]() { this->_continuousTouchCallback(worldPoint); });
+                    this->_continuousTouchDelayTime, [=]() { this->_continuousTouchCallback(worldPoint); });
             }
         }
         return true;

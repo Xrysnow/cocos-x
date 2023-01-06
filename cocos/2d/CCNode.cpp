@@ -48,9 +48,9 @@ THE SOFTWARE.
 #include "renderer/backend/ProgramStateRegistry.h"
 
 #if CC_NODE_RENDER_SUBPIXEL
-#    define RENDER_IN_SUBPIXEL
+    #define RENDER_IN_SUBPIXEL
 #else
-#    define RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
+    #define RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
 #endif
 
 /*
@@ -187,7 +187,7 @@ Node::~Node()
 
     _eventDispatcher->removeEventListenersForTarget(this);
 
-#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && _CC_DEBUG > 0
+#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && CC_DEBUG > 0
     _eventDispatcher->debugCheckNodeHasNoEventListenersOnDestruction(this);
 #endif
 
@@ -1927,6 +1927,11 @@ Vec2 Node::convertTouchToNodeSpaceAR(Touch* touch) const
 {
     Vec2 point = touch->getLocation();
     return this->convertToNodeSpaceAR(point);
+}
+
+Vec2 Node::getWorldPosition() const
+{
+    return convertToWorldSpace(Vec2(_anchorPoint.x * _contentSize.width, _anchorPoint.y * _contentSize.height));
 }
 
 void Node::updateTransform()

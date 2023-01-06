@@ -34,56 +34,56 @@ THE SOFTWARE.
 #if !defined(CC_USE_GFX)
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#include "platform/android/CCGL-android.h"
+    #include "platform/android/CCGL-android.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#include "platform/win32/CCGL-win32.h"
+    #include "platform/win32/CCGL-win32.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
-#include "platform/linux/CCGL-linux.h"
+    #include "platform/linux/CCGL-linux.h"
 #endif
 
 #if !defined(GL_BGRA)
-#    define GL_BGRA 0x80E1
+    #define GL_BGRA 0x80E1
 #endif
 
 #if !defined(GL_SRGB_ALPHA)
-#    define GL_SRGB_ALPHA 0x8C42
+    #define GL_SRGB_ALPHA 0x8C42
 #endif
 
 #if !defined(GL_SRGB8_ALPHA8)
-#    define GL_SRGB8_ALPHA8 0x8C43
+    #define GL_SRGB8_ALPHA8 0x8C43
 #endif
 
 #if !defined(GL_SRGB)
-#    define GL_SRGB 0x8C40
+    #define GL_SRGB 0x8C40
 #endif
 
 #if !defined(GL_SRGB8)
-#    define GL_SRGB8 0x8C41
+    #define GL_SRGB8 0x8C41
 #endif
 
 #if !defined(GL_SLUMINANCE)
-#    define GL_SLUMINANCE 0x8C46
+    #define GL_SLUMINANCE 0x8C46
 #endif
 
 #if !defined(GL_SLUMINANCE_ALPHA)
-#    define GL_SLUMINANCE_ALPHA 0x8C44
+    #define GL_SLUMINANCE_ALPHA 0x8C44
 #endif
 
 #ifndef GL_MULTISAMPLE
-#define GL_MULTISAMPLE GL_MULTISAMPLE_EXT
+    #define GL_MULTISAMPLE GL_MULTISAMPLE_EXT
 #endif
 
 #ifndef GL_VERTEX_PROGRAM_POINT_SIZE
-#define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
+    #define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
 #endif
 
 #ifndef glDrawBuffer
-inline void _glDrawBufferImpl(GLenum buf) { glDrawBuffers(1, &buf); }
-#define glDrawBuffer _glDrawBufferImpl
+    inline void _glDrawBufferImpl(GLenum buf) { glDrawBuffers(1, &buf); }
+    #define glDrawBuffer _glDrawBufferImpl
 #endif
 
 #ifndef glClearDepth
-#define glClearDepth glClearDepthf
+    #define glClearDepth glClearDepthf
 #endif
 
 #endif

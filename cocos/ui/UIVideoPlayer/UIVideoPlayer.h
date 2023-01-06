@@ -29,13 +29,13 @@
                         CC_TARGET_PLATFORM == CC_PLATFORM_TIZEN) &&                                           \
                            !defined(CC_PLATFORM_OS_TVOS)
 
-#    include "ui/UIWidget.h"
+    #include "ui/UIWidget.h"
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
-#        include "2d/CCDrawNode.h"
-#    endif
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
+        #include "2d/CCDrawNode.h"
+    #endif
 
-#    undef ERROR
+    #undef ERROR
 
 /**
  * @addtogroup ui
@@ -236,9 +236,9 @@ public:
     virtual void onEnter() override;
     virtual void onExit() override;
 
-#    if defined(_WIN32)
+    #if defined(_WIN32)
     void setContentSize(const Size& contentSize) override;
-#    endif
+    #endif
 
     VideoPlayer();
     virtual ~VideoPlayer();
@@ -247,9 +247,9 @@ protected:
     virtual cocos2d::ui::Widget* createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     DrawNode* _debugDrawNode;
-#    endif
+    #endif
 
     enum class Source
     {

@@ -274,9 +274,9 @@ bool FontFreeType::loadFontFace(std::string_view fontPath, float fontSize)
         if (_doNativeBytecodeHinting && !strcmp(FT_Get_Font_Format(face), "TrueType"))
         {
 #if !defined(FT_PIX_ROUND)
-#    define FT_TYPEOF(type)
-#    define FT_PIX_FLOOR(x) ((x) & ~FT_TYPEOF(x) 63)
-#    define FT_PIX_ROUND(x) FT_PIX_FLOOR((x) + 32)
+    #define FT_TYPEOF(type)
+    #define FT_PIX_FLOOR(x) ((x) & ~FT_TYPEOF(x) 63)
+    #define FT_PIX_ROUND(x) FT_PIX_FLOOR((x) + 32)
 #endif
             _ascender  = static_cast<int>(FT_PIX_ROUND(FT_MulFix(face->ascender, size_metrics.y_scale)));
             _descender = static_cast<int>(FT_PIX_ROUND(FT_MulFix(face->descender, size_metrics.y_scale)));
@@ -388,7 +388,7 @@ unsigned char* FontFreeType::getGlyphBitmap(char32_t charCode,
 
         // @remark: glyphIndex=0 means character is missing on current font face
         auto glyphIndex = FT_Get_Char_Index(_fontFace, static_cast<FT_ULong>(charCode));
-#if defined(_CC_DEBUG) && _CC_DEBUG > 0
+#if defined(CC_DEBUG) && CC_DEBUG > 0
         if (glyphIndex == 0)
         {
             char32_t ntcs[2] = {charCode, (char32_t)0};

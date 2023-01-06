@@ -28,10 +28,10 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
-#        include "bullet/btBulletCollisionCommon.h"
-#        include "bullet/btBulletDynamicsCommon.h"
+        #include "bullet/btBulletCollisionCommon.h"
+        #include "bullet/btBulletDynamicsCommon.h"
 
 NS_CC_BEGIN
 
@@ -551,6 +551,6 @@ cocos2d::Mat4 Physics3DCollider::getWorldTransform() const
 
 NS_CC_END
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS

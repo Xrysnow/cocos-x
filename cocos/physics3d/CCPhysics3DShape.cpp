@@ -27,8 +27,8 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
-#        include "bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+    #if (CC_ENABLE_BULLET_INTEGRATION)
+        #include "bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 
 NS_CC_BEGIN
 
@@ -39,14 +39,14 @@ Physics3DShape::ShapeType Physics3DShape::getShapeType() const
 
 Physics3DShape::Physics3DShape() : _shapeType(ShapeType::UNKNOWN)
 {
-#        if (CC_ENABLE_BULLET_INTEGRATION)
+        #if (CC_ENABLE_BULLET_INTEGRATION)
     _btShape         = nullptr;
     _heightfieldData = nullptr;
-#        endif
+        #endif
 }
 Physics3DShape::~Physics3DShape()
 {
-#        if (CC_ENABLE_BULLET_INTEGRATION)
+        #if (CC_ENABLE_BULLET_INTEGRATION)
     CC_SAFE_DELETE(_btShape);
     CC_SAFE_DELETE_ARRAY(_heightfieldData);
     for (auto&& iter : _compoundChildShapes)
@@ -54,7 +54,7 @@ Physics3DShape::~Physics3DShape()
         CC_SAFE_RELEASE(iter);
     }
     _compoundChildShapes.clear();
-#        endif
+        #endif
 }
 
 Physics3DShape* Physics3DShape::createBox(const cocos2d::Vec3& extent)
@@ -218,6 +218,6 @@ bool Physics3DShape::initCompoundShape(const std::vector<std::pair<Physics3DShap
 
 NS_CC_END
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS

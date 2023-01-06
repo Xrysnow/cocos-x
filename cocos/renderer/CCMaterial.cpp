@@ -41,7 +41,7 @@
 #include <sstream>
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    define strcasecmp _stricmp
+    #define strcasecmp _stricmp
 #endif
 
 NS_CC_BEGIN

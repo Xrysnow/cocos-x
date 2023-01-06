@@ -26,10 +26,10 @@
 
 #include "base/ccMacros.h"
 
-#if !defined(_CC_DEBUG) || _CC_DEBUG == 0
-#    define CHECK_GL_ERROR_DEBUG()
+#if !defined(CC_DEBUG) || CC_DEBUG == 0
+    #define CHECK_GL_ERROR_DEBUG()
 #else
-#    define CHECK_GL_ERROR_DEBUG()                                                                            \
+    #define CHECK_GL_ERROR_DEBUG()                                                                            \
         do                                                                                                    \
         {                                                                                                     \
             GLenum __error = glGetError();                                                                    \
@@ -38,7 +38,7 @@
                 cocos2d::log("OpenGL error 0x%04X in %s %s %d\n", __error, __FILE__, __FUNCTION__, __LINE__); \
             }                                                                                                 \
         } while (false)
-#    define CHECK_GL_ERROR_ABORT()                                                                            \
+    #define CHECK_GL_ERROR_ABORT()                                                                            \
         do                                                                                                    \
         {                                                                                                     \
             GLenum __error = glGetError();                                                                    \
@@ -59,9 +59,9 @@
  * function calls.
  */
 #if defined(NDEBUG) || (defined(__APPLE__) && !defined(DEBUG))
-#    define CC_GL_ASSERT(gl_code) gl_code
+    #define CC_GL_ASSERT(gl_code) gl_code
 #else
-#    define CC_GL_ASSERT(gl_code)                               \
+    #define CC_GL_ASSERT(gl_code)                               \
         do                                                      \
         {                                                       \
             gl_code;                                            \

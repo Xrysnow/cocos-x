@@ -28,12 +28,12 @@ THE SOFTWARE.
 #include "base/CCController.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    include <functional>
-#    include "base/ccMacros.h"
-#    include "base/CCDirector.h"
-#    include "base/CCScheduler.h"
-#    include "base/CCEventController.h"
-#    include "glfw3.h"
+    #include <functional>
+    #include "base/ccMacros.h"
+    #include "base/CCDirector.h"
+    #include "base/CCScheduler.h"
+    #include "base/CCEventController.h"
+    #include "glfw3.h"
 
 NS_CC_BEGIN
 
@@ -4229,7 +4229,7 @@ public:
 // Show a one-time warning in debug mode for every button that's currently not matched in the input profile.
 // This will let the developers know that the mapping must be included in the constructor of ControllerImpl located
 // above.
-#    ifdef _CC_DEBUG
+    #ifdef CC_DEBUG
                 int count;
                 glfwGetJoystickButtons(deviceId, &count);
                 for (int i = 0; i < count; ++i)
@@ -4258,14 +4258,14 @@ public:
                             controller->getDeviceName().data(), i);
                     }
                 }
-#    endif
+    #endif
 
                 break;
             }
         }
 
 // Show a warning if the controller input profile is non-existent:
-#    ifdef _CC_DEBUG
+    #ifdef CC_DEBUG
         if (controller->_buttonInputMap.empty())
         {
             CCLOG("ControllerImpl: Could not find a button input map for controller: %s", deviceName.data());
@@ -4275,7 +4275,7 @@ public:
         {
             CCLOG("ControllerImpl: Could not find an axis input map for controller: %s", deviceName.data());
         }
-#    endif
+    #endif
 
         controller->onConnected();
     }
@@ -4332,12 +4332,12 @@ public:
         {
             ControllerImpl::getInstance()->onDisconnected(deviceId);
         }
-#    ifdef _CC_DEBUG
+    #ifdef CC_DEBUG
         else
         {
             CCLOG("ControllerImpl: Unhandled GLFW joystick event: %d", event);
         }
-#    endif
+    #endif
     }
 
     void update(float /*dt*/)

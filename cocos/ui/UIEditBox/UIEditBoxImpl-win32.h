@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include "platform/CCPlatformConfig.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    include "ui/UIEditBox/UIEditBoxImpl-common.h"
+    #include "ui/UIEditBox/UIEditBoxImpl-common.h"
 
 NS_CC_BEGIN
 

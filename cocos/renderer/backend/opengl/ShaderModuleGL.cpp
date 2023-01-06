@@ -30,8 +30,7 @@
 
 CC_BACKEND_BEGIN
 
-ShaderModuleGL::ShaderModuleGL(ShaderStage stage, const std::string& source)
-: ShaderModule(stage)
+ShaderModuleGL::ShaderModuleGL(ShaderStage stage, std::string_view source) : ShaderModule(stage)
 {
     compileShader(stage, source);
 }
@@ -41,10 +40,10 @@ ShaderModuleGL::~ShaderModuleGL()
     deleteShader();
 }
 
-void ShaderModuleGL::compileShader(ShaderStage stage, const std::string &source)
+void ShaderModuleGL::compileShader(ShaderStage stage, std::string_view source)
 {
     GLenum shaderType       = stage == ShaderStage::VERTEX ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER;
-    const GLchar* sourcePtr = reinterpret_cast<const GLchar*>(source.c_str());
+    const GLchar* sourcePtr = reinterpret_cast<const GLchar*>(source.data());
     _shader                 = glCreateShader(shaderType);
     if (!_shader)
         return;
@@ -67,7 +66,7 @@ void ShaderModuleGL::compileShader(ShaderStage stage, const std::string &source)
             info.push_back('0');
             log("Error info:\n%s", info.data());
         }
-        log("Shader source:\n%s\n", source.c_str());
+        log("Shader source:\n%s\n", source.data());
         deleteShader();
         CCASSERT(false, "Shader compile failed!");
     }

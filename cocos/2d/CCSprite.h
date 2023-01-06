@@ -49,13 +49,13 @@ class Texture2D;
 struct transformValues_;
 
 #ifdef SPRITE_RENDER_IN_SUBPIXEL
-#    undef SPRITE_RENDER_IN_SUBPIXEL
+    #undef SPRITE_RENDER_IN_SUBPIXEL
 #endif
 
 #if CC_SPRITEBATCHNODE_RENDER_SUBPIXEL
-#    define SPRITE_RENDER_IN_SUBPIXEL
+    #define SPRITE_RENDER_IN_SUBPIXEL
 #else
-#    define SPRITE_RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
+    #define SPRITE_RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
 #endif
 
 /**

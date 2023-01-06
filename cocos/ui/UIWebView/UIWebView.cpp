@@ -26,12 +26,12 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 
-#    include "ui/UIWebView/UIWebViewImpl-android.h"
-#    include "ui/UIWebView/UIWebView-inl.h"
+    #include "ui/UIWebView/UIWebViewImpl-android.h"
+    #include "ui/UIWebView/UIWebView-inl.h"
 
 #elif (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 
-#    include "ui/UIWebView/UIWebViewImpl-win32.h"
-#    include "ui/UIWebView/UIWebView-inl.h"
+    #include "ui/UIWebView/UIWebViewImpl-win32.h"
+    #include "ui/UIWebView/UIWebView-inl.h"
 
 #endif

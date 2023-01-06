@@ -26,11 +26,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 #if defined(_WIN32)
-#    include <io.h>
-#    include <direct.h>
+    #include <io.h>
+    #include <direct.h>
 #else
-#    include <unistd.h>
-#    include <errno.h>
+    #include <unistd.h>
+    #include <errno.h>
 #endif
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -38,9 +38,9 @@ THE SOFTWARE.
 #include <inttypes.h>
 #include <sstream>
 
-#include "openssl/include/openssl/aes.h"
-#include "openssl/include/openssl/modes.h"
-#include "openssl/include/openssl/rc4.h"
+#include "openssl/aes.h"
+#include "openssl/modes.h"
+#include "openssl/rc4.h"
 
 #include "yasio/ibstream.hpp"
 #include "yasio/obstream.hpp"
@@ -50,7 +50,6 @@ THE SOFTWARE.
 #include "platform/CCCommon.h"
 #include "platform/CCFileUtils.h"
 #include "pugixml/pugixml.hpp"
-#include "base/base64.h"
 #include "base/ccUtils.h"
 
 #include "CCPosixFileStream.h"
@@ -58,9 +57,9 @@ THE SOFTWARE.
 #define USER_DEFAULT_PLAIN_MODE 1
 
 #if !USER_DEFAULT_PLAIN_MODE
-#    define USER_DEFAULT_FILENAME "UserDefault.bin"
+    #define USER_DEFAULT_FILENAME "UserDefault.bin"
 #else
-#    define USER_DEFAULT_FILENAME "UserDefault.xml"
+    #define USER_DEFAULT_FILENAME "UserDefault.xml"
 #endif
 
 typedef int32_t udflen_t;

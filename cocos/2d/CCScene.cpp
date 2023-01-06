@@ -35,16 +35,16 @@ THE SOFTWARE.
 #include "renderer/CCRenderer.h"
 
 #if CC_USE_PHYSICS
-#    include "physics/CCPhysicsWorld.h"
+    #include "physics/CCPhysicsWorld.h"
 #endif
 
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-#    include "physics3d/CCPhysics3DWorld.h"
-#    include "physics3d/CCPhysics3DComponent.h"
+    #include "physics3d/CCPhysics3DWorld.h"
+    #include "physics3d/CCPhysics3DComponent.h"
 #endif
 
 #if CC_USE_NAVMESH
-#    include "navmesh/CCNavMesh.h"
+    #include "navmesh/CCNavMesh.h"
 #endif
 
 NS_CC_BEGIN
@@ -316,20 +316,20 @@ bool Scene::initWithPhysics()
 
 bool Scene::initPhysicsWorld()
 {
-#    if CC_USE_PHYSICS
+    #if CC_USE_PHYSICS
     _physicsWorld = PhysicsWorld::construct(this);
-#    endif
+    #endif
 
     bool ret = false;
     do
     {
         this->setContentSize(_director->getWinSize());
 
-#    if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+    #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
         Physics3DWorldDes info;
         CC_BREAK_IF(!(_physics3DWorld = Physics3DWorld::create(&info)));
         _physics3DWorld->retain();
-#    endif
+    #endif
 
         // success
         ret = true;
@@ -342,23 +342,23 @@ bool Scene::initPhysicsWorld()
 #if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH)
 void Scene::stepPhysicsAndNavigation(float deltaTime)
 {
-#    if CC_USE_PHYSICS
+    #if CC_USE_PHYSICS
     if (_physicsWorld && _physicsWorld->isAutoStep())
         _physicsWorld->update(deltaTime);
-#    endif
+    #endif
 
-#    if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+    #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     if (_physics3DWorld)
     {
         _physics3DWorld->stepSimulate(deltaTime);
     }
-#    endif
-#    if CC_USE_NAVMESH
+    #endif
+    #if CC_USE_NAVMESH
     if (_navMesh)
     {
         _navMesh->update(deltaTime);
     }
-#    endif
+    #endif
 }
 #endif
 

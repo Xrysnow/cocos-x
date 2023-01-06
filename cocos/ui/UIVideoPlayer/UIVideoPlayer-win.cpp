@@ -27,25 +27,25 @@
 #include "ui/UIVideoPlayer/UIVideoPlayer.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    include <unordered_map>
-#    include <stdlib.h>
-#    include <string>
-#    include "base/CCDirector.h"
-#    include "base/CCEventListenerKeyboard.h"
-#    include "platform/CCFileUtils.h"
-#    include "ui/UIHelper.h"
-#    include "ui/UIVideoPlayer/MFMediaPlayer.h"
-#    include "yasio/detail/byte_buffer.hpp"
-#    include "ntcvt/ntcvt.hpp"
-#    include "ui/LayoutHelper.h"
-#    include "yasio/detail/sz.hpp"
+    #include <unordered_map>
+    #include <stdlib.h>
+    #include <string>
+    #include "base/CCDirector.h"
+    #include "base/CCEventListenerKeyboard.h"
+    #include "platform/CCFileUtils.h"
+    #include "ui/UIHelper.h"
+    #include "ui/UIVideoPlayer/MFMediaPlayer.h"
+    #include "yasio/detail/byte_buffer.hpp"
+    #include "ntcvt/ntcvt.hpp"
+    #include "ui/LayoutHelper.h"
+    #include "yasio/detail/sz.hpp"
 //-----------------------------------------------------------------------------------------------------------
 
 USING_NS_CC;
 
 //-----------------------------------------------------------------------------------------------------------
 
-#    define PS_SET_UNIFORM(ps, name, value)                       \
+    #define PS_SET_UNIFORM(ps, name, value)                       \
         do                                                        \
         {                                                         \
             decltype(value) __v = value;                          \
@@ -272,10 +272,10 @@ VideoPlayer::VideoPlayer()
 {
     auto pvd      = new PrivateVideoDescriptor{};
     _videoContext = pvd;
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode = DrawNode::create();
     addChild(_debugDrawNode);
-#    endif
+    #endif
 
     // Initialize mediaPlayer backend
     auto hr = MFMediaPlayer::CreateInstance(&pvd->_vplayer);
@@ -501,12 +501,12 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
     if (pvd->_scaleDirty || (flags & FLAGS_TRANSFORM_DIRTY))
         pvd->rescaleTo(this);
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode->clear();
     auto size         = getContentSize();
     Point vertices[4] = {Point::ZERO, Point(size.width, 0), Point(size.width, size.height), Point(0, size.height)};
     _debugDrawNode->drawPoly(vertices, 4, true, Color4F(1.0, 1.0, 1.0, 1.0));
-#    endif
+    #endif
 }
 
 void VideoPlayer::setContentSize(const Size& contentSize)

@@ -33,17 +33,17 @@
 #include "base/CCConsole.h"
 
 #if !CC_USE_MPG123
-#    define MINIMP3_IMPLEMENTATION
-#    include "minimp3/minimp3_ex.h"
+    #define MINIMP3_IMPLEMENTATION
+    #include "minimp3/minimp3_ex.h"
 #else
 // because the cocos2d-x engine has ssize_t typedef, so disable mpg123 ssize_t
-#    define MPG123_DEF_SSIZE_T
-#    include "mpg123.h"
+    #define MPG123_DEF_SSIZE_T
+    #include "mpg123.h"
 #endif
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#    include <unistd.h>
-#    include <errno.h>
+    #include <unistd.h>
+    #include <errno.h>
 #endif
 
 #if !CC_USE_MPG123
@@ -153,13 +153,13 @@ bool AudioDecoderMp3::open(std::string_view fullPath)
         auto& info    = handle->_dec.info;
         _channelCount = info.channels;  // the _channelCount is samplesPerFrame
         _sampleRate   = info.hz;
-#    ifndef MINIMP3_FLOAT_OUTPUT
+    #ifndef MINIMP3_FLOAT_OUTPUT
         _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_16;
         _bytesPerBlock = sizeof(uint16_t) * _channelCount;
-#    else
+    #else
         _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_FLT32;
         _bytesPerBlock = sizeof(float) * _channelCount;
-#    endif
+    #endif
         // samples
         _totalFrames = handle->_dec.samples / _channelCount;
 

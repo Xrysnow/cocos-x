@@ -26,16 +26,16 @@
 #include "physics/CCPhysicsShape.h"
 #if CC_USE_PHYSICS
 
-#    include <climits>
-#    include <cmath>
-#    include <unordered_map>
+    #include <climits>
+    #include <cmath>
+    #include <unordered_map>
 
-#    include "chipmunk/chipmunk.h"
-#    include "chipmunk/chipmunk_unsafe.h"
+    #include "chipmunk/chipmunk.h"
+    #include "chipmunk/chipmunk_unsafe.h"
 
-#    include "physics/CCPhysicsBody.h"
-#    include "physics/CCPhysicsWorld.h"
-#    include "physics/CCPhysicsHelper.h"
+    #include "physics/CCPhysicsBody.h"
+    #include "physics/CCPhysicsWorld.h"
+    #include "physics/CCPhysicsHelper.h"
 
 NS_CC_BEGIN
 extern const float PHYSICS_INFINITY;

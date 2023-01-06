@@ -30,10 +30,10 @@
 #include "base/ccConfig.h"
 #if CC_USE_PHYSICS
 
-#    include "2d/CCComponent.h"
-#    include "math/CCMath.h"
-#    include "physics/CCPhysicsShape.h"
-#    include "base/CCVector.h"
+    #include "2d/CCComponent.h"
+    #include "math/CCMath.h"
+    #include "physics/CCPhysicsShape.h"
+    #include "base/CCVector.h"
 
 struct cpBody;
 

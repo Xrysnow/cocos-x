@@ -29,19 +29,19 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
-#    include "base/CCRef.h"
-#    include "math/Vec3.h"
-#    include "recast/DetourNavMesh.h"
-#    include "recast/DetourNavMeshQuery.h"
-#    include "recast/DetourCrowd.h"
-#    include "recast/DetourTileCache.h"
-#    include <string>
-#    include <vector>
+    #include "base/CCRef.h"
+    #include "math/Vec3.h"
+    #include "recast/DetourNavMesh.h"
+    #include "recast/DetourNavMeshQuery.h"
+    #include "recast/DetourCrowd.h"
+    #include "recast/DetourTileCache.h"
+    #include <string>
+    #include <vector>
 
-#    include "navmesh/CCNavMeshAgent.h"
-#    include "navmesh/CCNavMeshDebugDraw.h"
-#    include "navmesh/CCNavMeshObstacle.h"
-#    include "navmesh/CCNavMeshUtils.h"
+    #include "navmesh/CCNavMeshAgent.h"
+    #include "navmesh/CCNavMeshDebugDraw.h"
+    #include "navmesh/CCNavMeshObstacle.h"
+    #include "navmesh/CCNavMeshUtils.h"
 
 NS_CC_BEGIN
 

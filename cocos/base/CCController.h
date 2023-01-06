@@ -29,10 +29,10 @@
      CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX ||   \
      CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 
-#    include "platform/CCPlatformMacros.h"
-#    include <string>
-#    include <vector>
-#    include <unordered_map>
+    #include "platform/CCPlatformMacros.h"
+    #include <string>
+    #include <vector>
+    #include <unordered_map>
 
 NS_CC_BEGIN
 
@@ -223,7 +223,7 @@ private:
     EventController* _keyEvent;
     EventController* _axisEvent;
 
-#    if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+    #if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     // FIXME: Once GLFW 3.3 is bundled with cocos2d-x, remove these unordered
     // maps. They won't be needed. We will only need to provide a mapping from
     // the GLFW gamepad key codes to the Controller::Key.
@@ -239,7 +239,7 @@ private:
 
     std::unordered_map<int, int> _buttonInputMap;
     std::unordered_map<int, int> _axisInputMap;
-#    endif
+    #endif
 
     friend class ControllerImpl;
     friend class EventListenerController;

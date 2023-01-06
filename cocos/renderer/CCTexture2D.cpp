@@ -51,7 +51,7 @@ THE SOFTWARE.
 #include "renderer/CCRenderer.h"
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-#    include "renderer/CCTextureCache.h"
+    #include "renderer/CCTextureCache.h"
 #endif
 
 NS_CC_BEGIN
@@ -223,12 +223,12 @@ bool Texture2D::updateWithImage(Image* image, backend::PixelFormat format, int i
     //! override renderFormat, since some render format is not supported by metal
     switch (renderFormat)
     {
-#    if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS || TARGET_OS_SIMULATOR)
+    #if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS || TARGET_OS_SIMULATOR)
     // packed 16 bits pixels only available on iOS
     case PixelFormat::RGB565:
     case PixelFormat::RGB5A1:
     case PixelFormat::RGBA4:
-#    endif
+    #endif
     case PixelFormat::L8:
     case PixelFormat::LA8:
     case PixelFormat::RGB8:

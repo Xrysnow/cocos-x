@@ -31,8 +31,8 @@
 #include "base/ccConfig.h"
 #if CC_USE_PHYSICS
 
-#    include "base/CCRef.h"
-#    include "math/CCMath.h"
+    #include "base/CCRef.h"
+    #include "math/CCMath.h"
 
 struct cpConstraint;
 

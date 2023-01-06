@@ -29,7 +29,7 @@ Copyright (c) 2020 C4games Ltd.
 #include <type_traits>
 
 #if !defined(_STD)
-#    define _STD ::std::
+    #define _STD ::std::
 #endif
 
 // BITMASK OPERATIONS, modified from msvc++ <type_traits> for cross-platform compiling.

@@ -32,7 +32,7 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
 class btDynamicsWorld;
 class btDefaultCollisionConfiguration;
@@ -167,7 +167,7 @@ protected:
     bool _collisionCheckingFlag;
     bool _needGhostPairCallbackChecking;
 
-#        if (CC_ENABLE_BULLET_INTEGRATION)
+        #if (CC_ENABLE_BULLET_INTEGRATION)
     btDynamicsWorld* _btPhyiscsWorld;
     btDefaultCollisionConfiguration* _collisionConfiguration;
     btCollisionDispatcher* _dispatcher;
@@ -175,14 +175,14 @@ protected:
     btSequentialImpulseConstraintSolver* _solver;
     btGhostPairCallback* _ghostCallback;
     Physics3DDebugDrawer* _debugDrawer;
-#        endif  // CC_ENABLE_BULLET_INTEGRATION
+        #endif  // CC_ENABLE_BULLET_INTEGRATION
 };
 
 // end of 3d group
 /// @}
 NS_CC_END
 
-#    endif
+    #endif
 
 #endif  // CC_USE_3D_PHYSICS
 

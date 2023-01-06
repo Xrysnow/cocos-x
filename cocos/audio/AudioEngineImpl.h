@@ -26,17 +26,17 @@
  ****************************************************************************/
 #pragma once
 #ifndef __AUDIO_ENGINE_IMPL_H_
-#    define __AUDIO_ENGINE_IMPL_H_
+    #define __AUDIO_ENGINE_IMPL_H_
 
-#    include "platform/CCPlatformConfig.h"
+    #include "platform/CCPlatformConfig.h"
 
-#    include <unordered_map>
-#    include <queue>
+    #include <unordered_map>
+    #include <queue>
 
-#    include "base/CCRef.h"
-#    include "audio/AudioMacros.h"
-#    include "audio/AudioCache.h"
-#    include "audio/AudioPlayer.h"
+    #include "base/CCRef.h"
+    #include "audio/AudioMacros.h"
+    #include "audio/AudioCache.h"
+    #include "audio/AudioPlayer.h"
 
 NS_CC_BEGIN
 
@@ -72,9 +72,9 @@ private:
     void _play2d(AudioCache* cache, AUDIO_ID audioID);
     void _unscheduleUpdate();
     ALuint findValidSource();
-#    if defined(__APPLE__)
+    #if defined(__APPLE__)
     static ALvoid myAlSourceNotificationCallback(ALuint sid, ALuint notificationID, ALvoid* userData);
-#    endif
+    #endif
     ALuint _alSources[MAX_AUDIOINSTANCES];
 
     // available sources

@@ -40,9 +40,9 @@
 
 #define VERY_VERY_VERBOSE_LOGGING
 #ifdef VERY_VERY_VERBOSE_LOGGING
-#    define ALOGVV ALOGV
+    #define ALOGVV ALOGV
 #else
-#    define ALOGVV(...) \
+    #define ALOGVV(...) \
         do              \
         {               \
         } while (false)
@@ -239,7 +239,7 @@ void AudioCache::readDataTask(unsigned int selfId)
                 alBufferi(_alBufferId, AL_UNPACK_BLOCK_ALIGNMENT_SOFT, decoder->getSamplesPerBlock());
             alBufferData(_alBufferId, _format, pcmData, (ALsizei)dataSize, (ALsizei)sampleRate);
 #else
-#    if !CC_USE_ALSOFT
+    #if !CC_USE_ALSOFT
             /// Apple OpenAL framework, try adjust frames
             /// May don't need, xcode11 sdk works well
             uint32_t adjustFrames = 0;
@@ -281,7 +281,7 @@ void AudioCache::readDataTask(unsigned int selfId)
                 pcmData  = pcmBuffer.data();
                 dataSize = static_cast<uint32_t>(pcmBuffer.size());
             }
-#    endif /* Adjust frames, may not needed */
+    #endif /* Adjust frames, may not needed */
             ALOGV(
                 "pcm buffer was loaded successfully, total frames: %u, total read frames: %u, adjust frames: %u, "
                 "remainingFrames: %u",

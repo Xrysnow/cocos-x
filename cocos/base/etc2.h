@@ -39,11 +39,11 @@ typedef int etc2_bool;
 typedef unsigned int etc2_uint32;
 
 #ifndef GL_COMPRESSED_RGB8_ETC2
-#    define GL_COMPRESSED_RGB8_ETC2 0x9274
+    #define GL_COMPRESSED_RGB8_ETC2 0x9274
 #endif
 
 #ifndef GL_COMPRESSED_RGBA8_ETC2_EAC
-#    define GL_COMPRESSED_RGBA8_ETC2_EAC 0x9278
+    #define GL_COMPRESSED_RGBA8_ETC2_EAC 0x9278
 #endif
 
 // Size of a PKM header, in bytes.

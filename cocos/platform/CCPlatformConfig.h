@@ -2,8 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2017 Chukong Technologies
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+Copyright (c) 2021 Bytedance Inc.
 
-http://www.cocos2d-x.org
+https://axmolengine.github.io/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,33 +60,33 @@ THE SOFTWARE.
 
 // Apple: Mac and iOS
 #if defined(__APPLE__) && !defined(__ANDROID__)  // exclude android for binding generator.
-#    include <TargetConditionals.h>
-#    if TARGET_OS_IPHONE  // TARGET_OS_IPHONE includes TARGET_OS_IOS TARGET_OS_TV and TARGET_OS_WATCH. see
+    #include <TargetConditionals.h>
+    #if TARGET_OS_IPHONE  // TARGET_OS_IPHONE includes TARGET_OS_IOS TARGET_OS_TV and TARGET_OS_WATCH. see
                           // TargetConditionals.h
-#        undef CC_TARGET_PLATFORM
-#        define CC_TARGET_PLATFORM CC_PLATFORM_IOS
-#    elif TARGET_OS_MAC
-#        undef CC_TARGET_PLATFORM
-#        define CC_TARGET_PLATFORM CC_PLATFORM_MAC
-#    endif
+        #undef CC_TARGET_PLATFORM
+        #define CC_TARGET_PLATFORM CC_PLATFORM_IOS
+    #elif TARGET_OS_MAC
+        #undef CC_TARGET_PLATFORM
+        #define CC_TARGET_PLATFORM CC_PLATFORM_MAC
+    #endif
 #endif
 
 // win32
 #if defined(_WIN32) && defined(_WINDOWS)
-#    undef CC_TARGET_PLATFORM
-#    define CC_TARGET_PLATFORM CC_PLATFORM_WIN32
+    #undef CC_TARGET_PLATFORM
+    #define CC_TARGET_PLATFORM CC_PLATFORM_WIN32
 #endif
 
 // linux
 #if defined(__linux__)
-#    undef CC_TARGET_PLATFORM
-#    define CC_TARGET_PLATFORM CC_PLATFORM_LINUX
+    #undef CC_TARGET_PLATFORM
+    #define CC_TARGET_PLATFORM CC_PLATFORM_LINUX
 #endif
 
 // android, override linux
 #if defined(__ANDROID__) || defined(ANDROID)
-#    undef CC_TARGET_PLATFORM
-#    define CC_TARGET_PLATFORM CC_PLATFORM_ANDROID
+    #undef CC_TARGET_PLATFORM
+    #define CC_TARGET_PLATFORM CC_PLATFORM_ANDROID
 #endif
 
 //////////////////////////////////////////////////////////////////////////
@@ -93,14 +94,14 @@ THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 
 // check user set platform
-#if ! CC_TARGET_PLATFORM
-    #error  "Cannot recognize the target platform; are you targeting an unsupported platform?"
+#if !CC_TARGET_PLATFORM
+    #error "Cannot recognize the target platform; are you targeting an unsupported platform?"
 #endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#ifndef __MINGW32__
-#pragma warning (disable:4127)
-#endif
+    #ifndef __MINGW32__
+        #pragma warning(disable : 4127)
+    #endif
 #endif  // CC_PLATFORM_WIN32
 
 #if ((CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) || (CC_TARGET_PLATFORM == CC_PLATFORM_IOS))

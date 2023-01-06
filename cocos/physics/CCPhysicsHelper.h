@@ -30,9 +30,9 @@
 #include "base/ccConfig.h"
 #if CC_USE_PHYSICS
 
-#    include "chipmunk/chipmunk.h"
-#    include "platform/CCPlatformMacros.h"
-#    include "math/CCMath.h"
+    #include "chipmunk/chipmunk.h"
+    #include "platform/CCPlatformMacros.h"
+    #include "math/CCMath.h"
 
 NS_CC_BEGIN
 

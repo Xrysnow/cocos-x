@@ -34,9 +34,9 @@
 
 // #define CC_DOWNLOADER_DEBUG
 #if defined(CC_DOWNLOADER_DEBUG) || defined(_DEBUG)
-#    define DLLOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
+    #define DLLOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
 #else
-#    define DLLOG(...) \
+    #define DLLOG(...) \
         do             \
         {              \
         } while (0)

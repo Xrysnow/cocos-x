@@ -197,7 +197,7 @@ public:
      */
     ~EventDispatcher();
 
-#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && _CC_DEBUG > 0
+#if CC_NODE_DEBUG_VERIFY_EVENT_LISTENERS && CC_DEBUG > 0
 
     /**
      * To help track down event listener issues in debug builds.

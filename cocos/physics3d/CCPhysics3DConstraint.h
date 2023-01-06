@@ -32,7 +32,7 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
 class btTypedConstraint;
 
@@ -115,9 +115,9 @@ public:
      */
     void setOverrideNumSolverIterations(int overrideNumIterations);
 
-#        if (CC_ENABLE_BULLET_INTEGRATION)
+        #if (CC_ENABLE_BULLET_INTEGRATION)
     btTypedConstraint* getbtContraint() { return _constraint; }
-#        endif
+        #endif
 
 protected:
     Physics3DConstraint();
@@ -615,7 +615,7 @@ public:
 
 NS_CC_END
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS
 

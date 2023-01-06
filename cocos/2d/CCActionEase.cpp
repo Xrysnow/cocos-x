@@ -38,7 +38,7 @@ THE SOFTWARE.
 NS_CC_BEGIN
 
 #ifndef M_PI_X_2
-#    define M_PI_X_2 (float)M_PI * 2.0f
+    #define M_PI_X_2 (float)M_PI * 2.0f
 #endif
 
 //

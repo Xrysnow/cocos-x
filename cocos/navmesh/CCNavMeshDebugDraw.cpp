@@ -24,15 +24,15 @@
  ****************************************************************************/
 #include "navmesh/CCNavMeshDebugDraw.h"
 #if CC_USE_NAVMESH
-#    include <stddef.h>  // offsetof
-#    include "base/ccTypes.h"
-#    include "renderer/backend/ProgramState.h"
-#    include "renderer/backend/Device.h"
-#    include "renderer/CCRenderer.h"
-#    include "renderer/CCRenderState.h"
-#    include "renderer/ccShaders.h"
-#    include "base/CCDirector.h"
-#    include "base/ccMacros.h"
+    #include <stddef.h>  // offsetof
+    #include "base/ccTypes.h"
+    #include "renderer/backend/ProgramState.h"
+    #include "renderer/backend/Device.h"
+    #include "renderer/CCRenderer.h"
+    #include "renderer/CCRenderState.h"
+    #include "renderer/ccShaders.h"
+    #include "base/CCDirector.h"
+    #include "base/ccMacros.h"
 
 NS_CC_BEGIN
 

@@ -1,7 +1,7 @@
 /****************************************************************************
  Copyright (c) 2018-2019 Xiamen Yaji Software Co., Ltd.
 
- http://www.cocos2d-x.org
+ https://axmolengine.github.io/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 #include "../DepthStencilState.h"
 #import <Metal/Metal.h>
+
+#include "tsl/robin_map.h"
 
 CC_BACKEND_BEGIN
 
@@ -61,7 +63,7 @@ private:
     // the current depth stencil state
     id<MTLDepthStencilState> _mtlDepthStencilState = nil;
 
-    std::unordered_map<uint32_t, id<MTLDepthStencilState>> _mtlStateCache;
+    tsl::robin_map<uint32_t, id<MTLDepthStencilState>> _mtlStateCache;
 };
 
 // end of _metal group

@@ -36,9 +36,9 @@
 static const int CC_EDIT_BOX_PADDING = 5;
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    define PASSWORD_CHAR "*"
+    #define PASSWORD_CHAR "*"
 #else
-#    define PASSWORD_CHAR "\u25CF"
+    #define PASSWORD_CHAR "\u25CF"
 #endif
 
 NS_CC_BEGIN

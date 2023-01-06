@@ -29,11 +29,11 @@
 #include "base/ccConfig.h"
 #if CC_USE_PHYSICS
 
-#    include "base/CCRef.h"
-#    include "math/CCMath.h"
-#    include "base/CCEventListenerCustom.h"
-#    include "base/CCEvent.h"
-#    include "base/CCEventCustom.h"
+    #include "base/CCRef.h"
+    #include "math/CCMath.h"
+    #include "base/CCEventListenerCustom.h"
+    #include "base/CCEvent.h"
+    #include "base/CCEventCustom.h"
 
 NS_CC_BEGIN
 

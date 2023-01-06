@@ -34,13 +34,11 @@ THE SOFTWARE.
 #include "base/CCConsole.h"
 
 #if !defined(__APPLE__)
-#    include "audio/AudioDecoderMp3.h"
-#    include "audio/AudioDecoderWav.h"
+    #include "audio/AudioDecoderMp3.h"
+    #include "audio/AudioDecoderWav.h"
 #else
-#    include "audio/AudioDecoderEXT.h"
+    #include "audio/AudioDecoderEXT.h"
 #endif
-
-//#include "yasio/cxx17/string_view.hpp"
 
 NS_CC_BEGIN
 

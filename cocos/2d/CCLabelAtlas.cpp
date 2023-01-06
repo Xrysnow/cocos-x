@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "renderer/CCTextureCache.h"
 
 #if CC_LABELATLAS_DEBUG_DRAW
-#    include "renderer/CCRenderer.h"
+    #include "renderer/CCRenderer.h"
 #endif
 
 NS_CC_BEGIN

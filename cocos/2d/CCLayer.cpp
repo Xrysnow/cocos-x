@@ -47,7 +47,7 @@ THE SOFTWARE.
 #include "renderer/backend/ProgramState.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-#    include "platform/desktop/CCGLViewImpl-desktop.h"
+    #include "platform/desktop/CCGLViewImpl-desktop.h"
 #endif
 
 NS_CC_BEGIN

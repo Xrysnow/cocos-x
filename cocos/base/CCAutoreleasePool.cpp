@@ -30,7 +30,7 @@ NS_CC_BEGIN
 
 AutoreleasePool::AutoreleasePool()
     : _name("")
-#if defined(_CC_DEBUG) && (_CC_DEBUG > 0)
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
     , _isClearing(false)
 #endif
 {
@@ -40,7 +40,7 @@ AutoreleasePool::AutoreleasePool()
 
 AutoreleasePool::AutoreleasePool(std::string_view name)
     : _name(name)
-#if defined(_CC_DEBUG) && (_CC_DEBUG > 0)
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
     , _isClearing(false)
 #endif
 {
@@ -63,7 +63,7 @@ void AutoreleasePool::addObject(Ref* object)
 
 void AutoreleasePool::clear()
 {
-#if defined(_CC_DEBUG) && (_CC_DEBUG > 0)
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
     _isClearing = true;
 #endif
     std::vector<Ref*> releasings;
@@ -72,7 +72,7 @@ void AutoreleasePool::clear()
     {
         obj->release();
     }
-#if defined(_CC_DEBUG) && (_CC_DEBUG > 0)
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
     _isClearing = false;
 #endif
 }

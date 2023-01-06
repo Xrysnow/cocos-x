@@ -29,7 +29,7 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
 
-#    include "ui/UIEditBox/UIEditBoxImpl-common.h"
+    #include "ui/UIEditBox/UIEditBoxImpl-common.h"
 
 @class UIEditBoxImplIOS_objc;
 @class UIFont;

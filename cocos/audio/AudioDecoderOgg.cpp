@@ -31,8 +31,8 @@
 #include "platform/CCFileUtils.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#    include <unistd.h>
-#    include <errno.h>
+    #include <unistd.h>
+    #include <errno.h>
 #endif
 
 NS_CC_BEGIN

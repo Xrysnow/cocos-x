@@ -42,7 +42,7 @@
 #include "2d/CCComponent.h"
 
 #if CC_USE_PHYSICS
-#    include "physics/CCPhysicsBody.h"
+    #include "physics/CCPhysicsBody.h"
 #endif
 
 NS_CC_BEGIN
@@ -1607,6 +1607,13 @@ public:
      * @return A point in world space coordinates, anchor relative.
      */
     Vec2 convertTouchToNodeSpaceAR(Touch* touch) const;
+
+    /**
+     * Gets position of widget in world space.
+     *
+     * @return Position of widget in world space.
+     */
+    Vec2 getWorldPosition() const;
 
     /**
      *  Sets an additional transform matrix to the node.

@@ -44,7 +44,7 @@ THE SOFTWARE.
 #include "platform/CCImage.h"
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-#    include <list>
+    #include <list>
 #endif
 
 NS_CC_BEGIN

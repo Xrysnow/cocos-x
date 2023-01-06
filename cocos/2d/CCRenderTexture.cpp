@@ -3,6 +3,7 @@ Copyright (c) 2009      Jason Booth
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+Copyright (c) 2022 Bytedance Inc.
 
 https://axmolengine.github.io/
 
@@ -195,10 +196,10 @@ bool RenderTexture::initWithWidthAndHeight(int w,
         _texture2D->updateTextureDescriptor(descriptor, !!CC_ENABLE_PREMULTIPLIED_ALPHA);
         _renderTargetFlags = RenderTargetFlag::COLOR;
 
-        if (PixelFormat::D24S8 == depthStencilFormat)
+        if (PixelFormat::D24S8 == depthStencilFormat || sharedRenderTarget)
         {
             _renderTargetFlags       = RenderTargetFlag::ALL;
-            descriptor.textureFormat = depthStencilFormat;
+            descriptor.textureFormat = PixelFormat::D24S8;
 
             _depthStencilTexture = new Texture2D();
             _depthStencilTexture->updateTextureDescriptor(descriptor);
@@ -437,7 +438,7 @@ bool RenderTexture::saveToFileAsNonPMA(std::string_view fileName,
     auto renderer          = _director->getRenderer();
     auto saveToFileCommand = renderer->nextCallbackCommand();
     saveToFileCommand->init(_globalZOrder);
-    saveToFileCommand->func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, fullpath, isRGBA, true);
+    saveToFileCommand->func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, std::move(fullpath), isRGBA, true);
 
     renderer->addCommand(saveToFileCommand);
     return true;
@@ -460,26 +461,26 @@ bool RenderTexture::saveToFile(std::string_view fileName,
     auto renderer          = _director->getRenderer();
     auto saveToFileCommand = renderer->nextCallbackCommand();
     saveToFileCommand->init(_globalZOrder);
-    saveToFileCommand->func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, fullpath, isRGBA, false);
+    saveToFileCommand->func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, std::move(fullpath), isRGBA, false);
 
     _director->getRenderer()->addCommand(saveToFileCommand);
     return true;
 }
 
-void RenderTexture::onSaveToFile(std::string_view filename, bool isRGBA, bool forceNonPMA)
+void RenderTexture::onSaveToFile(std::string filename, bool isRGBA, bool forceNonPMA)
 {
-    auto callbackFunc = [&, filename, isRGBA, forceNonPMA](RefPtr<Image> image) {
+    auto callbackFunc = [this, _filename = std::move(filename), isRGBA, forceNonPMA](RefPtr<Image> image) {
         if (image)
         {
             if (forceNonPMA && image->hasPremultipliedAlpha())
             {
                 image->reversePremultipliedAlpha();
             }
-            image->saveToFile(filename, !isRGBA);
+            image->saveToFile(_filename, !isRGBA);
         }
         if (_saveFileCallback)
         {
-            _saveFileCallback(this, filename);
+            _saveFileCallback(this, _filename);
         }
     };
     newImage(callbackFunc);

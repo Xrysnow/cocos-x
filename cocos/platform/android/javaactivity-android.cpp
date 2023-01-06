@@ -52,8 +52,8 @@ extern "C" {
 // ndk break compatibility, refer to https://github.com/cocos2d/cocos2d-x/issues/16267 for detail information
 // should remove it when using NDK r13 since NDK r13 will add back bsd_signal()
 #if __ANDROID_API__ > 19
-#    include <signal.h>
-#    include <dlfcn.h>
+    #include <signal.h>
+    #include <dlfcn.h>
 typedef __sighandler_t (*bsd_signal_func_t)(int, __sighandler_t);
 bsd_signal_func_t bsd_signal_func = NULL;
 

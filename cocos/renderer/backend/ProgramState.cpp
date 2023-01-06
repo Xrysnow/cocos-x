@@ -39,7 +39,7 @@
 #include "xxhash.h"
 
 #ifdef CC_USE_METAL
-#include "glsl_optimizer.h"
+    #include "glsl_optimizer.h"
 #endif
 
 CC_BACKEND_BEGIN

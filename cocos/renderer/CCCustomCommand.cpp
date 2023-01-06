@@ -76,11 +76,11 @@ CustomCommand& CustomCommand::operator=(CustomCommand&& rhs)
 // which must be suppressed.
 // see also: https://github.com/google/benchmark/pull/629
 #if defined(__INTEL_COMPILER)
-#    pragma warning push
-#    pragma warning(disable : 1875)
+    #pragma warning push
+    #pragma warning(disable : 1875)
 #elif defined(__GNUC__)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Winvalid-offsetof"
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Winvalid-offsetof"
 #endif
 void CustomCommand::assign(const CustomCommand& rhs)
 {
@@ -114,9 +114,9 @@ void CustomCommand::assign(CustomCommand&& rhs)
     }
 }
 #if defined(__INTEL_COMPILER)
-#    pragma warning pop
+    #pragma warning pop
 #elif defined(__GNUC__)
-#    pragma GCC diagnostic pop
+    #pragma GCC diagnostic pop
 #endif
 
 void CustomCommand::init(float depth, const cocos2d::Mat4& modelViewTransform, unsigned int flags)

@@ -29,9 +29,9 @@
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
 
-#    include <Foundation/Foundation.h>
-#    include <Cocoa/Cocoa.h>
-#    include <string>
+    #include <Foundation/Foundation.h>
+    #include <Cocoa/Cocoa.h>
+    #include <string>
 
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_IOS
 

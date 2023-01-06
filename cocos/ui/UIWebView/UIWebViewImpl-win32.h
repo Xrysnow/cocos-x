@@ -30,8 +30,8 @@
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(_CC_HAVE_WEBVIEW2)
 
-#    include <string>
-#    include "CCStdC.h"
+    #include <string>
+    #include "CCStdC.h"
 
 NS_CC_BEGIN
 

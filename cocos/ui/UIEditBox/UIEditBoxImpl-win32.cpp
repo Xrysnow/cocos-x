@@ -29,15 +29,15 @@ THE SOFTWARE.
 #include "platform/CCPlatformConfig.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 
-#    include "ui/UIEditBox/UIEditBox.h"
-#    include <tchar.h>
-#    include <stdio.h>
-#    include "2d/CCLabel.h"
-#    include "base/CCDirector.h"
-#    include "base/ccUTF8.h"
-#    include <Commctrl.h>
-#    include <windows.h>
-#    include "ui/UIHelper.h"
+    #include "ui/UIEditBox/UIEditBox.h"
+    #include <tchar.h>
+    #include <stdio.h>
+    #include "2d/CCLabel.h"
+    #include "base/CCDirector.h"
+    #include "base/ccUTF8.h"
+    #include <Commctrl.h>
+    #include <windows.h>
+    #include "ui/UIHelper.h"
 
 NS_CC_BEGIN
 

@@ -10,25 +10,25 @@
 //
 #pragma once
 #ifndef _LAYOUTHELPER_H_
-#    define _LAYOUTHELPER_H_
+    #define _LAYOUTHELPER_H_
 
-#    include "cocos2d.h"
-#    include "base/ccMacros.h"
+    #include "cocos2d.h"
+    #include "base/ccMacros.h"
 
 // f(x) = s * a + x
-#    define adjust_coord(__sz__, __achor__, __coord__) ((__sz__) * (__achor__) + (__coord__))
+    #define adjust_coord(__sz__, __achor__, __coord__) ((__sz__) * (__achor__) + (__coord__))
 
 // f(y) = y - s * a
-#    define adjust_coord_r(__sz__, __achor__, __coord__) ((__coord__) - (__sz__) * (__achor__))
+    #define adjust_coord_r(__sz__, __achor__, __coord__) ((__coord__) - (__sz__) * (__achor__))
 
 // f(x) = S - (s - s * a + x)
-#    define adjust_coord_neg(__SZ__, __sz__, __achor__, __coord__) \
+    #define adjust_coord_neg(__SZ__, __sz__, __achor__, __coord__) \
         ((__SZ__) - ((__sz__) - (__sz__) * (__achor__) + (__coord__)))
 
 // f(y) = S - (s - s * a + y)
-#    define adjust_coord_neg_r adjust_coord_neg
+    #define adjust_coord_neg_r adjust_coord_neg
 
-#    define center_coord(__SZ__, __sz__, __achor__) (((__SZ__) - (__sz__) + 2 * (__sz__) * (__achor__)) * 0.5f)
+    #define center_coord(__SZ__, __sz__, __achor__) (((__SZ__) - (__sz__) + 2 * (__sz__) * (__achor__)) * 0.5f)
 
 USING_NS_CC;
 
@@ -82,9 +82,9 @@ struct CC_DLL LayoutHelper
         ALIGN_RB = ALIGN_RIGHT | ALIGN_BOTTOM,   // right bottom
     };
 
-#    define isIgnoreX(align) (align != ALIGN_LEFT) && (align != ALIGN_RIGHT)
-#    define isIgnoreY(align) (align != ALIGN_TOP) && (align != ALIGN_BOTTOM)
-#    define isIgnoreXY(align) (align == ALIGN_CENTER)
+    #define isIgnoreX(align) (align != ALIGN_LEFT) && (align != ALIGN_RIGHT)
+    #define isIgnoreY(align) (align != ALIGN_TOP) && (align != ALIGN_BOTTOM)
+    #define isIgnoreXY(align) (align == ALIGN_CENTER)
 
     static cocos2d::Vec2 getScale2D(cocos2d::Node* pNode)
     {

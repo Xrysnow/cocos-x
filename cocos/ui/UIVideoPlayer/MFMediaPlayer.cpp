@@ -24,7 +24,7 @@
 // IF_FAILED_GOTO macro.
 // Jumps to 'label' on failure.
 #ifndef IF_FAILED_GOTO
-#    define IF_FAILED_GOTO(hr, label) \
+    #define IF_FAILED_GOTO(hr, label) \
         if (FAILED(hr))               \
         {                             \
             goto label;               \
@@ -122,8 +122,8 @@ public:
     STDMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&RefCount); }
 
 #if _MSC_VER == 1900
-#    pragma warning(push)
-#    pragma warning(disable : 4838)
+    #pragma warning(push)
+    #pragma warning(disable : 4838)
 #endif
 
     STDMETHODIMP QueryInterface(REFIID RefID, void** Object)
@@ -134,7 +134,7 @@ public:
     }
 
 #if _MSC_VER == 1900
-#    pragma warning(pop)
+    #pragma warning(pop)
 #endif
 
     STDMETHODIMP_(ULONG) Release()

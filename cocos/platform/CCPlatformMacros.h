@@ -88,18 +88,18 @@ Copyright (c) 2021 Bytedance Inc.
  * @since v0.99.5
  */
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-    #define CC_ENABLE_CACHE_TEXTURE_DATA       1
+    #define CC_ENABLE_CACHE_TEXTURE_DATA 1
 #else
-    #define CC_ENABLE_CACHE_TEXTURE_DATA       0
+    #define CC_ENABLE_CACHE_TEXTURE_DATA 0
 #endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) || (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     /** Application will crash in glDrawElements function on some win32 computers and some android devices.
      *  Indices should be bound again while drawing to avoid this bug.
      */
-    #define CC_REBIND_INDICES_BUFFER  1
+    #define CC_REBIND_INDICES_BUFFER 1
 #else
-    #define CC_REBIND_INDICES_BUFFER  0
+    #define CC_REBIND_INDICES_BUFFER 0
 #endif
 
 // Generic macros
@@ -249,35 +249,35 @@ public:                                                             \
 #define CC_BREAK_IF(cond)           if(cond) break
 
 #define __CCLOGWITHFUNCTION(s, ...) \
-    cocos2d::log("%s : %s", __FUNCTION__, cocos2d::StringUtils::format(s, ##__VA_ARGS__).c_str())
+    cocos2d::print("%s : %s", __FUNCTION__, cocos2d::StringUtils::format(s, ##__VA_ARGS__).c_str())
 
 /// @name Cocos2d debug
 /// @{
 #if !defined(COCOS2D_DEBUG) || COCOS2D_DEBUG == 0
-#define CCLOG(...)       do {} while (0)
-#define CCLOGINFO(...)   do {} while (0)
-#define CCLOGERROR(...)  do {} while (0)
-#define CCLOGWARN(...)   do {} while (0)
+    #define CCLOG(...)       do {} while (0)
+    #define CCLOGINFO(...)   do {} while (0)
+    #define CCLOGERROR(...)  do {} while (0)
+    #define CCLOGWARN(...)   do {} while (0)
 
 #elif COCOS2D_DEBUG == 1
-#define CCLOG(format, ...)      cocos2d::log(format, ##__VA_ARGS__)
-#define CCLOGERROR(format,...)  cocos2d::log(format, ##__VA_ARGS__)
-#define CCLOGINFO(format,...)   do {} while (0)
-#define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
+    #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOGINFO(format,...)   do {} while (0)
+    #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
 
 #elif COCOS2D_DEBUG > 1
-#define CCLOG(format, ...)      cocos2d::log(format, ##__VA_ARGS__)
-#define CCLOGERROR(format,...)  cocos2d::log(format, ##__VA_ARGS__)
-#define CCLOGINFO(format,...)   cocos2d::log(format, ##__VA_ARGS__)
-#define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
+    #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOGINFO(format,...)   cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
 #endif // COCOS2D_DEBUG
 
 /** Lua engine debug */
 #if !defined(COCOS2D_DEBUG) || COCOS2D_DEBUG == 0 || CC_LUA_ENGINE_DEBUG == 0
-#define LUALOG(...)
+    #define LUALOG(...)
 #else
-#define LUALOG(format, ...)     cocos2d::log(format, ##__VA_ARGS__)
-#endif // Lua engine debug
+    #define LUALOG(format, ...) cocos2d::print(format, ##__VA_ARGS__)
+#endif  // Lua engine debug
 
 //  end of debug group
 /// @}
@@ -288,11 +288,11 @@ public:                                                             \
  */
 #if defined(__GNUC__) && ((__GNUC__ >= 5) || ((__GNUG__ == 4) && (__GNUC_MINOR__ >= 4))) || \
     (defined(__clang__) && (__clang_major__ >= 3)) || (_MSC_VER >= 1800)
-#    define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+    #define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
         TypeName(const TypeName&) = delete;       \
         TypeName& operator=(const TypeName&) = delete;
 #else
-#    define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+    #define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
         TypeName(const TypeName&);                \
         TypeName& operator=(const TypeName&);
 #endif
@@ -313,11 +313,11 @@ public:                                                             \
  * Only certain compilers support __attribute__((deprecated)).
  */
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#    define CC_DEPRECATED_ATTRIBUTE __attribute__((deprecated))
+    #define CC_DEPRECATED_ATTRIBUTE __attribute__((deprecated))
 #elif _MSC_VER >= 1400  // vs 2005 or higher
-#    define CC_DEPRECATED_ATTRIBUTE __declspec(deprecated)
+    #define CC_DEPRECATED_ATTRIBUTE __declspec(deprecated)
 #else
-#    define CC_DEPRECATED_ATTRIBUTE
+    #define CC_DEPRECATED_ATTRIBUTE
 #endif
 
 /** @def CC_DEPRECATED(...)
@@ -334,70 +334,70 @@ public:                                                             \
  * @param argPos    1-based position of first format-dependent argument.
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4)
-#    define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
+    #define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
 #elif defined(__has_attribute)
-#    if __has_attribute(format)
-#        define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
-#    else
-#        define CC_FORMAT_PRINTF(formatPos, argPos)
-#    endif  // __has_attribute(format)
+    #if __has_attribute(format)
+        #define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
+    #else
+        #define CC_FORMAT_PRINTF(formatPos, argPos)
+    #endif  // __has_attribute(format)
 #else
-#    define CC_FORMAT_PRINTF(formatPos, argPos)
+    #define CC_FORMAT_PRINTF(formatPos, argPos)
 #endif
 
 #if defined(_MSC_VER)
-#    define CC_FORMAT_PRINTF_SIZE_T "%08lX"
+    #define CC_FORMAT_PRINTF_SIZE_T "%08lX"
 #else
-#    define CC_FORMAT_PRINTF_SIZE_T "%08zX"
+    #define CC_FORMAT_PRINTF_SIZE_T "%08zX"
 #endif
 
 #ifdef __GNUC__
-#    define CC_UNUSED __attribute__((unused))
+    #define CC_UNUSED __attribute__((unused))
 #else
-#    define CC_UNUSED
+    #define CC_UNUSED
 #endif
 
 /** @def CC_REQUIRES_NULL_TERMINATION
  *
  */
 #if !defined(CC_REQUIRES_NULL_TERMINATION)
-#    if defined(__APPLE_CC__) && (__APPLE_CC__ >= 5549)
-#        define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel(0, 1)))
-#    elif defined(__GNUC__)
-#        define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel))
-#    else
-#        define CC_REQUIRES_NULL_TERMINATION
-#    endif
+    #if defined(__APPLE_CC__) && (__APPLE_CC__ >= 5549)
+        #define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel(0, 1)))
+    #elif defined(__GNUC__)
+        #define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel))
+    #else
+        #define CC_REQUIRES_NULL_TERMINATION
+    #endif
 #endif
 
 // compatibility with non-clang compilers...
 #ifndef __has_attribute
-#    define __has_attribute(x) 0
+    #define __has_attribute(x) 0
 #endif
 #ifndef __has_builtin
-#    define __has_builtin(x) 0
+    #define __has_builtin(x) 0
 #endif
 
 /*
  * helps the compiler's optimizer predicting branches
  */
 #if __has_builtin(__builtin_expect)
-#    ifdef __cplusplus
-#        define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), true))
-#        define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
-#    else
-#        define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), 1))
-#        define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
-#    endif
+    #ifdef __cplusplus
+        #define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), true))
+        #define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
+    #else
+        #define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), 1))
+        #define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
+    #endif
 #else
-#    define UTILS_LIKELY(exp) (!!(exp))
-#    define UTILS_UNLIKELY(exp) (!!(exp))
+    #define UTILS_LIKELY(exp) (!!(exp))
+    #define UTILS_UNLIKELY(exp) (!!(exp))
 #endif
 
 #ifdef COCOS2D_DEBUG
-#define _CC_DEBUG COCOS2D_DEBUG
+    #define CC_DEBUG COCOS2D_DEBUG
 #else
-#define _CC_DEBUG 0
+    #define CC_DEBUG 0
 #endif
 
 #endif // __CC_PLATFORM_MACROS_H__

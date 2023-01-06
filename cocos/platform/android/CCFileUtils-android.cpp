@@ -36,7 +36,7 @@ THE SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "yasio/cxx17/string_view.hpp"
+#include "yasio/stl/string_view.hpp"
 
 #define LOG_TAG "CCFileUtils-android.cpp"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -212,8 +212,8 @@ bool FileUtilsAndroid::isAbsolutePath(std::string_view strPath) const
     DECLARE_GUARD;
     // On Android, there are two situations for full path.
     // 1) Files in APK, e.g. assets/path/path/file.png
-    // 2) Files not in APK, e.g. /data/data/org.cocos2dx.hellocpp/cache/path/path/file.png, or /sdcard/path/path/file.png.
-    // So these two situations need to be checked on Android.
+    // 2) Files not in APK, e.g. /data/data/org.axmol.hellocpp/cache/path/path/file.png, or
+    // /sdcard/path/path/file.png. So these two situations need to be checked on Android.
     return (strPath[0] == '/' || strPath.find(_defaultResRootPath) == 0);
 }
 

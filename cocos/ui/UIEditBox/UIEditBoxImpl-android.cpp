@@ -30,16 +30,16 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 
-#    include "ui/UIEditBox/UIEditBox.h"
-#    include <jni.h>
-#    include "platform/android/jni/JniHelper.h"
-#    include "2d/CCLabel.h"
-#    include "base/ccUTF8.h"
-#    include "math/Vec2.h"
-#    include "ui/UIHelper.h"
-#    include "base/CCDirector.h"
-#    include "platform/CCFileUtils.h"
-#    include "yasio/cxx17/string_view.hpp"
+    #include "ui/UIEditBox/UIEditBox.h"
+    #include <jni.h>
+    #include "platform/android/jni/JniHelper.h"
+    #include "2d/CCLabel.h"
+    #include "base/ccUTF8.h"
+    #include "math/Vec2.h"
+    #include "ui/UIHelper.h"
+    #include "base/CCDirector.h"
+    #include "platform/CCFileUtils.h"
+    #include "yasio/stl/string_view.hpp"
 
 NS_CC_BEGIN
 
@@ -48,7 +48,7 @@ static const char* editBoxClassName = "org.axmol.lib.EditBoxHelper";
 namespace ui
 {
 
-#    define LOGD(...) __android_log_print(ANDROID_LOG_ERROR, "", __VA_ARGS__)
+    #define LOGD(...) __android_log_print(ANDROID_LOG_ERROR, "", __VA_ARGS__)
 static void editBoxEditingDidBegin(int index);
 static void editBoxEditingDidChanged(int index, std::string_view text);
 static void editBoxEditingDidEnd(int index, std::string_view text, int action);

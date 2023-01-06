@@ -27,15 +27,15 @@
 #include "ui/UIVideoPlayer/UIVideoPlayer.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    include <unordered_map>
-#    include <stdlib.h>
-#    include <jni.h>
-#    include <string>
-#    include "platform/android/jni/JniHelper.h"
-#    include "base/CCDirector.h"
-#    include "base/CCEventListenerKeyboard.h"
-#    include "platform/CCFileUtils.h"
-#    include "ui/UIHelper.h"
+    #include <unordered_map>
+    #include <stdlib.h>
+    #include <jni.h>
+    #include <string>
+    #include "platform/android/jni/JniHelper.h"
+    #include "base/CCDirector.h"
+    #include "base/CCEventListenerKeyboard.h"
+    #include "platform/CCFileUtils.h"
+    #include "ui/UIHelper.h"
 
 //-----------------------------------------------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ USING_NS_CC;
 
 static void executeVideoCallback(int index, int event);
 
-#    define QUIT_FULLSCREEN 1000
+    #define QUIT_FULLSCREEN 1000
 
 extern "C" {
 JNIEXPORT void JNICALL Java_org_axmol_lib_VideoHelper_nativeExecuteVideoCallback(JNIEnv*,
@@ -113,10 +113,10 @@ VideoPlayer::VideoPlayer()
     _videoPlayerIndex                    = createVideoWidgetJNI();
     s_allVideoPlayers[_videoPlayerIndex] = this;
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode = DrawNode::create();
     addChild(_debugDrawNode);
-#    endif
+    #endif
 }
 
 VideoPlayer::~VideoPlayer()
@@ -169,12 +169,12 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
                                         (int)uiRect.origin.y, (int)uiRect.size.width, (int)uiRect.size.height);
     }
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode->clear();
     auto size         = getContentSize();
     Point vertices[4] = {Point::ZERO, Point(size.width, 0), Point(size.width, size.height), Point(0, size.height)};
     _debugDrawNode->drawPoly(vertices, 4, true, Color4F(1.0, 1.0, 1.0, 1.0));
-#    endif
+    #endif
 }
 
 void VideoPlayer::setFullScreenEnabled(bool enabled)

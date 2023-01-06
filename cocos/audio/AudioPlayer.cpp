@@ -35,9 +35,9 @@
 #include "audio/AudioDecoderManager.h"
 
 #ifdef VERY_VERY_VERBOSE_LOGGING
-#    define ALOGVV ALOGV
+    #define ALOGVV ALOGV
 #else
-#    define ALOGVV(...) \
+    #define ALOGVV(...) \
         do              \
         {               \
         } while (false)

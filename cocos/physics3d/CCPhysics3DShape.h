@@ -32,7 +32,7 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
 class btCollisionShape;
 
@@ -131,9 +131,9 @@ public:
      */
     static Physics3DShape* createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes);
 
-#        if CC_ENABLE_BULLET_INTEGRATION
+        #if CC_ENABLE_BULLET_INTEGRATION
     btCollisionShape* getbtShape() const { return _btShape; }
-#        endif
+        #endif
 
     Physics3DShape();
     ~Physics3DShape();
@@ -158,11 +158,11 @@ public:
 protected:
     ShapeType _shapeType;  // shape type
 
-#        if (CC_ENABLE_BULLET_INTEGRATION)
+        #if (CC_ENABLE_BULLET_INTEGRATION)
     btCollisionShape* _btShape;
     unsigned char* _heightfieldData;
     std::vector<Physics3DShape*> _compoundChildShapes;
-#        endif
+        #endif
 };
 
 // end of 3d group
@@ -170,7 +170,7 @@ protected:
 
 NS_CC_END
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS
 

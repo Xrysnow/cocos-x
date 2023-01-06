@@ -36,7 +36,7 @@
 // #import "platform/CCPlatformMacros.h"
 #import "platform/ios/OpenGL_Internal-ios.h"
 
-#if !defined(_CC_DEBUG) || _CC_DEBUG == 0
+#if !defined(CC_DEBUG) || CC_DEBUG == 0
 #define NSLog(...)       do {} while (0)
 #endif
 

@@ -37,10 +37,10 @@
 #include "renderer/ccShaders.h"
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-#    include "base/CCEventCustom.h"
-#    include "base/CCEventListenerCustom.h"
-#    include "base/CCEventType.h"
-#    include "base/CCEventDispatcher.h"
+    #include "base/CCEventCustom.h"
+    #include "base/CCEventListenerCustom.h"
+    #include "base/CCEventType.h"
+    #include "base/CCEventDispatcher.h"
 #endif
 
 NS_CC_BEGIN

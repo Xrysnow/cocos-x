@@ -102,14 +102,14 @@ static NSSize _calculateStringSize(NSAttributedString* str,
 
     NSSize dim;
 #ifdef __MAC_10_11
-#    if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
+    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
     dim = [str boundingRectWithSize:textRect
                             options:(NSStringDrawingOptions)(NSStringDrawingUsesLineFragmentOrigin)context:nil]
               .size;
-#    else
+    #else
     dim = [str boundingRectWithSize:textRect options:(NSStringDrawingOptions)(NSStringDrawingUsesLineFragmentOrigin)]
               .size;
-#    endif
+    #endif
 #else
     dim = [str boundingRectWithSize:textRect options:(NSStringDrawingOptions)(NSStringDrawingUsesLineFragmentOrigin)]
               .size;
@@ -142,16 +142,16 @@ static NSSize _calculateRealSizeForString(NSAttributedString** str, id font, NSS
             *str                                     = __attributedStringWithFontSize(mutableString, fontSize);
 
 #ifdef __MAC_10_11
-#    if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
+    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin
                                                 context:nil]
                                  .size;
-#    else
+    #else
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin]
                                  .size;
-#    endif
+    #endif
 #else
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin]
@@ -191,16 +191,16 @@ static NSSize _calculateRealSizeForString(NSAttributedString** str, id font, NSS
             *str                                     = __attributedStringWithFontSize(mutableString, fontSize);
 
 #ifdef __MAC_10_11
-#    if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
+    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_11
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(constrainSize.width, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin
                                                 context:nil]
                                  .size;
-#    else
+    #else
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(constrainSize.width, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin]
                                  .size;
-#    endif
+    #endif
 #else
             CGSize fitSize = [*str boundingRectWithSize:CGSizeMake(constrainSize.width, CGFLOAT_MAX)
                                                 options:NSStringDrawingUsesLineFragmentOrigin]

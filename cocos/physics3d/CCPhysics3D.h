@@ -31,13 +31,13 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    include "physics3d/CCPhysics3DShape.h"
-#    include "physics3d/CCPhysicsMeshRenderer.h"
-#    include "physics3d/CCPhysics3DWorld.h"
-#    include "physics3d/CCPhysics3DDebugDrawer.h"
-#    include "physics3d/CCPhysics3DObject.h"
-#    include "physics3d/CCPhysics3DComponent.h"
-#    include "physics3d/CCPhysics3DConstraint.h"
+    #include "physics3d/CCPhysics3DShape.h"
+    #include "physics3d/CCPhysicsMeshRenderer.h"
+    #include "physics3d/CCPhysics3DWorld.h"
+    #include "physics3d/CCPhysics3DDebugDrawer.h"
+    #include "physics3d/CCPhysics3DObject.h"
+    #include "physics3d/CCPhysics3DComponent.h"
+    #include "physics3d/CCPhysics3DConstraint.h"
 
 NS_CC_BEGIN
 
@@ -45,16 +45,16 @@ CC_DLL const char* physics3dVersion();
 
 NS_CC_END
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
 // include bullet header files
-#        include "bullet/LinearMath/btTransform.h"
-#        include "bullet/LinearMath/btVector3.h"
-#        include "bullet/LinearMath/btQuaternion.h"
+        #include "bullet/LinearMath/btTransform.h"
+        #include "bullet/LinearMath/btVector3.h"
+        #include "bullet/LinearMath/btQuaternion.h"
 
-#        include "bullet/btBulletCollisionCommon.h"
-#        include "bullet/btBulletDynamicsCommon.h"
-#        include "bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
+        #include "bullet/btBulletCollisionCommon.h"
+        #include "bullet/btBulletDynamicsCommon.h"
+        #include "bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
 
 // convert between cocos and bullet
 cocos2d::Vec3 convertbtVector3ToVec3(const btVector3& btVec3);
@@ -64,7 +64,7 @@ btTransform convertMat4TobtTransform(const cocos2d::Mat4& mat4);
 cocos2d::Quaternion convertbtQuatToQuat(const btQuaternion& btQuat);
 btQuaternion convertQuatTobtQuat(const cocos2d::Quaternion& quat);
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS
 

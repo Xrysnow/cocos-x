@@ -200,7 +200,7 @@ protected:
 NS_CC_END
 
 #ifdef _UITEXTFIELDEX_INLINE_
-#    include "UITextFieldEx.cpp"
+    #include "UITextFieldEx.cpp"
 #endif
 
 #endif

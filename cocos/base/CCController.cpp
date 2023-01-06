@@ -30,9 +30,9 @@
      CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX ||   \
      CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 
-#    include "base/CCEventDispatcher.h"
-#    include "base/CCEventController.h"
-#    include "base/CCDirector.h"
+    #include "base/CCEventDispatcher.h"
+    #include "base/CCEventController.h"
+    #include "base/CCDirector.h"
 
 NS_CC_BEGIN
 

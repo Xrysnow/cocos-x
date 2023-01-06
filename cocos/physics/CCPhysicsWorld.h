@@ -29,10 +29,10 @@
 #include "base/ccConfig.h"
 #if CC_USE_PHYSICS
 
-#    include <list>
-#    include "base/CCVector.h"
-#    include "math/CCMath.h"
-#    include "physics/CCPhysicsBody.h"
+    #include <list>
+    #include "base/CCVector.h"
+    #include "math/CCMath.h"
+    #include "physics/CCPhysicsBody.h"
 
 struct cpSpace;
 

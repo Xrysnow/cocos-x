@@ -28,10 +28,11 @@
 #include "Types.h"
 #include "base/CCRef.h"
 
-namespace cocos2d {
-    class MeshVertexData;
-    class MeshIndexData;
-}
+NS_CC_BEGIN
+
+class MeshVertexData;
+class MeshIndexData;
+NS_CC_END  // namespace ax
 
 CC_BACKEND_BEGIN
 

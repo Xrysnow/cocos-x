@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include <vector>
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#    include <windows.h>
+    #include <windows.h>
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) */
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -41,7 +41,7 @@ typedef void* id;
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) */
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-#    define CC_ICON_SET_SUPPORT true
+    #define CC_ICON_SET_SUPPORT true
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX) */
 
 /** There are some Resolution Policy for Adapt to the screen. */

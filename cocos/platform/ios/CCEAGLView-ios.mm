@@ -281,11 +281,11 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
     context_ = [renderer_ context];
 
-#    if GL_EXT_discard_framebuffer == 1
+    #if GL_EXT_discard_framebuffer == 1
     discardFramebufferSupported_ = YES;
-#    else
+    #else
     discardFramebufferSupported_ = NO;
-#    endif
+    #endif
 
     CHECK_GL_ERROR();
 
@@ -344,7 +344,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     //    -> context_ MUST be the OpenGL context
     //    -> renderbuffer_ must be the RENDER BUFFER
 
-#    ifdef __IPHONE_4_0
+    #ifdef __IPHONE_4_0
 
     if (multiSampling_)
     {
@@ -381,16 +381,16 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         }
     }
 
-#    endif  // __IPHONE_4_0
+    #endif  // __IPHONE_4_0
 
     if (![context_ presentRenderbuffer:GL_RENDERBUFFER])
     {
         //         CCLOG(@"cocos2d: Failed to swap renderbuffer in %s\n", __FUNCTION__);
     }
 
-#    if _CC_DEBUG
+    #if CC_DEBUG
     CHECK_GL_ERROR();
-#    endif
+    #endif
 
     // We can safely re-bind the framebuffer here, since this will be the
     // 1st instruction of the new main loop

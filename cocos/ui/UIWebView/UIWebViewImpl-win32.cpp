@@ -26,36 +26,35 @@
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(_CC_HAVE_WEBVIEW2)
 
-#    include "UIWebViewImpl-win32.h"
-#    include "UIWebView.h"
-#    include "base/CCDirector.h"
-#    include "platform/CCFileUtils.h"
-#    include "platform/CCGLView.h"
-#    include "base/base64.h"
-#    include "ui/UIHelper.h"
-#    include "rapidjson/document.h"
-#    include "rapidjson/stringbuffer.h"
-#    include "rapidjson/writer.h"
-#    include "base/ccUtils.h"
+    #include "UIWebViewImpl-win32.h"
+    #include "UIWebView.h"
+    #include "base/CCDirector.h"
+    #include "platform/CCFileUtils.h"
+    #include "platform/CCGLView.h"
+    #include "ui/UIHelper.h"
+    #include "rapidjson/document.h"
+    #include "rapidjson/stringbuffer.h"
+    #include "rapidjson/writer.h"
+    #include "base/ccUtils.h"
 
-#    define WIN32_LEAN_AND_MEAN
-#    include <Shlwapi.h>
-#    include <codecvt>
-#    include <utility>
-#    include <stdlib.h>
-#    include <Windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <Shlwapi.h>
+    #include <codecvt>
+    #include <utility>
+    #include <stdlib.h>
+    #include <Windows.h>
 
-#    pragma comment(lib, "user32.lib")
-#    pragma comment(lib, "Shlwapi.lib")
+    #pragma comment(lib, "user32.lib")
+    #pragma comment(lib, "Shlwapi.lib")
 
 // Edge/Chromium headers and libs
-#    include "WebView2.h"
-#    pragma comment(lib, "ole32.lib")
-#    pragma comment(lib, "oleaut32.lib")
+    #include "WebView2.h"
+    #pragma comment(lib, "ole32.lib")
+    #pragma comment(lib, "oleaut32.lib")
 
-#    include "platform/CCPlatformConfig.h"
+    #include "platform/CCPlatformConfig.h"
 
-#    include "ntcvt/ntcvt.hpp"
+    #include "ntcvt/ntcvt.hpp"
 
 USING_NS_CC;
 using namespace rapidjson;
@@ -219,9 +218,7 @@ static std::string getUriStringFromArgs(ArgType* args)
 
 static std::string getDataURI(std::string_view data, std::string_view mime_type)
 {
-    char* encodedData;
-    cocos2d::base64Encode(reinterpret_cast<const unsigned char*>(data.data()), static_cast<unsigned>(data.size()),
-                          &encodedData);
+    auto encodedData = utils::base64Encode(data);
     return std::string{"data:"}.append(mime_type).append(";base64,").append(utils::urlEncode(encodedData));
 }
 
@@ -235,12 +232,12 @@ static double getDeviceScaleFactor()
         // This value is safe to cache for the life time of the app since the user
         // must logout to change the DPI setting. This value also applies to all
         // screens.
-#    if _WIN32
+    #if _WIN32
         HDC screen_dc = ::GetDC(NULL);
         int dpi_x     = GetDeviceCaps(screen_dc, LOGPIXELSX);
         scale_factor  = static_cast<double>(dpi_x) / 96.0;
         ::ReleaseDC(NULL, screen_dc);
-#    endif
+    #endif
         initialized = true;
     }
 

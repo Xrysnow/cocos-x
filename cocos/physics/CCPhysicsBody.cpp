@@ -25,17 +25,17 @@
 #include "physics/CCPhysicsBody.h"
 #if CC_USE_PHYSICS
 
-#    include <climits>
-#    include <algorithm>
-#    include <cmath>
+    #include <climits>
+    #include <algorithm>
+    #include <cmath>
 
-#    include "chipmunk/chipmunk_private.h"
+    #include "chipmunk/chipmunk_private.h"
 
-#    include "2d/CCScene.h"
-#    include "physics/CCPhysicsShape.h"
-#    include "physics/CCPhysicsJoint.h"
-#    include "physics/CCPhysicsWorld.h"
-#    include "physics/CCPhysicsHelper.h"
+    #include "2d/CCScene.h"
+    #include "physics/CCPhysicsShape.h"
+    #include "physics/CCPhysicsJoint.h"
+    #include "physics/CCPhysicsWorld.h"
+    #include "physics/CCPhysicsHelper.h"
 
 static void internalBodySetMass(cpBody* body, cpFloat mass)
 {

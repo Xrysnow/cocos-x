@@ -30,8 +30,8 @@ THE SOFTWARE.
 
 #include "2d/CCAtlasNode.h"
 #if CC_LABELATLAS_DEBUG_DRAW
-#    include "renderer/CCCustomCommand.h"
-#    include "2d/CCDrawNode.h"
+    #include "renderer/CCCustomCommand.h"
+    #include "2d/CCDrawNode.h"
 #endif
 NS_CC_BEGIN
 

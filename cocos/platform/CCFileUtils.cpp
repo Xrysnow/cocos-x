@@ -2,7 +2,7 @@
 Copyright (c) 2010-2013 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2021-2022 Bytedance Inc.
+Copyright (c) 2021-2023 Bytedance Inc.
 
  https://axmolengine.github.io/
 
@@ -38,15 +38,15 @@ THE SOFTWARE.
 #include "platform/CCPosixFileStream.h"
 
 #ifdef MINIZIP_FROM_SYSTEM
-#    include <minizip/unzip.h>
+    #include <minizip/unzip.h>
 #else  // from our embedded sources
-#    include "unzip.h"
+    #include "unzip.h"
 #endif
 #include <sys/stat.h>
 
 #if defined(_WIN32)
-#    include "ntcvt/ntcvt.hpp"
-#    include "yasio/cxx17/string_view.hpp"
+    #include "ntcvt/ntcvt.hpp"
+    #include "yasio/stl/string_view.hpp"
 #endif
 
 #include "pugixml/pugixml.hpp"
@@ -1165,14 +1165,14 @@ int64_t FileUtils::getFileSize(std::string_view filepath) const
 
 #else
 // default implements for unix like os
-#    include <sys/types.h>
-#    include <errno.h>
-#    include <dirent.h>
+    #include <sys/types.h>
+    #include <errno.h>
+    #include <dirent.h>
 
 // android doesn't have ftw.h
-#    if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
-#        include <ftw.h>
-#    endif
+    #if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+        #include <ftw.h>
+    #endif
 
 bool FileUtils::isDirectoryExistInternal(std::string_view dirPath) const
 {
@@ -1249,7 +1249,7 @@ bool FileUtils::createDirectory(std::string_view path) const
 
 namespace
 {
-#    if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+    #if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
 int unlink_cb(const char* fpath, const struct stat* sb, int typeflag, struct FTW* ftwbuf)
 {
     int rv = remove(fpath);
@@ -1259,19 +1259,19 @@ int unlink_cb(const char* fpath, const struct stat* sb, int typeflag, struct FTW
 
     return rv;
 }
-#    endif
+    #endif
 }  // namespace
 
 bool FileUtils::removeDirectory(std::string_view path) const
 {
-#    if !defined(CC_TARGET_OS_TVOS)
+    #if !defined(CC_TARGET_OS_TVOS)
 
-#        if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+        #if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
     if (nftw(path.data(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS) == -1)
         return false;
     else
         return true;
-#        else
+        #else
     std::string command = "rm -r \""s;
     // Path may include space.
     command.append(path).append("\"", 1);
@@ -1279,11 +1279,11 @@ bool FileUtils::removeDirectory(std::string_view path) const
         return true;
     else
         return false;
-#        endif  // (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+        #endif  // (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
 
-#    else
+    #else
     return false;
-#    endif  // !defined(CC_TARGET_OS_TVOS)
+    #endif  // !defined(CC_TARGET_OS_TVOS)
 }
 
 bool FileUtils::removeFile(std::string_view path) const

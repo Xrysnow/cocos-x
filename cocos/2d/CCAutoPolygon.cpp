@@ -410,7 +410,7 @@ std::vector<cocos2d::Vec2> AutoPolygon::marchSquare(const Rect& rect, const Vec2
         prevx = stepx;
         prevy = stepy;
 
-#if defined(_CC_DEBUG) && (_CC_DEBUG > 0)
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
         const auto totalPixel = _width * _height;
         CCASSERT(count <= totalPixel, "oh no, marching square cannot find starting position");
 #endif

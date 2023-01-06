@@ -45,7 +45,7 @@ THE SOFTWARE.
 #define STBI_NO_TGA
 #define STB_IMAGE_IMPLEMENTATION
 #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
-#    define STBI_NO_THREAD_LOCALS
+    #define STBI_NO_THREAD_LOCALS
 #endif
 #include "stb/stb_image.h"
 
@@ -53,10 +53,10 @@ extern "C" {
 // To resolve link error when building 32bits with Xcode 6.
 // More information please refer to the discussion in https://github.com/cocos2d/cocos2d-x/pull/6986
 #if defined(__unix) || (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-#    ifndef __ENABLE_COMPATIBILITY_WITH_UNIX_2003__
-#        define __ENABLE_COMPATIBILITY_WITH_UNIX_2003__
-#        include <stdio.h>
-#        include <dirent.h>
+    #ifndef __ENABLE_COMPATIBILITY_WITH_UNIX_2003__
+        #define __ENABLE_COMPATIBILITY_WITH_UNIX_2003__
+        #include <stdio.h>
+        #include <dirent.h>
 FILE* fopen$UNIX2003(const char* filename, const char* mode)
 {
     return fopen(filename, mode);
@@ -91,16 +91,16 @@ struct dirent* readdir$INODE64(DIR* dir)
 {
     return readdir(dir);
 }
-#    endif
+    #endif
 #endif
 
 #if CC_USE_PNG
-#    include "png.h"
+    #include "png.h"
 #endif  // CC_USE_PNG
 
 #if CC_USE_JPEG
-#    include "jpeglib.h"
-#    include <setjmp.h>
+    #include "jpeglib.h"
+    #include <setjmp.h>
 #endif  // CC_USE_JPEG
 } /* extern "C" */
 
@@ -117,7 +117,7 @@ struct dirent* readdir$INODE64(DIR* dir)
 #include "base/astc.h"
 
 #if CC_USE_WEBP
-#    include "decode.h"
+    #include "decode.h"
 #endif  // CC_USE_WEBP
 
 #include "base/ccMacros.h"
@@ -128,8 +128,8 @@ struct dirent* readdir$INODE64(DIR* dir)
 #include "base/ccUtils.h"
 #include "base/ZipUtils.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    include "platform/android/CCFileUtils-android.h"
-#    include "platform/CCGL.h"
+    #include "platform/android/CCFileUtils-android.h"
+    #include "platform/CCGL.h"
 #endif
 
 
@@ -295,7 +295,7 @@ typedef struct _PVRTexHeader
 } PVRv2TexHeader;
 
 #ifdef _MSC_VER
-#    pragma pack(push, 1)
+    #pragma pack(push, 1)
 #endif
 typedef struct
 {
@@ -313,7 +313,7 @@ typedef struct
     uint32_t metadataLength;
 #ifdef _MSC_VER
 } PVRv3TexHeader;
-#    pragma pack(pop)
+    #pragma pack(pop)
 #else
 } __attribute__((packed)) PVRv3TexHeader;
 #endif
@@ -997,17 +997,17 @@ bool Image::initWithJpgData(uint8_t* data, ssize_t dataLen)
         /* setup decompression process and source, then read JPEG header */
         jpeg_create_decompress(&cinfo);
 
-#    ifndef CC_TARGET_QT5
+    #ifndef CC_TARGET_QT5
         jpeg_mem_src(&cinfo, const_cast<uint8_t*>(data), dataLen);
-#    endif /* CC_TARGET_QT5 */
+    #endif /* CC_TARGET_QT5 */
 
         /* reading the image header which contains image information */
-#    if (JPEG_LIB_VERSION >= 90)
+    #if (JPEG_LIB_VERSION >= 90)
         // libjpeg 0.9 adds stricter types.
         jpeg_read_header(&cinfo, TRUE);
-#    else
+    #else
         jpeg_read_header(&cinfo, TRUE);
-#    endif  //(JPEG_LIB_VERSION >= 90)
+    #endif  //(JPEG_LIB_VERSION >= 90)
 
         // we only support RGB or grayscale
         if (cinfo.jpeg_color_space == JCS_GRAYSCALE)
@@ -1062,7 +1062,7 @@ bool Image::initWithPngData(uint8_t* data, ssize_t dataLen)
 {
 #if CC_USE_PNG
     // length of bytes to check if it is a valid png file
-#    define PNGSIGSIZE 8
+    #define PNGSIGSIZE 8
     bool ret                    = false;
     png_byte header[PNGSIGSIZE] = {0};
     png_structp png_ptr         = 0;

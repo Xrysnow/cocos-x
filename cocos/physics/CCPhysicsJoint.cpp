@@ -25,12 +25,12 @@
 
 #include "physics/CCPhysicsJoint.h"
 #if CC_USE_PHYSICS
-#    include "chipmunk/chipmunk.h"
+    #include "chipmunk/chipmunk.h"
 
-#    include "physics/CCPhysicsBody.h"
-#    include "physics/CCPhysicsWorld.h"
-#    include "physics/CCPhysicsHelper.h"
-#    include "2d/CCNode.h"
+    #include "physics/CCPhysicsBody.h"
+    #include "physics/CCPhysicsWorld.h"
+    #include "physics/CCPhysicsHelper.h"
+    #include "2d/CCNode.h"
 
 NS_CC_BEGIN
 
@@ -84,15 +84,15 @@ public:
     Optional<float> _rate;
 };
 
-#    if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
-#        define LIKELY(x) (__builtin_expect((x), 1))
-#        define UNLIKELY(x) (__builtin_expect((x), 0))
-#    else
-#        define LIKELY(x) (x)
-#        define UNLIKELY(x) (x)
-#    endif
+    #if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
+        #define LIKELY(x) (__builtin_expect((x), 1))
+        #define UNLIKELY(x) (__builtin_expect((x), 0))
+    #else
+        #define LIKELY(x) (x)
+        #define UNLIKELY(x) (x)
+    #endif
 
-#    define CC_PJOINT_CACHE_READ(field)          \
+    #define CC_PJOINT_CACHE_READ(field)          \
         do                                       \
         {                                        \
             if (UNLIKELY(_initDirty))            \
@@ -101,7 +101,7 @@ public:
             }                                    \
         } while (0)
 
-#    define CC_PJOINT_CACHE_WRITE2(field, method, arg, convertedArg)                    \
+    #define CC_PJOINT_CACHE_WRITE2(field, method, arg, convertedArg)                    \
         do                                                                              \
         {                                                                               \
             if (UNLIKELY(_initDirty))                                                   \
@@ -115,7 +115,7 @@ public:
             }                                                                           \
         } while (0)
 
-#    define CC_PJOINT_CACHE_WRITE(field, method, arg) CC_PJOINT_CACHE_WRITE2(field, method, arg, arg)
+    #define CC_PJOINT_CACHE_WRITE(field, method, arg) CC_PJOINT_CACHE_WRITE2(field, method, arg, arg)
 
 PhysicsJoint::PhysicsJoint()
     : _bodyA(nullptr)

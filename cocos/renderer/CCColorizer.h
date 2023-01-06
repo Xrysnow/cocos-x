@@ -5,10 +5,10 @@
  */
 #pragma once
 #ifndef _CCCOLORIZER_H_
-#    define _CCCOLORIZER_H_
-#    include "math/CCMath.h"
-#    include "base/ccTypes.h"
-#    include <string>
+    #define _CCCOLORIZER_H_
+    #include "math/CCMath.h"
+    #include "base/ccTypes.h"
+    #include <string>
 
 NS_CC_BEGIN
 class CC_DLL Colorizer

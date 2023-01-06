@@ -27,15 +27,18 @@
 #include "base/ccMacros.h"
 
 CC_BACKEND_BEGIN
-namespace {
-    const std::string metalSpecificDefine = "#define METAL\n";
+namespace
+{
+constexpr std::string_view metalSpecificDefine = "#define METAL\n"sv;
 }
 
-ProgramMTL::ProgramMTL(const std::string& vertexShader, const std::string& fragmentShader)
+ProgramMTL::ProgramMTL(std::string_view vertexShader, std::string_view fragmentShader)
     : Program(vertexShader, fragmentShader)
 {
     _vertexShader = static_cast<ShaderModuleMTL*>(ShaderCache::newVertexShaderModule(vertexShader));
-    _fragmentShader = static_cast<ShaderModuleMTL*>(ShaderCache::newFragmentShaderModule(std::move(metalSpecificDefine + fragmentShader)));
+    std::string combinedSource{metalSpecificDefine};
+    combinedSource += fragmentShader;
+    _fragmentShader = static_cast<ShaderModuleMTL*>(ShaderCache::newFragmentShaderModule(std::move(combinedSource)));
 
     CC_SAFE_RETAIN(_vertexShader);
     CC_SAFE_RETAIN(_fragmentShader);
@@ -52,7 +55,7 @@ int ProgramMTL::getAttributeLocation(Attribute name) const
     return _vertexShader->getAttributeLocation(name);
 }
 
-int ProgramMTL::getAttributeLocation(const std::string &name) const
+int ProgramMTL::getAttributeLocation(std::string_view name) const
 {
     return _vertexShader->getAttributeLocation(name);
 }
@@ -81,7 +84,7 @@ UniformLocation ProgramMTL::getUniformLocation(backend::Uniform name) const
     return uniformLocation;
 }
 
-UniformLocation ProgramMTL::getUniformLocation(const std::string& uniform) const
+UniformLocation ProgramMTL::getUniformLocation(std::string_view uniform) const
 {
     UniformLocation uniformLocation;
     auto vsLocation = _vertexShader->getUniformLocation(uniform);
@@ -115,7 +118,7 @@ int ProgramMTL::getMaxFragmentLocation() const
     return _fragmentShader->getMaxLocation();
 }
 
-const std::unordered_map<std::string, AttributeBindInfo>& ProgramMTL::getActiveAttributes() const
+const hlookup::string_map<AttributeBindInfo>& ProgramMTL::getActiveAttributes() const
 {
     return _vertexShader->getAttributeInfo();
 }
@@ -163,7 +166,7 @@ std::size_t ProgramMTL::getUniformBufferSize(ShaderStage stage) const
     return 0;
 }
 
-const std::unordered_map<std::string, UniformInfo>& ProgramMTL::getAllActiveUniformInfo(ShaderStage stage) const
+const hlookup::string_map<UniformInfo>& ProgramMTL::getAllActiveUniformInfo(ShaderStage stage) const
 {
     switch (stage)
     {

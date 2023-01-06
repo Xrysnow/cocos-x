@@ -29,14 +29,14 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
-#    include "platform/CCPlatformMacros.h"
-#    include "math/CCMath.h"
+    #include "platform/CCPlatformMacros.h"
+    #include "math/CCMath.h"
 
-#    include "recast/DetourCommon.h"
-#    include "recast/DetourNavMesh.h"
-#    include "recast/DetourNavMeshQuery.h"
-#    include "recast/DetourTileCache.h"
-#    include "recast/DetourTileCacheBuilder.h"
+    #include "recast/DetourCommon.h"
+    #include "recast/DetourNavMesh.h"
+    #include "recast/DetourNavMeshQuery.h"
+    #include "recast/DetourTileCache.h"
+    #include "recast/DetourTileCacheBuilder.h"
 
 NS_CC_BEGIN
 

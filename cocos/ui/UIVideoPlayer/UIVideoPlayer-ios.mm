@@ -32,11 +32,11 @@
 using namespace cocos2d::ui;
 //-------------------------------------------------------------------------------------
 
-#    include "platform/ios/CCEAGLView-ios.h"
+    #include "platform/ios/CCEAGLView-ios.h"
 #    import <AVKit/AVPlayerViewController.h>
 #    import <CoreMedia/CMTime.h>
-#    include "base/CCDirector.h"
-#    include "platform/CCFileUtils.h"
+    #include "base/CCDirector.h"
+    #include "platform/CCFileUtils.h"
 
 @interface UIVideoViewWrapperIos : NSObject
 
@@ -283,10 +283,10 @@ VideoPlayer::VideoPlayer()
 {
     _videoContext = [[UIVideoViewWrapperIos alloc] init:this];
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode = DrawNode::create();
     addChild(_debugDrawNode);
-#    endif
+    #endif
 }
 
 VideoPlayer::~VideoPlayer()
@@ -366,12 +366,12 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
                                                            scaleFactor)];
     }
 
-#    if CC_VIDEOPLAYER_DEBUG_DRAW
+    #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode->clear();
     auto size         = getContentSize();
     Point vertices[4] = {Point::ZERO, Point(size.width, 0), Point(size.width, size.height), Point(0, size.height)};
     _debugDrawNode->drawPoly(vertices, 4, true, Color4F(1.0, 1.0, 1.0, 1.0));
-#    endif
+    #endif
 }
 
 bool VideoPlayer::isFullScreenEnabled() const

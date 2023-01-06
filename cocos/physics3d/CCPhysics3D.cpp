@@ -27,15 +27,15 @@
 
 #if CC_USE_3D_PHYSICS
 
-#    if (CC_ENABLE_BULLET_INTEGRATION)
+    #if (CC_ENABLE_BULLET_INTEGRATION)
 
 NS_CC_BEGIN
 
 CC_DLL const char* physics3dVersion()
 {
-#        if CC_ENABLE_BULLET_INTEGRATION
+        #if CC_ENABLE_BULLET_INTEGRATION
     return "bullet2.82";
-#        endif
+        #endif
 }
 
 NS_CC_END
@@ -91,6 +91,6 @@ btQuaternion convertQuatTobtQuat(const cocos2d::Quaternion& quat)
     return btQuaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
-#    endif  // CC_ENABLE_BULLET_INTEGRATION
+    #endif  // CC_ENABLE_BULLET_INTEGRATION
 
 #endif  // CC_USE_3D_PHYSICS

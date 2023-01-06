@@ -23,7 +23,7 @@ This file was modified to fit the cocos2d-x project
 #include "base/ccMacros.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    include <cpu-features.h>
+    #include <cpu-features.h>
 #endif
 
 //#define USE_NEON32        : neon 32 code will be used
@@ -34,41 +34,41 @@ This file was modified to fit the cocos2d-x project
 //#define INCLUDE_SSE       : SSE code included
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-#    if defined(__arm64__)
-#        define USE_NEON64
-#        define INCLUDE_NEON64
-#    elif defined(__ARM_NEON__)
-#        define USE_NEON32
-#        define INCLUDE_NEON32
-#    else
-#    endif
+    #if defined(__arm64__)
+        #define USE_NEON64
+        #define INCLUDE_NEON64
+    #elif defined(__ARM_NEON__)
+        #define USE_NEON32
+        #define INCLUDE_NEON32
+    #else
+    #endif
 #elif (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#    if defined(__arm64__) || defined(__aarch64__)
-#        define USE_NEON64
-#        define INCLUDE_NEON64
-#    elif defined(__ARM_NEON__)
-#        define INCLUDE_NEON32
-#    else
-#    endif
+    #if defined(__arm64__) || defined(__aarch64__)
+        #define USE_NEON64
+        #define INCLUDE_NEON64
+    #elif defined(__ARM_NEON__)
+        #define INCLUDE_NEON32
+    #else
+    #endif
 #else
 
 #endif
 
 #if defined(__SSE__)
-#    define USE_SSE
-#    define INCLUDE_SSE
+    #define USE_SSE
+    #define INCLUDE_SSE
 #endif
 
 #ifdef INCLUDE_NEON32
-#    include "math/MathUtilNeon.inl"
+    #include "math/MathUtilNeon.inl"
 #endif
 
 #ifdef INCLUDE_NEON64
-#    include "math/MathUtilNeon64.inl"
+    #include "math/MathUtilNeon64.inl"
 #endif
 
 #ifdef INCLUDE_SSE
-#    include "math/MathUtilSSE.inl"
+    #include "math/MathUtilSSE.inl"
 #endif
 
 #include "math/MathUtil.inl"

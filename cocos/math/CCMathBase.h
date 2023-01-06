@@ -1,18 +1,18 @@
 /****************************************************************************
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- 
- http://www.cocos2d-x.org
- 
+
+ https://axmolengine.github.io/
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,16 +34,16 @@
  */
 
 /**Util macro for conversion from degrees to radians.*/
-#define MATH_DEG_TO_RAD(x)          ((x) * 0.0174532925f)
+#define MATH_DEG_TO_RAD(x) ((x)*0.0174532925f)
 /**Util macro for conversion from radians to degrees.*/
-#define MATH_RAD_TO_DEG(x)          ((x)* 57.29577951f)
+#define MATH_RAD_TO_DEG(x) ((x)*57.29577951f)
 /**
 @{ Util macro for const float such as epsilon, small float and float precision tolerance.
 */
-#define MATH_FLOAT_SMALL            1.0e-37f
-#define MATH_TOLERANCE              2e-37f
-#define MATH_PIOVER2                1.57079632679489661923f
-#define MATH_EPSILON                0.000001f
+#define MATH_FLOAT_SMALL 1.0e-37f
+#define MATH_TOLERANCE 2e-37f
+#define MATH_PIOVER2 1.57079632679489661923f
+#define MATH_EPSILON 0.000001f
 /**@}*/
 
 //#define MATH_PIOVER4                0.785398163397448309616f
@@ -63,9 +63,9 @@
     #define NS_CC_MATH_END                       }
     #define USING_NS_CC_MATH                     using namespace cocos2d
 #else
-    #define NS_CC_MATH_BEGIN 
-    #define NS_CC_MATH_END 
-    #define USING_NS_CC_MATH 
+    #define NS_CC_MATH_BEGIN
+    #define NS_CC_MATH_END
+    #define USING_NS_CC_MATH
 #endif
 
 /**
@@ -73,4 +73,4 @@
  * @}
  */
 
-#endif // __CCMATHBASE_H__
+#endif  // __CCMATHBASE_H__

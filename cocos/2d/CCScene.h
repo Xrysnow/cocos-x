@@ -155,15 +155,15 @@ private:
 
 #if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
 public:
-#    if CC_USE_PHYSICS
+    #if CC_USE_PHYSICS
     /** Get the physics world of the scene.
      * @return The physics world of the scene.
      * @js NA
      */
     PhysicsWorld* getPhysicsWorld() const { return _physicsWorld; }
-#    endif
+    #endif
 
-#    if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+    #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     /** Get the 3d physics world of the scene.
      * @return The 3d physics world of the scene.
      * @js NA
@@ -174,7 +174,7 @@ public:
      * Set Physics3D debug draw camera.
      */
     void setPhysics3DDebugCamera(Camera* camera);
-#    endif
+    #endif
 
     /** Create a scene with physics.
      * @return An autoreleased Scene object with physics.
@@ -189,14 +189,14 @@ public:
 protected:
     void addChildToPhysicsWorld(Node* child);
 
-#    if CC_USE_PHYSICS
+    #if CC_USE_PHYSICS
     PhysicsWorld* _physicsWorld = nullptr;
-#    endif
+    #endif
 
-#    if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+    #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     Physics3DWorld* _physics3DWorld = nullptr;
     Camera* _physics3dDebugCamera   = nullptr;
-#    endif
+    #endif
 #endif  // (CC_USE_PHYSICS || CC_USE_3D_PHYSICS)
 
 #if CC_USE_NAVMESH

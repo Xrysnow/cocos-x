@@ -39,12 +39,12 @@
 #include <fcntl.h>
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#    include <io.h>
-#    if defined(__MINGW32__)
-#        include "platform/win32/inet_pton_mingw.h"
-#    endif
-#    define bzero(a, b) memset(a, 0, b)
-#    include "ntcvt/ntcvt.hpp"
+    #include <io.h>
+    #if defined(__MINGW32__)
+        #include "platform/win32/inet_pton_mingw.h"
+    #endif
+    #define bzero(a, b) memset(a, 0, b)
+    #include "ntcvt/ntcvt.hpp"
 #endif
 
 #include "base/CCDirector.h"
@@ -54,19 +54,20 @@
 #include "2d/CCScene.h"
 #include "platform/CCFileUtils.h"
 #include "renderer/CCTextureCache.h"
-#include "base/base64.h"
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
 
 // !FIXME: the previous version of cocos2d::log not thread safe
 // since axmol make it multi-threading safe by default
 #if !defined(CC_LOG_MULTITHREAD)
-#    define CC_LOG_MULTITHREAD 1
+    #define CC_LOG_MULTITHREAD 1
 #endif
 
 #if !defined(CC_LOG_TO_CONSOLE)
-#    define CC_LOG_TO_CONSOLE 1
+    #define CC_LOG_TO_CONSOLE 1
 #endif
+
+#define CC_VSNPRINTF_BUFFER_LENGTH 512
 
 NS_CC_BEGIN
 
@@ -121,17 +122,9 @@ void SendLogToWindow(const char* log)
 #endif
 }  // namespace
 
-void log(const char* format, ...)
-{
-#define CC_VSNPRINTF_BUFFER_LENGTH 512
-    va_list args;
-
-    va_start(args, format);
-    auto buf = StringUtils::vformat(format, args);
-    va_end(args);
-
+static void print_impl(std::string& buf) {
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-    __android_log_print(ANDROID_LOG_DEBUG, "axmol debug info", "%s", buf.c_str());
+    __android_log_print(ANDROID_LOG_DEBUG, "cocos2dx debug info", "%s", buf.c_str());
 
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
     buf.push_back('\n');
@@ -141,7 +134,7 @@ void log(const char* format, ...)
 
     OutputDebugStringW(wbuf.c_str());
 
-#    if CC_LOG_TO_CONSOLE
+    #if CC_LOG_TO_CONSOLE
     auto hStdout = ::GetStdHandle(STD_OUTPUT_HANDLE);
     if (hStdout)
     {
@@ -151,12 +144,12 @@ void log(const char* format, ...)
         DWORD wcch = static_cast<DWORD>(wbuf.size());
         ::WriteConsoleW(hStdout, wbuf.c_str(), wcch, nullptr, 0);
     }
-#    endif
+    #endif
 
-#    if !CC_LOG_MULTITHREAD
+    #if !CC_LOG_MULTITHREAD
     // print to log window
     SendLogToWindow(buf.c_str());
-#    endif
+    #endif
 #else
     buf.push_back('\n');
     // Linux, Mac, iOS, etc
@@ -165,8 +158,30 @@ void log(const char* format, ...)
 #endif
 
 #if !CC_LOG_MULTITHREAD
-    Director::getInstance()->getConsole()->log(buf.c_str());
+    Director::getInstance()->getConsole()->print(buf.c_str());
 #endif
+}
+
+void print(const char* format, ...)
+{
+    va_list args;
+
+    va_start(args, format);
+    auto buf = StringUtils::vformat(format, args);
+    va_end(args);
+
+    print_impl(buf);
+}
+
+void log(const char* format, ...)
+{
+    va_list args;
+
+    va_start(args, format);
+    auto buf = StringUtils::vformat(format, args);
+    va_end(args);
+
+    print_impl(buf);
 }
 
 // FIXME: Deprecated
@@ -568,7 +583,7 @@ bool Console::listenOnTCP(int port)
         char buf[INET_ADDRSTRLEN] = {0};
         struct sockaddr_in* sin   = (struct sockaddr_in*)res->ai_addr;
         if (inet_ntop(res->ai_family, &sin->sin_addr, buf, sizeof(buf)) != nullptr)
-            cocos2d::log("Console: IPV4 server is listening on %s:%d", buf, ntohs(sin->sin_port));
+            cocos2d::print("Console: IPV4 server is listening on %s:%d", buf, ntohs(sin->sin_port));
         else
             perror("inet_ntop");
     }
@@ -578,7 +593,7 @@ bool Console::listenOnTCP(int port)
         char buf[INET6_ADDRSTRLEN] = {0};
         struct sockaddr_in6* sin   = (struct sockaddr_in6*)res->ai_addr;
         if (inet_ntop(res->ai_family, &sin->sin6_addr, buf, sizeof(buf)) != nullptr)
-            cocos2d::log("Console: IPV6 server is listening on [%s]:%d", buf, ntohs(sin->sin6_port));
+            cocos2d::print("Console: IPV6 server is listening on [%s]:%d", buf, ntohs(sin->sin6_port));
         else
             perror("inet_ntop");
     }
@@ -591,7 +606,7 @@ bool Console::listenOnFileDescriptor(int fd)
 {
     if (_running)
     {
-        cocos2d::log("Console already started. 'stop' it before calling 'listen' again");
+        cocos2d::print("Console already started. 'stop' it before calling 'listen' again");
         return false;
     }
 
@@ -692,7 +707,7 @@ void Console::delSubCommand(Command& cmd, std::string_view subCmdName)
     cmd.delSubCommand(subCmdName);
 }
 
-void Console::log(const char* buf)
+void Console::print(const char* buf)
 {
     if (_sendDebugStrings)
     {
@@ -741,7 +756,7 @@ void Console::loop()
         {
             /* error */
             if (errno != EINTR)
-                cocos2d::log("Abnormal error in select()\n");
+                cocos2d::print("Abnormal error in select()\n");
             continue;
         }
         else if (nready == 0)
@@ -1551,7 +1566,7 @@ void Console::commandUpload(socket_native_type fd)
         }
         unsigned char* decode;
         unsigned char* in = (unsigned char*)data;
-        int dt            = base64Decode(in, 4, &decode);
+        int dt            = utils::base64Decode(in, 4, &decode);
         if (dt > 0)
         {
             fs->write(decode, dt);

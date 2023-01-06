@@ -40,7 +40,7 @@ THE SOFTWARE.
 #include "base/ccUTF8.h"
 #include "2d/CCCamera.h"
 #if CC_ICON_SET_SUPPORT
-#    include "platform/CCImage.h"
+    #include "platform/CCImage.h"
 #endif /* CC_ICON_SET_SUPPORT */
 #include "renderer/backend/metal/DeviceMTL.h"
 #include "renderer/CCRenderer.h"

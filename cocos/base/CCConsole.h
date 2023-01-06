@@ -29,11 +29,11 @@
 /// @cond DO_NOT_SHOW
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#    include <basetsd.h>
-#    ifndef __SSIZE_T
-#        define __SSIZE_T
+    #include <basetsd.h>
+    #ifndef __SSIZE_T
+        #define __SSIZE_T
 typedef SSIZE_T ssize_t;
-#    endif  // __SSIZE_T
+    #endif  // __SSIZE_T
 #endif
 
 #include <thread>
@@ -58,7 +58,9 @@ static const int MAX_LOG_LENGTH = 16 * 1024;
 /**
  @brief Output Debug message.
  */
-void CC_DLL log(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
+void CC_DLL print(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
+
+/* CC_DEPRECATED_ATTRIBUTE*/ void CC_DLL log(const char* format, ...) CC_FORMAT_PRINTF(1, 2);  // use print instead
 
 /** Console is helper class that lets the developer control the game from TCP connection.
  Console will spawn a new thread that will listen to a specified TCP port.
@@ -195,8 +197,10 @@ public:
     void delSubCommand(std::string_view cmdName, std::string_view subCmdName);
     void delSubCommand(Command& cmd, std::string_view subCmdName);
 
-    /** log something in the console */
-    void log(const char* buf);
+    /** print something in the console */
+    void print(const char* buf);
+
+    CC_DEPRECATED_ATTRIBUTE void log(const char* buf) { print(buf); }
 
     /**
      * set bind address

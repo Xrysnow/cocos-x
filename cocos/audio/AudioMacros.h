@@ -40,19 +40,19 @@
 // log, CCLOG aren't threadsafe, since we uses sub threads for parsing pcm data, threadsafe log output
 // is needed. Define the following macros (ALOGV, ALOGD, ALOGI, ALOGW, ALOGE) for threadsafe log output.
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#    include "base/ccUTF8.h"  // for StringUtils::format
-#    define AUDIO_LOG(fmt, ...) OutputDebugStringA(StringUtils::format((fmt "\r\n"), ##__VA_ARGS__).c_str())
+    #include "base/ccUTF8.h"  // for StringUtils::format
+    #define AUDIO_LOG(fmt, ...) OutputDebugStringA(StringUtils::format((fmt "\r\n"), ##__VA_ARGS__).c_str())
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#    include <android/log.h>
-#    define AUDIO_LOG(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine", fmt, ##__VA_ARGS__)
+    #include <android/log.h>
+    #define AUDIO_LOG(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, "AudioEngine", fmt, ##__VA_ARGS__)
 #else  // other platforms
-#    define AUDIO_LOG(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+    #define AUDIO_LOG(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 #endif
 
 #if defined(CC_DEBUG) && CC_DEBUG > 0
-#    define ALOGV(fmt, ...) AUDIO_LOG("V/" LOG_TAG " (" QUOTEME(__LINE__) "): " fmt "", ##__VA_ARGS__)
+    #define ALOGV(fmt, ...) AUDIO_LOG("V/" LOG_TAG " (" QUOTEME(__LINE__) "): " fmt "", ##__VA_ARGS__)
 #else
-#    define ALOGV(fmt, ...) \
+    #define ALOGV(fmt, ...) \
         do                  \
         {                   \
         } while (false)
@@ -63,7 +63,7 @@
 #define ALOGE(fmt, ...) AUDIO_LOG("E/" LOG_TAG " (" QUOTEME(__LINE__) "): " fmt "", ##__VA_ARGS__)
 
 #if defined(CC_DEBUG) && CC_DEBUG > 0
-#    define CHECK_AL_ERROR_DEBUG()                                                                     \
+    #define CHECK_AL_ERROR_DEBUG()                                                                     \
         do                                                                                             \
         {                                                                                              \
             ALenum __error = alGetError();                                                             \
@@ -73,7 +73,7 @@
             }                                                                                          \
         } while (false)
 #else
-#    define CHECK_AL_ERROR_DEBUG()
+    #define CHECK_AL_ERROR_DEBUG()
 #endif
 
 #define BREAK_IF(condition) \

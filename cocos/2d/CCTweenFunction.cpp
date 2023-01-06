@@ -35,7 +35,7 @@ namespace tweenfunc
 {
 
 #ifndef M_PI_X_2
-#    define M_PI_X_2 (float)M_PI * 2.0f
+    #define M_PI_X_2 (float)M_PI * 2.0f
 #endif
 
 float tweenTo(float time, TweenType type, float* easingParam)

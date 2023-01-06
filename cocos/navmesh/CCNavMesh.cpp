@@ -26,15 +26,15 @@
 #include "navmesh/CCNavMesh.h"
 #if CC_USE_NAVMESH
 
-#    include "platform/CCFileUtils.h"
-#    include "renderer/CCRenderer.h"
-#    include "recast/DetourCommon.h"
-#    include "recast/DetourDebugDraw.h"
-#    include <sstream>
+    #include "platform/CCFileUtils.h"
+    #include "renderer/CCRenderer.h"
+    #include "recast/DetourCommon.h"
+    #include "recast/DetourDebugDraw.h"
+    #include <sstream>
 
 NS_CC_BEGIN
 
-#    pragma pack(push, 1)
+    #pragma pack(push, 1)
 struct TileCacheSetHeader
 {
     int32_t magic;
@@ -49,7 +49,7 @@ struct TileCacheTileHeader
     dtCompressedTileRef tileRef;
     int32_t dataSize;
 };
-#    pragma pack(pop)
+    #pragma pack(pop)
 
 static unsigned char* parseRow(unsigned char* buf, unsigned char* bufEnd, char* row, int len)
 {

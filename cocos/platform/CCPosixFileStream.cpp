@@ -3,7 +3,7 @@
 #include "platform/CCPosixFileStream.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#    include "base/ZipUtils.h"
+    #include "base/ZipUtils.h"
 #endif
 
 #include <sys/stat.h>

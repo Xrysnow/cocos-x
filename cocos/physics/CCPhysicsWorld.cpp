@@ -25,21 +25,21 @@
 
 #include "physics/CCPhysicsWorld.h"
 #if CC_USE_PHYSICS
-#    include <algorithm>
-#    include <climits>
+    #include <algorithm>
+    #include <climits>
 
-#    include "chipmunk/chipmunk_private.h"
-#    include "physics/CCPhysicsBody.h"
-#    include "physics/CCPhysicsShape.h"
-#    include "physics/CCPhysicsContact.h"
-#    include "physics/CCPhysicsJoint.h"
-#    include "physics/CCPhysicsHelper.h"
+    #include "chipmunk/chipmunk_private.h"
+    #include "physics/CCPhysicsBody.h"
+    #include "physics/CCPhysicsShape.h"
+    #include "physics/CCPhysicsContact.h"
+    #include "physics/CCPhysicsJoint.h"
+    #include "physics/CCPhysicsHelper.h"
 
-#    include "2d/CCDrawNode.h"
-#    include "2d/CCScene.h"
-#    include "base/CCDirector.h"
-#    include "base/CCEventDispatcher.h"
-#    include "base/CCEventCustom.h"
+    #include "2d/CCDrawNode.h"
+    #include "2d/CCScene.h"
+    #include "base/CCDirector.h"
+    #include "base/CCEventDispatcher.h"
+    #include "base/CCEventCustom.h"
 
 NS_CC_BEGIN
 const float PHYSICS_INFINITY = FLT_MAX;
@@ -518,12 +518,12 @@ bool PhysicsWorld::init()
 {
     do
     {
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
         _cpSpace = cpSpaceNew();
-#    else
+    #else
         _cpSpace = cpHastySpaceNew();
         cpHastySpaceSetThreads(_cpSpace, 0);
-#    endif
+    #endif
         CC_BREAK_IF(_cpSpace == nullptr);
 
         cpSpaceSetGravity(_cpSpace, PhysicsHelper::vec22cpv(_gravity));
@@ -939,11 +939,11 @@ void PhysicsWorld::update(float delta, bool userCall /* = false*/)
 
     if (userCall)
     {
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
         cpSpaceStep(_cpSpace, delta);
-#    else
+    #else
         cpHastySpaceStep(_cpSpace, delta);
-#    endif
+    #endif
     }
     else
     {
@@ -955,11 +955,11 @@ void PhysicsWorld::update(float delta, bool userCall /* = false*/)
             while (_updateTime > step)
             {
                 _updateTime -= step;
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
                 cpSpaceStep(_cpSpace, dt);
-#    else
+    #else
                 cpHastySpaceStep(_cpSpace, dt);
-#    endif
+    #endif
             }
         }
         else
@@ -969,11 +969,11 @@ void PhysicsWorld::update(float delta, bool userCall /* = false*/)
                 const float dt = _updateTime * _speed / _substeps;
                 for (int i = 0; i < _substeps; ++i)
                 {
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
                     cpSpaceStep(_cpSpace, dt);
-#    else
+    #else
                     cpHastySpaceStep(_cpSpace, dt);
-#    endif
+    #endif
                     for (auto&& body : _bodies)
                     {
                         body->update(dt);
@@ -1035,11 +1035,11 @@ PhysicsWorld::~PhysicsWorld()
     removeAllBodies();
     if (_cpSpace)
     {
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
         cpSpaceFree(_cpSpace);
-#    else
+    #else
         cpHastySpaceFree(_cpSpace);
-#    endif
+    #endif
     }
     CC_SAFE_RELEASE_NULL(_debugDraw);
 }

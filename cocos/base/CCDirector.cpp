@@ -67,17 +67,8 @@ THE SOFTWARE.
 #endif
 
 #if CC_ENABLE_SCRIPT_BINDING
-#include "base/CCScriptSupport.h"
+    #include "base/CCScriptSupport.h"
 #endif
-
-/**
- Position of the FPS
- 
- Default: 0,0 (bottom-left corner)
- */
-#ifndef CC_DIRECTOR_STATS_POSITION
-#define CC_DIRECTOR_STATS_POSITION Director::getInstance()->getVisibleOrigin()
-#endif // CC_DIRECTOR_STATS_POSITION
 
 using namespace std;
 
@@ -88,7 +79,6 @@ NS_CC_BEGIN
 static Director* s_SharedDirector = nullptr;
 
 #define kDefaultFPS 60  // 60 frames per second
-extern const char* cocos2dVersion();
 
 const char* Director::EVENT_BEFORE_SET_NEXT_SCENE = "director_before_set_next_scene";
 const char* Director::EVENT_AFTER_SET_NEXT_SCENE  = "director_after_set_next_scene";
@@ -206,7 +196,7 @@ void Director::setDefaultValues()
     Configuration* conf = Configuration::getInstance();
 
     // default FPS
-    float fps = conf->getValue("cocos2d.x.fps", Value(kDefaultFPS)).asFloat();
+    float fps             = conf->getValue("cocos2d.x.fps", Value(kDefaultFPS)).asFloat();
     _oldAnimationInterval = _animationInterval = 1.0f / fps;
 
     // Display FPS
@@ -371,7 +361,7 @@ void Director::calculateDeltaTime()
         _deltaTime = MAX(0, _deltaTime);
     }
 
-#if COCOS2D_DEBUG
+#if CC_DEBUG
     // If we are debugging our code, prevent big delta time
     if (_deltaTime > 0.2f)
     {
@@ -1151,8 +1141,10 @@ void Director::pause()
 
     _oldAnimationInterval = _animationInterval;
 
+#if CC_REDUCE_PAUSED_CPU_USAGE
     // when paused, don't consume CPU
     setAnimationInterval(1 / 4.0, SetIntervalReason::BY_DIRECTOR_PAUSE);
+#endif
     _paused = true;
 }
 
@@ -1163,7 +1155,9 @@ void Director::resume()
         return;
     }
 
+#if CC_REDUCE_PAUSED_CPU_USAGE
     setAnimationInterval(_oldAnimationInterval, SetIntervalReason::BY_ENGINE);
+#endif
 
     _paused    = false;
     _deltaTime = 0;

@@ -100,7 +100,7 @@ static ALenum alSourceAddNotificationExt(ALuint sid,
     return AL_INVALID_VALUE;
 }
 
-#    if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+    #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
 @interface AudioEngineSessionHandler : NSObject {
 }
 
@@ -237,7 +237,7 @@ static ALenum alSourceAddNotificationExt(ALuint sid,
 @end
 
 static id s_AudioEngineSessionHandler = nullptr;
-#    endif
+    #endif
 
 ALvoid AudioEngineImpl::myAlSourceNotificationCallback(ALuint sid, ALuint notificationID, ALvoid* userData)
 {

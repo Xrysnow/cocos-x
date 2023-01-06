@@ -3,7 +3,7 @@ Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
-http://www.cocos2d-x.org
+https://axmolengine.github.io/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,15 +30,13 @@ THE SOFTWARE.
 #include "platform/CCPlatformConfig.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
-#include "platform/mac/CCPlatformDefine-mac.h"
+    #include "platform/mac/CCPlatformDefine-mac.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_IOS
-#include "platform/ios/CCPlatformDefine-ios.h"
+    #include "platform/ios/CCPlatformDefine-ios.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#include "platform/android/CCPlatformDefine-android.h"
+    #include "platform/android/CCPlatformDefine-android.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#include "platform/win32/CCPlatformDefine-win32.h"
+    #include "platform/win32/CCPlatformDefine-win32.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
-#include "platform/linux/CCPlatformDefine-linux.h"
+    #include "platform/linux/CCPlatformDefine-linux.h"
 #endif
-
-

@@ -28,12 +28,12 @@
 #include "platform/CCPlatformConfig.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
 
-#    include "base/ccMacros.h"
-#    include "base/CCEventDispatcher.h"
-#    include "base/CCEventController.h"
-#    include "base/CCEventListenerController.h"
-#    include "base/CCDirector.h"
-#    include "2d/CCLabel.h"
+    #include "base/ccMacros.h"
+    #include "base/CCEventDispatcher.h"
+    #include "base/CCEventController.h"
+    #include "base/CCEventListenerController.h"
+    #include "base/CCDirector.h"
+    #include "2d/CCLabel.h"
 
 #    import <GameController/GameController.h>
 
@@ -325,7 +325,7 @@ void Controller::registerListeners()
           }
         };
     }
-#    if defined(CC_TARGET_OS_TVOS)
+    #if defined(CC_TARGET_OS_TVOS)
     else if (_impl->_gcController.microGamepad != nil)
     {
         _impl->_gcController.microGamepad.dpad.up.valueChangedHandler =
@@ -360,7 +360,7 @@ void Controller::registerListeners()
           }
         };
     }
-#    endif
+    #endif
 
     _impl->_gcController.controllerPausedHandler = ^(GCController* gcCon) {
       auto iter = std::find_if(s_allController.begin(), s_allController.end(),

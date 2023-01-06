@@ -24,7 +24,7 @@
 #define MATHUTIL_H_
 
 #ifdef __SSE__
-#    include <xmmintrin.h>
+    #include <xmmintrin.h>
 #endif
 
 #include "math/CCMathBase.h"

@@ -17,11 +17,11 @@ DEALINGS IN THE SOFTWARE.
  */
 #pragma once
 #ifndef _CCMAT3_H_
-#    define _CCMAT3_H_
+    #define _CCMAT3_H_
 
-#    include "base/ccMacros.h"
-#    include "math/Vec3.h"
-#    include "math/Vec4.h"
+    #include "base/ccMacros.h"
+    #include "math/Vec3.h"
+    #include "math/Vec4.h"
 
 NS_CC_MATH_BEGIN
 

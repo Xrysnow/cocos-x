@@ -29,18 +29,18 @@
 
 CC_BACKEND_BEGIN
 
-ShaderModuleMTL::ShaderModuleMTL(id<MTLDevice> mtlDevice, ShaderStage stage, const std::string& source)
+ShaderModuleMTL::ShaderModuleMTL(id<MTLDevice> mtlDevice, ShaderStage stage, std::string_view source)
     : ShaderModule(stage)
 {
     // Convert GLSL shader to metal shader
     // TODO: don't crreate/destroy ctx every time.
     glslopt_ctx* ctx               = glslopt_initialize(kGlslTargetMetal);
     glslopt_shader_type shaderType = stage == ShaderStage::VERTEX ? kGlslOptShaderVertex : kGlslOptShaderFragment;
-    glslopt_shader* glslShader = glslopt_optimize(ctx, shaderType, source.c_str(), 0);
+    glslopt_shader* glslShader     = glslopt_optimize(ctx, shaderType, source.data(), 0);
     if (!glslShader)
     {
         NSLog(@"Can not translate GLSL shader to metal shader:");
-        NSLog(@"%s", source.c_str());
+        NSLog(@"%s", source.data());
         return;
     }
 
@@ -48,7 +48,7 @@ ShaderModuleMTL::ShaderModuleMTL(id<MTLDevice> mtlDevice, ShaderStage stage, con
     if (!metalShader)
     {
         NSLog(@"Can not get metal shader:");
-        NSLog(@"%s", source.c_str());
+        NSLog(@"%s", source.data());
         glslopt_cleanup(ctx);
         return;
     }
@@ -160,7 +160,7 @@ int ShaderModuleMTL::getUniformLocation(Uniform name) const
     return _uniformLocation[name];
 }
 
-int ShaderModuleMTL::getUniformLocation(const std::string& name) const
+int ShaderModuleMTL::getUniformLocation(std::string_view name) const
 {
     auto iter = _uniformInfos.find(name);
     if (iter != _uniformInfos.end())
@@ -202,14 +202,14 @@ void ShaderModuleMTL::setBuiltinUniformLocation()
         _uniformLocation[Uniform::EFFECT_TYPE] = iter->second.location;
     }
 
-    ///u_texture
+    /// u_tex0
     iter = _uniformInfos.find(UNIFORM_NAME_TEXTURE);
     if (iter != _uniformInfos.end())
     {
         _uniformLocation[Uniform::TEXTURE] = iter->second.location;
     }
 
-    ///u_texture1
+    /// u_tex1
     iter = _uniformInfos.find(UNIFORM_NAME_TEXTURE1);
     if (iter != _uniformInfos.end())
     {
@@ -222,7 +222,7 @@ int ShaderModuleMTL::getAttributeLocation(Attribute name) const
     return _attributeLocation[name];
 }
 
-int ShaderModuleMTL::getAttributeLocation(std::string name)
+int ShaderModuleMTL::getAttributeLocation(std::string_view name)
 {
     auto iter = _attributeInfo.find(name);
     if (iter != _attributeInfo.end())

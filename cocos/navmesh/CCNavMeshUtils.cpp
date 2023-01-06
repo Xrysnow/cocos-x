@@ -25,9 +25,9 @@
 #include "navmesh/CCNavMeshUtils.h"
 #if CC_USE_NAVMESH
 
-#    include "recast/DetourCommon.h"
-#    include "recast/DetourNavMeshBuilder.h"
-#    include "lz4/lz4.h"
+    #include "recast/DetourCommon.h"
+    #include "recast/DetourNavMeshBuilder.h"
+    #include "lz4/lz4.h"
 
 NS_CC_BEGIN
 
