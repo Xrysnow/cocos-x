@@ -25,8 +25,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#ifndef __CCPARALLCC_NODE_H__
-#define __CCPARALLCC_NODE_H__
+#ifndef __CCPARALLAX_NODE_H__
+#define __CCPARALLAX_NODE_H__
 
 #include "2d/CCNode.h"
 /*#include "ccArray.h"*/
@@ -115,4 +115,4 @@ private:
 
 NS_CC_END
 
-#endif  //__CCPARALLCC_NODE_H__
+#endif  //__CCPARALLAX_NODE_H__

@@ -394,10 +394,12 @@ public:                                                             \
     #define UTILS_UNLIKELY(exp) (!!(exp))
 #endif
 
+#ifndef CC_DEBUG
 #ifdef COCOS2D_DEBUG
     #define CC_DEBUG COCOS2D_DEBUG
 #else
     #define CC_DEBUG 0
+#endif
 #endif
 
 #endif // __CC_PLATFORM_MACROS_H__
