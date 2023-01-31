@@ -819,7 +819,7 @@ void WebViewImpl::setBackgroundTransparent()
     _systemWebControl->setBackgroundTransparent();
 }
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 //
 // Implement Win32WebControl

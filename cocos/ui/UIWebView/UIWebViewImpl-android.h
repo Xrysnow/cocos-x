@@ -43,7 +43,7 @@ namespace ui
 {
 class WebView;
 }
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 NS_CC_BEGIN
 
@@ -110,6 +110,6 @@ private:
 };
 
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 /// @endcond

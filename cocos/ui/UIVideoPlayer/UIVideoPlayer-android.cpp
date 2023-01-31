@@ -39,7 +39,7 @@
 
 //-----------------------------------------------------------------------------------------------------------
 
-static const char* videoHelperClassName = "org.axmol.lib.VideoHelper";
+static const char* videoHelperClassName = "org.cocos2dx.lib.VideoHelper";
 
 USING_NS_CC;
 
@@ -48,7 +48,7 @@ static void executeVideoCallback(int index, int event);
     #define QUIT_FULLSCREEN 1000
 
 extern "C" {
-JNIEXPORT void JNICALL Java_org_axmol_lib_VideoHelper_nativeExecuteVideoCallback(JNIEnv*,
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_VideoHelper_nativeExecuteVideoCallback(JNIEnv*,
                                                                                             jclass,
                                                                                             jint index,
                                                                                             jint event)

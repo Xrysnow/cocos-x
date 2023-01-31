@@ -118,6 +118,6 @@ protected:
 extern EditBoxImpl* __createSystemEditBox(EditBox* pEditBox);
 
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 #endif /* __UIEditBoxIMPL_H__ */

@@ -129,7 +129,7 @@ using ProgramCache = ProgramManager; // for compatible
 CC_BACKEND_END
 
 /**
-* @alias some feq use types to namespace ax
+* @alias some feq use types to namespace cocos2d
 */
 
 NS_CC_BEGIN

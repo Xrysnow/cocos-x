@@ -32,7 +32,7 @@ NS_CC_BEGIN
 
 class MeshVertexData;
 class MeshIndexData;
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 CC_BACKEND_BEGIN
 

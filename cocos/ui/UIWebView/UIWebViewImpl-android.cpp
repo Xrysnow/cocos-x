@@ -37,7 +37,7 @@
 #include "ui/UIHelper.h"
 #include "yasio/stl/string_view.hpp"
 
-static const char* className = "org.axmol.lib.WebViewHelper";
+static const char* className = "org.cocos2dx.lib.WebViewHelper";
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "", __VA_ARGS__)
 
@@ -86,7 +86,7 @@ extern "C" {
  * Method:    shouldStartLoading
  * Signature: (ILjava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_axmol_lib_WebViewHelper_shouldStartLoading(JNIEnv* env,
+JNIEXPORT jboolean JNICALL Java_org_cocos2dx_lib_WebViewHelper_shouldStartLoading(JNIEnv* env,
                                                                                           jclass,
                                                                                           jint index,
                                                                                           jstring jurl)
@@ -102,7 +102,7 @@ JNIEXPORT jboolean JNICALL Java_org_axmol_lib_WebViewHelper_shouldStartLoading(J
  * Method:    didFinishLoading
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_axmol_lib_WebViewHelper_didFinishLoading(JNIEnv* env,
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_WebViewHelper_didFinishLoading(JNIEnv* env,
                                                                                     jclass,
                                                                                     jint index,
                                                                                     jstring jurl)
@@ -119,7 +119,7 @@ JNIEXPORT void JNICALL Java_org_axmol_lib_WebViewHelper_didFinishLoading(JNIEnv*
  * Method:    didFailLoading
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_axmol_lib_WebViewHelper_didFailLoading(JNIEnv* env,
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_WebViewHelper_didFailLoading(JNIEnv* env,
                                                                                   jclass,
                                                                                   jint index,
                                                                                   jstring jurl)
@@ -136,7 +136,7 @@ JNIEXPORT void JNICALL Java_org_axmol_lib_WebViewHelper_didFailLoading(JNIEnv* e
  * Method:    onJsCallback
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_axmol_lib_WebViewHelper_onJsCallback(JNIEnv* env,
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_WebViewHelper_onJsCallback(JNIEnv* env,
                                                                                 jclass,
                                                                                 jint index,
                                                                                 jstring jmessage)
@@ -367,4 +367,4 @@ void WebViewImpl::setBounces(bool bounces)
     // empty function as this was mainly a fix for iOS
 }
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d

@@ -1137,4 +1137,4 @@ void DownloaderCURL::_onDownloadFinished(DownloadTask& task, int checkState)
 }
 
 }  // namespace network
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d

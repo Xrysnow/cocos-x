@@ -250,7 +250,7 @@ private:
 };
 
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 #endif
 

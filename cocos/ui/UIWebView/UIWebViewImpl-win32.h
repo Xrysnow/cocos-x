@@ -44,7 +44,7 @@ namespace ui
 class WebView;
 }
 
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 class Win32WebControl;
 
@@ -90,7 +90,7 @@ private:
     WebView* _webView;
 };
 }  // namespace ui
-NS_CC_END  // namespace ax
+NS_CC_END  // namespace cocos2d
 
 #endif  // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 
