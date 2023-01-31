@@ -624,7 +624,7 @@ void Renderer::render()
 bool Renderer::beginFrame()
 {
 #ifdef CC_USE_GFX
-	_filledVertex = 0;
+    _filledVertex = 0;
     _filledIndex = 0;
 #endif
     return _commandBuffer->beginFrame();
@@ -916,8 +916,8 @@ void Renderer::drawBatchedTriangles()
         size_t iCurrent = 0;
         for (auto& c : tb.cmds)
         {
-	        const auto vcount = c->getVertexCount();
-	        const auto icount = c->getIndexCount();
+            const auto vcount = c->getVertexCount();
+            const auto icount = c->getIndexCount();
             memcpy(vbuffer + vCurrent,
                 c->getVertices(),
                 sizeof(V3F_C4B_T2F) * vcount);
@@ -1182,11 +1182,16 @@ void Renderer::readPixels(backend::RenderTarget* rt,
 
 void Renderer::beginRenderPass()
 {
+#ifdef CC_USE_GFX
+    // CommandBufferGFX::beginRenderPass requires viewport
+    _commandBuffer->setViewport(_viewport.x, _viewport.y, _viewport.w, _viewport.h);
+#endif // CC_USE_GFX
     _commandBuffer->beginRenderPass(_currentRT, _renderPassDesc);
     _commandBuffer->updateDepthStencilState(_dsDesc);
     _commandBuffer->setStencilReferenceValue(_stencilRef);
-
+#ifndef CC_USE_GFX
     _commandBuffer->setViewport(_viewport.x, _viewport.y, _viewport.w, _viewport.h);
+#endif // !CC_USE_GFX
     _commandBuffer->setCullMode(_cullMode);
     _commandBuffer->setWinding(_winding);
     _commandBuffer->setScissorRect(_scissorState.isEnabled, _scissorState.rect.x, _scissorState.rect.y,
