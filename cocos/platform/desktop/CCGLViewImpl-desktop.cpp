@@ -1180,6 +1180,11 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
 {
     if (w && h && _resolutionPolicy != ResolutionPolicy::UNKNOWN)
     {
+        const float frameWidth  = w / _frameZoomFactor;
+        const float frameHeight = h / _frameZoomFactor;
+        setFrameSize(frameWidth, frameHeight);
+        Director::getInstance()->setViewport();
+
         /*
          x-studio spec, fix view size incorrect when window size changed.
          The original code behavior:
