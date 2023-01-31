@@ -38,7 +38,7 @@
 #define TIME_DELAY_PRECISION 0.0001
 
 #ifdef ERROR
-#    undef ERROR
+    #undef ERROR
 #endif  // ERROR
 
 USING_NS_CC;

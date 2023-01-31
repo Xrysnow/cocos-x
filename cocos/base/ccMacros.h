@@ -320,7 +320,7 @@ It should work same as apples CFSwapInt32LittleToHost(..)
     #if defined(_MSC_VER) && _MSC_VER >= 1300 && !defined(__INTEL_COMPILER)
 // If MSVC has "/RTCc" set, it will complain about truncating casts at
 // runtime.  This file contains some intentional truncating casts.
-#        pragma runtime_checks("c", off)
+        #pragma runtime_checks("c", off)
     #endif
 #else
     #ifdef __APPLE__

@@ -37,7 +37,7 @@
 #include <unordered_map>
 
 #ifdef ERROR
-#    undef ERROR
+    #undef ERROR
 #endif  // ERROR
 
 /**
