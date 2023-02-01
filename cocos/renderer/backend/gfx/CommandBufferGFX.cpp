@@ -26,7 +26,6 @@ CommandBufferGFX::CommandBufferGFX()
 	Director::getInstance()->getEventDispatcher()->addCustomEventListener(
 		"glview_window_resized", [this](EventCustom*)
 	{
-		log("Screen Resized");
 		_screenResized = true;
 	});
 }
@@ -40,6 +39,11 @@ CommandBufferGFX::~CommandBufferGFX()
 	{
 		CC_SAFE_DELETE(it.second);
 	}
+	for (auto& p : swapchains)
+	{
+		delete p;
+	}
+	swapchains.clear();
 }
 
 bool CommandBufferGFX::beginFrame()
