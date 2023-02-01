@@ -315,6 +315,8 @@ void CommandBufferGFX::setProgramState(ProgramState* programState)
 void CommandBufferGFX::drawArrays(
 	PrimitiveType primitiveType, std::size_t start, std::size_t count, bool wireframe)
 {
+	if (_screenResized)
+		return;
 	auto attributes = getAttributesFromProgramState(_programState);
 	if (attributes.empty())
 		attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
@@ -350,6 +352,8 @@ void CommandBufferGFX::drawArrays(
 void CommandBufferGFX::drawElements(
 	PrimitiveType primitiveType, IndexFormat indexType, std::size_t count, std::size_t offset, bool wireframe)
 {
+	if (_screenResized)
+		return;
 	auto attributes = getAttributesFromProgramState(_programState);
 	if (attributes.empty())
 		attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
