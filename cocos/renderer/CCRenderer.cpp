@@ -389,6 +389,7 @@ Renderer::~Renderer()
 
 #ifdef CC_USE_GFX
     delete[] _triBatchesToDraw;
+    GlobalTriangleBufferPool.reset();
 #else
     free(_triBatchesToDraw);
 #endif
