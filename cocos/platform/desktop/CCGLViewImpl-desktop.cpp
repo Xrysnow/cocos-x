@@ -1204,7 +1204,7 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
 
 void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* /*window*/, int iconified)
 {
-    if (iconified == GL_TRUE)
+    if (iconified == GLFW_TRUE)
     {
         Application::getInstance()->applicationDidEnterBackground();
     }
@@ -1216,7 +1216,7 @@ void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* /*window*/, int iconifi
 
 void GLViewImpl::onGLFWWindowFocusCallback(GLFWwindow* /*window*/, int focused)
 {
-    if (focused == GL_TRUE)
+    if (focused == GLFW_TRUE)
     {
         Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_FOCUSED, nullptr);
     }
