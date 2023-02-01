@@ -16,6 +16,7 @@ public:
 	static DeviceGFX* getInstance();
 	static void setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width, uint32_t height);
 	static bool isAvailable();
+	static void destroy();
 
 	enum API : uint32_t {
 		UNKNOWN,

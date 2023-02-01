@@ -186,6 +186,10 @@ Director::~Director()
     ScriptEngineManager::destroyInstance();
 #endif
 
+#ifdef CC_USE_GFX
+    backend::DeviceGFX::destroy();
+#endif
+
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif

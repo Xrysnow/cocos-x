@@ -12,13 +12,15 @@
 #include "base/CCConfiguration.h"
 #include "renderer/ccShaders.h"
 
+static cocos2d::backend::DeviceGFX* DeviceGFXInstance = nullptr;
+
 CC_BACKEND_BEGIN
 
 Device* Device::getInstance()
 {
-    if (!_instance)
-        _instance = new DeviceGFX();
-    return _instance;
+	if (!DeviceGFXInstance)
+		DeviceGFXInstance = new DeviceGFX();
+	return DeviceGFXInstance;
 }
 
 DeviceGFX* DeviceGFX::getInstance()
@@ -42,6 +44,13 @@ void DeviceGFX::setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width,
 bool DeviceGFX::isAvailable()
 {
 	return cc::gfx::Device::getInstance() != nullptr;
+}
+
+void DeviceGFX::destroy()
+{
+	delete DeviceGFXInstance;
+	DeviceGFXInstance = nullptr;
+	cc::gfx::DeviceManager::destroy();
 }
 
 DeviceGFX::API DeviceGFX::getAPI()
