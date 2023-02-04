@@ -33,8 +33,9 @@ CommandBufferGFX::CommandBufferGFX()
 CommandBufferGFX::~CommandBufferGFX()
 {
 	cleanResources();
-	CC_SAFE_RELEASE_NULL(_renderPipeline);
-	CC_SAFE_DELETE(_defaultFBO);
+    // NOTE: _renderPipeline belongs to Renderer
+    CC_SAFE_RELEASE_NULL(_defaultFBO);
+
 	for (auto& it : _renderPasses)
 	{
 		CC_SAFE_DELETE(it.second);
