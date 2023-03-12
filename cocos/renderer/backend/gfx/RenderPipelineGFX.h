@@ -1,29 +1,23 @@
 #pragma once
 #include "renderer/backend/RenderPipeline.h"
 #include "gfx/backend/GFXDeviceManager.h"
-#include <vector>
+#include "ProgramGFX.h"
 
 CC_BACKEND_BEGIN
-
-class ProgramGFX;
 
 class RenderPipelineGFX : public RenderPipeline
 {
 public:
-	RenderPipelineGFX() = default;
-	~RenderPipelineGFX() override;
+    RenderPipelineGFX() = default;
 
-	void update(
-		const RenderTarget*,
-		const PipelineDescriptor& pipelineDescirptor) override;
+    void update(const RenderTarget*, const PipelineDescriptor& pipelineDescirptor) override;
+    void doUpdate(cc::gfx::PipelineStateInfo* psinfo);
 
-	void doUpdate(cc::gfx::PipelineStateInfo* psinfo);
-
-	ProgramGFX* getProgram() const { return _programGFX; }
+    ProgramGFX* getProgram() const { return _programGFX; }
 
 private:
-	ProgramGFX* _programGFX = nullptr;
-	BlendDescriptor _blendDescriptor;
+    cocos2d::RefPtr<ProgramGFX> _programGFX;
+    BlendDescriptor _blendDescriptor;
 };
 
 CC_BACKEND_END
