@@ -7,13 +7,10 @@ CC_BACKEND_BEGIN
 class DepthStencilStateGFX : public DepthStencilState
 {
 public:
-	DepthStencilStateGFX() = default;
+    DepthStencilStateGFX() = default;
 
-	void apply(
-		cc::gfx::PipelineStateInfo* info,
-		unsigned int stRefValueFront,
-		unsigned int stRefValueBack) const;
-	static void reset(cc::gfx::PipelineStateInfo* info);
+    void apply(cc::gfx::PipelineStateInfo* info, unsigned int stRefValueFront, unsigned int stRefValueBack) const;
+    static void reset(cc::gfx::PipelineStateInfo* info);
 };
 
 CC_BACKEND_END
