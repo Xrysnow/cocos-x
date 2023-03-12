@@ -564,6 +564,12 @@ cc::gfx::BlendFactor UtilsGFX::toBlendFactor(BlendFactor blendFactor)
     case BlendFactor::BLEND_CLOLOR:
         ret = cc::gfx::BlendFactor::CONSTANT_COLOR;
         break;
+    case BlendFactor::CONSTANT_ALPHA:
+        ret = cc::gfx::BlendFactor::CONSTANT_ALPHA;
+        break;
+    case BlendFactor::ONE_MINUS_CONSTANT_ALPHA:
+        ret = cc::gfx::BlendFactor::ONE_MINUS_CONSTANT_ALPHA;
+        break;
     default:
         break;
     }
