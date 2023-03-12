@@ -1,19 +1,19 @@
 #include "BufferGFX.h"
-#include <cassert>
 #include "base/ccMacros.h"
 #include "base/CCDirector.h"
 #include "base/CCEventType.h"
 #include "base/CCEventDispatcher.h"
 #include "UtilsGFX.h"
+#include <cassert>
 
 using namespace cc;
 
 CC_BACKEND_BEGIN
 
-BufferGFX::BufferGFX(std::size_t size, BufferType type, BufferUsage usage)
-: Buffer(size, type, usage)
+BufferGFX::BufferGFX(std::size_t size, BufferType type, BufferUsage usage) : Buffer(size, type, usage)
 {
-    //NOTE: this should not be used
+    // NOTE: this should not be used
+    CC_LOG_ERROR("stride of buffer is not specified");
     gfx::BufferInfo info;
     switch (type)
     {
@@ -27,23 +27,25 @@ BufferGFX::BufferGFX(std::size_t size, BufferType type, BufferUsage usage)
         // note: stride should be specified here but in CommandBufferGFX::drawElements now
         info.stride = 2;
         break;
-    default: ;
+    default:;
     }
     info.memUsage = UtilsGFX::toMemoryUsage(usage);
-    info.size = size;
-	_buffer = gfx::Device::getInstance()->createBuffer(info);
+    info.size     = size;
+    _buffer       = gfx::Device::getInstance()->createBuffer(info);
     CC_ASSERT(_buffer);
 }
 
 BufferGFX::BufferGFX(const cc::gfx::BufferInfo& bufferInfo)
     : Buffer(bufferInfo.size, BufferType::VERTEX, BufferUsage::STATIC)
 {
-    if (bufferInfo.size == 0 ||
-        bufferInfo.usage == gfx::BufferUsageBit::NONE ||
+    if (bufferInfo.size == 0 || bufferInfo.usage == gfx::BufferUsageBit::NONE ||
         bufferInfo.memUsage == gfx::MemoryUsageBit::NONE)
     {
-        log("%s: invalid buffer info, size=%d, usage=%d, memUsage=%d", __FUNCTION__,
-            bufferInfo.size, (int)bufferInfo.usage, (int)bufferInfo.memUsage);
+        log("%s: invalid buffer info, size=%d, usage=%d, memUsage=%d",
+            __FUNCTION__,
+            bufferInfo.size,
+            (int)bufferInfo.usage,
+            (int)bufferInfo.memUsage);
         CC_ASSERT(false);
     }
     _buffer = gfx::Device::getInstance()->createBuffer(bufferInfo);
@@ -54,12 +56,13 @@ BufferGFX::BufferGFX(const cc::gfx::BufferInfo& bufferInfo)
 BufferGFX::BufferGFX(const cc::gfx::BufferViewInfo& bufferViewInfo)
     : Buffer(bufferViewInfo.range, BufferType::VERTEX, BufferUsage::STATIC)
 {
-    if (bufferViewInfo.range == 0 ||
-        !bufferViewInfo.buffer ||
+    if (bufferViewInfo.range == 0 || !bufferViewInfo.buffer ||
         bufferViewInfo.offset + bufferViewInfo.range > bufferViewInfo.buffer->getSize())
     {
-        log("%s: invalid buffer view info, range=%d, offset=%d", __FUNCTION__,
-            bufferViewInfo.range, bufferViewInfo.offset);
+        log("%s: invalid buffer view info, range=%d, offset=%d",
+            __FUNCTION__,
+            bufferViewInfo.range,
+            bufferViewInfo.offset);
         CC_ASSERT(false);
     }
     _isView = true;
@@ -70,10 +73,6 @@ BufferGFX::BufferGFX(const cc::gfx::BufferViewInfo& bufferViewInfo)
 
 BufferGFX::~BufferGFX()
 {
-    if(!_isView)
-	{
-	    CC_SAFE_DELETE(_buffer);
-	}
 }
 
 void BufferGFX::usingDefaultStoredData(bool needDefaultStoredData)
@@ -84,21 +83,41 @@ void BufferGFX::updateInfo()
 {
     switch (_buffer->getUsage())
     {
-    case gfx::BufferUsageBit::NONE: break;
-    case gfx::BufferUsageBit::TRANSFER_SRC: _type = (BufferType)5; break;
-    case gfx::BufferUsageBit::TRANSFER_DST: _type = (BufferType)6; break;
-    case gfx::BufferUsageBit::INDEX: _type = BufferType::INDEX; break;
-    case gfx::BufferUsageBit::VERTEX: _type = BufferType::VERTEX; break;
-    case gfx::BufferUsageBit::UNIFORM: _type = (BufferType)2; break;
-    case gfx::BufferUsageBit::STORAGE: _type = (BufferType)3; break;
-    case gfx::BufferUsageBit::INDIRECT: _type = (BufferType)4; break;
+    case gfx::BufferUsageBit::NONE:
+        break;
+    case gfx::BufferUsageBit::TRANSFER_SRC:
+        _type = (BufferType)5;
+        break;
+    case gfx::BufferUsageBit::TRANSFER_DST:
+        _type = (BufferType)6;
+        break;
+    case gfx::BufferUsageBit::INDEX:
+        _type = BufferType::INDEX;
+        break;
+    case gfx::BufferUsageBit::VERTEX:
+        _type = BufferType::VERTEX;
+        break;
+    case gfx::BufferUsageBit::UNIFORM:
+        _type = (BufferType)2;
+        break;
+    case gfx::BufferUsageBit::STORAGE:
+        _type = (BufferType)3;
+        break;
+    case gfx::BufferUsageBit::INDIRECT:
+        _type = (BufferType)4;
+        break;
     default:;
     }
     switch (_buffer->getMemUsage())
     {
-    case gfx::MemoryUsageBit::NONE: break;
-    case gfx::MemoryUsageBit::DEVICE: _usage = BufferUsage::STATIC; break;
-    case gfx::MemoryUsageBit::HOST: _usage = BufferUsage::DYNAMIC; break;
+    case gfx::MemoryUsageBit::NONE:
+        break;
+    case gfx::MemoryUsageBit::DEVICE:
+        _usage = BufferUsage::STATIC;
+        break;
+    case gfx::MemoryUsageBit::HOST:
+        _usage = BufferUsage::DYNAMIC;
+        break;
     default:;
     }
 }
@@ -132,10 +151,10 @@ void BufferGFX::update(const void* data, std::size_t size, std::size_t offset)
     }
     if (!_buffer)
     {
-	    CCASSERT(false, "invalid buffer");
+        CCASSERT(false, "invalid buffer");
         return;
     }
-    //NOTE: 'offset' requires modified gfx
+    // NOTE: 'offset' requires modified gfx
     _buffer->update(data, size, offset);
 }
 
