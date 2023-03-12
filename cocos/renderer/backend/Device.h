@@ -85,6 +85,7 @@ public:
      * @return A Buffer object.
      */
     virtual Buffer* newBuffer(size_t size, BufferType type, BufferUsage usage) = 0;
+    virtual Buffer* newBuffer(size_t size, size_t stride, BufferType type, BufferUsage usage) { return newBuffer(size, type, usage); }
 
     /**
      * New a TextureBackend object, not auto released.
