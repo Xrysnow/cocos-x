@@ -79,7 +79,7 @@ public:
     cc::gfx::DescriptorSetLayout* getDefaultDescriptorSetLayout() const { return defaultDescriptorSetLayout; }
     cc::gfx::PipelineLayout* getDefaultPipelineLayout();
 
-    ProgramStateGFX* getState(ProgramState* key) { return _states.at(key); }
+    ProgramStateGFX* getState(const ProgramState* key);
 
 protected:
 #if CC_ENABLE_CACHE_TEXTURE_DATA
@@ -98,6 +98,8 @@ protected:
     virtual const std::unordered_map<std::string, int> getAllUniformsLocation() const { return {}; }
 #endif
 
+    bool generateState(const ProgramState* state);
+    void removeState(const ProgramState* state);
 
     using SpirvCodes = std::unordered_map<cc::gfx::ShaderStageFlagBit, std::vector<uint32_t>>;
 

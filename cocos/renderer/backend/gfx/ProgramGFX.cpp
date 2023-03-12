@@ -775,6 +775,28 @@ cc::gfx::PipelineLayout* ProgramGFX::getDefaultPipelineLayout()
     return defaultPipelineLayout;
 }
 
+ProgramStateGFX* ProgramGFX::getState(const ProgramState* key)
+{
+    return _states.at((void*)key);
+}
+
+bool ProgramGFX::generateState(const ProgramState* state)
+{
+    if(!isValid() || !state)
+        return false;
+    if (getState(state))
+        return true;
+    const auto stateGFX = new ProgramStateGFX(this);
+    stateGFX->autorelease();
+    _states.insert((void*)state, stateGFX);
+    return true;
+}
+
+void ProgramGFX::removeState(const ProgramState* state)
+{
+    _states.erase((void*)state);
+}
+
 void ProgramGFX::initDefaultInfo()
 {
     if (builtinAttributes.empty())

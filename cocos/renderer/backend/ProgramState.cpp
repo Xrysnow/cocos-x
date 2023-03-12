@@ -199,11 +199,8 @@ bool ProgramState::init(Program* program)
     _vertexUniformBufferSize = _program->getUniformBufferSize(ShaderStage::VERTEX);
     _vertexUniformBuffer     = (char*)calloc(1, _vertexUniformBufferSize);
 #if defined(CC_USE_GFX)
-    auto p = static_cast<ProgramGFX*>(_program);
-    CC_ASSERT(p->isValid());
-    auto stateGFX = new ProgramStateGFX(p);
-    stateGFX->autorelease();
-    p->_states.insert(this, stateGFX);
+    const auto ok = static_cast<ProgramGFX*>(_program)->generateState(this);
+    CC_ASSERT(ok);
 #elif defined(CC_USE_METAL)
     _fragmentUniformBufferSize = _program->getUniformBufferSize(ShaderStage::FRAGMENT);
     _fragmentUniformBuffer     = (char*)calloc(1, _fragmentUniformBufferSize);
@@ -242,7 +239,7 @@ void ProgramState::resetUniforms()
 ProgramState::~ProgramState()
 {
 #ifdef CC_USE_GFX
-	static_cast<ProgramGFX*>(_program)->_states.erase(this);
+    static_cast<ProgramGFX*>(_program)->removeState(this);
 #endif
 #ifdef CC_USE_METAL
     XXH32_freeState(_uniformHashState);
@@ -269,13 +266,12 @@ ProgramState* ProgramState::clone() const
     cp->_ownVertexLayout = _ownVertexLayout;
     cp->_vertexLayout    = !_ownVertexLayout ? _vertexLayout : new VertexLayout(*_vertexLayout);
 #if defined(CC_USE_GFX)
-    auto p = static_cast<ProgramGFX*>(_program);
-    auto stateGFX = new ProgramStateGFX(p);
-    CC_ASSERT(cp && p && stateGFX);
-    stateGFX->autorelease();
-    p->_states.insert(cp, stateGFX);
+    const auto p = static_cast<ProgramGFX*>(_program);
+    p->generateState(cp);
+    const auto stateGFX = p->getState(cp);
+    CC_ASSERT(stateGFX);
     stateGFX->setAllBuffer(_vertexUniformBuffer, _vertexUniformBufferSize);
-    stateGFX->textures = p->_states.at((void*)this)->textures;
+    stateGFX->textures = p->getState(this)->textures;
 #elif defined(CC_USE_METAL)
     memcpy(cp->_fragmentUniformBuffer, _fragmentUniformBuffer, _fragmentUniformBufferSize);
 #endif
@@ -301,38 +297,34 @@ void ProgramState::setCallbackUniform(const backend::UniformLocation& uniformLoc
 void ProgramState::setUniform(const backend::UniformLocation& uniformLocation, const void* data, std::size_t size)
 {
 #ifdef CC_USE_GFX
-	const auto p = static_cast<ProgramGFX*>(_program);
+    const auto p = static_cast<ProgramGFX*>(_program);
     CC_ASSERT(p->isValid());
     const auto location = uniformLocation.location[0];
-    const auto offset = uniformLocation.location[1];
-	const auto state = p->_states.at(this);
+    const auto offset   = uniformLocation.location[1];
+    const auto state    = p->getState(this);
     CC_ASSERT(state);
     if (!state)
         return;
-	if (!state->setUniform(uniformLocation, data, size))
-	{
-		log("%s: failed, loc=%d, size=%d, offset=%d",
-		    __FUNCTION__, location, (int)size, offset);
-		CCASSERT(false, "failed");
-	}
-	const auto allOffset = state->getAllBufferOffset(uniformLocation);
-	if (allOffset + size > _vertexUniformBufferSize ||
-		allOffset > _vertexUniformBufferSize ||
-		size > _vertexUniformBufferSize)
-	{
-		log("%s: invalid parameters, loc=%d, size=%d, offset=%d",
-		    __FUNCTION__, location, (int)size, (int)allOffset);
-		CCASSERT(false, "invalid parameters");
-		return;
-	}
-	if (allOffset < 0)
-	{
-		log("%s: invalid uniform location, [0]=%d, [1]=%d",
-		    __FUNCTION__, location, (int)offset);
-		CCASSERT(false, "invalid uniform location");
-		return;
-	}
-	memcpy(_vertexUniformBuffer + allOffset, data, size);
+    if (!state->setUniform(uniformLocation, data, size))
+    {
+        log("%s: failed, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, offset);
+        CCASSERT(false, "failed");
+    }
+    const auto allOffset = state->getAllBufferOffset(uniformLocation);
+    if (allOffset + size > _vertexUniformBufferSize || allOffset > _vertexUniformBufferSize ||
+        size > _vertexUniformBufferSize)
+    {
+        log("%s: invalid parameters, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, (int)allOffset);
+        CCASSERT(false, "invalid parameters");
+        return;
+    }
+    if (allOffset < 0)
+    {
+        log("%s: invalid uniform location, [0]=%d, [1]=%d", __FUNCTION__, location, (int)offset);
+        CCASSERT(false, "invalid uniform location");
+        return;
+    }
+    memcpy(_vertexUniformBuffer + allOffset, data, size);
 #else
     switch (uniformLocation.shaderStage)
     {
@@ -549,20 +541,24 @@ void ProgramState::setTexture(const backend::UniformLocation& uniformLocation,
                               backend::TextureBackend* texture)
 {
 #ifdef CC_USE_GFX
-	const auto p = static_cast<ProgramGFX*>(_program);
+    const auto p = static_cast<ProgramGFX*>(_program);
     CC_ASSERT(p->isValid());
-	const auto state = p->_states.at(this);
+    const auto state = p->getState(this);
     CC_ASSERT(state);
     if (state)
-	{
+    {
         // slot is replaced by location[0]
-        const bool ok = state->setTexture(uniformLocation, texture, /*slot*/0);
+        const bool ok = state->setTexture(uniformLocation, texture, /*slot*/ 0);
         if (!ok)
         {
-            log("%s: failed, location=%d,%d, slot=%d, texture=0x%x", __FUNCTION__,
-                uniformLocation.location[0], uniformLocation.location[1], slot, texture);
+            log("%s: failed, location=%d,%d, slot=%d, texture=0x%x",
+                __FUNCTION__,
+                uniformLocation.location[0],
+                uniformLocation.location[1],
+                slot,
+                texture);
         }
-	}
+    }
 #endif
     switch (uniformLocation.shaderStage)
     {
@@ -586,10 +582,10 @@ void ProgramState::setTextureArray(const backend::UniformLocation& uniformLocati
                                    std::vector<backend::TextureBackend*> textures)
 {
 #ifdef CC_USE_GFX
-	for (int i = 0; i < std::min(slots.size(), textures.size()); ++i)
-	{
-		setTexture(uniformLocation, slots.at(i), textures.at(i));
-	}
+    for (int i = 0; i < std::min(slots.size(), textures.size()); ++i)
+    {
+        setTexture(uniformLocation, slots.at(i), textures.at(i));
+    }
 #endif
     switch (uniformLocation.shaderStage)
     {
