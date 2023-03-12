@@ -899,11 +899,10 @@ ProgramGFX::SpirvCodes ProgramGFX::compileSpirvCodes(
 
 std::string ProgramGFX::generateShaderName(const cc::gfx::ShaderInfo& shaderInfo, void* p)
 {
-    std::string shaderName = StringUtils::format("0x%x(", (uint32_t)p);
+    std::string shaderName = StringUtils::format("0x%tx(", (ptrdiff_t)p);
     for (auto& stage : shaderInfo.stages)
     {
         shaderName += StringUtils::format("%d+", (uint32_t)stage.source.size());
-        auto hash = std::hash<std::string>{}(stage.source);
     }
     if (shaderName.back() == '+')
         shaderName.back() = ')';
