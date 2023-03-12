@@ -1,21 +1,24 @@
-# This file is copy from https://github.com/google/angle with some modifications
-# Defines the AXIS style for automatic reformatting.
-# https://code.google.com/p/angleproject/wiki/CodingStandard
 # See Clang docs: http://clang.llvm.org/docs/ClangFormatStyleOptions.html
 BasedOnStyle: Chromium
+Standard: Latest
 
-# Allow double brackets such as std::vector<std::vector<int>>.
-Standard: Cpp11
-
-# Indent 4 spaces at a time.
-IndentWidth: 4
-
-# Keep lines under 120 columns long.
 ColumnLimit: 120
 
-SortIncludes: false
+MaxEmptyLinesToKeep: 1
 
-# Always break before braces
+# Indent
+IndentWidth: 4
+UseTab: Never
+IndentCaseLabels: false
+
+# Include
+SortIncludes: false
+IncludeBlocks: Preserve
+
+# Preprocessor
+IndentPPDirectives: BeforeHash
+
+# Braces
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel: true
@@ -28,37 +31,51 @@ BraceWrapping:
   AfterUnion: true
   BeforeCatch: true
   BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
   IndentBraces: false
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
 
   # Keeps extern "C" blocks unindented.
   AfterExternBlock: false
 
-# Indent case labels.
-IndentCaseLabels: false
-
 # Left-align pointers and references
 PointerAlignment: Left
 
-# ANGLE likes to align things as much as possible.
+# Align
 AlignOperands: true
-AlignConsecutiveAssignments: true
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+  PadOperators: true
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AlignAfterOpenBracket: AlwaysBreak
 
-# Use 0 space negative offset for access modifiers
-AccessModifierOffset: -4
-
-# TODO(jmadill): Decide if we want this on. Doesn't have an "all or none" mode.
+# Single line
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
 AllowShortCaseLabelsOnASingleLine: false
+
+AlwaysBreakTemplateDeclarations: Yes
+
+# Arguments
+BinPackArguments: false
+BinPackParameters: false
+PackConstructorInitializers: BinPack
+
+# Access modifier
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+AccessModifierOffset: -4
 
 # Useful for spacing out functions in classes
 KeepEmptyLinesAtTheStartOfBlocks: true
-
-# Indent nested PP directives.
-IndentPPDirectives: AfterHash
-
-# Include blocks style
-IncludeBlocks: Preserve
-UseTab: Never
-BreakConstructorInitializers: BeforeComma
