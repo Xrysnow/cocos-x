@@ -4,12 +4,12 @@ If(APPLE)
     endif()
 endif()
 
- #Please use them everywhere
- #WINDOWS   =   Windows Desktop
- #ANDROID    =  Android
- #IOS    =  iOS
- #MACOSX    =  MacOS X
- #LINUX      =   Linux
+#Please use them everywhere
+#WINDOWS   =   Windows Desktop
+#ANDROID   =   Android
+#IOS       =   iOS
+#MACOSX    =   MacOS X
+#LINUX     =   Linux
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
     set(PLATFORM_FOLDER win32)
@@ -68,7 +68,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # check visual studio version
- if(WINDOWS)
+if(WINDOWS)
     # not support other compile tools except MSVC for now
     if(MSVC)
         # Visual Studio 2015, MSVC_VERSION 1900      (v140 toolset)
@@ -83,8 +83,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
     endif()
 endif()
 
- # Set macro definitions for special platforms
- function(use_cocos2dx_compile_define target)
+# Set macro definitions for special platforms
+function(use_cocos2dx_compile_define target)
     target_compile_definitions(${target} PUBLIC $<$<CONFIG:Debug>:COCOS2D_DEBUG=1>)
     if(APPLE)
         target_compile_definitions(${target} PUBLIC __APPLE__)
@@ -121,13 +121,46 @@ endif()
     if(CC_USE_GFX)
         target_compile_definitions(${target} PUBLIC CC_USE_GFX)
     endif()
+    if(CC_ENABLE_EXT_GUI)
+        target_compile_definitions(${target} PUBLIC CC_USE_EXT_GUI)
+    endif()
+    if(CC_ENABLE_EXT_ASSETMANAGER)
+        target_compile_definitions(${target} PUBLIC CC_USE_ASSETMANAGER)
+    endif()
+    if(CC_ENABLE_EXT_PARTICLE3D)
+        target_compile_definitions(${target} PUBLIC CC_USE_PARTICLE3D)
+    endif()
+    if(CC_ENABLE_EXT_PHYSICS_NODE)
+        target_compile_definitions(${target} PUBLIC CC_USE_PHYSICS_NODE)
+    endif()
+    if(CC_ENABLE_EXT_SPINE)
+        target_compile_definitions(${target} PUBLIC CC_USE_SPINE)
+    endif()
+    if(CC_ENABLE_EXT_DRAGONBONES)
+        target_compile_definitions(${target} PUBLIC CC_USE_DRAGONBONES)
+    endif()
+    if(CC_ENABLE_EXT_COCOSTUDIO)
+        target_compile_definitions(${target} PUBLIC CC_USE_COCOSTUDIO)
+    endif()
+    if(CC_ENABLE_EXT_FAIRYGUI)
+        target_compile_definitions(${target} PUBLIC CC_USE_FAIRYGUI)
+    endif()
+    if(CC_ENABLE_EXT_LIVE2D)
+        target_compile_definitions(${target} PUBLIC CC_USE_EXT_LIVE2D)
+    endif()
+    if(CC_ENABLE_EXT_EFFEKSEER)
+        target_compile_definitions(${target} PUBLIC CC_USE_EFFEKSEER)
+    endif()
+    if(CC_ENABLE_EXT_IMGUI)
+        target_compile_definitions(${target} PUBLIC CC_USE_EXT_IMGUI)
+    endif()
 endfunction()
 
  # Set compiler options
- function(use_cocos2dx_compile_options target)
+function(use_cocos2dx_compile_options target)
     if(MSVC)
         target_compile_options(${target}
             PUBLIC /MP
         )
     endif()
- endfunction()
+endfunction()
