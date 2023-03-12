@@ -9,9 +9,6 @@ class DeviceGFX;
 class RenderTargetGFX : public RenderTarget
 {
 public:
-    /*
-     * generateFBO, false, use for screen framebuffer
-     */
     RenderTargetGFX(bool defaultRenderTarget);
     ~RenderTargetGFX() override;
 
