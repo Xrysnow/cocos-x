@@ -18,9 +18,9 @@ public:
     void disableEffect(int effectFlag) { effect &= ~effectFlag; }
     bool hasEffect(int effectFlag) const { return (effect & effectFlag) != 0; }
 
-    static const int OUTLINE = 1;
-    static const int SHADOW = 2;
-    static const int GLOW = 4;
+    static constexpr int OUTLINE = 1;
+    static constexpr int SHADOW = 2;
+    static constexpr int GLOW = 4;
 
     std::string face;
     float fontSize;
