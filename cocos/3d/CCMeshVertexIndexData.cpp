@@ -112,7 +112,7 @@ MeshVertexData* MeshVertexData::create(const MeshData& meshdata, CustomCommand::
 {
     auto vertexdata           = new MeshVertexData();
     vertexdata->_vertexBuffer = backend::Device::getInstance()->newBuffer(
-        meshdata.vertex.size() * sizeof(meshdata.vertex[0]), backend::BufferType::VERTEX, backend::BufferUsage::STATIC);
+        meshdata.vertex.size() * sizeof(meshdata.vertex[0]), meshdata.getPerVertexSize(), backend::BufferType::VERTEX, backend::BufferUsage::STATIC);
     // CC_SAFE_RETAIN(vertexdata->_vertexBuffer);
 
     vertexdata->_sizePerVertex = meshdata.getPerVertexSize();
@@ -134,7 +134,7 @@ MeshVertexData* MeshVertexData::create(const MeshData& meshdata, CustomCommand::
     {
         auto& indices = meshdata.subMeshIndices[i];
         auto indexBuffer = backend::Device::getInstance()->newBuffer(
-            indices.bsize(), backend::BufferType::INDEX, backend::BufferUsage::STATIC);
+            indices.bsize(), IndexArray::formatToStride(indices.format()), backend::BufferType::INDEX, backend::BufferUsage::STATIC);
         indexBuffer->autorelease();
 #if CC_ENABLE_CACHE_TEXTURE_DATA
         indexBuffer->usingDefaultStoredData(false);

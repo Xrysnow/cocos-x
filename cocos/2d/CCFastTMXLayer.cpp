@@ -268,7 +268,7 @@ void FastTMXLayer::updateVertexBuffer()
     if (!_vertexBuffer)
     {
         auto device   = backend::Device::getInstance();
-        _vertexBuffer = device->newBuffer(vertexBufferSize, backend::BufferType::VERTEX, backend::BufferUsage::STATIC);
+        _vertexBuffer = device->newBuffer(vertexBufferSize, sizeof(V3F_C4B_T2F), backend::BufferType::VERTEX, backend::BufferUsage::STATIC);
     }
     _vertexBuffer->updateData(&_totalQuads[0], vertexBufferSize);
 }
@@ -283,7 +283,7 @@ void FastTMXLayer::updateIndexBuffer()
     if (!_indexBuffer)
     {
         auto device  = backend::Device::getInstance();
-        _indexBuffer = device->newBuffer(indexBufferSize, backend::BufferType::INDEX, backend::BufferUsage::DYNAMIC);
+        _indexBuffer = device->newBuffer(indexBufferSize, sizeof(_indices[0]), backend::BufferType::INDEX, backend::BufferUsage::DYNAMIC);
     }
     _indexBuffer->updateData(&_indices[0], indexBufferSize);
 }

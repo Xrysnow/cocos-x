@@ -78,7 +78,7 @@ void Particle3DQuadRender::render(Renderer* renderer, const Mat4& transform, Par
     {
         size_t stride = sizeof(Particle3DQuadRender::posuvcolor);
         _vertexBuffer =
-            backend::Device::getInstance()->newBuffer(stride * 4 * particleSystem->getParticleQuota(),
+            backend::Device::getInstance()->newBuffer(stride * 4 * particleSystem->getParticleQuota(), stride,
                                                       backend::BufferType::VERTEX, backend::BufferUsage::DYNAMIC);
         if (_vertexBuffer == nullptr)
         {
@@ -90,7 +90,7 @@ void Particle3DQuadRender::render(Renderer* renderer, const Mat4& transform, Par
     if (_indexBuffer == nullptr)
     {
         _indexBuffer =
-            backend::Device::getInstance()->newBuffer(sizeof(uint16_t) * 6 * particleSystem->getParticleQuota(),
+            backend::Device::getInstance()->newBuffer(sizeof(uint16_t) * 6 * particleSystem->getParticleQuota(), sizeof(uint16_t),
                                                       backend::BufferType::INDEX, backend::BufferUsage::DYNAMIC);
         if (_indexBuffer == nullptr)
         {

@@ -158,12 +158,12 @@ void PUBillboardChain::setupBuffers()
 
         size_t stride = sizeof(VertexInfo);
         _vertexBuffer = backend::Device::getInstance()->newBuffer(
-            stride * _chainElementList.size() * 2, backend::BufferType::VERTEX, backend::BufferUsage::DYNAMIC);
+            stride * _chainElementList.size() * 2, stride, backend::BufferType::VERTEX, backend::BufferUsage::DYNAMIC);
         VertexInfo vi = {Vec3(0.0f, 0.0f, 0.0f), Vec2(0.0f, 0.0f), Vec4::ONE};
         _vertices.resize(_chainElementList.size() * 2, vi);
 
         _indexBuffer =
-            backend::Device::getInstance()->newBuffer(_chainCount * _maxElementsPerChain * 6 * sizeof(uint16_t),
+            backend::Device::getInstance()->newBuffer(_chainCount * _maxElementsPerChain * 6 * sizeof(uint16_t), sizeof(uint16_t),
                                                       backend::BufferType::VERTEX, backend::BufferUsage::DYNAMIC);
 
         _indices.resize(_chainCount * _maxElementsPerChain * 6, 0);
