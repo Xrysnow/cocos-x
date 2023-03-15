@@ -73,7 +73,7 @@ public:
     virtual int64_t getFileSize(std::string_view filepath) const override;
     virtual std::vector<std::string> listFiles(std::string_view dirPath) const override;
 
-private:
+protected:
     virtual bool isFileExistInternal(std::string_view strFilePath) const override;
     virtual bool isDirectoryExistInternal(std::string_view dirPath) const override;
 
