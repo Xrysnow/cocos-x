@@ -36,16 +36,14 @@ THE SOFTWARE.
 #include <android/api-level.h>
 #include <jni.h>
 
-#include "platform/CCGL.h"
+//#include "platform/CCGL.h"
 
 #define LOG_TAG "main"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 void cocos_android_app_init(JNIEnv* env) __attribute__((weak));
 
-void cocos_audioengine_focus_change(int focusChange);
-
-using namespace cocos2d;
+USING_NS_CC;
 
 extern "C" {
 
@@ -73,7 +71,7 @@ __sighandler_t bsd_signal(int s, __sighandler_t f)
 }
 #endif  // __ANDROID_API__ > 19
 
-JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     JniHelper::setJavaVM(vm);
 
@@ -82,7 +80,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
     return JNI_VERSION_1_4;
 }
 
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*, jclass, jint w, jint h)
 {
     auto director = cocos2d::Director::getInstance();
     auto glView   = director->getOpenGLView();
@@ -104,7 +102,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
     }
 }
 
-JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jobject thiz)
+JNIEXPORT jintArray JNICALL Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jclass)
 {
     cocos2d::Application::getInstance()->initGLContextAttrs();
     GLContextAttrs _glContextAttrs = GLView::getGLContextAttrs();
@@ -119,12 +117,7 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
     return glContextAttrsJava;
 }
 
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxAudioFocusManager_nativeOnAudioFocusChange(JNIEnv* env, jobject thiz, jint focusChange)
-{
-    cocos_audioengine_focus_change(focusChange);
-}
-
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceChanged(JNIEnv*  env, jobject thiz, jint w, jint h)
+JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceChanged(JNIEnv*, jclass, jint w, jint h)
 {
     cocos2d::Application::getInstance()->applicationScreenSizeChanged(w, h);
 }
