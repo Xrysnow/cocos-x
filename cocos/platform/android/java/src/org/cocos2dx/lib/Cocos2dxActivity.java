@@ -110,10 +110,15 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 
     protected void onLoadNativeLibraries() {
         try {
+            // get main lib name from app/AndroidManifest.xml
             ApplicationInfo ai = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
             Bundle bundle = ai.metaData;
             String libName = bundle.getString("android.app.lib_name");
-            System.loadLibrary(libName);
+            assert libName != null;
+            System.loadLibrary(libName); // cocos2dlua
+            System.loadLibrary("OpenSLES");
+            System.loadLibrary("openal");
+            System.loadLibrary("ffmpeg");
         } catch (Exception e) {
             e.printStackTrace();
         }
