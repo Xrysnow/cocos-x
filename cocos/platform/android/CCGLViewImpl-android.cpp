@@ -29,6 +29,21 @@ THE SOFTWARE.
 #include "platform/android/jni/JniHelper.h"
 #include "CCGL.h"
 
+#ifdef CC_USE_GFX
+#include "gfx-base/GFXDef-common.h"
+#include "GFXDeviceManager.h"
+#include "renderer/backend/gfx/DeviceGFX.h"
+#include "base/threading/MessageQueue.h"
+static void GFXBeforeScreenResize()
+{
+    const auto agent = cc::gfx::DeviceAgent::getInstance();
+    if (agent)
+    {
+        agent->getMessageQueue()->kickAndWait();
+    }
+}
+#endif
+
 #include <stdlib.h>
 #include <android/log.h>
 
@@ -95,6 +110,53 @@ GLViewImpl::~GLViewImpl() {}
 
 bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZoomFactor)
 {
+#if defined(CC_USE_GFX)
+    if (!cc::gfx::Device::getInstance())
+    {
+        // create device
+        auto desiredApi = cc::gfx::API::VULKAN;
+        auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt();
+        if (0 < configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
+            desiredApi = (cc::gfx::API)configAPI;
+        if (desiredApi != cc::gfx::API::VULKAN && desiredApi != cc::gfx::API::METAL)
+        {
+            // if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !gladLoadGLES2(glfwGetProcAddress))
+            // {
+            //     CCLOGERROR("Failed to load glad");
+            //     return false;
+            // }
+            if (!eglGetDisplay)
+            {
+                CCLOGERROR("Failed to load EGL");
+                return false;
+            }
+            if (!glGetError)
+            {
+                CCLOGERROR("Failed to load GLES");
+                return false;
+            }
+        }
+
+        void* hdl = nullptr;
+
+        cc::gfx::DeviceInfo info;
+        const auto device = cc::gfx::DeviceManager::create(info, desiredApi);
+        if (!device)
+        {
+            CCLOGERROR("Failed to create device");
+            return false;
+        }
+
+        backend::DeviceGFX::setSwapchainInfo(hdl, true, _screenSize.width, _screenSize.height);
+
+        auto configMT = Configuration::getInstance()->getValue("GFXMultithreaded");
+        const auto agent = dynamic_cast<cc::gfx::DeviceAgent*>(device);
+        if (agent && configMT.getType() == Value::Type::BOOLEAN)
+        {
+            agent->setMultithreaded(configMT.asBool());
+        }
+    }
+#endif
     return true;
 }
 
