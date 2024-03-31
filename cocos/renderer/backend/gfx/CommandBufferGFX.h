@@ -76,7 +76,9 @@ private:
     };
 
     void prepareDrawing();
-    static cc::gfx::AttributeList getAttributesFromProgramState(ProgramState* state);
+    cc::gfx::PipelineState* getPipelineState();
+    cc::gfx::AttributeList getAttributesFromProgramState(ProgramState* state);
+    static cc::gfx::AttributeList generateAttributeList(ProgramState* state);
     void setUniforms(ProgramGFX* program);
     void cleanResources();
     cc::gfx::RenderPass* getRenderPass(
@@ -93,13 +95,13 @@ private:
     cc::gfx::Framebuffer* _currentFBO = nullptr;
     Size _currentFBOSize;
     cc::gfx::RenderPass* _currentPass = nullptr;
-    std::vector<cc::gfx::PipelineState*> _pstate;
+    std::unordered_map<uint32_t, cc::gfx::PipelineState*> _pstates;
     std::vector<cc::gfx::PipelineLayout*> _pLayout;
     cc::gfx::PipelineStateInfo _pstateinfo;
     std::vector<cc::gfx::Buffer*> _uniformBuffer;
     std::vector<cc::gfx::DescriptorSetLayout*> _dsLayout;
     std::vector<cc::gfx::DescriptorSet*> _ds;
-    std::vector<cc::gfx::InputAssembler*> _inputAssembler;
+    std::unordered_map<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
     cocos2d::RefPtr<BufferGFX> _vertexBuffer;
     cocos2d::RefPtr<BufferGFX> _indexBuffer;
     cocos2d::RefPtr<ProgramState> _programState;
@@ -108,6 +110,7 @@ private:
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     cc::gfx::Viewport _viewPort;
     std::unordered_map<uint32_t, cc::gfx::RenderPass*> _renderPasses;
+    std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;
     cocos2d::Vector<TextureBackend*> _tmpTextures;
     bool _screenResized  = false;
     bool _scissorEnabled = false;
