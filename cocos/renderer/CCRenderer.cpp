@@ -84,6 +84,7 @@ public:
 private:
     const size_t dataBlockSize = 16384;
     std::multimap<size_t, TriangleBuffer> buffers;
+    std::multimap<size_t, TriangleBuffer> usedBuffers;
     std::multimap<size_t, VertexBuffer> vDatas;
     std::multimap<size_t, IndexBuffer> iDatas;
     size_t tbVTotal = 0;
@@ -104,20 +105,22 @@ public:
         auto vsize       = vnum * vstride;
         auto isize       = inum * istride;
         size_t lastVSizeMax = 0;
-        for (auto& it : buffers)
+        const auto key = vnum + inum;
+        for (auto it = buffers.lower_bound(key); it != buffers.end(); ++it)
         {
-            if (!it.second.used && it.first >= vnum + inum && it.second.vb->getSize() >= vsize &&
-                it.second.ib->getSize() >= isize)
+            const auto vs = it->second.vb->getSize();
+            const auto is = it->second.ib->getSize();
+            if (vs >= vsize && is >= isize && !it->second.used)
             {
-                it.second.used = true;
-                tbVUsed        += it.second.vb->getSize();
-                tbIUsed        += it.second.ib->getSize();
-                return it.second;
+                it->second.used = true;
+                tbVUsed += vs;
+                tbIUsed += is;
+                auto copy = it->second;
+                usedBuffers.insert(std::pair(key, copy));
+                buffers.erase(it);
+                return copy;
             }
-            if (!it.second.used)
-            {
-                lastVSizeMax = std::max(lastVSizeMax, it.second.vb->getSize());
-            }
+            lastVSizeMax = std::max(lastVSizeMax, it->second.vb->getSize());
         }
         // when buffer increases continuously, performance can be bad,
         // so we give redundancy here
@@ -138,7 +141,7 @@ public:
         CC_ASSERT(b.vb);
         CC_ASSERT(b.ib);
         b.used = true;
-        buffers.insert(std::pair(vnum + inum, b));
+        usedBuffers.insert(std::pair(vnum + inum, b));
         tbVTotal += vsize;
         tbITotal += isize;
         tbVUsed  += vsize;
@@ -147,17 +150,15 @@ public:
     }
     V3F_C4B_T2F* nextVertexData(size_t vnum)
     {
-        for (auto& it : vDatas)
+        for (auto it = vDatas.lower_bound(vnum); it != vDatas.end(); ++it)
         {
-            if (it.first < vnum)
-                continue;
-            const auto used   = it.second.used;
-            const auto unused = (ssize_t)it.second.data.size() - (ssize_t)used;
+            const auto used   = it->second.used;
+            const auto unused = (ssize_t)it->second.data.size() - (ssize_t)used;
             if (unused >= vnum)
             {
-                it.second.used += vnum;
-                vbUsed         += vnum;
-                return it.second.data.data() + used;
+                it->second.used += vnum;
+                vbUsed          += vnum;
+                return it->second.data.data() + used;
             }
         }
         const auto size = std::max(vnum, dataBlockSize);
@@ -170,17 +171,15 @@ public:
     }
     uint16_t* nextIndexData(size_t inum)
     {
-        for (auto& it : iDatas)
+        for (auto it = iDatas.lower_bound(inum); it != iDatas.end(); ++it)
         {
-            if (it.first < inum)
-                continue;
-            const auto used   = it.second.used;
-            const auto unused = (ssize_t)it.second.data.size() - (ssize_t)used;
+            const auto used   = it->second.used;
+            const auto unused = (ssize_t)it->second.data.size() - (ssize_t)used;
             if (unused >= inum)
             {
-                it.second.used += inum;
+                it->second.used += inum;
                 ibUsed         += inum;
-                return it.second.data.data() + used;
+                return it->second.data.data() + used;
             }
         }
         const auto size = std::max(inum, dataBlockSize);
@@ -193,23 +192,22 @@ public:
     }
     void reuse()
     {
-        //if (tbVUsed + 16 < tbVTotal || tbIUsed + 16 < tbITotal)
         {
-            // remove unused
-            for (auto it = buffers.begin(); it != buffers.end();)
+            for (auto&& it : buffers)
             {
-                if (!it->second.used)
-                {
-                    CC_SAFE_RELEASE(it->second.vb);
-                    CC_SAFE_RELEASE(it->second.ib);
-                    it = buffers.erase(it);
-                }
-                else
-                    ++it;
+                tbVTotal -= it.second.vb->getSize();
+                tbITotal -= it.second.ib->getSize();
+                CC_SAFE_RELEASE(it.second.vb);
+                CC_SAFE_RELEASE(it.second.ib);
             }
+            buffers.clear();
+            buffers = usedBuffers;
+            usedBuffers.clear();
         }
         for (auto& it : buffers)
             it.second.used = false;
+        tbVUsed = 0;
+        tbIUsed = 0;
         //
         //if (vbUsed + 16 < vbTotal)
         {
@@ -217,13 +215,17 @@ public:
             for (auto it = vDatas.begin(); it != vDatas.end();)
             {
                 if (it->second.used == 0)
+                {
+                    vbTotal -= it->second.data.size();
                     it = vDatas.erase(it);
+                }
                 else
                     ++it;
             }
         }
         for (auto& it : vDatas)
             it.second.used = 0;
+        vbUsed = 0;
         //
         //if (ibUsed + 16 < ibTotal)
         {
@@ -231,13 +233,17 @@ public:
             for (auto it = iDatas.begin(); it != iDatas.end();)
             {
                 if (it->second.used == 0)
+                {
+                    ibTotal -= it->second.data.size();
                     it = iDatas.erase(it);
+                }
                 else
                     ++it;
             }
         }
         for (auto& it : iDatas)
             it.second.used = 0;
+        ibUsed = 0;
     }
     void reset()
     {
@@ -246,9 +252,23 @@ public:
             CC_SAFE_RELEASE(it.second.vb);
             CC_SAFE_RELEASE(it.second.ib);
         }
+        for (auto& it : usedBuffers)
+        {
+            CC_SAFE_RELEASE(it.second.vb);
+            CC_SAFE_RELEASE(it.second.ib);
+        }
         buffers.clear();
+        usedBuffers.clear();
         vDatas.clear();
         iDatas.clear();
+        tbVTotal = 0;
+        tbITotal = 0;
+        tbVUsed = 0;
+        tbIUsed = 0;
+        vbTotal = 0;
+        vbUsed = 0;
+        ibTotal = 0;
+        ibUsed = 0;
     }
     size_t getMemorySize() const
     {
