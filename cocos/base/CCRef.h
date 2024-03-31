@@ -144,13 +144,13 @@ public:
     unsigned int _ID;
     /// Lua reference id
     int _luaID;
-    /// scriptObject, support for swift
-    void* _scriptObject;
-
     /**
      When true, it means that the object was already rooted.
      */
     bool _rooted;
+    /// scriptObject, support for swift
+    void* _scriptObject;
+
 #endif
 
     // Memory leak diagnostic data (only included when CC_REF_LEAK_DETECTION is defined and its value isn't zero)
