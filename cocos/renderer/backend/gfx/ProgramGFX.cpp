@@ -8,6 +8,7 @@
 #include "UtilsGFX.h"
 #include "glslang/glslang/Public/ShaderLang.h"
 #include "glslang/SPIRV/GlslangToSpv.h"
+#include "glslang/Include/Types.h"
 #include "spirv_cross/spirv_msl.hpp"
 #include "TextureGFX.h"
 #include <regex>
