@@ -16,6 +16,9 @@
 
 using namespace cc;
 
+//#define USE_IA_CACHE
+static std::vector<gfx::InputAssembler*> InputAssemblerRec;
+
 CC_BACKEND_BEGIN
 
 CommandBufferGFX::CommandBufferGFX()
@@ -25,6 +28,8 @@ CommandBufferGFX::CommandBufferGFX()
     // NOTE: when resizing, engine will pause/resume at anywhere
     Director::getInstance()->getEventDispatcher()->addCustomEventListener(
         "glview_window_resized", [this](EventCustom*) { _screenResized = true; });
+    //
+    _pstateInfoHash = XXH32_createState();
 }
 
 CommandBufferGFX::~CommandBufferGFX()
@@ -54,6 +59,8 @@ CommandBufferGFX::~CommandBufferGFX()
     for (auto&& p : swapchains)
         delete p;
     swapchains.clear();
+
+    XXH32_freeState(_pstateInfoHash);
 }
 
 bool CommandBufferGFX::beginFrame()
@@ -207,7 +214,7 @@ void CommandBufferGFX::setWinding(Winding winding)
 void CommandBufferGFX::setIndexBuffer(Buffer* buffer)
 {
     CC_ASSERT(buffer);
-    if (buffer == nullptr || _indexBuffer == buffer)
+    if (!buffer || _indexBuffer == buffer)
         return;
     _indexBuffer = static_cast<BufferGFX*>(buffer);
 }
@@ -229,16 +236,6 @@ void CommandBufferGFX::drawArrays(PrimitiveType primitiveType, std::size_t start
 {
     if (_screenResized)
         return;
-    const void* iaHasher[2];
-    auto attributes = getAttributesFromProgramState(_programState);
-    iaHasher[0] = _programState->getVertexLayout();
-    if (attributes.empty())
-    {
-        attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
-        iaHasher[0] = _renderPipeline->getProgram()->getHandler();
-    }
-
-    _pstateinfo.inputState.attributes = attributes;
     if (!wireframe)
     {
         _pstateinfo.primitive                   = UtilsGFX::toPrimitiveType(primitiveType);
@@ -249,27 +246,10 @@ void CommandBufferGFX::drawArrays(PrimitiveType primitiveType, std::size_t start
         _pstateinfo.primitive                   = gfx::PrimitiveMode::LINE_LIST;
         _pstateinfo.rasterizerState.polygonMode = gfx::PolygonMode::LINE;
     }
-    prepareDrawing();
-
-    iaHasher[1] = _vertexBuffer->getHandler();
-    const auto iaKey = XXH32(iaHasher, sizeof(iaHasher), 0);
-    if (const auto it = _inputAssemblers.find(iaKey); it != _inputAssemblers.end())
-        _cb->bindInputAssembler(it->second);
-    else
-    {
-        gfx::InputAssemblerInfo info;
-        info.attributes = attributes;
-        info.vertexBuffers.push_back(_vertexBuffer->getHandler());
-        const auto inputAssembler = gfx::Device::getInstance()->createInputAssembler(info);
-        _inputAssemblers[iaKey] = inputAssembler;
-        _cb->bindInputAssembler(inputAssembler);
-    }
-
     gfx::DrawInfo dinfo;
     dinfo.vertexCount = count;
     dinfo.firstVertex = start;
-    _cb->draw(dinfo);
-
+    prepareDrawing(false, dinfo);
     cleanResources();
 }
 
@@ -278,16 +258,6 @@ void CommandBufferGFX::drawElements(
 {
     if (_screenResized)
         return;
-    const void* iaHasher[3];
-    auto attributes = getAttributesFromProgramState(_programState);
-    iaHasher[0] = _programState->getVertexLayout();
-    if (attributes.empty())
-    {
-        attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
-        iaHasher[0] = _renderPipeline->getProgram()->getHandler();
-    }
-
-    _pstateinfo.inputState.attributes = attributes;
     if (!wireframe)
     {
         _pstateinfo.primitive                   = UtilsGFX::toPrimitiveType(primitiveType);
@@ -298,29 +268,10 @@ void CommandBufferGFX::drawElements(
         _pstateinfo.primitive                   = gfx::PrimitiveMode::LINE_LIST;
         _pstateinfo.rasterizerState.polygonMode = gfx::PolygonMode::LINE;
     }
-    prepareDrawing();
-
-    iaHasher[1] = _vertexBuffer->getHandler();
-    iaHasher[2] = _indexBuffer->getHandler();
-    const auto iaKey = XXH32(iaHasher, sizeof(iaHasher), 0);
-    if (const auto it = _inputAssemblers.find(iaKey); it != _inputAssemblers.end())
-        _cb->bindInputAssembler(it->second);
-    else
-    {
-        gfx::InputAssemblerInfo info;
-        info.attributes = attributes;
-        info.vertexBuffers.push_back(_vertexBuffer->getHandler());
-        info.indexBuffer = _indexBuffer->getHandler();
-        const auto inputAssembler = gfx::Device::getInstance()->createInputAssembler(info);
-        _inputAssemblers[iaKey] = inputAssembler;
-        _cb->bindInputAssembler(inputAssembler);
-    }
-
     gfx::DrawInfo dinfo;
     dinfo.indexCount = count;
     dinfo.firstIndex = offset / _indexBuffer->getHandler()->getStride();
-    _cb->draw(dinfo);
-
+    prepareDrawing(true, dinfo);
     cleanResources();
 }
 
@@ -343,6 +294,11 @@ void CommandBufferGFX::endFrame()
     gfx::Device::getInstance()->present();
 
     // clean
+    for (auto& p : InputAssemblerRec)
+    {
+        CC_SAFE_DELETE(p);
+    }
+    InputAssemblerRec.clear();
     for (auto& p : _generatedFBO)
     {
         CC_SAFE_DELETE(p);
@@ -452,8 +408,15 @@ void CommandBufferGFX::readPixels(RenderTarget* rt, std::function<void(const Pix
         callback(pbd);
 }
 
-void CommandBufferGFX::prepareDrawing()
+void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawInfo)
 {
+    _pstateinfo.inputState.attributes = getAttributesFromProgramState(_programState);
+    _inputAssemblerHash[0] = _programState->getVertexLayout();
+    if (_pstateinfo.inputState.attributes.empty())
+    {
+        _pstateinfo.inputState.attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
+        _inputAssemblerHash[0] = _renderPipeline->getProgram()->getHandler();
+    }
     _pstateinfo.dynamicStates =
         // gfx::DynamicStateFlagBit::VIEWPORT |
         // gfx::DynamicStateFlagBit::SCISSOR |
@@ -482,19 +445,61 @@ void CommandBufferGFX::prepareDrawing()
     // put states in _renderPipeline into _pstateinfo
     _renderPipeline->doUpdate(&_pstateinfo);
 
-    const auto pstate = getPipelineState();
-    _cb->bindPipelineState(pstate);
-}
+    XXH32_reset(_pstateInfoHash, 0);
+    // for _pstateinfo.inputState.attributes
+    XXH32_update(_pstateInfoHash, _inputAssemblerHash.data(), sizeof(void*));
+    // merge continous members
+    XXH32_update(_pstateInfoHash, &_pstateinfo.shader,
+        sizeof(void*) * 3);
+    XXH32_update(_pstateInfoHash, &_pstateinfo.rasterizerState,
+        sizeof(_pstateinfo.rasterizerState) + sizeof(_pstateinfo.depthStencilState));
+    XXH32_update(_pstateInfoHash, &_pstateinfo.blendState,
+        sizeof(_pstateinfo.blendState.isA2C) + sizeof(_pstateinfo.blendState.isIndepend) + sizeof(_pstateinfo.blendState.blendColor));
+    XXH32_update(_pstateInfoHash, _pstateinfo.blendState.targets.data(),
+        sizeof(gfx::BlendTarget));
+    XXH32_update(_pstateInfoHash, &_pstateinfo.primitive,
+        sizeof(_pstateinfo.primitive) + sizeof(_pstateinfo.dynamicStates) + sizeof(_pstateinfo.bindPoint) + sizeof(_pstateinfo.subpass));
+    const auto pstateKey = XXH32_digest(_pstateInfoHash);
+    if (const auto it = _pstates.find(pstateKey); it != _pstates.end())
+    {
+        _cb->bindPipelineState(it->second);
+    }
+    else
+    {
+        const auto pstate = gfx::Device::getInstance()->createPipelineState(_pstateinfo);
+        _pstates[pstateKey] = pstate;
+        _cb->bindPipelineState(pstate);
+    }
 
-gfx::PipelineState* CommandBufferGFX::getPipelineState()
-{
-    const auto key = XXH32(&_pstateinfo, sizeof(_pstateinfo), 0);
-    const auto it = _pstates.find(key);
-    if (it != _pstates.end())
-        return it->second;
-    const auto pstate = gfx::Device::getInstance()->createPipelineState(_pstateinfo);
-    _pstates[key] = pstate;
-    return pstate;
+#ifdef USE_IA_CACHE
+    _inputAssemblerHash[1] = _vertexBuffer->getHandler();
+    if(useIndex)
+        _inputAssemblerHash[2] = _indexBuffer->getHandler();
+    const auto iaKey = XXH32(_inputAssemblerHash.data(), sizeof(void*) * (useIndex ? 3 : 2), 0);
+    if (const auto it = _inputAssemblers.find(iaKey); it != _inputAssemblers.end())
+    {
+        it->second->setDrawInfo(drawInfo);
+        _cb->bindInputAssembler(it->second);
+    }
+    else
+#endif
+    {
+        gfx::InputAssemblerInfo info;
+        info.attributes = _pstateinfo.inputState.attributes;
+        info.vertexBuffers.push_back(_vertexBuffer->getHandler());
+        if (useIndex)
+            info.indexBuffer = _indexBuffer->getHandler();
+        const auto inputAssembler = gfx::Device::getInstance()->createInputAssembler(info);
+        inputAssembler->setDrawInfo(drawInfo);
+#ifdef USE_IA_CACHE
+        _inputAssemblers[iaKey] = inputAssembler;
+#else
+        InputAssemblerRec.push_back(inputAssembler);
+#endif
+        _cb->bindInputAssembler(inputAssembler);
+    }
+
+    _cb->draw(drawInfo);
 }
 
 gfx::AttributeList CommandBufferGFX::getAttributesFromProgramState(ProgramState* state)

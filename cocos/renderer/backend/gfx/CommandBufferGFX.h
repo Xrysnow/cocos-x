@@ -75,8 +75,7 @@ private:
         unsigned int h = 0;
     };
 
-    void prepareDrawing();
-    cc::gfx::PipelineState* getPipelineState();
+    void prepareDrawing(bool useIndex, const cc::gfx::DrawInfo& drawInfo);
     cc::gfx::AttributeList getAttributesFromProgramState(ProgramState* state);
     static cc::gfx::AttributeList generateAttributeList(ProgramState* state);
     void setUniforms(ProgramGFX* program);
@@ -98,10 +97,12 @@ private:
     std::unordered_map<uint32_t, cc::gfx::PipelineState*> _pstates;
     std::vector<cc::gfx::PipelineLayout*> _pLayout;
     cc::gfx::PipelineStateInfo _pstateinfo;
+    XXH32_state_s* _pstateInfoHash = nullptr;
     std::vector<cc::gfx::Buffer*> _uniformBuffer;
     std::vector<cc::gfx::DescriptorSetLayout*> _dsLayout;
     std::vector<cc::gfx::DescriptorSet*> _ds;
     std::unordered_map<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
+    std::array<const void*, 3> _inputAssemblerHash;
     cocos2d::RefPtr<BufferGFX> _vertexBuffer;
     cocos2d::RefPtr<BufferGFX> _indexBuffer;
     cocos2d::RefPtr<ProgramState> _programState;
