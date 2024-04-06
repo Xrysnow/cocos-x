@@ -11,6 +11,7 @@
 #include "UtilsGFX.h"
 #include "base/CCConfiguration.h"
 #include "renderer/ccShaders.h"
+#include "gfx/backend/gfx-base/GFXUtil.h"
 
 static cocos2d::backend::DeviceGFX* DeviceGFXInstance = nullptr;
 
@@ -71,6 +72,9 @@ DeviceGFX::DeviceGFX()
         delete _deviceInfo;
         _deviceInfo = nullptr;
     }
+    cc::gfx::setPipelineCacheFolderHandler([]() {
+        return FileUtils::getInstance()->getWritablePath();
+    });
 }
 
 DeviceGFX::~DeviceGFX()
