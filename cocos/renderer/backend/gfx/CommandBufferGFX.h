@@ -4,6 +4,7 @@
 #include "renderer/backend/gfx/BufferGFX.h"
 #include "base/CCEventListenerCustom.h"
 #include "gfx/backend/GFXDeviceManager.h"
+#include "gfx/base/RefMap.h"
 #include "math/CCMath.h"
 #include <vector>
 
@@ -94,14 +95,13 @@ private:
     cc::gfx::Framebuffer* _currentFBO = nullptr;
     Size _currentFBOSize;
     cc::gfx::RenderPass* _currentPass = nullptr;
-    std::unordered_map<uint32_t, cc::gfx::PipelineState*> _pstates;
+    cc::RefMap<uint32_t, cc::gfx::PipelineState*> _pstates;
     std::vector<cc::gfx::PipelineLayout*> _pLayout;
     cc::gfx::PipelineStateInfo _pstateinfo;
     XXH32_state_s* _pstateInfoHash = nullptr;
-    std::vector<cc::gfx::Buffer*> _uniformBuffer;
-    std::vector<cc::gfx::DescriptorSetLayout*> _dsLayout;
-    std::vector<cc::gfx::DescriptorSet*> _ds;
-    std::unordered_map<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
+    cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
+    cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _usedInputAssemblers;
+    std::unordered_map<uint32_t, cc::RefVector<cc::gfx::Buffer*>> _inputAssemblerBuffers;
     std::array<const void*, 3> _inputAssemblerHash;
     cocos2d::RefPtr<BufferGFX> _vertexBuffer;
     cocos2d::RefPtr<BufferGFX> _indexBuffer;
@@ -110,7 +110,7 @@ private:
     CullMode _cullMode                          = CullMode::NONE;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     cc::gfx::Viewport _viewPort;
-    std::unordered_map<uint32_t, cc::gfx::RenderPass*> _renderPasses;
+    cc::RefMap<uint32_t, cc::gfx::RenderPass*> _renderPasses;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;
     cocos2d::Vector<TextureBackend*> _tmpTextures;
     bool _screenResized  = false;

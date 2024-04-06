@@ -16,9 +16,6 @@
 
 using namespace cc;
 
-//#define USE_IA_CACHE
-static std::vector<gfx::InputAssembler*> InputAssemblerRec;
-
 CC_BACKEND_BEGIN
 
 CommandBufferGFX::CommandBufferGFX()
@@ -38,24 +35,10 @@ CommandBufferGFX::~CommandBufferGFX()
     // NOTE: _renderPipeline belongs to Renderer
     CC_SAFE_RELEASE_NULL(_defaultFBO);
 
-    for (auto&& it : _renderPasses)
-    {
-        CC_SAFE_RELEASE(it.second);
-    }
     _renderPasses.clear();
-
-    for (auto&& it : _pstates)
-    {
-        CC_SAFE_DELETE(it.second);
-    }
     _pstates.clear();
-
-    for (auto&& it : _inputAssemblers)
-    {
-        CC_SAFE_DELETE(it.second);
-    }
     _inputAssemblers.clear();
-
+    _usedInputAssemblers.clear();
     for (auto&& p : swapchains)
         delete p;
     swapchains.clear();
@@ -107,15 +90,15 @@ bool CommandBufferGFX::beginFrame()
     return true;
 }
 
-void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descirptor)
+void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
 {
     const auto rt   = (const RenderTargetGFX*)renderTarget;
     auto clearFlags = gfx::ClearFlagBit::NONE;
-    if (bitmask::any(descirptor.flags.clear, TargetBufferFlags::COLOR))
+    if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         clearFlags |= gfx::ClearFlagBit::COLOR;
-    if (bitmask::any(descirptor.flags.clear, TargetBufferFlags::DEPTH))
+    if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::DEPTH))
         clearFlags |= gfx::ClearFlagBit::DEPTH;
-    if (bitmask::any(descirptor.flags.clear, TargetBufferFlags::STENCIL))
+    if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::STENCIL))
         clearFlags |= gfx::ClearFlagBit::STENCIL;
 
     rt->update();
@@ -143,7 +126,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         _currentFBOSize.height = tex->getHeight();
     }
 
-    const auto& clearColor = descirptor.clearColorValue;
+    const auto& clearColor = descriptor.clearColorValue;
     gfx::Color color;
     color.x = clearColor[0];
     color.y = clearColor[1];
@@ -155,7 +138,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     rect.y      = _viewPort.top;
     rect.width  = _viewPort.width;
     rect.height = _viewPort.height;
-
+    /*
     if (clearFlags != gfx::ClearFlagBit::NONE && _scissorEnabled)
     {
         const auto left = std::max(_viewPort.left, _scissorRect.x);
@@ -167,7 +150,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
             _scissorRect.x, _scissorRect.y, _scissorRect.width, _scissorRect.height
         );
     }
-
+    */
     CC_ASSERT(_currentFBO);
     if (_currentFBO == _defaultFBO)
         _currentPass = getRenderPass(clearFlags, true, _currentFBO->getColorTextures()[0]->getFormat());
@@ -176,7 +159,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     // rect will be both viewport and scissor
     // NOTE: in vulkan, viewport of the whole render pass is decided here
     _cb->beginRenderPass(
-        _currentPass, _currentFBO, rect, {color}, descirptor.clearDepthValue, (int)descirptor.clearStencilValue);
+        _currentPass, _currentFBO, rect, {color}, descriptor.clearDepthValue, (int)descriptor.clearStencilValue);
 }
 
 void CommandBufferGFX::setRenderPipeline(RenderPipeline* renderPipeline)
@@ -293,12 +276,19 @@ void CommandBufferGFX::endFrame()
     // present will wait
     gfx::Device::getInstance()->present();
 
-    // clean
-    for (auto& p : InputAssemblerRec)
+    _inputAssemblers = _usedInputAssemblers;
+    _usedInputAssemblers = {};
+    // remove unused buffer of IAs
+    for (auto it = _inputAssemblerBuffers.begin(); it != _inputAssemblerBuffers.end();)
     {
-        CC_SAFE_DELETE(p);
+        // remove unused buffer records
+        if (_inputAssemblers.find(it->first) == _inputAssemblers.end())
+            it = _inputAssemblerBuffers.erase(it);
+        else
+            ++it;
     }
-    InputAssemblerRec.clear();
+
+    // clean
     for (auto& p : _generatedFBO)
     {
         CC_SAFE_DELETE(p);
@@ -467,38 +457,37 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
     else
     {
         const auto pstate = gfx::Device::getInstance()->createPipelineState(_pstateinfo);
-        _pstates[pstateKey] = pstate;
+        _pstates.insert(pstateKey, pstate);
         _cb->bindPipelineState(pstate);
     }
 
-#ifdef USE_IA_CACHE
     _inputAssemblerHash[1] = _vertexBuffer->getHandler();
     if(useIndex)
         _inputAssemblerHash[2] = _indexBuffer->getHandler();
-    const auto iaKey = XXH32(_inputAssemblerHash.data(), sizeof(void*) * (useIndex ? 3 : 2), 0);
+    const auto iaKey = XXH32(_inputAssemblerHash.data(), sizeof(void*) * (useIndex ? 3 : 2), 0) + XXH32(&drawInfo, sizeof(drawInfo), 0);
     if (const auto it = _inputAssemblers.find(iaKey); it != _inputAssemblers.end())
     {
-        it->second->setDrawInfo(drawInfo);
+        //NOTE: no need to use setDrawInfo() since it's only used by CB->draw(IA)
         _cb->bindInputAssembler(it->second);
+        _usedInputAssemblers.insert(iaKey, it->second);
     }
     else
-#endif
     {
         gfx::InputAssemblerInfo info;
         info.attributes = _pstateinfo.inputState.attributes;
         info.vertexBuffers.push_back(_vertexBuffer->getHandler());
+        _inputAssemblerBuffers[iaKey] = { _vertexBuffer->getHandler() };
         if (useIndex)
+        {
             info.indexBuffer = _indexBuffer->getHandler();
+            _inputAssemblerBuffers[iaKey].pushBack(_indexBuffer->getHandler());
+        }
         const auto inputAssembler = gfx::Device::getInstance()->createInputAssembler(info);
-        inputAssembler->setDrawInfo(drawInfo);
-#ifdef USE_IA_CACHE
-        _inputAssemblers[iaKey] = inputAssembler;
-#else
-        InputAssemblerRec.push_back(inputAssembler);
-#endif
+        _inputAssemblers.insert(iaKey, inputAssembler);
+        _usedInputAssemblers.insert(iaKey, inputAssembler);
         _cb->bindInputAssembler(inputAssembler);
     }
-
+    // draw(IA) == draw(IA->getDrawInfo()), so we use draw(DrawInfo) and skip IA->setDrawInfo(DrawInfo)
     _cb->draw(drawInfo);
 }
 
@@ -600,9 +589,9 @@ cc::gfx::RenderPass* CommandBufferGFX::getRenderPass(
 {
     // format can be different
     const auto key = (uint32_t)clearFlags + ((uint32_t)format << 8) + (hasDepthStencil ? 0U : (1U << 31));
-    if (_renderPasses.count(key))
+    if (const auto find = _renderPasses.at(key))
     {
-        return _renderPasses[key];
+        return find;
     }
     gfx::RenderPassInfo info;
     gfx::ColorAttachment ca;
@@ -640,9 +629,7 @@ cc::gfx::RenderPass* CommandBufferGFX::getRenderPass(
         }
     }
     const auto rp = gfx::Device::getInstance()->createRenderPass(info);
-    CC_ASSERT(rp);
-    CC_SAFE_ADD_REF(rp);
-    _renderPasses[key] = rp;
+    _renderPasses.insert(key, rp);
     return rp;
 }
 
