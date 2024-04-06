@@ -331,6 +331,8 @@ void UtilsGFX::toTypes(PixelFormat textureFormat, cc::gfx::Format& format, bool&
     using cc::gfx::Format;
     format       = Format::UNKNOWN;
     isCompressed = false;
+    //NOTE: R8/RG8 are EXTs in ES2, L8/LA8 are not valid in ES3 and VK
+    const auto isES2 = cc::gfx::Device::getInstance()->getGfxAPI() == cc::gfx::API::GLES2;
     switch (textureFormat)
     {
     case PixelFormat::RGBA8888:
@@ -343,20 +345,13 @@ void UtilsGFX::toTypes(PixelFormat textureFormat, cc::gfx::Format& format, bool&
         format = Format::RGBA4;
         break;
     case PixelFormat::A8:
-        // NOTE: use R8
-        format = Format::R8;
+        format = isES2 ? Format::L8 : Format::R8;
         break;
     case PixelFormat::I8:
-        format = Format::L8;
-        // internalFormat = GL_LUMINANCE;
-        // format = GL_LUMINANCE;
-        // type = GL_UNSIGNED_BYTE;
+        format = isES2 ? Format::L8 : Format::R8;
         break;
-    case PixelFormat::AI88:
-        format = Format::LA8;
-        // internalFormat = GL_LUMINANCE_ALPHA;
-        // format = GL_LUMINANCE_ALPHA;
-        // type = GL_UNSIGNED_BYTE;
+    case PixelFormat::LA8:
+        format = isES2 ? Format::LA8 : Format::RG8;
         break;
     case PixelFormat::RGB565:
         format = Format::R5G6B5;

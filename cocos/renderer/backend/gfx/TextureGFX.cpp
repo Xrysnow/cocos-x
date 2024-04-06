@@ -120,6 +120,12 @@ void Texture2DGFX::updateTextureDescriptor(const TextureDescriptor& descriptor, 
                 gfx::GFX_FORMAT_INFOS[gfx::toNumber(_info.format)].name.c_str(),
                 (int)feature);
         }
+        else if (_info.format == gfx::Format::L8 || _info.format == gfx::Format::LA8)
+        {
+            CC_LOG_WARNING(
+                "pixel format %s in ES2 uses different channel in shaders",
+                gfx::GFX_FORMAT_INFOS[gfx::toNumber(_info.format)].name.c_str());
+        }
     }
 
     _info.width  = _width;
