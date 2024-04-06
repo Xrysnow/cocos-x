@@ -66,8 +66,8 @@ class TriangleBufferPool
 public:
     struct TriangleBuffer
     {
-        backend::BufferGFX* vb = nullptr;
-        backend::BufferGFX* ib = nullptr;
+        RefPtr<backend::BufferGFX> vb;
+        RefPtr<backend::BufferGFX> ib;
         bool used              = false;
     };
     struct VertexBuffer
@@ -82,7 +82,7 @@ public:
     };
 
 private:
-    const size_t dataBlockSize = 16384;
+    static constexpr size_t dataBlockSize = 16384;
     std::multimap<size_t, TriangleBuffer> buffers;
     std::multimap<size_t, TriangleBuffer> usedBuffers;
     std::multimap<size_t, VertexBuffer> vDatas;
@@ -140,6 +140,8 @@ public:
             d->newBuffer(isize, istride, backend::BufferType::INDEX, backend::BufferUsage::DYNAMIC));
         CC_ASSERT(b.vb);
         CC_ASSERT(b.ib);
+        b.vb->autorelease();
+        b.ib->autorelease();
         b.used = true;
         usedBuffers.insert(std::pair(vnum + inum, b));
         tbVTotal += vsize;
@@ -197,8 +199,6 @@ public:
             {
                 tbVTotal -= it.second.vb->getSize();
                 tbITotal -= it.second.ib->getSize();
-                CC_SAFE_RELEASE(it.second.vb);
-                CC_SAFE_RELEASE(it.second.ib);
             }
             buffers.clear();
             buffers = usedBuffers;
@@ -209,7 +209,6 @@ public:
         tbVUsed = 0;
         tbIUsed = 0;
         //
-        //if (vbUsed + 16 < vbTotal)
         {
             // remove unused
             for (auto it = vDatas.begin(); it != vDatas.end();)
@@ -227,7 +226,6 @@ public:
             it.second.used = 0;
         vbUsed = 0;
         //
-        //if (ibUsed + 16 < ibTotal)
         {
             // remove unused
             for (auto it = iDatas.begin(); it != iDatas.end();)
@@ -247,16 +245,6 @@ public:
     }
     void reset()
     {
-        for (auto& it : buffers)
-        {
-            CC_SAFE_RELEASE(it.second.vb);
-            CC_SAFE_RELEASE(it.second.ib);
-        }
-        for (auto& it : usedBuffers)
-        {
-            CC_SAFE_RELEASE(it.second.vb);
-            CC_SAFE_RELEASE(it.second.ib);
-        }
         buffers.clear();
         usedBuffers.clear();
         vDatas.clear();
