@@ -297,7 +297,7 @@ public:
     /**
      * Gets uniformID, it's part of materialID for batch draw
      */
-    uint32_t getUniformID() const { return _uniformID; }
+    uint32_t getUniformID();
 
     /**
      * Updates uniformID, it's part of materialID for batch draw

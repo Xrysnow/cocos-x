@@ -342,6 +342,7 @@ void ProgramState::setUniform(const backend::UniformLocation& uniformLocation, c
         break;
     }
 #endif
+    _uniformID = -1;
 }
 
 #if !defined(CC_USE_GFX) && defined(CC_USE_METAL)
@@ -442,6 +443,7 @@ void ProgramState::setVertexUniform(int location, const void* data, std::size_t 
     }
     memcpy(_vertexUniformBuffer + offset, data, size);
 #endif
+    _uniformID = -1;
 }
 
 void ProgramState::setFragmentUniform(int location, const void* data, std::size_t size)
@@ -500,6 +502,13 @@ void ProgramState::ensureVertexLayoutMutable()
     }
 }
 
+uint32_t ProgramState::getUniformID()
+{
+    if (_uniformID == -1)
+        updateUniformID();
+    return _uniformID;
+}
+
 void ProgramState::updateUniformID(int uniformID)
 {
     if (uniformID == -1)
@@ -551,12 +560,15 @@ void ProgramState::setTexture(const backend::UniformLocation& uniformLocation,
         const bool ok = state->setTexture(uniformLocation, texture, /*slot*/ 0);
         if (!ok)
         {
-            log("%s: failed, location=%d,%d, slot=%d, texture=0x%x",
+            /*
+            log("%s: %s failed, location=%d,%d, slot=%d, texture=0x%x",
                 __FUNCTION__,
+                p->getShaderInfo().name.c_str(),
                 uniformLocation.location[0],
                 uniformLocation.location[1],
                 slot,
                 texture);
+            */
         }
     }
 #endif
