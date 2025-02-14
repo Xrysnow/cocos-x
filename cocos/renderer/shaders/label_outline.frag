@@ -67,15 +67,16 @@ varying vec2 v_texCoord;
 
 void main()
 {
-#if __VERSION__ >= 300
-    vec4 sample_ = texture(u_texture, v_texCoord);
-#else
-    vec4 sample_ = texture2D(u_texture, v_texCoord);
-#endif
     // fontAlpha == 1 means the area of solid text (without edge)
     // fontAlpha == 0 means the area outside text, including outline area
     // fontAlpha == (0, 1) means the edge of text
+#if __VERSION__ >= 300
+    vec4 sample_ = texture(u_texture, v_texCoord);
+    float fontAlpha = sample_.g;
+#else
+    vec4 sample_ = texture2D(u_texture, v_texCoord);
     float fontAlpha = sample_.a;
+#endif
 
     // outlineAlpha == 1 means the area of 'solid text' and 'solid outline'
     // outlineAlpha == 0 means the transparent area outside text and outline
