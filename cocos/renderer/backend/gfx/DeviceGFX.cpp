@@ -110,6 +110,7 @@ Buffer* DeviceGFX::newBuffer(size_t size, size_t stride, BufferType type, Buffer
     info.memUsage = UtilsGFX::toMemoryUsage(usage);
     info.size     = (uint32_t)size;
     info.stride   = (uint32_t)stride;
+    //info.flags    = cc::gfx::BufferFlags::ENABLE_STAGING_WRITE;
     return new BufferGFX(info);
 }
 
@@ -261,6 +262,7 @@ Program* DeviceGFX::newProgram(std::string_view vertexShader, std::string_view f
         block.name    = "VSBlock";
         block.members = it2->second;
         block.binding = 0;
+        block.count   = 1;
         info.blocks.emplace_back(block);
     }
     it2 = BuiltinShaderUniforms.find(fragKey);
@@ -270,6 +272,7 @@ Program* DeviceGFX::newProgram(std::string_view vertexShader, std::string_view f
         block.name    = "FSBlock";
         block.members = it2->second;
         block.binding = 1;
+        block.count   = 1;
         info.blocks.emplace_back(block);
     }
     it2 = BuiltinShaderLightCommonUniforms.find(fragKey);
@@ -279,6 +282,7 @@ Program* DeviceGFX::newProgram(std::string_view vertexShader, std::string_view f
         block.name    = "CommonLightBlock";
         block.members = it2->second;
         block.binding = 2;
+        block.count   = 1;
         info.blocks.emplace_back(block);
     }
     const auto it3 = BuiltinShaderTextures.find(fragKey);
@@ -327,7 +331,7 @@ struct BuiltinShaderHelper
         alist->emplace_back(attr);
         return *this;
     }
-    BuiltinShaderHelper& uniform(const std::string& name, cc::gfx::Type type, uint32_t count = 0)
+    BuiltinShaderHelper& uniform(const std::string& name, cc::gfx::Type type, uint32_t count = 1)
     {
         cc::gfx::Uniform uniform;
         uniform.name  = name;
