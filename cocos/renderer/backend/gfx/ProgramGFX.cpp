@@ -134,8 +134,8 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
                     log("%s: attribute '%s' location mismatch, expect %d, got %d",
                         __FUNCTION__,
                         a.name.c_str(),
-                        target.location,
-                        a.location);
+                        (int)target.location,
+                        (int)a.location);
                 }
             }
             else
@@ -148,7 +148,7 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
     else
     {
         // attributes should not be empty
-        log("%s: no attributes is given", __FUNCTION__);
+        log("%s: no attributes is given in \"%s\"", __FUNCTION__, shaderInfo.name.c_str());
     }
 
     if (!shaderInfo.blocks.empty())
@@ -173,10 +173,10 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
                     log("%s: uniform block '%s' mismatch, expect binding=%d set=%d, got binding=%d set=%d",
                         __FUNCTION__,
                         b.name.c_str(),
-                        target.binding,
-                        target.set,
-                        b.binding,
-                        b.set);
+                        (int)target.binding,
+                        (int)target.set,
+                        (int)b.binding,
+                        (int)b.set);
                 }
                 // compare sequence
                 for (size_t j = 0; j < std::max(b.members.size(), target.members.size()); ++j)
@@ -294,11 +294,11 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
                         "type=%d",
                         __FUNCTION__,
                         s.name.c_str(),
-                        target.binding,
-                        target.set,
+                        (int)target.binding,
+                        (int)target.set,
                         (int)target.type,
-                        s.binding,
-                        s.set,
+                        (int)s.binding,
+                        (int)s.set,
                         (int)s.type);
                 }
             }
@@ -448,7 +448,7 @@ void ProgramGFX::computeShaderInfo(
         ub.name    = block.name;
         ub.binding = block.getBinding();
         ub.set     = q.layoutSet == glslang::TQualifier::layoutSetEnd ? 0u : q.layoutSet;
-        // ub.count = 1; // seems not used
+        ub.count = 1; // required by gles3
 
         BlockInfoEx ex;
         ex.name              = block.name;
@@ -643,11 +643,11 @@ void ProgramGFX::updateBlockInfoEx(
                             u.name.c_str(),
                             block.name.c_str(),
                             uinfo.count,
-                            uinfo.size,
-                            uinfo.bufferOffset,
-                            gotCount,
-                            size,
-                            ex_size);
+                            (int)uinfo.size,
+                            (int)uinfo.bufferOffset,
+                            (int)gotCount,
+                            (int)size,
+                            (int)ex_size);
                     }
                     uinfo.count        = u.count;
                     uinfo.size         = size;
@@ -664,8 +664,8 @@ void ProgramGFX::updateBlockInfoEx(
                     __FUNCTION__,
                     info.name.c_str(),
                     block.name.c_str(),
-                    ex.size,
-                    ex_size);
+                    (int)ex.size,
+                    (int)ex_size);
             }
             ex.size = ex_size;
         }
@@ -726,7 +726,7 @@ cc::gfx::DescriptorSetLayoutBindingList ProgramGFX::computeUniformLayoutBindings
             continue;
         if (usedBindings.count(st.binding))
         {
-            log("%s: binding of sampler '%s' (%d) is already used", __FUNCTION__, st.name.c_str(), st.binding);
+            log("%s: binding of sampler '%s' (%d) is already used", __FUNCTION__, st.name.c_str(), (int)st.binding);
         }
         else
         {
@@ -925,7 +925,7 @@ std::string ProgramGFX::generateShaderName(const cc::gfx::ShaderInfo& shaderInfo
     std::string shaderName = StringUtils::format("0x%tx(", (ptrdiff_t)p);
     for (auto& stage : shaderInfo.stages)
     {
-        shaderName += StringUtils::format("%d+", (uint32_t)stage.source.size());
+        shaderName += StringUtils::format("%d+", (int)stage.source.size());
     }
     if (shaderName.back() == '+')
         shaderName.back() = ')';
@@ -1069,8 +1069,10 @@ ProgramStateGFX::ProgramStateGFX(ProgramGFX* program_, const cocos2d::Map<std::s
         {
             gfx::BufferInfo info;
             info.usage    = gfx::BufferUsageBit::UNIFORM;
-            info.size     = program->getUniformBlockSize(name);
             info.memUsage = gfx::MemoryUsageBit::HOST;
+            info.size     = program->getUniformBlockSize(name);
+            info.stride   = info.size;
+            //info.flags    = gfx::BufferFlags::ENABLE_STAGING_WRITE;
             buffer        = new BufferGFX(info);  // owned by this
             buffer->autorelease();
             buffers.insert(name, buffer);
@@ -1167,6 +1169,12 @@ bool ProgramStateGFX::setAllBuffer(const void* data, std::size_t size)
         }
         data_head += block_size;
     }
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    if (data_head - data != size)
+    {
+        log("%s: size mismatch, given %d, set %d", __FUNCTION__, (int)size, (int)(data_head - data));
+    }
+#endif
     return true;
 }
 
