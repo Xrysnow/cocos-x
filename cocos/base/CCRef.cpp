@@ -86,7 +86,13 @@ void Ref::retain()
 
 void Ref::release()
 {
-    CCASSERT(_referenceCount > 0, "reference count should be greater than 0");
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    if (_referenceCount <= 0)
+    {
+        print("Ref::release: invalid reference count in %s, got %d", typeid(*this).name(), _referenceCount);
+        CCASSERT(false, "reference count should be greater than 0");
+    }
+#endif
     --_referenceCount;
 
     if (_referenceCount == 0)
