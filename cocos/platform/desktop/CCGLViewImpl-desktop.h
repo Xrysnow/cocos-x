@@ -93,6 +93,7 @@ public:
 
     int getMonitorCount() const;
     Vec2 getMonitorSize() const;
+    GLFWmonitor* getMonitor() const;
 
     /* override functions */
     virtual bool isOpenGLReady() override;

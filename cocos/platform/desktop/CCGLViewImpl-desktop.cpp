@@ -165,6 +165,39 @@ const std::string GLViewImpl::EVENT_WINDOW_UNFOCUSED = "glview_window_unfocused"
 
 ////////////////////////////////////////////////////
 
+static GLFWmonitor* getCurrentMonitor(GLFWwindow* window) {
+    int monitorCount;
+    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+
+    int windowX, windowY, windowWidth, windowHeight;
+    glfwGetWindowPos(window, &windowX, &windowY);
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+    float xscale, yscale;
+    glfwGetWindowContentScale(window, &xscale, &yscale);
+
+    const auto windowCenterX = windowX + ((float)windowWidth / 2) * xscale;
+    const auto windowCenterY = windowY + ((float)windowHeight / 2) * yscale;
+
+    for (int i = 0; i < monitorCount; i++) {
+        int monitorX, monitorY;
+        glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
+
+        int monitorWidth, monitorHeight;
+        glfwGetMonitorWorkarea(monitors[i],
+            &monitorX, &monitorY,
+            &monitorWidth, &monitorHeight);
+
+        if (windowCenterX >= monitorX &&
+            windowCenterX < (monitorX + monitorWidth) &&
+            windowCenterY >= monitorY &&
+            windowCenterY < (monitorY + monitorHeight)) {
+            return monitors[i];
+        }
+    }
+    return glfwGetPrimaryMonitor();
+}
+
 struct keyCodeItem
 {
     int glfwKeyCode;
@@ -417,14 +450,17 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 	    desiredApi = (cc::gfx::API)configAPI;
     if (desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL)
     {
-	    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
     else
     {
-	    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-	    glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
-	    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+#if CC_DEBUG
+        glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
+#endif
     }
 #elif defined(CC_USE_ANGLE)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
@@ -532,7 +568,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         }
     }
 
-	void* hdl = getWindowHandle();
+    void* hdl = getWindowHandle();
     CC_ASSERT(hdl);
 
     cc::gfx::DeviceInfo info;
@@ -773,8 +809,8 @@ void GLViewImpl::setFullscreen()
 
 void GLViewImpl::setFullscreen(int w, int h, int refreshRate)
 {
-    auto monitor = glfwGetPrimaryMonitor();
-    if (nullptr == monitor || monitor == _monitor)
+    auto monitor = isFullscreen() ? glfwGetWindowMonitor(_mainWindow) : getCurrentMonitor(_mainWindow);
+    if (nullptr == monitor)
     {
         return;
     }
@@ -795,7 +831,7 @@ void GLViewImpl::setFullscreen(int monitorIndex, int w, int h, int refreshRate)
         return;
     }
     GLFWmonitor* monitor = monitors[monitorIndex];
-    if (nullptr == monitor || _monitor == monitor)
+    if (nullptr == monitor)
     {
         return;
     }
@@ -827,9 +863,10 @@ void GLViewImpl::setWindowed(int width, int height)
     }
     else
     {
-        const GLFWvidmode* videoMode = glfwGetVideoMode(_monitor);
+        GLFWmonitor* monitor = getCurrentMonitor(_mainWindow);
+        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
         int xpos = 0, ypos = 0;
-        glfwGetMonitorPos(_monitor, &xpos, &ypos);
+        glfwGetMonitorPos(monitor, &xpos, &ypos);
         xpos += (int)((videoMode->width - width) * 0.5f);
         ypos += (int)((videoMode->height - height) * 0.5f);
         _monitor = nullptr;
@@ -863,16 +900,7 @@ int GLViewImpl::getMonitorCount() const
 
 Vec2 GLViewImpl::getMonitorSize() const
 {
-    GLFWmonitor* monitor = _monitor;
-    if (nullptr == monitor)
-    {
-        GLFWwindow* window = this->getWindow();
-        monitor            = glfwGetWindowMonitor(window);
-    }
-    if (nullptr == monitor)
-    {
-        monitor = glfwGetPrimaryMonitor();
-    }
+    GLFWmonitor* monitor = getMonitor();
     if (nullptr != monitor)
     {
         const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
@@ -880,6 +908,16 @@ Vec2 GLViewImpl::getMonitorSize() const
         return size;
     }
     return Vec2::ZERO;
+}
+
+GLFWmonitor* GLViewImpl::getMonitor() const
+{
+    GLFWmonitor* monitor = getCurrentMonitor(_mainWindow);
+    if (nullptr == monitor)
+    {
+        monitor = glfwGetWindowMonitor(getWindow());
+    }
+    return monitor;
 }
 
 void GLViewImpl::updateFrameSize()
@@ -915,8 +953,9 @@ void GLViewImpl::updateFrameSize()
 #ifdef CC_USE_GFX
             GFXBeforeScreenResize();
 #endif
-            glfwSetWindowSize(_mainWindow, (int)(_screenSize.width * _retinaFactor * _frameZoomFactor),
-                              (int)(_screenSize.height * _retinaFactor * _frameZoomFactor));
+            glfwSetWindowSize(_mainWindow,
+                (int)(_screenSize.width * _retinaFactor * _frameZoomFactor),
+                (int)(_screenSize.height * _retinaFactor * _frameZoomFactor));
 
             _isInRetinaMonitor = false;
         }
@@ -1010,7 +1049,7 @@ void GLViewImpl::onGLFWError(int errorID, const char* errorDesc)
     {
         _glfwError.append(StringUtils::format("GLFWError #%d Happen, %s\n", errorID, errorDesc));
     }
-    CCLOGERROR("%s", _glfwError.c_str());
+    CC_LOG_ERROR("%s", _glfwError.c_str());
 }
 
 void GLViewImpl::onGLFWMouseCallBack(GLFWwindow* /*window*/, int button, int action, int /*modify*/)
@@ -1171,13 +1210,22 @@ void GLViewImpl::onGLFWCharCallback(GLFWwindow* /*window*/, unsigned int charact
     }
 }
 
-void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* /*window*/, int /*x*/, int /*y*/)
+void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* /*window*/, int x, int y)
 {
     Director::getInstance()->setViewport();
+    if (isFullscreen())
+    {
+        _monitor = getCurrentMonitor(_mainWindow);
+    }
 }
 
 void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
 {
+    // should skip fullscreen
+    if (isFullscreen())
+    {
+        return;
+    }
     if (w && h && _resolutionPolicy != ResolutionPolicy::UNKNOWN)
     {
         const float frameWidth  = w / _frameZoomFactor;
