@@ -307,21 +307,27 @@ void ProgramState::setUniform(const backend::UniformLocation& uniformLocation, c
         return;
     if (!state->setUniform(uniformLocation, data, size))
     {
+#if CC_DEBUG
         log("%s: failed, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, offset);
         CCASSERT(false, "failed");
+#endif
     }
     const auto allOffset = state->getAllBufferOffset(uniformLocation);
     if (allOffset + size > _vertexUniformBufferSize || allOffset > _vertexUniformBufferSize ||
         size > _vertexUniformBufferSize)
     {
+#if CC_DEBUG
         log("%s: invalid parameters, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, (int)allOffset);
         CCASSERT(false, "invalid parameters");
+#endif
         return;
     }
     if (allOffset < 0)
     {
+#if CC_DEBUG
         log("%s: invalid uniform location, [0]=%d, [1]=%d", __FUNCTION__, location, (int)offset);
         CCASSERT(false, "invalid uniform location");
+#endif
         return;
     }
     memcpy(_vertexUniformBuffer + allOffset, data, size);
@@ -438,8 +444,10 @@ void ProgramState::setVertexUniform(int location, const void* data, std::size_t 
         offset > _vertexUniformBufferSize ||
         size > _vertexUniformBufferSize)
     {
+#if CC_DEBUG
         log("setVertexUniform: %d, %d, %d", location, (int)size, (int)offset);
         CCASSERT(false, "setVertexUniform: invalid parameters");
+#endif
     }
     memcpy(_vertexUniformBuffer + offset, data, size);
 #endif
