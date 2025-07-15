@@ -52,6 +52,7 @@ void TrianglesCommand::init(float globalOrder,
         CCLOGERROR("Resize indexCount from %d to %d, size must be multiple times of 3", count, _triangles.indexCount);
     }
     _mv = mv;
+    _skipModelView = false;
 
     auto programType = _pipelineDescriptor.programState->getProgram()->getProgramType();
     auto uniformID   = _pipelineDescriptor.programState->getUniformID();

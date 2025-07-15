@@ -105,6 +105,9 @@ public:
     /** update material ID */
     void updateMaterialID();
 
+    void setSkipModelView(bool skipModelView) { _skipModelView = skipModelView; }
+    bool isSkipModelView() const { return _skipModelView; }
+
 protected:
     /**Generate the material ID by textureID, glProgramState, and blend function.*/
     void generateMaterialID();
@@ -114,6 +117,8 @@ protected:
 
     /**Rendered triangles.*/
     Triangles _triangles;
+
+    bool _skipModelView = false;
 
     // Cached value to determine to generate material id or not.
     BlendFunc _blendType              = BlendFunc::DISABLE;

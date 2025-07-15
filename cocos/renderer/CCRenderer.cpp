@@ -845,11 +845,14 @@ void Renderer::fillVerticesAndIndices(const TrianglesCommand* cmd, unsigned int 
     size_t vertexCount = cmd->getVertexCount();
     memcpy(&_verts[_filledVertex], cmd->getVertices(), sizeof(V3F_C4B_T2F) * vertexCount);
 
-    // fill vertex, and convert them to world coordinates
-    const Mat4& modelView = cmd->getModelView();
-    for (size_t i = 0; i < vertexCount; ++i)
+    if (!c->isSkipModelView())
     {
-        modelView.transformPoint(&(_verts[i + _filledVertex].vertices));
+        // fill vertex, and convert them to world coordinates
+        const Mat4& modelView = cmd->getModelView();
+        for (size_t i = 0; i < vertexCount; ++i)
+        {
+            modelView.transformPoint(&(_verts[i + _filledVertex].vertices));
+        }
     }
 
     // fill index
@@ -954,10 +957,12 @@ void Renderer::drawBatchedTriangles()
             const auto vcount = c->getVertexCount();
             const auto icount = c->getIndexCount();
             memcpy(vbuffer + vCurrent, c->getVertices(), sizeof(V3F_C4B_T2F) * vcount);
-            const auto& modelView = c->getModelView();
-            if (vcount <= 64 || !modelView.isIdentity())
+            if (!c->isSkipModelView())
+            {
+                const auto& modelView = c->getModelView();
                 for (size_t j = 0; j < vcount; ++j)
                     modelView.transformPoint(&((vbuffer + vCurrent + j)->vertices));
+            }
             const auto indices = c->getIndices();
             for (size_t j = 0; j < icount; ++j)
                 ibuffer[iCurrent + j] = vCurrent + indices[j];
