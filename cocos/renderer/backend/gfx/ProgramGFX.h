@@ -47,6 +47,7 @@ public:
     bool isValid() const { return getHandler(); }
 
     const cc::gfx::ShaderInfo& getShaderInfo() const { return _info; }
+    size_t getHash() const { return hash; }
 
     UniformLocation getUniformLocation(std::string_view uniform) const override;
     UniformLocation getUniformLocation(backend::Uniform name) const override;
