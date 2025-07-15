@@ -1170,9 +1170,11 @@ bool ProgramStateGFX::setAllBuffer(const void* data, std::size_t size)
         data_head += block_size;
     }
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    if (data_head - data != size)
+    const auto data_origin = (const char*)data;
+    const auto done = data_head - data_origin;
+    if (done != size)
     {
-        log("%s: size mismatch, given %d, set %d", __FUNCTION__, (int)size, (int)(data_head - data));
+        log("%s: size mismatch, given %d, set %d", __FUNCTION__, (int)size, (int)done);
     }
 #endif
     return true;
