@@ -444,6 +444,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     setViewName(viewName);
 
     _frameZoomFactor = frameZoomFactor;
+    bool useGL = CC_TARGET_PLATFORM != CC_PLATFORM_MAC;
 #if defined(CC_USE_GFX)
     auto desiredApi = cc::gfx::API::VULKAN;
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -452,7 +453,8 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt();
     if (0 < configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
 	    desiredApi = (cc::gfx::API)configAPI;
-    if (desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL)
+    useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL);
+    if (!useGL)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
@@ -553,7 +555,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 
 #if defined(CC_USE_GFX)
 
-    if (desiredApi != cc::gfx::API::VULKAN && desiredApi != cc::gfx::API::METAL)
+    if (useGL)
     {
         if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !gladLoadGLES2(glfwGetProcAddress))
         {
@@ -625,7 +627,8 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 #endif
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
-    glfwSwapInterval(_glContextAttrs.vsync ? 1 : 0);
+    if (useGL)
+        glfwSwapInterval(_glContextAttrs.vsync ? 1 : 0);
 #endif
 
 //    // GLFW v3.2 no longer emits "onGLFWWindowSizeFunCallback" at creation time. Force default viewport:
