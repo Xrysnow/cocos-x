@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 #include "platform/desktop/CCGLViewImpl-desktop.h"
 #include "platform/CCApplication.h"
+#include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
 #include "base/CCTouch.h"
 #include "base/CCEventDispatcher.h"
@@ -37,7 +38,7 @@ THE SOFTWARE.
 #include "2d/CCCamera.h"
 
 #if defined(_WIN32)
-#    include "glfw3ext.h"
+#include "glfw3ext.h"
 #endif
 #if CC_ICON_SET_SUPPORT
 #include "platform/CCImage.h"
@@ -70,6 +71,9 @@ static void GFXBeforeScreenResize()
 #else
 #define GLFW_EXPOSE_NATIVE_EGL
 #define GLFW_EXPOSE_NATIVE_X11
+#ifndef Status
+#define Status int
+#endif
 #endif
 #include "glfw3native.h"
 
@@ -1024,7 +1028,7 @@ id GLViewImpl::getNSGLContext()
 #else
 void* GLViewImpl::getLinuxWindow()
 {
-    return glfwGetX11Window(_mainWindow);
+    return (void*)glfwGetX11Window(_mainWindow);
 }
 #endif
 
