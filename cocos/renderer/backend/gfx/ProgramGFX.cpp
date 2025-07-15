@@ -416,6 +416,7 @@ ProgramGFX::~ProgramGFX()
     CC_SAFE_RELEASE_NULL(_program);
     CC_SAFE_RELEASE_NULL(defaultPipelineLayout);
     CC_SAFE_RELEASE_NULL(defaultDescriptorSetLayout);
+    cachedPrograms.erase(hash);
 }
 
 void ProgramGFX::computeShaderInfo(
