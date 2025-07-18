@@ -451,9 +451,9 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     DesiredAPI = cc::gfx::API::METAL;
 #endif
     auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt();
-    if (0 < configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
+    if (0 <= configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
 	    desiredApi = (cc::gfx::API)configAPI;
-    useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL);
+    useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL || desiredApi == cc::gfx::API::UNKNOWN);
     if (!useGL)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
