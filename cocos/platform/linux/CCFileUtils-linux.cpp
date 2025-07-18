@@ -31,8 +31,8 @@ THE SOFTWARE.
 #include "base/ccUTF8.h"
 #include <unistd.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <errno.h>
+#include <cstdio>
+#include <cerrno>
 
 using namespace std;
 
@@ -109,6 +109,16 @@ std::string FileUtilsLinux::getNativeWritableAbsolutePath() const
     }
 
     return _writablePath;
+}
+
+void FileUtilsLinux::setWritablePath(std::string_view writablePath)
+{
+    DECLARE_GUARD;
+    struct stat st;
+    stat(writablePath.data(), &st);
+    if (!S_ISDIR(st.st_mode) || access(writablePath.data(), W_OK) != 0)
+        return;
+    _writablePath = writablePath;
 }
 
 bool FileUtilsLinux::isFileExistInternal(std::string_view path) const

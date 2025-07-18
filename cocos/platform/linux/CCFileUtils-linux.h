@@ -46,14 +46,12 @@ class CC_DLL FileUtilsLinux : public FileUtils
 protected:
     FileUtilsLinux();
 
-private:
-    std::string _writablePath;
-
 public:
     /* override functions */
     bool init() override;
     virtual std::string getWritablePath() const override;
     std::string getNativeWritableAbsolutePath() const override;
+    virtual void setWritablePath(std::string_view writablePath) override;
 
 private:
     virtual bool isFileExistInternal(std::string_view strFilePath) const override;
