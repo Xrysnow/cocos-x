@@ -577,6 +577,16 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     void* hdl = getWindowHandle();
     CC_ASSERT(hdl);
 
+    const auto& cfgMT = Configuration::getInstance()->getValue("GFXMultithreaded");
+    if (cfgMT.getType() == Value::Type::BOOLEAN && !cfgMT.asBool())
+    {
+        cc::gfx::DeviceManager::DETACH_DEVICE_THREAD = false;
+        CC_LOG_INFO("Disable detach thread");
+    }
+    else
+    {
+        CC_LOG_INFO("Enable detach thread");
+    }
     cc::gfx::DeviceInfo info;
     const auto device = cc::gfx::DeviceManager::create(info, desiredApi);
     if (!device)
@@ -586,13 +596,6 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     }
 
     backend::DeviceGFX::setSwapchainInfo(hdl, true, rect.size.width, rect.size.height);
-
-    auto configMT = Configuration::getInstance()->getValue("GFXMultithreaded");
-    const auto agent = dynamic_cast<cc::gfx::DeviceAgent*>(device);
-    if (agent && configMT.getType() == Value::Type::BOOLEAN)
-    {
-        agent->setMultithreaded(configMT.asBool());
-    }
 
 #elif (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
 
@@ -631,9 +634,9 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         glfwSwapInterval(_glContextAttrs.vsync ? 1 : 0);
 #endif
 
-//    // GLFW v3.2 no longer emits "onGLFWWindowSizeFunCallback" at creation time. Force default viewport:
-//    setViewPortInPoints(0, 0, neededWidth, neededHeight);
-//
+    // GLFW v3.2 no longer emits "onGLFWWindowSizeFunCallback" at creation time. Force default viewport:
+    //setViewPortInPoints(0, 0, neededWidth, neededHeight);
+
     return true;
 }
 
