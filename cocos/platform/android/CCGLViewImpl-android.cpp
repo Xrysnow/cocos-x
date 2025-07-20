@@ -29,6 +29,9 @@ THE SOFTWARE.
 #include "platform/android/jni/JniHelper.h"
 #include "CCGL.h"
 
+#include "glad/gl.h"
+#include "glad/egl.h"
+
 #ifdef CC_USE_GFX
 #include "gfx-base/GFXDef-common.h"
 #include "GFXDeviceManager.h"
@@ -47,28 +50,35 @@ static void GFXBeforeScreenResize()
 #include <stdlib.h>
 #include <android/log.h>
 
-// <EGL/egl.h> exists since android 2.3
-#include <EGL/egl.h>
-PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT       = 0;
-PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT       = 0;
-PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT = 0;
-
 #define DEFAULT_MARGIN_ANDROID 30.0f
 #define WIDE_SCREEN_ASPECT_RATIO_ANDROID 2.0f
 
-void initExtensions()
-{
-    glGenVertexArraysOESEXT    = (PFNGLGENVERTEXARRAYSOESPROC)eglGetProcAddress("glGenVertexArraysOES");
-    glBindVertexArrayOESEXT    = (PFNGLBINDVERTEXARRAYOESPROC)eglGetProcAddress("glBindVertexArrayOES");
-    glDeleteVertexArraysOESEXT = (PFNGLDELETEVERTEXARRAYSOESPROC)eglGetProcAddress("glDeleteVertexArraysOES");
-}
 
 NS_CC_BEGIN
 
-GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, Rect rect, float frameZoomFactor)
+void GLViewImpl::loadGLES2()
+{
+//    auto glesVer = gladLoaderLoadGLES2();
+//    if (!glesVer)
+//        CCLOGERROR("Load GLES fail");
+
+    //
+    if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !eglGetDisplay)
+    {
+        ccMessageBox("Failed to load glad EGL", "OpenGL error");
+        return;
+    }
+    if (!gladLoadGLES2(eglGetProcAddress) || !glGetError)
+    {
+        ccMessageBox("Failed to load glad GLES", "OpenGL error");
+        return;
+    }
+}
+
+GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
 {
     auto ret = new GLViewImpl;
-    if (ret && ret->initWithRect(viewName, rect, frameZoomFactor))
+    if (ret && ret->initWithRect(viewName, rect, frameZoomFactor, resizable))
     {
         ret->autorelease();
         return ret;
@@ -103,12 +113,11 @@ GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName)
 
 GLViewImpl::GLViewImpl()
 {
-    initExtensions();
 }
 
 GLViewImpl::~GLViewImpl() {}
 
-bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZoomFactor)
+bool GLViewImpl::initWithRect(std::string_view /*viewName*/, const Rect& /*rect*/, float /*frameZoomFactor*/, bool /*resizable*/)
 {
 #if defined(CC_USE_GFX)
     if (!cc::gfx::Device::getInstance())
@@ -172,7 +181,8 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
-    JniHelper::callStaticVoidMethod("org.cocos2dx.lib.Cocos2dxHelper", "terminateProcess");
+    JniHelper::callStaticVoidMethod("org.cocos.lib.CocosEngine", "onExit");
+    release();
 }
 
 void GLViewImpl::swapBuffers() {}
@@ -181,11 +191,11 @@ void GLViewImpl::setIMEKeyboardState(bool bOpen)
 {
     if (bOpen)
     {
-        JniHelper::callStaticVoidMethod("org.cocos2dx.lib.Cocos2dxGLSurfaceView", "openIMEKeyboard");
+        JniHelper::callStaticVoidMethod("org.cocos.lib.CocosGLSurfaceView", "openIMEKeyboard");
     }
     else
     {
-        JniHelper::callStaticVoidMethod("org.cocos2dx.lib.Cocos2dxGLSurfaceView", "closeIMEKeyboard");
+        JniHelper::callStaticVoidMethod("org.cocos.lib.CocosGLSurfaceView", "closeIMEKeyboard");
     }
 }
 
@@ -205,9 +215,17 @@ Rect GLViewImpl::getSafeAreaRect() const
     float marginX = DEFAULT_MARGIN_ANDROID / _scaleX;
     float marginY = DEFAULT_MARGIN_ANDROID / _scaleY;
 
-    bool isScreenRound   = JniHelper::callStaticBooleanMethod("org/cocos2dx/lib/Cocos2dxHelper", "isScreenRound");
-    bool hasSoftKeys     = JniHelper::callStaticBooleanMethod("org/cocos2dx/lib/Cocos2dxHelper", "hasSoftKeys");
-    bool isCutoutEnabled = JniHelper::callStaticBooleanMethod("org/cocos2dx/lib/Cocos2dxHelper", "isCutoutEnabled");
+    bool isScreenRound   = JniHelper::callStaticBooleanMethod("org/cocos/lib/CocosEngine", "isScreenRound");
+    bool hasSoftKeys     = JniHelper::callStaticBooleanMethod("org/cocos/lib/CocosEngine", "hasSoftKeys");
+    bool isCutoutEnabled = JniHelper::callStaticBooleanMethod("org/cocos/lib/CocosEngine", "isCutoutEnabled");
+
+    float insetTop = 0.0f;
+    float insetBottom = 0.0f;
+    float insetLeft = 0.0f;
+    float insetRight = 0.0f;
+
+    static axstd::pod_vector<int32_t> cornerRadii =
+            JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getDeviceCornerRadii");
 
     if (isScreenRound)
     {
@@ -228,28 +246,59 @@ Rect GLViewImpl::getSafeAreaRect() const
             // landscape: no changes with X-coords
         }
     }
-    else if (deviceAspectRatio >= WIDE_SCREEN_ASPECT_RATIO_ANDROID)
+    else if (deviceAspectRatio >= WIDE_SCREEN_ASPECT_RATIO_ANDROID || cornerRadii.size() >= 4)
     {
         // almost all devices on the market have round corners if
         // deviceAspectRatio more than 2 (@see "android.max_aspect" parameter in AndroidManifest.xml)
-        float bottomMarginIfPortrait = 0;
-        if (hasSoftKeys)
-        {
-            bottomMarginIfPortrait = marginY * 2.f;
-        }
 
-        if (safeAreaRect.size.width < safeAreaRect.size.height)
+        // cornerRadii is only available in API31+ (Android 12+)
+        if (cornerRadii.size() >= 4)
         {
-            // portrait: double margin space if device has soft menu
-            safeAreaRect.origin.y += bottomMarginIfPortrait;
-            safeAreaRect.size.height -= (bottomMarginIfPortrait + marginY);
+            float radiiBottom = cornerRadii[0] / _scaleY;
+            float radiiLeft   = cornerRadii[1] / _scaleX;
+            float radiiRight  = cornerRadii[2] / _scaleX;
+            float radiiTop    = cornerRadii[3] / _scaleY;
+
+            if (safeAreaRect.size.width < safeAreaRect.size.height)
+            {
+                if (hasSoftKeys)
+                {
+                    safeAreaRect.origin.y += marginY;
+                    safeAreaRect.size.height -= (marginY * 2);
+                }
+
+                // portrait
+                insetTop = radiiTop;
+                insetBottom = radiiBottom;
+            }
+            else
+            {
+                // landscape
+                insetLeft = radiiLeft;
+                insetRight = radiiRight;
+            }
         }
         else
         {
-            // landscape: ignore double margin at the bottom in any cases
-            // prepare signle margin for round corners
-            safeAreaRect.origin.y += marginY;
-            safeAreaRect.size.height -= (marginY * 2.f);
+            float bottomMarginIfPortrait = 0;
+            if (hasSoftKeys)
+            {
+                bottomMarginIfPortrait = marginY * 2.f;
+            }
+
+            if (safeAreaRect.size.width < safeAreaRect.size.height)
+            {
+                // portrait: double margin space if device has soft menu
+                safeAreaRect.origin.y += bottomMarginIfPortrait;
+                safeAreaRect.size.height -= (bottomMarginIfPortrait + marginY);
+            }
+            else
+            {
+                // landscape: ignore double margin at the bottom in any cases
+                // prepare single margin for round corners
+                safeAreaRect.origin.y += marginY;
+                safeAreaRect.size.height -= (marginY * 2.f);
+            }
         }
     }
     else
@@ -265,8 +314,10 @@ Rect GLViewImpl::getSafeAreaRect() const
     if (isCutoutEnabled)
     {
         // screen with enabled cutout area (ex. Google Pixel 3 XL, Huawei P20, Asus ZenFone 5, etc)
-        static int* safeInsets = JniHelper::callStaticIntArrayMethod("org/cocos2dx/lib/Cocos2dxHelper", "getSafeInsets");
-        if (safeInsets != nullptr)
+        static axstd::pod_vector<int32_t> safeInsets =
+                JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getSafeInsets");
+
+        if (safeInsets.size() >= 4)
         {
             float safeInsetBottom = safeInsets[0] / _scaleY;
             float safeInsetLeft   = safeInsets[1] / _scaleX;
@@ -274,28 +325,26 @@ Rect GLViewImpl::getSafeAreaRect() const
             float safeInsetTop    = safeInsets[3] / _scaleY;
 
             // fit safe area rect with safe insets
-            if (safeInsetBottom > 0)
-            {
-                safeAreaRect.origin.y += safeInsetBottom;
-                safeAreaRect.size.height -= safeInsetBottom;
-            }
-            if (safeInsetLeft > 0)
-            {
-                safeAreaRect.origin.x += safeInsetLeft;
-                safeAreaRect.size.width -= safeInsetLeft;
-            }
-            if (safeInsetRight > 0)
-            {
-                safeAreaRect.size.width -= safeInsetRight;
-            }
-            if (safeInsetTop > 0)
-            {
-                safeAreaRect.size.height -= safeInsetTop;
-            }
+            auto maxInsetBottom = std::max(safeInsetBottom, insetBottom);
+            safeAreaRect.origin.y += maxInsetBottom;
+            safeAreaRect.size.height -= maxInsetBottom;
+
+            auto maxInsetLeft = std::max(safeInsetLeft, insetLeft);
+            safeAreaRect.origin.x += maxInsetLeft;
+            safeAreaRect.size.width -= maxInsetLeft;
+
+            safeAreaRect.size.width -= std::max(safeInsetRight, insetRight);
+            safeAreaRect.size.height -= std::max(safeInsetTop, insetTop);
         }
     }
 
     return safeAreaRect;
+}
+
+void GLViewImpl::queueOperation(void (*op)(void*), void* param)
+{
+    JniHelper::callStaticVoidMethod("org.cocos.lib.CocosEngine", "queueOperation", (jlong)(uintptr_t)op,
+                                    (jlong)(uintptr_t)param);
 }
 
 NS_CC_END

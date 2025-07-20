@@ -1,7 +1,8 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion PROP_COMPILE_SDK_VERSION.toInteger()
+    namespace "org.cocos.lib"
+    compileSdk PROP_COMPILE_SDK_VERSION.toInteger()
 
     defaultConfig {
         minSdkVersion PROP_MIN_SDK_VERSION
@@ -15,7 +16,7 @@ android {
         java.srcDirs = ['../java/src','../ControllerManualAdapter/src']
         manifest.srcFile "AndroidManifest.xml"
     }
-    
+
     buildTypes {
         release {
             minifyEnabled false

@@ -2,9 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2021 Bytedance Inc.
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include "platform/CCPlatformMacros.h"
 #include "math/Vec3.h"
 #include "jni/jni.hpp"
+#include "base/axstd.h"
 
 namespace jni
 {
@@ -61,7 +62,8 @@ struct TypeSignature<std::string>
 };
 }  // namespace jni
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 typedef struct JniMethodInfo_
 {
@@ -115,6 +117,34 @@ public:
         else
         {
             reportError(className, methodName, signature);
+        }
+    }
+
+    /**
+    @brief Call of Java static object method
+    @if no such method will log error
+    @remark: user been responsible for delete by DeleteGlobalRef
+    */
+    template <typename... Ts>
+    static jobject callStaticObjectMethod(const char* className, const char* methodName, Ts&&... xs)
+    {
+        cocos2d::JniMethodInfo t;
+        const char* signature = jni::TypeSignature<jni::Object<>(std::decay_t<Ts>...)>{}();
+        if (cocos2d::JniHelper::getStaticMethodInfo(t, className, methodName, signature))
+        {
+            LocalRefMapType localRefs;
+            jobject tmp = t.env->CallStaticObjectMethod(t.classID, t.methodID, convert(localRefs, t, xs)...);
+            jobject ret{};
+            if (tmp)
+                ret = t.env->NewGlobalRef(tmp);
+            t.env->DeleteLocalRef(t.classID);
+            deleteLocalRefs(t.env, localRefs);
+            return ret;
+        }
+        else
+        {
+            reportError(className, methodName, signature);
+            return nullptr;
         }
     }
 
@@ -191,13 +221,56 @@ public:
     }
 
     /**
-    @brief Call of Java static float* method
-    @return address of JniMethodInfo if there are proper JniMethodInfo; otherwise nullptr.
+    @brief Call of Java static method
+    @return std::vector<std::string>
     */
     template <typename... Ts>
-    static float* callStaticFloatArrayMethod(const char* className, const char* methodName, Ts&&... xs)
+    static std::vector<std::string> callStaticStringArrayMethod(const char* className, const char* methodName, Ts&&... xs)
     {
-        static float ret[32];
+        cocos2d::JniMethodInfo t;
+        const auto signature = "(Ljava/lang/String;)[Ljava/lang/String;";
+        if (cocos2d::JniHelper::getStaticMethodInfo(t, className, methodName, signature))
+        {
+            LocalRefMapType localRefs;
+            jobjectArray array =
+                    (jobjectArray)t.env->CallStaticObjectMethod(t.classID, t.methodID, convert(localRefs, t, xs)...);
+
+            if (array == nullptr)
+            {
+                t.env->DeleteLocalRef(t.classID);
+                deleteLocalRefs(t.env, localRefs);
+                return {};
+            }
+
+            jsize len = t.env->GetArrayLength(array);
+            std::vector<std::string> result(len);
+            for (int i=0; i < len; ++i)
+            {
+                jstring string = (jstring)t.env->GetObjectArrayElement(array, i);
+                const char* arrayItem = t.env->GetStringUTFChars(string, 0);
+                result[i] = std::move((std::string(arrayItem)));
+                t.env->ReleaseStringUTFChars(string, arrayItem);
+                t.env->DeleteLocalRef(string);
+            }
+
+            t.env->DeleteLocalRef(t.classID);
+            deleteLocalRefs(t.env, localRefs);
+            return result;
+        }
+        else
+        {
+            reportError(className, methodName, signature);
+        }
+        return {};
+    }
+
+    /**
+    @brief Call of Java static float* method
+    @return axstd::pod_vector
+    */
+    template <typename... Ts>
+    static axstd::pod_vector<float> callStaticFloatArrayMethod(const char* className, const char* methodName, Ts&&... xs)
+    {
         cocos2d::JniMethodInfo t;
         const char* signature = jni::TypeSignature<jni::Array<jfloat>(std::decay_t<Ts>...)>{}();
         if (cocos2d::JniHelper::getStaticMethodInfo(t, className, methodName, signature))
@@ -205,35 +278,40 @@ public:
             LocalRefMapType localRefs;
             jfloatArray array =
                 (jfloatArray)t.env->CallStaticObjectMethod(t.classID, t.methodID, convert(localRefs, t, xs)...);
-            jsize len = t.env->GetArrayLength(array);
-            if (len <= 32)
+
+            if (array == nullptr)
             {
-                jfloat* elems = t.env->GetFloatArrayElements(array, 0);
-                if (elems)
-                {
-                    memcpy(ret, elems, sizeof(float) * len);
-                    t.env->ReleaseFloatArrayElements(array, elems, 0);
-                };
+                t.env->DeleteLocalRef(t.classID);
+                deleteLocalRefs(t.env, localRefs);
+                return {};
             }
+
+            jsize len = t.env->GetArrayLength(array);
+            axstd::pod_vector<float> result(len);
+            jfloat* elems = t.env->GetFloatArrayElements(array, 0);
+            if (elems)
+            {
+                memcpy(result.data(), elems, sizeof(float) * len);
+                t.env->ReleaseFloatArrayElements(array, elems, 0);
+            };
             t.env->DeleteLocalRef(t.classID);
             deleteLocalRefs(t.env, localRefs);
-            return &ret[0];
+            return result;
         }
         else
         {
             reportError(className, methodName, signature);
         }
-        return nullptr;
+        return {};
     }
 
     /**
     @brief Call of Java static int* method
-    @return address of JniMethodInfo if there are proper JniMethodInfo; otherwise nullptr.
+    @return axstd::pod_vector
     */
     template <typename... Ts>
-    static int* callStaticIntArrayMethod(const char* className, const char* methodName, Ts&&... xs)
+    static axstd::pod_vector<int32_t> callStaticIntArrayMethod(const char* className, const char* methodName, Ts&&... xs)
     {
-        static int ret[32];
         cocos2d::JniMethodInfo t;
         const char* signature = jni::TypeSignature<jni::Array<jint>(std::decay_t<Ts>...)>{}();
         if (cocos2d::JniHelper::getStaticMethodInfo(t, className, methodName, signature))
@@ -241,25 +319,31 @@ public:
             LocalRefMapType localRefs;
             jintArray array =
                 (jintArray)t.env->CallStaticObjectMethod(t.classID, t.methodID, convert(localRefs, t, xs)...);
-            jsize len = t.env->GetArrayLength(array);
-            if (len <= 32)
+
+            if (array == nullptr)
             {
-                jint* elems = t.env->GetIntArrayElements(array, 0);
-                if (elems)
-                {
-                    memcpy(ret, elems, sizeof(int) * len);
-                    t.env->ReleaseIntArrayElements(array, elems, 0);
-                };
+                t.env->DeleteLocalRef(t.classID);
+                deleteLocalRefs(t.env, localRefs);
+                return {};
             }
+
+            jsize len = t.env->GetArrayLength(array);
+            axstd::pod_vector<int32_t> result(len);
+            jint* elems = t.env->GetIntArrayElements(array, 0);
+            if (elems)
+            {
+                memcpy(result.data(), elems, sizeof(int32_t) * len);
+                t.env->ReleaseIntArrayElements(array, elems, 0);
+            };
             t.env->DeleteLocalRef(t.classID);
             deleteLocalRefs(t.env, localRefs);
-            return &ret[0];
+            return result;
         }
         else
         {
             reportError(className, methodName, signature);
         }
-        return nullptr;
+        return {};
     }
 
     /**
@@ -277,6 +361,14 @@ public:
             LocalRefMapType localRefs;
             jfloatArray array =
                 (jfloatArray)t.env->CallStaticObjectMethod(t.classID, t.methodID, convert(localRefs, t, xs)...);
+
+            if (array == nullptr)
+            {
+                t.env->DeleteLocalRef(t.classID);
+                deleteLocalRefs(t.env, localRefs);
+                return Vec3();
+            }
+
             jsize len = t.env->GetArrayLength(array);
             if (len == 3)
             {
@@ -347,6 +439,79 @@ public:
         return ret;
     }
 
+    /**
+    @brief Call of Java int method
+    @return value from Java int method if there are proper JniMethodInfo; otherwise 0.
+    */
+    template <typename... Ts>
+    static int callIntMethod(const char* className, const char* methodName, void* object, Ts&&... xs)
+    {
+        jint ret = 0;
+        cocos2d::JniMethodInfo t;
+        const char* signature = jni::TypeSignature<jint(std::decay_t<Ts>...)>{}();
+        if (cocos2d::JniHelper::getMethodInfo(t, className, methodName, signature))
+        {
+
+            LocalRefMapType localRefs;
+            ret = t.env->CallIntMethod((jobject)object, t.methodID, convert(localRefs, t, xs)...);
+            t.env->DeleteLocalRef(t.classID);
+            deleteLocalRefs(t.env, localRefs);
+        }
+        else
+        {
+            reportError(className, methodName, signature);
+        }
+        return ret;
+    }
+
+    /**
+    @brief Call of Java booleans method
+    @return value from Java boolean method if there are proper JniMethodInfo; otherwise 0.
+    */
+    template <typename... Ts>
+    static bool callBooleanMethod(const char* className, const char* methodName, void* object, Ts&&... xs)
+    {
+        jboolean ret = 0;
+        cocos2d::JniMethodInfo t;
+        const char* signature = jni::TypeSignature<jboolean(std::decay_t<Ts>...)>{}();
+        if (cocos2d::JniHelper::getMethodInfo(t, className, methodName, signature))
+        {
+
+            LocalRefMapType localRefs;
+            ret = t.env->CallBooleanMethod((jobject)object, t.methodID, convert(localRefs, t, xs)...);
+            t.env->DeleteLocalRef(t.classID);
+            deleteLocalRefs(t.env, localRefs);
+        }
+        else
+        {
+            reportError(className, methodName, signature);
+        }
+        return (ret == JNI_TRUE);
+    }
+
+    /**
+   @brief Call of Java void method
+   @return value from Java void method if there are proper JniMethodInfo; otherwise 0.
+   */
+    template <typename... Ts>
+    static void callVoidMethod(const char* className, const char* methodName, void* object, Ts&&... xs)
+    {
+        cocos2d::JniMethodInfo t;
+        const char* signature = jni::TypeSignature<void(std::decay_t<Ts>...)>{}();
+        if (cocos2d::JniHelper::getMethodInfo(t, className, methodName, signature))
+        {
+
+            LocalRefMapType localRefs;
+            t.env->CallVoidMethod((jobject)object, t.methodID, convert(localRefs, t, xs)...);
+            t.env->DeleteLocalRef(t.classID);
+            deleteLocalRefs(t.env, localRefs);
+        }
+        else
+        {
+            reportError(className, methodName, signature);
+        }
+    }
+
 private:
     static JNIEnv* cacheEnv(JavaVM* jvm);
 
@@ -409,6 +574,6 @@ private:
     static void reportError(const char* className, const char* methodName, const char* signature);
 };
 
-NS_CC_END
+}
 
 #endif  // __ANDROID_JNI_HELPER_H__

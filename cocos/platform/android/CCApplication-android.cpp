@@ -3,7 +3,7 @@ Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,10 @@ THE SOFTWARE.
 #include <jni.h>
 #include <cstring>
 
-#define LOG_TAG "CCApplication_android Debug"
+#define LOG_TAG "Application_android Debug"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
-// FIXME: using ndk-r10c will cause the next function could not be found. It may be a bug of ndk-r10c.
-// Here is the workaround method to fix the problem.
-#ifdef __aarch64__
-extern "C" size_t __ctype_get_mb_cur_max(void)
-{
-    return (size_t)sizeof(wchar_t);
-}
-#endif
-
-static const char* helperClassName = "org.cocos2dx.lib.Cocos2dxHelper";
+static const char* applicationHelperClassName = "org.cocos.lib.CocosEngine";
 
 NS_CC_BEGIN
 
@@ -75,7 +66,7 @@ int Application::run()
 
 void Application::setAnimationInterval(float interval)
 {
-    JniHelper::callStaticVoidMethod("org/cocos2dx/lib/Cocos2dxRenderer", "setAnimationInterval", interval);
+    JniHelper::callStaticVoidMethod("org/cocos/lib/CocosRenderer", "setAnimationInterval", interval);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -96,7 +87,7 @@ Application* Application::sharedApplication()
 const char* Application::getCurrentLanguageCode()
 {
     static char code[3]  = {0};
-    std::string language = JniHelper::callStaticStringMethod(helperClassName, "getCurrentLanguage");
+    std::string language = JniHelper::callStaticStringMethod(applicationHelperClassName, "getCurrentLanguage");
     strncpy(code, language.c_str(), 2);
     code[2] = '\0';
     return code;
@@ -116,12 +107,12 @@ Application::Platform Application::getTargetPlatform()
 
 std::string Application::getVersion()
 {
-    return JniHelper::callStaticStringMethod(helperClassName, "getVersion");
+    return JniHelper::callStaticStringMethod(applicationHelperClassName, "getVersion");
 }
 
 bool Application::openURL(std::string_view url)
 {
-    return JniHelper::callStaticBooleanMethod(helperClassName, "openURL", url);
+    return JniHelper::callStaticBooleanMethod(applicationHelperClassName, "openURL", url);
 }
 
 void Application::applicationScreenSizeChanged(int newWidth, int newHeight) {}

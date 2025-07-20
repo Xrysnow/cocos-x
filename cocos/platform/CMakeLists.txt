@@ -29,7 +29,6 @@ if(ANDROID)
         platform/android/CCCommon-android.cpp
         platform/android/CCGLViewImpl-android.cpp
         platform/android/CCFileUtils-android.cpp
-        platform/android/CCEnhanceAPI-android.cpp
     )
 elseif(WINDOWS)
     set(COCOS_PLATFORM_SPECIFIC_HEADER

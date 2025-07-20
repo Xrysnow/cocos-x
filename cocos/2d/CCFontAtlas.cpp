@@ -26,10 +26,6 @@
  ****************************************************************************/
 
 #include "2d/CCFontAtlas.h"
-#if CC_TARGET_PLATFORM != CC_PLATFORM_WIN32 && CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
-#elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#include "platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
-#endif
 #include <algorithm>
 #include "2d/CCFontFreeType.h"
 #include "base/ccUTF8.h"

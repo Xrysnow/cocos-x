@@ -2,9 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2022 Bytedance Inc.
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,11 @@ THE SOFTWARE.
 #pragma once
 
 #include "platform/CCPlatformConfig.h"
-
-#if CC_USE_GLAD
+/*
+#ifdef CC_USE_GFX
 
     #include "glad/gl.h"
+    #include "glad/egl.h"
 
     #undef GL_DEPTH_STENCIL
     #undef GL_DEPTH24_STENCIL8
@@ -98,33 +99,33 @@ THE SOFTWARE.
     #define GL_UNSIGNED_INT_24_8 GL_UNSIGNED_INT_24_8_OES
     #define GL_WRITE_ONLY GL_WRITE_ONLY_OES
 
-// GL_GLEXT_PROTOTYPES isn't defined in glplatform.h on android ndk r7
-// we manually define it here
+    // GL_GLEXT_PROTOTYPES isn't defined in glplatform.h on android ndk r7
+    // we manually define it here
     #include <GLES2/gl2platform.h>
     #ifndef GL_GLEXT_PROTOTYPES
         #define GL_GLEXT_PROTOTYPES 1
     #endif
 
-// normal process
+    // normal process
     #include <GLES2/gl2.h>
     #include <GLES2/gl2ext.h>
-// gl2.h doesn't define GLchar on Android
-typedef char GLchar;
-// android defines GL_BGRA_EXT but not GL_BRGA
+    // gl2.h doesn't define GLchar on Android
+    typedef char GLchar;
+    // android defines GL_BGRA_EXT but not GL_BRGA
     #ifndef GL_BGRA
         #define GL_BGRA 0x80E1
     #endif
 
-// declare here while define in EGLView_android.cpp
-extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT;
-extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT;
-extern PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT;
+    // declare here while define in EGLView_android.cpp
+    extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT;
+    extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT;
+    extern PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT;
 
     #define glGenVertexArraysOES glGenVertexArraysOESEXT
     #define glBindVertexArrayOES glBindVertexArrayOESEXT
     #define glDeleteVertexArraysOES glDeleteVertexArraysOESEXT
 
-/* gles3/gl */
+    // gles3/gl
     #if !defined(GL_SRGB8)
         #define GL_SRGB8 0x8C41
     #endif
@@ -149,13 +150,14 @@ extern PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT;
         #define GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC 0x9279
     #endif
 
-/* gles2/glext */
+    // gles2/glext
     #ifndef GL_EXT_texture_compression_s3tc_srgb
         #define GL_EXT_texture_compression_s3tc_srgb 1
         #define GL_COMPRESSED_SRGB_S3TC_DXT1_EXT 0x8C4C
         #define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT 0x8C4D
         #define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT 0x8C4E
         #define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT 0x8C4F
-    #endif /* GL_EXT_texture_compression_s3tc_srgb */
+    #endif=
 
 #endif
+*/

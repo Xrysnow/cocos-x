@@ -27,7 +27,9 @@ THE SOFTWARE.
 
 #include <android/log.h>
 
-#define CC_DLL
+#ifndef CC_DLL
+    #define CC_DLL
+#endif
 
 #define CC_NO_MESSAGE_PSEUDOASSERT(cond)                        \
     if (!(cond)) {                                              \
@@ -45,9 +47,13 @@ THE SOFTWARE.
                             __FILE__, __FUNCTION__, __LINE__, msg); \
     }
 
-#define CC_ASSERT(cond) CC_NO_MESSAGE_PSEUDOASSERT(cond)
+#ifndef CC_ASSERT
+    #define CC_ASSERT(cond) CC_NO_MESSAGE_PSEUDOASSERT(cond)
+#endif
 
-#define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
+#ifndef CC_UNUSED_PARAM
+    #define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
+#endif
 
 /* Define NULL pointer value */
 #ifndef NULL

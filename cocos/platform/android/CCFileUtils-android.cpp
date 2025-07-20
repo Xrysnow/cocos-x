@@ -2,9 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2020 C4games Ltd
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md)
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,7 @@ THE SOFTWARE.
 #include "platform/android/CCFileUtils-android.h"
 #include "platform/CCCommon.h"
 #include "platform/android/jni/JniHelper.h"
-#include "platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
-#include "android/asset_manager.h"
-#include "android/asset_manager_jni.h"
+#include "platform/android/jni/Java_org_cocos_lib_CocosEngine.h"
 #include "base/ZipUtils.h"
 
 #include <stdlib.h>
@@ -44,24 +42,32 @@ THE SOFTWARE.
 #define ASSETS_FOLDER_NAME "assets/"
 #define ASSETS_FOLDER_NAME_LENGTH 7
 
-using namespace std;
-
-#define DECLARE_GUARD (void)0  // std::lock_guard<std::recursive_mutex> mutexGuard(_mutex)
+// #define CC_USE_ANDROID_EXTERNAL_FILES_DIR 1
 
 NS_CC_BEGIN
 
+static jobject s_assetmanager_hold = nullptr;
 AAssetManager* FileUtilsAndroid::assetmanager = nullptr;
 ZipFile* FileUtilsAndroid::obbfile            = nullptr;
 
-void FileUtilsAndroid::setassetmanager(AAssetManager* a)
+void FileUtilsAndroid::setAssetManagerFromJava(jobject a)
 {
-    if (nullptr == a)
+    auto env = JniHelper::getEnv();
+    if (!s_assetmanager_hold)
+        s_assetmanager_hold = env->NewGlobalRef(a);
+    /*
+    Note: that the caller is responsible for obtaining and holding a VM reference to the jobject to 
+        prevent its being garbage collected while the native object is in use.
+    refer: https://developer.android.com/ndk/reference/group/asset#aassetmanager_fromjava
+    */
+    auto aassetMgr = AAssetManager_fromJava(env, s_assetmanager_hold);
+    if (nullptr == aassetMgr)
     {
         LOGD("setassetmanager : received unexpected nullptr parameter");
         return;
     }
 
-    cocos2d::FileUtilsAndroid::assetmanager = a;
+    cocos2d::FileUtilsAndroid::assetmanager = aassetMgr;
 }
 
 FileUtils* FileUtils::getInstance()
@@ -92,8 +98,6 @@ FileUtilsAndroid::~FileUtilsAndroid()
 
 bool FileUtilsAndroid::init()
 {
-    DECLARE_GUARD;
-
     _defaultResRootPath = ASSETS_FOLDER_NAME;
 
     std::string assetsPath(getApkPath());
@@ -107,9 +111,6 @@ bool FileUtilsAndroid::init()
 
 bool FileUtilsAndroid::isFileExistInternal(std::string_view strFilePath) const
 {
-
-    DECLARE_GUARD;
-
     if (strFilePath.empty())
     {
         return false;
@@ -209,17 +210,15 @@ bool FileUtilsAndroid::isDirectoryExistInternal(std::string_view dirPath) const
 
 bool FileUtilsAndroid::isAbsolutePath(std::string_view strPath) const
 {
-    DECLARE_GUARD;
     // On Android, there are two situations for full path.
     // 1) Files in APK, e.g. assets/path/path/file.png
-    // 2) Files not in APK, e.g. /data/data/org.axmol.hellocpp/cache/path/path/file.png, or
+    // 2) Files not in APK, e.g. /data/data/org.cocos.hellocpp/cache/path/path/file.png, or
     // /sdcard/path/path/file.png. So these two situations need to be checked on Android.
     return (strPath[0] == '/' || strPath.find(_defaultResRootPath) == 0);
 }
 
 int64_t FileUtilsAndroid::getFileSize(std::string_view filepath) const
 {
-    DECLARE_GUARD;
     int64_t size = FileUtils::getFileSize(filepath);
     if (size != -1)
     {
@@ -250,15 +249,32 @@ int64_t FileUtilsAndroid::getFileSize(std::string_view filepath) const
 
 std::vector<std::string> FileUtilsAndroid::listFiles(std::string_view dirPath) const
 {
-
     if (!dirPath.empty() && dirPath[0] == '/')
         return FileUtils::listFiles(dirPath);
 
     std::vector<std::string> fileList;
-    string fullPath = fullPathForDirectory(dirPath);
-
     static const std::string apkprefix("assets/");
     std::string relativePath;
+
+    if (obbfile)
+    {
+        std::string fullPath = fullPathForDirectory(dirPath);
+
+        size_t position = fullPath.find(apkprefix);
+        if (0 == position)
+        {
+            // "assets/" is at the beginning of the path and we don't want it
+            relativePath += fullPath.substr(apkprefix.size());
+        }
+        else
+        {
+            relativePath = fullPath;
+        }
+
+        return obbfile->listFiles(relativePath);
+    }
+
+    std::string fullPath = std::string(dirPath); // don't call fullPathForDirectory(dirPath), since empty folders will not return a valid result
     size_t position = fullPath.find(apkprefix);
     if (0 == position)
     {
@@ -269,9 +285,6 @@ std::vector<std::string> FileUtilsAndroid::listFiles(std::string_view dirPath) c
     {
         relativePath = fullPath;
     }
-
-    if (obbfile)
-        return obbfile->listFiles(relativePath);
 
     if (nullptr == assetmanager)
     {
@@ -284,81 +297,9 @@ std::vector<std::string> FileUtilsAndroid::listFiles(std::string_view dirPath) c
         relativePath.erase(relativePath.length() - 1);
     }
 
-    auto* dir = AAssetManager_openDir(assetmanager, relativePath.c_str());
-    if (nullptr == dir)
-    {
-        LOGD("... FileUtilsAndroid::failed to open dir %s", relativePath.c_str());
-        AAssetDir_close(dir);
-        return fileList;
-    }
-    const char* tmpDir = nullptr;
-    while ((tmpDir = AAssetDir_getNextFileName(dir)) != nullptr)
-    {
-        string filepath(tmpDir);
-        if (isDirectoryExistInternal(filepath))
-            filepath += "/";
-        fileList.emplace_back(fullPath + filepath);
-    }
-    AAssetDir_close(dir);
+    fileList = JniHelper::callStaticStringArrayMethod("org/cocos/lib/CocosEngine", "getAssetsList", relativePath);
+
     return fileList;
-}
-
-FileUtils::Status FileUtilsAndroid::getContents(std::string_view filename, ResizableBuffer* buffer) const
-{
-    static const std::string apkprefix("assets/");
-    if (filename.empty())
-        return FileUtils::Status::NotExists;
-
-    auto fullPath = fullPathForFilename(filename);
-
-    if (fullPath[0] == '/')
-        return FileUtils::getContents(fullPath, buffer);
-
-    std::string relativePath;
-    size_t position = fullPath.find(apkprefix);
-    if (0 == position)
-    {
-        // "assets/" is at the beginning of the path and we don't want it
-        relativePath += fullPath.substr(apkprefix.size());
-    }
-    else
-    {
-        relativePath = fullPath;
-    }
-
-    if (obbfile)
-    {
-        if (obbfile->getFileData(relativePath, buffer))
-            return FileUtils::Status::OK;
-    }
-
-    if (nullptr == assetmanager)
-    {
-        LOGD("... FileUtilsAndroid::assetmanager is nullptr");
-        return FileUtils::Status::NotInitialized;
-    }
-
-    AAsset* asset = AAssetManager_open(assetmanager, relativePath.c_str(), AASSET_MODE_UNKNOWN);
-    if (nullptr == asset)
-    {
-        LOGD("AAssetManager_open %s failed", relativePath.c_str());
-        return FileUtils::Status::OpenFailed;
-    }
-
-    auto size = AAsset_getLength(asset);
-    buffer->resize(size);
-
-    int readsize = AAsset_read(asset, buffer->buffer(), size);
-    AAsset_close(asset);
-
-    if (readsize < size)
-    {
-        if (readsize >= 0)
-            buffer->resize(readsize);
-        return FileUtils::Status::ReadFailed;
-    }
-
-    return FileUtils::Status::OK;
 }
 
 std::string FileUtilsAndroid::getWritablePath() const
@@ -370,7 +311,11 @@ std::string FileUtilsAndroid::getNativeWritableAbsolutePath() const
 {
     // Fix for Nexus 10 (Android 4.2 multi-user environment)
     // the path is retrieved through Java Context.getCacheDir() method
-    std::string path = JniHelper::callStaticStringMethod("org.cocos2dx.lib.Cocos2dxHelper", "getCocos2dxWritablePath");
+#ifdef CC_USE_ANDROID_EXTERNAL_FILES_DIR
+    std::string path = JniHelper::callStaticStringMethod("org.cocos.lib.CocosEngine", "getExternalFilesDir");
+#else
+    std::string path = JniHelper::callStaticStringMethod("org.cocos.lib.CocosEngine", "getInternalFilesDir");
+#endif
     if (!path.empty())
         path.append("/");
 

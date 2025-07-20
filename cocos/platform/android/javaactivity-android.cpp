@@ -1,9 +1,9 @@
 /****************************************************************************
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2022 Bytedance Inc.
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,6 @@ THE SOFTWARE.
 #include <android/api-level.h>
 #include <jni.h>
 
-//#include "platform/CCGL.h"
 
 #define LOG_TAG "main"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -80,13 +79,15 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
     return JNI_VERSION_1_4;
 }
 
-JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*, jclass, jint w, jint h)
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeInit(JNIEnv*, jclass, jint w, jint h)
 {
+    GLViewImpl::loadGLES2();
+
     auto director = cocos2d::Director::getInstance();
     auto glView   = director->getOpenGLView();
     if (!glView)
     {
-        glView = cocos2d::GLViewImpl::createWithRect("Cocos app", {0,0,(float)w,(float)h}, 1);
+        glView = cocos2d::GLViewImpl::create("cocos");
         glView->setFrameSize(w, h);
         director->setOpenGLView(glView);
 
@@ -102,7 +103,7 @@ JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*
     }
 }
 
-JNIEXPORT jintArray JNICALL Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jclass)
+JNIEXPORT jintArray JNICALL Java_org_cocos_lib_CocosActivity_getGLContextAttrs(JNIEnv* env, jclass)
 {
     cocos2d::Application::getInstance()->initGLContextAttrs();
     GLContextAttrs _glContextAttrs = GLView::getGLContextAttrs();
@@ -117,8 +118,9 @@ JNIEXPORT jintArray JNICALL Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextA
     return glContextAttrsJava;
 }
 
-JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceChanged(JNIEnv*, jclass, jint w, jint h)
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnSurfaceChanged(JNIEnv*, jclass, jint w, jint h)
 {
     cocos2d::Application::getInstance()->applicationScreenSizeChanged(w, h);
 }
+
 }

@@ -2,9 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
-Copyright (c) 2021 Bytedance Inc.
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +67,8 @@ void _detachCurrentThread(void* a)
     cocos2d::JniHelper::getJavaVM()->DetachCurrentThread();
 }
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 JavaVM* JniHelper::_psJavaVM                         = nullptr;
 jmethodID JniHelper::loadclassMethod_methodID        = nullptr;
@@ -348,4 +349,8 @@ void JniHelper::reportError(const char* className, const char* methodName, const
          signature);
 }
 
-NS_CC_END  // namespace ax
+}  // namespace cocos2d
+
+#undef LOGE
+#undef LOGD
+#undef LOG_TAG

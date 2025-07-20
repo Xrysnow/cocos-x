@@ -3,7 +3,7 @@ Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,7 @@ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include "jni.h"
-#include "android/asset_manager.h"
+#include <android/asset_manager_jni.h>
 
 NS_CC_BEGIN
 
@@ -52,19 +51,16 @@ class CC_DLL FileUtilsAndroid : public FileUtils
 public:
     FileUtilsAndroid();
     /**
-     * @js NA
      * @lua NA
      */
     virtual ~FileUtilsAndroid();
 
-    static void setassetmanager(AAssetManager* a);
+    static void setAssetManagerFromJava(jobject a);
     static AAssetManager* getAssetManager() { return assetmanager; }
     static ZipFile* getObbFile() { return obbfile; }
 
     /* override functions */
     bool init() override;
-
-    virtual FileUtils::Status getContents(std::string_view filename, ResizableBuffer* buffer) const override;
 
     virtual std::string getWritablePath() const override;
     std::string getNativeWritableAbsolutePath() const override;

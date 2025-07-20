@@ -2,8 +2,9 @@
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
-https://axmolengine.github.io/
+https://axmol.dev/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +36,9 @@ class CC_DLL GLViewImpl : public GLView
 {
 public:
     // static function
+    static void loadGLES2();
     static GLViewImpl* create(std::string_view viewname);
-    static GLViewImpl* createWithRect(std::string_view viewName, Rect rect, float frameZoomFactor = 1.0f);
+    static GLViewImpl* createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor = 1.0f, bool resizable = false);
     static GLViewImpl* createWithFullScreen(std::string_view viewName);
 
     bool isOpenGLReady() override;
@@ -45,11 +47,13 @@ public:
     void setIMEKeyboardState(bool bOpen) override;
     virtual Rect getSafeAreaRect() const override;
 
+    void queueOperation(void (*op)(void*), void* param);
+
 protected:
     GLViewImpl();
     virtual ~GLViewImpl();
 
-    bool initWithRect(std::string_view viewName, Rect rect, float frameZoomFactor);
+    bool initWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable = false);
     bool initWithFullScreen(std::string_view viewName);
 };
 
