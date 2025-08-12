@@ -1,12 +1,10 @@
 #include "CommandBufferGFX.h"
 #include "BufferGFX.h"
 #include "RenderPipelineGFX.h"
-#include "TextureGFX.h"
 #include "DepthStencilStateGFX.h"
 #include "ProgramGFX.h"
 #include "base/ccMacros.h"
 #include "base/CCEventDispatcher.h"
-#include "base/CCEventType.h"
 #include "base/CCDirector.h"
 #include "UtilsGFX.h"
 #include "DeviceGFX.h"
@@ -24,7 +22,9 @@ CommandBufferGFX::CommandBufferGFX()
     _cb = gfx::Device::getInstance()->getCommandBuffer();
     // NOTE: when resizing, engine will pause/resume at anywhere
     Director::getInstance()->getEventDispatcher()->addCustomEventListener(
-        "glview_window_resized", [this](EventCustom*) { _screenResized = true; });
+        "glview_window_resized", [this](EventCustom*) {
+            _screenResized = true;
+        });
     //
     _pstateInfoHash = XXH32_createState();
 }
@@ -33,9 +33,8 @@ CommandBufferGFX::~CommandBufferGFX()
 {
     cleanResources();
     // NOTE: _renderPipeline belongs to Renderer
-    CC_SAFE_RELEASE_NULL(_defaultFBO);
+    CC_SAFE_DELETE(_defaultRT);
 
-    _renderPasses.clear();
     _pstates.clear();
     _inputAssemblers.clear();
     _usedInputAssemblers.clear();
@@ -59,14 +58,16 @@ bool CommandBufferGFX::beginFrame()
 #endif
 
         const auto fsize = Director::getInstance()->getOpenGLView()->getFrameSize();
-        for (auto& sw : swapchains)
+        // handled in backend in vulkan
+        if (gfx::Device::getInstance()->getGfxAPI() != gfx::API::VULKAN)
         {
-            sw->resize(fsize.width, fsize.height, gfx::SurfaceTransform::IDENTITY);
+            for (auto&& sw : swapchains)
+                sw->resize((uint32_t)fsize.width, (uint32_t)fsize.height, gfx::SurfaceTransform::IDENTITY);
         }
-        DeviceGFX::setSwapchainInfo(hdl, ((DeviceGFX*)DeviceGFX::getInstance())->getVsync(), fsize.width, fsize.height);
+        DeviceGFX::setSwapchainInfo(hdl, DeviceGFX::getInstance()->getVsync(), (uint32_t)fsize.width, (uint32_t)fsize.height);
 
-        resetDefaultFBO();
-        _currentFBO    = _defaultFBO;
+        CC_SAFE_DELETE(_defaultRT);
+        _currentFBO = nullptr;
         _screenResized = false;
     }
 
@@ -84,15 +85,18 @@ bool CommandBufferGFX::beginFrame()
     // NOTE: default FBO should be created after 'acquire'
     gfx::Device::getInstance()->acquire(swapchains);
 
-    if (!_defaultFBO)
+    if (!_defaultRT)
         resetDefaultFBO();
+    if (!_currentFBO)
+        _currentFBO = _defaultRT->getFramebuffer();
+
     _cb->begin();
     return true;
 }
 
 void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
 {
-    const auto rt   = (const RenderTargetGFX*)renderTarget;
+    auto rt   = (const RenderTargetGFX*)renderTarget;
     auto clearFlags = gfx::ClearFlagBit::NONE;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         clearFlags |= gfx::ClearFlagBit::COLOR;
@@ -102,25 +106,17 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         clearFlags |= gfx::ClearFlagBit::STENCIL;
 
     rt->update();
-    auto info = rt->getInfo();
     // NOTE: color is always required
-    if (rt->isDefaultRenderTarget() || info.colorTextures.empty())
+    if (rt->isDefault())
     {
-        _currentFBO     = _defaultFBO;
+        _currentFBO     = _defaultRT->getFramebuffer(clearFlags);
         _currentFBOSize = Director::getInstance()->getOpenGLView()->getFrameSize();
     }
     else
     {
-        info.renderPass = getRenderPass(clearFlags, (bool)info.depthStencilTexture, info.colorTextures[0]->getFormat());
-        CC_ASSERT(info.renderPass->getColorAttachments()[0].format == info.colorTextures[0]->getFormat());
-        _currentFBO     = gfx::Device::getInstance()->createFramebuffer(info);
-        _generatedFBO.emplace_back(_currentFBO);
+        _currentFBO = rt->getFramebuffer(clearFlags);
 
-        // textures are retained in RenderTarget
-        //_tmpTextures.pushBack(rt->_color[0].texture);
-        // if (rt->_depth.texture)
-        //	_tmpTextures.pushBack(rt->_depth.texture);
-
+        auto& info = rt->getInfo();
         const auto tex         = info.colorTextures[0];
         _currentFBOSize.width  = tex->getWidth();
         _currentFBOSize.height = tex->getHeight();
@@ -152,10 +148,16 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     }
     */
     CC_ASSERT(_currentFBO);
-    if (_currentFBO == _defaultFBO)
-        _currentPass = getRenderPass(clearFlags, true, _currentFBO->getColorTextures()[0]->getFormat());
-    else
-        _currentPass = _currentFBO->getRenderPass();
+
+    // must be the same
+    _currentPass = _currentFBO->getRenderPass();
+
+    // clamp to avoid error
+    rect.x = std::clamp(rect.x, 0, (int)_currentFBOSize.width);
+    rect.y = std::clamp(rect.y, 0, (int)_currentFBOSize.height);
+    rect.width  = std::min((int)rect.width, (int)_currentFBOSize.width - rect.x);
+    rect.height = std::min((int)rect.height, (int)_currentFBOSize.height - rect.y);
+
     // rect will be both viewport and scissor
     // NOTE: in vulkan, viewport of the whole render pass is decided here
     _cb->beginRenderPass(
@@ -174,13 +176,6 @@ void CommandBufferGFX::setViewport(int x, int y, unsigned int w, unsigned int h)
     _viewPort.width  = w;
     _viewPort.height = h;
     // NOTE: flip viewport will cause error on validation layer, so we flip through projection
-#if 0
-    if (gfx::Device::getInstance()->getGfxAPI() == gfx::API::VULKAN && _currentFBO == _defaultFBO)
-    {
-        _viewPort.top = _currentFBOSize.height - _viewPort.top;
-        _viewPort.height = -_viewPort.height;
-    }
-#endif
     _cb->setViewport(_viewPort);
 }
 
@@ -288,13 +283,7 @@ void CommandBufferGFX::endFrame()
             ++it;
     }
 
-    // clean
-    for (auto& p : _generatedFBO)
-    {
-        CC_SAFE_DELETE(p);
-    }
-    _generatedFBO.clear();
-    _currentFBO = _defaultFBO;
+    _currentFBO = _defaultRT->getFramebuffer();
     _tmpTextures.clear();
 }
 
@@ -368,10 +357,11 @@ void CommandBufferGFX::setScissorRect(bool isEnabled, float x, float y, float wi
 void CommandBufferGFX::readPixels(RenderTarget* rt, std::function<void(const PixelBufferDescriptor&)> callback)
 {
     PixelBufferDescriptor pbd;
-    auto tex = _defaultFBO->getColorTextures()[0];
+    gfx::Texture* tex;
     gfx::BufferTextureCopy copy;
-    if (rt->isDefaultRenderTarget())
+    if (rt->isDefaultRenderTarget() && _defaultRT)
     {
+        tex = _defaultRT->getInfo().colorTextures[0];
         // read from screen
         copy.texOffset.x      = _viewPort.left;
         copy.texOffset.y      = _viewPort.top;
@@ -584,98 +574,11 @@ void CommandBufferGFX::cleanResources()
     _programState = nullptr;
 }
 
-cc::gfx::RenderPass* CommandBufferGFX::getRenderPass(
-    cc::gfx::ClearFlagBit clearFlags, bool hasDepthStencil, cc::gfx::Format format)
-{
-    // format can be different
-    const auto key = (uint32_t)clearFlags + ((uint32_t)format << 8) + (hasDepthStencil ? 0U : (1U << 31));
-    if (const auto find = _renderPasses.at(key))
-    {
-        return find;
-    }
-    gfx::RenderPassInfo info;
-    gfx::ColorAttachment ca;
-    // should be RGBA8, but can be BGRA8 in vulkan
-    ca.format = format;
-    // default loadOp is CLEAR
-    if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::COLOR))
-    {
-        // TODO: should be DISACARD if is skybox
-        ca.loadOp = gfx::LoadOp::LOAD;
-
-        gfx::GeneralBarrierInfo binfo;
-        binfo.prevAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
-        binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
-        ca.barrier         = gfx::Device::getInstance()->getGeneralBarrier(binfo);
-    }
-    info.colorAttachments = {ca};
-    if (hasDepthStencil)
-    {
-        auto& dsa = info.depthStencilAttachment;
-        // should be D24S8
-        dsa.format = gfx::Format::DEPTH_STENCIL;
-        // dsa.stencilStoreOp = gfx::StoreOp::DISCARD;
-        // dsa.depthStoreOp = gfx::StoreOp::DISCARD;
-        if (!gfx::hasAllFlags(clearFlags, gfx::ClearFlagBit::DEPTH_STENCIL))
-        {
-            if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::DEPTH))
-                dsa.depthLoadOp = gfx::LoadOp::LOAD;
-            if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::STENCIL))
-                dsa.stencilLoadOp = gfx::LoadOp::LOAD;
-            gfx::GeneralBarrierInfo binfo;
-            binfo.prevAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
-            binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
-            dsa.barrier        = gfx::Device::getInstance()->getGeneralBarrier(binfo);
-        }
-    }
-    const auto rp = gfx::Device::getInstance()->createRenderPass(info);
-    _renderPasses.insert(key, rp);
-    return rp;
-}
-
 void CommandBufferGFX::resetDefaultFBO()
 {
-    CC_SAFE_RELEASE_NULL(_defaultFBO);
-    gfx::FramebufferInfo fbinfo;
-    const auto d = (DeviceGFX*)backend::Device::getInstance();
-    for (auto& t : colorTextures)
-    {
-        CC_SAFE_DELETE(t);
-    }
-    CC_SAFE_DELETE(dsTexture);
-
-    if (swapchains.empty())
-    {
-        fbinfo.renderPass = getRenderPass(gfx::ClearFlagBit::ALL, true);
-        gfx::TextureInfo info;
-        info.usage =
-            gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED | gfx::TextureUsageBit::TRANSFER_SRC;
-        info.format = gfx::Format::RGBA8;
-        info.width  = d->getWidth();
-        info.height = d->getHeight();
-        auto ct     = gfx::Device::getInstance()->createTexture(info);
-        CC_ASSERT(ct);
-        fbinfo.colorTextures = {ct};
-        gfx::TextureInfo info1;
-        info1.usage = gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT | gfx::TextureUsageBit::SAMPLED |
-                      gfx::TextureUsageBit::TRANSFER_SRC;
-        info1.format = gfx::Format::DEPTH_STENCIL;
-        info1.width  = d->getWidth();
-        info1.height = d->getHeight();
-        auto dst     = gfx::Device::getInstance()->createTexture(info1);
-        CC_ASSERT(dst);
-        fbinfo.depthStencilTexture = dst;
-    }
-    else
-    {
-        // get from default swapchain
-        const auto sw              = swapchains[0];
-        fbinfo.renderPass          = getRenderPass(gfx::ClearFlagBit::ALL, true, sw->getColorTexture()->getFormat());
-        fbinfo.colorTextures       = {sw->getColorTexture()};
-        fbinfo.depthStencilTexture = sw->getDepthStencilTexture();
-    }
-    _defaultFBO = gfx::Device::getInstance()->createFramebuffer(fbinfo);
-    CC_SAFE_ADD_REF(_defaultFBO);
+    CC_SAFE_DELETE(_defaultRT);
+    _defaultRT = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
+    _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
 }
 
 CC_BACKEND_END

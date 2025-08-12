@@ -2,6 +2,7 @@
 #include "renderer/backend/Macros.h"
 #include "renderer/backend/CommandBuffer.h"
 #include "renderer/backend/gfx/BufferGFX.h"
+#include "renderer/backend/gfx/RenderTargetGFX.h"
 #include "base/CCEventListenerCustom.h"
 #include "gfx/backend/GFXDeviceManager.h"
 #include "gfx/base/RefMap.h"
@@ -81,17 +82,12 @@ private:
     static cc::gfx::AttributeList generateAttributeList(ProgramState* state);
     void setUniforms(ProgramGFX* program);
     void cleanResources();
-    cc::gfx::RenderPass* getRenderPass(
-        cc::gfx::ClearFlagBit clearFlags, bool hasDepthStencil, cc::gfx::Format format = cc::gfx::Format::RGBA8);
     void resetDefaultFBO();
 
     std::vector<cc::gfx::Swapchain*> swapchains;
-    std::vector<cc::gfx::Texture*> colorTextures;
-    cc::gfx::Texture* dsTexture = nullptr;
 
     cc::gfx::CommandBuffer* _cb = nullptr;
-    std::vector<cc::gfx::Framebuffer*> _generatedFBO;
-    cc::gfx::Framebuffer* _defaultFBO = nullptr;
+    RenderTargetGFX* _defaultRT = nullptr;
     cc::gfx::Framebuffer* _currentFBO = nullptr;
     Size _currentFBOSize;
     cc::gfx::RenderPass* _currentPass = nullptr;
@@ -102,7 +98,7 @@ private:
     cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
     cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _usedInputAssemblers;
     std::unordered_map<uint32_t, cc::RefVector<cc::gfx::Buffer*>> _inputAssemblerBuffers;
-    std::array<const void*, 3> _inputAssemblerHash;
+    std::array<const void*, 3> _inputAssemblerHash = {};
     cocos2d::RefPtr<BufferGFX> _vertexBuffer;
     cocos2d::RefPtr<BufferGFX> _indexBuffer;
     cocos2d::RefPtr<ProgramState> _programState;
@@ -110,7 +106,6 @@ private:
     CullMode _cullMode                          = CullMode::NONE;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     cc::gfx::Viewport _viewPort;
-    cc::RefMap<uint32_t, cc::gfx::RenderPass*> _renderPasses;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;
     cocos2d::Vector<TextureBackend*> _tmpTextures;
     bool _screenResized  = false;
