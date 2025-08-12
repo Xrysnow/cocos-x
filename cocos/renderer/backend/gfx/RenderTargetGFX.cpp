@@ -8,6 +8,8 @@ using namespace cc;
 
 CC_BACKEND_BEGIN
 
+std::unordered_map<uint32_t, gfx::RenderPass*> RenderTargetGFX::renderPasses;
+
 RenderTargetGFX* RenderTargetGFX::createDefault(const gfx::Swapchain* swapchain)
 {
     auto ret = new RenderTargetGFX(true);
@@ -46,6 +48,9 @@ RenderTargetGFX::RenderTargetGFX(bool defaultRenderTarget) : RenderTarget(defaul
 
 RenderTargetGFX::~RenderTargetGFX()
 {
+    // framebuffers should be destroyed before textures
+    framebuffers.clear();
+    textures.clear();
 }
 
 void RenderTargetGFX::update() const
@@ -154,10 +159,6 @@ gfx::Framebuffer* RenderTargetGFX::getFramebuffer(cc::gfx::ClearFlagBit clearFla
     if (!framebuffers.at((uint32_t)clearFlags))
     {
         CC_LOG_ERROR("no framebuffer for clear flags: %d, hasDepthStencil: %d", (int)clearFlags, (int)hasDepthStencil());
-        for (auto&& it : framebuffers)
-        {
-            CC_LOG_ERROR("clear flags: %d", it.first);
-        }
     }
 #endif  // CC_DEBUG
     return framebuffers.at((uint32_t)clearFlags);
@@ -171,6 +172,13 @@ bool RenderTargetGFX::hasDepthStencil() const
 void RenderTargetGFX::generateFramebuffers() const
 {
     framebuffers.clear();
+    textures.clear();
+    // hold textures
+    for (auto&& t : info.colorTextures)
+        textures.pushBack(t);
+    if (info.depthStencilTexture)
+        textures.pushBack(info.depthStencilTexture);
+    //
     auto clearTypeEnd = (uint32_t)gfx::ClearFlagBit::ALL;
     const auto hasDS = hasDepthStencil();
     if (!hasDS)
@@ -179,7 +187,6 @@ void RenderTargetGFX::generateFramebuffers() const
     for (uint32_t i = 0; i <= clearTypeEnd; ++i)
     {
         info.renderPass = getRenderPass((gfx::ClearFlagBit)i, hasDS, colorFormat);
-        renderPasss.insert(i, info.renderPass);
         framebuffers.insert(i, gfx::Device::getInstance()->createFramebuffer(info));
     }
 }
@@ -189,6 +196,12 @@ gfx::RenderPass* RenderTargetGFX::getRenderPass(
     bool hasDepthStencil,
     gfx::Format format)
 {
+    const auto key = (uint32_t)clearFlags + ((uint32_t)format << 8) + (hasDepthStencil ? 0U : (1U << 31));
+    const auto find = renderPasses.find(key);
+    if (find != renderPasses.end())
+    {
+        return find->second;
+    }
     gfx::RenderPassInfo info;
     gfx::ColorAttachment ca;
     // should be RGBA8, but can be BGRA8 in vulkan
@@ -199,7 +212,6 @@ gfx::RenderPass* RenderTargetGFX::getRenderPass(
         // TODO: should be DISACARD if is skybox
         ca.loadOp = gfx::LoadOp::LOAD;
         gfx::GeneralBarrierInfo binfo;
-        //binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_COLOR_INPUT_ATTACHMENT | gfx::AccessFlagBit::COLOR_ATTACHMENT_WRITE;
         binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
         // must be same as nextAccesses if not clear
         binfo.prevAccesses = binfo.nextAccesses;
@@ -218,13 +230,14 @@ gfx::RenderPass* RenderTargetGFX::getRenderPass(
             if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::STENCIL))
                 dsa.stencilLoadOp = gfx::LoadOp::LOAD;
             gfx::GeneralBarrierInfo binfo;
-            //binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_DEPTH_STENCIL_INPUT_ATTACHMENT | gfx::AccessFlagBit::DEPTH_STENCIL_ATTACHMENT_WRITE;
             binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
             binfo.prevAccesses = binfo.nextAccesses;
             dsa.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
         }
     }
-    return gfx::Device::getInstance()->createRenderPass(info);
+    const auto rp = gfx::Device::getInstance()->createRenderPass(info);
+    renderPasses[key] = rp;
+    return rp;
 }
 
 CC_BACKEND_END

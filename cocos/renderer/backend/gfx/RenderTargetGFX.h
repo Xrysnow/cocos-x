@@ -15,7 +15,7 @@ public:
     RenderTargetGFX(bool defaultRenderTarget);
     ~RenderTargetGFX() override;
 
-    bool isDefault()const { return _defaultRenderTarget || info.colorTextures.empty(); }
+    bool isDefault() const { return _defaultRenderTarget || info.colorTextures.empty(); }
     void update() const;
 
     const cc::gfx::FramebufferInfo& getInfo() const { return info; }
@@ -28,8 +28,9 @@ private:
         cc::gfx::ClearFlagBit clearFlags, bool hasDepthStencil, cc::gfx::Format format);
 
     mutable cc::gfx::FramebufferInfo info;
-    mutable cc::RefMap<uint32_t, cc::gfx::RenderPass*> renderPasss;
     mutable cc::RefMap<uint32_t, cc::gfx::Framebuffer*> framebuffers;
+    mutable cc::RefVector<cc::gfx::Texture*> textures;
+    static std::unordered_map<uint32_t, cc::gfx::RenderPass*> renderPasses;
 };
 
 CC_BACKEND_END
