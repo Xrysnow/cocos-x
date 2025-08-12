@@ -4,7 +4,41 @@
 #include "UtilsGFX.h"
 #include "gfx/backend/GFXDeviceManager.h"
 
+using namespace cc;
+
 CC_BACKEND_BEGIN
+
+RenderTargetGFX* RenderTargetGFX::createDefault(const gfx::Swapchain* swapchain)
+{
+    auto ret = new RenderTargetGFX(true);
+    if (swapchain)
+    {
+        ret->info.colorTextures = { swapchain->getColorTexture() };
+        ret->info.depthStencilTexture = swapchain->getDepthStencilTexture();
+    }
+    else
+    {
+        const auto d = (DeviceGFX*)backend::Device::getInstance();
+        gfx::TextureInfo info;
+        info.usage =
+            gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED | gfx::TextureUsageBit::TRANSFER_SRC;
+        info.format = gfx::Format::RGBA8;
+        info.width = d->getWidth();
+        info.height = d->getHeight();
+        auto ct = gfx::Device::getInstance()->createTexture(info);
+        ret->info.colorTextures = { ct };
+        gfx::TextureInfo info1;
+        info1.usage = gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT | gfx::TextureUsageBit::SAMPLED |
+            gfx::TextureUsageBit::TRANSFER_SRC;
+        info1.format = gfx::Format::DEPTH_STENCIL;
+        info1.width = d->getWidth();
+        info1.height = d->getHeight();
+        auto dst = gfx::Device::getInstance()->createTexture(info1);
+        ret->info.depthStencilTexture = dst;
+    }
+    ret->generateFramebuffers();
+    return ret;
+}
 
 RenderTargetGFX::RenderTargetGFX(bool defaultRenderTarget) : RenderTarget(defaultRenderTarget)
 {
@@ -43,12 +77,16 @@ void RenderTargetGFX::update() const
                 const auto usage = tex->getTextureUsage();
                 if (fmt != PixelFormat::RGBA8888 || usage != TextureUsage::RENDER_TARGET)
                 {
-                    print("%s: invalid color attachment, format=%d, usage=%d", __FUNCTION__, (int)fmt, (int)usage);
+                    CC_LOG_ERROR("%s: invalid color attachment, format=%d, usage=%d", __FUNCTION__, (int)fmt, (int)usage);
                     CC_ASSERT(false);
                     continue;
                 }
                 info.colorTextures.emplace_back(UtilsGFX::getTexture(tex));
 #if CC_DEBUG
+                if (!UtilsGFX::getTexture(tex))
+                {
+                    CC_ASSERT(false);
+                }
                 if (width == 0)
                 {
                     width  = tex->getWidth();
@@ -68,6 +106,12 @@ void RenderTargetGFX::update() const
             }
         }
     }
+#if CC_DEBUG
+    if (info.colorTextures.empty())
+    {
+        CC_ASSERT(false);
+    }
+#endif  // CC_DEBUG
     // depth and stencil are always packed
     const auto dsTex = _depth.texture ? _depth.texture : _stencil.texture;
     if (dsTex)
@@ -76,7 +120,7 @@ void RenderTargetGFX::update() const
         const auto usage = dsTex->getTextureUsage();
         if (fmt != PixelFormat::D24S8 || usage != TextureUsage::RENDER_TARGET)
         {
-            print("%s: invalid DS attachment, format=%d, usage=%d", __FUNCTION__, (int)fmt, (int)usage);
+            CC_LOG_ERROR("%s: invalid DS attachment, format=%d, usage=%d", __FUNCTION__, (int)fmt, (int)usage);
             CC_ASSERT(false);
         }
         else
@@ -92,7 +136,95 @@ void RenderTargetGFX::update() const
 #endif  // CC_DEBUG
         }
     }
+    generateFramebuffers();
     _dirty = false;
+}
+
+gfx::Framebuffer* RenderTargetGFX::getFramebuffer(cc::gfx::ClearFlagBit clearFlags) const
+{
+    if (!hasDepthStencil())
+    {
+        clearFlags &= ~gfx::ClearFlagBit::DEPTH_STENCIL;
+    }
+    if (framebuffers.empty())
+    {
+        generateFramebuffers();
+    }
+#if CC_DEBUG
+    if (!framebuffers.at((uint32_t)clearFlags))
+    {
+        CC_LOG_ERROR("no framebuffer for clear flags: %d, hasDepthStencil: %d", (int)clearFlags, (int)hasDepthStencil());
+        for (auto&& it : framebuffers)
+        {
+            CC_LOG_ERROR("clear flags: %d", it.first);
+        }
+    }
+#endif  // CC_DEBUG
+    return framebuffers.at((uint32_t)clearFlags);
+}
+
+bool RenderTargetGFX::hasDepthStencil() const
+{
+    return _depth.texture || _stencil.texture || _defaultRenderTarget;
+}
+
+void RenderTargetGFX::generateFramebuffers() const
+{
+    framebuffers.clear();
+    auto clearTypeEnd = (uint32_t)gfx::ClearFlagBit::ALL;
+    const auto hasDS = hasDepthStencil();
+    if (!hasDS)
+        clearTypeEnd = (uint32_t)gfx::ClearFlagBit::COLOR;
+    const auto colorFormat = info.colorTextures[0]->getFormat();
+    for (uint32_t i = 0; i <= clearTypeEnd; ++i)
+    {
+        info.renderPass = getRenderPass((gfx::ClearFlagBit)i, hasDS, colorFormat);
+        renderPasss.insert(i, info.renderPass);
+        framebuffers.insert(i, gfx::Device::getInstance()->createFramebuffer(info));
+    }
+}
+
+gfx::RenderPass* RenderTargetGFX::getRenderPass(
+    gfx::ClearFlagBit clearFlags,
+    bool hasDepthStencil,
+    gfx::Format format)
+{
+    gfx::RenderPassInfo info;
+    gfx::ColorAttachment ca;
+    // should be RGBA8, but can be BGRA8 in vulkan
+    ca.format = format;
+    // default loadOp is CLEAR
+    if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::COLOR))
+    {
+        // TODO: should be DISACARD if is skybox
+        ca.loadOp = gfx::LoadOp::LOAD;
+        gfx::GeneralBarrierInfo binfo;
+        //binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_COLOR_INPUT_ATTACHMENT | gfx::AccessFlagBit::COLOR_ATTACHMENT_WRITE;
+        binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
+        // must be same as nextAccesses if not clear
+        binfo.prevAccesses = binfo.nextAccesses;
+        ca.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
+    }
+    info.colorAttachments = { ca };
+    if (hasDepthStencil)
+    {
+        auto& dsa = info.depthStencilAttachment;
+        // should be D24S8
+        dsa.format = gfx::Format::DEPTH_STENCIL;
+        if (!gfx::hasAllFlags(clearFlags, gfx::ClearFlagBit::DEPTH_STENCIL))
+        {
+            if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::DEPTH))
+                dsa.depthLoadOp = gfx::LoadOp::LOAD;
+            if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::STENCIL))
+                dsa.stencilLoadOp = gfx::LoadOp::LOAD;
+            gfx::GeneralBarrierInfo binfo;
+            //binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_DEPTH_STENCIL_INPUT_ATTACHMENT | gfx::AccessFlagBit::DEPTH_STENCIL_ATTACHMENT_WRITE;
+            binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
+            binfo.prevAccesses = binfo.nextAccesses;
+            dsa.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
+        }
+    }
+    return gfx::Device::getInstance()->createRenderPass(info);
 }
 
 CC_BACKEND_END
