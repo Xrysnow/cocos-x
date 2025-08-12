@@ -198,7 +198,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
 
         if (PixelFormat::D24S8 == depthStencilFormat || sharedRenderTarget)
         {
-            _renderTargetFlags       = RenderTargetFlag::ALL;
+            _renderTargetFlags       = RenderTargetFlag::COLOR | RenderTargetFlag::DEPTH_AND_STENCIL;
             descriptor.textureFormat = PixelFormat::D24S8;
 
             _depthStencilTexture = new Texture2D();
