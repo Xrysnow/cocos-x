@@ -64,10 +64,10 @@ bool CommandBufferGFX::beginFrame()
             for (auto&& sw : swapchains)
                 sw->resize((uint32_t)fsize.width, (uint32_t)fsize.height, gfx::SurfaceTransform::IDENTITY);
         }
-        DeviceGFX::setSwapchainInfo(hdl, DeviceGFX::getInstance()->getVsync(), (uint32_t)fsize.width, (uint32_t)fsize.height);
+        DeviceGFX::setSwapchainInfo(
+            hdl, DeviceGFX::getInstance()->getVsync(), (uint32_t)fsize.width, (uint32_t)fsize.height);
 
-        CC_SAFE_DELETE(_defaultRT);
-        _currentFBO = nullptr;
+        _currentFBO    = nullptr;
         _screenResized = false;
     }
 
@@ -85,10 +85,10 @@ bool CommandBufferGFX::beginFrame()
     // NOTE: default FBO should be created after 'acquire'
     gfx::Device::getInstance()->acquire(swapchains);
 
-    if (!_defaultRT)
-        resetDefaultFBO();
     if (!_currentFBO)
-        _currentFBO = _defaultRT->getFramebuffer();
+    {
+        resetDefaultFBO();
+    }
 
     _cb->begin();
     return true;
@@ -104,13 +104,15 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         clearFlags |= gfx::ClearFlagBit::DEPTH;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::STENCIL))
         clearFlags |= gfx::ClearFlagBit::STENCIL;
-
+    // this may invalidate previous FBOs, so '_currentFBO' shoudld be stored
     rt->update();
     // NOTE: color is always required
     if (rt->isDefault())
     {
-        _currentFBO     = _defaultRT->getFramebuffer(clearFlags);
-        _currentFBOSize = Director::getInstance()->getOpenGLView()->getFrameSize();
+        _currentFBO            = _defaultRT->getFramebuffer(clearFlags);
+        const auto fsize       = Director::getInstance()->getOpenGLView()->getFrameSize();
+        _currentFBOSize.width  = (uint32_t)fsize.width;
+        _currentFBOSize.height = (uint32_t)fsize.height;
     }
     else
     {
@@ -121,6 +123,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         _currentFBOSize.width  = tex->getWidth();
         _currentFBOSize.height = tex->getHeight();
     }
+    _usedFBOs.pushBack(_currentFBO);
 
     const auto& clearColor = descriptor.clearColorValue;
     gfx::Color color;
@@ -285,6 +288,7 @@ void CommandBufferGFX::endFrame()
 
     _currentFBO = _defaultRT->getFramebuffer();
     _tmpTextures.clear();
+    _usedFBOs.clear();
 }
 
 void CommandBufferGFX::setDepthStencilState(DepthStencilState* depthStencilState)
@@ -579,6 +583,7 @@ void CommandBufferGFX::resetDefaultFBO()
     CC_SAFE_DELETE(_defaultRT);
     _defaultRT = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
     _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
+    _usedFBOs.pushBack(_currentFBO);
 }
 
 CC_BACKEND_END

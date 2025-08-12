@@ -88,8 +88,10 @@ private:
 
     cc::gfx::CommandBuffer* _cb = nullptr;
     RenderTargetGFX* _defaultRT = nullptr;
-    cc::gfx::Framebuffer* _currentFBO = nullptr;
-    Size _currentFBOSize;
+    cc::IntrusivePtr<cc::gfx::Framebuffer> _currentFBO;
+    cc::gfx::Extent _currentFBOSize;
+    cc::RefVector<cc::gfx::Framebuffer*> _usedFBOs;
+
     cc::gfx::RenderPass* _currentPass = nullptr;
     cc::RefMap<uint32_t, cc::gfx::PipelineState*> _pstates;
     std::vector<cc::gfx::PipelineLayout*> _pLayout;
