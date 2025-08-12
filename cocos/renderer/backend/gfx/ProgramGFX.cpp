@@ -1070,7 +1070,7 @@ ProgramStateGFX::ProgramStateGFX(ProgramGFX* program_, const cocos2d::Map<std::s
         {
             gfx::BufferInfo info;
             info.usage    = gfx::BufferUsageBit::UNIFORM;
-            info.memUsage = gfx::MemoryUsageBit::HOST;
+            info.memUsage = gfx::MemoryUsageBit::DEVICE;
             info.size     = program->getUniformBlockSize(name);
             info.stride   = info.size;
             //info.flags    = gfx::BufferFlags::ENABLE_STAGING_WRITE;
