@@ -448,9 +448,9 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 #if defined(CC_USE_GFX)
     auto desiredApi = cc::gfx::API::VULKAN;
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-    DesiredAPI = cc::gfx::API::METAL;
+    desiredApi = cc::gfx::API::METAL;
 #endif
-    auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt();
+    auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt((int)desiredApi);
     if (0 <= configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
 	    desiredApi = (cc::gfx::API)configAPI;
     useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL || desiredApi == cc::gfx::API::UNKNOWN);
