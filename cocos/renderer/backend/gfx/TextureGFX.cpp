@@ -79,6 +79,11 @@ void Texture2DGFX::initWithZeros()
     if (!_texture)
         resetTexture();
 
+    if (hasFlag(_info.usage, gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT))
+    {
+        return;
+    }
+
     // NOTE: size can be different sometime (DS texture)
     auto size        = _width * _height * _bitsPerPixel / 8;
     const auto size1 = gfx::formatSize(_texture->getFormat(), _width, _height, 1);
@@ -134,16 +139,15 @@ void Texture2DGFX::updateTextureDescriptor(const TextureDescriptor& descriptor, 
     if (_textureUsage == TextureUsage::RENDER_TARGET)
     {
         if (_textureFormat == PixelFormat::D24S8)
-            _info.usage = gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
+            _info.usage = gfx::TextureUsageBit::TRANSFER_DST | gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
         else  // should be RGBA8
-            _info.usage = gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
+            _info.usage = gfx::TextureUsageBit::TRANSFER_DST | gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
     }
     else
     {
         _info.usage = gfx::TextureUsageBit::TRANSFER_DST | gfx::TextureUsageBit::SAMPLED;
     }
     // Update data here because `updateData()` may not be invoked later.
-    // if (isParameterValid() && _textureFormat != PixelFormat::D24S8)
     if (descriptor.textureUsage == TextureUsage::RENDER_TARGET)
     {
         initWithZeros();
