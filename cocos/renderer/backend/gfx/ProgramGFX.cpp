@@ -667,6 +667,15 @@ void ProgramGFX::updateBlockInfoEx(
                     block.name.c_str(),
                     (int)ex.size,
                     (int)ex_size);
+                uint32_t cur = 0;
+                for (auto& u : block.members)
+                {
+                    const auto offset = UtilsGFX::getUniformStd140Offset(u.type, u.count, cur);
+                    const auto size = UtilsGFX::getUniformStd140Size(u.type, u.count);
+                    cur = offset + size;
+                    log("    '%s': tsize=%d, count=%d, size=%d, offset=%d",
+                        u.name.c_str(), gfx::getTypeSize(u.type), u.count, size, offset);
+                }
             }
             ex.size = ex_size;
         }
