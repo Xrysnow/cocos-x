@@ -22,9 +22,7 @@ CommandBufferGFX::CommandBufferGFX()
     _cb = gfx::Device::getInstance()->getCommandBuffer();
     // NOTE: when resizing, engine will pause/resume at anywhere
     Director::getInstance()->getEventDispatcher()->addCustomEventListener(
-        "glview_window_resized", [this](EventCustom*) {
-            _screenResized = true;
-        });
+        "glview_window_resized", [this](EventCustom*) { _screenResized = true; });
     //
     _pstateInfoHash = XXH32_createState();
 }
@@ -52,9 +50,9 @@ bool CommandBufferGFX::beginFrame()
     {
         const auto view = (GLViewImpl*)Director::getInstance()->getOpenGLView();
 #ifdef CC_PLATFORM_PC
-        void* hdl       = view->getWindowHandle();
+        void* hdl = view->getWindowHandle();
 #else
-        void* hdl       = nullptr;
+        void* hdl = nullptr;
 #endif
 
         const auto fsize = Director::getInstance()->getOpenGLView()->getFrameSize();
@@ -96,7 +94,7 @@ bool CommandBufferGFX::beginFrame()
 
 void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
 {
-    auto rt   = (const RenderTargetGFX*)renderTarget;
+    auto rt         = (const RenderTargetGFX*)renderTarget;
     auto clearFlags = gfx::ClearFlagBit::NONE;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         clearFlags |= gfx::ClearFlagBit::COLOR;
@@ -118,7 +116,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     {
         _currentFBO = rt->getFramebuffer(clearFlags);
 
-        auto& info = rt->getInfo();
+        auto& info             = rt->getInfo();
         const auto tex         = info.colorTextures[0];
         _currentFBOSize.width  = tex->getWidth();
         _currentFBOSize.height = tex->getHeight();
@@ -156,8 +154,8 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     _currentPass = _currentFBO->getRenderPass();
 
     // clamp to avoid error
-    rect.x = std::clamp(rect.x, 0, (int)_currentFBOSize.width);
-    rect.y = std::clamp(rect.y, 0, (int)_currentFBOSize.height);
+    rect.x      = std::clamp(rect.x, 0, (int)_currentFBOSize.width);
+    rect.y      = std::clamp(rect.y, 0, (int)_currentFBOSize.height);
     rect.width  = std::min((int)rect.width, (int)_currentFBOSize.width - rect.x);
     rect.height = std::min((int)rect.height, (int)_currentFBOSize.height - rect.y);
 
@@ -259,9 +257,9 @@ void CommandBufferGFX::drawElements(
 void CommandBufferGFX::endRenderPass()
 {
     _cb->endRenderPass();
-    _currentPass = nullptr;
+    _currentPass  = nullptr;
     _vertexBuffer = nullptr;
-    _indexBuffer = nullptr;
+    _indexBuffer  = nullptr;
     _programState = nullptr;
 }
 
@@ -274,7 +272,7 @@ void CommandBufferGFX::endFrame()
     // present will wait
     gfx::Device::getInstance()->present();
 
-    _inputAssemblers = _usedInputAssemblers;
+    _inputAssemblers     = _usedInputAssemblers;
     _usedInputAssemblers = {};
     // remove unused buffer of IAs
     for (auto it = _inputAssemblerBuffers.begin(); it != _inputAssemblerBuffers.end();)
@@ -395,11 +393,11 @@ void CommandBufferGFX::readPixels(RenderTarget* rt, std::function<void(const Pix
 void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawInfo)
 {
     _pstateinfo.inputState.attributes = getAttributesFromProgramState(_programState);
-    _inputAssemblerHash[0] = _programState->getVertexLayout();
+    _inputAssemblerHash[0]            = _programState->getVertexLayout();
     if (_pstateinfo.inputState.attributes.empty())
     {
         _pstateinfo.inputState.attributes = _renderPipeline->getProgram()->getHandler()->getAttributes();
-        _inputAssemblerHash[0] = _renderPipeline->getProgram()->getHandler();
+        _inputAssemblerHash[0]            = _renderPipeline->getProgram()->getHandler();
     }
     _pstateinfo.dynamicStates =
         // gfx::DynamicStateFlagBit::VIEWPORT |
@@ -425,7 +423,7 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
 
     // Set cull mode.
     _pstateinfo.rasterizerState.cullMode = UtilsGFX::toCullMode(_cullMode);
-    _pstateinfo.pipelineLayout = program->getDefaultPipelineLayout();
+    _pstateinfo.pipelineLayout           = program->getDefaultPipelineLayout();
     // put states in _renderPipeline into _pstateinfo
     _renderPipeline->doUpdate(&_pstateinfo);
 
@@ -433,16 +431,22 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
     // for _pstateinfo.inputState.attributes
     XXH32_update(_pstateInfoHash, _inputAssemblerHash.data(), sizeof(void*));
     // merge continous members
-    XXH32_update(_pstateInfoHash, &_pstateinfo.shader,
-        sizeof(void*) * 3);
-    XXH32_update(_pstateInfoHash, &_pstateinfo.rasterizerState,
+    XXH32_update(_pstateInfoHash, &_pstateinfo.shader, sizeof(void*) * 3);
+    XXH32_update(
+        _pstateInfoHash,
+        &_pstateinfo.rasterizerState,
         sizeof(_pstateinfo.rasterizerState) + sizeof(_pstateinfo.depthStencilState));
-    XXH32_update(_pstateInfoHash, &_pstateinfo.blendState,
-        sizeof(_pstateinfo.blendState.isA2C) + sizeof(_pstateinfo.blendState.isIndepend) + sizeof(_pstateinfo.blendState.blendColor));
-    XXH32_update(_pstateInfoHash, _pstateinfo.blendState.targets.data(),
-        sizeof(gfx::BlendTarget));
-    XXH32_update(_pstateInfoHash, &_pstateinfo.primitive,
-        sizeof(_pstateinfo.primitive) + sizeof(_pstateinfo.dynamicStates) + sizeof(_pstateinfo.bindPoint) + sizeof(_pstateinfo.subpass));
+    XXH32_update(
+        _pstateInfoHash,
+        &_pstateinfo.blendState,
+        sizeof(_pstateinfo.blendState.isA2C) + sizeof(_pstateinfo.blendState.isIndepend) +
+            sizeof(_pstateinfo.blendState.blendColor));
+    XXH32_update(_pstateInfoHash, _pstateinfo.blendState.targets.data(), sizeof(gfx::BlendTarget));
+    XXH32_update(
+        _pstateInfoHash,
+        &_pstateinfo.primitive,
+        sizeof(_pstateinfo.primitive) + sizeof(_pstateinfo.dynamicStates) + sizeof(_pstateinfo.bindPoint) +
+            sizeof(_pstateinfo.subpass));
     const auto pstateKey = XXH32_digest(_pstateInfoHash);
     if (const auto it = _pstates.find(pstateKey); it != _pstates.end())
     {
@@ -456,12 +460,13 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
     }
 
     _inputAssemblerHash[1] = _vertexBuffer->getHandler();
-    if(useIndex)
+    if (useIndex)
         _inputAssemblerHash[2] = _indexBuffer->getHandler();
-    const auto iaKey = XXH32(_inputAssemblerHash.data(), sizeof(void*) * (useIndex ? 3 : 2), 0) + XXH32(&drawInfo, sizeof(drawInfo), 0);
+    const auto iaKey = XXH32(_inputAssemblerHash.data(), sizeof(void*) * (useIndex ? 3 : 2), 0) +
+                       XXH32(&drawInfo, sizeof(drawInfo), 0);
     if (const auto it = _inputAssemblers.find(iaKey); it != _inputAssemblers.end())
     {
-        //NOTE: no need to use setDrawInfo() since it's only used by CB->draw(IA)
+        // NOTE: no need to use setDrawInfo() since it's only used by CB->draw(IA)
         _cb->bindInputAssembler(it->second);
         _usedInputAssemblers.insert(iaKey, it->second);
     }
@@ -470,7 +475,7 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
         gfx::InputAssemblerInfo info;
         info.attributes = _pstateinfo.inputState.attributes;
         info.vertexBuffers.push_back(_vertexBuffer->getHandler());
-        _inputAssemblerBuffers[iaKey] = { _vertexBuffer->getHandler() };
+        _inputAssemblerBuffers[iaKey] = {_vertexBuffer->getHandler()};
         if (useIndex)
         {
             info.indexBuffer = _indexBuffer->getHandler();
@@ -487,14 +492,14 @@ void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawIn
 
 gfx::AttributeList CommandBufferGFX::getAttributesFromProgramState(ProgramState* state)
 {
-    //NOTE: layout is mutable for a state, so always use layout as key
+    // NOTE: layout is mutable for a state, so always use layout as key
     if (!state)
         return {};
     const auto key = state->getVertexLayout();
-    const auto it = _attributeLists.find(key);
+    const auto it  = _attributeLists.find(key);
     if (it != _attributeLists.end())
         return it->second;
-    const auto list = generateAttributeList(state);
+    const auto list      = generateAttributeList(state);
     _attributeLists[key] = list;
     return list;
 }
@@ -573,7 +578,7 @@ void CommandBufferGFX::setUniforms(ProgramGFX* program)
 
 void CommandBufferGFX::cleanResources()
 {
-    _indexBuffer = nullptr;
+    _indexBuffer  = nullptr;
     _vertexBuffer = nullptr;
     _programState = nullptr;
 }
@@ -581,7 +586,7 @@ void CommandBufferGFX::cleanResources()
 void CommandBufferGFX::resetDefaultFBO()
 {
     CC_SAFE_DELETE(_defaultRT);
-    _defaultRT = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
+    _defaultRT  = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
     _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
     _usedFBOs.pushBack(_currentFBO);
 }

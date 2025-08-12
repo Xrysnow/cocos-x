@@ -42,8 +42,7 @@ public:
 
     void setIndexBuffer(Buffer* buffer) override;
 
-    void drawArrays(
-        PrimitiveType primitiveType, std::size_t start, std::size_t count, bool wireframe = false) override;
+    void drawArrays(PrimitiveType primitiveType, std::size_t start, std::size_t count, bool wireframe = false) override;
 
     void drawElements(
         PrimitiveType primitiveType,
@@ -97,22 +96,26 @@ private:
     std::vector<cc::gfx::PipelineLayout*> _pLayout;
     cc::gfx::PipelineStateInfo _pstateinfo;
     XXH32_state_s* _pstateInfoHash = nullptr;
+
     cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _inputAssemblers;
     cc::RefMap<uint32_t, cc::gfx::InputAssembler*> _usedInputAssemblers;
     std::unordered_map<uint32_t, cc::RefVector<cc::gfx::Buffer*>> _inputAssemblerBuffers;
     std::array<const void*, 3> _inputAssemblerHash = {};
+
     cocos2d::RefPtr<BufferGFX> _vertexBuffer;
     cocos2d::RefPtr<BufferGFX> _indexBuffer;
     cocos2d::RefPtr<ProgramState> _programState;
     RenderPipelineGFX* _renderPipeline          = nullptr;
-    CullMode _cullMode                          = CullMode::NONE;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
-    cc::gfx::Viewport _viewPort;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;
     cocos2d::Vector<TextureBackend*> _tmpTextures;
-    bool _screenResized  = false;
+
+    CullMode _cullMode   = CullMode::NONE;
     bool _scissorEnabled = false;
     cc::gfx::Rect _scissorRect;
+    cc::gfx::Viewport _viewPort;
+
+    bool _screenResized = false;
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _backToForegroundListener = nullptr;
