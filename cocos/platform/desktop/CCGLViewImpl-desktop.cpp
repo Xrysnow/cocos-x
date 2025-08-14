@@ -1234,6 +1234,8 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
     // should skip fullscreen
     if (isFullscreen())
     {
+        //NOTE: when exclusive fullscreen, the window size will be set to 0x0 when jump out
+        Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_RESIZED, nullptr);
         return;
     }
     if (w && h && _resolutionPolicy != ResolutionPolicy::UNKNOWN)
@@ -1265,10 +1267,12 @@ void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* /*window*/, int iconifi
     if (iconified == GLFW_TRUE)
     {
         Application::getInstance()->applicationDidEnterBackground();
+        Director::getInstance()->getEventDispatcher()->dispatchCustomEvent("glview_window_iconified", nullptr);
     }
     else
     {
         Application::getInstance()->applicationWillEnterForeground();
+        Director::getInstance()->getEventDispatcher()->dispatchCustomEvent("glview_window_uniconified", nullptr);
     }
 }
 
