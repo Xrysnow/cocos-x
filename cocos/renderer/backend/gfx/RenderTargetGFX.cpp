@@ -145,7 +145,7 @@ void RenderTargetGFX::update() const
     _dirty = false;
 }
 
-gfx::Framebuffer* RenderTargetGFX::getFramebuffer(cc::gfx::ClearFlagBit clearFlags) const
+gfx::Framebuffer* RenderTargetGFX::getFramebuffer(gfx::ClearFlagBit clearFlags) const
 {
     if (!hasDepthStencil())
     {

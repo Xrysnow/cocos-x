@@ -586,6 +586,7 @@ void CommandBufferGFX::cleanResources()
 void CommandBufferGFX::resetDefaultFBO()
 {
     CC_SAFE_DELETE(_defaultRT);
+    // this is the only one real instance
     _defaultRT  = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
     _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
     _usedFBOs.pushBack(_currentFBO);
