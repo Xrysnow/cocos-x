@@ -56,12 +56,12 @@ bool CommandBufferGFX::beginFrame()
 #endif
 
         const auto fsize = Director::getInstance()->getOpenGLView()->getFrameSize();
-        // handled in backend in vulkan
-        if (gfx::Device::getInstance()->getGfxAPI() != gfx::API::VULKAN)
-        {
-            for (auto&& sw : swapchains)
-                sw->resize((uint32_t)fsize.width, (uint32_t)fsize.height, gfx::SurfaceTransform::IDENTITY);
-        }
+        // resize the swapchain synchronously for ALL backends (including Vulkan): the
+        // default framebuffer must be rebuilt with the post-recreation texture views,
+        // otherwise the commands recorded this frame reference image views of the
+        // destroyed swapchain (VUID-VkRenderPassBeginInfo-framebuffer-parameter)
+        for (auto&& sw : swapchains)
+            sw->resize((uint32_t)fsize.width, (uint32_t)fsize.height, gfx::SurfaceTransform::IDENTITY);
         DeviceGFX::setSwapchainInfo(
             hdl, DeviceGFX::getInstance()->getVsync(), (uint32_t)fsize.width, (uint32_t)fsize.height);
 
@@ -81,7 +81,15 @@ bool CommandBufferGFX::beginFrame()
         swapchains.push_back(sw);
     }
     // NOTE: default FBO should be created after 'acquire'
+    const auto generationBeforeAcquire = swapchains.empty() ? 0 : swapchains[0]->getGeneration();
     gfx::Device::getInstance()->acquire(swapchains);
+    // the backend may recreate the swapchain inside acquire() (e.g. VK_ERROR_OUT_OF_DATE_KHR):
+    // rebuild the default framebuffer when the generation changed so that no recorded
+    // command can reference texture views of the destroyed swapchain
+    if (!swapchains.empty() && swapchains[0]->getGeneration() != generationBeforeAcquire)
+    {
+        _currentFBO = nullptr;
+    }
 
     if (!_currentFBO)
     {
@@ -94,7 +102,48 @@ bool CommandBufferGFX::beginFrame()
 
 void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
 {
-    auto rt         = (const RenderTargetGFX*)renderTarget;
+    const auto rt = (const RenderTargetGFX*)renderTarget;
+    uint32_t rtWidth = 0, rtHeight = 0;
+    if (rt->isDefault())
+    {
+        if (_defaultRT)
+        {
+            const auto& info = _defaultRT->getInfo();
+            if (!info.colorTextures.empty() && info.colorTextures[0])
+            {
+                rtWidth = info.colorTextures[0]->getWidth();
+                rtHeight = info.colorTextures[0]->getHeight();
+            }
+        }
+        if (rtWidth == 0 || rtHeight == 0)
+        {
+            const auto fsize = Director::getInstance()->getOpenGLView()->getFrameSize();
+            rtWidth = (uint32_t)fsize.width;
+            rtHeight = (uint32_t)fsize.height;
+        }
+    }
+    else
+    {
+        auto& info = rt->getInfo();
+        if (info.colorTextures.empty() || info.colorTextures[0] == nullptr)
+        {
+            _skipCurrentRenderPass = true;
+            return;
+        }
+        const auto tex = info.colorTextures[0];
+        rtWidth = tex->getWidth();
+        rtHeight = tex->getHeight();
+    }
+    // skip
+    if (rtWidth == 0 || rtHeight == 0)
+    {
+        _skipCurrentRenderPass = true;
+        _currentPass = nullptr;
+        return;
+    }
+    // this may invalidate previous FBOs, so '_currentFBO' shoudld be stored
+    rt->update();
+
     auto clearFlags = gfx::ClearFlagBit::NONE;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         clearFlags |= gfx::ClearFlagBit::COLOR;
@@ -102,33 +151,19 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         clearFlags |= gfx::ClearFlagBit::DEPTH;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::STENCIL))
         clearFlags |= gfx::ClearFlagBit::STENCIL;
-    // this may invalidate previous FBOs, so '_currentFBO' shoudld be stored
-    rt->update();
     // NOTE: color is always required
     if (rt->isDefault())
     {
-        _currentFBO            = _defaultRT->getFramebuffer(clearFlags);
-        const auto fsize       = Director::getInstance()->getOpenGLView()->getFrameSize();
-        _currentFBOSize.width  = (uint32_t)fsize.width;
-        _currentFBOSize.height = (uint32_t)fsize.height;
+        _currentFBO = _defaultRT->getFramebuffer(clearFlags);
     }
     else
     {
         _currentFBO = rt->getFramebuffer(clearFlags);
-
-        auto& info             = rt->getInfo();
-        const auto tex         = info.colorTextures[0];
-        _currentFBOSize.width  = tex->getWidth();
-        _currentFBOSize.height = tex->getHeight();
     }
+    _currentFBOSize.width  = rtWidth;
+    _currentFBOSize.height = rtHeight;
     _usedFBOs.pushBack(_currentFBO);
 
-    const auto& clearColor = descriptor.clearColorValue;
-    gfx::Color color;
-    color.x = clearColor[0];
-    color.y = clearColor[1];
-    color.z = clearColor[2];
-    color.w = clearColor[3];
     // NOTE: (x,y) is left-bottom in opengl, but left-top in vulkan
     gfx::Rect rect;
     rect.x      = _viewPort.left;
@@ -148,16 +183,32 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         );
     }
     */
-    CC_ASSERT(_currentFBO);
-
-    // must be the same
-    _currentPass = _currentFBO->getRenderPass();
-
     // clamp to avoid error
     rect.x      = std::clamp(rect.x, 0, (int)_currentFBOSize.width);
     rect.y      = std::clamp(rect.y, 0, (int)_currentFBOSize.height);
     rect.width  = std::min((int)rect.width, (int)_currentFBOSize.width - rect.x);
     rect.height = std::min((int)rect.height, (int)_currentFBOSize.height - rect.y);
+
+    if (rect.width == 0 || rect.height == 0)
+    {
+        _skipCurrentRenderPass = true;
+        _currentPass = nullptr;
+        // _currentFBO is set but not used
+        return;
+    }
+    _skipCurrentRenderPass = false;
+
+    const auto& clearColor = descriptor.clearColorValue;
+    gfx::Color color;
+    color.x = clearColor[0];
+    color.y = clearColor[1];
+    color.z = clearColor[2];
+    color.w = clearColor[3];
+
+    CC_ASSERT(_currentFBO);
+
+    // must be the same
+    _currentPass = _currentFBO->getRenderPass();
 
     // rect will be both viewport and scissor
     // NOTE: in vulkan, viewport of the whole render pass is decided here
@@ -213,7 +264,7 @@ void CommandBufferGFX::setProgramState(ProgramState* programState)
 
 void CommandBufferGFX::drawArrays(PrimitiveType primitiveType, std::size_t start, std::size_t count, bool wireframe)
 {
-    if (_screenResized)
+    if (_screenResized || _skipCurrentRenderPass)
         return;
     if (!wireframe)
     {
@@ -235,7 +286,7 @@ void CommandBufferGFX::drawArrays(PrimitiveType primitiveType, std::size_t start
 void CommandBufferGFX::drawElements(
     PrimitiveType primitiveType, IndexFormat indexType, std::size_t count, std::size_t offset, bool wireframe)
 {
-    if (_screenResized)
+    if (_screenResized || _skipCurrentRenderPass)
         return;
     if (!wireframe)
     {
@@ -256,7 +307,10 @@ void CommandBufferGFX::drawElements(
 
 void CommandBufferGFX::endRenderPass()
 {
-    _cb->endRenderPass();
+    if (!_skipCurrentRenderPass)
+        _cb->endRenderPass();
+    _skipCurrentRenderPass = false;
+
     _currentPass  = nullptr;
     _vertexBuffer = nullptr;
     _indexBuffer  = nullptr;
@@ -303,6 +357,8 @@ void CommandBufferGFX::updateDepthStencilState(const DepthStencilDescriptor& des
 
 void CommandBufferGFX::updatePipelineState(const RenderTarget* rt, const PipelineDescriptor& descriptor)
 {
+    if (_skipCurrentRenderPass)
+        return;
     _renderPipeline->update(rt, descriptor);
 }
 

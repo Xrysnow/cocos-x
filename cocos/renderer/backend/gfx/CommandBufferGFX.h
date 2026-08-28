@@ -116,6 +116,7 @@ private:
     cc::gfx::Viewport _viewPort;
 
     bool _screenResized = false;
+    bool _skipCurrentRenderPass = false;
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _backToForegroundListener = nullptr;
