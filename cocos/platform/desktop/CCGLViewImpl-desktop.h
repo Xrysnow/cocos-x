@@ -69,15 +69,16 @@ public:
     void pollEvents() override;
     GLFWwindow* getWindow() const { return _mainWindow; }
 
+    /* If exclusive fullscreen */
     bool isFullscreen() const;
 
     /* Sets primary monitor full screen with default w*h(refresh rate) */
-    void setFullscreen();
+    void setFullscreen(bool exclusive = false);
     /* Sets primary monitor full screen with w*h(refresh rate) */
-    void setFullscreen(int w, int h, int refreshRate);
+    void setFullscreen(int w, int h, int refreshRate, bool exclusive = false);
 
     /* Sets monitor full screen with default w*h(refresh rate) */
-    void setFullscreen(int monitorIndex);
+    void setFullscreen(int monitorIndex, bool exclusive = false);
     /// <summary>
     /// Sets monitor full screen with w*h(refresh rate)
     /// </summary>
@@ -85,10 +86,10 @@ public:
     /// <param name="w">the width of hardware resolution in full screen, -1 use default value</param>
     /// <param name="h">the height of hardware resolution in full screen, -1 use default value</param>
     /// <param name="refreshRate">the display refresh rate, usually 60, -1 use default value</param>
-    void setFullscreen(int monitorIndex, int w, int h, int refreshRate);
+    void setFullscreen(int monitorIndex, int w, int h, int refreshRate, bool exclusive = false);
 
     /* for internal use */
-    void setFullscreen(GLFWmonitor* monitor, int w, int h, int refreshRate);
+    void setFullscreen(GLFWmonitor* monitor, int w, int h, int refreshRate, bool exclusive = false);
     void setWindowed(int width, int height);
 
     int getMonitorCount() const;
