@@ -26,6 +26,10 @@
   #define FMT_HEADER_ONLY
 #endif
 
+#ifndef FMT_UNICODE
+#  define FMT_UNICODE 0
+#endif
+
 #include "fmt/format.h"
 
 namespace fmt
