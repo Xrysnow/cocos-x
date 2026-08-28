@@ -37,9 +37,6 @@ THE SOFTWARE.
 #include "base/ccUTF8.h"
 #include "2d/CCCamera.h"
 
-#if defined(_WIN32)
-#include "glfw3ext.h"
-#endif
 #if CC_ICON_SET_SUPPORT
 #include "platform/CCImage.h"
 #endif
@@ -385,11 +382,7 @@ GLViewImpl::GLViewImpl(bool initglfw)
     if (initglfw)
     {
         glfwSetErrorCallback(GLFWEventHandler::onGLFWError);
-#if defined(_WIN32)
-        glfwxInit();
-#else
         glfwInit();
-#endif
     }
 }
 
@@ -397,11 +390,7 @@ GLViewImpl::~GLViewImpl()
 {
     CCLOGINFO("deallocing GLViewImpl: %p", this);
     GLFWEventHandler::setGLViewImpl(nullptr);
-#if defined(_WIN32)
-    glfwxTerminate();
-#else
     glfwTerminate();
-#endif
 }
 
 GLViewImpl* GLViewImpl::create(std::string_view viewName)
@@ -517,10 +506,6 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 
     int neededWidth  = (int)(rect.size.width * _frameZoomFactor);
     int neededHeight = (int)(rect.size.height * _frameZoomFactor);
-
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    glfwxSetParent((HWND)_glContextAttrs.viewParent);
-#endif
 
     _mainWindow = glfwCreateWindow(neededWidth, neededHeight, _viewName.c_str(), _monitor, nullptr);
 
