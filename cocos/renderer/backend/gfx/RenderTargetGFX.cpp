@@ -186,7 +186,7 @@ void RenderTargetGFX::generateFramebuffers() const
     const auto colorFormat = info.colorTextures[0]->getFormat();
     for (uint32_t i = 0; i <= clearTypeEnd; ++i)
     {
-        info.renderPass = getRenderPass((gfx::ClearFlagBit)i, hasDS, colorFormat);
+        info.renderPass = getRenderPass((gfx::ClearFlagBit)i, hasDS, colorFormat, isDefault());
         framebuffers.insert(i, gfx::Device::getInstance()->createFramebuffer(info));
     }
 }
@@ -194,9 +194,13 @@ void RenderTargetGFX::generateFramebuffers() const
 gfx::RenderPass* RenderTargetGFX::getRenderPass(
     gfx::ClearFlagBit clearFlags,
     bool hasDepthStencil,
-    gfx::Format format)
+    gfx::Format format,
+    bool isDefault)
 {
-    const auto key = (uint32_t)clearFlags + ((uint32_t)format << 8) + (hasDepthStencil ? 0U : (1U << 31));
+    const auto key = (uint32_t)clearFlags |
+        ((uint32_t)format << 8) |
+        ((hasDepthStencil ? 1u : 0u) << 16) |
+        ((isDefault ? 1u : 0u) << 17);
     const auto find = renderPasses.find(key);
     if (find != renderPasses.end())
     {
@@ -212,9 +216,18 @@ gfx::RenderPass* RenderTargetGFX::getRenderPass(
         // TODO: should be DISACARD if is skybox
         ca.loadOp = gfx::LoadOp::LOAD;
         gfx::GeneralBarrierInfo binfo;
-        binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
+        binfo.nextAccesses = isDefault ?
+            gfx::AccessFlagBit::COLOR_ATTACHMENT_WRITE:
+            gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
         // must be same as nextAccesses if not clear
         binfo.prevAccesses = binfo.nextAccesses;
+        ca.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
+    }
+    else if (!isDefault)
+    {
+        gfx::GeneralBarrierInfo binfo;
+        binfo.prevAccesses = gfx::AccessFlagBit::COLOR_ATTACHMENT_WRITE;
+        binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
         ca.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
     }
     info.colorAttachments = { ca };
@@ -230,7 +243,9 @@ gfx::RenderPass* RenderTargetGFX::getRenderPass(
             if (!gfx::hasFlag(clearFlags, gfx::ClearFlagBit::STENCIL))
                 dsa.stencilLoadOp = gfx::LoadOp::LOAD;
             gfx::GeneralBarrierInfo binfo;
-            binfo.nextAccesses = gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
+            binfo.nextAccesses = isDefault ?   
+                gfx::AccessFlagBit::DEPTH_STENCIL_ATTACHMENT_WRITE :
+                gfx::AccessFlagBit::FRAGMENT_SHADER_READ_TEXTURE;
             binfo.prevAccesses = binfo.nextAccesses;
             dsa.barrier = gfx::Device::getInstance()->getGeneralBarrier(binfo);
         }

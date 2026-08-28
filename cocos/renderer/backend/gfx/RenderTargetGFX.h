@@ -25,7 +25,10 @@ private:
     bool hasDepthStencil() const;
     void generateFramebuffers() const;
     static cc::gfx::RenderPass* getRenderPass(
-        cc::gfx::ClearFlagBit clearFlags, bool hasDepthStencil, cc::gfx::Format format);
+        cc::gfx::ClearFlagBit clearFlags,
+        bool hasDepthStencil,
+        cc::gfx::Format format,
+        bool isDefault);
 
     mutable cc::gfx::FramebufferInfo info;
     mutable cc::RefMap<uint32_t, cc::gfx::Framebuffer*> framebuffers;
