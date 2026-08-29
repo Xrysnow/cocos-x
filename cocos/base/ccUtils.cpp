@@ -207,7 +207,8 @@ void captureScreen(std::function<void(bool, std::string_view)> afterCap, std::st
                 bool ok = image->saveToFile(_outfile);
                 Director::getInstance()->getScheduler()->performFunctionInCocosThread(
                     [ok, _afterCap = std::move(_afterCap), _outfile = std::move(_outfile)] {
-                        _afterCap(ok, _outfile);
+                        if (_afterCap)
+                            _afterCap(ok, _outfile);
                     });
             });
     });
