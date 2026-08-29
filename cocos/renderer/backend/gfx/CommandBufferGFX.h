@@ -87,6 +87,7 @@ private:
 
     cc::gfx::CommandBuffer* _cb = nullptr;
     RenderTargetGFX* _defaultRT = nullptr;
+    uint32_t _defaultRTGeneration = 0;
     cc::IntrusivePtr<cc::gfx::Framebuffer> _currentFBO;
     cc::gfx::Extent _currentFBOSize;
     cc::RefVector<cc::gfx::Framebuffer*> _usedFBOs;

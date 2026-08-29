@@ -45,11 +45,25 @@ CommandBufferGFX::~CommandBufferGFX()
 
 bool CommandBufferGFX::beginFrame()
 {
+    // deliver vsync changes into the swapchain and force a recreation this frame
+    // (DeviceGFX::vsync is otherwise consumed only at swapchain creation)
+    {
+        static cc::gfx::VsyncMode s_lastVsyncMode = cc::gfx::VsyncMode::ON;
+        const auto vsyncMode = DeviceGFX::getInstance()->getVsync() ? cc::gfx::VsyncMode::ON : cc::gfx::VsyncMode::OFF;
+        if (vsyncMode != s_lastVsyncMode)
+        {
+            s_lastVsyncMode = vsyncMode;
+            for (auto&& sw : swapchains)
+                sw->setVSyncMode(vsyncMode);
+            _screenResized = true; // force swapchain recreation this frame
+        }
+    }
+
     // NOTE: drawing between resizing and here should be skipped, otherwise the backend will be stuck
     if (_screenResized)
     {
-        const auto view = (GLViewImpl*)Director::getInstance()->getOpenGLView();
 #ifdef CC_PLATFORM_PC
+        const auto view = (GLViewImpl*)Director::getInstance()->getOpenGLView();
         void* hdl = view->getWindowHandle();
 #else
         void* hdl = nullptr;
@@ -154,6 +168,10 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     // NOTE: color is always required
     if (rt->isDefault())
     {
+        if (!swapchains.empty() && swapchains[0]->getGeneration() != _defaultRTGeneration)
+        {
+            resetDefaultFBO();
+        }
         _currentFBO = _defaultRT->getFramebuffer(clearFlags);
     }
     else
@@ -383,10 +401,13 @@ void CommandBufferGFX::setScissorRect(bool isEnabled, float x, float y, float wi
             const auto h = _currentFBOSize.height;
             y            = h - y - height;
         }
-        rect.x      = (int32_t)x;
-        rect.y      = (int32_t)y;
-        rect.width  = (uint32_t)width;
-        rect.height = (uint32_t)height;
+        // clamp to avoid error
+        const int32_t fboW = static_cast<int32_t>(_currentFBOSize.width);
+        const int32_t fboH = static_cast<int32_t>(_currentFBOSize.height);
+        rect.x      = std::clamp((int32_t)x, 0, fboW);
+        rect.y      = std::clamp((int32_t)y, 0, fboH);
+        rect.width  = (uint32_t)std::clamp((int32_t)width, 0, fboW - rect.x);
+        rect.height = (uint32_t)std::clamp((int32_t)height, 0, fboH - rect.y);
     }
     else
     {
@@ -644,6 +665,7 @@ void CommandBufferGFX::resetDefaultFBO()
     CC_SAFE_DELETE(_defaultRT);
     // this is the only one real instance
     _defaultRT  = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
+    _defaultRTGeneration = swapchains.empty() ? 0 : swapchains[0]->getGeneration();
     _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
     _usedFBOs.pushBack(_currentFBO);
 }
