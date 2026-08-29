@@ -544,7 +544,10 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         rect.size.height = realH / _frameZoomFactor;
     }
 
-    glfwMakeContextCurrent(_mainWindow);
+    if (useGL)
+    {
+        glfwMakeContextCurrent(_mainWindow);
+    }
 
     glfwSetMouseButtonCallback(_mainWindow, GLFWEventHandler::onGLFWMouseCallBack);
     glfwSetCursorPosCallback(_mainWindow, GLFWEventHandler::onGLFWMouseMoveCallBack);
@@ -598,6 +601,13 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     {
         ccMessageBox("Failed to create device", "Error");
         return false;
+    }
+
+    const auto api = device->getGfxAPI();
+    if (api != desiredApi)
+    {
+        CC_LOG_WARNING("Device API is not desired, changed from %d to %d",
+            (int)desiredApi, (int)api);
     }
 
     backend::DeviceGFX::setSwapchainInfo(hdl, true, rect.size.width, rect.size.height);
