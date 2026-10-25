@@ -5,6 +5,9 @@ macro(cocos2dx_depend)
     if(WINDOWS)
         list(APPEND PLATFORM_SPECIFIC_LIBS ws2_32 userenv psapi winmm Version Iphlpapi opengl32)
     elseif(LINUX)
+        # CCFontFreeType uses FT_RENDER_MODE_SDF, introduced in FreeType 2.11.
+        find_package(Freetype 2.11 REQUIRED)
+        list(APPEND PLATFORM_SPECIFIC_LIBS Freetype::Freetype)
         # need review those libs: X11 Xi Xrandr Xxf86vm Xinerama Xcursor rt m
         list(APPEND PLATFORM_SPECIFIC_LIBS dl X11 Xi Xrandr Xxf86vm Xinerama Xcursor rt m)
         # use older cmake style on below linux libs
