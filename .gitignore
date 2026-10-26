@@ -5,6 +5,8 @@ buildsrc/
 
 # Ignore files build by Visual Studio
 *.exe
+# Keep the bundled assembler used for JPEG SIMD builds.
+!/tools/nasm/nasm.exe
 *.pdb
 *.aps
 *.vcproj.*.user
