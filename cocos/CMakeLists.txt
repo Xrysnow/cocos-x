@@ -179,8 +179,14 @@ if(WINDOWS)
             message(FATAL_ERROR "Please run setup.py again to download NUGET.EXE, and run CMake again.")
         endif()
      
-        exec_program(${NUGET_EXE}
-            ARGS install "Microsoft.Web.WebView2" -Version 1.0.992.28 -ExcludeVersion -OutputDirectory ${CMAKE_BINARY_DIR}/packages)
+        execute_process(
+            COMMAND "${NUGET_EXE}" install "Microsoft.Web.WebView2"
+                -Version 1.0.992.28 -ExcludeVersion -OutputDirectory "${CMAKE_BINARY_DIR}/packages"
+            RESULT_VARIABLE WEBVIEW2_NUGET_RESULT
+        )
+        if(NOT WEBVIEW2_NUGET_RESULT STREQUAL "0")
+            message(FATAL_ERROR "NuGet failed to install Microsoft.Web.WebView2: ${WEBVIEW2_NUGET_RESULT}")
+        endif()
 
         if(CMAKE_GENERATOR STREQUAL "Ninja")
             target_link_libraries(${COCOS_CORE_LIB} ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/${ARCH_ALIAS}/WebView2Loader.dll.lib)
