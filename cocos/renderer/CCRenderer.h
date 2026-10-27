@@ -474,6 +474,7 @@ protected:
 
     bool beginFrame();  /// Indicate the begining of a frame
     void endFrame();    /// Finish a frame.
+    void discardFrame(); /// Clear commands when no backend frame was begun.
 
     /// Draw the previews queued triangles and flush previous context
     void flush();

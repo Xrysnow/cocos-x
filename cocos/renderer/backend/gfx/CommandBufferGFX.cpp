@@ -21,96 +21,163 @@ CommandBufferGFX::CommandBufferGFX()
     // get the primary command buffer
     _cb = gfx::Device::getInstance()->getCommandBuffer();
     // NOTE: when resizing, engine will pause/resume at anywhere
-    Director::getInstance()->getEventDispatcher()->addCustomEventListener(
+    _windowResizedListener = Director::getInstance()->getEventDispatcher()->addCustomEventListener(
         "glview_window_resized", [this](EventCustom*) { _screenResized = true; });
+    _windowResizedListener->retain();
     //
     _pstateInfoHash = XXH32_createState();
+    DeviceGFX::registerCommandBuffer(this);
 }
 
 CommandBufferGFX::~CommandBufferGFX()
 {
+    DeviceGFX::unregisterCommandBuffer(this);
+    if (_windowResizedListener)
+    {
+        Director::getInstance()->getEventDispatcher()->removeEventListener(_windowResizedListener);
+        CC_SAFE_RELEASE_NULL(_windowResizedListener);
+    }
+    shutdownSurface();
     cleanResources();
     // NOTE: _renderPipeline belongs to Renderer
-    CC_SAFE_DELETE(_defaultRT);
-
     _pstates.clear();
     _inputAssemblers.clear();
     _usedInputAssemblers.clear();
-    for (auto&& p : swapchains)
-        delete p;
-    swapchains.clear();
-
     XXH32_freeState(_pstateInfoHash);
+}
+
+void CommandBufferGFX::shutdownSurface()
+{
+    if (_surfaceClosed)
+        return;
+    _surfaceClosed = true;
+    // A recorded frame must finish its submit/present pair before releasing its surface.
+    if (_frameStarted)
+    {
+        if (_currentPass)
+            endRenderPass();
+        endFrame();
+    }
+    _currentFBO = nullptr;
+    _usedFBOs.clear();
+    CC_SAFE_DELETE(_defaultRT);
+    for (auto* swapchain : swapchains)
+    {
+        swapchain->releaseAcquiredDrawable();
+        // Metal drains GPU work; Agent confirms actor destruction before returning.
+        swapchain->destroy();
+        delete swapchain;
+    }
+    swapchains.clear();
+    _tmpTextures.clear();
+    cleanResources();
 }
 
 bool CommandBufferGFX::beginFrame()
 {
-    // deliver vsync changes into the swapchain and force a recreation this frame
-    // (DeviceGFX::vsync is otherwise consumed only at swapchain creation)
+    if (_surfaceClosed || _surfaceFailed)
+        return false;
+
+    auto* device = DeviceGFX::getInstance();
+    auto* view = Director::getInstance()->getOpenGLView();
+    if (!view)
+        return false;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+    // Main-thread pollEvents publishes this snapshot before beginFrame. Never resize
+    // attachments to zero or ask Metal for a drawable for an iconified/hidden window.
+    auto* desktopView = static_cast<GLViewImpl*>(view);
+    const auto outputSize = desktopView->getRenderFramebufferSize();
+    if (!desktopView->isRenderSurfaceAvailable())
+        return false;
+    if (outputSize.width != device->getWidth() || outputSize.height != device->getHeight())
+        _screenResized = true;
+    if (!swapchains.empty() && (outputSize.width != swapchains[0]->getWidth() ||
+                               outputSize.height != swapchains[0]->getHeight()))
+        _screenResized = true;
+#else
+    const auto outputSize = view->getFrameSize();
+#endif
+    if (outputSize.width <= 0 || outputSize.height <= 0)
+        return false;
+
+    const auto vsyncMode = device->getVsync() ? gfx::VsyncMode::ON : gfx::VsyncMode::OFF;
+    for (auto* swapchain : swapchains)
     {
-        static cc::gfx::VsyncMode s_lastVsyncMode = cc::gfx::VsyncMode::ON;
-        const auto vsyncMode = DeviceGFX::getInstance()->getVsync() ? cc::gfx::VsyncMode::ON : cc::gfx::VsyncMode::OFF;
-        if (vsyncMode != s_lastVsyncMode)
+        if (swapchain->getVSyncMode() != vsyncMode)
         {
-            s_lastVsyncMode = vsyncMode;
-            for (auto&& sw : swapchains)
-                sw->setVSyncMode(vsyncMode);
-            _screenResized = true; // force swapchain recreation this frame
+            swapchain->setVSyncMode(vsyncMode);
+            // Metal applies its layer properties directly at this ordered boundary.
+            // Preserve recreation for the other backends' existing VSync contract.
+            if (gfx::Device::getInstance()->getGfxAPI() != gfx::API::METAL)
+                _screenResized = true;
         }
     }
 
-    // NOTE: drawing between resizing and here should be skipped, otherwise the backend will be stuck
     if (_screenResized)
     {
-#ifdef CC_PLATFORM_PC
-        const auto view = (GLViewImpl*)Director::getInstance()->getOpenGLView();
-        void* hdl = view->getWindowHandle();
-#else
-        void* hdl = nullptr;
-#endif
-
-        const auto fsize = Director::getInstance()->getOpenGLView()->getFrameSize();
-        // resize the swapchain synchronously for ALL backends (including Vulkan): the
-        // default framebuffer must be rebuilt with the post-recreation texture views,
-        // otherwise the commands recorded this frame reference image views of the
-        // destroyed swapchain (VUID-VkRenderPassBeginInfo-framebuffer-parameter)
-        for (auto&& sw : swapchains)
-            sw->resize((uint32_t)fsize.width, (uint32_t)fsize.height, gfx::SurfaceTransform::IDENTITY);
-        DeviceGFX::setSwapchainInfo(
-            hdl, DeviceGFX::getInstance()->getVsync(), (uint32_t)fsize.width, (uint32_t)fsize.height);
-
-        _currentFBO    = nullptr;
+        // Destroy framebuffer references before replacing swapchain attachments.
+        _currentFBO = nullptr;
+        _usedFBOs.clear();
+        CC_SAFE_DELETE(_defaultRT);
+        for (auto* swapchain : swapchains)
+            swapchain->resize((uint32_t)outputSize.width, (uint32_t)outputSize.height,
+                              gfx::SurfaceTransform::IDENTITY);
+        DeviceGFX::setSwapchainInfo(device->getWindowHandle(), device->getVsync(),
+            (uint32_t)outputSize.width, (uint32_t)outputSize.height, device->getNativeRenderSurface());
         _screenResized = false;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+        for (auto* swapchain : swapchains)
+        {
+            if (swapchain->getWidth() != (uint32_t)outputSize.width ||
+                swapchain->getHeight() != (uint32_t)outputSize.height)
+            {
+                _screenResized = true;
+                return false;
+            }
+        }
+#endif
     }
 
     if (swapchains.empty())
     {
-        const auto d = (DeviceGFX*)Device::getInstance();
         gfx::SwapchainInfo info;
-        info.windowHandle = d->getWindowHandle();
-        info.vsyncMode    = d->getVsync() ? gfx::VsyncMode::ON : gfx::VsyncMode::OFF;
-        info.width        = d->getWidth();
-        info.height       = d->getHeight();
-        const auto sw     = gfx::Device::getInstance()->createSwapchain(info);
-        swapchains.push_back(sw);
-    }
-    // NOTE: default FBO should be created after 'acquire'
-    const auto generationBeforeAcquire = swapchains.empty() ? 0 : swapchains[0]->getGeneration();
-    gfx::Device::getInstance()->acquire(swapchains);
-    // the backend may recreate the swapchain inside acquire() (e.g. VK_ERROR_OUT_OF_DATE_KHR):
-    // rebuild the default framebuffer when the generation changed so that no recorded
-    // command can reference texture views of the destroyed swapchain
-    if (!swapchains.empty() && swapchains[0]->getGeneration() != generationBeforeAcquire)
-    {
-        _currentFBO = nullptr;
+        info.windowHandle = device->getWindowHandle();
+        info.nativeRenderSurface = device->getNativeRenderSurface();
+        info.vsyncMode = vsyncMode;
+        info.width = device->getWidth();
+        info.height = device->getHeight();
+        if (!info.width || !info.height)
+            return false;
+        auto* swapchain = gfx::Device::getInstance()->createSwapchain(info);
+        if (!swapchain || !swapchain->isSurfaceInitialized())
+        {
+            CCLOGERROR("GFX swapchain initialization failed; rendering is disabled for this surface.");
+            if (swapchain)
+            {
+                swapchain->destroy();
+                delete swapchain;
+            }
+            _surfaceFailed = true;
+            return false;
+        }
+        swapchains.push_back(swapchain);
     }
 
-    if (!_currentFBO)
+    const auto generationBeforeAcquire = swapchains[0]->getGeneration();
+    gfx::Device::getInstance()->acquire(swapchains);
+    // DeviceAgent synchronizes Metal acquire before exposing the result.
+    if (!swapchains[0]->hasAcquiredDrawable())
     {
-        resetDefaultFBO();
+        swapchains[0]->releaseAcquiredDrawable();
+        return false;
     }
+    if (swapchains[0]->getGeneration() != generationBeforeAcquire)
+        _currentFBO = nullptr;
+    if (!_currentFBO)
+        resetDefaultFBO();
 
     _cb->begin();
+    _frameStarted = true;
     return true;
 }
 
@@ -337,6 +404,9 @@ void CommandBufferGFX::endRenderPass()
 
 void CommandBufferGFX::endFrame()
 {
+    if (!_frameStarted)
+        return;
+    _frameStarted = false;
     CC_ASSERT(!_currentPass);
     _cb->end();
     gfx::Device::getInstance()->flushCommands({_cb});

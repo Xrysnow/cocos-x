@@ -258,7 +258,6 @@ void Director::setGLDefaultValues()
 // Draw the Scene
 void Director::drawScene()
 {
-    _renderer->beginFrame();
 
     // calculate "global" dt
     calculateDeltaTime();
@@ -268,6 +267,8 @@ void Director::drawScene()
         _openGLView->pollEvents();
     }
 
+    const bool canDraw = _renderer->beginFrame();
+
     // tick before glClear: issue #533
     if (!_paused)
     {
@@ -275,10 +276,6 @@ void Director::drawScene()
         _scheduler->update(_deltaTime);
         _eventDispatcher->dispatchEvent(_eventAfterUpdate);
     }
-
-    _renderer->clear(ClearFlag::ALL, _clearColor, 1, 0, -10000.0);
-
-    _eventDispatcher->dispatchEvent(_eventBeforeDraw);
 
     /* to avoid flickr, nextScene MUST be here: after tick and before draw.
      * FIXME: Which bug is this one. It seems that it can't be reproduced with v0.9
@@ -288,13 +285,24 @@ void Director::drawScene()
         setNextScene();
     }
 
+#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH)
+    if (_runningScene)
+        _runningScene->stepPhysicsAndNavigation(_deltaTime);
+#endif
+    if (!canDraw)
+    {
+        // Window events and existing logical updates continue without an output
+        // drawable. Do not dispatch an unpaired draw event or retain queued commands.
+        _renderer->discardFrame();
+        return;
+    }
+
+    _renderer->clear(ClearFlag::ALL, _clearColor, 1, 0, -10000.0);
+    _eventDispatcher->dispatchEvent(_eventBeforeDraw);
     pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 
     if (_runningScene)
     {
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH)
-        _runningScene->stepPhysicsAndNavigation(_deltaTime);
-#endif
         // clear draw stats
         _renderer->clearDrawStats();
 
@@ -1055,6 +1063,11 @@ void Director::reset()
 
 void Director::purgeDirector()
 {
+#if defined(CC_USE_GFX) && CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+    // Drain the Metal surface while its device, event dispatcher and native view
+    // are all alive. GLView end/destruction repeats this idempotent safeguard.
+    backend::DeviceGFX::shutdownSurface();
+#endif
     reset();
 
     //    CHECK_GL_ERROR_DEBUG();

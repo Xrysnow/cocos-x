@@ -74,7 +74,9 @@ THE SOFTWARE.
 #include "glfw3native.h"
 #endif
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <unordered_map>
 
 #ifdef CC_USE_GFX
@@ -398,6 +400,9 @@ GLViewImpl::~GLViewImpl()
     CCLOGINFO("deallocing GLViewImpl: %p", this);
     GLFWEventHandler::setGLViewImpl(nullptr);
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+#if defined(CC_USE_GFX)
+    backend::DeviceGFX::shutdownSurface();
+#endif
     detail::destroyMacWindowBridge(_macBridge);
     _macBridge = nullptr;
 #endif
@@ -462,6 +467,31 @@ GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName,
 bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZoomFactor, bool resizable)
 {
     setViewName(viewName);
+
+#if CC_DEBUG && (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    // Opt-in cold-start coverage until Lua can configure GLContextAttrs.vsync.
+    if (const char* initialVSync = std::getenv("LSTGX_P2_INITIAL_VSYNC"))
+    {
+        if (initialVSync[0] == '0' && initialVSync[1] == '\0')
+            _glContextAttrs.vsync = false;
+        else if (initialVSync[0] == '1' && initialVSync[1] == '\0')
+            _glContextAttrs.vsync = true;
+        CC_LOG_INFO("P2 diagnostic: initial VSync request %s, effective %s",
+            initialVSync, _glContextAttrs.vsync ? "on" : "off");
+    }
+    auto diagnosticCount = [](const char* name) -> unsigned long long {
+        const char* value = std::getenv(name);
+        if (!value || value[0] < '0' || value[0] > '9')
+            return 0;
+        char* end = nullptr;
+        const auto count = std::strtoull(value, &end, 10);
+        return end && *end == '\0' ? count : 0;
+    };
+    _p2ZeroSizeBegin = diagnosticCount("LSTGX_P2_ZERO_SIZE_BEGIN");
+    _p2ZeroSizeCount = diagnosticCount("LSTGX_P2_ZERO_SIZE_COUNT");
+    if (_p2ZeroSizeCount && !_p2ZeroSizeBegin)
+        _p2ZeroSizeBegin = 1;
+#endif
 
     _frameZoomFactor = frameZoomFactor;
     bool useGL = CC_TARGET_PLATFORM != CC_PLATFORM_MAC;
@@ -625,7 +655,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     }
 #endif
 
-    void* hdl = getWindowHandle();
+    void* hdl = getRenderSurfaceHandle();
     CC_ASSERT(hdl);
 
     const auto& cfgMT = Configuration::getInstance()->getValue("GFXMultithreaded");
@@ -674,7 +704,18 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     }
 #endif
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    refreshRenderSurfaceState();
+    backend::DeviceGFX::setSwapchainInfo(hdl, _glContextAttrs.vsync,
+        static_cast<uint32_t>(_renderFramebufferSize.width),
+        static_cast<uint32_t>(_renderFramebufferSize.height), detail::getMacMetalLayer(_macBridge));
+    CC_LOG_INFO("macOS Metal surface: window %.0fx%.0f, framebuffer %.0fx%.0f, VSync %s",
+        _renderWindowSize.width, _renderWindowSize.height,
+        _renderFramebufferSize.width, _renderFramebufferSize.height,
+        _glContextAttrs.vsync ? "on" : "off");
+#else
     backend::DeviceGFX::setSwapchainInfo(hdl, true, rect.size.width, rect.size.height);
+#endif
 
 #elif (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
 
@@ -761,6 +802,13 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    GLFWEventHandler::setGLViewImpl(nullptr);
+    _renderSurfaceAvailable = false;
+#if defined(CC_USE_GFX)
+    backend::DeviceGFX::shutdownSurface();
+#endif
+#endif
     if (_mainWindow)
     {
         glfwSetWindowShouldClose(_mainWindow, 1);
@@ -788,8 +836,61 @@ bool GLViewImpl::windowShouldClose()
 
 void GLViewImpl::pollEvents()
 {
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    // Application may perform its trailing poll after Director has been purged.
+    if (!_mainWindow)
+        return;
+#endif
     glfwPollEvents();
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    refreshRenderSurfaceState(true);
+#endif
 }
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+void GLViewImpl::refreshRenderSurfaceState(bool polled)
+{
+    // All GLFW/AppKit access stays in the main-thread window phase. The renderer
+    // consumes these values only after pollEvents(), before queuing an acquire.
+    int windowWidth = 0, windowHeight = 0;
+    int pixelWidth = 0, pixelHeight = 0;
+    if (_mainWindow)
+    {
+        glfwGetWindowSize(_mainWindow, &windowWidth, &windowHeight);
+        glfwGetFramebufferSize(_mainWindow, &pixelWidth, &pixelHeight);
+    }
+    _renderWindowSize.set(std::max(windowWidth, 0), std::max(windowHeight, 0));
+    _renderFramebufferSize.set(std::max(pixelWidth, 0), std::max(pixelHeight, 0));
+    _renderSurfaceAvailable = _mainWindow && _macBridge &&
+        windowWidth > 0 && windowHeight > 0 && pixelWidth > 0 && pixelHeight > 0 &&
+        glfwGetWindowAttrib(_mainWindow, GLFW_ICONIFIED) == GLFW_FALSE &&
+        glfwGetWindowAttrib(_mainWindow, GLFW_VISIBLE) == GLFW_TRUE &&
+        glfwWindowShouldClose(_mainWindow) == GLFW_FALSE;
+#if CC_DEBUG
+    if (polled)
+    {
+        ++_p2RenderSurfacePolls;
+        if (_p2ZeroSizeCount && _p2RenderSurfacePolls >= _p2ZeroSizeBegin &&
+            _p2RenderSurfacePolls - _p2ZeroSizeBegin < _p2ZeroSizeCount)
+        {
+            if (_p2RenderSurfacePolls == _p2ZeroSizeBegin)
+                CC_LOG_INFO("P2 diagnostic: zero framebuffer begin at poll %llu for %llu polls",
+                    _p2RenderSurfacePolls, _p2ZeroSizeCount);
+            _renderFramebufferSize = Vec2::ZERO;
+            _renderSurfaceAvailable = false;
+        }
+        else if (_p2ZeroSizeCount && _p2RenderSurfacePolls >= _p2ZeroSizeBegin &&
+                 _p2RenderSurfacePolls - _p2ZeroSizeBegin == _p2ZeroSizeCount)
+        {
+            CC_LOG_INFO("P2 diagnostic: zero framebuffer end at poll %llu, actual %.0fx%.0f",
+                _p2RenderSurfacePolls, _renderFramebufferSize.width, _renderFramebufferSize.height);
+        }
+    }
+#else
+    (void)polled;
+#endif
+}
+#endif
 
 void GLViewImpl::enableRetina(bool enabled)
 {  // official v4 comment follow sources

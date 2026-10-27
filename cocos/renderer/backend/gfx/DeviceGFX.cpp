@@ -12,8 +12,10 @@
 #include "base/CCConfiguration.h"
 #include "renderer/ccShaders.h"
 #include "gfx/backend/gfx-base/GFXUtil.h"
+#include <algorithm>
 
 static cocos2d::backend::DeviceGFX* DeviceGFXInstance = nullptr;
+static std::vector<cocos2d::backend::CommandBufferGFX*> SurfaceCommandBuffers;
 
 CC_BACKEND_BEGIN
 
@@ -29,16 +31,46 @@ DeviceGFX* DeviceGFX::getInstance()
     return static_cast<DeviceGFX*>(Device::getInstance());
 }
 
-void DeviceGFX::setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width, uint32_t height)
+void DeviceGFX::setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width, uint32_t height,
+                               void* nativeRenderSurface)
 {
     const auto instance = (DeviceGFX*)getInstance();
     CC_ASSERT(instance);
     if (instance)
     {
         instance->windowHandle = windowHandle;
+        instance->nativeRenderSurface = nativeRenderSurface;
         instance->vsync        = vsync;
         instance->width        = width;
         instance->height       = height;
+    }
+}
+
+void DeviceGFX::setVsync(bool enabled)
+{
+    getInstance()->vsync = enabled;
+}
+
+void DeviceGFX::registerCommandBuffer(CommandBufferGFX* commandBuffer)
+{
+    SurfaceCommandBuffers.push_back(commandBuffer);
+}
+
+void DeviceGFX::unregisterCommandBuffer(CommandBufferGFX* commandBuffer)
+{
+    SurfaceCommandBuffers.erase(std::remove(SurfaceCommandBuffers.begin(), SurfaceCommandBuffers.end(), commandBuffer),
+                               SurfaceCommandBuffers.end());
+}
+
+void DeviceGFX::shutdownSurface()
+{
+    for (auto* commandBuffer : SurfaceCommandBuffers)
+        commandBuffer->shutdownSurface();
+    if (DeviceGFXInstance)
+    {
+        DeviceGFXInstance->windowHandle = nullptr;
+        DeviceGFXInstance->nativeRenderSurface = nullptr;
+        DeviceGFXInstance->width = DeviceGFXInstance->height = 0;
     }
 }
 
@@ -51,7 +83,12 @@ void DeviceGFX::destroy()
 {
     delete DeviceGFXInstance;
     DeviceGFXInstance = nullptr;
-    cc::gfx::DeviceManager::destroy();
+    RenderTargetGFX::destroyRenderPassCache();
+    if (auto* device = cc::gfx::Device::getInstance())
+    {
+        device->destroy();
+        delete device;
+    }
 }
 
 DeviceGFX::API DeviceGFX::getAPI()

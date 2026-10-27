@@ -10,6 +10,16 @@ CC_BACKEND_BEGIN
 
 std::unordered_map<uint32_t, gfx::RenderPass*> RenderTargetGFX::renderPasses;
 
+void RenderTargetGFX::destroyRenderPassCache()
+{
+    for (const auto& entry : renderPasses)
+    {
+        entry.second->destroy();
+        delete entry.second;
+    }
+    renderPasses.clear();
+}
+
 RenderTargetGFX* RenderTargetGFX::createDefault(const gfx::Swapchain* swapchain)
 {
     auto ret = new RenderTargetGFX(true);

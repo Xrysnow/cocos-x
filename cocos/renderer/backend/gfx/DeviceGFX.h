@@ -3,16 +3,25 @@
 
 CC_BACKEND_BEGIN
 
+class CommandBufferGFX;
+
 class DeviceGFX : public Device
 {
     void* windowHandle = nullptr;
+    void* nativeRenderSurface = nullptr;
     uint32_t width     = 0;
     uint32_t height    = 0;
     bool vsync         = true;
 
 public:
     static DeviceGFX* getInstance();
-    static void setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width, uint32_t height);
+    static void setSwapchainInfo(void* windowHandle, bool vsync, uint32_t width, uint32_t height,
+                                 void* nativeRenderSurface = nullptr);
+    static void setVsync(bool enabled);
+    // Release swapchains before their native window/layer, while the device queue is alive.
+    static void shutdownSurface();
+    static void registerCommandBuffer(CommandBufferGFX* commandBuffer);
+    static void unregisterCommandBuffer(CommandBufferGFX* commandBuffer);
     static bool isAvailable();
     static void destroy();
 
@@ -230,6 +239,7 @@ public:
     Program* newProgram(const ShaderInfo& info);
 
     void* getWindowHandle() const { return windowHandle; }
+    void* getNativeRenderSurface() const { return nativeRenderSurface; }
     uint32_t getWidth() const { return width; }
     uint32_t getHeight() const { return height; }
     bool getVsync() const { return vsync; }

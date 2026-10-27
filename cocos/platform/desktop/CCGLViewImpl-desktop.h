@@ -147,6 +147,13 @@ public:
     /** Internal renderer surface; not exposed to Lua. macOS returns NSView*. */
     void* getRenderSurfaceHandle();
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    // Internal P2 rendering inputs, refreshed on the main thread after polling.
+    // Full public size snapshots and change notifications are introduced in P3.
+    Vec2 getRenderFramebufferSize() const { return _renderFramebufferSize; }
+    bool isRenderSurfaceAvailable() const { return _renderSurfaceAvailable; }
+#endif
+
 protected:
     GLViewImpl(bool initglfw = true);
     virtual ~GLViewImpl();
@@ -185,7 +192,16 @@ protected:
     GLFWmonitor* _monitor;
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    void refreshRenderSurfaceState(bool polled = false);
     detail::MacWindowBridge* _macBridge = nullptr;
+    Vec2 _renderWindowSize;
+    Vec2 _renderFramebufferSize;
+    bool _renderSurfaceAvailable = false;
+#if CC_DEBUG
+    unsigned long long _p2RenderSurfacePolls = 0;
+    unsigned long long _p2ZeroSizeBegin = 0;
+    unsigned long long _p2ZeroSizeCount = 0;
+#endif
 #endif
 
     std::string _glfwError;

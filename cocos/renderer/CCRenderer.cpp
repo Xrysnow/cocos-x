@@ -678,6 +678,33 @@ void Renderer::endFrame()
     GlobalTriangleBufferPool.reuse();
 }
 
+void Renderer::discardFrame()
+{
+    // RenderTexture and other update-time producers may have queued pooled
+    // commands even though scene traversal was skipped. Reclaim them without
+    // executing their render callbacks; ordinary commands remain node-owned.
+    for (auto& queue : _renderGroups)
+    {
+        for (ssize_t i = 0; i < queue.size(); ++i)
+        {
+            auto* command = queue[i];
+            if (command->getType() == RenderCommand::Type::GROUP_COMMAND)
+                _groupCommandPool.emplace_back(static_cast<GroupCommand*>(command));
+            else if (command->getType() == RenderCommand::Type::CALLBACK_COMMAND)
+            {
+                auto* callback = static_cast<CallbackCommand*>(command);
+                callback->reset();
+                _callbackCommandsPool.emplace_back(callback);
+            }
+        }
+    }
+    clean();
+    clearDrawStats();
+    _queuedTotalIndexCount = 0;
+    _queuedTotalVertexCount = 0;
+    GlobalTriangleBufferPool.reuse();
+}
+
 void Renderer::clean()
 {
     // Clear render group

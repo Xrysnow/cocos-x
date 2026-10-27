@@ -17,6 +17,7 @@ void destroyMacWindowBridge(MacWindowBridge* bridge);
 // Borrowed handles cached at creation; these queries do not access AppKit.
 void* getMacWindowHandle(const MacWindowBridge* bridge);        // NSWindow*
 void* getMacRenderSurfaceHandle(const MacWindowBridge* bridge); // NSView*
+void* getMacMetalLayer(const MacWindowBridge* bridge);          // CAMetalLayer*
 
 // A GLFW_NO_API window has no NSGL context.
 void* getMacNSGLContext(const MacWindowBridge* bridge);

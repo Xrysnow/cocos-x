@@ -25,6 +25,7 @@ public:
     ~CommandBufferGFX() override;
 
     bool beginFrame() override;
+    void shutdownSurface();
 
     void beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor) override;
 
@@ -118,6 +119,10 @@ private:
 
     bool _screenResized = false;
     bool _skipCurrentRenderPass = false;
+    bool _frameStarted = false;
+    bool _surfaceClosed = false;
+    bool _surfaceFailed = false;
+    EventListenerCustom* _windowResizedListener = nullptr;
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _backToForegroundListener = nullptr;
