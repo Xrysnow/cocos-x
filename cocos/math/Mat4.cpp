@@ -25,9 +25,7 @@
 #include "math/Quaternion.h"
 #include "math/MathUtil.h"
 #include "base/ccMacros.h"
-#ifdef CC_USE_GFX
 #include "gfx-base/GFXDevice.h"
-#endif
 
 NS_CC_MATH_BEGIN
 
@@ -125,7 +123,6 @@ void Mat4::createLookAt(float eyePositionX,
     dst->m[15] = 1.0f;
 }
 
-#ifdef CC_USE_GFX
 void Mat4::createPerspective(float fieldOfView, float aspectRatio,
     float zNearPlane, float zFarPlane, Mat4* dst)
 {
@@ -170,41 +167,6 @@ void Mat4::createPerspective(float fieldOfView, float aspectRatio,
         dst->m[14] = -2.0f * zFarPlane * zNearPlane * f_n;
     }
 }
-#else
-void Mat4::createPerspective(float fieldOfView, float aspectRatio,
-                                     float zNearPlane, float zFarPlane, Mat4* dst)
-{
-    GP_ASSERT(dst);
-    GP_ASSERT(zFarPlane != zNearPlane);
-
-    float f_n   = 1.0f / (zFarPlane - zNearPlane);
-    float theta = MATH_DEG_TO_RAD(fieldOfView) * 0.5f;
-    if (std::abs(std::fmod(theta, MATH_PIOVER2)) < MATH_EPSILON)
-    {
-        CCLOGERROR("Invalid field of view value (%f) causes attempted calculation tan(%f), which is undefined.",
-                   fieldOfView, theta);
-        return;
-    }
-    float divisor = std::tan(theta);
-    GP_ASSERT(divisor);
-    float factor = 1.0f / divisor;
-
-    memset(dst, 0, MATRIX_SIZE);
-
-    GP_ASSERT(aspectRatio);
-    dst->m[0]  = (1.0f / aspectRatio) * factor;
-    dst->m[5]  = factor;
-    dst->m[10] = (-(zFarPlane + zNearPlane)) * f_n;
-    dst->m[11] = -1.0f;
-    dst->m[14] = -2.0f * zFarPlane * zNearPlane * f_n;
-
-// https://metashapes.com/blog/opengl-metal-projection-matrix-problem/
-#ifdef CC_USE_METAL
-    dst->m[10] = -(zFarPlane)*f_n;
-    dst->m[14] = -(zFarPlane * zNearPlane) * f_n;
-#endif
-}
-#endif
 
 void Mat4::createOrthographic(float width, float height, float zNearPlane, float zFarPlane, Mat4* dst)
 {
@@ -213,7 +175,6 @@ void Mat4::createOrthographic(float width, float height, float zNearPlane, float
     createOrthographicOffCenter(-halfWidth, halfWidth, -halfHeight, halfHeight, zNearPlane, zFarPlane, dst);
 }
 
-#ifdef CC_USE_GFX
 void Mat4::createOrthographicOffCenter(float left, float right, float bottom, float top,
     float zNearPlane, float zFarPlane, Mat4* dst)
 {
@@ -250,32 +211,6 @@ void Mat4::createOrthographicOffCenter(float left, float right, float bottom, fl
     }
     dst->m[15] = 1;
 }
-#else
-void Mat4::createOrthographicOffCenter(float left, float right, float bottom, float top,
-                                         float zNearPlane, float zFarPlane, Mat4* dst)
-{
-    GP_ASSERT(dst);
-    GP_ASSERT(right != left);
-    GP_ASSERT(top != bottom);
-    GP_ASSERT(zFarPlane != zNearPlane);
-
-    memset(dst, 0, MATRIX_SIZE);
-    dst->m[0]  = 2 / (right - left);
-    dst->m[5]  = 2 / (top - bottom);
-    dst->m[10] = 2 / (zNearPlane - zFarPlane);
-
-    dst->m[12] = (left + right) / (left - right);
-    dst->m[13] = (top + bottom) / (bottom - top);
-    dst->m[14] = (zNearPlane + zFarPlane) / (zNearPlane - zFarPlane);
-    dst->m[15] = 1;
-
-//// https://metashapes.com/blog/opengl-metal-projection-matrix-problem/
-#ifdef CC_USE_METAL
-    dst->m[10] = 1 / (zNearPlane - zFarPlane);
-    dst->m[14] = zNearPlane / (zNearPlane - zFarPlane);
-#endif
-}
-#endif
 
 void Mat4::createBillboard(const Vec3& objectPosition,
                            const Vec3& cameraPosition,

@@ -40,9 +40,7 @@ THE SOFTWARE.
 #include "renderer/backend/Device.h"
 #include "renderer/backend/Texture.h"
 #include "renderer/backend/RenderTarget.h"
-#ifdef CC_USE_GFX
 #include "gfx-base/GFXDevice.h"
-#endif
 
 NS_CC_BEGIN
 
@@ -233,13 +231,9 @@ bool RenderTexture::initWithWidthAndHeight(int w,
         // retained
         setSprite(Sprite::createWithTexture(_texture2D));
 
-#if defined(CC_USE_GFX)
         const auto api = cc::gfx::Device::getInstance()->getGfxAPI();
         if (api != cc::gfx::API::VULKAN && api != cc::gfx::API::METAL)
             _sprite->setFlippedY(true);
-#elif defined(CC_USE_GL) || defined(CC_USE_GLES)
-        _sprite->setFlippedY(true);
-#endif
 
         if (_texture2D->hasPremultipliedAlpha())
         {

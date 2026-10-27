@@ -31,9 +31,7 @@
 #include "2d/CCScene.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCQuadCommand.h"
-#ifdef CC_USE_GFX
 #include "renderer/backend/gfx/DeviceGFX.h"
-#endif
 
 NS_CC_BEGIN
 
@@ -332,10 +330,8 @@ void Camera::unproject(const Vec2& viewport, const Vec3* src, Vec3* dst) const
     CCASSERT(src && dst, "vec3 can not be null");
 
     Vec4 screen(src->x / viewport.width, ((viewport.height - src->y)) / viewport.height, src->z, 1.0f);
-#ifdef CC_USE_GFX
     if (backend::DeviceGFX::getAPI() == backend::DeviceGFX::API::VULKAN)
         screen.y = src->y / viewport.height;
-#endif
     screen.x = screen.x * 2.0f - 1.0f;
     screen.y = screen.y * 2.0f - 1.0f;
     screen.z = screen.z * 2.0f - 1.0f;
@@ -356,10 +352,8 @@ void Camera::unprojectGL(const Vec2& viewport, const Vec3* src, Vec3* dst) const
     CCASSERT(src && dst, "vec3 can not be null");
 
     Vec4 screen(src->x / viewport.width, src->y / viewport.height, src->z, 1.0f);
-#ifdef CC_USE_GFX
     if (backend::DeviceGFX::getAPI() == backend::DeviceGFX::API::VULKAN)
         screen.y = (viewport.height - src->y) / viewport.height;
-#endif
     screen.x = screen.x * 2.0f - 1.0f;
     screen.y = screen.y * 2.0f - 1.0f;
     screen.z = screen.z * 2.0f - 1.0f;

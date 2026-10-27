@@ -146,9 +146,6 @@ protected:
     virtual ShaderModule* newShaderModule(ShaderStage stage, std::string_view source) = 0;
 
     DeviceInfo* _deviceInfo = nullptr;  ///< Device information.
-
-private:
-    static Device* _instance;
 };
 
 // end of _backend group

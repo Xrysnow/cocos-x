@@ -37,10 +37,6 @@
 #include "renderer/backend/Program.h"
 #include "renderer/backend/VertexLayout.h"
 
-#ifdef CC_USE_METAL
-struct XXH32_state_s;
-#endif
-
 CC_BACKEND_BEGIN
 
 class TextureBackend;
@@ -327,22 +323,6 @@ protected:
     void ensureVertexLayoutMutable();
 
     /**
-     * Set the vertex uniform data.
-     * @param location Specifies the uniform location.
-     * @param data Specifies the new values to be used for the specified uniform variable.
-     * @param size Specifies the uniform data size.
-     */
-    void setVertexUniform(int location, const void* data, std::size_t size, std::size_t offset);
-
-    /**
-     * Set the fargment uniform data.
-     * @param location Specifies the uniform location.
-     * @param data Specifies the new values to be used for the specified uniform variable.
-     * @param size Specifies the uniform data size.
-     */
-    void setFragmentUniform(int location, const void* data, std::size_t size);
-
-    /**
      * Set texture.
      * @param location Specifies the location of texture.
      * @param slot Specifies slot selector of texture.
@@ -375,19 +355,6 @@ protected:
     /// Initialize.
     bool init(Program* program);
 
-#ifdef CC_USE_METAL
-    /**
-     * float3 etc in Metal has both sizeof and alignment same as float4, convert it before fill into uniform buffer
-     * @param uniformInfo Specifies the uniform information.
-     * @param srcData Specifies the new values to be used for the specified uniform variable.
-     * @param srcSize Specifies the uniform data size.
-     * @param uniformBuffer Specifies the uniform buffer to update.
-     */
-    void convertAndCopyUniformData(const backend::UniformInfo& uniformInfo,
-                                   const void* srcData,
-                                   std::size_t srcSize,
-                                   void* buffer);
-#endif
     /**
      * Applies the specified custom auto-binding.
      *
@@ -413,9 +380,6 @@ protected:
     bool _ownVertexLayout = false;
 
     uint32_t _uniformID = 0;
-#ifdef CC_USE_METAL
-    struct XXH32_state_s* _uniformHashState = nullptr;
-#endif
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _backToForegroundListener = nullptr;

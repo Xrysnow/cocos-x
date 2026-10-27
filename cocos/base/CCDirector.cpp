@@ -62,9 +62,7 @@ THE SOFTWARE.
 #include "platform/CCApplication.h"
 #include "audio/AudioEngine.h"
 #include "renderer/backend/ProgramManager.h"
-#ifdef CC_USE_GFX
 #include "renderer/backend/gfx/DeviceGFX.h"
-#endif
 
 #if CC_ENABLE_SCRIPT_BINDING
     #include "base/CCScriptSupport.h"
@@ -186,9 +184,7 @@ Director::~Director()
     ScriptEngineManager::destroyInstance();
 #endif
 
-#ifdef CC_USE_GFX
     backend::DeviceGFX::destroy();
-#endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
@@ -714,10 +710,8 @@ Vec2 Director::convertToGL(const Vec2& uiPoint)
 
     Vec2 glSize = _openGLView->getDesignResolutionSize();
     Vec4 clipCoord(2.0f * uiPoint.x / glSize.width - 1.0f, 1.0f - 2.0f * uiPoint.y / glSize.height, zClip, 1);
-#ifdef CC_USE_GFX
     if (backend::DeviceGFX::getAPI() == backend::DeviceGFX::API::VULKAN)
         clipCoord.y = -clipCoord.y;
-#endif
     Vec4 glCoord;
     // transformInv.transformPoint(clipCoord, &glCoord);
     transformInv.transformVector(clipCoord, &glCoord);
@@ -746,10 +740,8 @@ Vec2 Director::convertToUI(const Vec2& glPoint)
     clipCoord.x = clipCoord.x / clipCoord.w;
     clipCoord.y = clipCoord.y / clipCoord.w;
     clipCoord.z = clipCoord.z / clipCoord.w;
-#ifdef CC_USE_GFX
     if (backend::DeviceGFX::getAPI() == backend::DeviceGFX::API::VULKAN)
         clipCoord.y = -clipCoord.y;
-#endif
     Vec2 glSize  = _openGLView->getDesignResolutionSize();
     float factor = 1.0f / glCoord.w;
     return Vec2(glSize.width * (clipCoord.x * 0.5f + 0.5f) * factor,
@@ -1063,7 +1055,7 @@ void Director::reset()
 
 void Director::purgeDirector()
 {
-#if defined(CC_USE_GFX) && CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
     // Drain the Metal surface while its device, event dispatcher and native view
     // are all alive. GLView end/destruction repeats this idempotent safeguard.
     backend::DeviceGFX::shutdownSurface();

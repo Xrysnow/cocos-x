@@ -428,45 +428,6 @@ protected:
     friend class Director;
     friend class GroupCommand;
 
-    /**
-     * Create and reuse vertex and index buffer for triangleCommand.
-     * When queued vertex or index count exceed the limited value, a new vertex or index buffer will be created.
-     */
-    class TriangleCommandBufferManager
-    {
-    public:
-        ~TriangleCommandBufferManager();
-
-        /**
-         * Create a new vertex buffer and a index buffer and push it to cache.
-         * @note Should invoke firstly.
-         */
-        void init();
-
-        /**
-         * Reset avalable buffer index to zero.
-         * That means when get vertex buffer or index buffer, the earliest created buffer object in the cache will be
-         * returned.
-         */
-        void putbackAllBuffers();
-
-        /**
-         * Buffer will be created If next buffer unavailable in the cache, otherwise set the buffer index in order to
-         * get the next available buffer.
-         */
-        void prepareNextBuffer();
-
-        backend::Buffer* getVertexBuffer() const;  ///< Get the vertex buffer.
-        backend::Buffer* getIndexBuffer() const;   ///< Get the index buffer.
-
-    private:
-        void createBuffer();
-
-        int _currentBufferIndex = 0;
-        std::vector<backend::Buffer*> _vertexBufferPool;
-        std::vector<backend::Buffer*> _indexBufferPool;
-    };
-
     inline GroupCommandManager* getGroupCommandManager() const { return _groupCommandManager; }
     void drawBatchedTriangles();
     void drawCustomCommand(RenderCommand* command);
@@ -490,8 +451,6 @@ protected:
     void visitRenderQueue(RenderQueue& queue);
     void doVisitRenderQueue(const std::vector<RenderCommand*>&);
 
-    void fillVerticesAndIndices(const TrianglesCommand* cmd, unsigned int vertexBufferOffset);
-
     void pushStateBlock();
 
     void popStateBlock();
@@ -513,13 +472,6 @@ protected:
 
     std::vector<GroupCommand*> _groupCommandPool;
 
-    // for TrianglesCommand
-    V3F_C4B_T2F _verts[VBO_SIZE];
-    unsigned short _indices[INDEX_VBO_SIZE];
-    backend::Buffer* _vertexBuffer = nullptr;
-    backend::Buffer* _indexBuffer  = nullptr;
-    TriangleCommandBufferManager _triangleCommandBufferManager;
-
     backend::CommandBuffer* _commandBuffer = nullptr;
     backend::RenderPassDescriptor _renderPassDesc;
 
@@ -530,9 +482,7 @@ protected:
     struct TriBatchToDraw
     {
         TrianglesCommand* cmd      = nullptr;  // needed for the Material
-#ifdef CC_USE_GFX
         std::vector<TrianglesCommand*> cmds;
-#endif
         unsigned int indicesToDraw = 0;
         unsigned int offset        = 0;
     };
@@ -543,10 +493,6 @@ protected:
 
     unsigned int _queuedTotalVertexCount = 0;
     unsigned int _queuedTotalIndexCount  = 0;
-    unsigned int _queuedVertexCount      = 0;
-    unsigned int _queuedIndexCount       = 0;
-    unsigned int _filledIndex            = 0;
-    unsigned int _filledVertex           = 0;
 
     // stats
     size_t _drawnBatches  = 0;
