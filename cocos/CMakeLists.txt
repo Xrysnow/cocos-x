@@ -208,6 +208,4 @@ add_subdirectory(${COCOS2DX_ROOT_PATH}/extensions ${ENGINE_BINARY_PATH}/extensio
 #    target_compile_options(${COCOS_CORE_LIB} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-fno-aligned-allocation>)
 #endif()
 
-if(CC_USE_GFX)
-	target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_USE_GFX)
-endif()
+target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_USE_GFX)
