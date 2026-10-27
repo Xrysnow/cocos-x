@@ -64,19 +64,26 @@ elseif(APPLE)
         set(COCOS_PLATFORM_SPECIFIC_HEADER
             ${COCOS_PLATFORM_SPECIFIC_HEADER}
             platform/mac/CCStdC-mac.h
-            platform/mac/CCGLViewImpl-mac.h
+            platform/desktop/CCGLViewImpl-desktop.h
+            platform/mac/CCGLViewImpl-desktop-mac.h
             platform/mac/CCPlatformDefine-mac.h
             platform/mac/CCApplication-mac.h
-           # platform/desktop/CCGLViewImpl-desktop.h
             )
         set(COCOS_PLATFORM_SPECIFIC_SRC
             ${COCOS_PLATFORM_SPECIFIC_SRC}
             platform/mac/CCApplication-mac.mm
-            platform/mac/CCGLViewImpl-mac.mm
+            platform/desktop/CCGLViewImpl-desktop.cpp
+            platform/mac/CCGLViewImpl-desktop-mac.mm
             platform/mac/CCCommon-mac.mm
             platform/mac/CCDevice-mac.mm
-           # platform/desktop/CCGLViewImpl-desktop.cpp
             )
+        # Keep the shared implementation pure C++; native ownership stays in MRC.
+        set_source_files_properties(platform/desktop/CCGLViewImpl-desktop.cpp
+            PROPERTIES LANGUAGE CXX)
+        set_source_files_properties(platform/mac/CCGLViewImpl-desktop-mac.mm
+            PROPERTIES LANGUAGE OBJCXX)
+        set_property(SOURCE platform/mac/CCGLViewImpl-desktop-mac.mm
+            APPEND PROPERTY COMPILE_OPTIONS -fno-objc-arc)
     elseif(IOS)
         set(COCOS_PLATFORM_SPECIFIC_HEADER
             ${COCOS_PLATFORM_SPECIFIC_HEADER}

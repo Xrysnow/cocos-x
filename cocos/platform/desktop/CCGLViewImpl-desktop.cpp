@@ -40,24 +40,30 @@ THE SOFTWARE.
 #if CC_ICON_SET_SUPPORT
 #include "platform/CCImage.h"
 #endif
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
 #include "glad/gl.h"
 #include "glad/egl.h"
+#endif
 #include "renderer/CCRenderer.h"
 
 #ifdef CC_USE_GFX
 #include "gfx-base/GFXDef-common.h"
-#include "gfx-vulkan/VKSwapchain.h"
+#include "gfx-base/GFXSwapchain.h"
 #include "GFXDeviceManager.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
 #include "base/threading/MessageQueue.h"
 #endif
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+#include "platform/mac/CCGLViewImpl-desktop-mac.h"
+#if !defined(CC_USE_GFX) || defined(CC_USE_ANGLE) || !defined(CC_USE_METAL) || \
+    defined(CC_USE_VULKAN) || defined(CC_USE_GLES2) || defined(CC_USE_GLES3)
+#error "macOS GLViewImpl requires GFX Metal only (GFX ON, ANGLE OFF)."
+#endif
+#else
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
-#elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-#define GLFW_EXPOSE_NATIVE_COCOA
-#define GLFW_EXPOSE_NATIVE_NSGL
 #else
 #define GLFW_EXPOSE_NATIVE_EGL
 #define GLFW_EXPOSE_NATIVE_X11
@@ -66,6 +72,7 @@ THE SOFTWARE.
 #endif
 #endif
 #include "glfw3native.h"
+#endif
 
 #include <cmath>
 #include <unordered_map>
@@ -390,6 +397,10 @@ GLViewImpl::~GLViewImpl()
 {
     CCLOGINFO("deallocing GLViewImpl: %p", this);
     GLFWEventHandler::setGLViewImpl(nullptr);
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    detail::destroyMacWindowBridge(_macBridge);
+    _macBridge = nullptr;
+#endif
     glfwTerminate();
 }
 
@@ -458,8 +469,23 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     auto desiredApi = cc::gfx::API::VULKAN;
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     desiredApi = cc::gfx::API::METAL;
-#endif
-    auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt((int)desiredApi);
+    const auto& configuredAPI = Configuration::getInstance()->getValue("GFXDesiredAPI");
+    if (!configuredAPI.isNull())
+    {
+        const auto family = configuredAPI.getTypeFamily();
+        const bool numeric = family == Value::Type::INTEGER || family == Value::Type::FLOAT ||
+                             family == Value::Type::DOUBLE;
+        if (!numeric || configuredAPI.asDouble() != static_cast<double>(desiredApi))
+        {
+            CC_LOG_ERROR("macOS GLViewImpl: GFXDesiredAPI must be Metal (%d), got %s",
+                static_cast<int>(desiredApi), configuredAPI.getDescription().c_str());
+            return false;
+        }
+    }
+    useGL = false;
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#else
+    const auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt((int)desiredApi);
     if (0 <= configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
 	    desiredApi = (cc::gfx::API)configAPI;
     useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL || desiredApi == cc::gfx::API::UNKNOWN);
@@ -477,6 +503,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
 #endif
     }
+#endif
 #elif defined(CC_USE_ANGLE)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
@@ -491,7 +518,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
 
-    glfwWindowHint(GLFW_RESIZABLE, resizable ? GL_TRUE : GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_RED_BITS, _glContextAttrs.redBits);
     glfwWindowHint(GLFW_GREEN_BITS, _glContextAttrs.greenBits);
     glfwWindowHint(GLFW_BLUE_BITS, _glContextAttrs.blueBits);
@@ -518,10 +545,24 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
             message.append(_glfwError);
         }
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+        // No GLView has been installed in Director yet; the legacy alert assumes one exists.
+        CC_LOG_ERROR("macOS GLViewImpl: %s", message.c_str());
+#else
         ccMessageBox(message.c_str(), "Error launch application");
         utils::killCurrentProcess();  // kill current process, don't cause crash when driver issue.
+#endif
         return false;
     }
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    _macBridge = detail::createMacWindowBridge(_mainWindow);
+    if (!_macBridge)
+    {
+        CC_LOG_ERROR("macOS GLViewImpl: failed to create the Cocoa window bridge");
+        return false;
+    }
+#endif
 
     /*
      *  Note that the created window and context may differ from what you requested,
@@ -563,6 +604,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 
 #if defined(CC_USE_GFX)
 
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
     if (useGL)
     {
         if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !gladLoadGLES2(glfwGetProcAddress))
@@ -581,11 +623,17 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
             return false;
         }
     }
+#endif
 
     void* hdl = getWindowHandle();
     CC_ASSERT(hdl);
 
     const auto& cfgMT = Configuration::getInstance()->getValue("GFXMultithreaded");
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    // Each creation applies its own setting, including after an earlier false override.
+    cc::gfx::DeviceManager::DETACH_DEVICE_THREAD =
+        cfgMT.getType() != Value::Type::BOOLEAN || cfgMT.asBool();
+#endif
     if (cfgMT.getType() == Value::Type::BOOLEAN && !cfgMT.asBool())
     {
         cc::gfx::DeviceManager::DETACH_DEVICE_THREAD = false;
@@ -599,16 +647,32 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     const auto device = cc::gfx::DeviceManager::create(info, desiredApi);
     if (!device)
     {
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+        CC_LOG_ERROR("macOS GLViewImpl: failed to create a GFX Metal device");
+#else
         ccMessageBox("Failed to create device", "Error");
+#endif
         return false;
     }
 
     const auto api = device->getGfxAPI();
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    if (api != cc::gfx::API::METAL)
+    {
+        CC_LOG_ERROR("macOS GLViewImpl: Metal device creation fell back to unsupported API %d",
+            static_cast<int>(api));
+        // No renderer adapter or swapchain exists yet; destroy the rejected GFX device first.
+        device->destroy();
+        delete device;
+        return false;
+    }
+#else
     if (api != desiredApi)
     {
         CC_LOG_WARNING("Device API is not desired, changed from %d to %d",
             (int)desiredApi, (int)api);
     }
+#endif
 
     backend::DeviceGFX::setSwapchainInfo(hdl, true, rect.size.width, rect.size.height);
 
@@ -1080,11 +1144,11 @@ HWND GLViewImpl::getWin32Window()
 #elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
 id GLViewImpl::getCocoaWindow()
 {
-    return glfwGetCocoaWindow(_mainWindow);
+    return reinterpret_cast<id>(detail::getMacWindowHandle(_macBridge));
 }
 id GLViewImpl::getNSGLContext()
 {
-    return glfwGetNSGLContext(_mainWindow);
+    return reinterpret_cast<id>(detail::getMacNSGLContext(_macBridge));
 }
 #else
 void* GLViewImpl::getLinuxWindow()
@@ -1098,9 +1162,18 @@ void* GLViewImpl::getWindowHandle()
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     return glfwGetWin32Window(_mainWindow);
 #elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-    return (void*)glfwGetCocoaWindow(_mainWindow);
+    return detail::getMacWindowHandle(_macBridge);
 #else
     return (void*)glfwGetX11Window(_mainWindow);
+#endif
+}
+
+void* GLViewImpl::getRenderSurfaceHandle()
+{
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    return detail::getMacRenderSurfaceHandle(_macBridge);
+#else
+    return getWindowHandle();
 #endif
 }
 

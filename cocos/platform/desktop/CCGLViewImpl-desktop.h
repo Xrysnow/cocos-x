@@ -35,6 +35,13 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+namespace detail
+{
+struct MacWindowBridge;
+}
+#endif
+
 class GLFWEventHandler;
 class CC_DLL GLViewImpl : public GLView
 {
@@ -137,6 +144,9 @@ public:
 #endif
     void* getWindowHandle();
 
+    /** Internal renderer surface; not exposed to Lua. macOS returns NSView*. */
+    void* getRenderSurfaceHandle();
+
 protected:
     GLViewImpl(bool initglfw = true);
     virtual ~GLViewImpl();
@@ -173,6 +183,10 @@ protected:
 
     GLFWwindow* _mainWindow;
     GLFWmonitor* _monitor;
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    detail::MacWindowBridge* _macBridge = nullptr;
+#endif
 
     std::string _glfwError;
 
