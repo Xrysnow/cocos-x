@@ -33,7 +33,6 @@ THE SOFTWARE.
 #include "math/CCMath.h"
 #include "base/CCDirector.h"
 #include "base/ccUtils.h"
-#include "renderer/backend/metal/DeviceMTL.h"
 
 NS_CC_BEGIN
 

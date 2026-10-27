@@ -32,20 +32,9 @@ THE SOFTWARE.
 #include "glad/gl.h"
 #include "glad/egl.h"
 
-#ifdef CC_USE_GFX
 #include "gfx-base/GFXDef-common.h"
 #include "GFXDeviceManager.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
-#include "base/threading/MessageQueue.h"
-static void GFXBeforeScreenResize()
-{
-    const auto agent = cc::gfx::DeviceAgent::getInstance();
-    if (agent)
-    {
-        agent->getMessageQueue()->kickAndWait();
-    }
-}
-#endif
 
 #include <stdlib.h>
 #include <android/log.h>
@@ -119,7 +108,10 @@ GLViewImpl::~GLViewImpl() {}
 
 bool GLViewImpl::initWithRect(std::string_view /*viewName*/, const Rect& /*rect*/, float /*frameZoomFactor*/, bool /*resizable*/)
 {
-#if defined(CC_USE_GFX)
+    // NOTE: gfx surface integration is not wired up on Android yet - Java still
+    // owns the surface and EGL ES2 context, no ANativeWindow reaches gfx, and
+    // the nativeInit startup path (initWithFullScreen) does not pass through
+    // here, so this device creation is currently inert.
     if (!cc::gfx::Device::getInstance())
     {
         // create device
@@ -165,7 +157,6 @@ bool GLViewImpl::initWithRect(std::string_view /*viewName*/, const Rect& /*rect*
             agent->setMultithreaded(configMT.asBool());
         }
     }
-#endif
     return true;
 }
 
