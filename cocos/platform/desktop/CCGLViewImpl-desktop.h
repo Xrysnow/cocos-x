@@ -162,8 +162,6 @@ protected:
     bool initWithFullScreen(std::string_view viewName);
     bool initWithFullscreen(std::string_view viewname, const GLFWvidmode& videoMode, GLFWmonitor* monitor);
 
-    bool loadGL();
-
     /* update frame layout when enter/exit full screen mode */
     void updateWindowSize();
 
