@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <string>
 //#include "platform/CCFileStream.h"
+#include "platform/CCPlatformMacros.h"
 #include "audio/AudioMacros.h"
 
 NS_CC_BEGIN

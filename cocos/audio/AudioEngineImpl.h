@@ -34,6 +34,7 @@
     #include <queue>
 
     #include "base/CCRef.h"
+    #include "base/hlookup.h"
     #include "audio/AudioMacros.h"
     #include "audio/AudioCache.h"
     #include "audio/AudioPlayer.h"
