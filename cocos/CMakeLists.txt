@@ -127,9 +127,13 @@ list(APPEND COCOS_SRC ${COCOS_HEADER})
 
 add_library(${COCOS_CORE_LIB} ${COCOS_SRC})
 
+if(AUDIO_USE_LIBVORBIS)
+    target_compile_definitions(${COCOS_CORE_LIB} PRIVATE AUDIO_USE_LIBVORBIS)
+endif()
+
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
-target_link_libraries(${COCOS_CORE_LIB} external)
+target_link_libraries(${COCOS_CORE_LIB} external OpenAL ogg)
 
 # add base macro define and compile options
 use_cocos2dx_compile_define(${COCOS_CORE_LIB})

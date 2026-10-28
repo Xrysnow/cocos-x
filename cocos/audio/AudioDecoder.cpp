@@ -1,104 +1,179 @@
-/****************************************************************************
- Copyright (c) 2016 Chukong Technologies Inc.
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2021 Bytedance Inc.
-
- https://axmolengine.github.io/
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
- ****************************************************************************/
-
-#include "audio/AudioDecoder.h"
-#include "audio/AudioMacros.h"
+#include "AudioDecoder.h"
+#include "AudioStream.h"
+#include "AudioDecoderWav.h"
+#ifdef AUDIO_USE_LIBVORBIS
+#include "AudioDecoderVorbis.h"
+#endif
+#include "AudioDecoderVorbisStb.h"
+#include "AudioDecoderFlac.h"
+#include "AudioDecoderMp3.h"
+#include "AudioCommon.h"
 #include "platform/CCFileUtils.h"
-
-#define LOG_TAG "AudioDecoder"
+#include <algorithm>
+#include <cctype>
+#include <unordered_map>
 
 NS_CC_BEGIN
+using namespace AudioInternal;
 
-AudioDecoder::AudioDecoder()
-    : _isOpened(false)
-    , _totalFrames(0)
-    , _bytesPerBlock(0)
-    , _samplesPerBlock(1)
-    , _sampleRate(0)
-    , _channelCount(0)
-    , _sourceFormat(AUDIO_SOURCE_FORMAT::PCM_16)
-{}
+static std::unordered_map<std::string, AudioDecoder::DecoderType> DecoderTypeMap = {
+	{"wav", AudioDecoder::DecoderType::WAV},
+	{"ogg", AudioDecoder::DecoderType::VORBIS},
+	{"flac", AudioDecoder::DecoderType::FLAC},
+	{"mp3", AudioDecoder::DecoderType::MP3},
+};
 
-AudioDecoder::~AudioDecoder() {}
-
-bool AudioDecoder::isOpened() const
+std::string AudioDecoder::AudioInfo::toString()
 {
-    return _isOpened;
+	return string_format("Frame: %d, Freq: %d, Time: %.3f, Channel: %d, BitDepth: %d",
+		(int)totalFrames, (int)sampleRate, (float)getTotalTime(),
+		(int)channelCount, (int)getBitDepth());
 }
 
-uint32_t AudioDecoder::readFixedFrames(uint32_t framesToRead, char* pcmBuf)
+AudioDecoder::AudioDecoder(size_t bufferSize, DecoderType type)
+	: decoderType(type)
+	, bufferSize(bufferSize)
 {
-    uint32_t framesRead     = 0;
-    uint32_t framesReadOnce = 0;
-    do
-    {
-        framesReadOnce = read(framesToRead - framesRead, pcmBuf + framesToBytes((framesRead)));
-        framesRead += framesReadOnce;
-    } while (framesReadOnce != 0 && framesRead < framesToRead);
-
-    if (framesRead < framesToRead)
-    {
-        memset(pcmBuf + framesToBytes(framesRead), 0x0, framesToBytes(framesToRead - framesRead));
-    }
-
-    return framesRead;
+	buffer.resize(bufferSize);
 }
 
-uint32_t AudioDecoder::getTotalFrames() const
+AudioDecoder::~AudioDecoder()
 {
-    return _totalFrames;
 }
 
-uint32_t AudioDecoder::framesToBytes(uint32_t frames) const
+AudioDecoder::DecoderType AudioDecoder::getDecoderTypeFromPath(const std::string& path)
 {
-    return _bytesPerBlock * frames;
+	// get ext in lower case
+	auto ext = cocos2d::FileUtils::getInstance()->getFileExtension(path);
+	// remove dot
+	if (!ext.empty())
+		ext = ext.substr(1);
+	const auto it = DecoderTypeMap.find(ext);
+	if (it != DecoderTypeMap.end())
+		return it->second;
+	return AudioDecoder::DecoderType::UNKNOWN;
 }
 
-uint32_t AudioDecoder::bytesToFrames(uint32_t bytes) const
+AudioDecoder* AudioDecoder::createFromStream(AudioStream* s, size_t bufferSize, DecoderType type)
 {
-    return bytes / _bytesPerBlock;
+	if (!s)
+		return nullptr;
+	switch (type)
+	{
+	case AudioDecoder::DecoderType::WAV:
+		return AudioDecoderWav::create(s, bufferSize);
+	case AudioDecoder::DecoderType::VORBIS:
+#ifdef AUDIO_USE_LIBVORBIS
+		return AudioDecoderVorbis::create(s, bufferSize);
+#else
+		return AudioDecoderVorbisStb::create(s, bufferSize);
+#endif
+	case AudioDecoder::DecoderType::FLAC:
+		return AudioDecoderFlac::create(s, bufferSize);
+	case AudioDecoder::DecoderType::MP3:
+		return AudioDecoderMp3::create(s, bufferSize);
+	case AudioDecoder::DecoderType::UNKNOWN:
+	default:;
+	}
+	return nullptr;
 }
 
-uint32_t AudioDecoder::getSampleRate() const
+AudioDecoder* AudioDecoder::createFromFile(const std::string& path, size_t bufferSize, DecoderType type)
 {
-    return _sampleRate;
+	if (type == DecoderType::UNKNOWN)
+		type = getDecoderTypeFromPath(path);
+	return createFromStream(AudioStream::createFromFile(path), bufferSize, type);
 }
 
-uint32_t AudioDecoder::getChannelCount() const
+AudioDecoder* AudioDecoder::createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type)
 {
-    return _channelCount;
+	if (type == DecoderType::UNKNOWN)
+		type = getDecoderTypeFromPath(path);
+	return createFromStream(AudioStream::createFromLocalFile(path), bufferSize, type);
 }
 
-uint32_t AudioDecoder::getSamplesPerBlock() const
+const uint8_t* AudioDecoder::getBuffer() const
 {
-    return _samplesPerBlock;
+	return buffer.data();
 }
 
-AUDIO_SOURCE_FORMAT AudioDecoder::getSourceFormat() const
+bool AudioDecoder::seekTime(double seconds)
 {
-    return _sourceFormat;
+	return seek(seconds * getSampleRate());
 }
-NS_CC_END  // namespace ax
+
+AudioDecoder* AudioDecoder::clone()
+{
+	//BUG: current implementation dose not support play from the same stream
+	return createFromStream(stream, bufferSize, decoderType);
+}
+
+int64_t AudioDecoder::decode()
+{
+	int64_t toReadSize = bufferSize;
+	const int64_t tCurSample = tell();
+	const int64_t tSampleToRead = bufferSize / getBytesPerFrame();
+	const int64_t exceed = tCurSample + tSampleToRead - getLoopEnd();
+	if (exceed > 0)
+		toReadSize -= exceed * getBytesPerFrame();
+	toReadSize = std::max<int64_t>(toReadSize, 0);
+	const int64_t size = decode((char*)buffer.data(), toReadSize);
+	if (size > 0)
+		bufferPosition = tCurSample;
+	if (exceed > 0 && size == toReadSize)
+		eof = true;
+	return size;
+}
+
+int AudioDecoder::getBufferSize() const
+{
+	return bufferSize;
+}
+
+void AudioDecoder::setLoopingPoint(double tStart, double tEnd)
+{
+	if (tStart >= 0.0 && tEnd > 0.0 && tStart < tEnd)
+	{
+		const auto sampleRate = getSampleRate();
+		const auto totalFrames = getTotalFrames();
+		const auto start = std::min(int64_t(sampleRate * tStart), totalFrames);
+		const auto end = std::min(int64_t(sampleRate * tEnd), totalFrames);
+		if (start < end)
+		{
+			loopStart = start;
+			loopEnd = end;
+		}
+	}
+}
+
+double AudioDecoder::getLoopingStart()
+{
+	return (double)getLoopStart() / getSampleRate();
+}
+
+double AudioDecoder::getLoopingEnd()
+{
+	return (double)getLoopEnd() / getSampleRate();
+}
+
+int64_t AudioDecoder::getLoopStart() const
+{
+	return loopStart;
+}
+
+int64_t AudioDecoder::getLoopEnd() const
+{
+	return loopEnd == 0 ? getTotalFrames() : loopEnd;
+}
+
+bool AudioDecoder::rewind()
+{
+	return seek(getLoopStart());
+}
+
+bool AudioDecoder::isFinished()
+{
+	return eof;
+}
+
+NS_CC_END

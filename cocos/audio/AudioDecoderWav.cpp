@@ -1,261 +1,258 @@
-/****************************************************************************
- Copyright (c) 2018-2020 HALX99.
- Copyright (c) 2021 Bytedance Inc.
+#include "AudioCommon.h"
+#include "AudioDecoderWav.h"
+#include "NqrRiffUtils.h"
+#include <algorithm>
+#include <new>
+#include <vector>
+#include <cstring>
 
- https://axmolengine.github.io/
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
- ****************************************************************************/
-#define LOG_TAG "AudioDecoderWav"
-
-#include <stddef.h>
-#include <assert.h>
-#include "audio/AudioDecoderWav.h"
-#include "audio/AudioMacros.h"
-#include "platform/CCFileUtils.h"
-
+using namespace nqr;
 NS_CC_BEGIN
+using namespace AudioInternal;
 
-enum : uint32_t
+const uint32_t CKC_RIFF = GenerateChunkCode('R', 'I', 'F', 'F');
+const uint32_t CKC_RIFX = GenerateChunkCode('R', 'I', 'F', 'X');
+const uint32_t CKC_FFIR = GenerateChunkCode('F', 'F', 'I', 'R');
+const uint32_t CKC_WAVE = GenerateChunkCode('W', 'A', 'V', 'E');
+const uint32_t CKC_fmt_ = GenerateChunkCode('f', 'm', 't', ' ');
+const uint32_t CKC_fact = GenerateChunkCode('f', 'a', 'c', 't');
+const uint32_t CKC_bext = GenerateChunkCode('b', 'e', 'x', 't');
+const uint32_t CKC_data = GenerateChunkCode('d', 'a', 't', 'a');
+
+AudioDecoderWav::AudioDecoderWav(size_t bufferSize)
+	: AudioDecoder(bufferSize, DecoderType::WAV)
 {
-    WAV_SIGN_ID     = MAKE_FOURCC('W', 'A', 'V', 'E'),
-    WAV_FMT_ID      = MAKE_FOURCC('f', 'm', 't', ' '),
-    WAV_DATA_ID     = MAKE_FOURCC('d', 'a', 't', 'a'),
-    WAV_HEADER_SIZE = sizeof(struct WAV_CHUNK_HEADER),
-    WAV_RIFF_SIZE   = sizeof(WAV_RIFF_CHUNK),
-};
-
-// 00000001-0000-0010-8000-00aa00389b71
-static const GUID WAV_SUBTYPE_PCM = {0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
-
-// 00000003-0000-0010-8000-00aa00389b71
-static const GUID WAV_SUBTYPE_IEEE_FLOAT = {0x00000003,
-                                            0x0000,
-                                            0x0010,
-                                            {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
-
-static bool wav_scan_chunk(WAV_FILE* wavf, uint32_t chunkID, void* header, void* body, uint32_t bodySize)
-{
-    auto& fs = wavf->Stream;
-    auto h   = (WAV_CHUNK_HEADER*)header;
-    for (; fs->read(h, WAV_HEADER_SIZE) == WAV_HEADER_SIZE;)
-    {
-        wavf->PcmDataOffset += WAV_HEADER_SIZE;
-        if (h->ChunkID == chunkID)
-        {  // chunk found
-            if (body)
-            {  // require read body?
-                auto readsize = (std::min)(bodySize, h->ChunkSize);
-                fs->read(body, readsize);
-                if (h->ChunkSize > bodySize)
-                    fs->seek(h->ChunkSize - bodySize, SEEK_CUR);
-                wavf->PcmDataOffset += h->ChunkSize;
-            }
-            return true;
-        }
-        else
-        {
-            // Skip other non specified chunk
-            fs->seek(h->ChunkSize, SEEK_CUR);
-            wavf->PcmDataOffset += h->ChunkSize;
-        }
-    }
-    return false;
-}
-static bool wav_open(std::string_view fullPath, WAV_FILE* wavf)
-{
-    wavf->Stream = FileUtils::getInstance()->openFileStream(fullPath, FileStream::Mode::READ);
-    if (!wavf->Stream)
-        return false;
-
-    auto& fileStream    = wavf->Stream;
-    wavf->PcmDataOffset = 0;
-
-    // Parsing RIFF chunk
-    fileStream->read(&wavf->FileHeader, WAV_RIFF_SIZE);
-    wavf->PcmDataOffset += WAV_RIFF_SIZE;
-
-    if (wavf->FileHeader.Riff.Format != WAV_SIGN_ID)
-        return false;  // not .wav file
-
-    // check somthings
-    auto h = &wavf->FileHeader;
-
-    // Parsing FMT chunk
-    if (!wav_scan_chunk(wavf, WAV_FMT_ID, &wavf->FileHeader.Fmt, &wavf->FileHeader.Fmt.AudioFormat,
-                        sizeof(wavf->FileHeader.Fmt) - sizeof(WAV_RIFF_CHUNK)))
-        return false;
-
-    auto& fmtInfo = h->Fmt;
-
-    int bitDepth = (fmtInfo.BitsPerSample);
-
-    // Read PCM data or extensible data if exists.
-    switch (fmtInfo.AudioFormat)
-    {  // Check supported format
-    case WAV_FORMAT::PCM:
-    case WAV_FORMAT::IEEE:
-        switch (bitDepth)
-        {
-        case 8:
-            wavf->SourceFormat = AUDIO_SOURCE_FORMAT::PCM_U8;
-            break;
-        case 16:
-            wavf->SourceFormat = AUDIO_SOURCE_FORMAT::PCM_16;
-            break;
-        case 24:
-            wavf->SourceFormat = AUDIO_SOURCE_FORMAT::PCM_24;
-            break;
-        case 32:
-            wavf->SourceFormat = (fmtInfo.AudioFormat == WAV_FORMAT::IEEE) ? AUDIO_SOURCE_FORMAT::PCM_FLT32
-                                                                           : AUDIO_SOURCE_FORMAT::PCM_32;
-            break;
-        case 64:
-            wavf->SourceFormat = (fmtInfo.AudioFormat == WAV_FORMAT::IEEE) ? AUDIO_SOURCE_FORMAT::PCM_FLT64
-                                                                           : AUDIO_SOURCE_FORMAT::PCM_64;
-            break;
-        }
-        break;
-    case WAV_FORMAT::MULAW:
-        wavf->SourceFormat = AUDIO_SOURCE_FORMAT::MULAW;
-        break;
-    case WAV_FORMAT::ALAW:
-        wavf->SourceFormat = AUDIO_SOURCE_FORMAT::MULAW;
-        break;
-    case WAV_FORMAT::ADPCM:
-        wavf->SourceFormat = AUDIO_SOURCE_FORMAT::ADPCM;
-        break;
-    case WAV_FORMAT::IMA_ADPCM:
-        wavf->SourceFormat = AUDIO_SOURCE_FORMAT::IMA_ADPCM;
-        break;
-    case WAV_FORMAT::EXT:
-        // Check sub-format.
-        if (!IsEqualGUID(fmtInfo.ExtParams.SubFormat, WAV_SUBTYPE_PCM) &&
-            !IsEqualGUID(fmtInfo.ExtParams.SubFormat, WAV_SUBTYPE_IEEE_FLOAT))
-        {
-            fileStream.reset();
-            return false;
-        }
-        break;
-    default:
-        ALOGW("The wav format %d doesn't supported currently!", (int)fmtInfo.AudioFormat);
-        fileStream.reset();
-        assert(false);
-        return false;
-    }
-
-    return wav_scan_chunk(wavf, WAV_DATA_ID, &h->PcmData, nullptr, 0);
-}
-
-static int wav_read(WAV_FILE* wavf, char* pcmBuf, uint32_t bytesToRead)
-{
-    return wavf->Stream->read(pcmBuf, bytesToRead);
-}
-
-static int wav_seek(WAV_FILE* wavf, int offset)
-{
-    wavf->Stream->seek(wavf->PcmDataOffset + offset, SEEK_SET);
-    const auto newOffset = wavf->Stream->tell();
-    return newOffset >= wavf->PcmDataOffset ? newOffset - wavf->PcmDataOffset : -1;
-}
-
-static int wav_close(WAV_FILE* wavf)
-{
-    const auto result = wavf->Stream->close();
-    wavf->Stream.reset();
-    return result;
-}
-
-AudioDecoderWav::AudioDecoderWav()
-{
-    memset(&_wavf, 0, offsetof(WAV_FILE, Stream));
 }
 
 AudioDecoderWav::~AudioDecoderWav()
 {
-    close();
+	if (stream)
+	{
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+		stream->release();
+		stream = nullptr;
+	}
 }
 
-bool AudioDecoderWav::open(std::string_view fullPath)
+bool AudioDecoderWav::init(AudioStream* src)
 {
-    if (wav_open(fullPath, &_wavf))
-    {
-        auto& fmtInfo  = _wavf.FileHeader.Fmt;
-        _sampleRate    = fmtInfo.SampleRate;
-        _channelCount  = fmtInfo.NumChannels;
-        _bytesPerBlock = fmtInfo.BlockAlign;  // == fmtInfo.BitsPerSample * _channelCount / 8;
-        _sourceFormat  = _wavf.SourceFormat;
+	stream = src;
+	if (!stream)
+		return false;
+	// The destructor releases stream on both successful and failed initialization.
+	stream->retain();
+	std::string msg;
+	std::vector<uint8_t> tempBufferData;
+	bool ret = false;
+	stream->lock();
+	stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+	auto size = stream->size();
+	do
+	{
+		// Read RIFF Header
+		RiffChunkHeader riffHeader = {};
+		stream->read((uint8_t*)&riffHeader, 12);
+		// Check RIFF
+		if (riffHeader.id_riff != CKC_RIFF) {
+			if (riffHeader.id_riff == CKC_RIFX || riffHeader.id_riff == CKC_FFIR) {
+				msg = "doesn't support big endian file";
+				break;
+			}
+			msg = "bad RIFF/RIFX/FFIR file header";
+			break;
+		}
 
-        // See: https://github.com/openalext/openalext/wiki/AL_SOFT_block_alignment
-        switch (_sourceFormat)
-        {
-        case AUDIO_SOURCE_FORMAT::ADPCM:
-            _samplesPerBlock = (_bytesPerBlock / _channelCount - 7) * 2 + 2;
-            break;
-        case AUDIO_SOURCE_FORMAT::IMA_ADPCM:
-            _samplesPerBlock = (_bytesPerBlock / _channelCount - 4) / 4 * 8 + 1;
-            break;
-        default:;
-        }
+		if (riffHeader.id_wave != CKC_WAVE) {
+			msg = "bad WAVE header";
+			break;
+		}
+		auto expectedSize = size - riffHeader.file_size;
+		if (expectedSize != sizeof(uint32_t) * 2) {
+			msg = "declared size of file dosn't match real size";
+			break;
+		}
+		// note: assume that header is smaller than 256B
+		try
+		{
+			tempBufferData.resize(256);
+		}
+		catch (const std::bad_alloc&)
+		{
+			msg = "failed to allocate temporary buffer";
+			break;
+		}
+		auto tempBuffer = tempBufferData.data();
+		uint64_t bufferLength;
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+		stream->read(tempBuffer, 256, &bufferLength);
 
-        _totalFrames = bytesToFrames(_wavf.FileHeader.PcmData.ChunkSize);
+		// Read WAVE Header
+		auto WaveChunkInfo = ScanForChunk(tempBuffer, bufferLength, CKC_fmt_);
+		if (WaveChunkInfo.offset == 0) {
+			msg = "couldn't find fmt chunk";
+			break;
+		}
+		CC_ASSERT(WaveChunkInfo.size == 16 || WaveChunkInfo.size == 18 ||
+			WaveChunkInfo.size == 20 || WaveChunkInfo.size == 40);
+		WaveChunkHeader wavHeader = {};
+		memcpy(&wavHeader, tempBuffer + WaveChunkInfo.offset, sizeof(WaveChunkHeader));
 
-        _isOpened = true;
-        return true;
-    }
-    return false;
+		if (wavHeader.chunk_size < 16) {
+			msg = "format chunk too small";
+			break;
+		}
+		//TODO: validate wav header (sane sample rate, bit depth, etc)
+
+		audioInfo.channelCount = wavHeader.channel_count;
+		audioInfo.sampleRate = wavHeader.sample_rate;
+		audioInfo.bytesPerFrame = wavHeader.frame_size;
+
+		auto bit_depth = wavHeader.bit_depth;
+		CC_ASSERT(audioInfo.channelCount*bit_depth / 8 == wavHeader.frame_size);
+		if (bit_depth != 16) {
+			// todo: not implemented
+			msg = "only support 16bit format, got " + std::to_string(bit_depth) + "bit";
+			break;
+		}
+
+		bool scanForFact = false;
+		bool grabExtensibleData = false;
+		//bool adpcmEncoded = false;
+		if (wavHeader.format == FORMAT_PCM)
+		{
+		}
+		else if (wavHeader.format == FORMAT_IEEE)
+		{
+			scanForFact = true;
+		}
+		else if (wavHeader.format == FORMAT_IMA_ADPCM)
+		{
+			//adpcmEncoded = true;
+			//scanForFact = true;
+			// todo: not implemented
+			msg = "not support ADPCM format";
+			break;
+		}
+		else if (wavHeader.format == FORMAT_EXT)
+		{
+			// Used when (1) PCM data has more than 16 bits; (2) channels > 2;
+			// (3) bits/sample !== container size; (4) channel/speaker mapping specified
+			//std::cout << "[format id] extended" << std::endl;
+			scanForFact = true;
+			grabExtensibleData = true;
+		}
+		else if (wavHeader.format == FORMAT_UNKNOWN) {
+			msg = "unknown wave format";
+			break;
+		}
+
+		// Read Additional Chunks
+		FactChunk factChunk{};
+		if (scanForFact)
+		{
+			auto FactChunkInfo = ScanForChunk(tempBuffer, bufferLength, CKC_fact);
+			if (FactChunkInfo.size)
+				memcpy(&factChunk, tempBuffer + FactChunkInfo.offset, sizeof(FactChunk));
+		}
+		if (grabExtensibleData)
+		{
+			ExtensibleData extData = {};
+			memcpy(&extData, tempBuffer + WaveChunkInfo.offset + sizeof(WaveChunkHeader), sizeof(ExtensibleData));
+			// extData can be compared against the multi-channel masks defined in the header
+			// eg. extData.channel_mask == SPEAKER_5POINT1
+		}
+
+		// Read Bext Chunk
+		auto BextChunkInfo = ScanForChunk(tempBuffer, bufferLength, CKC_bext);
+		BextChunk bextChunk = {};
+		if (BextChunkInfo.size)
+			memcpy(&bextChunk, tempBuffer + BextChunkInfo.offset, sizeof(BextChunk));
+
+		// Read DATA Chunk
+		auto DataChunkInfo = ScanForChunk(tempBuffer, bufferLength, CKC_data);
+		if (DataChunkInfo.offset == 0) {
+			msg = "couldn't find data chunk |size=" + std::to_string(stream->size()) +
+				"|temp buf size=" + std::to_string(bufferLength);
+			break;
+		}
+		uint32_t data_size;
+		memcpy(&data_size, tempBuffer + DataChunkInfo.offset + sizeof(uint32_t), sizeof(uint32_t));
+		data_offset = DataChunkInfo.offset + 2 * sizeof(uint32_t);// skip the header and size fields
+		// note: there may be some info at file tail, only use data_size
+		if (data_size != stream->size() - data_offset)
+		{
+			msg = "data size mismatch: expect " + std::to_string(data_size) +
+				", got " + std::to_string(stream->size() - data_offset);
+			data_size = std::min(data_size, uint32_t(stream->size() - data_offset));
+		}
+		//if (adpcmEncoded){}
+		audioInfo.totalFrames = data_size / wavHeader.frame_size;
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, data_offset);
+		ret = true;
+	}
+	while (false);
+	stream->unlock();
+	if (!msg.empty())
+	{
+		AINFO("%s", msg.c_str());
+	}
+	return ret;
 }
 
-uint32_t AudioDecoderWav::framesToBytes(uint32_t frames) const
+AudioDecoderWav* AudioDecoderWav::create(AudioStream* src, size_t bufSize)
 {
-    if (_samplesPerBlock == 1)
-        return _bytesPerBlock * frames;
-
-    return frames / _samplesPerBlock * _bytesPerBlock;
+	auto ret = new (std::nothrow) AudioDecoderWav(bufSize);
+	if (ret&&ret->init(src))
+	{
+		ret->autorelease();
+		return ret;
+	}
+	delete ret;
+	return nullptr;
 }
 
-uint32_t AudioDecoderWav::bytesToFrames(uint32_t bytes) const
+int64_t AudioDecoderWav::decode(char* dst, uint64_t bytesToRead)
 {
-    if (_samplesPerBlock == 1)
-        return bytes / _bytesPerBlock;
-    return bytes / _bytesPerBlock * _samplesPerBlock;
+	stream->lock();
+	int64_t tSizeRead = 0;
+	auto tBuffer = (uint8_t*)dst;
+	while (tSizeRead < bytesToRead)
+	{
+		uint64_t read;
+		stream->read(tBuffer, bytesToRead - tSizeRead, &read);
+		if (read == 0)  // got end
+		{
+			eof = true;
+			break;
+		}
+		tSizeRead += read;
+		tBuffer += read;
+	}
+	stream->unlock();
+	return tSizeRead;
 }
 
-void AudioDecoderWav::close()
+bool AudioDecoderWav::seek(int64_t frameOffset)
 {
-    if (isOpened())
-    {
-        wav_close(&_wavf);
-        _isOpened = false;
-    }
+	if (frameOffset >= getTotalFrames())
+		return false;
+	stream->lock();
+	const bool ret = stream->seek(AudioStream::SeekOrigin::BEGINNING, data_offset + frameOffset * getBytesPerFrame());
+	stream->unlock();
+	if (ret)
+		eof = false;
+	return ret;
 }
 
-uint32_t AudioDecoderWav::read(uint32_t framesToRead, char* pcmBuf)
+int64_t AudioDecoderWav::tell()
 {
-    auto bytesToRead  = framesToBytes(framesToRead);
-    int32_t bytesRead = wav_read(&_wavf, pcmBuf, bytesToRead);
-    return bytesToFrames(bytesRead);
+	const int64_t p = (int64_t)stream->tell() - (int64_t)data_offset;
+	return std::max<int64_t>(0, p) / getBytesPerFrame();
 }
 
-bool AudioDecoderWav::seek(uint32_t frameOffset)
+bool AudioDecoderWav::isSeekable()
 {
-    auto offset = framesToBytes(frameOffset);
-    return wav_seek(&_wavf, offset) == offset;
+	return true;
 }
-NS_CC_END  // namespace ax
+
+NS_CC_END

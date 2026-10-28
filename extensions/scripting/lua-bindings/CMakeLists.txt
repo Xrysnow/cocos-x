@@ -13,7 +13,6 @@ set(lua_bindings_manual_headers
     manual/network/axlua_network_manual.h
     manual/network/lua_xml_http_request.h
     manual/network/lua_downloader.h
-    manual/audioengine/axlua_audioengine_manual.h
     manual/Lua-BindingsExport.h
     manual/tolua_fix.h
     manual/navmesh/axlua_navmesh_manual.h
@@ -47,14 +46,12 @@ set(lua_bindings_manual_files
     manual/network/lua_xml_http_request.cpp
     manual/network/lua_downloader.cpp
     manual/ui/axlua_ui_manual.cpp
-    manual/audioengine/axlua_audioengine_manual.cpp
     manual/physics3d/axlua_physics3d_manual.cpp
     manual/navmesh/axlua_navmesh_conversions.cpp
     manual/navmesh/axlua_navmesh_manual.cpp
     )
 
 set(lua_bindings_auto_headers
-    auto/axlua_audioengine_auto.hpp
     auto/axlua_3d_auto.hpp
     auto/axlua_controller_auto.hpp
     auto/axlua_base_auto.hpp
@@ -73,7 +70,6 @@ set(lua_bindings_auto_files
     auto/axlua_extension_auto.cpp
     auto/axlua_physics_auto.cpp
     auto/axlua_ui_auto.cpp
-    auto/axlua_audioengine_auto.cpp
     auto/axlua_physics3d_auto.cpp
     auto/axlua_navmesh_auto.cpp
     auto/axlua_backend_auto.cpp

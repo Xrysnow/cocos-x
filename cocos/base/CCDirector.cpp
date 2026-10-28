@@ -987,7 +987,8 @@ void Director::reset()
         _eventDispatcher->dispatchEvent(_eventResetDirector);
 
     // Fix github issue: https://github.com/axmolengine/axmol/issues/550
-    // !!!The AudioEngine hold scheduler must end before Director destroyed, otherwise, just lead app crash
+    // Final audio shutdown fallback. AppFrame may already have drained audio
+    // after releasing game resources; AudioEngine::end() is idempotent.
     AudioEngine::end();
 
     // cleanup scheduler

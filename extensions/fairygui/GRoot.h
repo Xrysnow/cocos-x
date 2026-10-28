@@ -8,6 +8,10 @@
 #include "cocos2d.h"
 #include "event/InputProcessor.h"
 
+NS_CC_BEGIN
+class AudioSource;
+NS_CC_END
+
 NS_FGUI_BEGIN
 
 class WeakPtr;
@@ -56,6 +60,7 @@ public:
     void showTooltipsWin(GObject* tooltipWin);
     void hideTooltips();
 
+    // The host must initialize cocos2d::AudioEngine before playing UI sounds.
     void playSound(const std::string& url, float volumeScale = 1);
     bool isSoundEnabled() const { return _soundEnabled; }
     void setSoundEnabled(bool value);
@@ -78,6 +83,8 @@ private:
     void checkPopups();
     void onTouchEvent(int eventType);
     void updateContentScaleLevel();
+    void updateSounds(float dt);
+    void stopSounds();
 
     CALL_LATER_FUNC(GRoot, doShowTooltipsWin);
 
@@ -90,6 +97,9 @@ private:
     std::vector<WeakPtr> _justClosedPopups;
     GObject* _tooltipWin;
     GObject* _defaultTooltipWin;
+
+    // AudioPool tracks playback without retaining Sources. Release on the UI thread.
+    cocos2d::Vector<cocos2d::AudioSource*> _soundSources;
 
     static bool _soundEnabled;
     static float _soundVolumeScale;

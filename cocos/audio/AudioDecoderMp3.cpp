@@ -1,301 +1,262 @@
-/****************************************************************************
- Copyright (c) 2016 Chukong Technologies Inc.
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2020 C4games Ltd
- Copyright (c) 2021 Bytedance Inc.
-
- https://axmolengine.github.io/
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
- ****************************************************************************/
-
-#define LOG_TAG "AudioDecoderMp3"
-#include "audio/AudioDecoderMp3.h"
-#include "audio/AudioMacros.h"
-#include "platform/CCFileUtils.h"
-
-#include "base/CCConsole.h"
-
-#if !CC_USE_MPG123
-    #define MINIMP3_IMPLEMENTATION
-    #include "minimp3/minimp3_ex.h"
-#else
-// because the cocos2d-x engine has ssize_t typedef, so disable mpg123 ssize_t
-    #define MPG123_DEF_SSIZE_T
-    #include "mpg123.h"
-#endif
-
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-    #include <unistd.h>
-    #include <errno.h>
-#endif
-
-#if !CC_USE_MPG123
-struct mp3dec_impl
-{
-    mp3dec_ex_t _dec;
-    mp3dec_io_t _decIO;
-};
-#endif
+#define DR_MP3_IMPLEMENTATION
+#include "AudioDecoderMp3.h"
 
 NS_CC_BEGIN
 
-#if !CC_USE_MPG123
-static size_t minimp3_read_r(void* buf, size_t size, void* user_data)
+/*
+Callback for when data is read. Return value is the number of bytes actually read.
+
+pUserData   [in]  The user data that was passed to drmp3_init(), drmp3_open() and family.
+pBufferOut  [out] The output buffer.
+bytesToRead [in]  The number of bytes to read.
+
+Returns the number of bytes actually read.
+
+A return value of less than bytesToRead indicates the end of the stream. Do _not_ return from this callback until
+either the entire bytesToRead is filled or you have reached the end of the stream.
+*/
+static size_t mp3Read(void* pUserData, void* pBufferOut, size_t bytesToRead)
 {
-    return ((FileStream*)user_data)->read(buf, size);
+	auto src = (AudioStream*)pUserData;
+	size_t toRead = src->size() - src->tell();
+	if (toRead > bytesToRead)
+		toRead = bytesToRead;
+	uint64_t read = 0;
+	src->read((uint8_t*)pBufferOut, toRead, &read);
+	return read;
+}
+/*
+Callback for when data needs to be seeked.
+
+pUserData [in] The user data that was passed to drmp3_init(), drmp3_open() and family.
+offset    [in] The number of bytes to move, relative to the origin. Will never be negative.
+origin    [in] The origin of the seek - the current position or the start of the stream.
+
+Returns whether or not the seek was successful.
+
+Whether or not it is relative to the beginning or current position is determined by the "origin" parameter which
+will be either drmp3_seek_origin_start or drmp3_seek_origin_current.
+*/
+static drmp3_bool32 mp3Seek(void* pUserData, int offset, drmp3_seek_origin origin)
+{
+	auto src = (AudioStream*)pUserData;
+	bool ret = false;
+	switch (origin) {
+	case drmp3_seek_origin_start:
+		ret = src->seek(AudioStream::SeekOrigin::BEGINNING, offset);
+		break;
+	case drmp3_seek_origin_current:
+		ret = src->seek(AudioStream::SeekOrigin::CURRENT, offset);
+		break;
+	default:;
+	}
+	return ret;
 }
 
-static int minimp3_seek_r(uint64_t position, void* user_data)
+typedef struct
 {
-    return ((FileStream*)user_data)->seek(position, SEEK_SET) < 0 ? -1 : 0;
-}
-#else
-static bool __mp3Inited = false;
+	char Header[3];
+	char Ver;
+	char Revision;
+	char Flag;
+	char Size[4];
+} ID3v2Header;
 
-static ssize_t mpg123_read_r(void* handle, void* buffer, size_t count)
+uint32_t getID3v2HeaderSize(const ID3v2Header& h)
 {
-    return ((FileStream*)handle)->read(buffer, count);
-}
-
-static off_t mpg123_lseek_r(void* handle, off_t offset, int whence)
-{
-    return ((FileStream*)handle)->seek(offset, whence);
-}
-
-void mpg123_close_r(void* handle)
-{
-    ((FileStream*)handle)->close();
-}
-#endif
-bool AudioDecoderMp3::lazyInit()
-{
-    bool ret = true;
-#if CC_USE_MPG123
-    if (!__mp3Inited)
-    {
-        int error = mpg123_init();
-        if (error == MPG123_OK)
-        {
-            __mp3Inited = true;
-        }
-        else
-        {
-            ALOGE("Basic setup goes wrong: %s", mpg123_plain_strerror(error));
-            ret = false;
-        }
-    }
-#endif
-    return ret;
+	if (memcmp(h.Header, "ID3", 3) != 0)
+		return 0;
+	return (h.Size[0] & 0x7F) * 0x200000
+		+ (h.Size[1] & 0x7F) * 0x4000
+		+ (h.Size[2] & 0x7F) * 0x80
+		+ (h.Size[3] & 0x7F);
 }
 
-void AudioDecoderMp3::destroy()
+/* big endian extract */
+static uint32_t ExtractI4(AudioStream* stream)
 {
-#if CC_USE_MPG123
-    if (__mp3Inited)
-    {
-        mpg123_exit();
-        __mp3Inited = false;
-    }
-#endif
+	uint8_t buf[4];
+	stream->read(buf, 4);
+	int x;
+	x = buf[0];
+	x <<= 8;
+	x |= buf[1];
+	x <<= 8;
+	x |= buf[2];
+	x <<= 8;
+	x |= buf[3];
+	return x;
 }
 
-AudioDecoderMp3::AudioDecoderMp3() : _handle(nullptr)
+void GetVbrTag(AudioStream* stream, int& frames, int& bytes, int& enc_delay, int& enc_padding)
 {
-    lazyInit();
+	int head_flags = ExtractI4(stream);
+	if (head_flags & 0x0001)
+		frames = ExtractI4(stream);
+	if (head_flags & 0x0002)
+		bytes = ExtractI4(stream);
+	if (head_flags & 0x0004)
+		stream->seek(AudioStream::SeekOrigin::CURRENT, 100);
+	if (head_flags & 0x0008)
+		stream->seek(AudioStream::SeekOrigin::CURRENT, 4);
+	stream->seek(AudioStream::SeekOrigin::CURRENT, 21);
+	uint8_t buf[3];
+	stream->read(buf, 3);
+	enc_delay = buf[0] << 4;
+	enc_delay += buf[1] >> 4;
+	enc_padding = (buf[1] & 0x0F) << 8;
+	enc_padding += buf[2];
+	if (enc_delay < 0 || enc_delay > 3000)
+		enc_delay = -1;
+	if (enc_padding < 0 || enc_padding > 3000)
+		enc_padding = -1;
+}
+
+AudioDecoderMp3::AudioDecoderMp3(size_t bufferSize)
+	: AudioDecoder(bufferSize, DecoderType::MP3)
+{
 }
 
 AudioDecoderMp3::~AudioDecoderMp3()
 {
-    close();
+	if (mp3)
+		drmp3_uninit(mp3);
+	delete mp3;
+	if (stream)
+	{
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+		stream->release();
+		stream = nullptr;
+	}
 }
 
-bool AudioDecoderMp3::open(std::string_view fullPath)
+bool AudioDecoderMp3::init(AudioStream* src)
 {
-#if !CC_USE_MPG123
-    do
-    {
-        _fileStream = FileUtils::getInstance()->openFileStream(fullPath, FileStream::Mode::READ);
-        if (!_fileStream)
-        {
-            ALOGE("Trouble with minimp3(1): %s\n", strerror(errno));
-            break;
-        }
+	stream = src;
+	if (!stream)
+		return false;
+	// The destructor releases stream on both successful and failed initialization.
+	stream->retain();
+	mp3 = new drmp3{};
+	stream->lock();
+	stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+	const auto ok = drmp3_init(mp3, mp3Read, mp3Seek, stream, nullptr);
+	stream->unlock();
+	if(!ok)
+	{
+		// drmp3_init already frees its buffers on failure. Only uninit a
+		// successfully initialized handle; otherwise the destructor frees twice.
+		delete mp3;
+		mp3 = nullptr;
+		return false;
+	}
+	audioInfo.sampleRate = mp3->sampleRate;
+	//audioInfo.bytesPerFrame = flac->bitsPerSample / 8;
+	audioInfo.bytesPerFrame = 2 * mp3->channels;
+	audioInfo.channelCount = mp3->channels;
+	audioInfo.totalFrames = drmp3_get_pcm_frame_count(mp3);
 
-        auto handle = new mp3dec_impl();
-
-        handle->_decIO.read      = minimp3_read_r;
-        handle->_decIO.seek      = minimp3_seek_r;
-        handle->_decIO.read_data = handle->_decIO.seek_data = _fileStream.get();
-
-        if (mp3dec_ex_open_cb(&handle->_dec, &handle->_decIO, MP3D_SEEK_TO_SAMPLE) != 0)
-        {
-            delete handle;
-            break;
-        }
-
-        auto& info    = handle->_dec.info;
-        _channelCount = info.channels;  // the _channelCount is samplesPerFrame
-        _sampleRate   = info.hz;
-    #ifndef MINIMP3_FLOAT_OUTPUT
-        _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_16;
-        _bytesPerBlock = sizeof(uint16_t) * _channelCount;
-    #else
-        _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_FLT32;
-        _bytesPerBlock = sizeof(float) * _channelCount;
-    #endif
-        // samples
-        _totalFrames = handle->_dec.samples / _channelCount;
-
-        // store the handle
-        _handle = handle;
-
-        _isOpened = true;
-        return true;
-    } while (false);
-
-    return false;
-#else
-    int32_t rate    = 0;
-    int error       = MPG123_OK;
-    int mp3Encoding = 0;
-    int channel     = 0;
-    do
-    {
-        _handle = mpg123_new(nullptr, &error);
-        if (nullptr == _handle)
-        {
-            ALOGE("Basic setup goes wrong: %s", mpg123_plain_strerror(error));
-            break;
-        }
-
-        if (!_fileStream.open(fullPath))
-        {
-            ALOGE("Trouble with mpg123(1): %s\n", strerror(errno));
-            break;
-        }
-
-        mpg123_replace_reader_handle(_handle, mpg123_read_r, mpg123_lseek_r, mpg123_close_r);
-
-        if (mpg123_open_handle(_handle, _fileStream) != MPG123_OK ||
-            mpg123_getformat(_handle, &rate, &channel, &mp3Encoding) != MPG123_OK)
-        {
-            ALOGE("Trouble with mpg123(2): %s\n", mpg123_strerror(_handle));
-            break;
-        }
-
-        _channelCount = channel;
-        _sampleRate   = rate;
-
-        if (mp3Encoding == MPG123_ENC_SIGNED_16)
-        {
-            _bytesPerBlock = 2 * _channelCount;
-            _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_16;
-        }
-        else if (mp3Encoding == MPG123_ENC_FLOAT_32)
-        {
-            _bytesPerBlock = 4 * _channelCount;
-            _sourceFormat  = AUDIO_SOURCE_FORMAT::PCM_FLT32;
-        }
-        else
-        {
-            ALOGE("Bad encoding: 0x%x!\n", mp3Encoding);
-            break;
-        }
-
-        /* Ensure that this output format will not change (it could, when we allow it). */
-        mpg123_format_none(_handle);
-        mpg123_format(_handle, rate, channel, mp3Encoding);
-        /* Ensure that we can get accurate length by call mpg123_length */
-        mpg123_scan(_handle);
-
-        _totalFrames = mpg123_length(_handle);
-
-        _isOpened = true;
-        return true;
-    } while (false);
-
-    if (_handle != nullptr)
-    {
-        mpg123_close(_handle);
-        mpg123_delete(_handle);
-        _handle = nullptr;
-    }
-    return false;
-#endif
+	ID3v2Header h;
+	uint8_t hdr[4];
+	bool findFrame = true;
+	stream->lock();
+	stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
+	stream->read((uint8_t*)&h, sizeof(h));
+	auto hsize = getID3v2HeaderSize(h);
+	stream->seek(AudioStream::SeekOrigin::BEGINNING, hsize);
+	stream->read(hdr, sizeof(hdr));
+	if (!drmp3_hdr_valid(hdr))
+	{
+		hsize += 10;
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, hsize);
+		stream->read(hdr, sizeof(hdr));
+		if (!drmp3_hdr_valid(hdr))
+			findFrame = false;
+	}
+	if (findFrame)
+	{
+		static const uint8_t info_hdr_offset[2][2] = {{21, 13}, {36, 21}};
+		const auto offset = hsize + info_hdr_offset[!!DRMP3_HDR_TEST_MPEG1(hdr)][!!DRMP3_HDR_IS_MONO(hdr)];
+		stream->seek(AudioStream::SeekOrigin::BEGINNING, offset);
+		uint8_t k[4];
+		stream->read(k, 4);
+		const std::string key{ (const char*)k,4 };
+		if (key == "Info" || key == "Xing")
+		{
+			int frames, bytes, enc_delay, enc_padding;
+			GetVbrTag(stream, frames, bytes, enc_delay, enc_padding);
+			if (frames > 0 && enc_delay >= 0 && enc_padding >= 0)
+			{
+				// should be CBR
+				const auto begin = enc_delay + 529;
+				const auto fullend = frames * drmp3_hdr_frame_samples(hdr);
+				const auto end = fullend - enc_padding + 529;
+				auto x = fullend;
+				if (x > end)
+				{
+					if (x < fullend)
+						x = end - begin;
+					else
+						x = x - (fullend - end + begin);
+				}
+				else
+					x = x - begin;
+				audioInfo.totalFrames = x;
+				frameBegin = begin;
+				frameEnd = begin + x;
+			}
+		}
+	}
+	// Header probing moves the underlying stream independently of drmp3's
+	// compressed-data cache. Reset both before seeking past encoder delay.
+	const auto reset = drmp3_seek_to_pcm_frame(mp3, 0);
+	stream->unlock();
+	return reset && seek(0);
 }
 
-void AudioDecoderMp3::close()
+AudioDecoderMp3* AudioDecoderMp3::create(AudioStream* src, size_t bufferSize)
 {
-    if (isOpened())
-    {
-#if !CC_USE_MPG123
-        if (_handle)
-        {
-            mp3dec_ex_close(&_handle->_dec);
-
-            delete _handle;
-            _handle = nullptr;
-            _fileStream.reset();
-        }
-#else
-        if (_handle != nullptr)
-        {
-            mpg123_close(_handle);
-            mpg123_delete(_handle);
-            _handle = nullptr;
-
-            _fileStream.reset();
-        }
-#endif
-        _isOpened = false;
-    }
+	auto ret = new (std::nothrow) AudioDecoderMp3(bufferSize);
+	if (ret&&ret->init(src))
+	{
+		ret->autorelease();
+		return ret;
+	}
+	delete ret;
+	return nullptr;
 }
 
-uint32_t AudioDecoderMp3::read(uint32_t framesToRead, char* pcmBuf)
+int64_t AudioDecoderMp3::decode(char* dst, uint64_t bytesToRead)
 {
-#if !CC_USE_MPG123
-    auto sampelsToRead = framesToRead * _channelCount;
-    auto samplesRead   = mp3dec_ex_read(&_handle->_dec, (mp3d_sample_t*)pcmBuf, sampelsToRead);
-    return static_cast<uint32_t>(samplesRead / _channelCount);
-#else
-    int bytesToRead  = framesToBytes(framesToRead);
-    size_t bytesRead = 0;
-    int err          = mpg123_read(_handle, (unsigned char*)pcmBuf, bytesToRead, &bytesRead);
-    if (err == MPG123_ERR)
-    {
-        ALOGE("Trouble with mpg123: %s\n", mpg123_strerror(_handle));
-        return 0;
-    }
-
-    return bytesToFrames(bytesRead);
-#endif
+	stream->lock();
+	const auto framesRead = drmp3_read_pcm_frames_s16(mp3, bytesToRead / audioInfo.bytesPerFrame, (drmp3_int16*)dst);
+	stream->unlock();
+	const auto bytesRead = framesRead * 2 * audioInfo.channelCount;
+	if (bytesRead < bytesToRead)
+		eof = true;
+	return bytesRead;
 }
 
-bool AudioDecoderMp3::seek(uint32_t frameOffset)
+bool AudioDecoderMp3::seek(int64_t frameOffset)
 {
-#if !CC_USE_MPG123
-    return 0 == mp3dec_ex_seek(&_handle->_dec, frameOffset);
-#else
-    off_t offset = mpg123_seek(_handle, frameOffset, SEEK_SET);
-    // ALOGD("mpg123_seek return: %d", (int)offset);
-    return (offset >= 0 && offset == frameOffset);
-#endif
+	if (frameOffset >= getTotalFrames())
+		return false;
+	stream->lock();
+	const drmp3_bool32 result = drmp3_seek_to_pcm_frame(mp3, (drmp3_uint64)(frameOffset + frameBegin));
+	stream->unlock();
+	if (result)
+		eof = false;
+	return result;
 }
-NS_CC_END  // namespace ax
+
+int64_t AudioDecoderMp3::tell()
+{
+	return mp3->currentPCMFrame - frameBegin;
+}
+
+bool AudioDecoderMp3::isSeekable()
+{
+	return true;
+}
+
+NS_CC_END

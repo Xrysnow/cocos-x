@@ -1,7 +1,9 @@
 #include "GRoot.h"
-#include "AudioEngine.h"
+#include "audio/AudioEngine.h"
+#include "audio/AudioSoundData.h"
 #include "UIConfig.h"
 #include "UIPackage.h"
+#include <limits>
 
 NS_FGUI_BEGIN
 USING_NS_CC;
@@ -42,6 +44,7 @@ GRoot::GRoot() : _windowSizeListener(nullptr),
 
 GRoot::~GRoot()
 {
+    stopSounds();
     delete _inputProcessor;
     CC_SAFE_RELEASE(_modalWaitPane);
     CC_SAFE_RELEASE(_defaultTooltipWin);
@@ -477,12 +480,82 @@ void GRoot::hideTooltips()
 
 void GRoot::playSound(const std::string& url, float volumnScale)
 {
-    if (!_soundEnabled)
+    if (!_soundEnabled || !AudioEngine::isValid())
         return;
 
     PackageItem* pi = UIPackage::getItemByURL(url);
-    if (pi)
-        AudioEngine::play2d(pi->file, false, _soundVolumeScale * volumnScale);
+    if (!pi)
+        return;
+
+    auto decoder = AudioDecoder::createFromFile(pi->file, AudioDecoder::DEFAULT_BUFFER_SIZE);
+    if (!decoder)
+        return;
+
+    AudioSource* source = nullptr;
+    const auto frames = decoder->getTotalFrames();
+    const auto frameBytes = decoder->getBytesPerFrame();
+    const auto sampleRate = decoder->getSampleRate();
+    const auto channels = decoder->getChannelCount();
+    const auto bitDepth = decoder->getBitDepth();
+    // Buffer short UI effects up front; longer/unknown-length sounds stay streamed.
+    // Each trigger owns independent playback and can overlap an earlier click.
+    const int64_t maxStaticBytes = 1024 * 1024;
+    if (frames > 0 && frames <= std::numeric_limits<int>::max()
+        && frameBytes > 0 && frames <= maxStaticBytes / frameBytes
+        && sampleRate > 0 && sampleRate <= std::numeric_limits<int>::max()
+        && channels > 0 && channels <= std::numeric_limits<int>::max()
+        && (bitDepth == 8 || bitDepth == 16))
+    {
+        AudioSoundData data(static_cast<int>(frames), static_cast<int>(sampleRate),
+            static_cast<int>(bitDepth), static_cast<int>(channels));
+        if (data.getSize() != static_cast<size_t>(frames * frameBytes))
+            return;
+        const auto decoded = decoder->decode(static_cast<char*>(data.getData()), data.getSize());
+        if (decoded == static_cast<int64_t>(data.getSize()))
+        {
+            source = AudioSource::createFromSoundData(&data);
+            if (!source)
+                return;
+        }
+        else if (!decoder->rewind())
+            return;
+    }
+    if (!source)
+        source = AudioSource::createFromDecoder(decoder);
+    if (!source)
+        return;
+
+    source->setLooping(false);
+    source->setVolume(_soundVolumeScale * volumnScale);
+    if (!source->play())
+        return;
+
+    _soundSources.pushBack(source);
+    CALL_PER_FRAME(GRoot, updateSounds);
+}
+
+void GRoot::updateSounds(float dt)
+{
+    // A paused Source is still in the pool. isPlaying()/isFinished() alone would
+    // discard paused sounds or miss completion after the pool resets a Source.
+    auto pool = AudioEngine::isValid() ? AudioPool::getInstance() : nullptr;
+    for (auto it = _soundSources.begin(); it != _soundSources.end();)
+    {
+        if (!pool || !pool->isPlaying(*it))
+            it = _soundSources.erase(it);
+        else
+            ++it;
+    }
+    if (_soundSources.empty())
+        CALL_PER_FRAME_CANCEL(GRoot, updateSounds);
+}
+
+void GRoot::stopSounds()
+{
+    CALL_PER_FRAME_CANCEL(GRoot, updateSounds);
+    for (auto source : _soundSources)
+        source->stop();
+    _soundSources.clear();
 }
 
 void GRoot::setSoundEnabled(bool value)
@@ -519,6 +592,7 @@ void GRoot::onEnter()
 
 void GRoot::onExit()
 {
+    stopSounds();
     GComponent::onExit();
     if (_inst == this)
         _inst = nullptr;

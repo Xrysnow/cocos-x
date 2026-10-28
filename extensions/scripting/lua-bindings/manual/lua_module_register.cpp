@@ -33,7 +33,6 @@
 #include "scripting/lua-bindings/manual/ui/axlua_ui_manual.hpp"
 #include "scripting/lua-bindings/manual/spine/axlua_spine_manual.hpp"
 #include "scripting/lua-bindings/manual/3d/axlua_3d_manual.h"
-#include "scripting/lua-bindings/manual/audioengine/axlua_audioengine_manual.h"
 #include "scripting/lua-bindings/manual/physics3d/axlua_physics3d_manual.h"
 #include "scripting/lua-bindings/manual/navmesh/axlua_navmesh_manual.h"
 #include "lua_cjson.h"
@@ -69,7 +68,6 @@ int lua_module_register(lua_State* L)
     register_spine_module(L);
 #endif
     register_cocos3d_module(L);
-    register_audioengine_module(L);
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     register_physics3d_module(L);
 #endif
