@@ -8,6 +8,7 @@
 
 #include <sys/stat.h>
 #include <assert.h>
+#include <limits>
 
 #if defined(_WIN32)
 int _ftruncate(int fd, int64_t size)
@@ -105,7 +106,7 @@ static int pfs_asset_read(PXFileHandle& handle, void* buf, unsigned int size)
 }
 static int64_t pfs_asset_seek(PXFileHandle& handle, int64_t offst, int origin)
 {
-    return AAsset_seek(handle._asset, offst, origin);
+    return AAsset_seek64(handle._asset, offst, origin);
 }
 static int pfs_asset_close(PXFileHandle& handle)
 {
@@ -129,7 +130,32 @@ static int pfs_obb_read(PXFileHandle& handle, void* buf, unsigned int size)
 }
 static int64_t pfs_obb_seek(PXFileHandle& handle, int64_t offset, int origin)
 {
-    return FileUtilsAndroid::getObbFile()->zfseek(&handle._zfs, offset, origin);
+    auto obb = FileUtilsAndroid::getObbFile();
+    int64_t base = 0;
+    switch (origin)
+    {
+    case SEEK_SET:
+        break;
+    case SEEK_CUR:
+        base = handle._zfs.offset;
+        break;
+    case SEEK_END:
+        base = obb->zfsize(&handle._zfs);
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
+    }
+
+    // ZipFileStream and zfseek still use signed 32-bit positions. Calculate
+    // the absolute target before narrowing, including SEEK_END's file size.
+    const int64_t maxOffset = std::numeric_limits<int32_t>::max();
+    if (base < 0 || base > maxOffset || offset < -base || offset > maxOffset - base)
+    {
+        errno = EOVERFLOW;
+        return -1;
+    }
+    return obb->zfseek(&handle._zfs, static_cast<int32_t>(base + offset), SEEK_SET);
 }
 static int pfs_obb_close(PXFileHandle& handle)
 {
@@ -150,6 +176,13 @@ PosixFileStream::~PosixFileStream()
 
 bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
 {
+    internalClose();
+    if (path.empty())
+    {
+        errno = EINVAL;
+        return false;
+    }
+
     bool ok = false;
 #if CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
     ok = pfs_posix_open(path, mode, _handle) != -1;
@@ -172,11 +205,22 @@ bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
         ok       = obb != nullptr && obb->zfopen(relativePath, &_handle._zfs);
         if (ok)
         {
+            // Reject entries whose cursor would overflow inside zfread/zfseek.
+            const auto entrySize = obb->zfsize(&_handle._zfs);
+            if (entrySize < 0 || entrySize > std::numeric_limits<int32_t>::max())
+            {
+                obb->zfclose(&_handle._zfs);
+                reset();
+                errno = EOVERFLOW;
+                return false;
+            }
             this->_iof = &pfs_obb_iof;
         }
         else
         {
             AAssetManager* asMgr = FileUtilsAndroid::getAssetManager();
+            if (!asMgr)
+                return false;
             AAsset* asset        = AAssetManager_open(asMgr, relativePath.c_str(), AASSET_MODE_UNKNOWN);
             ok                   = !!asset;
             if (ok)
@@ -217,14 +261,15 @@ int PosixFileStream::close()
 
 int PosixFileStream::seek(int64_t offset, int origin)
 {
-    const auto result = _iof->seek(_handle, static_cast<int32_t>(offset),
-                                   origin);  // this returns -1 for error, and resulting offset on success
-    return result < 0 ? -1 : 0;              // return 0 for success
+    if (!_iof)
+        return -1;
+    const auto result = _iof->seek(_handle, offset, origin);  // resulting offset, or -1 for error
+    return result < 0 ? -1 : 0;                              // return 0 for success
 }
 
 int PosixFileStream::read(void* buf, unsigned int size)
 {
-    return _iof->read(_handle, buf, size);
+    return _iof ? _iof->read(_handle, buf, size) : -1;
 }
 
 int PosixFileStream::write(const void* buf, unsigned int size)
@@ -234,21 +279,17 @@ int PosixFileStream::write(const void* buf, unsigned int size)
 
 int64_t PosixFileStream::tell()
 {
-    return _iof->seek(_handle, 0, SEEK_CUR);
+    return _iof ? _iof->seek(_handle, 0, SEEK_CUR) : -1;
 }
 
 int64_t PosixFileStream::size()
 {
-    return _iof->size(_handle);
+    return _iof ? _iof->size(_handle) : -1;
 }
 
 bool PosixFileStream::isOpen() const
 {
-#if CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
-    return _handle._fd != -1;
-#else
-    return _handle._fd != -1 && _handle._asset != nullptr;
-#endif
+    return _iof != nullptr;
 }
 
 void PosixFileStream::reset()
