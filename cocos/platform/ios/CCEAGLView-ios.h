@@ -67,29 +67,14 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #import <OpenGLES/ES2/glext.h>
 #import <CoreFoundation/CoreFoundation.h>
 
-#import "platform/CCPlatformConfig.h"
-#if defined(CC_USE_GLES)
-#    import "platform/ios/CCESRenderer-ios.h"
-#endif
-
 // CLASS INTERFACE:
 
 /** CCEAGLView Class.
- * This class wraps the CAEAGLLayer from CoreAnimation into a convenient UIView subclass.
- * The view content is basically an EAGL surface you render your OpenGL scene into.
- * Note that setting the view non-opaque will only work if the EAGL surface has an alpha channel.
+ * This class wraps a CAMetalLayer from CoreAnimation into a convenient UIView subclass.
+ * The layer is owned by the gfx Metal swapchain, which sets its device, pixel format and
+ * drawable size when the renderer creates the surface.
  */
-@interface CCEAGLView : UIView {
-#if defined(CC_USE_GLES)
-    id<CCESRenderer> renderer_;
-#endif
-    BOOL preserveBackbuffer_;
-    CGRect safeArea_;
-    BOOL discardFramebufferSupported_;
-
-    // fsaa addition
-    unsigned int requestedSamples_;
-}
+@interface CCEAGLView : UIView
 
 /** creates an initializes an CCEAGLView with a frame and 0-bit depth buffer, and a RGB565 color buffer */
 + (id)viewWithFrame:(CGRect)frame;
@@ -129,16 +114,8 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 /** returns surface size in pixels */
 @property(nonatomic, readonly) CGSize surfaceSize;
 
-#if defined(CC_USE_GLES)
-/** OpenGL context */
-@property(nonatomic, readonly) EAGLContext* context;
-#endif
-
 @property(nonatomic, readwrite) BOOL multiSampling;
 @property(nonatomic, readonly) BOOL isKeyboardShown;
-
-/** CCEAGLView uses double-buffer. This method swaps the buffers */
-- (void)swapBuffers;
 
 - (CGRect)convertRectFromViewToSurface:(CGRect)rect;
 - (CGPoint)convertPointFromViewToSurface:(CGPoint)point;

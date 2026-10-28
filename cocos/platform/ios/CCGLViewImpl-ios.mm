@@ -30,6 +30,12 @@
 #include "platform/ios/CCGLViewImpl-ios.h"
 #include "base/CCTouch.h"
 #include "base/CCDirector.h"
+#include "base/CCEventDispatcher.h"
+#include "base/CCConfiguration.h"
+#include "renderer/backend/gfx/DeviceGFX.h"
+
+#include "gfx-base/GFXDef-common.h"
+#include "GFXDeviceManager.h"
 
 NS_CC_BEGIN
 
@@ -122,19 +128,74 @@ GLViewImpl::GLViewImpl() {}
 
 GLViewImpl::~GLViewImpl()
 {
+    // Safeguard for destruction without end(): release the gfx swapchains while the
+    // gfx device still exists, before the native view's CAMetalLayer goes away.
+    backend::DeviceGFX::shutdownSurface();
     // CCEAGLView *glView = (CCEAGLView*) _eaglView;
     //[glView release];
 }
 
 bool GLViewImpl::initWithEAGLView(void* eaglView)
 {
-    _eaglView          = eaglView;
-    CCEAGLView* glView = (CCEAGLView*)_eaglView;
+    CCEAGLView* glView = (CCEAGLView*)eaglView;
+
+    if (!setupGfxSurface(eaglView))
+        return false;
+
+    _eaglView = eaglView;
 
     _screenSize.width = _designResolutionSize.width = [glView getWidth];
     _screenSize.height = _designResolutionSize.height = [glView getHeight];
     //    _scaleX = _scaleY = [glView contentScaleFactor];
 
+    return true;
+}
+
+bool GLViewImpl::setupGfxSurface(void* eaglView)
+{
+    auto glView = (CCEAGLView*)eaglView;
+    if (!glView)
+        return false;
+
+    // The renderer's DeviceGFX singleton asserts unless a gfx device already exists;
+    // create it here, before Director::setOpenGLView runs Renderer::init.
+    if (!cc::gfx::Device::getInstance())
+    {
+        const auto& cfgMT = Configuration::getInstance()->getValue("GFXMultithreaded");
+        cc::gfx::DeviceManager::DETACH_DEVICE_THREAD =
+            cfgMT.getType() != Value::Type::BOOLEAN || cfgMT.asBool();
+
+        cc::gfx::DeviceInfo info;
+        const auto device = cc::gfx::DeviceManager::create(info, cc::gfx::API::METAL);
+        if (!device)
+        {
+            CC_LOG_ERROR("iOS GLViewImpl: failed to create a gfx Metal device");
+            return false;
+        }
+        if (device->getGfxAPI() != cc::gfx::API::METAL)
+        {
+            CC_LOG_ERROR("iOS GLViewImpl: Metal device creation fell back to unsupported API %d",
+                static_cast<int>(device->getGfxAPI()));
+            // No renderer adapter or swapchain exists yet; destroy the rejected gfx device first.
+            device->destroy();
+            delete device;
+            return false;
+        }
+    }
+
+    const auto width  = (uint32_t)[glView getWidth];
+    const auto height = (uint32_t)[glView getHeight];
+    if (!width || !height)
+    {
+        CC_LOG_ERROR("iOS GLViewImpl: invalid surface size %ux%u", width, height);
+        return false;
+    }
+
+    // gfx Metal on iOS adopts the CAMetalLayer of the given UIView when the renderer
+    // creates the swapchain; the default attachments stay owned by the gfx swapchain.
+    backend::DeviceGFX::setSwapchainInfo(eaglView, _glContextAttrs.vsync, width, height);
+    CC_LOG_INFO("iOS Metal surface: view %p, framebuffer %ux%u, VSync %s", eaglView, width, height,
+        _glContextAttrs.vsync ? "on" : "off");
     return true;
 }
 
@@ -154,6 +215,9 @@ bool GLViewImpl::initWithRect(std::string_view viewName, const Rect& rect, float
 #if !defined(CC_TARGET_OS_TVOS)
     [eaglView setMultipleTouchEnabled:YES];
 #endif
+
+    if (!setupGfxSurface(eaglView))
+        return false;
 
     _screenSize.width = _designResolutionSize.width = [eaglView getWidth];
     _screenSize.height = _designResolutionSize.height = [eaglView getHeight];
@@ -207,6 +271,10 @@ void GLViewImpl::end()
 {
     [CCDirectorCaller destroy];
 
+    // Release the gfx swapchains while the device queue is alive and before the native
+    // view goes away; the gfx device itself is destroyed by Director teardown.
+    backend::DeviceGFX::shutdownSurface();
+
     // destroy EAGLView
     CCEAGLView* eaglView = (CCEAGLView*)_eaglView;
 
@@ -217,8 +285,21 @@ void GLViewImpl::end()
 
 void GLViewImpl::swapBuffers()
 {
-    CCEAGLView* eaglView = (CCEAGLView*)_eaglView;
-    [eaglView swapBuffers];
+    // gfx presents through its own swapchain; the Director per-frame call stays a no-op.
+}
+
+void GLViewImpl::updateLayoutSize(float width, float height)
+{
+    if (_screenSize.width == width && _screenSize.height == height)
+        return;
+
+    setFrameSize(width, height);
+    updateDesignResolutionSize();
+
+    auto director = Director::getInstance();
+    director->setViewport();
+    // The gfx CommandBuffer listens for this event and resizes its swapchain at beginFrame.
+    director->getEventDispatcher()->dispatchCustomEvent("glview_window_resized", nullptr);
 }
 
 void GLViewImpl::setIMEKeyboardState(bool open)

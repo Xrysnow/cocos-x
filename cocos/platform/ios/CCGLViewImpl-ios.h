@@ -73,6 +73,11 @@ public:
 
     virtual Rect getSafeAreaRect() const override;
 
+    /** Applies a CCEAGLView layout change (size in real pixels) to the frame size, design
+     *  resolution and the gfx renderer, which resizes its swapchain at the next beginFrame.
+     */
+    void updateLayoutSize(float width, float height);
+
 protected:
     GLViewImpl();
     virtual ~GLViewImpl();
@@ -80,6 +85,12 @@ protected:
     bool initWithEAGLView(void* eaGLView);
     bool initWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor);
     bool initWithFullScreen(std::string_view viewName);
+
+    /** Creates the gfx Metal device (if not yet created) and publishes the surface info
+     *  used by DeviceGFX when the renderer creates its swapchain. Must run before
+     *  Director::setOpenGLView, whose Renderer::init constructs the DeviceGFX singleton.
+     */
+    bool setupGfxSurface(void* eaglView);
 
     // the objective-c CCEAGLView instance
     void* _eaglView;
