@@ -162,6 +162,7 @@ void UIPackage::removeAllPackages()
     _packageInstById.clear();
     _packageInstByName.clear();
     _packageList.clear();
+    CC_SAFE_RELEASE_NULL(_emptyTexture);
 }
 
 GObject* UIPackage::createObject(const string& pkgName, const string& resName)
