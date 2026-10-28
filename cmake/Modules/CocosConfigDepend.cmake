@@ -84,8 +84,10 @@ macro(cocos2dx_depend)
                  ${AV_FOUNDATION_LIBRARY}
                  ${WEBKIT_LIBRARY}
                  ${COCOS_APPLE_LIBS}
-                 "/usr/lib/libz.dylib"
-                 "/usr/lib/libiconv.dylib"
+                 # Bare names resolve against the iPhoneOS SDK's .tbd stubs;
+                 # absolute /usr/lib paths point at the macOS host.
+                 "z"
+                 "iconv"
                  )
         endif()
     endif()

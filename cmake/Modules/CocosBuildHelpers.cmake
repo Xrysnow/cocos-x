@@ -278,8 +278,18 @@ endmacro()
 # custom Xcode property for iOS target
 macro(cocos_config_target_xcode_property cocos_target)
     if(IOS)
-        set_xcode_property(${cocos_target} ENABLE_BITCODE "NO")
-        set_xcode_property(${cocos_target} ONLY_ACTIVE_ARCH "YES")
+        # Aliased link targets (e.g. OpenAL's alsoft::*) cannot carry target
+        # properties; apply the attributes to the aliased real target instead.
+        # A macro argument is text-substituted, so keep the resolved name in a
+        # separate variable.
+        get_target_property(cc_aliased_target ${cocos_target} ALIASED_TARGET)
+        if(cc_aliased_target)
+            set(cc_xcode_target ${cc_aliased_target})
+        else()
+            set(cc_xcode_target ${cocos_target})
+        endif()
+        set_xcode_property(${cc_xcode_target} ENABLE_BITCODE "NO")
+        set_xcode_property(${cc_xcode_target} ONLY_ACTIVE_ARCH "YES")
     endif()
 endmacro()
 
