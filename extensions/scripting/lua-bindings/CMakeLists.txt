@@ -9,6 +9,8 @@ set(lua_bindings_manual_headers
     manual/CCLuaBridge.h
     manual/extension/axlua_extension_manual.h
     manual/LuaBasicConversions.h
+    manual/lua_conversion/lua_conversion.hpp
+    manual/lua_conversion/lua_conversion_tolua.hpp
     manual/platform/ios/CCLuaObjcBridge.h
     manual/network/axlua_network_manual.h
     manual/network/lua_xml_http_request.h
