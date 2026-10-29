@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "platform/CCPlatformMacros.h"
 #include "tolua++.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include <array>
@@ -26,6 +27,15 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+// Follow cocos' debug policy unless checks are explicitly overridden.
+#ifndef CC_LUA_BINDING_CHECKS
+#if CC_DEBUG > 0
+#define CC_LUA_BINDING_CHECKS 1
+#else
+#define CC_LUA_BINDING_CHECKS 0
+#endif
+#endif
 
 extern std::unordered_map<uintptr_t, const char*> g_luaType;
 extern std::unordered_map<std::string, const char*> g_typeCast;
@@ -74,7 +84,7 @@ end
 )__";
 
     template<typename T>
-    std::string getClassNameByType()
+    const char* _getClassNameByType()
     {
 		using key_type = decltype(g_luaType)::key_type;
 		using type = std::conditional_t<std::is_integral_v<key_type>, key_type, const char*>;
@@ -83,6 +93,12 @@ end
         if (it != g_luaType.end())
             return it->second;
         return "";
+    }
+
+    template<typename T>
+    std::string getClassNameByType()
+    {
+        return _getClassNameByType<T>();
     }
 
     template<typename T>
@@ -1318,125 +1334,184 @@ end
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	template<size_t Index, typename Callable, typename Targ = void, typename... Targs>
-	struct _invoke_helper {
-		template<typename... Fargs>
-		static bool F(lua_State* L, int argTop, int& argCur, Callable callable, Fargs&&... args) {
-			++argCur;
-			using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
-			T arg{};
-			if (!luaval_to_native(L, argTop + 1 - Index, &arg))
-				return false;
-			if constexpr (std::is_member_function_pointer_v<Callable> && sizeof...(Fargs) == 0) {
-				if (!arg)
-					return false;
-			}
-			static_assert(Index > 0);
-			return _invoke_helper<Index - 1, Callable, Targs...>::template F<Fargs..., Targ>(L, argTop, argCur, callable, std::forward<Fargs>(args)..., std::forward<Targ>(arg));
+	// Binding reads are separate from to_native's public checked conversion
+	// contract. Overload resolution always requests Checked=true.
+	template<typename T, class Enable = void>
+	struct binding_read {
+		template<bool Checked>
+		static bool F(lua_State* L, int lo, T* outValue) {
+			if constexpr (Checked)
+				return to_native<T>::F(L, lo, outValue);
+			else if constexpr (std::is_same_v<T, bool>) {
+				*outValue = lua_toboolean(L, lo) != 0;
+				return true;
+			} else if constexpr (std::is_floating_point_v<T>) {
+				*outValue = static_cast<T>(lua_tonumber(L, lo));
+				return true;
+			} else if constexpr (std::is_integral_v<T>) {
+				if (lua_type(L, lo) == LUA_TCDATA)
+					return to_native<T>::F(L, lo, outValue);
+				const auto value = lua_tonumber(L, lo);
+				// The upper bound is exclusive: max() is rounded upwards for
+				// int64/uint64 in a double and must never permit an overflowing cast.
+				const auto upper = std::ldexp(lua_Number(1), std::numeric_limits<T>::digits);
+				const auto lower = std::is_signed_v<T> ? -upper : lua_Number(0);
+				if (value >= lower && value < upper) {
+					*outValue = static_cast<T>(value);
+					return true;
+				}
+				constexpr uint64_t mask = UINT64_MAX >> ((8 - sizeof(T)) * 8);
+				const auto bits = _integer_bits_from_number(value) & mask;
+				if constexpr (std::is_signed_v<T>)
+					*outValue = static_cast<T>(bits > (mask >> 1)
+						? -static_cast<int64_t>(mask ^ bits) - 1 : static_cast<int64_t>(bits));
+				else
+					*outValue = static_cast<T>(bits);
+				return true;
+			} else if constexpr (std::is_enum_v<T>) {
+				std::underlying_type_t<T> value;
+				const bool ok = binding_read<decltype(value)>::template F<false>(L, lo, &value);
+				if (ok) *outValue = static_cast<T>(value);
+				return ok;
+			} else if constexpr (std::is_same_v<T, const char*>) {
+				*outValue = lua_tolstring(L, lo, nullptr);
+				return true;
+			} else if constexpr (std::is_same_v<T, std::string>
+#ifdef __cpp_lib_string_view
+				|| std::is_same_v<T, std::string_view>
+#endif
+				) {
+				size_t size;
+				const auto* value = lua_tolstring(L, lo, &size);
+				*outValue = T(value, size);
+				return true;
+			} else
+				return to_native<T>::F(L, lo, outValue);
 		}
 	};
 
-	inline void _invoke_in_frame(lua_State* L, int nargs, lua_CFunction entry, void* context) {
-		// retain args in the outer frame until invoke completes to avoid GC issues
-		const int top = lua_gettop(L);
-		const int prefix = top - nargs;
-		luaL_checkstack(L, prefix + 2, "native invocation stack overflow");
-		lua_pushlightuserdata(L, context); // ...prefix, ...args, context(call)
-		lua_pushcclosure(L, entry, 1); // ...prefix, ...args, closure
-		// reproduce the stack:
-		// ...prefix, ...args, closure, ...prefix
-		for (int i = 1; i <= prefix; ++i)
-			lua_pushvalue(L, i);
-		// inner may clear its stack
-		lua_call(L, prefix, LUA_MULTRET); // ...prefix, ...args, ...prefix?, ...result
-		// ...prefix?, ...result
-		for (int i = 0; i < top; ++i)
-			lua_remove(L, 1);
-	}
-
-	template<typename F>
-	int _invoke_frame_entry(lua_State* L) {
-		auto* call = static_cast<F*>(lua_touserdata(L, lua_upvalueindex(1)));
-		if (!call)
-			return luaL_error(L, "expired native invocation");
-		// debug code can retain the closure and may cause UB, so make it expire
-		lua_pushnil(L);
-		lua_replace(L, lua_upvalueindex(1));
-		return (*call)(L);
-	}
-
-	template<typename Callable>
-	struct _invoke_helper<0, Callable> {
+	template<size_t Index, bool Checked, bool RequireSelf, typename Callable, typename Targ = void, typename... Targs>
+	struct _invoke_helper {
 		template<typename... Fargs>
-		static bool F(lua_State* L, int argTop, int& argCur, Callable callable, Fargs&&... args) {
-			auto invoke = [&](lua_State* state) {
-				if constexpr (std::is_same_v<std::invoke_result_t<Callable, Fargs...>, void>)
-					std::invoke(callable, std::forward<Fargs>(args)...);
-				else
-					native_to_luaval(state, std::invoke(callable, std::forward<Fargs>(args)...));
-				return lua_gettop(state);
-			};
-			_invoke_in_frame(L, static_cast<int>(sizeof...(Fargs)), _invoke_frame_entry<decltype(invoke)>, &invoke);
+		static bool F(lua_State* L, int argTop, int& argCur, int& results, Callable& callable, Fargs&&... args) {
+			++argCur;
+			using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
+			T arg{};
+			if (!binding_read<T>::template F<Checked>(L, argTop + 1 - Index, &arg))
+				return false;
+			if constexpr (Checked && (RequireSelf || std::is_member_function_pointer_v<Callable>) && sizeof...(Fargs) == 0) {
+				if constexpr (std::is_pointer_v<T>) {
+					if (!arg) return false;
+				}
+			}
+			static_assert(Index > 0);
+			return _invoke_helper<Index - 1, Checked, RequireSelf, Callable, Targs...>::template F<Fargs..., Targ>(L, argTop, argCur, results, callable, std::forward<Fargs>(args)..., std::forward<Targ>(arg));
+		}
+	};
+
+	template<bool Checked, bool RequireSelf, typename Callable>
+	struct _invoke_helper<0, Checked, RequireSelf, Callable> {
+		template<typename... Fargs>
+		static bool F(lua_State* L, int argTop, int& argCur, int& results, Callable& callable, Fargs&&... args) {
+			const int top = lua_gettop(L);
+			if constexpr (std::is_same_v<std::invoke_result_t<Callable&, Fargs...>, void>) {
+				std::invoke(callable, std::forward<Fargs>(args)...);
+#if CC_LUA_BINDING_CHECKS
+				if (lua_gettop(L) != top)
+					luaL_error(L, "native invocation changed Lua stack (expected %d, got %d)", top, lua_gettop(L));
+#endif
+				results = 0;
+			} else {
+				decltype(auto) value = std::invoke(callable, std::forward<Fargs>(args)...);
+#if CC_LUA_BINDING_CHECKS
+				if (lua_gettop(L) != top)
+					luaL_error(L, "native invocation changed Lua stack (expected %d, got %d)", top, lua_gettop(L));
+#endif
+				native_to_luaval(L, value);
+				results = lua_gettop(L) - top;
+#if CC_LUA_BINDING_CHECKS
+				if (results < 0)
+					luaL_error(L, "native result conversion removed Lua inputs");
+#endif
+			}
 			return true;
 		}
 	};
 
-	template<typename T>
-	struct invoke {};
+	template<typename... Targs>
+	struct _invoke_arguments {
+		template<bool Checked, bool KeepInputs, bool Overload, bool RequireSelf, typename Callable>
+		static bool F(lua_State* L, Callable& callable, int& argCur, int firstArg, int* outResults, int inputTop) {
+			constexpr int nargs = sizeof...(Targs);
+			const int top = lua_gettop(L);
+			if (inputTop < 0) inputTop = top;
+			if (inputTop < nargs) return false;
+			argCur = RequireSelf ? -1 : firstArg;
+			int argTop = inputTop;
+			if constexpr (Overload) {
+				// Isolate slot-replacing converters from subsequent candidates.
+				luaL_checkstack(L, nargs, "overload argument stack overflow");
+				for (int i = inputTop - nargs + 1; i <= inputTop; ++i) lua_pushvalue(L, i);
+				argTop = lua_gettop(L);
+			}
+			int results = 0;
+			const bool ok = _invoke_helper<nargs, Checked, RequireSelf, Callable, Targs...>::F(L, argTop, argCur, results, callable);
+			if (!ok) {
+				lua_settop(L, top);
+				return false;
+			}
+			if (outResults) *outResults = results;
+			if constexpr (!KeepInputs) {
+				// Argument destructors have run before releasing input roots.
+				const int prefix = top - nargs;
+				const int firstResult = lua_gettop(L) - results + 1;
+				for (int i = 0; i < results; ++i) {
+					lua_pushvalue(L, firstResult + i);
+					lua_replace(L, prefix + i + 1);
+				}
+				lua_settop(L, prefix + results);
+			}
+			return true;
+		}
+	};
+
+	template<typename T> struct invoke {};
 
 	template<typename R, typename... Targs>
 	struct invoke<std::function<R(Targs...)>> {
 		using callable_t = std::function<R(Targs...)>;
-		static bool F(lua_State* L, callable_t callable, int& argCur)
-		{
-			constexpr size_t narg = sizeof...(Targs);
-			const auto top = lua_gettop(L);
-			if (top < narg)
-				return false;
-			argCur = 0;
-			return _invoke_helper<narg, callable_t, Targs...>::F(L, top, argCur, callable);
+		template<bool Checked = bool(CC_LUA_BINDING_CHECKS), bool KeepInputs = false, bool Overload = false, bool RequireSelf = false, typename Callable>
+		static bool F(lua_State* L, Callable&& callable, int& argCur, int* outResults = nullptr, int inputTop = -1) {
+			if constexpr (std::is_same_v<std::decay_t<Callable>, callable_t>) {
+				// A stored function may destroy its owner from inside a callback.
+				// Keep its historical value semantics and an owning call-local copy.
+				callable_t owned(std::forward<Callable>(callable));
+				return _invoke_arguments<Targs...>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, owned, argCur, 0, outResults, inputTop);
+			} else
+				return _invoke_arguments<Targs...>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, callable, argCur, 0, outResults, inputTop);
 		}
 	};
 
 	template<typename R, typename... Targs>
-	struct invoke<R(*)(Targs...)> {
-		using callable_t = std::function<R(Targs...)>;
-		static bool F(lua_State* L, callable_t callable, int& argCur)
-		{
-			constexpr size_t narg = sizeof...(Targs);
-			const auto top = lua_gettop(L);
-			if (top < narg)
-				return false;
-			argCur = 0;
-			return _invoke_helper<narg, callable_t, Targs...>::F(L, top, argCur, callable);
-		}
+	struct invoke<R(*)(Targs...)> : invoke<std::function<R(Targs...)>> {
+		using callable_t = R(*)(Targs...);
 	};
 
 	template<typename C, typename R, typename... Targs>
 	struct invoke<R(C::*)(Targs...)> {
 		using callable_t = R(C::*)(Targs...);
-		static bool F(lua_State* L, callable_t callable, int& argCur)
-		{
-			constexpr size_t narg = sizeof...(Targs);
-			const auto top = lua_gettop(L);
-			if (top < narg + 1)
-				return false;
-			argCur = -1;
-			return _invoke_helper<narg + 1, callable_t, C*, Targs...>::F(L, top, argCur, callable);
+		template<bool Checked = bool(CC_LUA_BINDING_CHECKS), bool KeepInputs = false, bool Overload = false, bool RequireSelf = false, typename Callable>
+		static bool F(lua_State* L, Callable&& callable, int& argCur, int* outResults = nullptr, int inputTop = -1) {
+			return _invoke_arguments<C*, Targs...>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, callable, argCur, -1, outResults, inputTop);
 		}
 	};
 
 	template<typename C, typename R, typename... Targs>
 	struct invoke<R(C::*)(Targs...) const> {
 		using callable_t = R(C::*)(Targs...) const;
-		static bool F(lua_State* L, callable_t callable, int& argCur)
-		{
-			constexpr size_t narg = sizeof...(Targs);
-			const auto top = lua_gettop(L);
-			if (top < narg + 1)
-				return false;
-			argCur = -1;
-			return _invoke_helper<narg + 1, callable_t, const C*, Targs...>::F(L, top, argCur, callable);
+		template<bool Checked = bool(CC_LUA_BINDING_CHECKS), bool KeepInputs = false, bool Overload = false, bool RequireSelf = false, typename Callable>
+		static bool F(lua_State* L, Callable&& callable, int& argCur, int* outResults = nullptr, int inputTop = -1) {
+			return _invoke_arguments<const C*, Targs...>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, callable, argCur, -1, outResults, inputTop);
 		}
 	};
 
@@ -1449,13 +1524,46 @@ end
 		typedef std::function<ReturnType(Args...)> function;
 	};
 
-	template<typename T>
-	bool invoke_native(lua_State* L, int& argCur, T callable)
-	{
-		if constexpr (std::is_class_v<T>)
-			return invoke<typename function_traits<T>::function>::F(L, callable, argCur);
+	template <typename ClassType, typename ReturnType, typename... Args>
+	struct function_traits<ReturnType(ClassType::*)(Args...)>
+		: function_traits<ReturnType(ClassType::*)(Args...) const> {};
+
+	template<bool Checked, bool KeepInputs, bool Overload, bool RequireSelf = false, typename T>
+	bool _invoke_native(lua_State* L, int& argCur, T&& callable, int* outResults = nullptr, int inputTop = -1) {
+		using type = std::decay_t<T>;
+		if constexpr (std::is_class_v<type>)
+			return invoke<typename function_traits<type>::function>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, std::forward<T>(callable), argCur, outResults, inputTop);
 		else
-			return invoke<T>::F(L, callable, argCur);
+			return invoke<type>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, std::forward<T>(callable), argCur, outResults, inputTop);
+	}
+
+	// Direct calls consume their trailing arguments, preserve the prefix, and
+	// append exactly the converter's results. Native code sees all inputs until
+	// result conversion and argument destruction have completed.
+	template<typename T>
+	bool invoke_native(lua_State* L, int& argCur, T callable) {
+		return _invoke_native<bool(CC_LUA_BINDING_CHECKS), false, false>(L, argCur, std::move(callable));
+	}
+
+	// Expand a dynamic receiver once across same-arity overload attempts. The
+	// extra root retains the original wrapper for void setters; ordinary userdata
+	// never needs a copy. Negative values mean no wrapper or invalid wrapper.
+	inline bool _prepare_binding_receiver(lua_State* L, int& original) {
+		if (original != 0) return original != -2;
+		if (!lua_istable(L, 1)) { original = -1; return true; }
+		lua_pushvalue(L, 1);
+		original = lua_gettop(L);
+		if (push_table_instance(L, 1)) return true;
+		lua_pop(L, 1);
+		original = -2;
+		return false;
+	}
+
+	// Bindings return topmost results; retaining inputs avoids shifting stack
+	// slots and lets void setters return the original Lua self directly.
+	template<bool Overload = false, bool RequireSelf = false, typename T>
+	bool invoke_binding(lua_State* L, int& argCur, T callable, int& results, int inputTop = -1) {
+		return _invoke_native<Overload || bool(CC_LUA_BINDING_CHECKS), true, Overload, RequireSelf>(L, argCur, std::move(callable), &results, inputTop);
 	}
 
 	template<typename R, typename... Targs>
@@ -1497,10 +1605,13 @@ end
 				return luaL_error(L, "expired std::function object");
 			if (!*p->value)
 				return 0;
+			if (lua_gettop(L) < 1 + static_cast<int>(sizeof...(Targs)))
+				return luaL_error(L, "not enough arguments for std::function");
 			int cur = 0;
+			const int prefix = lua_gettop(L) - static_cast<int>(sizeof...(Targs));
 			if (!invoke_native(L, cur, *p->value))
 				return luaL_error(L, "invalid parameter %d", cur);
-			return std::is_same_v<R, void> ? 0 : 1;
+			return lua_gettop(L) - prefix;
 		}
 	public:
 		static void F(lua_State* L, const type& inValue) {

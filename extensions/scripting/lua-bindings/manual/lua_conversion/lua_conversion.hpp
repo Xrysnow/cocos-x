@@ -29,6 +29,7 @@ namespace lua
 
 	template<typename T>
 	struct to_native<T*, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, T>>> {
+		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
 			if (!L || !outValue)
 				return false;
@@ -42,10 +43,10 @@ namespace lua
 				*outValue = nullptr;
 				return true;
 			}
-			std::string className = getClassNameByType<T>();
-			if (className.empty() || !isusertype(L, lo, className.c_str()))
+			const auto* className = _getClassNameByType<T>();
+			if (!*className || !isusertype(L, lo, className))
 				return false;
-			const auto p = static_cast<T*>(_tousertype(L, lo));
+			const auto p = static_cast<T*>(*static_cast<void**>(lua_touserdata(L, lo)));
 			if (!p)
 				return false;
 			*outValue = p;
@@ -55,6 +56,7 @@ namespace lua
 
 	template<typename T>
 	struct to_native<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T>>> {
+		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
 			if (!L || !outValue)
 				return false;
@@ -68,14 +70,36 @@ namespace lua
 				*outValue = nullptr;
 				return true;
 			}
-			const auto className = getClassNameByType<T>();
-			if (className.empty() || !isusertype(L, lo, className.c_str()))
+			const auto* className = _getClassNameByType<T>();
+			if (!*className || !isusertype(L, lo, className))
 				return false;
-			auto p = (T*)_tousertype(L, lo); //note: return false when userdata is null
+			auto p = static_cast<T*>(*static_cast<void**>(lua_touserdata(L, lo)));
 			if (!p)
 				return false;
 			*outValue = p;
 			return true;
+		}
+	};
+
+	// Keep wrapper tables in their original slots so setters return the Lua
+	// wrapper itself. An instance produced by __index stays rooted on the stack
+	// through native execution, return conversion and argument destruction.
+	template<typename T>
+	struct binding_read<T*, std::void_t<typename to_native<T*>::binding_pointer>> {
+		template<bool Checked>
+		static bool F(lua_State* L, int lo, T** outValue) {
+			if (lua_istable(L, lo)) {
+				lua_pushliteral(L, ".c_instance");
+				lua_gettable(L, lo);
+				lo = lua_gettop(L);
+			}
+			if constexpr (Checked)
+				return to_native<T*>::F(L, lo, outValue);
+			else {
+				if (lua_isnil(L, lo)) *outValue = nullptr;
+				else *outValue = static_cast<T*>(*static_cast<void**>(lua_touserdata(L, lo)));
+				return true;
+			}
 		}
 	};
 
@@ -685,9 +709,12 @@ namespace lua
 #define LUA_INVOKE_HEADER(CName_, FName_)\
 	constexpr auto LUA_OBJ_TYPE = CName_;\
 	constexpr auto LUA_FNAME = FName_;\
-	if (lua_isnil(lua_S, 1))\
+	if (CC_LUA_BINDING_CHECKS && lua_isnil(lua_S, 1))\
 		return luaL_error(lua_S, "invalid class object in '%s'", LUA_FNAME);\
-	const int argc = lua_gettop(lua_S) - 1;\
+	const int binding_arg_top = lua_gettop(lua_S);\
+	const int argc = binding_arg_top - 1;\
+	int binding_self = 0;\
+	constexpr bool binding_member_self = true;\
 	int arg_cur = -1;\
 	bool ok = false;
 #endif // !LUA_INVOKE_HEADER
@@ -695,7 +722,10 @@ namespace lua
 #ifndef LUA_SINVOKE_HEADER
 #define LUA_SINVOKE_HEADER(CName_, FName_)\
 	constexpr auto LUA_FNAME = FName_;\
-	const int argc = lua_gettop(lua_S) - 1;\
+	const int binding_arg_top = lua_gettop(lua_S);\
+	const int argc = binding_arg_top - 1;\
+	int binding_self = -1;\
+	constexpr bool binding_member_self = false;\
 	int arg_cur = -1;\
 	bool ok = false;
 #endif // !LUA_SINVOKE_HEADER
@@ -703,7 +733,10 @@ namespace lua
 #ifndef LUA_GINVOKE_HEADER
 #define LUA_GINVOKE_HEADER(CName_, FName_)\
 	constexpr auto LUA_FNAME = FName_;\
-	const int argc = lua_gettop(lua_S);\
+	const int binding_arg_top = lua_gettop(lua_S);\
+	const int argc = binding_arg_top;\
+	int binding_self = -1;\
+	constexpr bool binding_member_self = false;\
 	int arg_cur = -1;\
 	bool ok = false;
 #endif // !LUA_GINVOKE_HEADER
@@ -711,14 +744,11 @@ namespace lua
 #ifndef LUA_TRY_INVOKE
 #define LUA_TRY_INVOKE(ARGC_, Fn_)\
 	if (argc == (ARGC_) && !ok) {\
-		lua_pushvalue(lua_S, 1);\
-		lua_insert(lua_S, 1);\
-		ok = lua::invoke_native(lua_S, arg_cur, (Fn_));\
+		int native_results = 0;\
+		ok = lua::invoke_binding<false, binding_member_self>(lua_S, arg_cur, (Fn_), native_results);\
 		if (ok) {\
 			lua_settop(lua_S, 1);\
 			return 1;\
-		} else {\
-			lua_remove(lua_S, 1);\
 		}\
 	}
 #endif // !LUA_TRY_INVOKE
@@ -726,21 +756,56 @@ namespace lua
 #ifndef LUA_TRY_INVOKE_R
 #define LUA_TRY_INVOKE_R(ARGC_, Fn_)\
 	if (argc == (ARGC_) && !ok) {\
-		ok = lua::invoke_native(lua_S, arg_cur, (Fn_));\
-		if (ok) return 1;\
+		int native_results = 0;\
+		ok = lua::invoke_binding<false, binding_member_self>(lua_S, arg_cur, (Fn_), native_results);\
+		if (ok) return native_results;\
 	}
 #endif // !LUA_TRY_INVOKE_R
 
 #ifndef LUA_TRY_CTOR
 #define LUA_TRY_CTOR(ARGC_, Fn_)\
 	if (argc == (ARGC_) && !ok) {\
-		ok = lua::invoke_native(lua_S, arg_cur, (Fn_));\
+		int native_results = 0;\
+		ok = lua::invoke_binding<false, binding_member_self>(lua_S, arg_cur, (Fn_), native_results);\
 		if (ok) {\
 			tolua_register_gc(lua_S, lua_gettop(lua_S));\
-			return 1;\
+			return native_results;\
 		}\
 	}
 #endif // !LUA_TRY_CTOR
+
+#ifndef LUA_TRY_INVOKE_OVERLOAD
+#define LUA_TRY_INVOKE_OVERLOAD(ARGC_, Fn_)\
+	if (argc == (ARGC_) && !ok) {\
+		int native_results = 0;\
+		if (!lua::_prepare_binding_receiver(lua_S, binding_self)) { arg_cur = 0; }\
+		else ok = lua::invoke_binding<true, binding_member_self>(lua_S, arg_cur, (Fn_), native_results, binding_arg_top);\
+		if (ok) {\
+			if (binding_self > 0) { lua_pushvalue(lua_S, binding_self); lua_replace(lua_S, 1); }\
+			lua_settop(lua_S, 1); return 1;\
+		}\
+	}
+#endif // !LUA_TRY_INVOKE_OVERLOAD
+
+#ifndef LUA_TRY_INVOKE_R_OVERLOAD
+#define LUA_TRY_INVOKE_R_OVERLOAD(ARGC_, Fn_)\
+	if (argc == (ARGC_) && !ok) {\
+		int native_results = 0;\
+		if (!lua::_prepare_binding_receiver(lua_S, binding_self)) { arg_cur = 0; }\
+		else ok = lua::invoke_binding<true, binding_member_self>(lua_S, arg_cur, (Fn_), native_results, binding_arg_top);\
+		if (ok) return native_results;\
+	}
+#endif // !LUA_TRY_INVOKE_R_OVERLOAD
+
+#ifndef LUA_TRY_CTOR_OVERLOAD
+#define LUA_TRY_CTOR_OVERLOAD(ARGC_, Fn_)\
+	if (argc == (ARGC_) && !ok) {\
+		int native_results = 0;\
+		if (!lua::_prepare_binding_receiver(lua_S, binding_self)) { arg_cur = 0; }\
+		else ok = lua::invoke_binding<true, binding_member_self>(lua_S, arg_cur, (Fn_), native_results, binding_arg_top);\
+		if (ok) { tolua_register_gc(lua_S, lua_gettop(lua_S)); return native_results; }\
+	}
+#endif // !LUA_TRY_CTOR_OVERLOAD
 
 #ifndef LUA_INVOKE_FOOTER
 #define LUA_INVOKE_FOOTER(Expected_)\
