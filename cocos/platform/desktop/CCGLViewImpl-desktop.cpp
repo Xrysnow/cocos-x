@@ -462,7 +462,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
 
 #if CC_DEBUG && (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     // Opt-in cold-start coverage until Lua can configure GLContextAttrs.vsync.
-    if (const char* initialVSync = std::getenv("LSTGX_P2_INITIAL_VSYNC"))
+    if (const char* initialVSync = std::getenv("CC_P2_INITIAL_VSYNC"))
     {
         if (initialVSync[0] == '0' && initialVSync[1] == '\0')
             _glContextAttrs.vsync = false;
@@ -479,8 +479,8 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         const auto count = std::strtoull(value, &end, 10);
         return end && *end == '\0' ? count : 0;
     };
-    _p2ZeroSizeBegin = diagnosticCount("LSTGX_P2_ZERO_SIZE_BEGIN");
-    _p2ZeroSizeCount = diagnosticCount("LSTGX_P2_ZERO_SIZE_COUNT");
+    _p2ZeroSizeBegin = diagnosticCount("CC_P2_ZERO_SIZE_BEGIN");
+    _p2ZeroSizeCount = diagnosticCount("CC_P2_ZERO_SIZE_COUNT");
     if (_p2ZeroSizeCount && !_p2ZeroSizeBegin)
         _p2ZeroSizeBegin = 1;
 #endif
