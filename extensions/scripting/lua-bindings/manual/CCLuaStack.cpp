@@ -274,6 +274,54 @@ void LuaStack::clean()
     lua_settop(_state, 0);
 }
 
+int LuaStack::executeCallback(const std::function<int()>& callback)
+{
+    // Own the callable outside the protected region: a callback may unregister
+    // (and destroy) its C++ owner, and Lua errors may bypass C++ destructors.
+    const auto ownedCallback = callback;
+    struct Context
+    {
+        const std::function<int()>* callback;
+        int result;
+    } context{&ownedCallback, 0};
+    const int top = lua_gettop(_state);
+    const int callDepth = _callFromLua;
+    const int status = lua_cpcall(_state, [](lua_State* L) -> int {
+        auto* context = lua_type(L, 1) == LUA_TLIGHTUSERDATA
+                            ? static_cast<Context*>(lua_touserdata(L, 1)) : nullptr;
+        if (!context)
+            return luaL_error(L, "expired LuaStack callback invocation");
+        lua_settop(L, 0);
+        context->result = (*context->callback)();
+        return 0;
+    }, &context);
+    _callFromLua = callDepth;
+    if (status != 0)
+    {
+        // Error reporting can itself invoke a Lua log callback. Protect it too,
+        // and suppress recursive error reports from a failing error reporter.
+        static thread_local bool reporting = false;
+        if (!reporting)
+        {
+            const char* message = lua_type(_state, -1) == LUA_TSTRING
+                                      ? lua_tostring(_state, -1) : "non-string Lua callback error";
+            reporting = true;
+            lua_cpcall(_state, [](lua_State* L) -> int {
+                if (lua_type(L, 1) != LUA_TLIGHTUSERDATA || !lua_touserdata(L, 1))
+                    return luaL_error(L, "expired LuaStack callback error report");
+                const auto* message = static_cast<const char*>(lua_touserdata(L, 1));
+                CCLOG("[LUA ERROR] %s", message);
+                return 0;
+            }, const_cast<char*>(message));
+            reporting = false;
+        }
+    }
+    // Only our own error/result suffix is removed. The protected frame cannot
+    // delete or replace any of the caller's input slots.
+    lua_settop(_state, top);
+    return status == 0 ? context.result : 0;
+}
+
 void LuaStack::pushInt(int intValue)
 {
     lua_pushinteger(_state, intValue);
@@ -445,6 +493,7 @@ int LuaStack::executeFunction(int numArgs)
 
 int LuaStack::executeFunctionByHandler(int nHandler, int numArgs)
 {
+    const int base = lua_gettop(_state) - numArgs;
     int ret = 0;
     if (pushFunctionByHandler(nHandler)) /* L: ... arg1 arg2 ... func */
     {
@@ -454,7 +503,7 @@ int LuaStack::executeFunctionByHandler(int nHandler, int numArgs)
         }
         ret = executeFunction(numArgs);
     }
-    lua_settop(_state, 0);
+    lua_settop(_state, base);
     return ret;
 }
 
@@ -475,6 +524,7 @@ int LuaStack::reallocateScriptHandler(int nHandler)
     if (pushFunctionByHandler(nHandler))
     {
         nNewHandle = toluafix_ref_function(_state, lua_gettop(_state), 0);
+        lua_pop(_state, 1);
     }
     /*
         toluafix_get_function_by_refid(_state,nNewHandle);
@@ -492,7 +542,9 @@ int LuaStack::executeFunction(int handler,
                               int numResults,
                               const std::function<void(lua_State*, int)>& func)
 {
-    if (pushFunctionByHandler(handler)) /* L: ... arg1 arg2 ... func */
+    const int base = lua_gettop(_state) - numArgs;
+    const bool hasFunction = pushFunctionByHandler(handler); /* L: ... arg1 arg2 ... func */
+    if (hasFunction)
     {
         if (numArgs > 0)
         {
@@ -505,6 +557,7 @@ int LuaStack::executeFunction(int handler,
         {
             CCLOG("value at stack [%d] is not function", functionIndex);
             lua_pop(_state, numArgs + 1);  // remove function and arguments
+            lua_settop(_state, base);
             return 0;
         }
 
@@ -536,6 +589,7 @@ int LuaStack::executeFunction(int handler,
             {
                 lua_pop(_state, 2);  // remove __G__TRACKBACK__ and error message from stack
             }
+            lua_settop(_state, base);
             return 0;
         }
 
@@ -550,13 +604,12 @@ int LuaStack::executeFunction(int handler,
 
         } while (0);
 
-        if (traceCallback)
-        {
-            lua_pop(_state, 1);  // remove __G__TRACKBACK__ from stack      /* L: ... */
-        }
+        // func may consume or clear all callback results. Reclaim the whole
+        // owned suffix below instead of assuming its traceback is still on top.
     }
 
-    return 1;
+    lua_settop(_state, base);
+    return hasFunction ? 1 : 0;
 }
 
 int LuaStack::reload(const char* moduleFileName)

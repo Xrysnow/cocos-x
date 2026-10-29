@@ -197,11 +197,13 @@ int axlua_physics_PhysicsWorld_rayCast(lua_State* tolua_S)
         {
             arg0 = [handler, stack](cocos2d::PhysicsWorld& world, const cocos2d::PhysicsRayCastInfo& info,
                              void* data) -> bool {
-                
-                auto Ls    = stack->getLuaState();
-                tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
-                physics_raycastinfo_to_luaval(Ls, info);
-                return stack->executeFunctionByHandler(handler, 2);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                return callbackStack->executeCallback([=, &world, &info]() mutable -> int {
+                    auto Ls    = stack->getLuaState();
+                    tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
+                    physics_raycastinfo_to_luaval(Ls, info);
+                    return stack->executeFunctionByHandler(handler, 2);
+                });
             };
         } while (0);
 
@@ -262,11 +264,13 @@ int axlua_physics_PhysicsWorld_queryRect(lua_State* tolua_S)
         do
         {
             arg0 = [handler,stack](cocos2d::PhysicsWorld& world, cocos2d::PhysicsShape& shape, void* data) -> bool {
-               
-                auto Ls    = stack->getLuaState();
-                tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
-                toluafix_pushusertype_ccobject(Ls, shape._ID, &shape._luaID, (void*)(&shape), "cc.PhysicsShape");
-                return stack->executeFunctionByHandler(handler, 2);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                return callbackStack->executeCallback([=, &world, &shape]() mutable -> int {
+                     auto Ls    = stack->getLuaState();
+                     tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
+                     toluafix_pushusertype_ccobject(Ls, shape._ID, &shape._luaID, (void*)(&shape), "cc.PhysicsShape");
+                     return stack->executeFunctionByHandler(handler, 2);
+                });
             };
         } while (0);
 
@@ -327,10 +331,13 @@ int axlua_physics_PhysicsWorld_queryPoint(lua_State* tolua_S)
         do
         {
             arg0 = [handler,stack](cocos2d::PhysicsWorld& world, cocos2d::PhysicsShape& shape, void* data) -> bool {
-                auto Ls    = stack->getLuaState();
-                tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
-                toluafix_pushusertype_ccobject(Ls, shape._ID, &shape._luaID, (void*)(&shape), "cc.PhysicsShape");
-                return stack->executeFunctionByHandler(handler, 2);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                return callbackStack->executeCallback([=, &world, &shape]() mutable -> int {
+                    auto Ls    = stack->getLuaState();
+                    tolua_pushusertype(Ls, (void*)(&world), getLuaTypeName(&world, "cc.PhysicsWorld"));
+                    toluafix_pushusertype_ccobject(Ls, shape._ID, &shape._luaID, (void*)(&shape), "cc.PhysicsShape");
+                    return stack->executeFunctionByHandler(handler, 2);
+                });
             };
             assert(false);
         } while (0);
@@ -1364,12 +1371,15 @@ static int toaxlua_EventListenerPhysicsContact_registerScriptHandler(lua_State* 
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onContactBegin = [handler](PhysicsContact& contact) -> bool {
-                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-                stack->pushObject(&contact, "cc.PhysicsContact");
-                bool ret = stack->executeFunctionByHandler(handler, 1);
-                stack->clean();
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                return callbackStack->executeCallback([=, &contact]() mutable -> int {
+                    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                    stack->pushObject(&contact, "cc.PhysicsContact");
+                    bool ret = stack->executeFunctionByHandler(handler, 1);
+                    stack->clean();
 
-                return ret;
+                    return ret;
+                });
             };
         }
         break;
@@ -1378,13 +1388,16 @@ static int toaxlua_EventListenerPhysicsContact_registerScriptHandler(lua_State* 
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onContactPreSolve = [handler](PhysicsContact& contact, PhysicsContactPreSolve& solve) -> bool {
-                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-                stack->pushObject(&contact, "cc.PhysicsContact");
-                tolua_pushusertype(stack->getLuaState(), &solve, "cc.PhysicsContactPreSolve");
-                bool ret = stack->executeFunctionByHandler(handler, 2);
-                stack->clean();
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                return callbackStack->executeCallback([=, &contact, &solve]() mutable -> int {
+                    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                    stack->pushObject(&contact, "cc.PhysicsContact");
+                    tolua_pushusertype(stack->getLuaState(), &solve, "cc.PhysicsContactPreSolve");
+                    bool ret = stack->executeFunctionByHandler(handler, 2);
+                    stack->clean();
 
-                return ret;
+                    return ret;
+                });
             };
         }
         break;
@@ -1393,12 +1406,17 @@ static int toaxlua_EventListenerPhysicsContact_registerScriptHandler(lua_State* 
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onContactPostSolve = [handler](PhysicsContact& contact, const PhysicsContactPostSolve& solve) {
-                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-                stack->pushObject(&contact, "cc.PhysicsContact");
-                tolua_pushusertype(stack->getLuaState(), const_cast<PhysicsContactPostSolve*>(&solve),
-                                   "cc.PhysicsContactPostSolve");
-                stack->executeFunctionByHandler(handler, 2);
-                stack->clean();
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=, &contact, &solve]() mutable -> int {
+                    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                    stack->pushObject(&contact, "cc.PhysicsContact");
+                    tolua_pushusertype(stack->getLuaState(), const_cast<PhysicsContactPostSolve*>(&solve),
+                                       "cc.PhysicsContactPostSolve");
+                    stack->executeFunctionByHandler(handler, 2);
+                    stack->clean();
+
+                    return 0;
+                });
             };
         }
         break;
@@ -1407,10 +1425,15 @@ static int toaxlua_EventListenerPhysicsContact_registerScriptHandler(lua_State* 
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onContactSeparate = [handler](PhysicsContact& contact) {
-                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-                stack->pushObject(&contact, "cc.PhysicsContact");
-                stack->executeFunctionByHandler(handler, 1);
-                stack->clean();
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=, &contact]() mutable -> int {
+                    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                    stack->pushObject(&contact, "cc.PhysicsContact");
+                    stack->executeFunctionByHandler(handler, 1);
+                    stack->clean();
+
+                    return 0;
+                });
             };
         }
         break;

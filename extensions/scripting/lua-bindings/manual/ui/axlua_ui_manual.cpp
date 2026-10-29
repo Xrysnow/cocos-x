@@ -52,15 +52,17 @@ using namespace ui;
 
 static int handleUIEvent(int handler, cocos2d::Ref* sender, int eventType)
 {
-    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+    return LuaEngine::getInstance()->getLuaStack()->executeCallback([&]() -> int {
+        LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
 
-    stack->pushObject(sender, "cc.Ref");
-    stack->pushInt(eventType);
+        stack->pushObject(sender, "cc.Ref");
+        stack->pushInt(eventType);
 
-    stack->executeFunctionByHandler(handler, 2);
-    stack->clean();
+        stack->executeFunctionByHandler(handler, 2);
+        stack->clean();
 
-    return 0;
+        return 0;
+    });
 }
 
 static int axlua_Widget_addTouchEventListener(lua_State* L)
@@ -156,10 +158,15 @@ static int axlua_Widget_addClickEventListener(lua_State* L)
         LUA_FUNCTION handler = (toluafix_ref_function(L, 2, 0));
 
         self->addClickEventListener([=](cocos2d::Ref* sender) {
-            LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-            stack->pushObject(sender, "cc.Ref");
-            stack->executeFunctionByHandler(handler, 1);
-            stack->clean();
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                stack->pushObject(sender, "cc.Ref");
+                stack->executeFunctionByHandler(handler, 1);
+                stack->clean();
+
+                return 0;
+            });
         });
 
         ScriptHandlerMgr::getInstance()->addCustomHandler((void*)self, handler);
@@ -287,12 +294,17 @@ static int axlua_RadioButton_addEventListener(lua_State* L)
         LUA_FUNCTION handler = (toluafix_ref_function(L, 2, 0));
 
         self->addEventListener([=](RadioButton* radioButton, RadioButton::EventType eventType) {
-            LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-            stack->pushObject(radioButton, "ccui.RadioButton");
-            stack->pushInt((int)eventType);
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+                stack->pushObject(radioButton, "ccui.RadioButton");
+                stack->pushInt((int)eventType);
 
-            stack->executeFunctionByHandler(handler, 2);
-            stack->clean();
+                stack->executeFunctionByHandler(handler, 2);
+                stack->clean();
+
+                return 0;
+            });
         });
 
         ScriptHandlerMgr::getInstance()->addCustomHandler((void*)self, handler);
@@ -356,14 +368,19 @@ static int axlua_RadioButtonGroup_addEventListener(lua_State* L)
         LUA_FUNCTION handler = (toluafix_ref_function(L, 2, 0));
 
         self->addEventListener([=](RadioButton* radioButton, int index, RadioButtonGroup::EventType eventType) {
-            LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
 
-            stack->pushObject(radioButton, "ccui.RadioButton");
-            stack->pushInt(index);
-            stack->pushInt((int)eventType);
+                stack->pushObject(radioButton, "ccui.RadioButton");
+                stack->pushInt(index);
+                stack->pushInt((int)eventType);
 
-            stack->executeFunctionByHandler(handler, 3);
-            stack->clean();
+                stack->executeFunctionByHandler(handler, 3);
+                stack->clean();
+
+                return 0;
+            });
         });
 
         ScriptHandlerMgr::getInstance()->addCustomHandler((void*)self, handler);
@@ -1099,15 +1116,20 @@ static void cloneFocusHandler(const EventListenerFocus* src, EventListenerFocus*
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)dst, newscriptHandler,
                                                           ScriptHandlerMgr::HandlerType::EVENT_FOCUS);
         dst->onFocusChanged = [=](ui::Widget* widgetLostFocus, ui::Widget* widgetGetFocus) {
-            auto stack   = LuaEngine::getInstance()->getLuaStack();
-            lua_State* L = stack->getLuaState();
-            int id       = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
-            int* luaID   = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
-            id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
-            luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
-            stack->executeFunctionByHandler(handler, 2);
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                auto stack   = LuaEngine::getInstance()->getLuaStack();
+                lua_State* L = stack->getLuaState();
+                int id       = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
+                int* luaID   = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
+                toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
+                id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
+                luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
+                toluafix_pushusertype_ccobject(L, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
+                stack->executeFunctionByHandler(handler, 2);
+
+                return 0;
+            });
         };
     }
 }
@@ -1199,15 +1221,20 @@ static int toaxlua_EventListenerFocus_registerScriptHandler(lua_State* L)
                                                           ScriptHandlerMgr::HandlerType::EVENT_FOCUS);
 
         self->onFocusChanged = [=](ui::Widget* widgetLostFocus, ui::Widget* widgetGetFocus) {
-            auto stack = LuaEngine::getInstance()->getLuaStack();
-            auto Ls    = stack->getLuaState();
-            int id     = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
-            int* luaID = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
-            id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
-            luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
-            toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
-            stack->executeFunctionByHandler(handler, 2);
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                auto stack = LuaEngine::getInstance()->getLuaStack();
+                auto Ls    = stack->getLuaState();
+                int id     = (widgetLostFocus) ? (int)widgetLostFocus->_ID : -1;
+                int* luaID = (widgetLostFocus) ? &widgetLostFocus->_luaID : nullptr;
+                toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetLostFocus, "ccui.Widget");
+                id    = (widgetGetFocus) ? (int)widgetGetFocus->_ID : -1;
+                luaID = (widgetGetFocus) ? &widgetGetFocus->_luaID : nullptr;
+                toluafix_pushusertype_ccobject(Ls, id, luaID, (void*)widgetGetFocus, "ccui.Widget");
+                stack->executeFunctionByHandler(handler, 2);
+
+                return 0;
+            });
         };
         return 0;
     }

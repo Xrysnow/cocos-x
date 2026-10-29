@@ -66,12 +66,17 @@ static int axlua_video_VideoPlayer_addEventListener(lua_State* L)
         LUA_FUNCTION handler = (toluafix_ref_function(L, 2, 0));
 
         self->addEventListener([=](cocos2d::Ref* ref, cocos2d::ui::VideoPlayer::EventType eventType) {
-            LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
 
-            stack->pushObject(ref, "cc.Ref");
-            stack->pushInt((int)eventType);
+                stack->pushObject(ref, "cc.Ref");
+                stack->pushInt((int)eventType);
 
-            stack->executeFunctionByHandler(handler, 2);
+                stack->executeFunctionByHandler(handler, 2);
+
+                return 0;
+            });
         });
 
         return 0;

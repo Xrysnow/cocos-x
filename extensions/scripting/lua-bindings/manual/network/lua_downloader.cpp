@@ -226,21 +226,27 @@ static int lua_downloader_setOnFileTaskSuccess(lua_State* L)
     saveCallback(L, d, "setOnFileTaskSuccess");
 
     d->setOnFileTaskSuccess([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](const DownloadTask& task) {
-        int ret = getCallback(L, d, "setOnFileTaskSuccess");  // stack callbackfn
-        if (ret)
-        {
-            pushTaskTable(L, task);  // stack callbackfn, task
-            if (lua_pcall(L, 1, 0, 0) != 0)
+        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+        callbackStack->executeCallback([=, &task]() mutable -> int {
+            auto* L = callbackStack->getLuaState();
+            int ret = getCallback(L, d, "setOnFileTaskSuccess");  // stack callbackfn
+            if (ret)
+            {
+                pushTaskTable(L, task);  // stack callbackfn, task
+                if (lua_pcall(L, 1, 0, 0) != 0)
+                {
+                    lua_pop(L, 1);  // remove callback or nil
+                    luaL_error(L, "cc.Downloader.setOnFileTaskSuccess invoke callback error!");
+                    return 0;
+                }
+            }
+            else
             {
                 lua_pop(L, 1);  // remove callback or nil
-                luaL_error(L, "cc.Downloader.setOnFileTaskSuccess invoke callback error!");
-                return;
             }
-        }
-        else
-        {
-            lua_pop(L, 1);  // remove callback or nil
-        }
+
+            return 0;
+        });
     });
 
     return 0;
@@ -258,24 +264,30 @@ static int lua_downloader_setOnTaskProgress(lua_State* L)
     saveCallback(L, d, "setOnTaskProgress");
 
     d->setOnTaskProgress([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](const DownloadTask& task) {
-        int ret = getCallback(L, d, "setOnTaskProgress");  // stack callbackfn
-        if (ret)
-        {
-            pushTaskTable(L, task);  // stack callbackfn, task
-            lua_pushnumber(L, (lua_Number)task.progressInfo.bytesReceived);
-            lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesReceived);
-            lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesExpected);
-            if (lua_pcall(L, 4, 0, 0) != 0)
+        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+        callbackStack->executeCallback([=, &task]() mutable -> int {
+            auto* L = callbackStack->getLuaState();
+            int ret = getCallback(L, d, "setOnTaskProgress");  // stack callbackfn
+            if (ret)
+            {
+                pushTaskTable(L, task);  // stack callbackfn, task
+                lua_pushnumber(L, (lua_Number)task.progressInfo.bytesReceived);
+                lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesReceived);
+                lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesExpected);
+                if (lua_pcall(L, 4, 0, 0) != 0)
+                {
+                    lua_pop(L, 1);  // remove callback or nil
+                    luaL_error(L, "cc.Downloader.setOnTaskProgress invoke callback error!");
+                    return 0;
+                }
+            }
+            else
             {
                 lua_pop(L, 1);  // remove callback or nil
-                luaL_error(L, "cc.Downloader.setOnTaskProgress invoke callback error!");
-                return;
             }
-        }
-        else
-        {
-            lua_pop(L, 1);  // remove callback or nil
-        }
+
+            return 0;
+        });
     });
 
     return 0;
@@ -294,24 +306,30 @@ static int lua_downloader_setOnTaskError(lua_State* L)
 
     d->setOnTaskError([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](
                           const DownloadTask& task, int errorCode, int errorCodeInternal, std::string_view errorSt) {
-        int ret = getCallback(L, d, "setOnTaskError");  // stack callbackfn
-        if (ret)
-        {
-            pushTaskTable(L, task);  // stack callbackfn, task
-            lua_pushnumber(L, errorCode);
-            lua_pushnumber(L, errorCodeInternal);
-            lua_pushlstring(L, errorSt.data(), errorSt.length());
-            if (lua_pcall(L, 4, 0, 0) != 0)
+        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+        callbackStack->executeCallback([=, &task]() mutable -> int {
+            auto* L = callbackStack->getLuaState();
+            int ret = getCallback(L, d, "setOnTaskError");  // stack callbackfn
+            if (ret)
+            {
+                pushTaskTable(L, task);  // stack callbackfn, task
+                lua_pushnumber(L, errorCode);
+                lua_pushnumber(L, errorCodeInternal);
+                lua_pushlstring(L, errorSt.data(), errorSt.length());
+                if (lua_pcall(L, 4, 0, 0) != 0)
+                {
+                    lua_pop(L, 1);  // remove callback or nil
+                    luaL_error(L, "cc.Downloader.setOnTaskError invoke callback error!");
+                    return 0;
+                }
+            }
+            else
             {
                 lua_pop(L, 1);  // remove callback or nil
-                luaL_error(L, "cc.Downloader.setOnTaskError invoke callback error!");
-                return;
             }
-        }
-        else
-        {
-            lua_pop(L, 1);  // remove callback or nil
-        }
+
+            return 0;
+        });
     });
 
     return 0;

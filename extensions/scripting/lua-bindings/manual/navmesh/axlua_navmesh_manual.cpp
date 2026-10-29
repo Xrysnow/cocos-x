@@ -93,11 +93,16 @@ int axlua_navmesh_NavMeshAgent_move(lua_State* tolua_S)
             return 0;
         }
         cobj->move(arg0, [=](cocos2d::NavMeshAgent* agent, float totalTimeAfterMove) {
-            auto stack = LuaEngine::getInstance()->getLuaStack();
-            auto Ls    = stack->getLuaState();
-            object_to_luaval<cocos2d::NavMeshAgent>(Ls, "cc.NavMeshAgent", (cocos2d::NavMeshAgent*)agent);
-            tolua_pushnumber(Ls, (lua_Number)totalTimeAfterMove);
-            stack->executeFunctionByHandler(handler, 2);
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                auto stack = LuaEngine::getInstance()->getLuaStack();
+                auto Ls    = stack->getLuaState();
+                object_to_luaval<cocos2d::NavMeshAgent>(Ls, "cc.NavMeshAgent", (cocos2d::NavMeshAgent*)agent);
+                tolua_pushnumber(Ls, (lua_Number)totalTimeAfterMove);
+                stack->executeFunctionByHandler(handler, 2);
+
+                return 0;
+            });
         });
         ScriptHandlerMgr::getInstance()->addCustomHandler((void*)cobj, handler);
         lua_settop(tolua_S, 1);

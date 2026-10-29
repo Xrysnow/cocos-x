@@ -152,6 +152,14 @@ public:
     virtual void clean();
 
     /**
+     * Run a complete C++ -> Lua callback in its own protected C frame. Parameter
+     * preparation, execution, result conversion and clean() must all stay inside
+     * callback. Lua errors are reported and return zero; the caller's stack is
+     * preserved, including when a callback reenters this stack.
+     */
+    int executeCallback(const std::function<int()>& callback);
+
+    /**
      * Pushes a integer number with value intValue onto the stack.
      *
      * @param intValue a integer number.
@@ -276,6 +284,9 @@ public:
      * @param numResults the number of return value.
      * @param func callback function which is called if the numResults > 0.
      * @return 0 if it happen error or it hasn't return value, otherwise return 1.
+     * Parameter preparation and this call belong inside executeCallback();
+     * capture func by value in that outer callback so its owner is retained
+     * outside the protected frame even if Lua deletes the original owner.
      */
     virtual int executeFunction(int handler,
                                 int numArgs,

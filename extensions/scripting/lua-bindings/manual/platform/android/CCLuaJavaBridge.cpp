@@ -35,6 +35,34 @@ extern "C" {
     #include "scripting/lua-bindings/manual/tolua_fix.h"
 }
 
+namespace
+{
+template <class Callback>
+int protectedBridgeCallback(lua_State* L, const Callback& callback)
+{
+    struct Context
+    {
+        const Callback* callback;
+        int result;
+    } context{&callback, 0};
+    const int status = lua_cpcall(L, [](lua_State* L) -> int {
+        auto* context = lua_type(L, 1) == LUA_TLIGHTUSERDATA
+                            ? static_cast<Context*>(lua_touserdata(L, 1)) : nullptr;
+        if (!context)
+            return luaL_error(L, "expired LuaJavaBridge callback invocation");
+        lua_settop(L, 0);
+        context->result = (*context->callback)();
+        return 0;
+    }, &context);
+    if (status != 0)
+    {
+        lua_pop(L, 1);
+        return -status;
+    }
+    return context.result;
+}
+} // namespace
+
 LuaJavaBridge::CallInfo::~CallInfo()
 {
     if (m_returnType == TypeString && m_ret.stringValue)
@@ -503,27 +531,61 @@ int LuaJavaBridge::releaseLuaFunctionById(int functionId)
 
 int LuaJavaBridge::callLuaFunctionById(int functionId, const char* arg)
 {
-    lua_State* L = s_luaState;
-    int top      = lua_gettop(L);
-    /* L: */
-    lua_pushstring(L, LUAJ_REGISTRY_FUNCTION); /* L: key */
-    lua_rawget(L, LUA_REGISTRYINDEX);          /* L: f_id */
-    if (!lua_istable(L, -1))
-    {
-        lua_pop(L, 1);
-        return -1;
-    }
-
-    lua_pushnil(L);              /* L: f_id nil */
-    while (lua_next(L, -2) != 0) /* L: f_id f id */
-    {
-        int value = lua_tonumber(L, -1);
-        lua_pop(L, 1); /* L: f_id f */
-        if (value == functionId)
+    return protectedBridgeCallback(s_luaState, [&]() -> int {
+        lua_State* L = s_luaState;
+        int top      = lua_gettop(L);
+        /* L: */
+        lua_pushstring(L, LUAJ_REGISTRY_FUNCTION); /* L: key */
+        lua_rawget(L, LUA_REGISTRYINDEX);          /* L: f_id */
+        if (!lua_istable(L, -1))
         {
-            lua_pushstring(L, arg);         /* L: f_id f arg */
-            int ok = lua_pcall(L, 1, 1, 0); /* L: f_id ret|err */
-            int ret;
+            lua_pop(L, 1);
+            return -1;
+        }
+
+        lua_pushnil(L);              /* L: f_id nil */
+        while (lua_next(L, -2) != 0) /* L: f_id f id */
+        {
+            int value = lua_tonumber(L, -1);
+            lua_pop(L, 1); /* L: f_id f */
+            if (value == functionId)
+            {
+                lua_pushstring(L, arg);         /* L: f_id f arg */
+                int ok = lua_pcall(L, 1, 1, 0); /* L: f_id ret|err */
+                int ret;
+                if (ok == 0)
+                {
+                    ret = lua_tonumber(L, -1);
+                }
+                else
+                {
+                    ret = -ok;
+                }
+
+                lua_settop(L, top);
+                return ret;
+            }
+        } /* L: f_id */
+
+        lua_settop(L, top);
+        return -1;
+    });
+}
+
+// call lua global function
+int LuaJavaBridge::callLuaGlobalFunction(const char* functionName, const char* arg)
+{
+    return protectedBridgeCallback(s_luaState, [&]() -> int {
+        lua_State* L = s_luaState;
+
+        int ret = -1;
+        int top = lua_gettop(L);
+
+        lua_getglobal(L, functionName);
+        if (lua_isfunction(L, -1))
+        {
+            lua_pushstring(L, arg);
+            int ok = lua_pcall(L, 1, 1, 0);
             if (ok == 0)
             {
                 ret = lua_tonumber(L, -1);
@@ -532,41 +594,11 @@ int LuaJavaBridge::callLuaFunctionById(int functionId, const char* arg)
             {
                 ret = -ok;
             }
-
-            lua_settop(L, top);
-            return ret;
         }
-    } /* L: f_id */
 
-    lua_settop(L, top);
-    return -1;
-}
-
-// call lua global function
-int LuaJavaBridge::callLuaGlobalFunction(const char* functionName, const char* arg)
-{
-    lua_State* L = s_luaState;
-
-    int ret = -1;
-    int top = lua_gettop(L);
-
-    lua_getglobal(L, functionName);
-    if (lua_isfunction(L, -1))
-    {
-        lua_pushstring(L, arg);
-        int ok = lua_pcall(L, 1, 1, 0);
-        if (ok == 0)
-        {
-            ret = lua_tonumber(L, -1);
-        }
-        else
-        {
-            ret = -ok;
-        }
-    }
-
-    lua_settop(L, top);
-    return ret;
+        lua_settop(L, top);
+        return ret;
+    });
 }
 
 // ----------------------------------------

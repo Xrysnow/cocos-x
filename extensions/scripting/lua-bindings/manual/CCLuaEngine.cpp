@@ -86,23 +86,29 @@ void LuaEngine::removeScriptHandler(int nHandler)
 
 int LuaEngine::executeString(const char* codes)
 {
-    int ret = _stack->executeString(codes);
-    _stack->clean();
-    return ret;
+    return _stack->executeCallback([&]() -> int {
+        int ret = _stack->executeString(codes);
+        _stack->clean();
+        return ret;
+    });
 }
 
 int LuaEngine::executeScriptFile(const char* filename)
 {
-    int ret = _stack->executeScriptFile(filename);
-    _stack->clean();
-    return ret;
+    return _stack->executeCallback([&]() -> int {
+        int ret = _stack->executeScriptFile(filename);
+        _stack->clean();
+        return ret;
+    });
 }
 
 int LuaEngine::executeGlobalFunction(const char* functionName)
 {
-    int ret = _stack->executeGlobalFunction(functionName);
-    _stack->clean();
-    return ret;
+    return _stack->executeCallback([&]() -> int {
+        int ret = _stack->executeGlobalFunction(functionName);
+        _stack->clean();
+        return ret;
+    });
 }
 
 int LuaEngine::executeNodeEvent(Node* pNode, int nAction)
@@ -122,12 +128,14 @@ int LuaEngine::executeCallFuncActionEvent(CallFunc* pAction, Ref* pTarget /* = N
 
 int LuaEngine::executeSchedule(int nHandler, float dt, Node* pNode /* = NULL*/)
 {
-    if (!nHandler)
-        return 0;
-    _stack->pushFloat(dt);
-    int ret = _stack->executeFunctionByHandler(nHandler, 1);
-    _stack->clean();
-    return ret;
+    return _stack->executeCallback([&]() -> int {
+        if (!nHandler)
+            return 0;
+        _stack->pushFloat(dt);
+        int ret = _stack->executeFunctionByHandler(nHandler, 1);
+        _stack->clean();
+        return ret;
+    });
 }
 
 int LuaEngine::executeLayerTouchEvent(Layer* pLayer, int eventType, Touch* pTouch)
@@ -150,74 +158,76 @@ int LuaEngine::executeEvent(int nHandler,
                             Ref* pEventSource /* = NULL*/,
                             const char* pEventSourceClassName /* = NULL*/)
 {
-    _stack->pushString(pEventName);
-    if (pEventSource)
-    {
-        _stack->pushObject(pEventSource, pEventSourceClassName ? pEventSourceClassName : "cc.Ref");
-    }
-    int ret = _stack->executeFunctionByHandler(nHandler, pEventSource ? 2 : 1);
-    _stack->clean();
-    return ret;
+    return _stack->executeCallback([&]() -> int {
+        _stack->pushString(pEventName);
+        if (pEventSource)
+        {
+            _stack->pushObject(pEventSource, pEventSourceClassName ? pEventSourceClassName : "cc.Ref");
+        }
+        int ret = _stack->executeFunctionByHandler(nHandler, pEventSource ? 2 : 1);
+        _stack->clean();
+        return ret;
+    });
 }
 
 bool LuaEngine::handleAssert(const char* msg)
 {
-    bool ret = _stack->handleAssert(msg);
-    _stack->clean();
-    return ret;
+    return _stack->handleAssert(msg);
 }
 
 int LuaEngine::reallocateScriptHandler(int nHandler)
 {
-    int nRet = _stack->reallocateScriptHandler(nHandler);
-    _stack->clean();
-    return nRet;
+    return _stack->reallocateScriptHandler(nHandler);
 }
 
 bool LuaEngine::parseConfig(ConfigType type, std::string_view str)
 {
-    lua_getglobal(_stack->getLuaState(), "__onParseConfig");
-    if (!lua_isfunction(_stack->getLuaState(), -1))
-    {
-        CCLOG("[LUA ERROR] name '%s' does not represent a Lua function", "__onParseConfig");
-        lua_pop(_stack->getLuaState(), 1);
-        return false;
-    }
+    return _stack->executeCallback([&]() -> int {
+        lua_getglobal(_stack->getLuaState(), "__onParseConfig");
+        if (!lua_isfunction(_stack->getLuaState(), -1))
+        {
+            CCLOG("[LUA ERROR] name '%s' does not represent a Lua function", "__onParseConfig");
+            lua_pop(_stack->getLuaState(), 1);
+            return false;
+        }
 
-    _stack->pushInt((int)type);
-    _stack->pushString(str.data(), str.length());
+        _stack->pushInt((int)type);
+        _stack->pushString(str.data(), str.length());
 
-    return _stack->executeFunction(2);
+        return _stack->executeFunction(2);
+    });
 }
 
 int LuaEngine::sendEvent(const ScriptEvent& evt)
 {
-    switch (evt.type)
-    {
-    case kNodeEvent:
-        return handleNodeEvent(evt.data);
-    case kMenuClickedEvent:
-        return handleMenuClickedEvent(evt.data);
-    case kCallFuncEvent:
-        return handleCallFuncActionEvent(evt.data);
-    case kScheduleEvent:
-        return handleScheduler(evt.data);
-    case kTouchEvent:
-        return handleTouchEvent(evt.data);
-    case kTouchesEvent:
-        return handleTouchesEvent(evt.data);
-    case kKeypadEvent:
-        return handleKeypadEvent(evt.data);
-    case kAccelerometerEvent:
-        return handleAccelerometerEvent(evt.data);
-    case kCommonEvent:
-        return handleCommonEvent(evt.data);
-    case kControlEvent:
-        return handlerControlEvent(evt.data);
-    default:;
-    }
+    return _stack->executeCallback([&]() -> int {
+        switch (evt.type)
+        {
+        case kNodeEvent:
+            return handleNodeEvent(evt.data);
+        case kMenuClickedEvent:
+            return handleMenuClickedEvent(evt.data);
+        case kCallFuncEvent:
+            return handleCallFuncActionEvent(evt.data);
+        case kScheduleEvent:
+            return handleScheduler(evt.data);
+        case kTouchEvent:
+            return handleTouchEvent(evt.data);
+        case kTouchesEvent:
+            return handleTouchesEvent(evt.data);
+        case kKeypadEvent:
+            return handleKeypadEvent(evt.data);
+        case kAccelerometerEvent:
+            return handleAccelerometerEvent(evt.data);
+        case kCommonEvent:
+            return handleCommonEvent(evt.data);
+        case kControlEvent:
+            return handlerControlEvent(evt.data);
+        default:;
+        }
 
-    return 0;
+        return 0;
+    });
 }
 
 int LuaEngine::handleNodeEvent(void* data)
@@ -729,75 +739,77 @@ int LuaEngine::handleEvenCustom(void* data)
 
 int LuaEngine::handleEvent(ScriptHandlerMgr::HandlerType type, void* data)
 {
-    switch (type)
-    {
-    case ScriptHandlerMgr::HandlerType::SCROLLVIEW_SCROLL:
-    case ScriptHandlerMgr::HandlerType::SCROLLVIEW_ZOOM:
-    case ScriptHandlerMgr::HandlerType::TABLECELL_TOUCHED:
-    case ScriptHandlerMgr::HandlerType::TABLECELL_HIGHLIGHT:
-    case ScriptHandlerMgr::HandlerType::TABLECELL_UNHIGHLIGHT:
-    case ScriptHandlerMgr::HandlerType::TABLECELL_WILL_RECYCLE:
-    {
-        return handleTableViewEvent(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_PROGRESS:
-    case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_ERROR:
-    case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_SUCCESS:
-    {
-        return handleAssetsManagerEvent(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::ARMATURE_EVENT:
-    {
-        return handleArmatureWrapper(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_ACC:
-    {
-        return handleEventAcc(data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_PRESSED:
-    case ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_RELEASED:
-    {
-        return handleEventKeyboard(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_CUSTIOM:
-    {
-        return handleEvenCustom(data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_BEGAN:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_MOVED:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_ENDED:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_CANCELLED:
-    {
-        return handleEventTouch(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_BEGAN:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_MOVED:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_ENDED:
-    case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_CANCELLED:
-    {
-        return handleEventTouches(type, data);
-    }
-    break;
-    case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_DOWN:
-    case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_UP:
-    case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_MOVE:
-    case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_SCROLL:
-    {
-        return handleEventMouse(type, data);
-    }
-    break;
-    default:
+    return _stack->executeCallback([&]() -> int {
+        switch (type)
+        {
+        case ScriptHandlerMgr::HandlerType::SCROLLVIEW_SCROLL:
+        case ScriptHandlerMgr::HandlerType::SCROLLVIEW_ZOOM:
+        case ScriptHandlerMgr::HandlerType::TABLECELL_TOUCHED:
+        case ScriptHandlerMgr::HandlerType::TABLECELL_HIGHLIGHT:
+        case ScriptHandlerMgr::HandlerType::TABLECELL_UNHIGHLIGHT:
+        case ScriptHandlerMgr::HandlerType::TABLECELL_WILL_RECYCLE:
+        {
+            return handleTableViewEvent(type, data);
+        }
         break;
-    }
+        case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_PROGRESS:
+        case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_ERROR:
+        case ScriptHandlerMgr::HandlerType::ASSETSMANAGER_SUCCESS:
+        {
+            return handleAssetsManagerEvent(type, data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::ARMATURE_EVENT:
+        {
+            return handleArmatureWrapper(type, data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_ACC:
+        {
+            return handleEventAcc(data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_PRESSED:
+        case ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_RELEASED:
+        {
+            return handleEventKeyboard(type, data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_CUSTIOM:
+        {
+            return handleEvenCustom(data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_BEGAN:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_MOVED:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_ENDED:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCH_CANCELLED:
+        {
+            return handleEventTouch(type, data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_BEGAN:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_MOVED:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_ENDED:
+        case ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_CANCELLED:
+        {
+            return handleEventTouches(type, data);
+        }
+        break;
+        case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_DOWN:
+        case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_UP:
+        case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_MOVE:
+        case ScriptHandlerMgr::HandlerType::EVENT_MOUSE_SCROLL:
+        {
+            return handleEventMouse(type, data);
+        }
+        break;
+        default:
+            break;
+        }
 
-    return 0;
+        return 0;
+    });
 }
 
 int LuaEngine::handleEvent(ScriptHandlerMgr::HandlerType type,
@@ -805,20 +817,24 @@ int LuaEngine::handleEvent(ScriptHandlerMgr::HandlerType type,
                            int numResults,
                            const std::function<void(lua_State*, int)>& func)
 {
-    switch (type)
-    {
-    case ScriptHandlerMgr::HandlerType::TABLECELL_SIZE_FOR_INDEX:
-    case ScriptHandlerMgr::HandlerType::TABLECELL_AT_INDEX:
-    case ScriptHandlerMgr::HandlerType::TABLEVIEW_NUMS_OF_CELLS:
-    {
-        return handleTableViewEvent(type, data, numResults, func);
-    }
-    break;
-    default:
+    // Own the result converter before entering the protected frame. The Lua
+    // handler (or the converter itself) may destroy its original C++ owner.
+    return _stack->executeCallback([&, func]() -> int {
+        switch (type)
+        {
+        case ScriptHandlerMgr::HandlerType::TABLECELL_SIZE_FOR_INDEX:
+        case ScriptHandlerMgr::HandlerType::TABLECELL_AT_INDEX:
+        case ScriptHandlerMgr::HandlerType::TABLEVIEW_NUMS_OF_CELLS:
+        {
+            return handleTableViewEvent(type, data, numResults, func);
+        }
         break;
-    }
+        default:
+            break;
+        }
 
-    return 0;
+        return 0;
+    });
 }
 
 int LuaEngine::handleTableViewEvent(ScriptHandlerMgr::HandlerType type, void* data)
@@ -1022,7 +1038,9 @@ int LuaEngine::handleArmatureWrapper(ScriptHandlerMgr::HandlerType type, void* d
 
 int LuaEngine::reload(const char* moduleFileName)
 {
-    return _stack->reload(moduleFileName);
+    return _stack->executeCallback([&]() -> int {
+        return _stack->reload(moduleFileName);
+    });
 }
 
 NS_CC_END

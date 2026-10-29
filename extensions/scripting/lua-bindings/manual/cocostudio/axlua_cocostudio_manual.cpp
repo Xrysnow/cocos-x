@@ -515,10 +515,15 @@ static int axlua_ActionTimeline_setFrameEventCallFunc(lua_State* L)
 
         LUA_FUNCTION handler = (toluafix_ref_function(L, 2, 0));
         self->setFrameEventCallFunc([=](cocostudio::timeline::Frame* frame) {
-            auto stack = LuaEngine::getInstance()->getLuaStack();
-            toluafix_pushusertype_ccobject(stack->getLuaState(), frame->_ID, &frame->_luaID, (void*)frame,
-                                           getLuaTypeName(frame, "ccs.Frame"));
-            stack->executeFunctionByHandler(handler, 1);
+            auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+            callbackStack->executeCallback([=]() mutable -> int {
+                auto stack = LuaEngine::getInstance()->getLuaStack();
+                toluafix_pushusertype_ccobject(stack->getLuaState(), frame->_ID, &frame->_luaID, (void*)frame,
+                                               getLuaTypeName(frame, "ccs.Frame"));
+                stack->executeFunctionByHandler(handler, 1);
+
+                return 0;
+            });
         });
 
         return 0;

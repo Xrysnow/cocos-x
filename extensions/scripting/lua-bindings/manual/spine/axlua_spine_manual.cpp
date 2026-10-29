@@ -184,9 +184,10 @@ int executeSpineEvent(LuaSkeletonAnimation* skeletonAnimation,
         spineEvent.insert(spineEvent.end(), LuaValueDict::value_type("eventData", LuaValue::dictValue(eventData)));
     }
 
-    stack->pushLuaValueDict(spineEvent);
-    ret = stack->executeFunctionByHandler(handler, 1);
-    return ret;
+    return stack->executeCallback([&]() -> int {
+        stack->pushLuaValueDict(spineEvent);
+        return stack->executeFunctionByHandler(handler, 1);
+    });
 }
 
 int tolua_Cocos2d_CCSkeletonAnimation_registerSpineEventHandler00(lua_State* tolua_S)

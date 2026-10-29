@@ -111,31 +111,40 @@ void* ComponentLua::getScriptObject() const
 
 void ComponentLua::update(float delta)
 {
-    if (_succeedLoadingScript && getLuaFunction(ComponentLua::UPDATE))
-    {
-        getUserData();
-        lua_State* l = LuaEngine::getInstance()->getLuaStack()->getLuaState();
-        lua_pushnumber(l, delta);
-        LuaEngine::getInstance()->getLuaStack()->executeFunction(2);
-    }
+    LuaEngine::getInstance()->getLuaStack()->executeCallback([&]() -> int {
+        if (_succeedLoadingScript && getLuaFunction(ComponentLua::UPDATE))
+        {
+            getUserData();
+            lua_State* l = LuaEngine::getInstance()->getLuaStack()->getLuaState();
+            lua_pushnumber(l, delta);
+            LuaEngine::getInstance()->getLuaStack()->executeFunction(2);
+        }
+        return 0;
+    });
 }
 
 void ComponentLua::onEnter()
 {
-    if (_succeedLoadingScript && getLuaFunction(ComponentLua::ON_ENTER))
-    {
-        getUserData();
-        LuaEngine::getInstance()->getLuaStack()->executeFunction(1);
-    }
+    LuaEngine::getInstance()->getLuaStack()->executeCallback([&]() -> int {
+        if (_succeedLoadingScript && getLuaFunction(ComponentLua::ON_ENTER))
+        {
+            getUserData();
+            LuaEngine::getInstance()->getLuaStack()->executeFunction(1);
+        }
+        return 0;
+    });
 }
 
 void ComponentLua::onExit()
 {
-    if (_succeedLoadingScript && getLuaFunction(ComponentLua::ON_EXIT))
-    {
-        getUserData();
-        LuaEngine::getInstance()->getLuaStack()->executeFunction(1);
-    }
+    LuaEngine::getInstance()->getLuaStack()->executeCallback([&]() -> int {
+        if (_succeedLoadingScript && getLuaFunction(ComponentLua::ON_EXIT))
+        {
+            getUserData();
+            LuaEngine::getInstance()->getLuaStack()->executeFunction(1);
+        }
+        return 0;
+    });
 }
 
 bool ComponentLua::getLuaFunction(std::string_view functionName)
@@ -170,36 +179,33 @@ bool ComponentLua::loadAndExecuteScript()
     auto fileUtils               = FileUtils::getInstance();
     std::string fullPathOfScript = fileUtils->fullPathForFilename(_scriptFileName);
     Data data                    = fileUtils->getDataFromFile(fullPathOfScript);
-    int error                    = LUA_ERRFILE;
-    if (data.getSize() > 0)
-        error = engine->getLuaStack()->luaLoadBuffer(l, (const char*)data.getBytes(), (int)data.getSize(),
-                                                     fullPathOfScript.c_str());
-    if (error)
+    if (data.getSize() <= 0)
     {
-        CCLOG("ComponentLua::loadAndExecuteScript: %s", lua_tostring(l, -1));
-        lua_pop(l, 1);
+        CCLOG("ComponentLua::loadAndExecuteScript: cannot read %s", fullPathOfScript.c_str());
         return false;
     }
 
-    // execute script
-    error = lua_pcall(l, 0, 1, 0);
-    if (error)
-    {
-        CCLOG("ComponentLua::loadAndExecuteScript: %s", lua_tostring(l, -1));
-        lua_pop(l, 1);
-        return false;
-    }
+    // Keep the file buffer and filename owners outside the protected region.
+    return engine->getLuaStack()->executeCallback([&]() -> int {
+        int error = engine->getLuaStack()->luaLoadBuffer(l, (const char*)data.getBytes(), (int)data.getSize(),
+                                                        fullPathOfScript.c_str());
+        if (!error)
+            error = lua_pcall(l, 0, 1, 0);
+        if (error)
+        {
+            CCLOG("ComponentLua::loadAndExecuteScript: %s", lua_tostring(l, -1));
+            return false;
+        }
 
-    // check the return value from lua script is a table
-    int type = lua_type(l, -1);
-    if (type != LUA_TTABLE)
-    {
-        CCLOG("%s should return a table, or the script component can not work currectly", _scriptFileName.c_str());
-        return false;
-    }
+        if (!lua_istable(l, -1))
+        {
+            CCLOG("%s should return a table, or the script component can not work currectly", _scriptFileName.c_str());
+            return false;
+        }
 
-    storeLuaTable();
-    return true;
+        storeLuaTable();
+        return true;
+    });
 }
 
 void ComponentLua::initClass()
@@ -262,6 +268,7 @@ void ComponentLua::removeLuaTable()
         lua_pushstring(l, _strIndex.c_str());  // stack: LUA_REGISTRYINDEX["component"] strIndex
         lua_pushnil(l);                        // stack: LUA_REGISTRYINDEX["component"] strIndex nil
         lua_rawset(l, -3);                     // stack: LUA_REGISTRYINDEX["component"]
+        lua_pop(l, 1);
     }
 }
 

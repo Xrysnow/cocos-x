@@ -196,11 +196,16 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onConnected = [=](cocos2d::Controller* controller, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 2);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 2);
+
+                    return 0;
+                });
             };
         }
         break;
@@ -209,11 +214,16 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onDisconnected = [=](cocos2d::Controller* controller, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 2);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 2);
+
+                    return 0;
+                });
             };
         }
         break;
@@ -223,12 +233,17 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onKeyDown = [=](cocos2d::Controller* controller, int keyCode, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                tolua_pushnumber(Ls, (lua_Number)keyCode);
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 3);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    tolua_pushnumber(Ls, (lua_Number)keyCode);
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 3);
+
+                    return 0;
+                });
             };
         }
         break;
@@ -237,12 +252,17 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onKeyUp = [=](cocos2d::Controller* controller, int keyCode, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                tolua_pushnumber(Ls, (lua_Number)keyCode);
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 3);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    tolua_pushnumber(Ls, (lua_Number)keyCode);
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 3);
+
+                    return 0;
+                });
             };
         }
         break;
@@ -251,12 +271,17 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onKeyRepeat = [=](cocos2d::Controller* controller, int keyCode, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                tolua_pushnumber(Ls, (lua_Number)keyCode);
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 3);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    tolua_pushnumber(Ls, (lua_Number)keyCode);
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 3);
+
+                    return 0;
+                });
             };
         }
         break;
@@ -265,12 +290,17 @@ static int toaxlua_EventListenerController_registerScriptHandler(lua_State* tolu
             ScriptHandlerMgr::getInstance()->addObjectHandler((void*)self, handler, type);
 
             self->onAxisEvent = [=](cocos2d::Controller* controller, int keyCode, Event* event) {
-                tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                tolua_pushnumber(Ls, (lua_Number)keyCode);
-                int ID     = (event) ? (int)event->_ID : -1;
-                int* luaID = (event) ? &event->_luaID : NULL;
-                toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
-                stack->executeFunctionByHandler(handler, 3);
+                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
+                callbackStack->executeCallback([=]() mutable -> int {
+                    tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
+                    tolua_pushnumber(Ls, (lua_Number)keyCode);
+                    int ID     = (event) ? (int)event->_ID : -1;
+                    int* luaID = (event) ? &event->_luaID : NULL;
+                    toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
+                    stack->executeFunctionByHandler(handler, 3);
+
+                    return 0;
+                });
             };
         }
         break;

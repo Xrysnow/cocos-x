@@ -43,9 +43,13 @@ Ref* CustomGUIReader::createInstance()
 {
     Ref* result     = nullptr;
     LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-    stack->executeFunction(_createFunc, 0, 1, [&result](lua_State* L, int numReturn) {
+    const int handler = _createFunc;
+    const std::function<void(lua_State*, int)> convert = [&result](lua_State* L, int numReturn) {
         result = static_cast<Ref*>(tolua_tousertype(L, -1, nullptr));
         lua_pop(L, 1);
+    };
+    stack->executeCallback([stack, handler, convert]() -> int {
+        return stack->executeFunction(handler, 0, 1, convert);
     });
     return result;
 }
@@ -96,10 +100,13 @@ void CustomGUIReader::setCustomProps(std::string_view classType,
         customOptions.Accept(writer);
 
         auto stack = LuaEngine::getInstance()->getLuaStack();
-        stack->pushString(classType);
-        stack->pushObject(widget, "cc.Ref");
-        stack->pushString(buffer.GetString(), static_cast<int>(buffer.GetSize()));
-        stack->executeFunctionByHandler(_setPropsFunc, 3);
+        const int handler = _setPropsFunc;
+        stack->executeCallback([&]() -> int {
+            stack->pushString(classType);
+            stack->pushObject(widget, "cc.Ref");
+            stack->pushString(buffer.GetString(), static_cast<int>(buffer.GetSize()));
+            return stack->executeFunctionByHandler(handler, 3);
+        });
     }
 }
 }  // namespace cocostudio
