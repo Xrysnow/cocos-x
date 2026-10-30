@@ -29,7 +29,7 @@
 # build luacocos2d if BUILD_LUA_LIBS=ON
 
 # The version number
-set(COCOS2D_X_VERSION 4.0)
+set(COCOS_X_VERSION 4.0)
 
 set(COCOS_CORE_LIB cocos2d)
 project(cocos2d_libs)
@@ -161,7 +161,7 @@ set_target_properties(${COCOS_CORE_LIB}
                       ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
                       LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
                       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-                      VERSION "${COCOS2D_X_VERSION}"
+                      VERSION "${COCOS_X_VERSION}"
                       FOLDER "Internal"
                       )
 

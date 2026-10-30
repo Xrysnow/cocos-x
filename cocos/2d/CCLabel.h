@@ -25,8 +25,8 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _COCOS2D_CCLABEL_H_
-#define _COCOS2D_CCLABEL_H_
+#ifndef _CCLABEL_H_
+#define _CCLABEL_H_
 
 #include "2d/CCNode.h"
 #include "renderer/CCCustomCommand.h"

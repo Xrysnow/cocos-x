@@ -22,8 +22,8 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __COCOS2D_EXT_H__
-#define __COCOS2D_EXT_H__
+#ifndef __CC_EXT_H__
+#define __CC_EXT_H__
 
 #include "ExtensionMacros.h"
 
@@ -46,4 +46,4 @@
 #include "Particle3D/CCParticleSystem3D.h"
 #include "Particle3D/PU/CCPUParticleSystem3D.h"
 
-#endif /* __COCOS2D_EXT_H__ */
+#endif /* __CC_EXT_H__ */

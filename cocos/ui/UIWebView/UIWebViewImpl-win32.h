@@ -23,8 +23,8 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __COCOS2D__UI__WEBVIEWIMPL_WIN32_H_
-#define __COCOS2D__UI__WEBVIEWIMPL_WIN32_H_
+#ifndef __CC__UI__WEBVIEWIMPL_WIN32_H_
+#define __CC__UI__WEBVIEWIMPL_WIN32_H_
 
 #include "platform/CCPlatformMacros.h"
 
@@ -94,4 +94,4 @@ NS_CC_END  // namespace cocos2d
 
 #endif  // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 
-#endif  // __COCOS2D__UI__WEBVIEWIMPL_WIN32_H_
+#endif  // __CC__UI__WEBVIEWIMPL_WIN32_H_
