@@ -31,7 +31,6 @@
 #define SPINE_SKELETONBATCH_H_
 
 #include "cocos2d.h"
-#if COCOS2D_VERSION >= 0x00040000
 
 #include "renderer/backend/ProgramState.h"
 #include <spine/spine.h>
@@ -84,6 +83,5 @@ namespace spine {
 
 }// namespace spine
 
-#endif
 
 #endif// SPINE_SKELETONBATCH_H_

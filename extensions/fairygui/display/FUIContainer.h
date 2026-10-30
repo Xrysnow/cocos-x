@@ -20,16 +20,11 @@ public:
     cocos2d::Rect _clippingRect;
     bool _clippingRectDirty;
 
-#if COCOS2D_VERSION >= 0x00040000
 #if !defined(CC_VERSION)
     cocos2d::GroupCommand _groupCommand;
 #endif
     //cocos2d::CallbackCommand _beforeVisitCmdScissor;
     //cocos2d::CallbackCommand _afterVisitCmdScissor;
-#else
-    cocos2d::CustomCommand _beforeVisitCmdScissor;
-    cocos2d::CustomCommand _afterVisitCmdScissor;
-#endif
 };
 
 class StencilClippingSupport
@@ -42,17 +37,10 @@ public:
 #if !defined(CC_VERSION) 
     cocos2d::GroupCommand _groupCommand;
 #endif
-#if COCOS2D_VERSION >= 0x00040000
     cocos2d::backend::ProgramState* _originStencilProgram;
     //cocos2d::CallbackCommand _beforeVisitCmd;
     //cocos2d::CallbackCommand _afterDrawStencilCmd;
     //cocos2d::CallbackCommand _afterVisitCmd;
-#else
-    cocos2d::GLProgram* _originStencilProgram;
-    cocos2d::CustomCommand _beforeVisitCmd;
-    cocos2d::CustomCommand _afterDrawStencilCmd;
-    cocos2d::CustomCommand _afterVisitCmd;
-#endif
 };
 
 class FUIContainer : public cocos2d::Node
@@ -92,12 +80,10 @@ private:
     RectClippingSupport* _rectClippingSupport;
     StencilClippingSupport* _stencilClippingSupport;
     
-#if COCOS2D_VERSION >= 0x00040000
     void setProgramStateRecursively(Node* node, cocos2d::backend::ProgramState* programState);
     void restoreAllProgramStates();
     
     std::unordered_map<Node*, cocos2d::backend::ProgramState*> _originalStencilProgramState;
-#endif
 };
 
 //internal use

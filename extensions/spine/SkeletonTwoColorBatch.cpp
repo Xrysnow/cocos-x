@@ -28,7 +28,6 @@
  *****************************************************************************/
 
 #include <spine/spine-cocos2dx.h>
-#if COCOS2D_VERSION >= 0x00040000
 
 #include "base/ccTypes.h"
 #include "base/ccUtils.h"
@@ -414,5 +413,3 @@ namespace spine {
 		return command;
 	}
 }// namespace spine
-
-#endif

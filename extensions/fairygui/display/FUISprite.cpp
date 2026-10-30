@@ -102,21 +102,13 @@ void FUISprite::setGrayed(bool value)
 {
 #if defined(CC_VERSION)
     Sprite::setProgramState(value ? backend::ProgramType::GRAY_SCALE : backend::ProgramType::POSITION_TEXTURE_COLOR);
-#elif COCOS2D_VERSION >= 0x00040000
+#else
     auto isETC1 = getTexture() && getTexture()->getAlphaTextureName();
     if (value) {
         Sprite::updateShaders(positionTextureColor_vert, (isETC1)?etc1Gray_frag:grayScale_frag);
     } else {
         Sprite::updateShaders(positionTextureColor_vert, (isETC1)?etc1_frag:positionTextureColor_frag);
     }
-#else
-    GLProgramState* glState = nullptr;
-    if (value)
-        glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_GRAYSCALE, getTexture());
-    else
-        glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP, getTexture());
-
-    setGLProgramState(glState);
 #endif
 }
 
@@ -493,9 +485,7 @@ void FUISprite::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform
         Sprite::draw(renderer, transform, flags);
     else
     {
-#if COCOS2D_VERSION >= 0x00040000
         setMVPMatrixUniform();
-#endif
 
 #if CC_USE_CULLING
         // Don't calculate the culling if the transform was not updated
@@ -518,9 +508,6 @@ void FUISprite::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform
         {
             _trianglesCommand.init(_globalZOrder,
                                    _texture,
-#if COCOS2D_VERSION < 0x00040000
-                                   getGLProgramState(),
-#endif
                                    _blendFunc,
                                    _fillTriangles,
                                    transform,

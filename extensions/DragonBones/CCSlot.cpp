@@ -162,12 +162,7 @@ void CCSlot::_updateFrame()
                 const auto& transform = frameDisplay->getNodeToParentTransform();  // Backup transform. (Set rect and
                                                                                    // polygon will override transform).
 
-#if COCOS2D_VERSION >= 0x00031400
                 polygonInfo.setRect(boundsRect);
-#else
-                polygonInfo.rect = boundsRect;  // Copy
-                frameDisplay->setContentSize(boundsRect.size);
-#endif
                 frameDisplay->setPolygonInfo(polygonInfo);
 
                 const auto isSkinned = currentVerticesData->weight != nullptr;
@@ -340,12 +335,7 @@ void CCSlot::_updateMesh()
         meshDisplay->getNodeToParentTransform();  // Backup transform. (Set rect and polygon will override transform).
     auto polygonInfo = meshDisplay->getPolygonInfo();
 
-#if COCOS2D_VERSION >= 0x00031400
     polygonInfo.setRect(boundsRect);
-#else
-    polygonInfo.rect = boundsRect;  // Copy
-    meshDisplay->setContentSize(boundsRect.size);
-#endif
 
     meshDisplay->setPolygonInfo(polygonInfo);
 
@@ -433,11 +423,7 @@ void CCSlot::_updateBlendMode()
             const auto texture = spriteDisplay->getTexture();
             if (texture && texture->hasPremultipliedAlpha())
             {
-#if COCOS2D_VERSION >= 0x00040000
                 cocos2d::BlendFunc blendFunc = {cocos2d::backend::BlendFactor::ONE, cocos2d::backend::BlendFactor::ONE};
-#else
-                cocos2d::BlendFunc blendFunc = {GL_ONE, GL_ONE};
-#endif
                 spriteDisplay->setBlendFunc(blendFunc);
             }
             else

@@ -32,7 +32,6 @@ TextureAtlasData* CCFactory::_buildTextureAtlasData(TextureAtlasData* textureAtl
             {
                 const auto defaultPixelFormat = cocos2d::Texture2D::getDefaultAlphaPixelFormat();
                 auto pixelFormat              = defaultPixelFormat;
-#if COCOS2D_VERSION >= 0x00040000
                 switch (textureAtlasData->format)
                 {
                 case TextureFormat::RGBA8888:
@@ -63,38 +62,6 @@ TextureAtlasData* CCFactory::_buildTextureAtlasData(TextureAtlasData* textureAtl
                 default:
                     break;
                 }
-#else
-                switch (textureAtlasData->format)
-                {
-                case TextureFormat::RGBA8888:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::RGBA8;
-                    break;
-
-                case TextureFormat::BGRA8888:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::BGRA8;
-                    break;
-
-                case TextureFormat::RGBA4444:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::RGBA4;
-                    break;
-
-                case TextureFormat::RGB888:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::RGB8;
-                    break;
-
-                case TextureFormat::RGB565:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::RGB565;
-                    break;
-
-                case TextureFormat::RGBA5551:
-                    pixelFormat = cocos2d::Texture2D::PixelFormat::RGB5A1;
-                    break;
-
-                case TextureFormat::DEFAULT:
-                default:
-                    break;
-                }
-#endif
 
                 texture = textureCache->addImage(textureAtlasData->imagePath, pixelFormat);
             }
@@ -163,12 +130,8 @@ DragonBonesData* CCFactory::loadDragonBonesData(std::string_view filePath, std::
         }
         else
         {
-#if COCOS2D_VERSION >= 0x00031200
             cocos2d::Data cocos2dData;
             cocos2d::FileUtils::getInstance()->getContents(fullpath, &cocos2dData);
-#else
-            const auto cocos2dData = cocos2d::FileUtils::getInstance()->getDataFromFile(fullpath);
-#endif
             const auto binary = (unsigned char*)malloc(sizeof(unsigned char) * cocos2dData.getSize());
             memcpy(binary, cocos2dData.getBytes(), cocos2dData.getSize());
             const auto data = parseDragonBonesData((char*)binary, name, scale);

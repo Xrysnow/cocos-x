@@ -6,25 +6,6 @@
 NS_FGUI_BEGIN
 USING_NS_CC;
 
-#if COCOS2D_VERSION < 0x00040000
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-#define CC_CLIPPING_NODE_OPENGLES 0
-#else
-#define CC_CLIPPING_NODE_OPENGLES 1
-#endif
-
-#if CC_CLIPPING_NODE_OPENGLES
-static void setProgram(Node *n, GLProgram *p)
-{
-    n->setGLProgram(p);
-
-    auto& children = n->getChildren();
-    for (const auto &child : children) {
-        setProgram(child, p);
-    }
-}
-#endif
-#endif // COCOS2D_VERSION < 0x00040000
 
 RectClippingSupport::RectClippingSupport() :
     _clippingEnabled(false),
@@ -153,11 +134,7 @@ void FUIContainer::setStencil(cocos2d::Node * stencil)
     }
 
     if (_stencilClippingSupport->_stencil != nullptr)
-#if COCOS2D_VERSION >= 0x00040000
         _stencilClippingSupport->_originStencilProgram = _stencilClippingSupport->_stencil->getProgramState();
-#else
-        _stencilClippingSupport->_originStencilProgram = _stencilClippingSupport->_stencil->getGLProgram();
-#endif
 }
 
 float FUIContainer::getAlphaThreshold() const
@@ -173,22 +150,11 @@ void FUIContainer::setAlphaThreshold(float alphaThreshold)
     if (_stencilClippingSupport == nullptr)
         _stencilClippingSupport = new StencilClippingSupport();
 
-#if COCOS2D_VERSION >= 0x00040000
     if (alphaThreshold == 1 && alphaThreshold != _stencilClippingSupport->_stencilStateManager->getAlphaThreshold()) {
         if (_stencilClippingSupport->_stencil) {
             restoreAllProgramStates();
         }
     }
-#else
-#if CC_CLIPPING_NODE_OPENGLES
-    if (alphaThreshold == 1 && alphaThreshold != _stencilClippingSupport->_stencilStateManager->getAlphaThreshold())
-    {
-        // should reset program used by _stencil
-        if (_stencilClippingSupport->_stencil)
-            setProgram(_stencilClippingSupport->_stencil, _stencilClippingSupport->_originStencilProgram);
-    }
-#endif
-#endif
 
     _stencilClippingSupport->_stencilStateManager->setAlphaThreshold(alphaThreshold);
 }
@@ -211,13 +177,6 @@ void FUIContainer::setInverted(bool inverted)
 
 void FUIContainer::onEnter()
 {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-    if (_scriptType == kScriptTypeJavascript)
-    {
-        if (ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnEnter))
-            return;
-    }
-#endif
 
     Node::onEnter();
 
@@ -230,13 +189,6 @@ void FUIContainer::onEnter()
 
 void FUIContainer::onEnterTransitionDidFinish()
 {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-    if (_scriptType == kScriptTypeJavascript)
-    {
-        if (ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnEnterTransitionDidFinish))
-            return;
-    }
-#endif
 
     Node::onEnterTransitionDidFinish();
 
@@ -248,13 +200,6 @@ void FUIContainer::onEnterTransitionDidFinish()
 
 void FUIContainer::onExitTransitionDidStart()
 {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-    if (_scriptType == kScriptTypeJavascript)
-    {
-        if (ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnExitTransitionDidStart))
-            return;
-    }
-#endif
 
     if (_stencilClippingSupport != nullptr && _stencilClippingSupport->_stencil != nullptr)
         _stencilClippingSupport->_stencil->onExitTransitionDidStart();
@@ -263,13 +208,6 @@ void FUIContainer::onExitTransitionDidStart()
 
 void FUIContainer::onExit()
 {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-    if (_scriptType == kScriptTypeJavascript)
-    {
-        if (ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnExit))
-            return;
-    }
-#endif
 
     if (_stencilClippingSupport != nullptr && _stencilClippingSupport->_stencil != nullptr)
         _stencilClippingSupport->_stencil->onExit();
@@ -285,7 +223,6 @@ void FUIContainer::setCameraMask(unsigned short mask, bool applyChildren)
         _stencilClippingSupport->_stencil->setCameraMask(mask, applyChildren);
 }
 
-#if COCOS2D_VERSION >= 0x00040000
 void FUIContainer::setProgramStateRecursively(Node* node, backend::ProgramState* programState)
 {
     _originalStencilProgramState[node] = node->getProgramState();
@@ -306,7 +243,6 @@ void FUIContainer::restoreAllProgramStates()
         node->setProgramState(programState);
     }
 }
-#endif
 
 void FUIContainer::onBeforeVisitScissor()
 {
@@ -315,11 +251,7 @@ void FUIContainer::onBeforeVisitScissor()
     Rect clippingRect = getClippingRect();
     if (false == _rectClippingSupport->_scissorOldState)
     {
-#if COCOS2D_VERSION >= 0x00040000
         Director::getInstance()->getRenderer()->setScissorTest(true);
-#else
-        glEnable(GL_SCISSOR_TEST);
-#endif
     }
     else
     {
@@ -346,11 +278,7 @@ void FUIContainer::onAfterVisitScissor()
     else
     {
         // revert scissor test
-#if COCOS2D_VERSION >= 0x00040000
         Director::getInstance()->getRenderer()->setScissorTest(false);
-#else
-        glDisable(GL_SCISSOR_TEST);
-#endif
     }
 }
 
@@ -397,38 +325,17 @@ void FUIContainer::visit(cocos2d::Renderer * renderer, const cocos2d::Mat4 & par
         renderer->pushGroup(_stencilClippingSupport->_groupCommand.getRenderQueueID());
 #endif
 
-#if COCOS2D_VERSION >= 0x00040000
         _stencilClippingSupport->_stencilStateManager->onBeforeVisit(_globalZOrder);
-#else
-        _stencilClippingSupport->_beforeVisitCmd.init(_globalZOrder);
-        _stencilClippingSupport->_beforeVisitCmd.func = CC_CALLBACK_0(StencilStateManager::onBeforeVisit, _stencilClippingSupport->_stencilStateManager);
-        renderer->addCommand(&_stencilClippingSupport->_beforeVisitCmd);
-#endif
 
         auto alphaThreshold = this->getAlphaThreshold();
         if (alphaThreshold < 1)
         {
-#if COCOS2D_VERSION >= 0x00040000
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
             auto programState = new backend::ProgramState(program);
             auto alphaLocation = programState->getUniformLocation("u_alpha_value");
             programState->setUniform(alphaLocation, &alphaThreshold, sizeof(alphaThreshold));
             setProgramStateRecursively(_stencilClippingSupport->_stencil, programState);
             CC_SAFE_RELEASE_NULL(programState);
-#else
-#if CC_CLIPPING_NODE_OPENGLES
-            // since glAlphaTest do not exists in OES, use a shader that writes
-            // pixel only if greater than an alpha threshold
-            GLProgram *program = GLProgramCache::getInstance()->getGLProgram(GLProgram::SHADER_NAME_POSITION_TEXTURE_ALPHA_TEST_NO_MV);
-            GLint alphaValueLocation = glGetUniformLocation(program->getProgram(), GLProgram::UNIFORM_NAME_ALPHA_TEST_VALUE);
-            // set our alphaThreshold
-            program->use();
-            program->setUniformLocationWith1f(alphaValueLocation, alphaThreshold);
-            // we need to recursively apply this shader to all the nodes in the stencil node
-            // FIXME: we should have a way to apply shader to all nodes without having to do this
-            setProgram(_stencilClippingSupport->_stencil, program);
-#endif
-#endif
 
         }
         _stencilClippingSupport->_stencil->visit(renderer, _modelViewTransform, flags);
@@ -487,11 +394,9 @@ void FUIContainer::visit(cocos2d::Renderer * renderer, const cocos2d::Mat4 & par
         renderer->addCommand(rectClippingGroupCommand);
         renderer->pushGroup(rectClippingGroupCommand->getRenderQueueID());
 #else
-    #if COCOS2D_VERSION >= 0x00040000
         _rectClippingSupport->_groupCommand.init(_globalZOrder);
         renderer->addCommand(&_rectClippingSupport->_groupCommand);
         renderer->pushGroup(_rectClippingSupport->_groupCommand.getRenderQueueID());
-    #endif
 #endif
 
         auto beforeVisitCmdScissor = renderer->nextCallbackCommand();
@@ -505,9 +410,7 @@ void FUIContainer::visit(cocos2d::Renderer * renderer, const cocos2d::Mat4 & par
         afterVisitCmdScissor->init(_globalZOrder);
         afterVisitCmdScissor->func = CC_CALLBACK_0(FUIContainer::onAfterVisitScissor, this);
         renderer->addCommand(afterVisitCmdScissor);
-#if COCOS2D_VERSION >= 0x00040000
         renderer->popGroup();
-#endif
     }
     else
         Node::visit(renderer, parentTransform, parentFlags);

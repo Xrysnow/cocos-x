@@ -8,9 +8,6 @@
 NS_FGUI_BEGIN
 USING_NS_CC;
 
-#if COCOS2D_VERSION < 0x00040000
-using namespace cocos2d::experimental;
-#endif
 
 GRoot* GRoot::_inst = nullptr;
 bool GRoot::_soundEnabled = true;

@@ -99,14 +99,6 @@ namespace spine {
 	}
 
 	void SkeletonRenderer::setupGLProgramState(bool twoColorTintEnabled) {
-#if COCOS2D_VERSION < 0x00040000
-		if (twoColorTintEnabled) {
-			setGLProgramState(SkeletonTwoColorBatch::getInstance()->getTwoColorTintProgramState());
-			return;
-		}
-
-		setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP, nullptr));
-#endif
 	}
 
 	void SkeletonRenderer::setSkeletonData(SkeletonData *skeletonData, bool ownsSkeletonData) {
@@ -414,11 +406,7 @@ namespace spine {
 					triangles.indices = batch->allocateIndices(triangles.indexCount);
 					memcpy(triangles.indices, _clipper->getClippedTriangles().buffer(), sizeof(unsigned short) * _clipper->getClippedTriangles().size());
 
-#if COCOS2D_VERSION < 0x00040000
-					cocos2d::TrianglesCommand *batchedTriangles = batch->addCommand(renderer, _globalZOrder, texture, _glProgramState, blendFunc, triangles, transform, transformFlags);
-#else
 					cocos2d::TrianglesCommand *batchedTriangles = batch->addCommand(renderer, _globalZOrder, texture, _programState, blendFunc, triangles, transform, transformFlags);
-#endif
 
 					const float *verts = _clipper->getClippedVertices().buffer();
 					const float *uvs = _clipper->getClippedUVs().buffer();
@@ -432,11 +420,7 @@ namespace spine {
                     }
 				} else {
 					// Not clipping.
-#if COCOS2D_VERSION < 0x00040000
-					cocos2d::TrianglesCommand *batchedTriangles = batch->addCommand(renderer, _globalZOrder, texture, _glProgramState, blendFunc, triangles, transform, transformFlags);
-#else
 					cocos2d::TrianglesCommand *batchedTriangles = batch->addCommand(renderer, _globalZOrder, texture, _programState, blendFunc, triangles, transform, transformFlags);
-#endif
                     V3F_C4B_T2F *vertex = batchedTriangles->getTriangles().verts;
                     for (int v = 0, vn = batchedTriangles->getTriangles().vertCount; v < vn; ++v, ++vertex) {
                         vertex->colors = color4B;
@@ -460,11 +444,7 @@ namespace spine {
 					trianglesTwoColor.indices = twoColorBatch->allocateIndices(trianglesTwoColor.indexCount);
 					memcpy(trianglesTwoColor.indices, _clipper->getClippedTriangles().buffer(), sizeof(unsigned short) * _clipper->getClippedTriangles().size());
 
-#if COCOS2D_VERSION < 0x00040000
-					TwoColorTrianglesCommand *batchedTriangles = lastTwoColorTrianglesCommand = twoColorBatch->addCommand(renderer, _globalZOrder, texture->getName(), _glProgramState, blendFunc, trianglesTwoColor, transform, transformFlags);
-#else
 					TwoColorTrianglesCommand *batchedTriangles = lastTwoColorTrianglesCommand = twoColorBatch->addCommand(renderer, _globalZOrder, texture, _programState, blendFunc, trianglesTwoColor, transform, transformFlags);
-#endif
 
 					const float *verts = _clipper->getClippedVertices().buffer();
 					const float *uvs = _clipper->getClippedUVs().buffer();
@@ -480,11 +460,7 @@ namespace spine {
                     }
 				} else {
 
-#if COCOS2D_VERSION < 0x00040000
-					TwoColorTrianglesCommand *batchedTriangles = lastTwoColorTrianglesCommand = twoColorBatch->addCommand(renderer, _globalZOrder, texture->getName(), _glProgramState, blendFunc, trianglesTwoColor, transform, transformFlags);
-#else
 					TwoColorTrianglesCommand *batchedTriangles = lastTwoColorTrianglesCommand = twoColorBatch->addCommand(renderer, _globalZOrder, texture, _programState, blendFunc, trianglesTwoColor, transform, transformFlags);
-#endif
 
                     V3F_C4B_C4B_T2F *vertex = batchedTriangles->getTriangles().verts;
                     for (int v = 0, vn = batchedTriangles->getTriangles().vertCount; v < vn; ++v, ++vertex) {
@@ -552,11 +528,7 @@ namespace spine {
 
 		// Draw bounding rectangle
 		if (_debugBoundingRect) {
-#if COCOS2D_VERSION < 0x00040000
-			glLineWidth(2);
-#else
 			drawNode->setLineWidth(2.0f);
-#endif
 			const cocos2d::Rect brect = getBoundingBox();
 			const Vec2 points[4] =
 					{
@@ -570,11 +542,7 @@ namespace spine {
 		if (_debugSlots) {
 			// Slots.
 			// DrawPrimitives::setDrawColor4B(0, 0, 255, 255);
-#if COCOS2D_VERSION < 0x00040000
-			glLineWidth(2);
-#else
 			drawNode->setLineWidth(2.0f);
-#endif
 			V3F_C4B_T2F_Quad quad;
 			for (int i = 0, n = _skeleton->getSlots().size(); i < n; i++) {
 				Slot *slot = _skeleton->getDrawOrder()[i];
@@ -601,11 +569,7 @@ namespace spine {
 
 		if (_debugBones) {
 			// Bone lengths.
-#if COCOS2D_VERSION < 0x00040000
-			glLineWidth(2);
-#else
 			drawNode->setLineWidth(2.0f);
-#endif
 			for (int i = 0, n = _skeleton->getBones().size(); i < n; i++) {
 				Bone *bone = _skeleton->getBones()[i];
 				if (!bone->isActive()) continue;
@@ -625,11 +589,7 @@ namespace spine {
 
 		if (_debugMeshes) {
 			// Meshes.
-#if COCOS2D_VERSION < 0x00040000
-			glLineWidth(2);
-#else
 			drawNode->setLineWidth(2.0f);
-#endif
 			for (int i = 0, n = _skeleton->getSlots().size(); i < n; ++i) {
 				Slot *slot = _skeleton->getDrawOrder()[i];
 				if (!slot->getBone().isActive()) continue;
@@ -715,18 +675,12 @@ namespace spine {
 	}
 
 	void SkeletonRenderer::setTwoColorTint(bool enabled) {
-#if COCOS2D_VERSION >= 0x00040000
 		_twoColorTint = enabled;
-#endif
 		setupGLProgramState(enabled);
 	}
 
 	bool SkeletonRenderer::isTwoColorTint() {
-#if COCOS2D_VERSION < 0x00040000
-		return getGLProgramState() == SkeletonTwoColorBatch::getInstance()->getTwoColorTintProgramState();
-#else
 		return _twoColorTint;
-#endif
 	}
 
 	void SkeletonRenderer::setSlotsRange(int startSlotIndex, int endSlotIndex) {
@@ -775,17 +729,11 @@ namespace spine {
 	}
 
 	void SkeletonRenderer::onEnter() {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-		if (_scriptType == kScriptTypeJavascript && ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnEnter)) return;
-#endif
 		Node::onEnter();
 		scheduleUpdate();
 	}
 
 	void SkeletonRenderer::onExit() {
-#if CC_ENABLE_SCRIPT_BINDING && COCOS2D_VERSION < 0x00040000
-		if (_scriptType == kScriptTypeJavascript && ScriptEngineManager::sendNodeEventToJSExtended(this, kNodeOnExit)) return;
-#endif
 		Node::onExit();
 		unscheduleUpdate();
 	}
@@ -917,26 +865,6 @@ namespace spine {
 		BlendFunc makeBlendFunc(BlendMode blendMode, bool premultipliedAlpha) {
 			BlendFunc blendFunc;
 
-#if COCOS2D_VERSION < 0x00040000
-			switch (blendMode) {
-				case BlendMode_Additive:
-					blendFunc.src = premultipliedAlpha ? GL_ONE : GL_SRC_ALPHA;
-					blendFunc.dst = GL_ONE;
-					break;
-				case BlendMode_Multiply:
-					blendFunc.src = GL_DST_COLOR;
-					blendFunc.dst = GL_ONE_MINUS_SRC_ALPHA;
-					break;
-				case BlendMode_Screen:
-					blendFunc.src = GL_ONE;
-					blendFunc.dst = GL_ONE_MINUS_SRC_COLOR;
-					break;
-				default:
-					blendFunc.src = premultipliedAlpha ? GL_ONE : GL_SRC_ALPHA;
-					blendFunc.dst = GL_ONE_MINUS_SRC_ALPHA;
-					break;
-			}
-#else
 			switch (blendMode) {
 				case BlendMode_Additive:
 					blendFunc.src = premultipliedAlpha ? backend::BlendFactor::ONE : backend::BlendFactor::SRC_ALPHA;
@@ -954,7 +882,6 @@ namespace spine {
 					blendFunc.src = premultipliedAlpha ? backend::BlendFactor::ONE : backend::BlendFactor::SRC_ALPHA;
 					blendFunc.dst = backend::BlendFactor::ONE_MINUS_SRC_ALPHA;
 			}
-#endif
 			return blendFunc;
 		}
 

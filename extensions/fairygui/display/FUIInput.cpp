@@ -78,11 +78,7 @@ void FUIInput::setKeyboardType(int value)
 
 void FUIInput::openKeyboard()
 {
-#if COCOS2D_VERSION >= 0x00031700
     EditBox::openKeyboard();
-#else
-    touchDownAction(this, cocos2d::ui::Widget::TouchEventType::ENDED);
-#endif
 }
 
 void FUIInput::continueInit()

@@ -28,7 +28,6 @@
  *****************************************************************************/
 
 #include <spine/spine-cocos2dx.h>
-#if COCOS2D_VERSION >= 0x00040000
 
 #include <algorithm>
 #include <spine/Extension.h>
@@ -195,5 +194,3 @@ namespace spine {
 		return command;
 	}
 }// namespace spine
-
-#endif
