@@ -35,6 +35,11 @@ Copyright (c) 2021 Bytedance Inc.
 #include "platform/CCPlatformConfig.h"
 #include "platform/CCPlatformDefine.h"
 
+#ifndef CC_DEBUG
+    #define CC_DEBUG 0
+#endif
+#define COCOS2D_DEBUG CC_DEBUG
+
 /** @def CREATE_FUNC(__TYPE__)
  * Define a create function for a specific type, such as Layer.
  *
@@ -253,27 +258,27 @@ public:                                                             \
 
 /// @name Cocos2d debug
 /// @{
-#if !defined(COCOS2D_DEBUG) || COCOS2D_DEBUG == 0
+#if !defined(CC_DEBUG) || CC_DEBUG == 0
     #define CCLOG(...)       do {} while (0)
     #define CCLOGINFO(...)   do {} while (0)
     #define CCLOGERROR(...)  do {} while (0)
     #define CCLOGWARN(...)   do {} while (0)
 
-#elif COCOS2D_DEBUG == 1
+#elif CC_DEBUG == 1
     #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
     #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
     #define CCLOGINFO(format,...)   do {} while (0)
     #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
 
-#elif COCOS2D_DEBUG > 1
+#elif CC_DEBUG > 1
     #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
     #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
     #define CCLOGINFO(format,...)   cocos2d::print(format, ##__VA_ARGS__)
     #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
-#endif // COCOS2D_DEBUG
+#endif // CC_DEBUG
 
 /** Lua engine debug */
-#if !defined(COCOS2D_DEBUG) || COCOS2D_DEBUG == 0 || CC_LUA_ENGINE_DEBUG == 0
+#if !defined(CC_DEBUG) || CC_DEBUG == 0 || CC_LUA_ENGINE_DEBUG == 0
     #define LUALOG(...)
 #else
     #define LUALOG(format, ...) cocos2d::print(format, ##__VA_ARGS__)
@@ -392,14 +397,6 @@ public:                                                             \
 #else
     #define UTILS_LIKELY(exp) (!!(exp))
     #define UTILS_UNLIKELY(exp) (!!(exp))
-#endif
-
-#ifndef CC_DEBUG
-#ifdef COCOS2D_DEBUG
-    #define CC_DEBUG COCOS2D_DEBUG
-#else
-    #define CC_DEBUG 0
-#endif
 #endif
 
 #endif // __CC_PLATFORM_MACROS_H__

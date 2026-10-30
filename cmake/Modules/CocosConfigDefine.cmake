@@ -85,7 +85,7 @@ endif()
 
 # Set macro definitions for special platforms
 function(use_cocos2dx_compile_define target)
-    target_compile_definitions(${target} PUBLIC $<$<CONFIG:Debug>:COCOS2D_DEBUG=1>)
+    target_compile_definitions(${target} PUBLIC $<$<CONFIG:Debug>:CC_DEBUG=1>)
     if(APPLE)
         target_compile_definitions(${target} PUBLIC __APPLE__)
         target_compile_definitions(${target} PUBLIC USE_FILE32API)
