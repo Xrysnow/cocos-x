@@ -416,7 +416,9 @@ ProgramGFX::~ProgramGFX()
     CC_SAFE_RELEASE_NULL(_program);
     CC_SAFE_RELEASE_NULL(defaultPipelineLayout);
     CC_SAFE_RELEASE_NULL(defaultDescriptorSetLayout);
-    cachedPrograms.erase(hash);
+    const auto cached = cachedPrograms.find(hash);
+    if (cached != cachedPrograms.end() && cached->second == this)
+        cachedPrograms.erase(cached);
 }
 
 void ProgramGFX::computeShaderInfo(
@@ -947,11 +949,14 @@ std::string ProgramGFX::generateShaderName(const cc::gfx::ShaderInfo& shaderInfo
 void ProgramGFX::addPurageListener()
 {
     Director::getInstance()->getEventDispatcher()->addCustomEventListener(Director::EVENT_RESET, [&](EventCustom*) {
-        for (auto&& it : cachedPrograms)
+        // Destruction can erase cache entries. Detach ownership before releasing
+        // programs so destructors cannot invalidate the active traversal.
+        auto programs = std::move(cachedPrograms);
+        cachedPrograms.clear();
+        for (auto&& it : programs)
         {
             CC_SAFE_RELEASE(it.second);
         }
-        cachedPrograms.clear();
     });
 }
 
