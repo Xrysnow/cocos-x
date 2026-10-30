@@ -27,6 +27,7 @@
 
 #include "scripting/lua-bindings/manual/CCLuaStack.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
+#include "scripting/lua-bindings/manual/lua_conversion/lua_callback_hooks.hpp"
 #include <string.h>
 extern "C" {
 #include "lua.h"
@@ -119,7 +120,7 @@ LuaStack::~LuaStack()
 LuaStack* LuaStack::create()
 {
     LuaStack* stack = new LuaStack();
-    stack->init();
+    if (!stack->init()) { delete stack; return nullptr; }
     stack->autorelease();
     return stack;
 }
@@ -127,7 +128,7 @@ LuaStack* LuaStack::create()
 LuaStack* LuaStack::attach(lua_State* L)
 {
     LuaStack* stack = new LuaStack();
-    stack->initWithLuaState(L);
+    if (!stack->initWithLuaState(L)) { delete stack; return nullptr; }
     stack->autorelease();
     return stack;
 }
@@ -136,6 +137,7 @@ bool LuaStack::init()
 {
     _state = lua_open();
     luaL_openlibs(_state);
+    if (!lua::initialize_callback_hooks(_state)) return false;
     toluafix_open(_state);
 
     // Register our version of the global "print" function
@@ -177,6 +179,7 @@ bool LuaStack::init()
 
 bool LuaStack::initWithLuaState(lua_State* L)
 {
+    if (!lua::initialize_callback_hooks(L)) return false;
     _state = L;
     return true;
 }

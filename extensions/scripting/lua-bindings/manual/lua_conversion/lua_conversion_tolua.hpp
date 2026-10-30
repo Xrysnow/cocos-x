@@ -2,7 +2,9 @@
 #include "platform/CCPlatformMacros.h"
 #include "tolua++.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
+#include "lua_callback_hooks.hpp"
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cmath>
 #include <cstdint>
@@ -450,9 +452,18 @@ end
 				lua_createtable(L, 0, 1);
 				lua_pushcfunction(L, collect);
 				lua_setfield(L, -2, "__gc");
+				// Allocation can run a finalizer which publishes this metatable.
+				// Reuse that canonical identity instead of invalidating its userdata.
 				lua_pushlightuserdata(L, key());
-				lua_pushvalue(L, -2);
-				lua_rawset(L, LUA_REGISTRYINDEX);
+				lua_rawget(L, LUA_REGISTRYINDEX);
+				if (!lua_isnil(L, -1)) {
+					lua_replace(L, -2);
+				} else {
+					lua_pop(L, 1);
+					lua_pushlightuserdata(L, key());
+					lua_pushvalue(L, -2);
+					lua_rawset(L, LUA_REGISTRYINDEX);
+				}
 			}
 			auto* p = new (lua_newuserdata(L, sizeof(_callback_userdata))) _callback_userdata{};
 			lua_insert(L, -2);
@@ -467,11 +478,11 @@ end
 	struct _callback_state {
 		const std::thread::id thread = std::this_thread::get_id();
 		std::mutex mutex;
-		bool alive = true;
-		_callback_reference* pending = nullptr;
-		bool callable() {
-			std::lock_guard<std::mutex> lock(mutex);
-			return alive && thread == std::this_thread::get_id();
+		// Common reads avoid the mutex; queue writers still serialize with close().
+		std::atomic<bool> alive{ true };
+		std::atomic<_callback_reference*> pending{ nullptr };
+		bool callable() const {
+			return thread == std::this_thread::get_id() && alive.load(std::memory_order_acquire);
 		}
 		void drain(lua_State* L);
 		void close();
@@ -484,11 +495,16 @@ end
 		// Own the diagnostic name; the caller's fName may be temporary.
 		std::string name;
 		std::string key;
+		enum class kind { handler, direct };
+		kind ownership = kind::handler;
+		int direct_ref = LUA_NOREF;
 		int handler = 0;
 		int thread_ref = LUA_NOREF;
 		_callback_reference* next = nullptr;
 		void unref(lua_State* current) {
-			if (handler) {
+			if (ownership == kind::direct) {
+				luaL_unref(current, LUA_REGISTRYINDEX, direct_ref);
+			} else if (handler) {
 				toluafix_remove_function_by_refid(current, handler);
 				if (!key.empty()) {
 					lua_pushstring(current, TOLUA_REFID_FUNCTION_MAPPING);
@@ -511,15 +527,16 @@ end
 			luaL_unref(current, LUA_REGISTRYINDEX, thread_ref);
 		}
 		static void release(_callback_reference* p) {
+			if (!p->state) { delete p; return; }
 			bool active;
 			{
 				std::lock_guard<std::mutex> lock(p->state->mutex);
-				active = p->state->alive;
+				active = p->state->alive.load(std::memory_order_relaxed);
 				if (active && p->state->thread != std::this_thread::get_id()) {
 					// Never access Lua from a worker. No allocation in this deleter.
 					// Drain on the next owner-thread registration/call, or discard on close.
-					p->next = p->state->pending;
-					p->state->pending = p;
+					p->next = p->state->pending.load(std::memory_order_relaxed);
+					p->state->pending.store(p, std::memory_order_release);
 					return;
 				}
 			}
@@ -529,11 +546,11 @@ end
 	};
 
 	inline void _callback_state::drain(lua_State* L) {
+		if (!pending.load(std::memory_order_acquire)) return;
 		_callback_reference* list;
 		{
 			std::lock_guard<std::mutex> lock(mutex);
-			list = pending;
-			pending = nullptr;
+			list = pending.exchange(nullptr, std::memory_order_relaxed);
 		}
 		// Unref outside the lock: Lua GC can reenter callback destruction.
 		while (list) {
@@ -547,9 +564,8 @@ end
 		_callback_reference* list;
 		{
 			std::lock_guard<std::mutex> lock(mutex);
-			alive = false;
-			list = pending;
-			pending = nullptr;
+			alive.store(false, std::memory_order_release);
+			list = pending.exchange(nullptr, std::memory_order_relaxed);
 		}
 		while (list) {
 			auto* p = list;
@@ -562,18 +578,32 @@ end
 		std::shared_ptr<_callback_state> state = std::make_shared<_callback_state>();
 		~_callback_lifetime() { state->close(); }
 	};
+	inline void* _callback_state_key() { static char key; return &key; }
+	// Leaves the canonical sentinel on the stack, including if allocation
+	// reentered registration and published one while our candidate was built.
+	inline void _push_callback_lifetime(lua_State* L, const std::shared_ptr<_callback_lifetime>& lifetime) {
+		using holder = _callback_userdata<_callback_lifetime>;
+		auto* candidate = holder::push(L, lifetime);
+		lua_pushlightuserdata(L, _callback_state_key());
+		lua_rawget(L, LUA_REGISTRYINDEX);
+		if (!lua_isnil(L, -1)) {
+			holder::reset(candidate);
+			lua_remove(L, -2);
+		} else {
+			lua_pop(L, 1);
+			lua_pushlightuserdata(L, _callback_state_key());
+			lua_pushvalue(L, -2);
+			lua_rawset(L, LUA_REGISTRYINDEX);
+		}
+	}
 	// Coroutines share the registry and therefore the same lifetime sentinel.
 	inline std::shared_ptr<_callback_state> _get_callback_state(lua_State* L) {
-		static char key;
 		using holder = _callback_userdata<_callback_lifetime>;
-		lua_pushlightuserdata(L, &key);
+		lua_pushlightuserdata(L, _callback_state_key());
 		lua_rawget(L, LUA_REGISTRYINDEX);
 		if (lua_isnil(L, -1)) {
 			lua_pop(L, 1);
-			holder::push(L, std::make_shared<_callback_lifetime>());
-			lua_pushlightuserdata(L, &key);
-			lua_pushvalue(L, -2);
-			lua_rawset(L, LUA_REGISTRYINDEX);
+			_push_callback_lifetime(L, std::make_shared<_callback_lifetime>());
 		}
 		auto* p = static_cast<holder*>(lua_touserdata(L, -1));
 		auto state = p->value ? (*p->value)->state : nullptr;
@@ -599,6 +629,8 @@ end
     ////////////////////////////////////////////////////////////////////////////////
 
 	template<typename T, class Enable = void> struct to_native {};
+	template<typename T, class Enable = void> struct owned_callback_push;
+	template<typename T, class Enable = void> struct owned_callback_read;
 
 #define LUA_CHECK_TO_NATIVE\
 	const auto top = L ? lua_gettop(L) : 0;\
@@ -668,12 +700,14 @@ end
 
 #define TO_NATIVE_SIGNED(_T) template<>\
 	struct to_native<_T> {\
+		static constexpr bool owned_callback_fixed_environment = true;\
 		static bool F(lua_State* L, int lo, _T* outValue, const char* funcName = ""){\
 			if (!outValue) return false;\
 			int64_t i; bool ret = luaval_to_int(L, lo, &i, sizeof(_T), funcName);\
 			if (ret) *outValue = (_T)(i); return ret; } }
 #define TO_NATIVE_UNSIGNED(_T) template<>\
 	struct to_native<_T> {\
+		static constexpr bool owned_callback_fixed_environment = true;\
 		static bool F(lua_State* L, int lo, _T* outValue, const char* funcName = ""){\
 			if (!outValue) return false;\
 			uint64_t i; bool ret = luaval_to_uint(L, lo, &i, sizeof(_T), funcName);\
@@ -696,6 +730,7 @@ end
 	template<typename T>
 	struct to_native<T, std::enable_if_t<(std::is_same_v<T, long> ||
 		std::is_same_v<T, unsigned long>) && (sizeof(T) <= sizeof(uint64_t))>> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, T* outValue, const char* funcName = "") {
 			if (!outValue) return false;
 			using type = std::conditional_t<std::is_signed_v<T>, int64_t, uint64_t>;
@@ -724,6 +759,7 @@ end
 
 	template<>
 	struct to_native<bool> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, bool* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnil(L, lo) || lua_isboolean(L, lo);
@@ -734,6 +770,7 @@ end
 
 	template<>
 	struct to_native<float> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, float* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnumber(L, lo);
@@ -744,6 +781,7 @@ end
 
 	template<>
 	struct to_native<double> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, double* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnumber(L, lo);
@@ -765,6 +803,7 @@ end
 
 	template<>
 	struct to_native<std::string> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, std::string* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_isstring(L, lo))
@@ -793,6 +832,9 @@ end
 
 	template<typename T, size_t Size>
 	struct to_native<std::array<T, Size>> {
+		// A Lua error may bypass this converter's local result destructor.
+		static constexpr bool owned_callback_fixed_environment =
+			std::is_trivially_destructible_v<T> && owned_callback_read<T>::value;
 		static bool F(lua_State* L, int lo, std::array<T, Size>* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
@@ -1002,6 +1044,7 @@ end
 
 	template<>
 	struct to_lua<bool> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, bool inValue) {
 			if (!L) return;
 			lua_pushboolean(L, inValue);
@@ -1010,6 +1053,7 @@ end
 
 	template<typename T>
 	struct to_lua<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, T inValue) {
 			if (!L) return;
 			lua_pushnumber(L, (lua_Number)inValue);
@@ -1035,6 +1079,7 @@ end
 
 	template<>
 	struct to_lua<std::string> {
+		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, const std::string& inValue) {
 			if (!L) return;
 			lua_pushlstring(L, inValue.c_str(), inValue.size());
@@ -1053,6 +1098,7 @@ end
 
 	template<typename T, size_t Size>
 	struct to_lua<std::array<T, Size>> {
+		static constexpr bool owned_callback_fixed_environment = owned_callback_push<T>::value;
 		static void F(lua_State* L, const std::array<T, Size>& inValue) {
 			if (!L) return;
 			lua_createtable(L, (int)inValue.size(), 0);
@@ -1198,9 +1244,9 @@ end
 	inline void _callback_log_error(lua_State* L, const char* name) {
 		std::fprintf(stderr, "[LUA ERROR] callback (%s): %s\n", name, _callback_error_text(L, -1));
 	}
-	inline int _callback_report_error(lua_State* L) {
+	inline int _callback_report_error(lua_State* L, const char* name) {
 		lua_pushfstring(L, "[LUA ERROR] callback (%s): %s",
-			lua_tostring(L, lua_upvalueindex(1)), _callback_error_text(L, 1));
+			name, _callback_error_text(L, 1));
 		// Match LuaStack's reporting hook, but protect the reporter too. Its return
 		// value is irrelevant (the application's hook does not return a string).
 		lua_pushliteral(L, "__G__TRACKBACK__");
@@ -1223,10 +1269,49 @@ end
 		_callback_reference* callback;
 		F* invoke;
 		bool completed = false;
+		bool entered = false;
+		_callback_call* previous;
+		// One non-owning activation per signature/thread. The C++ guard stays
+		// outside both protected Lua frames and restores nested invocations.
+		inline static thread_local _callback_call* active = nullptr;
+		_callback_call(_callback_reference* ref, F* function)
+			: callback(ref), invoke(function), previous(active) { active = this; }
+		_callback_call(const _callback_call&) = delete;
+		_callback_call& operator=(const _callback_call&) = delete;
+		~_callback_call() { active = previous; }
+		static _callback_call* context(lua_State* L) {
+			return lua_type(L, 1) == LUA_TLIGHTUSERDATA
+				&& lua_touserdata(L, 1) == active ? active : nullptr;
+		}
+		static void push_cached(lua_State* L, lua_CFunction function, void* key) {
+			// Shared per VM/signature, with no callback owner or C++ frame in
+			// upvalues. Callers keep initial allocation inside a protected frame.
+			lua_pushlightuserdata(L, key);
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) {
+				lua_pop(L, 1);
+				lua_pushcfunction(L, function);
+				// The reporter uses explicit globals and needs no caller env.
+				// Avoid keeping the first caller's sandbox/coroutine env alive.
+				lua_newtable(L);
+				lua_setfenv(L, -2);
+				lua_pushlightuserdata(L, key);
+				lua_pushvalue(L, -2);
+				lua_rawset(L, LUA_REGISTRYINDEX);
+			}
+		}
+		static int report(lua_State* L) {
+			auto* context = active;
+			if (!context) return luaL_error(L, "expired Lua callback error handler");
+			return _callback_report_error(L, context->callback->name.c_str());
+		}
 		static int run(lua_State* L) {
 			auto* context = static_cast<_callback_call*>(lua_touserdata(L, lua_upvalueindex(1)));
-			if (!context) return luaL_error(L, "expired Lua callback invocation");
-			// A debug-retained trampoline must not retain a pointer to this C++ frame.
+			if (!context || context != active || context->entered)
+				return luaL_error(L, "expired Lua callback invocation");
+			context->entered = true;
+			// A retained trampoline must not retain this C++ frame. A fresh
+			// execution closure also preserves its caller's Lua environment.
 			lua_pushnil(L);
 			lua_replace(L, lua_upvalueindex(1));
 			(*context->invoke)(L);
@@ -1234,13 +1319,12 @@ end
 			return 0;
 		}
 		static int enter(lua_State* L) {
-			auto* context = lua_type(L, 1) == LUA_TLIGHTUSERDATA
-				? static_cast<_callback_call*>(lua_touserdata(L, 1)) : nullptr;
-			if (!context) return luaL_error(L, "expired Lua callback setup");
+			auto* context = _callback_call::context(L);
+			if (!context || context->entered) return luaL_error(L, "expired Lua callback setup");
 			lua_settop(L, 0);
 			context->callback->state->drain(L);
-			lua_pushlstring(L, context->callback->name.data(), context->callback->name.size());
-			lua_pushcclosure(L, _callback_report_error, 1);
+			static char report_key;
+			push_cached(L, report, &report_key);
 			lua_pushlightuserdata(L, context);
 			lua_pushcclosure(L, run, 1);
 			const int status = lua_pcall(L, 0, 0, 1);
@@ -1269,6 +1353,370 @@ end
 		}
 		lua_settop(L, top);
 		return context.completed;
+	}
+
+
+	// Explicit opt-in for conversion in a bridge-owned, fixed empty environment.
+	// The two directions are independent. Custom converters may specialize these
+	// traits only after auditing their environment and longjmp/lifetime contract.
+	template<typename T, class Enable>
+	struct owned_callback_push : std::false_type {};
+	template<typename T>
+	struct owned_callback_push<T, std::void_t<decltype(to_lua<T>::owned_callback_fixed_environment)>>
+		: std::bool_constant<to_lua<T>::owned_callback_fixed_environment> {};
+	template<typename T, class Enable>
+	struct owned_callback_read : std::false_type {};
+	template<typename T>
+	struct owned_callback_read<T, std::void_t<decltype(to_native<T>::owned_callback_fixed_environment)>>
+		: std::bool_constant<to_native<T>::owned_callback_fixed_environment> {};
+
+	// Unique for the lifetime of this OS thread, across signatures and VMs. Both
+	// Lua numbers and lightuserdata can represent every issued ticket exactly.
+	// Never wrap: exhaustion makes subsequent registrations/calls fail closed.
+	inline uint64_t _owned_callback_ticket() {
+		constexpr int digits = std::numeric_limits<lua_Number>::digits < 53
+			? std::numeric_limits<lua_Number>::digits : 53;
+		constexpr uint64_t limit = (uint64_t(1) << digits) - 1 < UINTPTR_MAX
+			? (uint64_t(1) << digits) - 1 : UINTPTR_MAX;
+		static thread_local uint64_t next = 0;
+		return next < limit ? ++next : 0;
+	}
+	inline void* _owned_callback_ticket_pointer(uint64_t ticket) {
+		return reinterpret_cast<void*>(static_cast<uintptr_t>(ticket));
+	}
+
+	// A CALL hook can inspect current tickets before entry. Its replay adds a
+	// frame above the original C frame, which cannot tail-call away. Authenticate
+	// the expected depth as well as the ticket, using only non-allocating public
+	// debug queries (no runtime-specific lua_Debug private fields). Release
+	// forbids hooks and compiles out both registration and invocation queries;
+	// registration authentication is unchanged; invocation credentials are Debug-only.
+	inline int _owned_callback_depth(lua_State* L) {
+		if constexpr (!callback_debug_hooks_enabled) return 0;
+		lua_Debug frame;
+		int depth = 0;
+		while (lua_getstack(L, depth, &frame)) ++depth;
+		return depth;
+	}
+	inline bool _owned_callback_extra_frame(lua_State* L, int depth) {
+		if constexpr (!callback_debug_hooks_enabled) return false;
+		lua_Debug frame;
+		return lua_getstack(L, depth, &frame) != 0;
+	}
+	// Everything that owns C++ storage lives outside the protected Lua frame.
+	// Successful Lua roots are recorded immediately, including partial creation.
+	struct _owned_callback_registration {
+		std::shared_ptr<_callback_reference> ref;
+		std::shared_ptr<_callback_lifetime> lifetime;
+		uint64_t ticket;
+		int caller_depth;
+		bool entered = false;
+		bool completed = false;
+		bool permitted = false;
+		bool needs_lifetime = false;
+		_owned_callback_registration* previous;
+		inline static thread_local _owned_callback_registration* active = nullptr;
+		_owned_callback_registration(lua_State* L, const char* name)
+			: ref(new _callback_reference{ nullptr, L, name ? name : "", "" }, _callback_reference::release),
+			ticket(_owned_callback_ticket()), caller_depth(_owned_callback_depth(L)), previous(active) {
+			ref->ownership = _callback_reference::kind::direct;
+			active = this;
+		}
+		~_owned_callback_registration() { active = previous; }
+		_owned_callback_registration(const _owned_callback_registration&) = delete;
+		_owned_callback_registration& operator=(const _owned_callback_registration&) = delete;
+		static void* finish_key() { static char key; return &key; }
+		static int finish(lua_State* L) {
+			auto* c = active;
+			if (!c || !c->permitted || c->ref->L != L
+				|| _owned_callback_extra_frame(L, c->caller_depth + 1) || lua_type(L, 1) != LUA_TFUNCTION
+				|| lua_type(L, 2) != LUA_TNUMBER || lua_tonumber(L, 2) != static_cast<lua_Number>(c->ticket))
+				return luaL_error(L, "expired Lua callback registration");
+			c->permitted = false;
+			lua_pushvalue(L, 1);
+			c->ref->direct_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+			c->completed = true;
+			return 0;
+		}
+		static int enter(lua_State* L) {
+			auto* c = active;
+			if (!c || c->entered || c->ref->L != L
+				|| _owned_callback_extra_frame(L, c->caller_depth + 1) || lua_type(L, 1) != LUA_TLIGHTUSERDATA
+				|| lua_touserdata(L, 1) != _owned_callback_ticket_pointer(c->ticket))
+				return luaL_error(L, "expired Lua callback registration");
+			c->entered = true;
+			lua_settop(L, 0);
+			luaL_checkstack(L, 12, "Lua callback registration stack overflow");
+			// Neutralize this fresh setup closure too: newly created sentinel
+			// userdata/metatable closures must not root the registering sandbox.
+			lua_newtable(L);
+			lua_replace(L, LUA_ENVIRONINDEX);
+			using holder = _callback_userdata<_callback_lifetime>;
+			// Use the same VM sentinel as the compatibility path.
+			lua_pushlightuserdata(L, _callback_state_key());
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) {
+				lua_pop(L, 1);
+				// Allocate C++ ownership outside Lua's C error frames. On a cold
+				// VM the caller supplies it and retries with a new entry ticket.
+				if (!c->lifetime) { c->needs_lifetime = true; return 0; }
+				_push_callback_lifetime(L, c->lifetime);
+			}
+			auto* p = static_cast<holder*>(lua_touserdata(L, -1));
+			c->ref->state = p->value ? (*p->value)->state : nullptr;
+			lua_pop(L, 1);
+			if (!c->ref->state || !c->ref->state->callable()) return 0;
+			c->ref->state->drain(L);
+			// Reserve the luaL_unref free-list slot before acquiring roots. Final
+			// release only overwrites existing registry slots, even during OOM.
+			lua_rawgeti(L, LUA_REGISTRYINDEX, 0);
+			const bool missing_freelist = lua_isnil(L, -1);
+			lua_pop(L, 1);
+			if (missing_freelist) {
+				lua_pushinteger(L, 0);
+				lua_rawseti(L, LUA_REGISTRYINDEX, 0);
+			}
+			lua_pushthread(L);
+			c->ref->thread_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+			_callback_call<void>::push_cached(L, finish, finish_key());
+			c->permitted = true;
+			return 0;
+		}
+	};
+
+	inline std::shared_ptr<_callback_reference> _own_direct_luafunction(lua_State* L, int index, const char* name) {
+		_owned_callback_registration c(L, name);
+		const int top = lua_gettop(L);
+		if (!c.ticket) return nullptr;
+		int status = lua_cpcall(L, _owned_callback_registration::enter, _owned_callback_ticket_pointer(c.ticket));
+		if (status == 0 && c.needs_lifetime) {
+			c.lifetime = std::make_shared<_callback_lifetime>();
+			c.ticket = _owned_callback_ticket();
+			c.entered = false;
+			c.needs_lifetime = false;
+			if (!c.ticket) return nullptr;
+			status = lua_cpcall(L, _owned_callback_registration::enter, _owned_callback_ticket_pointer(c.ticket));
+		}
+		if (status != 0 || !c.permitted) {
+			lua_settop(L, top);
+			return nullptr;
+		}
+		// cpcall cannot see the caller's input slot. Its protected preflight has
+		// already grown the physical stack beyond top+4; checkstack here only
+		// updates the caller's C API limit and cannot allocate in Lua 5.1/LuaJIT.
+		if (!lua_checkstack(L, 4)) return nullptr;
+		lua_pushlightuserdata(L, _owned_callback_registration::finish_key());
+		lua_rawget(L, LUA_REGISTRYINDEX);
+		lua_pushvalue(L, index);
+		lua_pushnumber(L, static_cast<lua_Number>(c.ticket));
+		status = lua_pcall(L, 2, 0, 0);
+		c.permitted = false;
+		lua_settop(L, top);
+		return status == 0 && c.completed ? std::move(c.ref) : nullptr;
+	}
+
+	template<typename F>
+	struct _owned_callback_call {
+		enum class phase { setup, preparing, permitted, running, finished };
+		_callback_reference* callback;
+		F* invoke;
+		lua_State* L;
+		// Only initialized/read in Debug; Release trusts the private bridge entry points.
+		uint64_t ticket;
+		int caller_depth;
+		phase stage;
+		bool completed = false;
+		_owned_callback_call* previous;
+		inline static thread_local _owned_callback_call* active = nullptr;
+		inline static char report_key, run_key;
+		_owned_callback_call(_callback_reference* ref, F* function)
+			: callback(ref), invoke(function), L(ref->L), previous(active) {
+			if constexpr (callback_debug_hooks_enabled) {
+				ticket = _owned_callback_ticket();
+				caller_depth = _owned_callback_depth(ref->L);
+				stage = phase::setup;
+			}
+			active = this;
+		}
+		_owned_callback_call(const _owned_callback_call&) = delete;
+		_owned_callback_call& operator=(const _owned_callback_call&) = delete;
+		~_owned_callback_call() { active = previous; }
+		static int report(lua_State* L) {
+			auto* c = active;
+			if (!c || c->L != L)
+				return luaL_error(L, "expired Lua callback error handler");
+			if constexpr (callback_debug_hooks_enabled) {
+				if (c->stage != phase::running)
+					return luaL_error(L, "expired Lua callback error handler");
+			}
+			return _callback_report_error(L, c->callback->name.c_str());
+		}
+		static int run(lua_State* L) {
+			auto* c = active;
+			if constexpr (callback_debug_hooks_enabled) {
+				// Do not dereference an untrusted Lua pointer, even for validation.
+				if (!c || lua_gettop(L) != 2 || lua_type(L, 1) != LUA_TLIGHTUSERDATA
+					|| lua_touserdata(L, 1) != c || lua_type(L, 2) != LUA_TNUMBER
+					|| lua_tonumber(L, 2) != static_cast<lua_Number>(c->ticket)
+					|| c->L != L || c->stage != phase::permitted
+					|| _owned_callback_extra_frame(L, c->caller_depth + 2))
+					return luaL_error(L, "expired Lua callback invocation");
+				c->stage = phase::running;
+				lua_settop(L, 0);
+			} else if (!c || c->L != L) {
+				return luaL_error(L, "expired Lua callback invocation");
+			}
+			// Release enters with zero Lua arguments. The context comes from TLS;
+			// its previous link still restores legitimate nested calls and reporters.
+			(*c->invoke)(L);
+			c->completed = true;
+			return 0;
+		}
+		static int enter(lua_State* L) {
+			auto* context = active;
+			if constexpr (callback_debug_hooks_enabled) {
+				if (!context || context->L != L || context->stage != phase::setup
+					|| _owned_callback_extra_frame(L, context->caller_depth + 1)
+					|| lua_type(L, 1) != LUA_TLIGHTUSERDATA
+					|| lua_touserdata(L, 1) != _owned_callback_ticket_pointer(context->ticket))
+					return luaL_error(L, "expired Lua callback setup");
+				context->stage = phase::preparing;
+			} else if (!context || context->L != L) {
+				return luaL_error(L, "expired Lua callback setup");
+			}
+			lua_settop(L, 0);
+			luaL_checkstack(L, 8, "Lua callback setup stack overflow");
+			context->callback->state->drain(L);
+			_callback_call<F>::push_cached(L, report, &report_key);
+			_callback_call<F>::push_cached(L, run, &run_key);
+			if constexpr (callback_debug_hooks_enabled) {
+				lua_pushlightuserdata(L, context);
+				lua_pushnumber(L, static_cast<lua_Number>(context->ticket));
+				context->stage = phase::permitted;
+			}
+			const int status = lua_pcall(L, callback_debug_hooks_enabled ? 2 : 0, 0, 1);
+			if constexpr (callback_debug_hooks_enabled) context->stage = phase::finished;
+			if (status != 0) {
+				context->completed = false;
+				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
+			}
+			return 0;
+		}
+		// Return false only when the original protected setup is still needed.
+		// Cache misses and pending cleanup remain cold, protected operations.
+		static bool try_call_fast(lua_State* L, int top) {
+			auto* context = active;
+			if (!context || context->L != L)
+				return false;
+			if (context->callback->state->pending.load(std::memory_order_acquire))
+				return false;
+			// A capacity limit is an ordinary failure. Allocation failure while
+			// growing this stack is outside the Release recovery contract.
+			if (!lua_checkstack(L, 8)) {
+				std::fprintf(stderr, "[LUA ERROR] callback (%s): Lua callback setup stack overflow\n",
+					context->callback->name.c_str());
+				return true;
+			}
+			lua_pushlightuserdata(L, &report_key);
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
+			lua_pushlightuserdata(L, &run_key);
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
+			// There is no setup C frame: preserve the caller's entire prefix.
+			const int status = lua_pcall(L, 0, 0, top + 1);
+			if (status != 0) {
+				context->completed = false;
+				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
+			}
+			return true;
+		}
+	};
+
+	template<typename F>
+	bool _call_owned_luafunction(const std::shared_ptr<_callback_reference>& ref, F&& invoke) {
+		auto keep = ref;
+		if (!keep->state->callable()) return false;
+		auto* L = keep->L;
+		if constexpr (!callback_debug_hooks_enabled) {
+			// Fail closed if an unmanaged native caller installed a hook.
+			if (lua_gethookmask(L)) return false;
+		}
+		const int top = lua_gettop(L);
+		_owned_callback_call<F> context{ keep.get(), &invoke };
+		if constexpr (callback_debug_hooks_enabled) {
+			if (!context.ticket) return false;
+		}
+		bool handled = false;
+		if constexpr (!callback_debug_hooks_enabled)
+			handled = _owned_callback_call<F>::try_call_fast(L, top);
+		if (!handled) {
+			void* credential = nullptr;
+			if constexpr (callback_debug_hooks_enabled)
+				credential = _owned_callback_ticket_pointer(context.ticket);
+			if (lua_cpcall(L, _owned_callback_call<F>::enter, credential) != 0) {
+				context.completed = false;
+				_callback_log_error(L, keep->name.c_str());
+			}
+		}
+		if constexpr (callback_debug_hooks_enabled)
+			context.stage = _owned_callback_call<F>::phase::finished;
+		lua_settop(L, top);
+		return context.completed;
+	}
+
+	// Independent ownership: no handler/alias, and clearing one C++ copy does
+	// not cancel others. The name is diagnostic only. Failure preserves *out.
+	// Release requires trusted scripts (including finalizers/reporters): never call,
+	// replay or mutate private bridge closures, environments or registry entries.
+	// Trigger callbacks only through public APIs; normal recursive calls are supported.
+	template<typename R, typename... Args>
+	bool luaval_to_owned_callback(lua_State* L, int index, std::function<R(Args...)>* out,
+		const char* diagnostic_name = "") {
+		static_assert((owned_callback_push<std::remove_cv_t<std::remove_reference_t<Args>>>::value && ...),
+			"owned Lua callback: argument converter has not opted into the fixed environment; use luaval_to_native");
+		static_assert(std::is_void_v<R> || (!std::is_reference_v<R> && std::is_same_v<R, std::remove_cv_t<R>> && owned_callback_read<R>::value),
+			"owned Lua callback: result converter/lifetime has not opted into the fixed environment; use luaval_to_native");
+		if constexpr (!callback_debug_hooks_enabled) {
+			if (L && lua_gethookmask(L)) return false;
+		}
+		index = _absolute_index(L, index);
+		if (!out || !index) return false;
+		if (lua_isnil(L, index)) { *out = nullptr; return true; }
+		if (!lua_isfunction(L, index)) return false;
+		try {
+			auto ref = _own_direct_luafunction(L, index, diagnostic_name);
+			if (!ref) return false;
+			std::function<R(Args...)> result = [ref = std::move(ref)](Args... args) -> R {
+				// The anchor inside _call_owned_luafunction survives self-replacement.
+				auto* callback = ref.get();
+				if constexpr (std::is_void_v<R>) {
+					_call_owned_luafunction(ref, [&](lua_State* L) {
+						lua_rawgeti(L, LUA_REGISTRYINDEX, callback->direct_ref);
+						if (!lua_isfunction(L, -1)) return;
+						luaL_checkstack(L, sizeof...(Args), "Lua callback argument stack overflow");
+						_to_lua_function_helper<sizeof...(Args), Args...>::F(L, std::forward<Args>(args)...);
+						lua_call(L, sizeof...(Args), 0);
+					});
+				} else {
+					R ret{};
+					const bool ok = _call_owned_luafunction(ref, [&](lua_State* L) {
+						lua_rawgeti(L, LUA_REGISTRYINDEX, callback->direct_ref);
+						if (!lua_isfunction(L, -1)) return;
+						luaL_checkstack(L, sizeof...(Args), "Lua callback argument stack overflow");
+						_to_lua_function_helper<sizeof...(Args), Args...>::F(L, std::forward<Args>(args)...);
+						lua_call(L, sizeof...(Args), 1);
+						if (!luaval_to_native(L, -1, &ret, callback->name.c_str()))
+							luaL_error(L, "invalid return value in handler (%s)", callback->name.c_str());
+					});
+					return ok ? std::move(ret) : R{};
+				}
+			};
+			*out = std::move(result);
+			return true;
+		} catch (const std::bad_alloc&) {
+			return false;
+		}
 	}
 
 	template<typename R, typename... Targs>
