@@ -1,4 +1,4 @@
-# cocos2d-x audio
+# cocos-x audio
 
 The audio implementation is part of the `cocos2d` library. Include public headers
 as `audio/AudioEngine.h`, `audio/AudioDecoder.h`, and `audio/AudioSource.h`, and use

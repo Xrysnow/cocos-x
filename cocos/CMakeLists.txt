@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 # ****************************************************************************/
 
-# this CMakeLists is to generate Cocos2d-x Engine Library
+# this CMakeLists is to generate cocos-x Engine Library
 # build libcocos2d
 # build luacocos2d if BUILD_LUA_LIBS=ON
 

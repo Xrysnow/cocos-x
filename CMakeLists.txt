@@ -28,7 +28,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(Cocos2d-x)
+project(cocos-x)
 
 # set default minimum deployment target
 if(XCODE)
@@ -52,7 +52,7 @@ set(BUILD_LUA_LIBS ON)
 
 add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
 
-# prevent tests project to build "cocos2d-x/cocos" again
+# prevent tests project to build "cocos-x/cocos" again
 set(BUILD_ENGINE_DONE ON)
 
 # add cpp tests default
@@ -64,5 +64,5 @@ if(BUILD_LUA_LIBS)
   add_subdirectory(${COCOS2DX_ROOT_PATH}/tests/lua-tests/project ${ENGINE_BINARY_PATH}/tests/lua-test)
 endif(BUILD_LUA_LIBS)
 
-# add cpp-template-default into project(Cocos2d-x) for tmp test
+# add cpp-template-default into project(cocos-x) for tmp test
 add_subdirectory(${COCOS2DX_ROOT_PATH}/templates/cpp-template-default ${ENGINE_BINARY_PATH}/tests/HelloCpp)

@@ -25,13 +25,13 @@ THE SOFTWARE.
 ****************************************************************************"""
 
 '''
-This script will install environment variables needed to by cocos2d-x. It will set these envrironment variables:
+This script will install environment variables needed to by cocos-x. It will set these envrironment variables:
 * COCOS_CONSOLE_ROOT: used to run cocos console tools, more information about cocos console tools please refer to
 https://github.com/cocos2d/cocos2d-console
 * NDK_ROOT: used to build android native codes
 * ANDROID_SDK_ROOT: used to generate applicatoin on Android through commands
-* COCOS_X_ROOT: path where cocos2d-x is installed
-* COCOS_TEMPLATES_ROOT: path where cocos2d-x's templates are installed
+* COCOS_X_ROOT: path where cocos-x is installed
+* COCOS_TEMPLATES_ROOT: path where cocos-x's templates are installed
 
 On Max OS X, when start a shell, it will read these files and execute commands in sequence:
 
@@ -185,7 +185,7 @@ class SetEnvVar(object):
             self.need_backup = False
 
         file = open(self.file_used_for_setup, 'a')
-        file.write('\n# Add environment variable %s for cocos2d-x\n' % key)
+        file.write('\n# Add environment variable %s for cocos-x\n' % key)
         file.write('export %s="%s"\n' % (key, value))
         file.write('export PATH=$%s:$PATH\n' % key)
         if key == ANDROID_SDK_ROOT:
@@ -660,7 +660,7 @@ class SetEnvVar(object):
 
     def set_environment_variables(self, ndk_root, android_sdk_root, quiet):
 
-        print('\nSetting up cocos2d-x...')
+        print('\nSetting up cocos-x...')
 
         self.file_used_for_setup = self._get_filepath_for_setup()
 
