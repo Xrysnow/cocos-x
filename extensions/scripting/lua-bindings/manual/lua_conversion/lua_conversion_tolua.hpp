@@ -2,7 +2,6 @@
 #include "platform/CCPlatformMacros.h"
 #include "tolua++.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
-#include "lua_callback_hooks.hpp"
 #include <array>
 #include <atomic>
 #include <bitset>
@@ -1370,47 +1369,13 @@ end
 	struct owned_callback_read<T, std::void_t<decltype(to_native<T>::owned_callback_fixed_environment)>>
 		: std::bool_constant<to_native<T>::owned_callback_fixed_environment> {};
 
-	// Unique for the lifetime of this OS thread, across signatures and VMs. Both
-	// Lua numbers and lightuserdata can represent every issued ticket exactly.
-	// Never wrap: exhaustion makes subsequent registrations/calls fail closed.
-	inline uint64_t _owned_callback_ticket() {
-		constexpr int digits = std::numeric_limits<lua_Number>::digits < 53
-			? std::numeric_limits<lua_Number>::digits : 53;
-		constexpr uint64_t limit = (uint64_t(1) << digits) - 1 < UINTPTR_MAX
-			? (uint64_t(1) << digits) - 1 : UINTPTR_MAX;
-		static thread_local uint64_t next = 0;
-		return next < limit ? ++next : 0;
-	}
-	inline void* _owned_callback_ticket_pointer(uint64_t ticket) {
-		return reinterpret_cast<void*>(static_cast<uintptr_t>(ticket));
-	}
-
-	// A CALL hook can inspect current tickets before entry. Its replay adds a
-	// frame above the original C frame, which cannot tail-call away. Authenticate
-	// the expected depth as well as the ticket, using only non-allocating public
-	// debug queries (no runtime-specific lua_Debug private fields). Release
-	// forbids hooks and compiles out both registration and invocation queries;
-	// registration authentication is unchanged; invocation credentials are Debug-only.
-	inline int _owned_callback_depth(lua_State* L) {
-		if constexpr (!callback_debug_hooks_enabled) return 0;
-		lua_Debug frame;
-		int depth = 0;
-		while (lua_getstack(L, depth, &frame)) ++depth;
-		return depth;
-	}
-	inline bool _owned_callback_extra_frame(lua_State* L, int depth) {
-		if constexpr (!callback_debug_hooks_enabled) return false;
-		lua_Debug frame;
-		return lua_getstack(L, depth, &frame) != 0;
-	}
 	// Everything that owns C++ storage lives outside the protected Lua frame.
 	// Successful Lua roots are recorded immediately, including partial creation.
+	// Trusted debug hooks may observe these frames; private entry points are not
+	// authenticated against direct calls or replay.
 	struct _owned_callback_registration {
 		std::shared_ptr<_callback_reference> ref;
 		std::shared_ptr<_callback_lifetime> lifetime;
-		uint64_t ticket;
-		int caller_depth;
-		bool entered = false;
 		bool completed = false;
 		bool permitted = false;
 		bool needs_lifetime = false;
@@ -1418,7 +1383,7 @@ end
 		inline static thread_local _owned_callback_registration* active = nullptr;
 		_owned_callback_registration(lua_State* L, const char* name)
 			: ref(new _callback_reference{ nullptr, L, name ? name : "", "" }, _callback_reference::release),
-			ticket(_owned_callback_ticket()), caller_depth(_owned_callback_depth(L)), previous(active) {
+			previous(active) {
 			ref->ownership = _callback_reference::kind::direct;
 			active = this;
 		}
@@ -1429,8 +1394,7 @@ end
 		static int finish(lua_State* L) {
 			auto* c = active;
 			if (!c || !c->permitted || c->ref->L != L
-				|| _owned_callback_extra_frame(L, c->caller_depth + 1) || lua_type(L, 1) != LUA_TFUNCTION
-				|| lua_type(L, 2) != LUA_TNUMBER || lua_tonumber(L, 2) != static_cast<lua_Number>(c->ticket))
+				|| lua_type(L, 1) != LUA_TFUNCTION)
 				return luaL_error(L, "expired Lua callback registration");
 			c->permitted = false;
 			lua_pushvalue(L, 1);
@@ -1440,11 +1404,8 @@ end
 		}
 		static int enter(lua_State* L) {
 			auto* c = active;
-			if (!c || c->entered || c->ref->L != L
-				|| _owned_callback_extra_frame(L, c->caller_depth + 1) || lua_type(L, 1) != LUA_TLIGHTUSERDATA
-				|| lua_touserdata(L, 1) != _owned_callback_ticket_pointer(c->ticket))
+			if (!c || c->ref->L != L)
 				return luaL_error(L, "expired Lua callback registration");
-			c->entered = true;
 			lua_settop(L, 0);
 			luaL_checkstack(L, 12, "Lua callback registration stack overflow");
 			// Neutralize this fresh setup closure too: newly created sentinel
@@ -1458,7 +1419,7 @@ end
 			if (lua_isnil(L, -1)) {
 				lua_pop(L, 1);
 				// Allocate C++ ownership outside Lua's C error frames. On a cold
-				// VM the caller supplies it and retries with a new entry ticket.
+				// VM the caller supplies it and retries the protected setup.
 				if (!c->lifetime) { c->needs_lifetime = true; return 0; }
 				_push_callback_lifetime(L, c->lifetime);
 			}
@@ -1487,15 +1448,11 @@ end
 	inline std::shared_ptr<_callback_reference> _own_direct_luafunction(lua_State* L, int index, const char* name) {
 		_owned_callback_registration c(L, name);
 		const int top = lua_gettop(L);
-		if (!c.ticket) return nullptr;
-		int status = lua_cpcall(L, _owned_callback_registration::enter, _owned_callback_ticket_pointer(c.ticket));
+		int status = lua_cpcall(L, _owned_callback_registration::enter, nullptr);
 		if (status == 0 && c.needs_lifetime) {
 			c.lifetime = std::make_shared<_callback_lifetime>();
-			c.ticket = _owned_callback_ticket();
-			c.entered = false;
 			c.needs_lifetime = false;
-			if (!c.ticket) return nullptr;
-			status = lua_cpcall(L, _owned_callback_registration::enter, _owned_callback_ticket_pointer(c.ticket));
+			status = lua_cpcall(L, _owned_callback_registration::enter, nullptr);
 		}
 		if (status != 0 || !c.permitted) {
 			lua_settop(L, top);
@@ -1508,8 +1465,7 @@ end
 		lua_pushlightuserdata(L, _owned_callback_registration::finish_key());
 		lua_rawget(L, LUA_REGISTRYINDEX);
 		lua_pushvalue(L, index);
-		lua_pushnumber(L, static_cast<lua_Number>(c.ticket));
-		status = lua_pcall(L, 2, 0, 0);
+		status = lua_pcall(L, 1, 0, 0);
 		c.permitted = false;
 		lua_settop(L, top);
 		return status == 0 && c.completed ? std::move(c.ref) : nullptr;
@@ -1517,25 +1473,15 @@ end
 
 	template<typename F>
 	struct _owned_callback_call {
-		enum class phase { setup, preparing, permitted, running, finished };
 		_callback_reference* callback;
 		F* invoke;
 		lua_State* L;
-		// Only initialized/read in Debug; Release trusts the private bridge entry points.
-		uint64_t ticket;
-		int caller_depth;
-		phase stage;
 		bool completed = false;
 		_owned_callback_call* previous;
 		inline static thread_local _owned_callback_call* active = nullptr;
 		inline static char report_key, run_key;
 		_owned_callback_call(_callback_reference* ref, F* function)
 			: callback(ref), invoke(function), L(ref->L), previous(active) {
-			if constexpr (callback_debug_hooks_enabled) {
-				ticket = _owned_callback_ticket();
-				caller_depth = _owned_callback_depth(ref->L);
-				stage = phase::setup;
-			}
 			active = this;
 		}
 		_owned_callback_call(const _owned_callback_call&) = delete;
@@ -1545,28 +1491,14 @@ end
 			auto* c = active;
 			if (!c || c->L != L)
 				return luaL_error(L, "expired Lua callback error handler");
-			if constexpr (callback_debug_hooks_enabled) {
-				if (c->stage != phase::running)
-					return luaL_error(L, "expired Lua callback error handler");
-			}
 			return _callback_report_error(L, c->callback->name.c_str());
 		}
 		static int run(lua_State* L) {
 			auto* c = active;
-			if constexpr (callback_debug_hooks_enabled) {
-				// Do not dereference an untrusted Lua pointer, even for validation.
-				if (!c || lua_gettop(L) != 2 || lua_type(L, 1) != LUA_TLIGHTUSERDATA
-					|| lua_touserdata(L, 1) != c || lua_type(L, 2) != LUA_TNUMBER
-					|| lua_tonumber(L, 2) != static_cast<lua_Number>(c->ticket)
-					|| c->L != L || c->stage != phase::permitted
-					|| _owned_callback_extra_frame(L, c->caller_depth + 2))
-					return luaL_error(L, "expired Lua callback invocation");
-				c->stage = phase::running;
-				lua_settop(L, 0);
-			} else if (!c || c->L != L) {
+			if (!c || c->L != L) {
 				return luaL_error(L, "expired Lua callback invocation");
 			}
-			// Release enters with zero Lua arguments. The context comes from TLS;
+			// Enter with zero Lua arguments. The context comes from TLS;
 			// its previous link still restores legitimate nested calls and reporters.
 			(*c->invoke)(L);
 			c->completed = true;
@@ -1574,14 +1506,7 @@ end
 		}
 		static int enter(lua_State* L) {
 			auto* context = active;
-			if constexpr (callback_debug_hooks_enabled) {
-				if (!context || context->L != L || context->stage != phase::setup
-					|| _owned_callback_extra_frame(L, context->caller_depth + 1)
-					|| lua_type(L, 1) != LUA_TLIGHTUSERDATA
-					|| lua_touserdata(L, 1) != _owned_callback_ticket_pointer(context->ticket))
-					return luaL_error(L, "expired Lua callback setup");
-				context->stage = phase::preparing;
-			} else if (!context || context->L != L) {
+			if (!context || context->L != L) {
 				return luaL_error(L, "expired Lua callback setup");
 			}
 			lua_settop(L, 0);
@@ -1589,13 +1514,7 @@ end
 			context->callback->state->drain(L);
 			_callback_call<F>::push_cached(L, report, &report_key);
 			_callback_call<F>::push_cached(L, run, &run_key);
-			if constexpr (callback_debug_hooks_enabled) {
-				lua_pushlightuserdata(L, context);
-				lua_pushnumber(L, static_cast<lua_Number>(context->ticket));
-				context->stage = phase::permitted;
-			}
-			const int status = lua_pcall(L, callback_debug_hooks_enabled ? 2 : 0, 0, 1);
-			if constexpr (callback_debug_hooks_enabled) context->stage = phase::finished;
+			const int status = lua_pcall(L, 0, 0, 1);
 			if (status != 0) {
 				context->completed = false;
 				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
@@ -1638,38 +1557,29 @@ end
 		auto keep = ref;
 		if (!keep->state->callable()) return false;
 		auto* L = keep->L;
-		if constexpr (!callback_debug_hooks_enabled) {
-			// Fail closed if an unmanaged native caller installed a hook.
-			if (lua_gethookmask(L)) return false;
-		}
 		const int top = lua_gettop(L);
 		_owned_callback_call<F> context{ keep.get(), &invoke };
-		if constexpr (callback_debug_hooks_enabled) {
-			if (!context.ticket) return false;
-		}
 		bool handled = false;
-		if constexpr (!callback_debug_hooks_enabled)
+		// Keep Debug setup protected, independently of whether hooks are installed.
+		if constexpr (CC_DEBUG <= 0)
 			handled = _owned_callback_call<F>::try_call_fast(L, top);
 		if (!handled) {
-			void* credential = nullptr;
-			if constexpr (callback_debug_hooks_enabled)
-				credential = _owned_callback_ticket_pointer(context.ticket);
-			if (lua_cpcall(L, _owned_callback_call<F>::enter, credential) != 0) {
+			if (lua_cpcall(L, _owned_callback_call<F>::enter, nullptr) != 0) {
 				context.completed = false;
 				_callback_log_error(L, keep->name.c_str());
 			}
 		}
-		if constexpr (callback_debug_hooks_enabled)
-			context.stage = _owned_callback_call<F>::phase::finished;
 		lua_settop(L, top);
 		return context.completed;
 	}
 
 	// Independent ownership: no handler/alias, and clearing one C++ copy does
 	// not cancel others. The name is diagnostic only. Failure preserves *out.
-	// Release requires trusted scripts (including finalizers/reporters): never call,
-	// replay or mutate private bridge closures, environments or registry entries.
-	// Trigger callbacks only through public APIs; normal recursive calls are supported.
+	// All builds trust scripts, debug hooks, finalizers and reporters. Observing
+	// bridge frames is supported; calling/replaying private bridge functions or
+	// changing their frames/environments/registry entries is unsupported and is
+	// not defended, and can repeat callbacks or corrupt registration state.
+	// Trigger callbacks through public APIs; normal recursion works.
 	template<typename R, typename... Args>
 	bool luaval_to_owned_callback(lua_State* L, int index, std::function<R(Args...)>* out,
 		const char* diagnostic_name = "") {
@@ -1677,9 +1587,6 @@ end
 			"owned Lua callback: argument converter has not opted into the fixed environment; use luaval_to_native");
 		static_assert(std::is_void_v<R> || (!std::is_reference_v<R> && std::is_same_v<R, std::remove_cv_t<R>> && owned_callback_read<R>::value),
 			"owned Lua callback: result converter/lifetime has not opted into the fixed environment; use luaval_to_native");
-		if constexpr (!callback_debug_hooks_enabled) {
-			if (L && lua_gethookmask(L)) return false;
-		}
 		index = _absolute_index(L, index);
 		if (!out || !index) return false;
 		if (lua_isnil(L, index)) { *out = nullptr; return true; }
