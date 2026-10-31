@@ -24,6 +24,8 @@
  ****************************************************************************/
 #include "scripting/lua-bindings/manual/3d/cclua_3d_manual.h"
 #include "scripting/lua-bindings/auto/cclua_3d_auto.hpp"
+#include "scripting/lua-bindings/auto/cclua_geometry_auto.hpp"
+#include "scripting/lua-bindings/manual/lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "3d/CCBundle3D.h"
@@ -672,237 +674,11 @@ static int register_all_cc_3d_manual(lua_State* L)
     return 0;
 }
 
-int cclua_3d_AABB_reset(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_reset'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 0)
-    {
-        if (!ok)
-            return 0;
-        cobj->reset();
-        lua_settop(L, 1);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:reset", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_reset'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_AABB_set(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_set'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 2)
-    {
-        cocos2d::Vec3 arg0;
-        cocos2d::Vec3 arg1;
-
-        ok &= luaval_to_vec3(L, 2, &arg0, "cc.AABB:set");
-
-        ok &= luaval_to_vec3(L, 3, &arg1, "cc.AABB:set");
-        if (!ok)
-            return 0;
-        cobj->set(arg0, arg1);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:set", argc, 2);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_set'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_AABB_transform(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_transform'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 1)
-    {
-        cocos2d::Mat4 arg0;
-
-        ok &= luaval_to_mat4(L, 2, &arg0, "cc.AABB:transform");
-        if (!ok)
-            return 0;
-        cobj->transform(arg0);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:transform", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_transform'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_AABB_getCenter(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_getCenter'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 0)
-    {
-        if (!ok)
-            return 0;
-        cocos2d::Vec3 ret = cobj->getCenter();
-        vec3_to_luaval(L, ret);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:getCenter", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_getCenter'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_AABB_isEmpty(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_isEmpty'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 0)
-    {
-        if (!ok)
-            return 0;
-        bool ret = cobj->isEmpty();
-        tolua_pushboolean(L, (bool)ret);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:isEmpty", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_isEmpty'.", &tolua_err);
-#endif
-
-    return 0;
-}
 int cclua_3d_AABB_getCorners(lua_State* L)
 {
+    const int inputTop = lua_gettop(L);
     int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
+    const cocos2d::AABB* cobj = nullptr;
     bool ok             = true;
 
 #if CC_DEBUG >= 1
@@ -914,7 +690,8 @@ int cclua_3d_AABB_getCorners(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
+    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
+        return luaL_error(L, "invalid class object in 'cc.AABB:getCorners'");
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -924,7 +701,7 @@ int cclua_3d_AABB_getCorners(lua_State* L)
     }
 #endif
 
-    argc = lua_gettop(L) - 1;
+    argc = inputTop - 1;
     if (argc == 1)
     {
         cocos2d::Vec3* arg0;
@@ -945,8 +722,10 @@ tolua_lerror:
 
     return 0;
 }
+
 int cclua_3d_AABB_updateMinMax(lua_State* L)
 {
+    const int inputTop = lua_gettop(L);
     int argc            = 0;
     cocos2d::AABB* cobj = nullptr;
     bool ok             = true;
@@ -960,7 +739,8 @@ int cclua_3d_AABB_updateMinMax(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
+    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
+        return luaL_error(L, "invalid class object in 'cc.AABB:updateMinMax'");
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -970,7 +750,7 @@ int cclua_3d_AABB_updateMinMax(lua_State* L)
     }
 #endif
 
-    argc = lua_gettop(L) - 1;
+    argc = inputTop - 1;
     if (argc == 2)
     {
         const cocos2d::Vec3* arg0;
@@ -994,658 +774,12 @@ tolua_lerror:
 
     return 0;
 }
-int cclua_3d_AABB_containPoint(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_containPoint'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 1)
-    {
-        cocos2d::Vec3 arg0;
-
-        ok &= luaval_to_vec3(L, 2, &arg0, "cc.AABB:containPoint");
-        if (!ok)
-            return 0;
-        bool ret = cobj->containPoint(arg0);
-        tolua_pushboolean(L, (bool)ret);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:containPoint", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_containPoint'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_AABB_constructor(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-    argc = lua_gettop(L) - 1;
-    do
-    {
-        if (argc == 2)
-        {
-            cocos2d::Vec3 arg0;
-            ok &= luaval_to_vec3(L, 2, &arg0, "cc.AABB:AABB");
-
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Vec3 arg1;
-            ok &= luaval_to_vec3(L, 3, &arg1, "cc.AABB:AABB");
-
-            if (!ok)
-            {
-                break;
-            }
-            cobj = new cocos2d::AABB(arg0, arg1);
-            tolua_pushusertype(L, (void*)cobj, "cc.AABB");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 0)
-        {
-            cobj = new cocos2d::AABB();
-            tolua_pushusertype(L, (void*)cobj, "cc.AABB");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:AABB", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_constructor'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-// An explicit setter prevents tolua from shadowing a read-only property.
-static int cclua_3d_readonly_field(lua_State* L)
-{
-    return luaL_error(L, "geometry fields are read-only; use methods to modify the object");
-}
-
-int cclua_3d_get_AABB_min(lua_State* L)
-{
-    cocos2d::AABB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_AABB_min'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getMin());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_AABB_min'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_AABB_max(lua_State* L)
-{
-    cocos2d::AABB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_AABB_max'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getMax());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_AABB_max'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_AABB_finalize(lua_State* L)
-{
-    cocos2d::AABB* self = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-    CC_SAFE_DELETE(self);
-    return 0;
-}
-
-int lua_register_cc_3d_AABB(lua_State* L)
-{
-    tolua_usertype(L, "cc.AABB");
-    tolua_cclass(L, "AABB", "cc.AABB", "", cclua_3d_AABB_finalize);
-
-    tolua_beginmodule(L, "AABB");
-    tolua_variable(L, "min", cclua_3d_get_AABB_min, cclua_3d_readonly_field);
-    tolua_variable(L, "max", cclua_3d_get_AABB_max, cclua_3d_readonly_field);
-    tolua_function(L, "new", cclua_3d_AABB_constructor);
-    tolua_function(L, "reset", cclua_3d_AABB_reset);
-    tolua_function(L, "set", cclua_3d_AABB_set);
-    tolua_function(L, "transform", cclua_3d_AABB_transform);
-    tolua_function(L, "getCenter", cclua_3d_AABB_getCenter);
-    tolua_function(L, "isEmpty", cclua_3d_AABB_isEmpty);
-    tolua_function(L, "getCorners", cclua_3d_AABB_getCorners);
-    tolua_function(L, "updateMinMax", cclua_3d_AABB_updateMinMax);
-    tolua_function(L, "containPoint", cclua_3d_AABB_containPoint);
-    tolua_endmodule(L);
-    auto typeName                                    = typeid(cocos2d::AABB).name();
-    g_luaType[reinterpret_cast<uintptr_t>(typeName)] = "cc.AABB";
-    g_typeCast[typeName]                             = "cc.AABB";
-    return 1;
-}
-
-int cclua_3d_OBB_reset(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_OBB_reset'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 0)
-    {
-        if (!ok)
-            return 0;
-        cobj->reset();
-        lua_settop(L, 1);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:reset", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_reset'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_OBB_set(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_OBB_set'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 5)
-    {
-        cocos2d::Vec3 arg0;
-        cocos2d::Vec3 arg1;
-        cocos2d::Vec3 arg2;
-        cocos2d::Vec3 arg3;
-        cocos2d::Vec3 arg4;
-
-        ok &= luaval_to_vec3(L, 2, &arg0, "cc.OBB:set");
-
-        ok &= luaval_to_vec3(L, 3, &arg1, "cc.OBB:set");
-
-        ok &= luaval_to_vec3(L, 4, &arg2, "cc.OBB:set");
-
-        ok &= luaval_to_vec3(L, 5, &arg3, "cc.OBB:set");
-
-        ok &= luaval_to_vec3(L, 6, &arg4, "cc.OBB:set");
-        if (!ok)
-            return 0;
-        cobj->set(arg0, arg1, arg2, arg3, arg4);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:set", argc, 5);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_set'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_OBB_transform(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_OBB_transform'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 1)
-    {
-        cocos2d::Mat4 arg0;
-
-        ok &= luaval_to_mat4(L, 2, &arg0, "cc.OBB:transform");
-        if (!ok)
-            return 0;
-        cobj->transform(arg0);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:transform", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_transform'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-int cclua_3d_OBB_containPoint(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_OBB_containPoint'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 1)
-    {
-        cocos2d::Vec3 arg0;
-
-        ok &= luaval_to_vec3(L, 2, &arg0, "cc.OBB:containPoint");
-        if (!ok)
-            return 0;
-        bool ret = cobj->containPoint(arg0);
-        tolua_pushboolean(L, (bool)ret);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:containPoint", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_containPoint'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-int cclua_3d_OBB_constructor(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
-    bool ok            = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-    argc = lua_gettop(L) - 1;
-    do
-    {
-        if (argc == 1)
-        {
-            cocos2d::AABB* arg0;
-            ok &= luaval_to_object<cocos2d::AABB>(L, 2, "cc.AABB", &arg0, "cc.OBB:OBB");
-
-            if (!ok)
-            {
-                break;
-            }
-            cobj = new cocos2d::OBB(*arg0);
-            tolua_pushusertype(L, (void*)cobj, "cc.OBB");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 0)
-        {
-            cobj = new cocos2d::OBB();
-            tolua_pushusertype(L, (void*)cobj, "cc.OBB");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 2)
-        {
-            const cocos2d::Vec3* arg0;
-            ok &= luaval_to_object<const cocos2d::Vec3>(L, 2, "cc.Vec3", &arg0, "cc.OBB:OBB");
-
-            if (!ok)
-            {
-                break;
-            }
-            int arg1;
-            ok &= luaval_to_int32(L, 3, (int*)&arg1, "cc.OBB:OBB");
-
-            if (!ok)
-            {
-                break;
-            }
-            cobj = new cocos2d::OBB(arg0, arg1);
-            tolua_pushusertype(L, (void*)cobj, "cc.OBB");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:OBB", argc, 2);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_constructor'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-int cclua_3d_OBB_intersects(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-    bool ok            = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_OBB_intersects'\n", nullptr);
-        return 0;
-    }
-#endif
-    argc = lua_gettop(L) - 1;
-    if (1 == argc)
-    {
-        cocos2d::OBB* arg0;
-        ok &= luaval_to_object<cocos2d::OBB>(L, 2, "cc.OBB", &arg0, "cc.OBB:intersects");
-
-        if (!ok)
-            return 0;
-
-        bool ret = self->intersects(*arg0);
-        tolua_pushboolean(L, ret);
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:intersects", argc, 1);
-    return 0;
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_intersects'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_OBB_center(lua_State* L)
-{
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_OBB_center'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getCenter());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_OBB_center'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_OBB_xAxis(lua_State* L)
-{
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_OBB_xAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getXAxis());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_OBB_xAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_OBB_yAxis(lua_State* L)
-{
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_OBB_yAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getYAxis());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_OBB_yAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_OBB_zAxis(lua_State* L)
-{
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_OBB_zAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getZAxis());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_OBB_zAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_OBB_extents(lua_State* L)
-{
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_OBB_extents'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getExtents());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_OBB_extents'.", &tolua_err);
-    return 0;
-#endif
-}
 
 int cclua_3d_OBB_getCorners(lua_State* L)
 {
+    const int inputTop = lua_gettop(L);
     int argc           = 0;
-    cocos2d::OBB* cobj = nullptr;
+    const cocos2d::OBB* cobj = nullptr;
 
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -1656,7 +790,8 @@ int cclua_3d_OBB_getCorners(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
+    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
+        return luaL_error(L, "invalid class object in 'cc.OBB:getCorners'");
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -1666,7 +801,7 @@ int cclua_3d_OBB_getCorners(lua_State* L)
     }
 #endif
 
-    argc = lua_gettop(L) - 1;
+    argc = inputTop - 1;
     if (argc == 1)
     {
         cocos2d::Vec3* arg0;
@@ -1723,138 +858,11 @@ tolua_lerror:
     return 0;
 }
 
-int cclua_3d_OBB_finalize(lua_State* L)
-{
-    cocos2d::OBB* self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-    CC_SAFE_DELETE(self);
-    return 0;
-}
-
-int lua_register_cc_3d_OBB(lua_State* L)
-{
-    tolua_usertype(L, "cc.OBB");
-    tolua_cclass(L, "OBB", "cc.OBB", "", cclua_3d_OBB_finalize);
-
-    tolua_beginmodule(L, "OBB");
-    tolua_variable(L, "center", cclua_3d_get_OBB_center, cclua_3d_readonly_field);
-    tolua_variable(L, "xAxis", cclua_3d_get_OBB_xAxis, cclua_3d_readonly_field);
-    tolua_variable(L, "yAxis", cclua_3d_get_OBB_yAxis, cclua_3d_readonly_field);
-    tolua_variable(L, "zAxis", cclua_3d_get_OBB_zAxis, cclua_3d_readonly_field);
-    tolua_variable(L, "extents", cclua_3d_get_OBB_extents, cclua_3d_readonly_field);
-    tolua_function(L, "new", cclua_3d_OBB_constructor);
-    tolua_function(L, "reset", cclua_3d_OBB_reset);
-    tolua_function(L, "set", cclua_3d_OBB_set);
-    tolua_function(L, "transform", cclua_3d_OBB_transform);
-    tolua_function(L, "containPoint", cclua_3d_OBB_containPoint);
-    tolua_function(L, "intersects", cclua_3d_OBB_intersects);
-    tolua_function(L, "getCorners", cclua_3d_OBB_getCorners);
-    tolua_endmodule(L);
-    auto typeName                                    = typeid(cocos2d::OBB).name();
-    g_luaType[reinterpret_cast<uintptr_t>(typeName)] = "cc.OBB";
-    g_typeCast[typeName]                             = "cc.OBB";
-    return 1;
-}
-
-int cclua_3d_Ray_set(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::Ray* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_Ray_set'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 2)
-    {
-        cocos2d::Vec3 arg0;
-        cocos2d::Vec3 arg1;
-
-        ok &= luaval_to_vec3(L, 2, &arg0, "cc.Ray:set");
-
-        ok &= luaval_to_vec3(L, 3, &arg1, "cc.Ray:set");
-        if (!ok)
-            return 0;
-        cobj->set(arg0, arg1);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Ray:set", argc, 2);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_Ray_set'.", &tolua_err);
-#endif
-
-    return 0;
-}
-int cclua_3d_Ray_transform(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::Ray* cobj = nullptr;
-    bool ok            = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_Ray_transform'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-    if (argc == 1)
-    {
-        cocos2d::Mat4 arg0;
-
-        ok &= luaval_to_mat4(L, 2, &arg0, "cc.Ray:transform");
-        if (!ok)
-            return 0;
-        cobj->transform(arg0);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Ray:transform", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_Ray_transform'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
 int cclua_3d_Ray_intersects(lua_State* L)
 {
+    const int inputTop = lua_gettop(L);
     int argc           = 0;
-    cocos2d::Ray* self = nullptr;
+    const cocos2d::Ray* self = nullptr;
     bool ok            = true;
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -1862,7 +870,8 @@ int cclua_3d_Ray_intersects(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
+    if (!lua::luaval_to_native(L, 1, &self) || !self)
+        return luaL_error(L, "invalid class object in 'cc.Ray:intersects'");
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -1870,11 +879,11 @@ int cclua_3d_Ray_intersects(lua_State* L)
         return 0;
     }
 #endif
-    argc = lua_gettop(L) - 1;
+    argc = inputTop - 1;
     if (1 == argc)
     {
-        cocos2d::OBB* arg0 = nullptr;
-        ok &= luaval_to_object<cocos2d::OBB>(L, 2, "cc.OBB", &arg0, "cc.Ray:intersects");
+        const cocos2d::OBB* arg0 = nullptr;
+        ok &= lua::luaval_to_native(L, 2, &arg0, "cc.Ray:intersects") && arg0;
 
         if (!ok)
             return 0;
@@ -1894,153 +903,39 @@ tolua_lerror:
 #endif
 }
 
-int cclua_3d_Ray_constructor(lua_State* L)
+// Retain the old native Vec3-buffer constructor; ordinary constructors are generated.
+static int cclua_3d_OBB_constructor(lua_State* L)
 {
-    int argc           = 0;
-    cocos2d::Ray* cobj = nullptr;
-    bool ok            = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
+    if (lua_gettop(L) - 1 != 2)
+        return lua_tocfunction(L, lua_upvalueindex(1))(L);
 
-    argc = lua_gettop(L) - 1;
-    do
-    {
-        if (argc == 2)
-        {
-            cocos2d::Vec3 arg0;
-            ok &= luaval_to_vec3(L, 2, &arg0, "cc.Ray:Ray");
-
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Vec3 arg1;
-            ok &= luaval_to_vec3(L, 3, &arg1, "cc.Ray:Ray");
-
-            if (!ok)
-            {
-                break;
-            }
-            cobj = new cocos2d::Ray(arg0, arg1);
-            tolua_pushusertype(L, (void*)cobj, "cc.Ray");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 0)
-        {
-            cobj = new cocos2d::Ray();
-            tolua_pushusertype(L, (void*)cobj, "cc.Ray");
-            tolua_register_gc(L, lua_gettop(L));
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Ray:Ray", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_error(L, "#ferror in function 'cclua_3d_Ray_constructor'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-int cclua_3d_get_Ray_origin(lua_State* L)
-{
-    cocos2d::Ray* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_Ray_origin'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getOrigin());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_Ray_origin'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_get_Ray_direction(lua_State* L)
-{
-    cocos2d::Ray* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_get_Ray_direction'\n", nullptr);
-        return 0;
-    }
-#endif
-    vec3_to_luaval(L, self->getDirection());
-    return 1;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_get_Ray_direction'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int cclua_3d_Ray_finalize(lua_State* L)
-{
-    cocos2d::Ray* self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-    CC_SAFE_DELETE(self);
-    return 0;
-}
-
-int lua_register_cc_3d_Ray(lua_State* L)
-{
-    tolua_usertype(L, "cc.Ray");
-    tolua_cclass(L, "Ray", "cc.Ray", "", cclua_3d_Ray_finalize);
-
-    tolua_beginmodule(L, "Ray");
-    tolua_variable(L, "origin", cclua_3d_get_Ray_origin, cclua_3d_readonly_field);
-    tolua_variable(L, "direction", cclua_3d_get_Ray_direction, cclua_3d_readonly_field);
-    tolua_function(L, "new", cclua_3d_Ray_constructor);
-    tolua_function(L, "set", cclua_3d_Ray_set);
-    tolua_function(L, "transform", cclua_3d_Ray_transform);
-    tolua_function(L, "intersects", cclua_3d_Ray_intersects);
-    tolua_endmodule(L);
-    auto typeName                                    = typeid(cocos2d::Ray).name();
-    g_luaType[reinterpret_cast<uintptr_t>(typeName)] = "cc.Ray";
-    g_typeCast[typeName]                             = "cc.Ray";
+    const cocos2d::Vec3* points = nullptr;
+    int count = 0;
+    if (!luaval_to_object<const cocos2d::Vec3>(L, 2, "cc.Vec3", &points, "cc.OBB:OBB") || !points ||
+        !luaval_to_int32(L, 3, &count, "cc.OBB:OBB"))
+        return luaL_error(L, "invalid arguments in 'cc.OBB:OBB'");
+    lua::push_value_owned(L, new cocos2d::OBB(points, count));
     return 1;
 }
 
 int register_all_cocos3d_manual_class(lua_State* L)
 {
-    tolua_module(L, "cc", 0);
-    tolua_beginmodule(L, "cc");
-    lua_register_cc_3d_AABB(L);
-    lua_register_cc_3d_OBB(L);
-    lua_register_cc_3d_Ray(L);
-    tolua_endmodule(L);
+    register_all_cc_geometry(L);
+    lua_getfield(L, LUA_REGISTRYINDEX, "cc.AABB");
+    tolua_function(L, "getCorners", cclua_3d_AABB_getCorners);
+    tolua_function(L, "updateMinMax", cclua_3d_AABB_updateMinMax);
+    lua_pop(L, 1);
 
+    lua_getfield(L, LUA_REGISTRYINDEX, "cc.OBB");
+    tolua_function(L, "getCorners", cclua_3d_OBB_getCorners);
+    lua_getfield(L, -1, "new");
+    lua_pushcclosure(L, cclua_3d_OBB_constructor, 1);
+    lua_setfield(L, -2, "new");
+    lua_pop(L, 1);
+
+    lua_getfield(L, LUA_REGISTRYINDEX, "cc.Ray");
+    tolua_function(L, "intersects", cclua_3d_Ray_intersects);
+    lua_pop(L, 1);
     return 0;
 }
 

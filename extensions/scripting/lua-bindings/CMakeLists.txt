@@ -3,6 +3,7 @@ set(cocos_root ${COCOS2DX_ROOT_PATH})
 set(lua_bindings_manual_headers
     manual/CCComponentLua.h
     manual/3d/cclua_3d_manual.h
+    manual/3d/cclua_geometry_compat.hpp
     manual/CCLuaStack.h
     manual/CCLuaEngine.h
     manual/lua_module_register.h
@@ -18,11 +19,14 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/callback_state.hpp
     manual/lua_conversion/detail/callback_from_lua.hpp
     manual/lua_conversion/detail/invoke.hpp
+    manual/lua_conversion/detail/value_userdata.hpp
     manual/lua_conversion/detail/callback_to_lua.hpp
     manual/lua_conversion/detail/binding_macros.hpp
+    manual/lua_conversion/detail/binding_macros_base.hpp
     manual/lua_conversion/detail/cocos/object.hpp
     manual/lua_conversion/detail/cocos/containers.hpp
     manual/lua_conversion/detail/cocos/value_types.hpp
+    manual/lua_conversion/detail/cocos/geometry.hpp
     manual/lua_conversion/detail/cocos/physics.hpp
     manual/platform/ios/CCLuaObjcBridge.h
     manual/network/cclua_network_manual.h
@@ -69,6 +73,7 @@ set(lua_bindings_manual_files
 
 set(lua_bindings_auto_headers
     auto/cclua_3d_auto.hpp
+    auto/cclua_geometry_auto.hpp
     auto/cclua_controller_auto.hpp
     auto/cclua_base_auto.hpp
     auto/cclua_navmesh_auto.hpp
@@ -82,6 +87,7 @@ set(lua_bindings_auto_headers
 
 set(lua_bindings_auto_files
     auto/cclua_3d_auto.cpp
+    auto/cclua_geometry_auto.cpp
     auto/cclua_base_auto.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
