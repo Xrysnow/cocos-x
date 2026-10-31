@@ -44,9 +44,9 @@ bool Frustum::isOutOfFrustum(const AABB& aabb) const
         for (int i = 0; i < plane; i++)
         {
             const Vec3& normal = _plane[i].getNormal();
-            point.x            = normal.x < 0 ? aabb._max.x : aabb._min.x;
-            point.y            = normal.y < 0 ? aabb._max.y : aabb._min.y;
-            point.z            = normal.z < 0 ? aabb._max.z : aabb._min.z;
+            point.x            = normal.x < 0 ? aabb.getMax().x : aabb.getMin().x;
+            point.y            = normal.y < 0 ? aabb.getMax().y : aabb.getMin().y;
+            point.z            = normal.z < 0 ? aabb.getMax().z : aabb.getMin().z;
 
             if (_plane[i].getSide(point) == PointSide::FRONT_PLANE)
                 return true;
@@ -61,17 +61,17 @@ bool Frustum::isOutOfFrustum(const OBB& obb) const
     {
         Vec3 point;
         int plane       = _clipZ ? 6 : 4;
-        Vec3 obbExtentX = obb._xAxis * obb._extents.x;
-        Vec3 obbExtentY = obb._yAxis * obb._extents.y;
-        Vec3 obbExtentZ = obb._zAxis * obb._extents.z;
+        Vec3 obbExtentX = obb.getXAxis() * obb.getExtents().x;
+        Vec3 obbExtentY = obb.getYAxis() * obb.getExtents().y;
+        Vec3 obbExtentZ = obb.getZAxis() * obb.getExtents().z;
 
         for (int i = 0; i < plane; i++)
         {
             const Vec3& normal = _plane[i].getNormal();
-            point              = obb._center;
-            point              = normal.dot(obb._xAxis) > 0 ? point - obbExtentX : point + obbExtentX;
-            point              = normal.dot(obb._yAxis) > 0 ? point - obbExtentY : point + obbExtentY;
-            point              = normal.dot(obb._zAxis) > 0 ? point - obbExtentZ : point + obbExtentZ;
+            point              = obb.getCenter();
+            point              = normal.dot(obb.getXAxis()) > 0 ? point - obbExtentX : point + obbExtentX;
+            point              = normal.dot(obb.getYAxis()) > 0 ? point - obbExtentY : point + obbExtentY;
+            point              = normal.dot(obb.getZAxis()) > 0 ? point - obbExtentZ : point + obbExtentZ;
 
             if (_plane[i].getSide(point) == PointSide::FRONT_PLANE)
                 return true;

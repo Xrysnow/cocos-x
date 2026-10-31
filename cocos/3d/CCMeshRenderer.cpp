@@ -909,7 +909,9 @@ Action* MeshRenderer::runAction(Action* action)
 Rect MeshRenderer::getBoundingBox() const
 {
     AABB aabb = getAABB();
-    Rect ret(aabb._min.x, aabb._min.y, (aabb._max.x - aabb._min.x), (aabb._max.y - aabb._min.y));
+    const auto& min = aabb.getMin();
+    const auto& max = aabb.getMax();
+    Rect ret(min.x, min.y, (max.x - min.x), (max.y - min.y));
     return ret;
 }
 

@@ -56,9 +56,19 @@ public:
     AABB(const Vec3& min, const Vec3& max);
 
     /**
+     * Gets the minimum corner of the bounding box.
+     */
+    const Vec3& getMin() const { return _min; }
+
+    /**
+     * Gets the maximum corner of the bounding box.
+     */
+    const Vec3& getMax() const { return _max; }
+
+    /**
      * Gets the center point of the bounding box.
      */
-    Vec3 getCenter();
+    Vec3 getCenter() const;
 
     /* Near face, specified counter-clockwise looking towards the origin from the positive z-axis.
      * verts[0] : left top front
@@ -115,7 +125,7 @@ public:
      */
     void transform(const Mat4& mat);
 
-public:
+private:
     Vec3 _min;
     Vec3 _max;
 };

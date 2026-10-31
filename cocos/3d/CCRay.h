@@ -101,6 +101,13 @@ public:
      */
     void transform(const Mat4& matrix);
 
+    /** Gets the ray origin position. */
+    const Vec3& getOrigin() const { return _origin; }
+
+    /** Gets the normalized ray direction. */
+    const Vec3& getDirection() const { return _direction; }
+
+private:
     Vec3 _origin;     // The ray origin position.
     Vec3 _direction;  // The ray direction vector.
 };

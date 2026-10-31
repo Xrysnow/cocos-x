@@ -45,8 +45,8 @@ bool Ray::intersects(const AABB& box, float* distance) const
     float t;
     bool hit = false;
     Vec3 hitpoint;
-    const Vec3& min     = box._min;
-    const Vec3& max     = box._max;
+    const Vec3& min     = box.getMin();
+    const Vec3& max     = box.getMax();
     const Vec3& rayorig = _origin;
     const Vec3& raydir  = _direction;
 
@@ -162,30 +162,28 @@ bool Ray::intersects(const AABB& box, float* distance) const
 
 bool Ray::intersects(const OBB& obb, float* distance) const
 {
-    AABB aabb;
-    aabb._min = -obb._extents;
-    aabb._max = obb._extents;
+    const AABB aabb(-obb.getExtents(), obb.getExtents());
 
     Ray ray;
     ray._direction = _direction;
     ray._origin    = _origin;
 
     Mat4 mat = Mat4::IDENTITY;
-    mat.m[0] = obb._xAxis.x;
-    mat.m[1] = obb._xAxis.y;
-    mat.m[2] = obb._xAxis.z;
+    mat.m[0] = obb.getXAxis().x;
+    mat.m[1] = obb.getXAxis().y;
+    mat.m[2] = obb.getXAxis().z;
 
-    mat.m[4] = obb._yAxis.x;
-    mat.m[5] = obb._yAxis.y;
-    mat.m[6] = obb._yAxis.z;
+    mat.m[4] = obb.getYAxis().x;
+    mat.m[5] = obb.getYAxis().y;
+    mat.m[6] = obb.getYAxis().z;
 
-    mat.m[8]  = obb._zAxis.x;
-    mat.m[9]  = obb._zAxis.y;
-    mat.m[10] = obb._zAxis.z;
+    mat.m[8]  = obb.getZAxis().x;
+    mat.m[9]  = obb.getZAxis().y;
+    mat.m[10] = obb.getZAxis().z;
 
-    mat.m[12] = obb._center.x;
-    mat.m[13] = obb._center.y;
-    mat.m[14] = obb._center.z;
+    mat.m[12] = obb.getCenter().x;
+    mat.m[13] = obb.getCenter().y;
+    mat.m[14] = obb.getCenter().z;
 
     mat = mat.getInversed();
 

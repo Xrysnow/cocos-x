@@ -60,6 +60,31 @@ public:
      */
     OBB(const Vec3* verts, int num);
 
+    /**
+     * Gets the center of the bounding box.
+     */
+    const Vec3& getCenter() const { return _center; }
+
+    /**
+     * Gets the x axis of the bounding box.
+     */
+    const Vec3& getXAxis() const { return _xAxis; }
+
+    /**
+     * Gets the y axis of the bounding box.
+     */
+    const Vec3& getYAxis() const { return _yAxis; }
+
+    /**
+     * Gets the z axis of the bounding box.
+     */
+    const Vec3& getZAxis() const { return _zAxis; }
+
+    /**
+     * Gets the half-lengths along the bounding box's axes.
+     */
+    const Vec3& getExtents() const { return _extents; }
+
     /*
      * Check point in
      */
@@ -130,7 +155,7 @@ protected:
      */
     Vec3 getFaceDirection(int index) const;
 
-public:
+private:
     Vec3 _center;   // obb center
     Vec3 _xAxis;    // x axis of obb, unit vector
     Vec3 _yAxis;    // y axis of obb, unit vector

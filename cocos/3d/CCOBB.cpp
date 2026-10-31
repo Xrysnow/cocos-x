@@ -227,13 +227,13 @@ OBB::OBB(const AABB& aabb)
 {
     reset();
 
-    _center = (aabb._min + aabb._max);
+    _center = (aabb.getMin() + aabb.getMax());
     _center.scale(0.5f);
     _xAxis.set(1.0f, 0.0f, 0.0f);
     _yAxis.set(0.0f, 1.0f, 0.0f);
     _zAxis.set(0.0f, 0.0f, 1.0f);
 
-    _extents = aabb._max - aabb._min;
+    _extents = aabb.getMax() - aabb.getMin();
     _extents.scale(0.5f);
 
     computeExtAxis();
@@ -312,6 +312,7 @@ void OBB::set(const Vec3& center, const Vec3& xAxis, const Vec3& yAxis, const Ve
     _yAxis   = yAxis;
     _zAxis   = zAxis;
     _extents = extents;
+    computeExtAxis();
 }
 
 void OBB::reset()

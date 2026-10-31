@@ -1097,6 +1097,12 @@ int axlua_3d_AABB_constructor(lua_State* L)
     return 0;
 }
 
+// An explicit setter prevents tolua from shadowing a read-only property.
+static int axlua_3d_readonly_field(lua_State* L)
+{
+    return luaL_error(L, "geometry fields are read-only; use methods to modify the object");
+}
+
 int axlua_3d_get_AABB_min(lua_State* L)
 {
     cocos2d::AABB* self = nullptr;
@@ -1115,53 +1121,12 @@ int axlua_3d_get_AABB_min(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_min);
+    vec3_to_luaval(L, self->getMin());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_AABB_min'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_AABB_min(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_AABB_min'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_min);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_AABB_min'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1184,53 +1149,12 @@ int axlua_3d_get_AABB_max(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_max);
+    vec3_to_luaval(L, self->getMax());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_AABB_max'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_AABB_max(lua_State* L)
-{
-    int argc            = 0;
-    cocos2d::AABB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::AABB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_AABB_max'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_max);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_Ray_direction'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1248,8 +1172,8 @@ int lua_register_axis_3d_AABB(lua_State* L)
     tolua_cclass(L, "AABB", "cc.AABB", "", axlua_3d_AABB_finalize);
 
     tolua_beginmodule(L, "AABB");
-    tolua_variable(L, "min", axlua_3d_get_AABB_min, axlua_3d_set_AABB_min);
-    tolua_variable(L, "max", axlua_3d_get_AABB_max, axlua_3d_set_AABB_max);
+    tolua_variable(L, "min", axlua_3d_get_AABB_min, axlua_3d_readonly_field);
+    tolua_variable(L, "max", axlua_3d_get_AABB_max, axlua_3d_readonly_field);
     tolua_function(L, "new", axlua_3d_AABB_constructor);
     tolua_function(L, "reset", axlua_3d_AABB_reset);
     tolua_function(L, "set", axlua_3d_AABB_set);
@@ -1596,53 +1520,12 @@ int axlua_3d_get_OBB_center(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_center);
+    vec3_to_luaval(L, self->getCenter());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_OBB_center'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_OBB_center(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_OBB_center'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_center);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_OBB_center'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1665,53 +1548,12 @@ int axlua_3d_get_OBB_xAxis(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_xAxis);
+    vec3_to_luaval(L, self->getXAxis());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_OBB_xAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_OBB_xAxis(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_OBB_xAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_xAxis);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_OBB_center'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1734,53 +1576,12 @@ int axlua_3d_get_OBB_yAxis(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_yAxis);
+    vec3_to_luaval(L, self->getYAxis());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_OBB_yAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_OBB_yAxis(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_OBB_yAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_yAxis);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_OBB_yAxis'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1803,53 +1604,12 @@ int axlua_3d_get_OBB_zAxis(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_zAxis);
+    vec3_to_luaval(L, self->getZAxis());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_OBB_zAxis'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_OBB_zAxis(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_OBB_zAxis'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_zAxis);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_OBB_zAxis'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1872,53 +1632,12 @@ int axlua_3d_get_OBB_extents(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_extents);
+    vec3_to_luaval(L, self->getExtents());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_OBB_extents'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_OBB_extents(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::OBB* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::OBB*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_OBB_extents'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_extents);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_OBB_extents'.", &tolua_err);
     return 0;
 #endif
 }
@@ -2017,11 +1736,11 @@ int lua_register_axis_3d_OBB(lua_State* L)
     tolua_cclass(L, "OBB", "cc.OBB", "", axlua_3d_OBB_finalize);
 
     tolua_beginmodule(L, "OBB");
-    tolua_variable(L, "center", axlua_3d_get_OBB_center, axlua_3d_set_OBB_center);
-    tolua_variable(L, "xAxis", axlua_3d_get_OBB_xAxis, axlua_3d_set_OBB_xAxis);
-    tolua_variable(L, "yAxis", axlua_3d_get_OBB_yAxis, axlua_3d_set_OBB_yAxis);
-    tolua_variable(L, "zAxis", axlua_3d_get_OBB_zAxis, axlua_3d_set_OBB_zAxis);
-    tolua_variable(L, "extents", axlua_3d_get_OBB_extents, axlua_3d_set_OBB_extents);
+    tolua_variable(L, "center", axlua_3d_get_OBB_center, axlua_3d_readonly_field);
+    tolua_variable(L, "xAxis", axlua_3d_get_OBB_xAxis, axlua_3d_readonly_field);
+    tolua_variable(L, "yAxis", axlua_3d_get_OBB_yAxis, axlua_3d_readonly_field);
+    tolua_variable(L, "zAxis", axlua_3d_get_OBB_zAxis, axlua_3d_readonly_field);
+    tolua_variable(L, "extents", axlua_3d_get_OBB_extents, axlua_3d_readonly_field);
     tolua_function(L, "new", axlua_3d_OBB_constructor);
     tolua_function(L, "reset", axlua_3d_OBB_reset);
     tolua_function(L, "set", axlua_3d_OBB_set);
@@ -2249,53 +1968,12 @@ int axlua_3d_get_Ray_origin(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_origin);
+    vec3_to_luaval(L, self->getOrigin());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_Ray_origin'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_Ray_origin(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::Ray* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_Ray_origin'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_origin);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_Ray_origin'.", &tolua_err);
     return 0;
 #endif
 }
@@ -2318,53 +1996,12 @@ int axlua_3d_get_Ray_direction(lua_State* L)
         return 0;
     }
 #endif
-    vec3_to_luaval(L, self->_direction);
+    vec3_to_luaval(L, self->getDirection());
     return 1;
 
 #if CC_DEBUG >= 1
 tolua_lerror:
     tolua_error(L, "#ferror in function 'axlua_3d_get_Ray_direction'.", &tolua_err);
-    return 0;
-#endif
-}
-
-int axlua_3d_set_Ray_direction(lua_State* L)
-{
-    int argc           = 0;
-    cocos2d::Ray* self = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    self = (cocos2d::Ray*)tolua_tousertype(L, 1, 0);
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'axlua_3d_set_Ray_direction'\n", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(L) - 1;
-
-    if (1 == argc)
-    {
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-        luaval_to_vec3(L, 2, &self->_direction);
-        return 0;
-    }
-
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_3d_set_Ray_direction'.", &tolua_err);
     return 0;
 #endif
 }
@@ -2382,8 +2019,8 @@ int lua_register_axis_3d_Ray(lua_State* L)
     tolua_cclass(L, "Ray", "cc.Ray", "", axlua_3d_Ray_finalize);
 
     tolua_beginmodule(L, "Ray");
-    tolua_variable(L, "origin", axlua_3d_get_Ray_origin, axlua_3d_set_Ray_origin);
-    tolua_variable(L, "direction", axlua_3d_get_Ray_direction, axlua_3d_set_Ray_direction);
+    tolua_variable(L, "origin", axlua_3d_get_Ray_origin, axlua_3d_readonly_field);
+    tolua_variable(L, "direction", axlua_3d_get_Ray_direction, axlua_3d_readonly_field);
     tolua_function(L, "new", axlua_3d_Ray_constructor);
     tolua_function(L, "set", axlua_3d_Ray_set);
     tolua_function(L, "transform", axlua_3d_Ray_transform);
