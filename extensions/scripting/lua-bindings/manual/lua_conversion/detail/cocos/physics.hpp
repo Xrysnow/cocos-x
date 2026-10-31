@@ -3,6 +3,7 @@
 #include "object.hpp"
 #include "value_types.hpp"
 #include "cocos2d.h"
+#include "physics3d/CCPhysics3DObject.h"
 
 namespace lua
 {
@@ -85,5 +86,12 @@ namespace lua
 		}
 	};
 
+#endif
+
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+	LUA_TO_LUA_STRUCT5(cocos2d::Physics3DCollisionInfo::CollisionPoint,
+		localPositionOnA, worldPositionOnA, localPositionOnB, worldPositionOnB, worldNormalOnB);
+
+	LUA_TO_LUA_STRUCT3(cocos2d::Physics3DCollisionInfo, objA, objB, collisionPointList);
 #endif
 }
