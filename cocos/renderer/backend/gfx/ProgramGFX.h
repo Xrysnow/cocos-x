@@ -71,6 +71,7 @@ public:
     };
 
     const std::unordered_map<std::string, BlockInfoEx>& getBlockInfoEx() const { return blockInfoEx; }
+    const UniformInfo* getUniformInfo(const UniformLocation& loc) const;
     // get default (set=0)
     const cc::gfx::DescriptorSetLayoutBindingList& getUniformLayoutBindings() const { return uniformLayoutBindings; }
     cc::gfx::DescriptorSetLayoutBindingList getUniformLayoutBindings(uint32_t set) const;
@@ -154,6 +155,7 @@ public:
 
     bool setBuffer(const std::string& blockName, BufferGFX* buffer);
     BufferGFX* getBuffer(const std::string& blockName);
+    // Low-level uploads use bytes already packed for the uniform buffer layout.
     bool setUniform(const std::string& name, const void* data, std::size_t size);
     bool setUniform(const UniformLocation& loc, const void* data, std::size_t size);
     bool setAllBuffer(const void* data, std::size_t size);

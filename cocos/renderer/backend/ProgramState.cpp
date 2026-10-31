@@ -31,6 +31,7 @@
 #include "base/CCEventType.h"
 #include "base/CCDirector.h"
 #include "renderer/backend/gfx/ProgramGFX.h"
+#include "renderer/backend/gfx/UtilsGFX.h"
 
 #include <algorithm>
 
@@ -233,31 +234,74 @@ void ProgramState::setUniform(const backend::UniformLocation& uniformLocation, c
     CC_ASSERT(state);
     if (!state)
         return;
+
+    const auto info      = p->getUniformInfo(uniformLocation);
+    const auto allOffset = state->getAllBufferOffset(uniformLocation);
+    if (!data || size == 0 || !info || allOffset < 0 || size_t(allOffset) > _vertexUniformBufferSize)
+    {
+        CCASSERT(false, "invalid uniform data or location");
+        return;
+    }
+    const auto remaining = _vertexUniformBufferSize - size_t(allOffset);
+    const auto api       = cc::gfx::Device::getInstance()->getGfxAPI();
+    const auto legacy    = api == cc::gfx::API::GLES2 || api == cc::gfx::API::WEBGL;
+    std::vector<uint8_t> packedData;
+    if (!legacy)
+    {
+        const bool mat3 = info->isMatrix && info->size == 9 * sizeof(float);
+        const auto elementSize = size_t(info->size);
+        auto stride = elementSize;
+        if (mat3)
+            stride = 12 * sizeof(float);
+        else if (info->isArray && !info->isMatrix)
+            stride = UtilsGFX::getUniformStructStd140Size(info->size);
+        if (stride != elementSize)
+        {
+            // setUniform accepts tightly packed values. Whole-buffer uploads
+            // already use the GPU layout and bypass this conversion.
+            if (elementSize == 0 || size % elementSize != 0 ||
+                size / elementSize > size_t(std::max(info->count, 1)) ||
+                size / elementSize > remaining / stride)
+            {
+                CCASSERT(false, "invalid uniform element count or packed size");
+                return;
+            }
+            const auto count = size / elementSize;
+            packedData.resize(count * stride, 0);
+            const auto source = static_cast<const uint8_t*>(data);
+            for (size_t element = 0; element < count; ++element)
+            {
+                auto target = packedData.data() + element * stride;
+                const auto value = source + element * elementSize;
+                if (mat3)
+                {
+                    for (size_t column = 0; column < 3; ++column)
+                        memcpy(target + column * 4 * sizeof(float),
+                               value + column * 3 * sizeof(float), 3 * sizeof(float));
+                }
+                else
+                {
+                    memcpy(target, value, elementSize);
+                }
+            }
+            data = packedData.data();
+            size = packedData.size();
+        }
+    }
+    if (size > remaining)
+    {
+        CCASSERT(false, "uniform buffer size overflow");
+        return;
+    }
     if (!state->setUniform(uniformLocation, data, size))
     {
 #if CC_DEBUG
         log("%s: failed, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, offset);
         CCASSERT(false, "failed");
 #endif
-    }
-    const auto allOffset = state->getAllBufferOffset(uniformLocation);
-    if (allOffset + size > _vertexUniformBufferSize || allOffset > _vertexUniformBufferSize ||
-        size > _vertexUniformBufferSize)
-    {
-#if CC_DEBUG
-        log("%s: invalid parameters, loc=%d, size=%d, offset=%d", __FUNCTION__, location, (int)size, (int)allOffset);
-        CCASSERT(false, "invalid parameters");
-#endif
         return;
     }
-    if (allOffset < 0)
-    {
-#if CC_DEBUG
-        log("%s: invalid uniform location, [0]=%d, [1]=%d", __FUNCTION__, location, (int)offset);
-        CCASSERT(false, "invalid uniform location");
-#endif
-        return;
-    }
+    // Cache exactly the bytes uploaded to the GPU, including zeroed padding.
     memcpy(_vertexUniformBuffer + allOffset, data, size);
     _uniformID = -1;
 }

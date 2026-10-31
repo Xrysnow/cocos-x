@@ -109,8 +109,9 @@ public:
     /**
      * Specify the value of a uniform variable for the current program state object.
      * @param uniformLocation Specifies the uniform location.
-     * @param data Specifies the new values to be used for the specified uniform variable.
-     * @param size Specifies the uniform data size.
+     * @param data Specifies tightly packed uniform values. The gfx backend pads mat3
+     *             vectors and scalar/vector array elements for uniform buffer storage.
+     * @param size Specifies the source data size before uniform buffer padding.
      */
     void setUniform(const backend::UniformLocation& uniformLocation, const void* data, std::size_t size);
 

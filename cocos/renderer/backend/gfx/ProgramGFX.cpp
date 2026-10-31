@@ -370,7 +370,7 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
     {
         for (auto& u : block.members)
         {
-            // NOTE: 0 means scalar, but the engine needs 1
+            // Layout has consumed count=0 for non-arrays; gfx requires at least one element.
             if (u.count == 0)
                 u.count = 1;
         }
@@ -585,102 +585,80 @@ void ProgramGFX::updateBlockInfoEx(
     const auto legacy = api == gfx::API::GLES2 || api == gfx::API::WEBGL;
     for (auto& block : info.blocks)
     {
-        if (blockInfoEx.find(block.name) == blockInfoEx.end())
+        const bool hasBlock = blockInfoEx.find(block.name) != blockInfoEx.end();
+        auto& ex            = blockInfoEx[block.name];
+        const auto reflectedSize = ex.size;
+        ex.name             = block.name;
+        ex.index            = i;
+        uint32_t ex_size    = 0;
+        for (auto& u : block.members)
         {
-            // block not in program
-            BlockInfoEx ex;
-            ex.name  = block.name;
-            ex.index = i;
-            for (auto& u : block.members)
+            const auto member = ex.members.find(u.name);
+            const bool hasMember = member != ex.members.end();
+            // Reflection preserves arrayness even when a gfx descriptor uses count=1
+            // for both a non-array and an array containing a single element.
+            const bool isArray = hasMember ? member->second.isArray : u.count != 0;
+            const auto count = std::max(u.count, 1u);
+            const auto layoutCount = isArray ? count : 0u;
+            ex_size = UtilsGFX::getUniformStd140Offset(u.type, layoutCount, ex_size);
+
+            auto& uinfo     = ex.members[u.name];
+            const auto size = gfx::getTypeSize(u.type);
+            const bool offsetNotOk =
+                !legacy && uinfo.bufferOffset != ex_size && uinfo.bufferOffset != uint32_t(-1);
+            if (hasMember && (uinfo.count != count || uinfo.size != size || offsetNotOk))
             {
-                ex.size = UtilsGFX::getUniformStd140Offset(u.type, u.count, ex.size);
-                UniformInfo uinfo;
-                uinfo.count        = u.count;
-                uinfo.size         = gfx::getTypeSize(u.type);
-                uinfo.bufferOffset = ex.size;
-                if (legacy)
-                    ex.size += uinfo.size * std::max(u.count, 1u);
-                else
-                    ex.size += UtilsGFX::getUniformStd140Size(u.type, u.count);
-                ex.members[u.name] = uinfo;
+                log("%s '%s': uniform '%s' in block '%s' mismatch, expect count=%d size=%d offset=%d, got "
+                    "count=%d size=%d offset=%d",
+                    __FUNCTION__,
+                    info.name.c_str(),
+                    u.name.c_str(),
+                    block.name.c_str(),
+                    uinfo.count,
+                    (int)uinfo.size,
+                    (int)uinfo.bufferOffset,
+                    (int)count,
+                    (int)size,
+                    (int)ex_size);
             }
-            blockInfoEx[block.name] = ex;
+            uinfo.count        = count;
+            uinfo.size         = size;
+            uinfo.bufferOffset = ex_size;
+            uinfo.isArray      = isArray;
+            uinfo.isMatrix     = u.type >= gfx::Type::MAT2 && u.type <= gfx::Type::MAT4;
+            if (legacy)
+                ex_size += size * count;
+            else
+                ex_size += UtilsGFX::getUniformStd140Size(u.type, layoutCount);
         }
-        else
+        if (!legacy)
         {
-            // block is in program
-            auto& ex         = blockInfoEx[block.name];
-            ex.index         = i;
-            uint32_t ex_size = 0;
-            for (auto& u : block.members)
-            {
-                if (ex.members.find(u.name) == ex.members.end())
-                {
-                    ex_size = UtilsGFX::getUniformStd140Offset(u.type, u.count, ex_size);
-                    // uniform not in program
-                    UniformInfo uinfo;
-                    uinfo.count        = u.count;
-                    uinfo.size         = gfx::getTypeSize(u.type);
-                    uinfo.bufferOffset = ex_size;
-                    if (legacy)
-                        ex_size += uinfo.size * std::max(u.count, 1u);
-                    else
-                        ex_size += UtilsGFX::getUniformStd140Size(u.type, u.count);
-                    ex.members[u.name] = uinfo;
-                }
-                else
-                {
-                    ex_size = UtilsGFX::getUniformStd140Offset(u.type, u.count, ex_size);
-                    // uniform is in program
-                    auto& uinfo         = ex.members[u.name];
-                    const auto size     = gfx::getTypeSize(u.type);
-                    const auto gotCount = std::max(u.count, 1u);
-                    // -1 means unknown
-                    const bool offsetNotOk = !legacy && uinfo.bufferOffset != ex_size && uinfo.bufferOffset != -1;
-                    if (uinfo.count != gotCount || uinfo.size != size || offsetNotOk)
-                    {
-                        log("%s '%s': uniform '%s' in block '%s' mismatch, expect count=%d size=%d offset=%d, got "
-                            "count=%d size=%d offset=%d",
-                            __FUNCTION__,
-                            info.name.c_str(),
-                            u.name.c_str(),
-                            block.name.c_str(),
-                            uinfo.count,
-                            (int)uinfo.size,
-                            (int)uinfo.bufferOffset,
-                            (int)gotCount,
-                            (int)size,
-                            (int)ex_size);
-                    }
-                    uinfo.count        = u.count;
-                    uinfo.size         = size;
-                    uinfo.bufferOffset = ex_size;
-                    if (legacy)
-                        ex_size += uinfo.size * std::max(u.count, 1u);
-                    else
-                        ex_size += UtilsGFX::getUniformStd140Size(u.type, u.count);
-                }
-            }
-            if (!legacy && ex_size != ex.size)
+            // glslang reports the last member's end; buffer storage also includes
+            // the block's trailing std140 padding.
+            ex_size = UtilsGFX::getUniformStructStd140Size(ex_size);
+            const auto expectedSize = UtilsGFX::getUniformStructStd140Size(reflectedSize);
+            if (hasBlock && ex_size != expectedSize)
             {
                 log("%s '%s': uniform block '%s' mismatch, expect size=%d, got size=%d",
                     __FUNCTION__,
                     info.name.c_str(),
                     block.name.c_str(),
-                    (int)ex.size,
+                    (int)expectedSize,
                     (int)ex_size);
                 uint32_t cur = 0;
                 for (auto& u : block.members)
                 {
-                    const auto offset = UtilsGFX::getUniformStd140Offset(u.type, u.count, cur);
-                    const auto size = UtilsGFX::getUniformStd140Size(u.type, u.count);
+                    const auto& uinfo = ex.members.at(u.name);
+                    const auto layoutCount = uinfo.isArray ? uint32_t(uinfo.count) : 0u;
+                    const auto offset = UtilsGFX::getUniformStd140Offset(u.type, layoutCount, cur);
+                    const auto size = UtilsGFX::getUniformStd140Size(u.type, layoutCount);
                     cur = offset + size;
                     log("    '%s': tsize=%d, count=%d, size=%d, offset=%d",
                         u.name.c_str(), gfx::getTypeSize(u.type), u.count, size, offset);
                 }
             }
-            ex.size = ex_size;
         }
+        ex.size = ex_size;
         ++i;
     }
 }
@@ -1032,6 +1010,23 @@ int ProgramGFX::getMaxFragmentLocation() const
     return 0;
 }
 
+const UniformInfo* ProgramGFX::getUniformInfo(const UniformLocation& loc) const
+{
+    const auto blockIndex = loc.location[0];
+    const auto offset     = loc.location[1];
+    if (blockIndex < 0 || offset < 0 || size_t(blockIndex) >= _info.blocks.size())
+        return nullptr;
+    const auto block = blockInfoEx.find(_info.blocks.at(blockIndex).name);
+    if (block == blockInfoEx.end())
+        return nullptr;
+    for (const auto& member : block->second.members)
+    {
+        if (member.second.bufferOffset == uint32_t(offset))
+            return &member.second;
+    }
+    return nullptr;
+}
+
 const UniformInfo& ProgramGFX::getActiveUniformInfo(ShaderStage stage, int location) const
 {
     // unused
@@ -1159,7 +1154,8 @@ bool ProgramStateGFX::setUniform(const UniformLocation& loc, const void* data, s
         return false;
     const auto& blockName = blocks.at(blockIndex).name;
     const auto buffer     = buffers.at(blockName);
-    if (!buffer)
+    if (!buffer || !data || size == 0 || size_t(offset) > buffer->getSize() ||
+        size > buffer->getSize() - size_t(offset))
         return false;
     buffer->update(data, size, offset);
     return true;

@@ -87,19 +87,19 @@ uint32_t UtilsGFX::getUniformStd140Alignment(cc::gfx::Type type, uint32_t count)
         case cc::gfx::Type::FLOAT4:
             return 4 * N;
         case cc::gfx::Type::MAT2:
-            return 2 * N;
+            return N4;  // std140 matrix columns have at least vec4 alignment.
         case cc::gfx::Type::MAT2X3:
             return 4 * N;
         case cc::gfx::Type::MAT2X4:
             return 4 * N;
         case cc::gfx::Type::MAT3X2:
-            return 2 * N;
+            return N4;  // std140 matrix columns have at least vec4 alignment.
         case cc::gfx::Type::MAT3:
             return 4 * N;
         case cc::gfx::Type::MAT3X4:
             return 4 * N;
         case cc::gfx::Type::MAT4X2:
-            return 2 * N;
+            return N4;  // std140 matrix columns have at least vec4 alignment.
         case cc::gfx::Type::MAT4X3:
             return 4 * N;
         case cc::gfx::Type::MAT4:
