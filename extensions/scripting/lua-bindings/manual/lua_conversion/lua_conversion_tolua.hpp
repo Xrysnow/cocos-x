@@ -1288,27 +1288,82 @@ end
 		return status == 0 && c.completed ? std::move(c.ref) : nullptr;
 	}
 
-	template<typename F>
-	struct _owned_callback_call {
+	// Share dispatch setup and error handling without instantiating them per F.
+	// Typed wrappers retain each signature's TLS activation and cache identity.
+	struct _owned_callback_call_base {
 		_callback_reference* callback;
-		F* invoke;
 		lua_State* L;
 		bool completed = false;
+		explicit _owned_callback_call_base(_callback_reference* ref)
+			: callback(ref), L(ref->L) {}
+		static int report(lua_State* L, _owned_callback_call_base* context) {
+			if (!context || context->L != L)
+				return luaL_error(L, "expired Lua callback error handler");
+			return _callback_report_error(L, context->callback->name.c_str());
+		}
+		static int enter(lua_State* L, _owned_callback_call_base* context,
+			lua_CFunction reporter, void* report_key, lua_CFunction runner, void* run_key) {
+			if (!context || context->L != L) {
+				return luaL_error(L, "expired Lua callback setup");
+			}
+			lua_settop(L, 0);
+			luaL_checkstack(L, 8, "Lua callback setup stack overflow");
+			context->callback->state->drain(L);
+			_push_cached_callback(L, reporter, report_key);
+			_push_cached_callback(L, runner, run_key);
+			const int status = lua_pcall(L, 0, 0, 1);
+			if (status != 0) {
+				context->completed = false;
+				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
+			}
+			return 0;
+		}
+		// Return false only when the original protected setup is still needed.
+		// Cache misses and pending cleanup remain cold, protected operations.
+		static bool try_call_fast(lua_State* L, int top, _owned_callback_call_base* context,
+			void* report_key, void* run_key) {
+			if (!context || context->L != L)
+				return false;
+			if (context->callback->state->pending.load(std::memory_order_acquire))
+				return false;
+			// A capacity limit is an ordinary failure. Allocation failure while
+			// growing this stack is outside the Release recovery contract.
+			if (!lua_checkstack(L, 8)) {
+				std::fprintf(stderr, "[LUA ERROR] callback (%s): Lua callback setup stack overflow\n",
+					context->callback->name.c_str());
+				return true;
+			}
+			lua_pushlightuserdata(L, report_key);
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
+			lua_pushlightuserdata(L, run_key);
+			lua_rawget(L, LUA_REGISTRYINDEX);
+			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
+			// There is no setup C frame: preserve the caller's entire prefix.
+			const int status = lua_pcall(L, 0, 0, top + 1);
+			if (status != 0) {
+				context->completed = false;
+				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
+			}
+			return true;
+		}
+	};
+
+	template<typename F>
+	struct _owned_callback_call : _owned_callback_call_base {
+		F* invoke;
 		_owned_callback_call* previous;
 		inline static thread_local _owned_callback_call* active = nullptr;
 		inline static char report_key, run_key;
 		_owned_callback_call(_callback_reference* ref, F* function)
-			: callback(ref), invoke(function), L(ref->L), previous(active) {
+			: _owned_callback_call_base(ref), invoke(function), previous(active) {
 			active = this;
 		}
 		_owned_callback_call(const _owned_callback_call&) = delete;
 		_owned_callback_call& operator=(const _owned_callback_call&) = delete;
 		~_owned_callback_call() { active = previous; }
 		static int report(lua_State* L) {
-			auto* c = active;
-			if (!c || c->L != L)
-				return luaL_error(L, "expired Lua callback error handler");
-			return _callback_report_error(L, c->callback->name.c_str());
+			return _owned_callback_call_base::report(L, active);
 		}
 		static int run(lua_State* L) {
 			auto* c = active;
@@ -1322,50 +1377,10 @@ end
 			return 0;
 		}
 		static int enter(lua_State* L) {
-			auto* context = active;
-			if (!context || context->L != L) {
-				return luaL_error(L, "expired Lua callback setup");
-			}
-			lua_settop(L, 0);
-			luaL_checkstack(L, 8, "Lua callback setup stack overflow");
-			context->callback->state->drain(L);
-			_push_cached_callback(L, report, &report_key);
-			_push_cached_callback(L, run, &run_key);
-			const int status = lua_pcall(L, 0, 0, 1);
-			if (status != 0) {
-				context->completed = false;
-				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
-			}
-			return 0;
+			return _owned_callback_call_base::enter(L, active, report, &report_key, run, &run_key);
 		}
-		// Return false only when the original protected setup is still needed.
-		// Cache misses and pending cleanup remain cold, protected operations.
 		static bool try_call_fast(lua_State* L, int top) {
-			auto* context = active;
-			if (!context || context->L != L)
-				return false;
-			if (context->callback->state->pending.load(std::memory_order_acquire))
-				return false;
-			// A capacity limit is an ordinary failure. Allocation failure while
-			// growing this stack is outside the Release recovery contract.
-			if (!lua_checkstack(L, 8)) {
-				std::fprintf(stderr, "[LUA ERROR] callback (%s): Lua callback setup stack overflow\n",
-					context->callback->name.c_str());
-				return true;
-			}
-			lua_pushlightuserdata(L, &report_key);
-			lua_rawget(L, LUA_REGISTRYINDEX);
-			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
-			lua_pushlightuserdata(L, &run_key);
-			lua_rawget(L, LUA_REGISTRYINDEX);
-			if (lua_isnil(L, -1)) { lua_settop(L, top); return false; }
-			// There is no setup C frame: preserve the caller's entire prefix.
-			const int status = lua_pcall(L, 0, 0, top + 1);
-			if (status != 0) {
-				context->completed = false;
-				if (status != LUA_ERRRUN) _callback_log_error(L, context->callback->name.c_str());
-			}
-			return true;
+			return _owned_callback_call_base::try_call_fast(L, top, active, &report_key, &run_key);
 		}
 	};
 
