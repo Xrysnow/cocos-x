@@ -1248,8 +1248,8 @@ int lua_register_axis_3d_AABB(lua_State* L)
     tolua_cclass(L, "AABB", "cc.AABB", "", axlua_3d_AABB_finalize);
 
     tolua_beginmodule(L, "AABB");
-    tolua_variable(L, "_min", axlua_3d_get_AABB_min, axlua_3d_set_AABB_min);
-    tolua_variable(L, "_max", axlua_3d_get_AABB_max, axlua_3d_set_AABB_max);
+    tolua_variable(L, "min", axlua_3d_get_AABB_min, axlua_3d_set_AABB_min);
+    tolua_variable(L, "max", axlua_3d_get_AABB_max, axlua_3d_set_AABB_max);
     tolua_function(L, "new", axlua_3d_AABB_constructor);
     tolua_function(L, "reset", axlua_3d_AABB_reset);
     tolua_function(L, "set", axlua_3d_AABB_set);
@@ -2017,11 +2017,11 @@ int lua_register_axis_3d_OBB(lua_State* L)
     tolua_cclass(L, "OBB", "cc.OBB", "", axlua_3d_OBB_finalize);
 
     tolua_beginmodule(L, "OBB");
-    tolua_variable(L, "_center", axlua_3d_get_OBB_center, axlua_3d_set_OBB_center);
-    tolua_variable(L, "_xAxis", axlua_3d_get_OBB_xAxis, axlua_3d_set_OBB_xAxis);
-    tolua_variable(L, "_yAxis", axlua_3d_get_OBB_yAxis, axlua_3d_set_OBB_yAxis);
-    tolua_variable(L, "_zAxis", axlua_3d_get_OBB_zAxis, axlua_3d_set_OBB_zAxis);
-    tolua_variable(L, "_extents", axlua_3d_get_OBB_extents, axlua_3d_set_OBB_extents);
+    tolua_variable(L, "center", axlua_3d_get_OBB_center, axlua_3d_set_OBB_center);
+    tolua_variable(L, "xAxis", axlua_3d_get_OBB_xAxis, axlua_3d_set_OBB_xAxis);
+    tolua_variable(L, "yAxis", axlua_3d_get_OBB_yAxis, axlua_3d_set_OBB_yAxis);
+    tolua_variable(L, "zAxis", axlua_3d_get_OBB_zAxis, axlua_3d_set_OBB_zAxis);
+    tolua_variable(L, "extents", axlua_3d_get_OBB_extents, axlua_3d_set_OBB_extents);
     tolua_function(L, "new", axlua_3d_OBB_constructor);
     tolua_function(L, "reset", axlua_3d_OBB_reset);
     tolua_function(L, "set", axlua_3d_OBB_set);
@@ -2382,8 +2382,8 @@ int lua_register_axis_3d_Ray(lua_State* L)
     tolua_cclass(L, "Ray", "cc.Ray", "", axlua_3d_Ray_finalize);
 
     tolua_beginmodule(L, "Ray");
-    tolua_variable(L, "_origin", axlua_3d_get_Ray_origin, axlua_3d_set_Ray_origin);
-    tolua_variable(L, "_direction", axlua_3d_get_Ray_direction, axlua_3d_set_Ray_direction);
+    tolua_variable(L, "origin", axlua_3d_get_Ray_origin, axlua_3d_set_Ray_origin);
+    tolua_variable(L, "direction", axlua_3d_get_Ray_direction, axlua_3d_set_Ray_direction);
     tolua_function(L, "new", axlua_3d_Ray_constructor);
     tolua_function(L, "set", axlua_3d_Ray_set);
     tolua_function(L, "transform", axlua_3d_Ray_transform);

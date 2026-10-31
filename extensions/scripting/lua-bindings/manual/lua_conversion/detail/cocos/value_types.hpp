@@ -30,6 +30,86 @@ namespace lua
 
 	LUA_TO_LUA_STRUCT4(cocos2d::Vec4, x, y, z, w);
 
+	template<>
+	struct to_native<cocos2d::AABB> {
+		static bool F(lua_State* L, int lo, cocos2d::AABB* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!is_indexable(L, lo)) return false;
+			cocos2d::AABB v;
+			bool ok = luaval_field_to_native(L, lo, "min", &v._min, fName) &&
+				luaval_field_to_native(L, lo, "max", &v._max, fName);
+			if (ok) *outValue = v;
+			return ok;
+		}
+	};
+
+	template<>
+	struct to_lua<cocos2d::AABB> {
+		static void F(lua_State* L, const cocos2d::AABB& inValue) {
+			if (!L) return;
+			lua_createtable(L, 0, 2);
+			native_to_luaval_field(L, -1, "min", inValue._min);
+			native_to_luaval_field(L, -1, "max", inValue._max);
+		}
+	};
+
+	template<>
+	struct to_native<cocos2d::OBB> {
+		static bool F(lua_State* L, int lo, cocos2d::OBB* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!is_indexable(L, lo)) return false;
+			cocos2d::OBB v;
+			bool ok = luaval_field_to_native(L, lo, "center", &v._center, fName) &&
+				luaval_field_to_native(L, lo, "xAxis", &v._xAxis, fName) &&
+				luaval_field_to_native(L, lo, "yAxis", &v._yAxis, fName) &&
+				luaval_field_to_native(L, lo, "zAxis", &v._zAxis, fName) &&
+				luaval_field_to_native(L, lo, "extents", &v._extents, fName);
+			if (ok) {
+				v._extentX = v._xAxis * v._extents.x;
+				v._extentY = v._yAxis * v._extents.y;
+				v._extentZ = v._zAxis * v._extents.z;
+				*outValue = v;
+			}
+			return ok;
+		}
+	};
+
+	template<>
+	struct to_lua<cocos2d::OBB> {
+		static void F(lua_State* L, const cocos2d::OBB& inValue) {
+			if (!L) return;
+			lua_createtable(L, 0, 5);
+			native_to_luaval_field(L, -1, "center", inValue._center);
+			native_to_luaval_field(L, -1, "xAxis", inValue._xAxis);
+			native_to_luaval_field(L, -1, "yAxis", inValue._yAxis);
+			native_to_luaval_field(L, -1, "zAxis", inValue._zAxis);
+			native_to_luaval_field(L, -1, "extents", inValue._extents);
+		}
+	};
+
+	template<>
+	struct to_native<cocos2d::Ray> {
+		static bool F(lua_State* L, int lo, cocos2d::Ray* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!is_indexable(L, lo)) return false;
+			cocos2d::Ray v;
+			bool ok = luaval_field_to_native(L, lo, "origin", &v._origin, fName) &&
+				luaval_field_to_native(L, lo, "direction", &v._direction, fName);
+			if (ok) *outValue = v;
+			return ok;
+		}
+	};
+
+	template<>
+	struct to_lua<cocos2d::Ray> {
+		static void F(lua_State* L, const cocos2d::Ray& inValue) {
+			if (!L) return;
+			lua_createtable(L, 0, 2);
+			native_to_luaval_field(L, -1, "origin", inValue._origin);
+			native_to_luaval_field(L, -1, "direction", inValue._direction);
+		}
+	};
+
 	LUA_TO_NATIVE_STRUCT2(cocos2d::BlendFunc, src, dst);
 
 	LUA_TO_LUA_STRUCT2(cocos2d::BlendFunc, src, dst);
