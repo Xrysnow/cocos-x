@@ -2,6 +2,7 @@
 #include "base.hpp"
 #include "scalar.hpp"
 #include "conversion.hpp"
+#include "value_userdata.hpp"
 #include "callback_from_lua.hpp"
 #include <cmath>
 #include <functional>
@@ -84,22 +85,48 @@ namespace lua
 		}
 	};
 
+	// Preserve existing conversion storage for unregistered types. Explicit value
+	// types instead refer directly to the rooted userdata; invoking a by-value
+	// signature makes the C++ copy, while references keep the original object.
+	template<typename Targ, class Enable = void>
+	struct binding_argument {
+		using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
+		T value{};
+		template<bool Checked> bool read(lua_State* L, int index) {
+			return binding_read<T>::template F<Checked>(L, index, &value);
+		}
+		decltype(auto) get() { return std::forward<Targ>(value); }
+	};
+
+	template<typename Targ>
+	struct binding_argument<Targ, std::enable_if_t<is_value_type_v<std::remove_reference_t<Targ>>>> {
+		using value_t = std::remove_reference_t<Targ>;
+		using source_t = std::conditional_t<std::is_lvalue_reference_v<Targ>, value_t, const value_t>;
+		source_t* value = nullptr;
+		template<bool Checked> bool read(lua_State* L, int index) {
+			static_assert(!std::is_rvalue_reference_v<Targ>, "value userdata rvalue references require an explicit adapter");
+			return read_value_pointer(L, index, &value);
+		}
+		decltype(auto) get() { return *value; }
+	};
+
 	template<size_t Index, bool Checked, bool RequireSelf, typename Callable, typename Targ = void, typename... Targs>
 	struct _invoke_helper {
 		template<typename... Fargs>
 		static bool F(lua_State* L, int argTop, int& argCur, int& results, Callable& callable, Fargs&&... args) {
 			++argCur;
 			using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
-			T arg{};
-			if (!binding_read<T>::template F<Checked>(L, argTop + 1 - Index, &arg))
+			binding_argument<Targ> arg;
+			if (!arg.template read<Checked>(L, argTop + 1 - Index))
 				return false;
-			if constexpr (Checked && (RequireSelf || std::is_member_function_pointer_v<Callable>) && sizeof...(Fargs) == 0) {
+			if constexpr ((Checked || (std::is_pointer_v<T> && is_value_type_v<std::remove_pointer_t<T>>)) &&
+				(RequireSelf || std::is_member_function_pointer_v<Callable>) && sizeof...(Fargs) == 0) {
 				if constexpr (std::is_pointer_v<T>) {
-					if (!arg) return false;
+					if (!arg.get()) return false;
 				}
 			}
 			static_assert(Index > 0);
-			return _invoke_helper<Index - 1, Checked, RequireSelf, Callable, Targs...>::template F<Fargs..., Targ>(L, argTop, argCur, results, callable, std::forward<Fargs>(args)..., std::forward<Targ>(arg));
+			return _invoke_helper<Index - 1, Checked, RequireSelf, Callable, Targs...>::F(L, argTop, argCur, results, callable, std::forward<Fargs>(args)..., arg.get());
 		}
 	};
 
@@ -121,7 +148,11 @@ namespace lua
 				if (lua_gettop(L) != top)
 					luaL_error(L, "native invocation changed Lua stack (expected %d, got %d)", top, lua_gettop(L));
 #endif
-				native_to_luaval(L, value);
+				using result_t = std::invoke_result_t<Callable&, Fargs...>;
+				if constexpr (std::is_lvalue_reference_v<result_t> && is_value_type_v<std::remove_reference_t<result_t>>)
+					push_value_borrowed(L, &value);
+				else
+					native_to_luaval(L, value);
 				results = lua_gettop(L) - top;
 #if CC_LUA_BINDING_CHECKS
 				if (results < 0)
@@ -148,12 +179,20 @@ namespace lua
 				for (int i = inputTop - nargs + 1; i <= inputTop; ++i) lua_pushvalue(L, i);
 				argTop = lua_gettop(L);
 			}
+			// Snapshot dynamically resolved wrapper instances for explicit borrowed
+			// return owners. The frame is a Lua stack root and unwinds with Lua errors.
+			int valueFrame = 0;
+			if constexpr ((is_value_argument_v<Targs> || ...)) {
+				_begin_value_arguments(L, inputTop, argTop, nargs);
+				valueFrame = lua_gettop(L);
+			}
 			int results = 0;
 			const bool ok = _invoke_helper<nargs, Checked, RequireSelf, Callable, Targs...>::F(L, argTop, argCur, results, callable);
 			if (!ok) {
 				lua_settop(L, top);
 				return false;
 			}
+			if (valueFrame) lua_remove(L, valueFrame);
 			if (outResults) *outResults = results;
 			if constexpr (!KeepInputs) {
 				// Argument destructors have run before releasing input roots.

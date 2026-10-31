@@ -65,7 +65,7 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_native<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T>>> {
+	struct to_native<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T> && !is_value_type_v<T>>> {
 		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
 			if (!L || !outValue)
@@ -92,7 +92,7 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_lua<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T>>> {
+	struct to_lua<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T> && !is_value_type_v<T>>> {
 		static void F(lua_State* L, T* inValue) {
 			if (!L) return;
 			if(!inValue) { lua_pushnil(L); return; }
