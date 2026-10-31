@@ -29,7 +29,6 @@
 #include <unordered_set>
 #include <vector>
 
-// Follow cocos' debug policy unless checks are explicitly overridden.
 #ifndef CC_LUA_BINDING_CHECKS
 #if CC_DEBUG > 0
 #define CC_LUA_BINDING_CHECKS 1
@@ -150,9 +149,9 @@ end
         }
         if (lua_objlen(L, lo) != sizeof(void*))
             return 0;
-        if (lua_getmetatable(L, lo))        /* if metatable? */
+        if (lua_getmetatable(L, lo))
         {
-            lua_rawget(L, LUA_REGISTRYINDEX);  /* get registry[mt] */
+            lua_rawget(L, LUA_REGISTRYINDEX); // registry[metatable] = type name
             const char *tn = lua_tostring(L, -1);
             const int r = tn && (strcmp(tn, type) == 0);
             lua_pop(L, 1);
@@ -160,19 +159,18 @@ end
                 return 1;
             else
             {
-                /* check if it is a specialized class */
                 lua_pushstring(L, "tolua_super");
-                lua_rawget(L, LUA_REGISTRYINDEX); /* get super */
+                lua_rawget(L, LUA_REGISTRYINDEX);
                 if (!lua_istable(L, -1)) {
                     lua_pop(L, 1);
                     return 0;
                 }
                 lua_getmetatable(L, lo);
-                lua_rawget(L, -2);                /* get super[mt] */
+                lua_rawget(L, -2); // super[metatable]
                 if (lua_istable(L, -1))
                 {
                     lua_pushstring(L, type);
-                    lua_rawget(L, -2);                /* get super[mt][type] */
+                    lua_rawget(L, -2); // super[metatable][type]
                     const int b = lua_toboolean(L, -1);
                     lua_pop(L, 3);
                     if (b)
@@ -241,7 +239,7 @@ end
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	// fix stack indices and keep pseudo-indices, 0 means invalid
+	// Preserves pseudo-indices; returns 0 for invalid stack indices.
 	inline int _absolute_index(lua_State* L, int lo) {
 		if (!L) return 0;
 		if (lo <= LUA_REGISTRYINDEX) return lo;
@@ -282,13 +280,12 @@ end
 		return value < 0 ? uint64_t(0) - magnitude : magnitude;
 	}
 
-	// Both legacy integer helpers return storage for exactly one 64-bit value.
+	// outValue must hold one 64-bit value, matching the legacy FFI helpers.
 	inline bool _luaval_to_integer_cdata(lua_State* L, int lo, void* outValue,
 		const char* key, const char* def)
 	{
 		const int top = lua_gettop(L);
-		// FFI floating-to-integer overflow is platform-specific. Extract those
-		// numbers first, without changing the legacy pre-registered helpers.
+		// Handle floating-to-integer overflow here; legacy FFI behavior is platform-specific.
 		bool ok = _try_get_internal_helper(L, "ffi.integer_number", _ffi_integer_number);
 		if (ok)
 		{
@@ -368,7 +365,6 @@ end
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	// Lua-owned storage for the state lifetime sentinel.
 	template<typename T>
 	struct _callback_userdata {
 		using value_type = std::shared_ptr<T>;
@@ -402,8 +398,8 @@ end
 				lua_createtable(L, 0, 1);
 				lua_pushcfunction(L, collect);
 				lua_setfield(L, -2, "__gc");
-				// Allocation can run a finalizer which publishes this metatable.
-				// Reuse that canonical identity instead of invalidating its userdata.
+				// Allocation may publish a metatable through a reentrant finalizer.
+				// Reuse it so existing userdata retain their identity.
 				lua_pushlightuserdata(L, key());
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				if (!lua_isnil(L, -1)) {
@@ -442,7 +438,7 @@ end
 	struct _callback_reference {
 		std::shared_ptr<_callback_state> state;
 		lua_State* L;
-		// Own the diagnostic name; the caller's fName may be temporary.
+		// The caller's name may be temporary.
 		std::string name;
 		int direct_ref = LUA_NOREF;
 		int thread_ref = LUA_NOREF;
@@ -459,8 +455,8 @@ end
 				std::lock_guard<std::mutex> lock(p->state->mutex);
 				active = p->state->alive.load(std::memory_order_relaxed);
 				if (active && p->state->thread != std::this_thread::get_id()) {
-					// Never access Lua from a worker. No allocation in this deleter.
-					// Drain on the next owner-thread registration/call, or discard on close.
+					// Queue without allocation or Lua access; drain on the next owner-thread
+					// registration/call, or discard on close.
 					p->next = p->state->pending.load(std::memory_order_relaxed);
 					p->state->pending.store(p, std::memory_order_release);
 					return;
@@ -506,8 +502,7 @@ end
 	};
 	// Coroutines share the registry and therefore the same lifetime sentinel.
 	inline void* _callback_state_key() { static char key; return &key; }
-	// Leaves the canonical sentinel on the stack, including if allocation
-	// reentered registration and published one while our candidate was built.
+	// Leaves the shared sentinel on the stack, reusing any published by reentrant allocation.
 	inline void _push_callback_lifetime(lua_State* L, const std::shared_ptr<_callback_lifetime>& lifetime) {
 		using holder = _callback_userdata<_callback_lifetime>;
 		auto* candidate = holder::push(L, lifetime);
@@ -547,8 +542,7 @@ end
 			if (lua_type(L, lo) != LUA_TSTRING) return false;
 		}
 		const auto top = lua_gettop(L);
-		// A converter may replace its slot (e.g. lua_tolstring on a number).
-		// Never expose lua_next's live iteration key to such a conversion.
+		// Convert a copy: slot replacement (e.g. lua_tolstring) would invalidate lua_next's key.
 		lua_pushvalue(L, lo);
 		const bool ok = to_native<K>::F(L, top + 1, outValue, fName);
 		lua_settop(L, top);
@@ -620,8 +614,7 @@ end
 #undef TO_NATIVE_SIGNED
 #undef TO_NATIVE_UNSIGNED
 
-	// Fixed-width aliases may omit long and unsigned long on LP64/LLP64.
-	// Existing explicit specializations keep priority over this fallback.
+	// Cover long/unsigned long when fixed-width aliases omit them on LP64/LLP64.
 	template<typename T>
 	struct to_native<T, std::enable_if_t<(std::is_same_v<T, long> ||
 		std::is_same_v<T, unsigned long>) && (sizeof(T) <= sizeof(uint64_t))>> {
@@ -1130,8 +1123,7 @@ end
 	inline int _callback_report_error(lua_State* L, const char* name) {
 		lua_pushfstring(L, "[LUA ERROR] callback (%s): %s",
 			name, _callback_error_text(L, 1));
-		// Match LuaStack's reporting hook, but protect the reporter too. Its return
-		// value is irrelevant (the application's hook does not return a string).
+		// Protect LuaStack's reporting hook; it need not return an error string.
 		lua_pushliteral(L, "__G__TRACKBACK__");
 		lua_rawget(L, LUA_GLOBALSINDEX);
 		if (lua_isfunction(L, -1)) {
@@ -1148,15 +1140,15 @@ end
 	}
 
 	inline void _push_cached_callback(lua_State* L, lua_CFunction function, void* key) {
-		// Shared per VM/cache key, with no callback owner or C++ frame in
-		// upvalues. Callers keep initial allocation inside a protected frame.
+		// Shared per VM/key, without owning callbacks or C++ frames.
+		// Initial allocation must run in a protected frame.
 		lua_pushlightuserdata(L, key);
 		lua_rawget(L, LUA_REGISTRYINDEX);
 		if (lua_isnil(L, -1)) {
 			lua_pop(L, 1);
 			lua_pushcfunction(L, function);
-			// Bridge closures use explicit globals/registry, not the caller env.
-			// Avoid keeping the first caller's sandbox/coroutine env alive.
+			// An empty environment avoids retaining the first caller's sandbox/coroutine.
+			// Bridge code accesses globals and the registry explicitly.
 			lua_newtable(L);
 			lua_setfenv(L, -2);
 			lua_pushlightuserdata(L, key);
@@ -1165,9 +1157,9 @@ end
 		}
 	}
 
-	// Existing converters run in the bridge's fixed empty environment. Only
-	// std::function payloads are excluded, including inside supported containers.
-	// Converters remain responsible for Lua-error cleanup and borrowed lifetimes.
+	// Payloads exclude std::function, including in supported containers.
+	// Converters run in an empty environment and must handle Lua-error cleanup
+	// and borrowed lifetimes.
 	template<typename T> struct _callback_has_function;
 	template<typename T>
 	using _callback_value = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -1187,10 +1179,8 @@ end
 	template<typename T, class Enable>
 	struct owned_callback_read : std::bool_constant<!_callback_has_function<_callback_value<T>>::value> {};
 
-	// Everything that owns C++ storage lives outside the protected Lua frame.
-	// Successful Lua roots are recorded immediately, including partial creation.
-	// Trusted debug hooks may observe these frames; private entry points are not
-	// authenticated against direct calls or replay.
+	// Keep C++ ownership outside protected Lua frames; record each acquired root
+	// immediately so partial registration can be cleaned up.
 	struct _owned_callback_registration {
 		std::shared_ptr<_callback_reference> ref;
 		std::shared_ptr<_callback_lifetime> lifetime;
@@ -1225,18 +1215,15 @@ end
 				return luaL_error(L, "expired Lua callback registration");
 			lua_settop(L, 0);
 			luaL_checkstack(L, 12, "Lua callback registration stack overflow");
-			// Neutralize this fresh setup closure too: newly created sentinel
-			// userdata/metatable closures must not root the registering sandbox.
+			// Sentinel userdata and closures must not retain the registering sandbox.
 			lua_newtable(L);
 			lua_replace(L, LUA_ENVIRONINDEX);
 			using holder = _callback_userdata<_callback_lifetime>;
-			// Look up the VM lifetime sentinel shared by all coroutines.
 			lua_pushlightuserdata(L, _callback_state_key());
 			lua_rawget(L, LUA_REGISTRYINDEX);
 			if (lua_isnil(L, -1)) {
 				lua_pop(L, 1);
-				// Allocate C++ ownership outside Lua's C error frames. On a cold
-				// VM the caller supplies it and retries the protected setup.
+				// The caller allocates C++ ownership outside Lua error frames, then retries.
 				if (!c->lifetime) { c->needs_lifetime = true; return 0; }
 				_push_callback_lifetime(L, c->lifetime);
 			}
@@ -1245,8 +1232,7 @@ end
 			lua_pop(L, 1);
 			if (!c->ref->state || !c->ref->state->callable()) return 0;
 			c->ref->state->drain(L);
-			// Reserve the luaL_unref free-list slot before acquiring roots. Final
-			// release only overwrites existing registry slots, even during OOM.
+			// Reserve luaL_unref's free-list slot so final release needs no allocation, even on OOM.
 			lua_rawgeti(L, LUA_REGISTRYINDEX, 0);
 			const bool missing_freelist = lua_isnil(L, -1);
 			lua_pop(L, 1);
@@ -1288,8 +1274,7 @@ end
 		return status == 0 && c.completed ? std::move(c.ref) : nullptr;
 	}
 
-	// Share dispatch setup and error handling without instantiating them per F.
-	// Typed wrappers retain each signature's TLS activation and cache identity.
+	// Share non-template dispatch code; TLS activation and cache keys remain per signature.
 	struct _owned_callback_call_base {
 		_callback_reference* callback;
 		lua_State* L;
@@ -1318,8 +1303,8 @@ end
 			}
 			return 0;
 		}
-		// Return false only when the original protected setup is still needed.
-		// Cache misses and pending cleanup remain cold, protected operations.
+		// false requests protected setup for cache misses or pending cleanup;
+		// true means handled, not necessarily successful.
 		static bool try_call_fast(lua_State* L, int top, _owned_callback_call_base* context,
 			void* report_key, void* run_key) {
 			if (!context || context->L != L)
@@ -1370,8 +1355,7 @@ end
 			if (!c || c->L != L) {
 				return luaL_error(L, "expired Lua callback invocation");
 			}
-			// Enter with zero Lua arguments. The context comes from TLS;
-			// its previous link still restores legitimate nested calls and reporters.
+			// No Lua arguments: TLS supplies the context and restores nested calls/reporters.
 			(*c->invoke)(L);
 			c->completed = true;
 			return 0;
@@ -1405,13 +1389,12 @@ end
 		return context.completed;
 	}
 
-	// Independent ownership: no handler/alias, and clearing one C++ copy does
-	// not cancel others. The name is diagnostic only. Failure preserves *out.
-	// All builds trust scripts, debug hooks, finalizers and reporters. Observing
-	// bridge frames is supported; calling/replaying private bridge functions or
-	// changing their frames/environments/registry entries is unsupported and is
-	// not defended, and can repeat callbacks or corrupt registration state.
-	// Trigger callbacks through public APIs; normal recursion works.
+	// No handler/alias registration; clearing one C++ copy leaves others valid.
+	// Failure preserves *out.
+	// All builds trust scripts, hooks, finalizers and reporters. Bridge frames may
+	// be observed, but private calls/replay or frame/environment/registry mutation
+	// are unguarded and may repeat callbacks or corrupt registration. Use public
+	// APIs for invocation; recursion is supported.
 	template<typename R, typename... Args>
 	bool luaval_to_owned_callback(lua_State* L, int index, std::function<R(Args...)>* out,
 		const char* diagnostic_name = "") {
@@ -1458,9 +1441,6 @@ end
 		}
 	}
 
-	// All callback reads, including explicit luaval_to_native calls, use owned
-	// references. std::function arguments/results are excluded, also when nested
-	// inside supported containers; other registered converters remain available.
 	template<typename R, typename... Targs>
 	struct to_native<std::function<R(Targs...)>> {
 		static bool F(lua_State* L, int lo, std::function<R(Targs...)>* outValue, const char* fName = "") {
@@ -1470,8 +1450,7 @@ end
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	// Automatic fields keep checked value conversion and share the owned callback
-	// path with public luaval_to_native.
+	// Automatic fields always use checked conversion.
 	template<typename T>
 	bool luaval_to_binding_value(lua_State* L, int index, T* out, const char* name = "") {
 		return luaval_to_native(L, index, out, name);
@@ -1482,8 +1461,7 @@ end
 		return luaval_to_owned_callback(L, index, out, name);
 	}
 
-	// Binding reads are separate from to_native's public checked conversion
-	// contract. Overload resolution always requests Checked=true.
+	// Public to_native stays checked; bindings may skip checks except during overload resolution.
 	template<typename T, class Enable = void>
 	struct binding_read {
 		template<bool Checked>
@@ -1500,8 +1478,7 @@ end
 				if (lua_type(L, lo) == LUA_TCDATA)
 					return to_native<T>::F(L, lo, outValue);
 				const auto value = lua_tonumber(L, lo);
-				// The upper bound is exclusive: max() is rounded upwards for
-				// int64/uint64 in a double and must never permit an overflowing cast.
+				// Use an exclusive bound: double rounds int64/uint64 max() up, allowing overflow.
 				const auto upper = std::ldexp(lua_Number(1), std::numeric_limits<T>::digits);
 				const auto lower = std::is_signed_v<T> ? -upper : lua_Number(0);
 				if (value >= lower && value < upper) {
@@ -1639,8 +1616,7 @@ end
 		template<bool Checked = bool(CC_LUA_BINDING_CHECKS), bool KeepInputs = false, bool Overload = false, bool RequireSelf = false, typename Callable>
 		static bool F(lua_State* L, Callable&& callable, int& argCur, int* outResults = nullptr, int inputTop = -1) {
 			if constexpr (std::is_same_v<std::decay_t<Callable>, callable_t>) {
-				// A stored function may destroy its owner from inside a callback.
-				// Keep its historical value semantics and an owning call-local copy.
+				// Keep a local owner: the callback may destroy or replace the stored function.
 				callable_t owned(std::forward<Callable>(callable));
 				return _invoke_arguments<Targs...>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, owned, argCur, 0, outResults, inputTop);
 			} else
@@ -1693,17 +1669,15 @@ end
 			return invoke<type>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, std::forward<T>(callable), argCur, outResults, inputTop);
 	}
 
-	// Direct calls consume their trailing arguments, preserve the prefix, and
-	// append exactly the converter's results. Native code sees all inputs until
-	// result conversion and argument destruction have completed.
+	// Replace trailing arguments with converted results, preserving the prefix.
+	// Inputs stay rooted through result conversion and argument destruction.
 	template<typename T>
 	bool invoke_native(lua_State* L, int& argCur, T callable) {
 		return _invoke_native<bool(CC_LUA_BINDING_CHECKS), false, false>(L, argCur, std::move(callable));
 	}
 
-	// Expand a dynamic receiver once across same-arity overload attempts. The
-	// extra root retains the original wrapper for void setters; ordinary userdata
-	// never needs a copy. Negative values mean no wrapper or invalid wrapper.
+	// Resolve a wrapper once across same-arity overloads; retain it for void setters.
+	// original: 0 = unresolved, -1 = no wrapper, -2 = invalid, >0 = saved wrapper slot.
 	inline bool _prepare_binding_receiver(lua_State* L, int& original) {
 		if (original != 0) return original != -2;
 		if (!lua_istable(L, 1)) { original = -1; return true; }
@@ -1715,8 +1689,7 @@ end
 		return false;
 	}
 
-	// Bindings return topmost results; retaining inputs avoids shifting stack
-	// slots and lets void setters return the original Lua self directly.
+	// Keep inputs to avoid stack shifts and let void setters return the original Lua self.
 	template<bool Overload = false, bool RequireSelf = false, typename T>
 	bool invoke_binding(lua_State* L, int& argCur, T callable, int& results, int inputTop = -1) {
 		return _invoke_native<Overload || bool(CC_LUA_BINDING_CHECKS), true, Overload, RequireSelf>(L, argCur, std::move(callable), &results, inputTop);
@@ -1748,7 +1721,7 @@ end
 			auto* p = get(L);
 			if (p && p->value) {
 				auto* value = p->value;
-				p->value = nullptr; // invalidate before destruction, fix reentrant __gc
+				p->value = nullptr; // Prevent double destruction on reentrant __gc.
 				value->~type();
 			}
 			return 0;
@@ -1788,7 +1761,7 @@ end
 			auto* p = new (lua_newuserdata(L, sizeof(userdata))) userdata{};
 			lua_insert(L, -2);
 			lua_setmetatable(L, -2);
-			// construct after all lua allocations so an exception here leaves an inert userdata
+			// Construct after Lua allocations; a throwing constructor leaves inert userdata.
 			p->value = new (p->storage) type(inValue);
 		}
 	};

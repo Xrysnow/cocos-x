@@ -81,9 +81,8 @@ namespace lua
 		}
 	};
 
-	// Keep wrapper tables in their original slots so setters return the Lua
-	// wrapper itself. An instance produced by __index stays rooted on the stack
-	// through native execution, return conversion and argument destruction.
+	// Preserve wrappers for setter returns; root __index-created instances
+	// through native execution, result conversion and argument destruction.
 	template<typename T>
 	struct binding_read<T*, std::void_t<typename to_native<T*>::binding_pointer>> {
 		template<bool Checked>
@@ -168,7 +167,6 @@ namespace lua
 	LUA_TO_NATIVE_STRUCT4(cocos2d::Vec4, x, y, z, w);
 	LUA_TO_NATIVE_STRUCT2(cocos2d::BlendFunc, src, dst);
 	LUA_TO_NATIVE_STRUCT3(cocos2d::Color3B, r, g, b);
-	//LUA_TO_NATIVE_STRUCT4(cocos2d::Color4B, r, g, b, a);
 	LUA_TO_NATIVE_STRUCT4(cocos2d::Color4F, r, g, b, a);
 	LUA_TO_NATIVE_STRUCT4(cocos2d::Quaternion, x, y, z, w);
 	LUA_TO_NATIVE_STRUCT2(cocos2d::MeshVertexAttrib, type, vertexAttrib);
@@ -223,7 +221,7 @@ namespace lua
 	};
 #endif
 
-	// Optional application adapter, isolated per Lua VM and shared by its coroutines.
+	// Per VM; shared by its coroutines.
 	using color4b_userdata_converter = bool (*)(lua_State*, int, cocos2d::Color4B*);
 
 	inline void* _color4b_userdata_converter_key() {
@@ -366,7 +364,7 @@ namespace lua
 			{
 				lua_pushnumber(L, 1);
 				lua_gettable(L, lo);
-				if (lua_isnil(L, -1)) /** if table[1] = nil,we don't think it is a pure array */
+				if (lua_isnil(L, -1)) // A missing first element selects map conversion.
 				{
 					lua_pop(L, 1);
 					cocos2d::ValueMap dictVal;
@@ -558,7 +556,7 @@ namespace lua
 	LUA_TO_LUA_STRUCT4(cocos2d::Viewport, x, y, w, h);
 	LUA_TO_LUA_STRUCT6(cocos2d::AffineTransform, a, b, c, d, tx, ty);
 	LUA_TO_LUA_STRUCT6(cocos2d::TTFConfig, fontFilePath, fontSize, glyphs, customGlyphs, distanceFieldEnabled, outlineSize);
-	LUA_TO_LUA_STRUCT4(cocos2d::Texture2D::TexParams, minFilter, magFilter, sAddressMode, tAddressMode); // cocos2d::backend::SamplerDescriptor
+	LUA_TO_LUA_STRUCT4(cocos2d::Texture2D::TexParams, minFilter, magFilter, sAddressMode, tAddressMode);
 	LUA_TO_LUA_STRUCT4(cocos2d::backend::AttributeBindInfo, attributeName, location, size, type);
 
 #if CC_USE_PHYSICS
