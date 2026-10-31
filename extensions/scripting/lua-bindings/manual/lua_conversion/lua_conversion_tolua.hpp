@@ -699,14 +699,12 @@ end
 
 #define TO_NATIVE_SIGNED(_T) template<>\
 	struct to_native<_T> {\
-		static constexpr bool owned_callback_fixed_environment = true;\
 		static bool F(lua_State* L, int lo, _T* outValue, const char* funcName = ""){\
 			if (!outValue) return false;\
 			int64_t i; bool ret = luaval_to_int(L, lo, &i, sizeof(_T), funcName);\
 			if (ret) *outValue = (_T)(i); return ret; } }
 #define TO_NATIVE_UNSIGNED(_T) template<>\
 	struct to_native<_T> {\
-		static constexpr bool owned_callback_fixed_environment = true;\
 		static bool F(lua_State* L, int lo, _T* outValue, const char* funcName = ""){\
 			if (!outValue) return false;\
 			uint64_t i; bool ret = luaval_to_uint(L, lo, &i, sizeof(_T), funcName);\
@@ -729,7 +727,6 @@ end
 	template<typename T>
 	struct to_native<T, std::enable_if_t<(std::is_same_v<T, long> ||
 		std::is_same_v<T, unsigned long>) && (sizeof(T) <= sizeof(uint64_t))>> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, T* outValue, const char* funcName = "") {
 			if (!outValue) return false;
 			using type = std::conditional_t<std::is_signed_v<T>, int64_t, uint64_t>;
@@ -758,7 +755,6 @@ end
 
 	template<>
 	struct to_native<bool> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, bool* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnil(L, lo) || lua_isboolean(L, lo);
@@ -769,7 +765,6 @@ end
 
 	template<>
 	struct to_native<float> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, float* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnumber(L, lo);
@@ -780,7 +775,6 @@ end
 
 	template<>
 	struct to_native<double> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, double* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const auto ok = lua_isnumber(L, lo);
@@ -802,7 +796,6 @@ end
 
 	template<>
 	struct to_native<std::string> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static bool F(lua_State* L, int lo, std::string* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_isstring(L, lo))
@@ -831,9 +824,6 @@ end
 
 	template<typename T, size_t Size>
 	struct to_native<std::array<T, Size>> {
-		// A Lua error may bypass this converter's local result destructor.
-		static constexpr bool owned_callback_fixed_environment =
-			std::is_trivially_destructible_v<T> && owned_callback_read<T>::value;
 		static bool F(lua_State* L, int lo, std::array<T, Size>* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
@@ -1043,7 +1033,6 @@ end
 
 	template<>
 	struct to_lua<bool> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, bool inValue) {
 			if (!L) return;
 			lua_pushboolean(L, inValue);
@@ -1052,7 +1041,6 @@ end
 
 	template<typename T>
 	struct to_lua<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, T inValue) {
 			if (!L) return;
 			lua_pushnumber(L, (lua_Number)inValue);
@@ -1078,7 +1066,6 @@ end
 
 	template<>
 	struct to_lua<std::string> {
-		static constexpr bool owned_callback_fixed_environment = true;
 		static void F(lua_State* L, const std::string& inValue) {
 			if (!L) return;
 			lua_pushlstring(L, inValue.c_str(), inValue.size());
@@ -1097,7 +1084,6 @@ end
 
 	template<typename T, size_t Size>
 	struct to_lua<std::array<T, Size>> {
-		static constexpr bool owned_callback_fixed_environment = owned_callback_push<T>::value;
 		static void F(lua_State* L, const std::array<T, Size>& inValue) {
 			if (!L) return;
 			lua_createtable(L, (int)inValue.size(), 0);
@@ -1355,19 +1341,27 @@ end
 	}
 
 
-	// Explicit opt-in for conversion in a bridge-owned, fixed empty environment.
-	// The two directions are independent. Custom converters may specialize these
-	// traits only after auditing their environment and longjmp/lifetime contract.
-	template<typename T, class Enable>
-	struct owned_callback_push : std::false_type {};
+	// Existing converters run in the bridge's fixed empty environment. Only
+	// std::function payloads are excluded, including inside supported containers.
+	// Converters remain responsible for Lua-error cleanup and borrowed lifetimes.
+	template<typename T> struct _callback_has_function;
 	template<typename T>
-	struct owned_callback_push<T, std::void_t<decltype(to_lua<T>::owned_callback_fixed_environment)>>
-		: std::bool_constant<to_lua<T>::owned_callback_fixed_environment> {};
-	template<typename T, class Enable>
-	struct owned_callback_read : std::false_type {};
+	using _callback_value = std::remove_cv_t<std::remove_reference_t<T>>;
+	template<typename T> struct _callback_has_function : std::false_type {};
+	template<typename R, typename... Args>
+	struct _callback_has_function<std::function<R(Args...)>> : std::true_type {};
+	template<template<typename...> class C, typename... Types>
+	struct _callback_has_function<C<Types...>>
+		: std::disjunction<_callback_has_function<_callback_value<Types>>...> {};
+	template<typename T, size_t Size>
+	struct _callback_has_function<std::array<T, Size>> : _callback_has_function<_callback_value<T>> {};
 	template<typename T>
-	struct owned_callback_read<T, std::void_t<decltype(to_native<T>::owned_callback_fixed_environment)>>
-		: std::bool_constant<to_native<T>::owned_callback_fixed_environment> {};
+	struct _callback_has_function<T*> : _callback_has_function<_callback_value<T>> {};
+
+	template<typename T, class Enable>
+	struct owned_callback_push : std::bool_constant<!_callback_has_function<_callback_value<T>>::value> {};
+	template<typename T, class Enable>
+	struct owned_callback_read : std::bool_constant<!_callback_has_function<_callback_value<T>>::value> {};
 
 	// Everything that owns C++ storage lives outside the protected Lua frame.
 	// Successful Lua roots are recorded immediately, including partial creation.
@@ -1584,9 +1578,9 @@ end
 	bool luaval_to_owned_callback(lua_State* L, int index, std::function<R(Args...)>* out,
 		const char* diagnostic_name = "") {
 		static_assert((owned_callback_push<std::remove_cv_t<std::remove_reference_t<Args>>>::value && ...),
-			"owned Lua callback: argument converter has not opted into the fixed environment; use luaval_to_native");
-		static_assert(std::is_void_v<R> || (!std::is_reference_v<R> && std::is_same_v<R, std::remove_cv_t<R>> && owned_callback_read<R>::value),
-			"owned Lua callback: result converter/lifetime has not opted into the fixed environment; use luaval_to_native");
+			"owned Lua callback: std::function arguments are not supported");
+		static_assert(owned_callback_read<R>::value,
+			"owned Lua callback: std::function results are not supported");
 		index = _absolute_index(L, index);
 		if (!out || !index) return false;
 		if (lua_isnil(L, index)) { *out = nullptr; return true; }
@@ -1626,68 +1620,29 @@ end
 		}
 	}
 
+	// All callback reads, including explicit luaval_to_native calls, use owned
+	// references. std::function arguments/results are excluded, also when nested
+	// inside supported containers; other registered converters remain available.
 	template<typename R, typename... Targs>
 	struct to_native<std::function<R(Targs...)>> {
 		static bool F(lua_State* L, int lo, std::function<R(Targs...)>* outValue, const char* fName = "") {
-			const int index = _absolute_index(L, lo);
-			if (!outValue || !index)
-				return false;
-			if (lua_isnil(L, index)) {
-				*outValue = nullptr;
-				return true;
-			}
-			auto ref = _own_luafunction(L, lo, fName);
-			if (!ref)
-				return false;
-			*outValue = [ref = std::move(ref)](Targs... args)
-			{
-				R ret = {};
-				auto* callback = ref.get();
-				const bool ok = _call_luafunction(ref, [&](lua_State* L) {
-					handler_to_luafunction(L, callback->handler);
-					if (!lua_isfunction(L, -1)) return;
-					luaL_checkstack(L, sizeof...(Targs), "Lua callback argument stack overflow");
-					_to_lua_function_helper<sizeof...(Targs), Targs...>::F(L, std::forward<Targs>(args)...);
-					lua_call(L, sizeof...(Targs), 1);
-					if (!luaval_to_native(L, -1, &ret, callback->name.c_str()))
-						luaL_error(L, "invalid return value in handler (%s)", callback->name.c_str());
-				});
-				if (!ok) return R{};
-				return ret;
-			};
-			return true;
-		}
-	};
-
-	template<typename... Targs>
-	struct to_native<std::function<void(Targs...)>> {
-		static bool F(lua_State* L, int lo, std::function<void(Targs...)>* outValue, const char* fName = "") {
-			const int index = _absolute_index(L, lo);
-			if (!outValue || !index)
-				return false;
-			if (lua_isnil(L, index)) {
-				*outValue = nullptr;
-				return true;
-			}
-			auto ref = _own_luafunction(L, lo, fName);
-			if (!ref)
-				return false;
-			*outValue = [ref = std::move(ref)](Targs... args)
-			{
-				auto* callback = ref.get();
-				_call_luafunction(ref, [&](lua_State* L) {
-					handler_to_luafunction(L, callback->handler);
-					if (!lua_isfunction(L, -1)) return;
-					luaL_checkstack(L, sizeof...(Targs), "Lua callback argument stack overflow");
-					_to_lua_function_helper<sizeof...(Targs), Targs...>::F(L, std::forward<Targs>(args)...);
-					lua_call(L, sizeof...(Targs), 0);
-				});
-			};
-			return true;
+			return luaval_to_owned_callback(L, lo, outValue, fName);
 		}
 	};
 
 	////////////////////////////////////////////////////////////////////////////////
+
+	// Automatic fields keep checked value conversion and share the owned callback
+	// path with public luaval_to_native.
+	template<typename T>
+	bool luaval_to_binding_value(lua_State* L, int index, T* out, const char* name = "") {
+		return luaval_to_native(L, index, out, name);
+	}
+	template<typename R, typename... Args>
+	bool luaval_to_binding_value(lua_State* L, int index, std::function<R(Args...)>* out,
+		const char* name = "") {
+		return luaval_to_owned_callback(L, index, out, name);
+	}
 
 	// Binding reads are separate from to_native's public checked conversion
 	// contract. Overload resolution always requests Checked=true.
@@ -1742,6 +1697,14 @@ end
 				return true;
 			} else
 				return to_native<T>::F(L, lo, outValue);
+		}
+	};
+
+	template<typename R, typename... Args>
+	struct binding_read<std::function<R(Args...)>> {
+		template<bool Checked>
+		static bool F(lua_State* L, int index, std::function<R(Args...)>* out) {
+			return luaval_to_owned_callback(L, index, out);
 		}
 	};
 

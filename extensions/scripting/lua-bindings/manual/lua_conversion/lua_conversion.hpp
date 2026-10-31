@@ -878,7 +878,7 @@ namespace lua
 
 #ifndef LUA_NATIVE_SETTER
 #define LUA_NATIVE_SETTER(V_, IDX_)\
-	if (!lua::luaval_to_native(lua_S, (IDX_), &(V_), LUA_FNAME))\
+	if (!lua::luaval_to_binding_value(lua_S, (IDX_), &(V_), LUA_FNAME))\
 		return luaL_error(lua_S, "invalid value for '%s'", LUA_FNAME);
 #endif // !LUA_NATIVE_SETTER
 
