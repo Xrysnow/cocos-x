@@ -11,6 +11,19 @@ set(lua_bindings_manual_headers
     manual/LuaBasicConversions.h
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
+    manual/lua_conversion/detail/base.hpp
+    manual/lua_conversion/detail/scalar.hpp
+    manual/lua_conversion/detail/containers.hpp
+    manual/lua_conversion/detail/conversion.hpp
+    manual/lua_conversion/detail/callback_state.hpp
+    manual/lua_conversion/detail/callback_from_lua.hpp
+    manual/lua_conversion/detail/invoke.hpp
+    manual/lua_conversion/detail/callback_to_lua.hpp
+    manual/lua_conversion/detail/binding_macros.hpp
+    manual/lua_conversion/detail/cocos/object.hpp
+    manual/lua_conversion/detail/cocos/containers.hpp
+    manual/lua_conversion/detail/cocos/value_types.hpp
+    manual/lua_conversion/detail/cocos/physics.hpp
     manual/platform/ios/CCLuaObjcBridge.h
     manual/network/axlua_network_manual.h
     manual/network/lua_xml_http_request.h
