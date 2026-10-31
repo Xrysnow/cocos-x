@@ -502,7 +502,7 @@ CC_DEPRECATED_ATTRIBUTE static inline bool luaval_to_array_of_Point(lua_State* L
  * @param L the current lua_State.
  * @param argc the numbers of Lua values in the stack.
  * @param ret a cocos2d::Vector of type T objects.
- * @return Return false if argc equal to 0 , L equal to nullptr or the Lua userdata at the index isn't `ax.Ref` type,
+ * @return Return false if argc equal to 0 , L equal to nullptr or the Lua userdata at the index isn't `cc.Ref` type,
  * otherwise return true.
  */
 template <class T>

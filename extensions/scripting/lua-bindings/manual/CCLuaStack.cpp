@@ -35,7 +35,7 @@ extern "C" {
 #include "lauxlib.h"
 }
 
-#include "scripting/lua-bindings/manual/AxluaLoader.h"
+#include "scripting/lua-bindings/manual/CcluaLoader.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     #include "scripting/lua-bindings/manual/platform/ios/CCLuaObjcBridge.h"
@@ -46,12 +46,12 @@ extern "C" {
 #endif
 
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
-#include "scripting/lua-bindings/auto/axlua_base_auto.hpp"
-#include "scripting/lua-bindings/manual/base/axlua_base_manual.hpp"
+#include "scripting/lua-bindings/auto/cclua_base_auto.hpp"
+#include "scripting/lua-bindings/manual/base/cclua_base_manual.hpp"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#include "scripting/lua-bindings/auto/axlua_physics_auto.hpp"
-#include "scripting/lua-bindings/manual/physics/axlua_physics_manual.hpp"
-#include "scripting/lua-bindings/auto/axlua_backend_auto.hpp"
+#include "scripting/lua-bindings/auto/cclua_physics_auto.hpp"
+#include "scripting/lua-bindings/manual/physics/cclua_physics_manual.hpp"
+#include "scripting/lua-bindings/auto/cclua_backend_auto.hpp"
 #include "base/ZipUtils.h"
 #include "platform/CCFileUtils.h"
 
@@ -145,19 +145,19 @@ bool LuaStack::init()
     luaL_register(_state, "_G", global_functions);
 
     g_luaType.clear();
-    register_all_ax_base(_state);
-    register_all_ax_backend(_state);
-    register_all_ax_manual(_state);
-    register_all_ax_module_manual(_state);
-    register_all_ax_math_manual(_state);
-    register_all_ax_shaders_manual(_state);
-    register_all_ax_bytearray_manual(_state);
+    register_all_cc_base(_state);
+    register_all_cc_backend(_state);
+    register_all_cc_manual(_state);
+    register_all_cc_module_manual(_state);
+    register_all_cc_math_manual(_state);
+    register_all_cc_shaders_manual(_state);
+    register_all_cc_bytearray_manual(_state);
 
     tolua_luanode_open(_state);
     register_luanode_manual(_state);
 #if CC_USE_PHYSICS
-    register_all_ax_physics(_state);
-    register_all_ax_physics_manual(_state);
+    register_all_cc_physics(_state);
+    register_all_cc_physics_manual(_state);
 #endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -171,7 +171,7 @@ bool LuaStack::init()
     tolua_script_handler_mgr_open(_state);
 
     // add cocos2dx loader
-    addLuaLoader(axlua_loader);
+    addLuaLoader(cclua_loader);
 
     return true;
 }

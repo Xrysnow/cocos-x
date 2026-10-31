@@ -35,17 +35,13 @@ if (unpack) then
     table.unpack = unpack
 end
 
--- < axmol-1.0
-cc = ax
-cc.Director.setDisplayStats = ax.Director.setStatsDisplay
-cc.Sprite3D = ax.MeshRenderer
-ccexp = axexp
-ccui = axui
-ccb = axb
+-- Keep method aliases within the directly registered cc table.
+cc.Director.setDisplayStats = cc.Director.setStatsDisplay
+cc.Sprite3D = cc.MeshRenderer
 
-require "axmol.core.Axmol"
-require "axmol.core.Constants"
-require "axmol.core.functions"
+require "cc.cocos2d.Cocos2d"
+require "cc.cocos2d.Cocos2dConstants"
+require "cc.cocos2d.functions"
 
 __G__TRACKBACK__ = function(msg)
     local msg = debug.traceback(msg, 3)
@@ -55,28 +51,28 @@ end
 
 -- cocosstudio
 if nil ~= ccs then
-    require "axmol.cocostudio.CocoStudio"
+    require "cc.cocostudio.CocoStudio"
 end
 -- ui
 if nil ~= ccui then
-    require "axmol.ui.GuiConstants"
+    require "cc.ui.GuiConstants"
 end
 
 -- extensions
-require "axmol.extension.ExtensionConstants"
+require "cc.extension.ExtensionConstants"
 -- network
-require "axmol.network.NetworkConstants"
+require "cc.network.NetworkConstants"
 -- Spine
 if nil ~= sp then
-    require "axmol.spine.SpineConstants"
+    require "cc.spine.SpineConstants"
 end
 
 -- Lua extensions
-require "axmol.core.bitExtend"
+require "cc.cocos2d.bitExtend"
 
 -- physics3d
-require "axmol.physics3d.physics3d-constants"
+require "cc.physics3d.physics3d-constants"
 
 if CC_USE_FRAMEWORK then
-    require "axmol.framework.init"
+    require "cc.framework.init"
 end

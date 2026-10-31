@@ -1,0 +1,69 @@
+#include "base/ccConfig.h"
+#ifndef __cc_backend_h__
+#define __cc_backend_h__
+
+#include "tolua++.h"
+
+int register_all_cc_backend(lua_State* tolua_S);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif // __cc_backend_h__

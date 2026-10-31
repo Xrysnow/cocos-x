@@ -27,14 +27,14 @@
 
 #include "scripting/lua-bindings/manual/lua_module_register.h"
 
-#include "scripting/lua-bindings/manual/network/axlua_network_manual.h"
-#include "scripting/lua-bindings/manual/cocostudio/axlua_cocostudio_manual.hpp"
-#include "scripting/lua-bindings/manual/extension/axlua_extension_manual.h"
-#include "scripting/lua-bindings/manual/ui/axlua_ui_manual.hpp"
-#include "scripting/lua-bindings/manual/spine/axlua_spine_manual.hpp"
-#include "scripting/lua-bindings/manual/3d/axlua_3d_manual.h"
-#include "scripting/lua-bindings/manual/physics3d/axlua_physics3d_manual.h"
-#include "scripting/lua-bindings/manual/navmesh/axlua_navmesh_manual.h"
+#include "scripting/lua-bindings/manual/network/cclua_network_manual.h"
+#include "scripting/lua-bindings/manual/cocostudio/cclua_cocostudio_manual.hpp"
+#include "scripting/lua-bindings/manual/extension/cclua_extension_manual.h"
+#include "scripting/lua-bindings/manual/ui/cclua_ui_manual.hpp"
+#include "scripting/lua-bindings/manual/spine/cclua_spine_manual.hpp"
+#include "scripting/lua-bindings/manual/3d/cclua_3d_manual.h"
+#include "scripting/lua-bindings/manual/physics3d/cclua_physics3d_manual.h"
+#include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_manual.h"
 #include "lua_cjson.h"
 #include "yasio/bindings/yasio_cclua.hpp"
 

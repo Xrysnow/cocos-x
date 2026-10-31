@@ -293,7 +293,7 @@ static int lua_collect_xml_http_request(lua_State* L)
     return 0;
 }
 
-static int axlua_XMLHttpRequest_constructor(lua_State* L)
+static int cclua_XMLHttpRequest_constructor(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -316,7 +316,7 @@ static int axlua_XMLHttpRequest_constructor(lua_State* L)
 
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_constructor'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_constructor'.", &tolua_err);
     return 0;
 #endif
 }
@@ -730,7 +730,7 @@ tolua_lerror:
 #endif
 }
 
-static int axlua_XMLHttpRequest_open(lua_State* L)
+static int cclua_XMLHttpRequest_open(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -745,7 +745,7 @@ static int axlua_XMLHttpRequest_open(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_open'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_open'\n", nullptr);
         return 0;
     }
 #endif
@@ -820,12 +820,12 @@ static int axlua_XMLHttpRequest_open(lua_State* L)
 
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_open'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_open'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_send(lua_State* L)
+static int cclua_XMLHttpRequest_send(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -843,7 +843,7 @@ static int axlua_XMLHttpRequest_send(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_send'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_send'\n", nullptr);
         return 0;
     }
 #endif
@@ -876,7 +876,7 @@ static int axlua_XMLHttpRequest_send(lua_State* L)
 
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_send'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_send'.", &tolua_err);
     return 0;
 #endif
 }
@@ -884,7 +884,7 @@ tolua_lerror:
 /**
  * @brief abort function Placeholder!
  */
-static int axlua_XMLHttpRequest_abort(lua_State* L)
+static int cclua_XMLHttpRequest_abort(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -899,7 +899,7 @@ static int axlua_XMLHttpRequest_abort(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_send'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_send'\n", nullptr);
         return 0;
     }
 #endif
@@ -915,12 +915,12 @@ static int axlua_XMLHttpRequest_abort(lua_State* L)
 
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_send'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_send'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_setRequestHeader(lua_State* L)
+static int cclua_XMLHttpRequest_setRequestHeader(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -935,7 +935,7 @@ static int axlua_XMLHttpRequest_setRequestHeader(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_setRequestHeader'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_setRequestHeader'\n", nullptr);
         return 0;
     }
 #endif
@@ -960,12 +960,12 @@ static int axlua_XMLHttpRequest_setRequestHeader(lua_State* L)
     return 0;
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_setRequestHeader'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_setRequestHeader'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_getAllResponseHeaders(lua_State* L)
+static int cclua_XMLHttpRequest_getAllResponseHeaders(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -983,7 +983,7 @@ static int axlua_XMLHttpRequest_getAllResponseHeaders(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_getAllResponseHeaders'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_getAllResponseHeaders'\n", nullptr);
         return 0;
     }
 #endif
@@ -1010,12 +1010,12 @@ static int axlua_XMLHttpRequest_getAllResponseHeaders(lua_State* L)
     return 0;
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_getAllResponseHeaders'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_getAllResponseHeaders'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_getResponseHeader(lua_State* L)
+static int cclua_XMLHttpRequest_getResponseHeader(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -1032,7 +1032,7 @@ static int axlua_XMLHttpRequest_getResponseHeader(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_getAllResponseHeaders'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_getAllResponseHeaders'\n", nullptr);
         return 0;
     }
 #endif
@@ -1065,12 +1065,12 @@ static int axlua_XMLHttpRequest_getResponseHeader(lua_State* L)
     return 0;
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_getAllResponseHeaders'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_getAllResponseHeaders'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_registerScriptHandler(lua_State* L)
+static int cclua_XMLHttpRequest_registerScriptHandler(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -1087,7 +1087,7 @@ static int axlua_XMLHttpRequest_registerScriptHandler(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_registerScriptHandler'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_registerScriptHandler'\n", nullptr);
         return 0;
     }
 #endif
@@ -1113,12 +1113,12 @@ static int axlua_XMLHttpRequest_registerScriptHandler(lua_State* L)
     return 0;
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_registerScriptHandler'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_registerScriptHandler'.", &tolua_err);
     return 0;
 #endif
 }
 
-static int axlua_XMLHttpRequest_unregisterScriptHandler(lua_State* L)
+static int cclua_XMLHttpRequest_unregisterScriptHandler(lua_State* L)
 {
     int argc                   = 0;
     LuaMinXmlHttpRequest* self = nullptr;
@@ -1135,7 +1135,7 @@ static int axlua_XMLHttpRequest_unregisterScriptHandler(lua_State* L)
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'axlua_XMLHttpRequest_unregisterScriptHandler'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_XMLHttpRequest_unregisterScriptHandler'\n", nullptr);
         return 0;
     }
 #endif
@@ -1156,7 +1156,7 @@ static int axlua_XMLHttpRequest_unregisterScriptHandler(lua_State* L)
     return 0;
 #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'axlua_XMLHttpRequest_unregisterScriptHandler'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_XMLHttpRequest_unregisterScriptHandler'.", &tolua_err);
     return 0;
 #endif
 }
@@ -1165,8 +1165,8 @@ TOLUA_API int register_xml_http_request(lua_State* L)
 {
     tolua_open(L);
     lua_reg_xml_http_request(L);
-    tolua_module(L, "ax", 0);
-    tolua_beginmodule(L, "ax");
+    tolua_module(L, "cc", 0);
+    tolua_beginmodule(L, "cc");
     tolua_cclass(L, "XMLHttpRequest", "cc.XMLHttpRequest", "cc.Ref", lua_collect_xml_http_request);
     tolua_beginmodule(L, "XMLHttpRequest");
     tolua_variable(L, "responseType", lua_get_XMLHttpRequest_responseType, lua_set_XMLHttpRequest_responseType);
@@ -1178,15 +1178,15 @@ TOLUA_API int register_xml_http_request(lua_State* L)
     tolua_variable(L, "statusText", lua_get_XMLHttpRequest_statusText, nullptr);
     tolua_variable(L, "responseText", lua_get_XMLHttpRequest_responseText, nullptr);
     tolua_variable(L, "response", lua_get_XMLHttpRequest_response, nullptr);
-    tolua_function(L, "new", axlua_XMLHttpRequest_constructor);
-    tolua_function(L, "open", axlua_XMLHttpRequest_open);
-    tolua_function(L, "send", axlua_XMLHttpRequest_send);
-    tolua_function(L, "abort", axlua_XMLHttpRequest_abort);
-    tolua_function(L, "setRequestHeader", axlua_XMLHttpRequest_setRequestHeader);
-    tolua_function(L, "getAllResponseHeaders", axlua_XMLHttpRequest_getAllResponseHeaders);
-    tolua_function(L, "getResponseHeader", axlua_XMLHttpRequest_getResponseHeader);
-    tolua_function(L, "registerScriptHandler", axlua_XMLHttpRequest_registerScriptHandler);
-    tolua_function(L, "unregisterScriptHandler", axlua_XMLHttpRequest_unregisterScriptHandler);
+    tolua_function(L, "new", cclua_XMLHttpRequest_constructor);
+    tolua_function(L, "open", cclua_XMLHttpRequest_open);
+    tolua_function(L, "send", cclua_XMLHttpRequest_send);
+    tolua_function(L, "abort", cclua_XMLHttpRequest_abort);
+    tolua_function(L, "setRequestHeader", cclua_XMLHttpRequest_setRequestHeader);
+    tolua_function(L, "getAllResponseHeaders", cclua_XMLHttpRequest_getAllResponseHeaders);
+    tolua_function(L, "getResponseHeader", cclua_XMLHttpRequest_getResponseHeader);
+    tolua_function(L, "registerScriptHandler", cclua_XMLHttpRequest_registerScriptHandler);
+    tolua_function(L, "unregisterScriptHandler", cclua_XMLHttpRequest_unregisterScriptHandler);
     tolua_endmodule(L);
     tolua_endmodule(L);
     return 1;

@@ -2,12 +2,12 @@ set(cocos_root ${COCOS2DX_ROOT_PATH})
 
 set(lua_bindings_manual_headers
     manual/CCComponentLua.h
-    manual/3d/axlua_3d_manual.h
+    manual/3d/cclua_3d_manual.h
     manual/CCLuaStack.h
     manual/CCLuaEngine.h
     manual/lua_module_register.h
     manual/CCLuaBridge.h
-    manual/extension/axlua_extension_manual.h
+    manual/extension/cclua_extension_manual.h
     manual/LuaBasicConversions.h
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
@@ -25,20 +25,20 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/cocos/value_types.hpp
     manual/lua_conversion/detail/cocos/physics.hpp
     manual/platform/ios/CCLuaObjcBridge.h
-    manual/network/axlua_network_manual.h
+    manual/network/cclua_network_manual.h
     manual/network/lua_xml_http_request.h
     manual/network/lua_downloader.h
     manual/Lua-BindingsExport.h
     manual/tolua_fix.h
-    manual/navmesh/axlua_navmesh_manual.h
-    manual/navmesh/axlua_navmesh_conversions.h
+    manual/navmesh/cclua_navmesh_manual.h
+    manual/navmesh/cclua_navmesh_conversions.h
     manual/base/LuaScriptHandlerMgr.h
-    manual/base/axlua_base_manual.hpp
-    manual/AxluaLoader.h
+    manual/base/cclua_base_manual.hpp
+    manual/CcluaLoader.h
     manual/CCLuaValue.h
-    manual/physics3d/axlua_physics3d_manual.h
-    manual/ui/axlua_ui_manual.hpp
-    manual/controller/axlua_controller_manual.hpp
+    manual/physics3d/cclua_physics3d_manual.h
+    manual/ui/cclua_ui_manual.hpp
+    manual/controller/cclua_controller_manual.hpp
     )
 
 set(lua_bindings_manual_files
@@ -46,48 +46,48 @@ set(lua_bindings_manual_files
     manual/CCLuaEngine.cpp
     manual/CCLuaStack.cpp
     manual/CCLuaValue.cpp
-    manual/AxluaLoader.cpp
+    manual/CcluaLoader.cpp
     manual/LuaBasicConversions.cpp
     manual/lua_module_register.cpp
     manual/tolua_fix.cpp
     manual/CCComponentLua.cpp
     manual/base/LuaScriptHandlerMgr.cpp
-    manual/base/axlua_base_manual.cpp
-    manual/physics/axlua_physics_manual.cpp
-    manual/3d/axlua_3d_manual.cpp
-    manual/controller/axlua_controller_manual.cpp
-    manual/extension/axlua_extension_manual.cpp
-    manual/network/axlua_network_manual.cpp
+    manual/base/cclua_base_manual.cpp
+    manual/physics/cclua_physics_manual.cpp
+    manual/3d/cclua_3d_manual.cpp
+    manual/controller/cclua_controller_manual.cpp
+    manual/extension/cclua_extension_manual.cpp
+    manual/network/cclua_network_manual.cpp
     manual/network/lua_xml_http_request.cpp
     manual/network/lua_downloader.cpp
-    manual/ui/axlua_ui_manual.cpp
-    manual/physics3d/axlua_physics3d_manual.cpp
-    manual/navmesh/axlua_navmesh_conversions.cpp
-    manual/navmesh/axlua_navmesh_manual.cpp
+    manual/ui/cclua_ui_manual.cpp
+    manual/physics3d/cclua_physics3d_manual.cpp
+    manual/navmesh/cclua_navmesh_conversions.cpp
+    manual/navmesh/cclua_navmesh_manual.cpp
     )
 
 set(lua_bindings_auto_headers
-    auto/axlua_3d_auto.hpp
-    auto/axlua_controller_auto.hpp
-    auto/axlua_base_auto.hpp
-    auto/axlua_navmesh_auto.hpp
-    auto/axlua_physics3d_auto.hpp
-    auto/axlua_ui_auto.hpp
-    auto/axlua_physics_auto.hpp
-    auto/axlua_extension_auto.hpp
-    auto/axlua_backend_auto.hpp
+    auto/cclua_3d_auto.hpp
+    auto/cclua_controller_auto.hpp
+    auto/cclua_base_auto.hpp
+    auto/cclua_navmesh_auto.hpp
+    auto/cclua_physics3d_auto.hpp
+    auto/cclua_ui_auto.hpp
+    auto/cclua_physics_auto.hpp
+    auto/cclua_extension_auto.hpp
+    auto/cclua_backend_auto.hpp
     )
 
 set(lua_bindings_auto_files
-    auto/axlua_3d_auto.cpp
-    auto/axlua_base_auto.cpp
-    auto/axlua_controller_auto.cpp
-    auto/axlua_extension_auto.cpp
-    auto/axlua_physics_auto.cpp
-    auto/axlua_ui_auto.cpp
-    auto/axlua_physics3d_auto.cpp
-    auto/axlua_navmesh_auto.cpp
-    auto/axlua_backend_auto.cpp
+    auto/cclua_3d_auto.cpp
+    auto/cclua_base_auto.cpp
+    auto/cclua_controller_auto.cpp
+    auto/cclua_extension_auto.cpp
+    auto/cclua_physics_auto.cpp
+    auto/cclua_ui_auto.cpp
+    auto/cclua_physics3d_auto.cpp
+    auto/cclua_navmesh_auto.cpp
+    auto/cclua_backend_auto.cpp
     )
 
 if(CC_ENABLE_EXT_SPINE)
@@ -95,14 +95,14 @@ if(CC_ENABLE_EXT_SPINE)
         manual/spine/LuaSkeletonAnimation.h
     )
     list(APPEND lua_bindings_manual_files
-        manual/spine/axlua_spine_manual.cpp
+        manual/spine/cclua_spine_manual.cpp
         manual/spine/LuaSkeletonAnimation.cpp
     )
     list(APPEND lua_bindings_auto_headers
-        auto/axlua_spine_auto.hpp
+        auto/cclua_spine_auto.hpp
     )
     list(APPEND lua_bindings_auto_files
-        auto/axlua_spine_auto.cpp
+        auto/cclua_spine_auto.cpp
     )
 endif()
 if(CC_ENABLE_EXT_COCOSTUDIO)
@@ -112,17 +112,17 @@ if(CC_ENABLE_EXT_COCOSTUDIO)
     )
     list(APPEND lua_bindings_manual_files
         manual/cocostudio/CustomGUIReader.cpp
-        manual/cocostudio/axlua_cocostudio_manual.cpp
+        manual/cocostudio/cclua_cocostudio_manual.cpp
         manual/cocostudio/lua-cocostudio-conversions.cpp
-        manual/cocostudio/axlua_csloader_manual.cpp
+        manual/cocostudio/cclua_csloader_manual.cpp
     )
     list(APPEND lua_bindings_auto_headers
-        auto/axlua_studio_auto.hpp
-        auto/axlua_csloader_auto.hpp
+        auto/cclua_studio_auto.hpp
+        auto/cclua_csloader_auto.hpp
     )
     list(APPEND lua_bindings_auto_files
-        auto/axlua_studio_auto.cpp
-        auto/axlua_csloader_auto.cpp
+        auto/cclua_studio_auto.cpp
+        auto/cclua_csloader_auto.cpp
     )
 endif()
 
@@ -139,57 +139,57 @@ if(APPLE)
     if(IOS)
         set(lua_bindings_manual_headers
             ${lua_bindings_manual_headers}
-            manual/ui/axlua_webview_manual.hpp
-            auto/axlua_webview_auto.hpp
-            auto/axlua_video_auto.hpp
-            manual/ui/axlua_video_manual.hpp
+            manual/ui/cclua_webview_manual.hpp
+            auto/cclua_webview_auto.hpp
+            auto/cclua_video_auto.hpp
+            manual/ui/cclua_video_manual.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
-            manual/ui/axlua_webview_manual.cpp
-            auto/axlua_webview_auto.cpp
-            manual/ui/axlua_video_manual.cpp
-            auto/axlua_video_auto.cpp
+            manual/ui/cclua_webview_manual.cpp
+            auto/cclua_webview_auto.cpp
+            manual/ui/cclua_video_manual.cpp
+            auto/cclua_video_auto.cpp
             )
     endif()
 elseif(ANDROID)
     set(lua_bindings_manual_headers
         ${lua_bindings_manual_headers}
-        manual/ui/axlua_webview_manual.hpp
-        auto/axlua_webview_auto.hpp
-        auto/axlua_video_auto.hpp
-        manual/ui/axlua_video_manual.hpp
+        manual/ui/cclua_webview_manual.hpp
+        auto/cclua_webview_auto.hpp
+        auto/cclua_video_auto.hpp
+        manual/ui/cclua_video_manual.hpp
         )
     set(lua_bindings_manual_files
         ${lua_bindings_manual_files}
-        manual/ui/axlua_webview_manual.cpp
-        auto/axlua_webview_auto.cpp
-        manual/ui/axlua_video_manual.cpp
-        auto/axlua_video_auto.cpp
+        manual/ui/cclua_webview_manual.cpp
+        auto/cclua_webview_auto.cpp
+        manual/ui/cclua_video_manual.cpp
+        auto/cclua_video_auto.cpp
         )
 elseif(WINDOWS)
     if(CC_ENABLE_MFMEDIA)
         set(lua_bindings_manual_headers
             ${lua_bindings_manual_headers}
-            auto/axlua_video_auto.hpp
-            manual/ui/axlua_video_manual.hpp
+            auto/cclua_video_auto.hpp
+            manual/ui/cclua_video_manual.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
-            manual/ui/axlua_video_manual.cpp
-            auto/axlua_video_auto.cpp
+            manual/ui/cclua_video_manual.cpp
+            auto/cclua_video_auto.cpp
             )
     endif()
     if(CC_ENABLE_MSEDGE_WEBVIEW2)
         set(lua_bindings_manual_headers
             ${lua_bindings_manual_headers}
-            manual/ui/axlua_webview_manual.hpp
-            auto/axlua_webview_auto.hpp
+            manual/ui/cclua_webview_manual.hpp
+            auto/cclua_webview_auto.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
-            manual/ui/axlua_webview_manual.cpp
-            auto/axlua_webview_auto.cpp
+            manual/ui/cclua_webview_manual.cpp
+            auto/cclua_webview_auto.cpp
             )
     endif()
 endif()

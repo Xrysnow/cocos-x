@@ -187,23 +187,23 @@ static int lua_downloader_createDownloadFileTask(lua_State* L)
         return 0;
     }
 
-    url         = axlua_tosv(L, 2);
-    storagePath = axlua_tosv(L, 3);
+    url         = cclua_tosv(L, 2);
+    storagePath = cclua_tosv(L, 3);
     if (argc > 2)
-        identifier = axlua_tosv(L, 4);
+        identifier = cclua_tosv(L, 4);
 
     std::string_view md5checksum = ""sv;
     std::string_view cacertPath  = ""sv;
     bool background = false;
 
     if (argc > 3)
-        md5checksum = axlua_tosv(L, 5);
+        md5checksum = cclua_tosv(L, 5);
 
     if (argc > 4)
         background = lua_toboolean(L, 6);
 
     if (argc > 5)
-        cacertPath = axlua_tosv(L, 7);
+        cacertPath = cclua_tosv(L, 7);
 
     auto tsk = d->createDownloadFileTask(url, storagePath, identifier, md5checksum, background, cacertPath);
 
@@ -350,7 +350,7 @@ static int lua_downloader_cleanup(lua_State* L)
 
 static int lua_downloader_tostring(lua_State* L)
 {
-    lua_pushstring(L, "[ax.Downloader]");
+    lua_pushstring(L, "[cc.Downloader]");
     return 1;
 }
 
