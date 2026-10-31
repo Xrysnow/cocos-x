@@ -368,55 +368,6 @@ end
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	inline int luafunction_to_handler(lua_State* L, int lo, const char* fName)
-	{
-		const int index = _absolute_index(L, lo);
-		if (!index) return 0;
-		const int handler = toluafix_ref_function(L, index, 0);
-		if (handler == 0)
-			return 0;
-		std::string key;
-		if (fName) key = fName;
-		if (!key.empty()) {
-			key += "::" + std::to_string(lo);
-			lua_pushstring(L, TOLUA_REFID_FUNCTION_MAPPING);
-			lua_rawget(L, LUA_REGISTRYINDEX); // ... t
-			lua_pushlstring(L, key.c_str(), key.size()); // ... t k
-			// Names are lookup aliases, not ownership or replacement keys.
-			lua_pushinteger(L, handler); // ... t k v
-			lua_settable(L, -3); // ... t
-			lua_pop(L, 1);
-		}
-		return handler;
-	}
-
-	inline int query_luafunction_handler(lua_State* L, int lo, const char* fName)
-    {
-		std::string key;
-		if (fName) key = fName;
-		if (!key.empty()) {
-			int value = 0;
-			key += "::" + std::to_string(lo);
-			lua_pushstring(L, TOLUA_REFID_FUNCTION_MAPPING);
-			lua_rawget(L, LUA_REGISTRYINDEX); // ... t
-			lua_pushlstring(L, key.c_str(), key.size()); // ... t k
-			lua_rawget(L, -2); // ... t v
-			if (lua_isnumber(L, -1))
-				value = (int)lua_tointeger(L, -1);
-			lua_pop(L, 2);
-			return value;
-		}
-		return 0;
-    }
-
-	inline void handler_to_luafunction(lua_State* L, int handler)
-    {
-		if (handler != 0)
-			toluafix_get_function_by_refid(L, handler);
-		else
-			lua_pushnil(L);
-    }
-
 	// Lua-owned storage for the state lifetime sentinel.
 	template<typename T>
 	struct _callback_userdata {
@@ -493,35 +444,11 @@ end
 		lua_State* L;
 		// Own the diagnostic name; the caller's fName may be temporary.
 		std::string name;
-		std::string key;
-		enum class kind { handler, direct };
-		kind ownership = kind::handler;
 		int direct_ref = LUA_NOREF;
-		int handler = 0;
 		int thread_ref = LUA_NOREF;
 		_callback_reference* next = nullptr;
 		void unref(lua_State* current) {
-			if (ownership == kind::direct) {
-				luaL_unref(current, LUA_REGISTRYINDEX, direct_ref);
-			} else if (handler) {
-				toluafix_remove_function_by_refid(current, handler);
-				if (!key.empty()) {
-					lua_pushstring(current, TOLUA_REFID_FUNCTION_MAPPING);
-					lua_rawget(current, LUA_REGISTRYINDEX);
-					lua_pushlstring(current, key.data(), key.size());
-					lua_rawget(current, -2);
-					// An older callback must not remove a newer callback's alias.
-					const bool matches = lua_isnumber(current, -1)
-						&& lua_tointeger(current, -1) == handler;
-					lua_pop(current, 1);
-					if (matches) {
-						lua_pushlstring(current, key.data(), key.size());
-						lua_pushnil(current);
-						lua_rawset(current, -3);
-					}
-					lua_pop(current, 1);
-				}
-			}
+			luaL_unref(current, LUA_REGISTRYINDEX, direct_ref);
 			// Last: current may itself be the coroutine kept alive by this ref.
 			luaL_unref(current, LUA_REGISTRYINDEX, thread_ref);
 		}
@@ -577,6 +504,7 @@ end
 		std::shared_ptr<_callback_state> state = std::make_shared<_callback_state>();
 		~_callback_lifetime() { state->close(); }
 	};
+	// Coroutines share the registry and therefore the same lifetime sentinel.
 	inline void* _callback_state_key() { static char key; return &key; }
 	// Leaves the canonical sentinel on the stack, including if allocation
 	// reentered registration and published one while our candidate was built.
@@ -595,36 +523,6 @@ end
 			lua_rawset(L, LUA_REGISTRYINDEX);
 		}
 	}
-	// Coroutines share the registry and therefore the same lifetime sentinel.
-	inline std::shared_ptr<_callback_state> _get_callback_state(lua_State* L) {
-		using holder = _callback_userdata<_callback_lifetime>;
-		lua_pushlightuserdata(L, _callback_state_key());
-		lua_rawget(L, LUA_REGISTRYINDEX);
-		if (lua_isnil(L, -1)) {
-			lua_pop(L, 1);
-			_push_callback_lifetime(L, std::make_shared<_callback_lifetime>());
-		}
-		auto* p = static_cast<holder*>(lua_touserdata(L, -1));
-		auto state = p->value ? (*p->value)->state : nullptr;
-		lua_pop(L, 1);
-		if (state && state->callable()) state->drain(L);
-		return state;
-	}
-	inline std::shared_ptr<_callback_reference> _own_luafunction(lua_State* L, int lo, const char* name) {
-		const int index = _absolute_index(L, lo);
-		if (!index || !lua_isfunction(L, index)) return nullptr;
-		auto state = _get_callback_state(L);
-		if (!state || !state->callable()) return nullptr;
-		auto ref = std::shared_ptr<_callback_reference>(new _callback_reference{
-			state, L, name ? name : "", "" }, _callback_reference::release);
-		if (!ref->name.empty()) ref->key = ref->name + "::" + std::to_string(lo);
-		// Pin the originating coroutine while native code holds the callback.
-		lua_pushthread(L);
-		ref->thread_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-		ref->handler = luafunction_to_handler(L, lo, name);
-		return ref->handler ? ref : nullptr;
-	}
-
     ////////////////////////////////////////////////////////////////////////////////
 
 	template<typename T, class Enable = void> struct to_native {};
@@ -1249,97 +1147,23 @@ end
 		return 1;
 	}
 
-	template<typename F>
-	struct _callback_call {
-		_callback_reference* callback;
-		F* invoke;
-		bool completed = false;
-		bool entered = false;
-		_callback_call* previous;
-		// One non-owning activation per signature/thread. The C++ guard stays
-		// outside both protected Lua frames and restores nested invocations.
-		inline static thread_local _callback_call* active = nullptr;
-		_callback_call(_callback_reference* ref, F* function)
-			: callback(ref), invoke(function), previous(active) { active = this; }
-		_callback_call(const _callback_call&) = delete;
-		_callback_call& operator=(const _callback_call&) = delete;
-		~_callback_call() { active = previous; }
-		static _callback_call* context(lua_State* L) {
-			return lua_type(L, 1) == LUA_TLIGHTUSERDATA
-				&& lua_touserdata(L, 1) == active ? active : nullptr;
-		}
-		static void push_cached(lua_State* L, lua_CFunction function, void* key) {
-			// Shared per VM/signature, with no callback owner or C++ frame in
-			// upvalues. Callers keep initial allocation inside a protected frame.
+	inline void _push_cached_callback(lua_State* L, lua_CFunction function, void* key) {
+		// Shared per VM/cache key, with no callback owner or C++ frame in
+		// upvalues. Callers keep initial allocation inside a protected frame.
+		lua_pushlightuserdata(L, key);
+		lua_rawget(L, LUA_REGISTRYINDEX);
+		if (lua_isnil(L, -1)) {
+			lua_pop(L, 1);
+			lua_pushcfunction(L, function);
+			// Bridge closures use explicit globals/registry, not the caller env.
+			// Avoid keeping the first caller's sandbox/coroutine env alive.
+			lua_newtable(L);
+			lua_setfenv(L, -2);
 			lua_pushlightuserdata(L, key);
-			lua_rawget(L, LUA_REGISTRYINDEX);
-			if (lua_isnil(L, -1)) {
-				lua_pop(L, 1);
-				lua_pushcfunction(L, function);
-				// The reporter uses explicit globals and needs no caller env.
-				// Avoid keeping the first caller's sandbox/coroutine env alive.
-				lua_newtable(L);
-				lua_setfenv(L, -2);
-				lua_pushlightuserdata(L, key);
-				lua_pushvalue(L, -2);
-				lua_rawset(L, LUA_REGISTRYINDEX);
-			}
+			lua_pushvalue(L, -2);
+			lua_rawset(L, LUA_REGISTRYINDEX);
 		}
-		static int report(lua_State* L) {
-			auto* context = active;
-			if (!context) return luaL_error(L, "expired Lua callback error handler");
-			return _callback_report_error(L, context->callback->name.c_str());
-		}
-		static int run(lua_State* L) {
-			auto* context = static_cast<_callback_call*>(lua_touserdata(L, lua_upvalueindex(1)));
-			if (!context || context != active || context->entered)
-				return luaL_error(L, "expired Lua callback invocation");
-			context->entered = true;
-			// A retained trampoline must not retain this C++ frame. A fresh
-			// execution closure also preserves its caller's Lua environment.
-			lua_pushnil(L);
-			lua_replace(L, lua_upvalueindex(1));
-			(*context->invoke)(L);
-			context->completed = true;
-			return 0;
-		}
-		static int enter(lua_State* L) {
-			auto* context = _callback_call::context(L);
-			if (!context || context->entered) return luaL_error(L, "expired Lua callback setup");
-			lua_settop(L, 0);
-			context->callback->state->drain(L);
-			static char report_key;
-			push_cached(L, report, &report_key);
-			lua_pushlightuserdata(L, context);
-			lua_pushcclosure(L, run, 1);
-			const int status = lua_pcall(L, 0, 0, 1);
-			if (status != 0) {
-				context->completed = false;
-				if (status != LUA_ERRRUN)
-					_callback_log_error(L, context->callback->name.c_str());
-			}
-			return 0;
-		}
-	};
-
-	template<typename F>
-	bool _call_luafunction(const std::shared_ptr<_callback_reference>& ref, F&& invoke) {
-		// All C++ owners live outside both protected frames, including when the
-		// callback clears its own slot or the reporting hook triggers GC/reentry.
-		auto keep = ref;
-		if (!keep->state->callable()) return false;
-		auto* L = keep->L;
-		const int top = lua_gettop(L);
-		_callback_call<F> context{ keep.get(), &invoke };
-		// cpcall also protects frame setup, argument conversion and result conversion.
-		if (lua_cpcall(L, _callback_call<F>::enter, &context) != 0) {
-			context.completed = false;
-			_callback_log_error(L, keep->name.c_str());
-		}
-		lua_settop(L, top);
-		return context.completed;
 	}
-
 
 	// Existing converters run in the bridge's fixed empty environment. Only
 	// std::function payloads are excluded, including inside supported containers.
@@ -1376,9 +1200,8 @@ end
 		_owned_callback_registration* previous;
 		inline static thread_local _owned_callback_registration* active = nullptr;
 		_owned_callback_registration(lua_State* L, const char* name)
-			: ref(new _callback_reference{ nullptr, L, name ? name : "", "" }, _callback_reference::release),
+			: ref(new _callback_reference{ nullptr, L, name ? name : "" }, _callback_reference::release),
 			previous(active) {
-			ref->ownership = _callback_reference::kind::direct;
 			active = this;
 		}
 		~_owned_callback_registration() { active = previous; }
@@ -1407,7 +1230,7 @@ end
 			lua_newtable(L);
 			lua_replace(L, LUA_ENVIRONINDEX);
 			using holder = _callback_userdata<_callback_lifetime>;
-			// Use the same VM sentinel as the compatibility path.
+			// Look up the VM lifetime sentinel shared by all coroutines.
 			lua_pushlightuserdata(L, _callback_state_key());
 			lua_rawget(L, LUA_REGISTRYINDEX);
 			if (lua_isnil(L, -1)) {
@@ -1433,7 +1256,7 @@ end
 			}
 			lua_pushthread(L);
 			c->ref->thread_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-			_callback_call<void>::push_cached(L, finish, finish_key());
+			_push_cached_callback(L, finish, finish_key());
 			c->permitted = true;
 			return 0;
 		}
@@ -1506,8 +1329,8 @@ end
 			lua_settop(L, 0);
 			luaL_checkstack(L, 8, "Lua callback setup stack overflow");
 			context->callback->state->drain(L);
-			_callback_call<F>::push_cached(L, report, &report_key);
-			_callback_call<F>::push_cached(L, run, &run_key);
+			_push_cached_callback(L, report, &report_key);
+			_push_cached_callback(L, run, &run_key);
 			const int status = lua_pcall(L, 0, 0, 1);
 			if (status != 0) {
 				context->completed = false;
