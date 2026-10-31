@@ -39,6 +39,7 @@ PageView::PageView()
     , _currentPageIndex(-1)
     , _childFocusCancelOffset(5.0f)
     , _eventCallback(nullptr)
+    , _pageEventListenerRegistered(false)
     , _autoScrollStopEpsilon(0.001f)
     , _previousPageIndex(-1)
     , _isTouchBegin(false)
@@ -294,14 +295,22 @@ void PageView::pageTurningEvent()
 
 void PageView::addEventListener(const ccPageViewCallback& callback)
 {
-    _eventCallback                          = callback;
-    ccScrollViewCallback scrollViewCallback = [=](Ref* /*ref*/, ScrollView::EventType type) -> void {
-        if (type == ScrollView::EventType::AUTOSCROLL_ENDED && _previousPageIndex != _currentPageIndex)
-        {
-            pageTurningEvent();
-        }
-    };
-    this->addEventListener(scrollViewCallback);
+    _eventCallback = callback;
+    _pageEventListenerRegistered = true;
+}
+
+void PageView::dispatchEvent(ScrollView::EventType eventType)
+{
+    // Page events belong to the PageView channel, not to the replaceable
+    // ScrollView callback. Keep the old page-before-scroll notification order.
+    this->retain();
+    if (_pageEventListenerRegistered && eventType == ScrollView::EventType::AUTOSCROLL_ENDED &&
+        _previousPageIndex != _currentPageIndex)
+    {
+        pageTurningEvent();
+    }
+    ListView::dispatchEvent(eventType);
+    this->release();
 }
 
 std::string PageView::getDescription() const
@@ -321,6 +330,7 @@ void PageView::copySpecialProperties(Widget* widget)
     {
         ListView::copySpecialProperties(widget);
         _eventCallback                  = pageView->_eventCallback;
+        _pageEventListenerRegistered     = pageView->_pageEventListenerRegistered;
         _ccEventCallback                = pageView->_ccEventCallback;
         _currentPageIndex               = pageView->_currentPageIndex;
         _previousPageIndex              = pageView->_previousPageIndex;

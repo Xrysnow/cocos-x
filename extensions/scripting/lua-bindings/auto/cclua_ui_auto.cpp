@@ -15630,60 +15630,6 @@ int lua_cc_ui_ScrollView_jumpToPercentVertical(lua_State* tolua_S)
 
     return 0;
 }
-int lua_cc_ui_ScrollView_addEventListener(lua_State* tolua_S)
-{
-    int argc = 0;
-    cocos2d::ui::ScrollView* cobj = nullptr;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"ccui.ScrollView",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::ui::ScrollView*)tolua_tousertype(tolua_S,1,0);
-
-#if CC_DEBUG >= 1
-    if (!cobj) 
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_cc_ui_ScrollView_addEventListener'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1) 
-    {
-        std::function<void (cocos2d::Ref *, cocos2d::ui::ScrollView::EventType)> arg0;
-
-        do {
-			// Lambda binding for lua is not supported.
-			assert(false);
-		} while(0)
-		;
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_ui_ScrollView_addEventListener'", nullptr);
-            return 0;
-        }
-        cobj->addEventListener(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.ScrollView:addEventListener",argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_ui_ScrollView_addEventListener'.",&tolua_err);
-#endif
-
-    return 0;
-}
 int lua_cc_ui_ScrollView_setScrollBarAutoHideTime(lua_State* tolua_S)
 {
     int argc = 0;
@@ -17630,7 +17576,6 @@ int lua_register_cc_ui_ScrollView(lua_State* tolua_S)
         tolua_function(tolua_S,"getScrolledPercentVertical",lua_cc_ui_ScrollView_getScrolledPercentVertical);
         tolua_function(tolua_S,"isBounceEnabled",lua_cc_ui_ScrollView_isBounceEnabled);
         tolua_function(tolua_S,"jumpToPercentVertical",lua_cc_ui_ScrollView_jumpToPercentVertical);
-        tolua_function(tolua_S,"addEventListener",lua_cc_ui_ScrollView_addEventListener);
         tolua_function(tolua_S,"setScrollBarAutoHideTime",lua_cc_ui_ScrollView_setScrollBarAutoHideTime);
         tolua_function(tolua_S,"stopScroll",lua_cc_ui_ScrollView_stopScroll);
         tolua_function(tolua_S,"setScrollBarPositionFromCornerForHorizontal",lua_cc_ui_ScrollView_setScrollBarPositionFromCornerForHorizontal);
@@ -18533,60 +18478,6 @@ int lua_cc_ui_ListView_setMagneticAllowedOutOfBoundary(lua_State* tolua_S)
 #if CC_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_cc_ui_ListView_setMagneticAllowedOutOfBoundary'.",&tolua_err);
-#endif
-
-    return 0;
-}
-int lua_cc_ui_ListView_addEventListener(lua_State* tolua_S)
-{
-    int argc = 0;
-    cocos2d::ui::ListView* cobj = nullptr;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"ccui.ListView",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::ui::ListView*)tolua_tousertype(tolua_S,1,0);
-
-#if CC_DEBUG >= 1
-    if (!cobj) 
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_cc_ui_ListView_addEventListener'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1) 
-    {
-        std::function<void (cocos2d::Ref *, cocos2d::ui::ListView::EventType)> arg0;
-
-        do {
-			// Lambda binding for lua is not supported.
-			assert(false);
-		} while(0)
-		;
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_ui_ListView_addEventListener'", nullptr);
-            return 0;
-        }
-        cobj->addEventListener(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.ListView:addEventListener",argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_ui_ListView_addEventListener'.",&tolua_err);
 #endif
 
     return 0;
@@ -19908,7 +19799,6 @@ int lua_register_cc_ui_ListView(lua_State* tolua_S)
         tolua_function(tolua_S,"insertDefaultItem",lua_cc_ui_ListView_insertDefaultItem);
         tolua_function(tolua_S,"setMagneticType",lua_cc_ui_ListView_setMagneticType);
         tolua_function(tolua_S,"setMagneticAllowedOutOfBoundary",lua_cc_ui_ListView_setMagneticAllowedOutOfBoundary);
-        tolua_function(tolua_S,"addEventListener",lua_cc_ui_ListView_addEventListener);
         tolua_function(tolua_S,"doLayout",lua_cc_ui_ListView_doLayout);
         tolua_function(tolua_S,"getTopmostItemInCurrentView",lua_cc_ui_ListView_getTopmostItemInCurrentView);
         tolua_function(tolua_S,"setPadding",lua_cc_ui_ListView_setPadding);
@@ -25054,60 +24944,6 @@ int lua_cc_ui_PageView_setIndicatorSelectedIndexColor(lua_State* tolua_S)
 
     return 0;
 }
-int lua_cc_ui_PageView_addEventListener(lua_State* tolua_S)
-{
-    int argc = 0;
-    cocos2d::ui::PageView* cobj = nullptr;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"ccui.PageView",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::ui::PageView*)tolua_tousertype(tolua_S,1,0);
-
-#if CC_DEBUG >= 1
-    if (!cobj) 
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_cc_ui_PageView_addEventListener'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1) 
-    {
-        std::function<void (cocos2d::Ref *, cocos2d::ui::PageView::EventType)> arg0;
-
-        do {
-			// Lambda binding for lua is not supported.
-			assert(false);
-		} while(0)
-		;
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_ui_PageView_addEventListener'", nullptr);
-            return 0;
-        }
-        cobj->addEventListener(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "ccui.PageView:addEventListener",argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_ui_PageView_addEventListener'.",&tolua_err);
-#endif
-
-    return 0;
-}
 int lua_cc_ui_PageView_getIndicatorPosition(lua_State* tolua_S)
 {
     int argc = 0;
@@ -26240,7 +26076,6 @@ int lua_register_cc_ui_PageView(lua_State* tolua_S)
         tolua_function(tolua_S,"setIndicatorIndexNodesScale",lua_cc_ui_PageView_setIndicatorIndexNodesScale);
         tolua_function(tolua_S,"setIndicatorEnabled",lua_cc_ui_PageView_setIndicatorEnabled);
         tolua_function(tolua_S,"setIndicatorSelectedIndexColor",lua_cc_ui_PageView_setIndicatorSelectedIndexColor);
-        tolua_function(tolua_S,"addEventListener",lua_cc_ui_PageView_addEventListener);
         tolua_function(tolua_S,"getIndicatorPosition",lua_cc_ui_PageView_getIndicatorPosition);
         tolua_function(tolua_S,"setCurrentPageIndex",lua_cc_ui_PageView_setCurrentPageIndex);
         tolua_function(tolua_S,"getIndicatorIndexNodesColor",lua_cc_ui_PageView_getIndicatorIndexNodesColor);

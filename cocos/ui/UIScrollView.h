@@ -627,7 +627,7 @@ protected:
     void processScrollEvent(MoveDirection dir, bool bounce);
     void processScrollingEvent();
     void processScrollingEndedEvent();
-    void dispatchEvent(EventType eventType);
+    virtual void dispatchEvent(EventType eventType);
 
     void updateScrollBar(const Vec2& outOfBoundary);
 

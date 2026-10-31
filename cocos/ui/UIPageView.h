@@ -333,6 +333,7 @@ public:
 
 protected:
     void pageTurningEvent();
+    virtual void dispatchEvent(ScrollView::EventType eventType) override;
     virtual float getAutoScrollStopEpsilon() const override;
 
     virtual void remedyLayoutParameter(Widget* item) override;
@@ -356,6 +357,7 @@ protected:
     float _childFocusCancelOffset;
 
     ccPageViewCallback _eventCallback;
+    bool _pageEventListenerRegistered;
     float _autoScrollStopEpsilon;
     ssize_t _previousPageIndex;
     bool _isTouchBegin;
