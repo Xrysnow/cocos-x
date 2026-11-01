@@ -131,19 +131,19 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     }
 
     protected void onLoadNativeLibraries() {
+        final ApplicationInfo ai;
         try {
-            // get main lib name from app/AndroidManifest.xml
-            ApplicationInfo ai = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            String libName = bundle.getString("android.app.lib_name");
-            assert libName != null;
-            System.loadLibrary(libName); // cocos2dlua
-            System.loadLibrary("OpenSLES");
-            System.loadLibrary("openal");
-            System.loadLibrary("ffmpeg");
-        } catch (Exception e) {
-            e.printStackTrace();
+            ai = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new IllegalStateException("Cannot read native library metadata for " + getPackageName(), e);
         }
+        final String libName = ai.metaData == null ? null : ai.metaData.getString("android.app.lib_name");
+        if (libName == null || libName.isEmpty()) {
+            throw new IllegalStateException("Missing android.app.lib_name in application metadata");
+        }
+        // The platform loader resolves DT_NEEDED, including optional modules
+        // selected by the native build. A load failure must stop initialization.
+        System.loadLibrary(libName);
     }
 
     // ===========================================================
