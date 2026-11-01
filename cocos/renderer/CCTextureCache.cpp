@@ -65,16 +65,6 @@ std::string TextureCache::getETC1AlphaFileSuffix()
 
 TextureCache::TextureCache() : _loadingThread(nullptr), _needQuit(false), _asyncRefCount(0) {}
 
-TextureCache::~TextureCache()
-{
-    CCLOGINFO("deallocing TextureCache: %p", this);
-
-    for (auto&& texture : _textures)
-        texture.second->release();
-
-    CC_SAFE_DELETE(_loadingThread);
-}
-
 std::string TextureCache::getDescription() const
 {
     return StringUtils::format("<TextureCache | Number of textures = %d>", static_cast<int>(_textures.size()));
@@ -99,6 +89,22 @@ public:
     backend::PixelFormat pixelFormat;
     bool loadSuccess;
 };
+
+TextureCache::~TextureCache()
+{
+    CCLOGINFO("deallocing TextureCache: %p", this);
+    waitForQuit();
+    // The queues alias these records. Destroy captures on the main thread only
+    // at cache destruction; public waitForQuit must preserve pending delivery.
+    for (auto* pending : _asyncStructQueue)
+        delete pending;
+    _asyncStructQueue.clear();
+    _requestQueue.clear();
+    _responseQueue.clear();
+    for (auto&& texture : _textures)
+        texture.second->release();
+    CC_SAFE_DELETE(_loadingThread);
+}
 
 /**
  The addImageAsync logic follow the steps:
@@ -255,9 +261,11 @@ void TextureCache::unbindAllImageAsync()
 void TextureCache::loadImage()
 {
     AsyncStruct* asyncStruct = nullptr;
-    while (!_needQuit)
+    while (true)
     {
         std::unique_lock<std::mutex> ul(_requestMutex);
+        if (_needQuit)
+            break;
         // pop an AsyncStruct from request queue
         if (_requestQueue.empty())
         {
@@ -649,8 +657,9 @@ void TextureCache::waitForQuit()
     _needQuit = true;
     _sleepCondition.notify_one();
     ul.unlock();
-    if (_loadingThread)
+    if (_loadingThread && _loadingThread->joinable())
         _loadingThread->join();
+
 }
 
 std::string TextureCache::getCachedTextureInfo() const

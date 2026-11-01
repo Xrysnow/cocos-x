@@ -1043,15 +1043,17 @@ void Director::reset()
     // purge all managed caches
     AnimationCache::destroyInstance();
     SpriteFrameCache::destroyInstance();
-    FileUtils::destroyInstance();
+    // Readers must finish while the FileUtils delegate and scheduler still exist.
+    destroyTextureCache();
     AsyncTaskPool::destroyInstance();
+    getScheduler()->removeAllPendingActions();
+    FileUtils::destroyInstance();
     backend::ProgramManager::destroyInstance();
 
     // cocos2d-x specific data structures
     UserDefault::destroyInstance();
     resetMatrixStack();
 
-    destroyTextureCache();
 }
 
 void Director::purgeDirector()

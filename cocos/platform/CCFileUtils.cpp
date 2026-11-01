@@ -51,7 +51,7 @@ THE SOFTWARE.
 
 #include "pugixml/pugixml.hpp"
 
-#define DECLARE_GUARD (void)0
+#define DECLARE_GUARD std::lock_guard<std::recursive_mutex> mutexGuard(_mutex)
 
 #include "base/filesystem.h"
 

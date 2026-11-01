@@ -746,7 +746,11 @@ public:
                                            std::function<void(std::vector<std::string>)> callback) const;
 
     /** Returns the full path cache. */
-    const hlookup::string_map<std::string> getFullPathCache() const { return _fullPathCache; }
+    const hlookup::string_map<std::string> getFullPathCache() const
+    {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
+        return _fullPathCache;
+    }
 
     /**
      *  Checks whether a file exists without considering search paths and resolution orders.

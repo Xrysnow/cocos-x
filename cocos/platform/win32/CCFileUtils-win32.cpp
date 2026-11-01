@@ -154,26 +154,32 @@ FileUtils::Status FileUtilsWin32::getContents(std::string_view filename, Resizab
     if (fileHandle == INVALID_HANDLE_VALUE)
         return FileUtils::Status::OpenFailed;
 
-    DWORD hi;
+    // ResizableBuffer::resize can throw; never leak the handle on that path.
+    struct CloseFile
+    {
+        HANDLE handle;
+        ~CloseFile() { ::CloseHandle(handle); }
+    } closeFile{fileHandle};
+    DWORD hi = 0;
     auto size = ::GetFileSize(fileHandle, &hi);
+    if (size == INVALID_FILE_SIZE && ::GetLastError() != NO_ERROR)
+        return FileUtils::Status::ObtainSizeFailed;
     if (hi > 0)
     {
-        ::CloseHandle(fileHandle);
         return FileUtils::Status::TooLarge;
     }
     // don't read file content if it is empty
     if (size == 0)
     {
-        ::CloseHandle(fileHandle);
+        buffer->resize(0);
         return FileUtils::Status::OK;
     }
 
     buffer->resize(size);
     DWORD sizeRead = 0;
     BOOL successed = ::ReadFile(fileHandle, buffer->buffer(), size, &sizeRead, nullptr);
-    ::CloseHandle(fileHandle);
 
-    if (!successed)
+    if (!successed || sizeRead != size)
     {
         CCLOG("Get data from file(%s) failed, error code is %s", filename.data(),
               std::to_string(::GetLastError()).data());
