@@ -112,7 +112,22 @@ bool EventListenerController::checkAvailable()
 
 EventListenerController* EventListenerController::clone()
 {
-    return nullptr;
+    auto ret = new EventListenerController();
+    if (ret->init())
+    {
+        ret->autorelease();
+        ret->onConnected    = onConnected;
+        ret->onDisconnected = onDisconnected;
+        ret->onKeyDown      = onKeyDown;
+        ret->onKeyUp        = onKeyUp;
+        ret->onKeyRepeat    = onKeyRepeat;
+        ret->onAxisEvent    = onAxisEvent;
+    }
+    else
+    {
+        CC_SAFE_DELETE(ret);
+    }
+    return ret;
 }
 
 NS_CC_END
