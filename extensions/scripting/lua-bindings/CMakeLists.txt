@@ -36,12 +36,14 @@ set(lua_bindings_manual_headers
     manual/tolua_fix.h
     manual/navmesh/cclua_navmesh_manual.h
     manual/navmesh/cclua_navmesh_conversions.h
+    manual/navmesh/cclua_navmesh_compat.hpp
     manual/base/LuaScriptHandlerMgr.h
     manual/base/cclua_base_manual.hpp
     manual/CcluaLoader.h
     manual/CCLuaValue.h
     manual/physics3d/cclua_physics3d_manual.h
     manual/ui/cclua_ui_manual.hpp
+    manual/ui/cclua_ui_retained.hpp
     manual/ui/cclua_ui_events_compat.hpp
     manual/controller/cclua_controller_manual.hpp
     )
@@ -76,27 +78,73 @@ set(lua_bindings_auto_headers
     auto/cclua_geometry_auto.hpp
     auto/cclua_controller_auto.hpp
     auto/cclua_base_auto.hpp
+    auto/cclua_base_compat.hpp
     auto/cclua_navmesh_auto.hpp
     auto/cclua_physics3d_auto.hpp
     auto/cclua_ui_auto.hpp
+    auto/cclua_ui_compat.hpp
     auto/cclua_ui_events_auto.hpp
     auto/cclua_physics_auto.hpp
     auto/cclua_extension_auto.hpp
+    auto/cclua_extension_compat.hpp
     auto/cclua_backend_auto.hpp
+    auto/cclua_backend_compat.hpp
     )
 
 set(lua_bindings_auto_files
     auto/cclua_3d_auto.cpp
     auto/cclua_geometry_auto.cpp
     auto/cclua_base_auto.cpp
+    auto/cclua_base_auto01.cpp
+    auto/cclua_base_auto02.cpp
+    auto/cclua_base_auto03.cpp
+    auto/cclua_base_auto04.cpp
+    auto/cclua_base_auto05.cpp
+    auto/cclua_base_auto06.cpp
+    auto/cclua_base_auto07.cpp
+    auto/cclua_base_auto08.cpp
+    auto/cclua_base_auto09.cpp
+    auto/cclua_base_auto10.cpp
+    auto/cclua_base_auto11.cpp
+    auto/cclua_base_auto12.cpp
+    auto/cclua_base_auto13.cpp
+    auto/cclua_base_auto14.cpp
+    auto/cclua_base_auto15.cpp
+    auto/cclua_base_auto16.cpp
+    auto/cclua_base_auto17.cpp
+    auto/cclua_base_auto18.cpp
+    auto/cclua_base_auto19.cpp
+    auto/cclua_base_auto20.cpp
+    auto/cclua_base_auto21.cpp
+    auto/cclua_base_auto22.cpp
+    auto/cclua_base_retained.cpp
+    auto/cclua_base_retained01.cpp
+    auto/cclua_base_retained02.cpp
+    auto/cclua_base_retained03.cpp
+    auto/cclua_base_retained04.cpp
+    auto/cclua_base_retained05.cpp
+    auto/cclua_base_retained06.cpp
+    auto/cclua_base_retained07.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
+    auto/cclua_extension_auto01.cpp
+    auto/cclua_extension_auto02.cpp
+    auto/cclua_extension_auto03.cpp
     auto/cclua_physics_auto.cpp
     auto/cclua_ui_auto.cpp
+    auto/cclua_ui_auto01.cpp
+    auto/cclua_ui_auto02.cpp
+    auto/cclua_ui_auto03.cpp
+    auto/cclua_ui_auto04.cpp
+    auto/cclua_ui_auto05.cpp
+    auto/cclua_ui_auto06.cpp
     auto/cclua_ui_events_auto.cpp
     auto/cclua_physics3d_auto.cpp
     auto/cclua_navmesh_auto.cpp
     auto/cclua_backend_auto.cpp
+    auto/cclua_backend_auto01.cpp
+    auto/cclua_backend_retained.cpp
+    auto/cclua_backend_retained01.cpp
     )
 
 if(CC_ENABLE_EXT_SPINE)
@@ -127,10 +175,19 @@ if(CC_ENABLE_EXT_COCOSTUDIO)
     )
     list(APPEND lua_bindings_auto_headers
         auto/cclua_studio_auto.hpp
+        auto/cclua_studio_compat.hpp
         auto/cclua_csloader_auto.hpp
     )
     list(APPEND lua_bindings_auto_files
         auto/cclua_studio_auto.cpp
+        auto/cclua_studio_auto01.cpp
+        auto/cclua_studio_auto02.cpp
+        auto/cclua_studio_auto03.cpp
+        auto/cclua_studio_auto04.cpp
+        auto/cclua_studio_auto05.cpp
+        auto/cclua_studio_auto06.cpp
+        auto/cclua_studio_auto07.cpp
+        auto/cclua_studio_retained.cpp
         auto/cclua_csloader_auto.cpp
     )
 endif()
@@ -241,6 +298,7 @@ target_include_directories(${COCOS_LUA_LIB}
     PUBLIC ${cocos_root}/external/jni.hpp/include
     PUBLIC ${cocos_root}/external/lua
     PUBLIC ${cocos_root}/external/lua/luajit/include
+    PRIVATE ${cocos_root}/extensions/scripting/lua-bindings/manual
     PRIVATE manual/platform/android
     PRIVATE manual/platform/android/jni
     PRIVATE ${cocos_root}/extensions/spine/runtime/include

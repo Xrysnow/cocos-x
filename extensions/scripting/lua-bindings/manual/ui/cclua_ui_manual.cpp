@@ -48,6 +48,7 @@
 #include "ui/CocosGUI.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "base/CCEventListenerFocus.h"
+#include "scripting/lua-bindings/manual/ui/cclua_ui_retained.hpp"
 
 using namespace ui;
 
@@ -798,6 +799,7 @@ int register_all_cc_ui_manual(lua_State* L)
 {
     if (nullptr == L)
         return 0;
+    register_all_cc_ui_retained(L);
     extendWidget(L);
     extendCheckBox(L);
     extendRadioButton(L);
