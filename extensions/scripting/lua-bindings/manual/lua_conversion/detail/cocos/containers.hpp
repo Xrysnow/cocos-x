@@ -4,6 +4,7 @@
 #include "object.hpp"
 #include "cocos2d.h"
 #include <functional>
+#include <limits>
 #include <string>
 #include <thread>
 #include <utility>
@@ -94,51 +95,96 @@ namespace lua
 	struct to_native<cocos2d::Value> {
 		static bool F(lua_State* L, int lo, cocos2d::Value* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
-			const auto type = lua_type(L, lo);
-			bool ok = false;
-			if (is_indexable(L, lo))
-			{
-				lua_pushnumber(L, 1);
-				lua_gettable(L, lo);
-				if (lua_isnil(L, -1)) // A missing first element selects map conversion.
-				{
-					lua_pop(L, 1);
-					cocos2d::ValueMap dictVal;
-					if ((ok = luaval_to_native(L, lo, &dictVal, fName)))
-						*outValue = cocos2d::Value(dictVal);
-				}
-				else
-				{
-					lua_pop(L, 1);
-					cocos2d::ValueVector arrVal;
-					if ((ok = luaval_to_native(L, lo, &arrVal, fName)))
-						*outValue = cocos2d::Value(arrVal);
-				}
-			}
-			else if (type == LUA_TSTRING)
-			{
-				std::string stringValue;
-				if ((ok = luaval_to_native(L, lo, &stringValue, fName)))
-					*outValue = cocos2d::Value(stringValue);
-			}
-			else if (type == LUA_TBOOLEAN)
-			{
-				bool boolVal = false;
-				if ((ok = luaval_to_native(L, lo, &boolVal, fName)))
-					*outValue = cocos2d::Value(boolVal);
-			}
-			else if (type == LUA_TNUMBER)
-			{
-				double doubleVal = 0;
-				if ((ok = luaval_to_native(L, lo, &doubleVal, fName)))
-					*outValue = cocos2d::Value(doubleVal);
-			}
-			else if (type == LUA_TNIL)
-			{
-				*outValue = cocos2d::Value::Null;
-				ok = true;
-			}
+			const void* ancestors[64]{};
+			cocos2d::Value result;
+			const bool ok = read(L, lo, result, ancestors, 0);
+			lua_settop(L, top);
+			if (ok) *outValue = std::move(result);
 			return ok;
+		}
+
+	private:
+		// Value is a data snapshot: inspect raw entries, never call metamethods.
+		// The ancestor path rejects cycles while allowing shared sibling tables.
+		static bool read(lua_State* L, int index, cocos2d::Value& result,
+			const void** ancestors, size_t depth) {
+			switch (lua_type(L, index)) {
+			case LUA_TNIL:
+				result = cocos2d::Value::Null;
+				return true;
+			case LUA_TBOOLEAN:
+				result = cocos2d::Value(lua_toboolean(L, index) != 0);
+				return true;
+			case LUA_TNUMBER:
+				result = cocos2d::Value(lua_tonumber(L, index));
+				return true;
+			case LUA_TSTRING: {
+				size_t size = 0;
+				const auto* text = lua_tolstring(L, index, &size);
+				result = cocos2d::Value(std::string_view(text, size));
+				return true;
+			}
+			case LUA_TTABLE: {
+				if (depth == 64 || !lua_checkstack(L, 4)) return false;
+				const auto* identity = lua_topointer(L, index);
+				for (size_t i = 0; i < depth; ++i)
+					if (ancestors[i] == identity) return false;
+				ancestors[depth] = identity;
+				const int top = lua_gettop(L);
+				const bool ok = read_table(L, index, result, ancestors, depth + 1);
+				lua_settop(L, top);
+				return ok;
+			}
+			default:
+				return false;
+			}
+		}
+
+		static bool read_table(lua_State* L, int index, cocos2d::Value& result,
+			const void** ancestors, size_t depth) {
+			size_t numeric = 0, strings = 0;
+			lua_Number maximum = 0;
+			lua_pushnil(L);
+			while (lua_next(L, index)) {
+				if (lua_type(L, -2) == LUA_TSTRING) {
+					++strings;
+				} else if (lua_type(L, -2) == LUA_TNUMBER) {
+					const auto key = lua_tonumber(L, -2);
+					if (!(key >= 1 && key <= std::numeric_limits<int>::max()) ||
+						key != static_cast<int>(key)) return false;
+					++numeric;
+					if (key > maximum) maximum = key;
+				} else return false;
+				lua_pop(L, 1);
+			}
+			// Positive integral keys must be exactly 1..N, without string fields.
+			if (numeric && (strings || maximum != numeric)) return false;
+			if (numeric) {
+				cocos2d::ValueVector values;
+				values.reserve(numeric);
+				for (size_t i = 0; i < numeric; ++i) {
+					lua_rawgeti(L, index, static_cast<int>(i + 1));
+					cocos2d::Value value;
+					if (!read(L, lua_gettop(L), value, ancestors, depth)) return false;
+					values.emplace_back(std::move(value));
+					lua_pop(L, 1);
+				}
+				result = cocos2d::Value(std::move(values));
+			} else {
+				// An empty table consistently represents an empty string dictionary.
+				cocos2d::ValueMap values;
+				lua_pushnil(L);
+				while (lua_next(L, index)) {
+					size_t size = 0;
+					const auto* key = lua_tolstring(L, -2, &size);
+					cocos2d::Value value;
+					if (!read(L, lua_gettop(L), value, ancestors, depth)) return false;
+					values[std::string(key, size)] = std::move(value);
+					lua_pop(L, 1);
+				}
+				result = cocos2d::Value(std::move(values));
+			}
+			return true;
 		}
 	};
 
@@ -146,6 +192,7 @@ namespace lua
 	struct to_lua<cocos2d::Value> {
 		static void F(lua_State* L, const cocos2d::Value& inValue) {
 			if (!L) return;
+			luaL_checkstack(L, 4, "Value result stack overflow");
 			switch (inValue.getTypeFamily())
 			{
 			case cocos2d::Value::Type::NONE:
