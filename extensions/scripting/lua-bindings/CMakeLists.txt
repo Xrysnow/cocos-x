@@ -42,6 +42,7 @@ set(lua_bindings_manual_headers
     manual/CcluaLoader.h
     manual/CCLuaValue.h
     manual/physics3d/cclua_physics3d_manual.h
+    manual/physics3d/cclua_physics3d_compat.hpp
     manual/ui/cclua_ui_manual.hpp
     manual/ui/cclua_ui_retained.hpp
     manual/ui/cclua_ui_events_compat.hpp
@@ -69,12 +70,14 @@ set(lua_bindings_manual_files
     manual/network/lua_downloader.cpp
     manual/ui/cclua_ui_manual.cpp
     manual/physics3d/cclua_physics3d_manual.cpp
+    manual/physics3d/cclua_physics3d_retained.cpp
     manual/navmesh/cclua_navmesh_conversions.cpp
     manual/navmesh/cclua_navmesh_manual.cpp
     )
 
 set(lua_bindings_auto_headers
     auto/cclua_3d_auto.hpp
+    auto/cclua_3d_compat.hpp
     auto/cclua_geometry_auto.hpp
     auto/cclua_controller_auto.hpp
     auto/cclua_base_auto.hpp
@@ -93,6 +96,11 @@ set(lua_bindings_auto_headers
 
 set(lua_bindings_auto_files
     auto/cclua_3d_auto.cpp
+    auto/cclua_3d_auto01.cpp
+    auto/cclua_3d_auto02.cpp
+    auto/cclua_3d_auto03.cpp
+    auto/cclua_3d_retained.cpp
+    auto/cclua_3d_retained01.cpp
     auto/cclua_geometry_auto.cpp
     auto/cclua_base_auto.cpp
     auto/cclua_base_auto01.cpp
@@ -140,6 +148,8 @@ set(lua_bindings_auto_files
     auto/cclua_ui_auto06.cpp
     auto/cclua_ui_events_auto.cpp
     auto/cclua_physics3d_auto.cpp
+    auto/cclua_physics3d_auto01.cpp
+    auto/cclua_physics3d_auto02.cpp
     auto/cclua_navmesh_auto.cpp
     auto/cclua_backend_auto.cpp
     auto/cclua_backend_auto01.cpp
