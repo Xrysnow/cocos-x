@@ -94,7 +94,12 @@ public:
     /**
      * Set root certificate path for SSL verification.
      *
-     * @param caFile a full path of root certificate.if it is empty, SSL verification is disabled.
+     * Applies to subsequent HTTPS requests from this shared HttpClient.
+     * @param caFile full path of a PEM CA bundle. Empty uses OpenSSL's default
+     * trust sources. Certificate chain and hostname verification stay enabled;
+     * missing or invalid trust sources cause the TLS handshake to fail.
+     * Changing the CA bundle while requests are pending or active is rejected;
+     * setting the existing filename again is safe.
      */
     void setSSLVerification(std::string_view caFile);
 

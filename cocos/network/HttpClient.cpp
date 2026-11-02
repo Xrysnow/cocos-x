@@ -27,6 +27,7 @@
  ****************************************************************************/
 
 #include "network/HttpClient.h"
+#include "network/SSLVerification.h"
 #include <errno.h>
 #include "base/ccUtils.h"
 #include "base/CCDirector.h"
@@ -107,8 +108,17 @@ void HttpClient::enableCookies(const char* cookieFile)
 void HttpClient::setSSLVerification(std::string_view caFile)
 {
     std::lock_guard<std::recursive_mutex> lock(_sslCaFileMutex);
+    if (_sslCaFilename == caFile)
+        return;
+    // tryTakeAvailChannel releases this queue's lock before taking the CA
+    // lock, so there is no inverse lock order with processResponse.
+    auto queueLock = _availChannelQueue.get_lock();
+    if (_availChannelQueue.unsafe_size() != MAX_CHANNELS)
+    {
+        CCLOG("HttpClient CA change rejected while requests are pending or active");
+        return;
+    }
     _sslCaFilename = caFile;
-    _service->set_option(yasio::YOPT_S_SSL_CACERT, _sslCaFilename.c_str());
 }
 
 HttpClient::HttpClient()
@@ -224,7 +234,10 @@ void HttpClient::processResponse(HttpResponse* response, std::string_view url)
             _service->set_option(YOPT_C_REMOTE_ENDPOINT, channelIndex, requestUri.getHost().data(),
                                  (int)requestUri.getPort());
             if (requestUri.isSecure())
-                _service->open(channelIndex, YCK_SSL_CLIENT);
+            {
+                std::lock_guard<std::recursive_mutex> lock(_sslCaFileMutex);
+                ssl_verification::open(*_service, channelIndex, _sslCaFilename);
+            }
             else
                 _service->open(channelIndex, YCK_TCP_CLIENT);
         }

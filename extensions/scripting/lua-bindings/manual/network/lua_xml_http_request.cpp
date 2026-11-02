@@ -31,6 +31,7 @@
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
 
 #include "network/HttpClient.h"
+#include "yasio/yasio.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -208,7 +209,10 @@ void LuaMinXmlHttpRequest::_sendRequest()
     _httpRequest->setResponseCallback(
         [this](cocos2d::network::HttpClient* sender, cocos2d::network::HttpResponse* response) {
             if (_isAborted)
+            {
+                release();
                 return;
+            }
             auto tag = response->getHttpRequest()->getTag();
             if (!tag.empty())
             {
@@ -220,12 +224,12 @@ void LuaMinXmlHttpRequest::_sendRequest()
             if (!response->isSucceed())
             {
                 CCLOG("Response failed, statusCode: %d", statusCode);
-                if (statusCode == 0)
-                {
-                    _errorFlag = true;
-                    _status    = 0;
-                    _statusText.clear();
-                }
+                _errorFlag = true;
+                _status = 0;
+                _readyState = DONE;
+                int error = response->getInternalCode();
+                _statusText = error == yasio::errc::ssl_handshake_failed ? "SSL handshake failed!"
+                                                                       : "Network request failed: " + std::to_string(error);
                 // TODO: call back lua function
                 int handler = cocos2d::ScriptHandlerMgr::getInstance()->getObjectHandler(
                     (void*)this, cocos2d::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
@@ -237,6 +241,7 @@ void LuaMinXmlHttpRequest::_sendRequest()
                     cocos2d::ScriptEvent event(cocos2d::ScriptEventType::kCommonEvent, (void*)&data);
                     cocos2d::ScriptEngineManager::sendEventToLua(event);
                 }
+                release();
                 return;
             }
 
@@ -825,6 +830,20 @@ tolua_lerror:
 #endif
 }
 
+// The underlying HttpClient is shared: set this before sending requests, and
+// do not change the CA bundle while requests using the previous trust run.
+// Empty selects default trust sources; this API cannot disable verification.
+static int cclua_XMLHttpRequest_setSSLVerification(lua_State* L)
+{
+    tolua_Error error;
+    if (!tolua_isusertype(L, 1, "cc.XMLHttpRequest", 0, &error))
+        return luaL_error(L, "setSSLVerification expects an XMLHttpRequest");
+    size_t length = 0;
+    const char* caFile = luaL_checklstring(L, 2, &length);
+    HttpClient::getInstance()->setSSLVerification(std::string_view(caFile, length));
+    return 0;
+}
+
 static int cclua_XMLHttpRequest_send(lua_State* L)
 {
     int argc                   = 0;
@@ -1181,6 +1200,7 @@ TOLUA_API int register_xml_http_request(lua_State* L)
     tolua_function(L, "new", cclua_XMLHttpRequest_constructor);
     tolua_function(L, "open", cclua_XMLHttpRequest_open);
     tolua_function(L, "send", cclua_XMLHttpRequest_send);
+    tolua_function(L, "setSSLVerification", cclua_XMLHttpRequest_setSSLVerification);
     tolua_function(L, "abort", cclua_XMLHttpRequest_abort);
     tolua_function(L, "setRequestHeader", cclua_XMLHttpRequest_setRequestHeader);
     tolua_function(L, "getAllResponseHeaders", cclua_XMLHttpRequest_getAllResponseHeaders);

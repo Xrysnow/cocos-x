@@ -61,6 +61,8 @@ public:
     std::string requestURL;
     std::string storagePath;
     
+    // PEM CA bundle; empty uses curl's default trust sources. HTTPS always
+    // verifies the certificate chain and hostname.
     std::string cacertPath;
 
     struct

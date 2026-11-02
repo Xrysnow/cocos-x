@@ -26,4 +26,7 @@
 
 #include "tolua++.h"
 
+// Registers XMLHttpRequest:setSSLVerification(caFile). This sets the shared
+// HttpClient CA bundle for subsequent requests. Empty uses default trust;
+// peer and hostname verification remain enabled.
 TOLUA_API int register_xml_http_request(lua_State* L);
