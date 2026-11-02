@@ -106,6 +106,7 @@ public class CocosRenderer {
 
     private static native void nativeInsertText(final String text);
     private static native void nativeDeleteBackward(final int numChars);
+    private static native void nativeIMEClosed();
     private static native String nativeGetContentText();
 
     public void handleInsertText(final String text) {
@@ -114,6 +115,10 @@ public class CocosRenderer {
 
     public void handleDeleteBackward(final int numChars) {
         CocosRenderer.nativeDeleteBackward(numChars);
+    }
+
+    void handleIMEClosed() {
+        CocosRenderer.nativeIMEClosed();
     }
 
     public String getContentText() {

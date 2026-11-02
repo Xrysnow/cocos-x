@@ -37,6 +37,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
@@ -286,6 +287,8 @@ public class CocosEditBox extends EditText {
 
     @Override
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
+        CocosGLSurfaceView inputView = CocosGLSurfaceView.getInstance();
+        if (inputView != null && inputView.isIMEEditor(this) && inputView.handleIMEKeyEvent(pKeyEvent)) return true;
         switch (pKeyCode) {
             case KeyEvent.KEYCODE_BACK:
                 Context context = getContext();
@@ -304,7 +307,26 @@ public class CocosEditBox extends EditText {
 
     @Override
     public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+        CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
+        if (view != null && view.isIMEEditor(this) && keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) view.dismissIME();
+            return true;
+        }
         return super.onKeyPreIme(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
+        if (view != null && view.isIMEEditor(this) && view.handleIMEKeyEvent(event)) return true;
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo info) {
+        InputConnection connection = super.onCreateInputConnection(info);
+        CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
+        return view != null && view.isIMEEditor(this) ? view.wrapInputConnection(connection) : connection;
     }
 
     public void setInputFlag(int inputFlag) {

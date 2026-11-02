@@ -71,8 +71,15 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeInsertText(JNIEnv*
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeDeleteBackward(JNIEnv*, jclass, jint numChars)
 {
-    //TODO: numChars
-    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
+    // Java counts Unicode code points, matching the native delegates' deletion unit.
+    for (jint i = 0; i < numChars; ++i)
+        cocos2d::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
+}
+
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeIMEClosed(JNIEnv*, jclass)
+{
+    cocos2d::IMEKeyboardNotificationInfo info{};
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidHide(info);
 }
 
 JNIEXPORT jstring JNICALL Java_org_cocos_lib_CocosRenderer_nativeGetContentText(JNIEnv* env, jclass)

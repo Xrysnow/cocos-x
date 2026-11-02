@@ -148,7 +148,13 @@ bool IMEDispatcher::attachDelegateWithIME(IMEDelegate* delegate)
                 _impl->_delegateWithIme  = 0;
                 oldDelegate->didDetachWithIME();
 
-                _impl->_delegateWithIme = *iter;
+                // A detach callback may remove delegates or attach another one.
+                // Do not retain its old list iterator or overwrite a reentrant owner.
+                if (_impl->_delegateWithIme)
+                    return _impl->_delegateWithIme == delegate;
+                iter = _impl->findDelegate(delegate);
+                CC_BREAK_IF(_impl->_delegateList.end() == iter);
+                _impl->_delegateWithIme = delegate;
                 delegate->didAttachWithIME();
             }
             ret = true;

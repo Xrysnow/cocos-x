@@ -37,6 +37,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.EditorInfo;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /** Compatibility name: this view no longer creates an EGL context. */
@@ -66,14 +69,19 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     private boolean mMultipleTouchEnabled = true;
 
     private CocosRenderHost mRenderHost;
+    private boolean mIMEEditorActive;
+    private boolean mImeWasVisible;
+    private final AtomicLong mImeSerial = new AtomicLong();
 
     private static final class ImeRequest {
         final String text;
         final long epoch;
+        final long serial;
 
-        ImeRequest(String text, long epoch) {
+        ImeRequest(String text, long epoch, long serial) {
             this.text = text;
             this.epoch = epoch;
+            this.serial = serial;
         }
     }
 
@@ -124,17 +132,21 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
                 switch (msg.what) {
                     case HANDLER_OPEN_IME_KEYBOARD:
                         final ImeRequest request = (ImeRequest) msg.obj;
-                        if (!mRenderHost.isInputCurrent(request.epoch)) return;
+                        if (!mRenderHost.isInputCurrent(request.epoch) || request.serial != mImeSerial.get()) return;
                         if (null != CocosGLSurfaceView.this.mEditText) {
+                            mIMEEditorActive = true;
+                            mImeWasVisible = false;
+                            mEditText.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI | EditorInfo.IME_ACTION_DONE);
                             CocosGLSurfaceView.this.mEditText.setVisibility(View.VISIBLE);
                             if (CocosGLSurfaceView.this.mEditText.requestFocus()) {
                                 CocosGLSurfaceView.this.mEditText.removeTextChangedListener(mTextInputWrapper);
-                                CocosGLSurfaceView.this.mEditText.setText("");
                                 final String text = request.text;
-                                CocosGLSurfaceView.this.mEditText.append(text);
+                                CocosGLSurfaceView.this.mEditText.setText(text);
+                                CocosGLSurfaceView.this.mEditText.setSelection(text.length());
                                 mTextInputWrapper.setOriginText(text);
                                 CocosGLSurfaceView.this.mEditText.addTextChangedListener(mTextInputWrapper);
                                 final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.restartInput(CocosGLSurfaceView.this.mEditText);
                                 imm.showSoftInput(CocosGLSurfaceView.this.mEditText, 0);
                                 mSoftKeyboardShown = true;
                                 Log.d("GLSurfaceView", "showSoftInput");
@@ -143,17 +155,8 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
                         break;
 
                     case HANDLER_CLOSE_IME_KEYBOARD:
-                        if (null != CocosGLSurfaceView.this.mEditText) {
-                            CocosGLSurfaceView.this.mEditText.removeTextChangedListener(mTextInputWrapper);
-                            final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                            imm.hideSoftInputFromWindow(CocosGLSurfaceView.this.mEditText.getWindowToken(), 0);
-                            CocosGLSurfaceView.this.requestFocus();
-                            // can take effect after GLSurfaceView has focus
-                            CocosGLSurfaceView.this.mEditText.setVisibility(View.GONE);
-                            mSoftKeyboardShown = false;
-                            ((CocosActivity)getContext()).hideVirtualButton();
-                            Log.d("GLSurfaceView", "HideSoftInput");
-                        }
+                        if ((Long) msg.obj != mImeSerial.get()) return;
+                        dismissIME(false);
                         break;
                 }
             }
@@ -203,6 +206,14 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         this.mEditText = pEditText;
         if (null != this.mEditText && null != mTextInputWrapper) {
             this.mEditText.setOnEditorActionListener(mTextInputWrapper);
+            this.mEditText.setOnFocusChangeListener((view, focused) -> {
+                if (!focused && mIMEEditorActive) dismissIME();
+            });
+            getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+                if (!mIMEEditorActive) return;
+                if (CocosEngine.isImeVisible()) mImeWasVisible = true;
+                else if (mImeWasVisible) dismissIME();
+            });
             this.requestFocus();
         }
     }
@@ -223,7 +234,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         final float[] xs = new float[pointerNumber];
         final float[] ys = new float[pointerNumber];
 
-        if (mSoftKeyboardShown){
+        if (mSoftKeyboardShown && !mIMEEditorActive){
             InputMethodManager imm = (InputMethodManager)this.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             View view = ((Activity)this.getContext()).getCurrentFocus();
             if (null != view) {
@@ -378,6 +389,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        dismissIME();
         cancelPendingInput();
         mRenderHost.surfaceDestroyed();
     }
@@ -418,7 +430,15 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     }
 
     void dismissIME() {
+        dismissIME(true);
+    }
+
+    private void dismissIME(boolean notifyNative) {
+        final boolean wasActive = mIMEEditorActive;
+        mIMEEditorActive = false;
+        final long serial = mImeSerial.incrementAndGet();
         mImeHandler.removeCallbacksAndMessages(null);
+        mTextInputWrapper.deactivate();
         if (mEditText != null) {
             mEditText.removeTextChangedListener(mTextInputWrapper);
             final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -427,6 +447,51 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
             mEditText.setVisibility(View.GONE);
         }
         mSoftKeyboardShown = false;
+        if (wasActive) {
+            requestFocus();
+            if (notifyNative) mRenderHost.cancelInput(() -> {
+                if (mRenderer != null && serial == mImeSerial.get()) mRenderer.handleIMEClosed();
+            });
+        }
+    }
+
+    boolean isIMEEditor(CocosEditBox editor) {
+        return mIMEEditorActive && mEditText == editor && isCurrentHost();
+    }
+
+    InputConnection wrapInputConnection(InputConnection connection) {
+        return connection == null ? null : mTextInputWrapper.wrap(connection);
+    }
+
+    boolean handleIMEKeyEvent(KeyEvent event) {
+        final int code = event.getKeyCode();
+        if (code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_ESCAPE) {
+            if (event.getAction() == KeyEvent.ACTION_UP) dismissIME();
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_DEL) {
+            if (mEditText.length() == 0) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) deleteBackward(1);
+                return true;
+            }
+            return false;
+        }
+        // Keep editor navigation and shortcuts at the native caret; printable
+        // characters still pass through EditText/IME, avoiding duplicate text.
+        if (event.isCtrlPressed() || event.isAltPressed()
+                || KeyEvent.isModifierKey(code) || code == KeyEvent.KEYCODE_TAB
+                || code == KeyEvent.KEYCODE_FORWARD_DEL || code == KeyEvent.KEYCODE_MOVE_HOME
+                || code == KeyEvent.KEYCODE_MOVE_END || code == KeyEvent.KEYCODE_PAGE_UP
+                || code == KeyEvent.KEYCODE_PAGE_DOWN
+                || (code >= KeyEvent.KEYCODE_DPAD_UP && code <= KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                mTextInputWrapper.resetForNativeCaret();
+                final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.restartInput(mEditText);
+            }
+            return event.getAction() == KeyEvent.ACTION_DOWN ? onKeyDown(code, event) : onKeyUp(code, event);
+        }
+        return false;
     }
 
     protected boolean isIgnoredKey(final int keyCode) {
@@ -501,7 +566,10 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
     void handleWindowFocusChanged(boolean hasFocus) {
         mRenderHost.setFocused(hasFocus);
-        if (!hasFocus) cancelPendingInput();
+        if (!hasFocus) {
+            dismissIME();
+            cancelPendingInput();
+        }
     }
 
     public void waitForPauseToComplete() {
@@ -513,6 +581,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         cancelPendingInput();
         mRenderHost.close(finalClose);
         if (mEditText != null) mEditText.setOnEditorActionListener(null);
+        if (mEditText != null) mEditText.setOnFocusChangeListener(null);
         if (mGLSurfaceView == this) {
             mGLSurfaceView = null;
         }
@@ -526,18 +595,22 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         final CocosGLSurfaceView view = mGLSurfaceView;
         if (view == null) return;
         final long epoch = view.mRenderHost.getInputEpoch();
+        final long serial = view.mImeSerial.incrementAndGet();
         view.queueInput(() -> {
             final String text = view.getContentText();
             final Handler handler = view.mImeHandler;
             if (view.isCurrentHost()) {
-                handler.obtainMessage(HANDLER_OPEN_IME_KEYBOARD, new ImeRequest(text, epoch)).sendToTarget();
+                handler.obtainMessage(HANDLER_OPEN_IME_KEYBOARD, new ImeRequest(text, epoch, serial)).sendToTarget();
             }
         });
     }
 
     public static void closeIMEKeyboard() {
         final CocosGLSurfaceView view = mGLSurfaceView;
-        if (view != null) view.mImeHandler.sendEmptyMessage(HANDLER_CLOSE_IME_KEYBOARD);
+        if (view != null) {
+            final long serial = view.mImeSerial.incrementAndGet();
+            view.mImeHandler.obtainMessage(HANDLER_CLOSE_IME_KEYBOARD, Long.valueOf(serial)).sendToTarget();
+        }
     }
 
     public void insertText(final String pText) {

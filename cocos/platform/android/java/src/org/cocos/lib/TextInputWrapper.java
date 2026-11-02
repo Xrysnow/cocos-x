@@ -24,127 +24,184 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos.lib;
 
-import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
+import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
+/** The hidden GLView editor. Native EditBox controls use their own input chain. */
 public class TextInputWrapper implements TextWatcher, OnEditorActionListener {
-    // ===========================================================
-    // Constants
-    // ===========================================================
-
-    private static final String TAG = TextInputWrapper.class.getSimpleName();
-
-    // ===========================================================
-    // Fields
-    // ===========================================================
-
     private final CocosGLSurfaceView mGLSurfaceView;
     private String mText = "";
-    private String mOriginText;
+    private int mBatchDepth;
+    private long mConnectionSerial;
+    private boolean mActive;
 
-    // ===========================================================
-    // Constructors
-    // ===========================================================
-
-    public TextInputWrapper(final CocosGLSurfaceView pCocosGLSurfaceView) {
-        this.mGLSurfaceView = pCocosGLSurfaceView;
+    public TextInputWrapper(final CocosGLSurfaceView view) {
+        mGLSurfaceView = view;
     }
 
-    // ===========================================================
-    // Getter & Setter
-    // ===========================================================
-
-    private boolean isFullScreenEdit() {
-        final TextView textField = this.mGLSurfaceView.getEditText();
-        final InputMethodManager imm = (InputMethodManager) textField.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        return imm.isFullscreenMode();
+    public void setOriginText(final String text) {
+        mText = text;
+        mBatchDepth = 0;
+        ++mConnectionSerial;
+        mActive = true;
     }
 
-    public void setOriginText(final String pOriginText) {
-        this.mOriginText = pOriginText;
+    void deactivate() {
+        mActive = false;
+        ++mConnectionSerial;
+        mBatchDepth = 0;
     }
 
-    // ===========================================================
-    // Methods for/from SuperClass/Interfaces
-    // ===========================================================
+    void resetForNativeCaret() {
+        final Editable editable = mGLSurfaceView.getEditText().getText();
+        BaseInputConnection.removeComposingSpans(editable);
+        flushCommittedText();
+        // Native navigation/selection changes the real caret. Do not let Android
+        // later autocorrect or delete text buffered at the previous caret.
+        mGLSurfaceView.getEditText().removeTextChangedListener(this);
+        editable.clear();
+        setOriginText("");
+        mGLSurfaceView.getEditText().addTextChangedListener(this);
+    }
 
-    @Override
-    public void afterTextChanged(final Editable s) {
-        if (this.isFullScreenEdit()) {
-            return;
+    private void beginEdit() {
+        ++mBatchDepth;
+    }
+
+    private void endEdit() {
+        if (mBatchDepth > 0) --mBatchDepth;
+        if (mBatchDepth == 0) flushCommittedText();
+    }
+
+    private void flushCommittedText() {
+        if (!mActive || mBatchDepth != 0 || !mGLSurfaceView.isCurrentHost()) return;
+        final Editable editable = mGLSurfaceView.getEditText().getText();
+        // setComposingText may replace the same range repeatedly. Never publish its
+        // provisional Latin syllables (or delete committed text) until it is final.
+        if (BaseInputConnection.getComposingSpanStart(editable) >= 0) return;
+        final String text = editable.toString();
+        int prefix = 0;
+        while (prefix < mText.length() && prefix < text.length()) {
+            final int oldPoint = mText.codePointAt(prefix);
+            if (oldPoint != text.codePointAt(prefix)) break;
+            prefix += Character.charCount(oldPoint);
         }
-        int old_i = 0;
-        int new_i = 0;
-        while (old_i < this.mText.length() && new_i < s.length()) {
-            if (this.mText.charAt(old_i) != s.charAt(new_i)) {
-                break;
-            }
-            old_i += 1;
-            new_i += 1;
-        }
-
-        if (old_i < this.mText.length()) {
-            this.mGLSurfaceView.deleteBackward(this.mText.length() - old_i);
-        }
-
-        int nModified = s.length() - new_i;
-        if (nModified > 0) {
-            final String insertText = s.subSequence(new_i, s.length()).toString();
-            this.mGLSurfaceView.insertText(insertText);
-        }
-
-        this.mText = s.toString();
+        final int deleted = mText.codePointCount(prefix, mText.length());
+        if (deleted > 0) mGLSurfaceView.deleteBackward(deleted);
+        if (prefix < text.length()) mGLSurfaceView.insertText(text.substring(prefix));
+        mText = text;
     }
 
-    @Override
-    public void beforeTextChanged(final CharSequence pCharSequence, final int start, final int count, final int after) {
-        this.mText = pCharSequence.toString();
-    }
-
-    @Override
-    public void onTextChanged(final CharSequence pCharSequence, final int start, final int before, final int count) {
-
-    }
-
-    @Override
-    public boolean onEditorAction(final TextView pTextView, final int pActionID, final KeyEvent pKeyEvent) {
-        if (this.mGLSurfaceView.getEditText() == pTextView && this.isFullScreenEdit()) {
-            // user press the action button, delete all old text and insert new text
-            if (null != mOriginText) {
-                if (!this.mOriginText.isEmpty()) {
-                    this.mGLSurfaceView.deleteBackward(this.mOriginText.length());
-                }
+    InputConnection wrap(final InputConnection target) {
+        final long serial = mConnectionSerial;
+        return new InputConnectionWrapper(target, false) {
+            private boolean isCurrent() {
+                return mActive && serial == mConnectionSerial && mGLSurfaceView.isCurrentHost();
             }
 
-            String text = pTextView.getText().toString();
-
-            if (text != null) {
-                /* If user input nothing, translate "\n" to engine. */
-                if ( text.compareTo("") == 0) {
-                    text = "\n";
-                }
-
-                if ( '\n' != text.charAt(text.length() - 1)) {
-                    text += '\n';
-                }
+            @Override
+            public boolean beginBatchEdit() {
+                if (!isCurrent()) return false;
+                beginEdit();
+                return super.beginBatchEdit();
             }
 
-            final String insertText = text;
-            this.mGLSurfaceView.insertText(insertText);
+            @Override
+            public boolean endBatchEdit() {
+                if (!isCurrent()) return false;
+                try { return super.endBatchEdit(); }
+                finally { endEdit(); }
+            }
 
-        }
+            @Override
+            public boolean setComposingText(CharSequence text, int cursor) {
+                if (!isCurrent()) return false;
+                beginEdit();
+                try { return super.setComposingText(text, cursor); }
+                finally { endEdit(); }
+            }
 
-        if (pActionID == EditorInfo.IME_ACTION_DONE) {
-            this.mGLSurfaceView.requestFocus();
+            @Override
+            public boolean commitText(CharSequence text, int cursor) {
+                if (!isCurrent()) return false;
+                beginEdit();
+                try { return super.commitText(text, cursor); }
+                finally { endEdit(); }
+            }
+
+            @Override
+            public boolean finishComposingText() {
+                if (!isCurrent()) return false;
+                beginEdit();
+                try { return super.finishComposingText(); }
+                finally { endEdit(); }
+            }
+
+            @Override
+            public boolean deleteSurroundingText(int before, int after) {
+                if (!isCurrent()) return false;
+                if (deleteBeforeEmptyEditor(before, after)) return true;
+                beginEdit();
+                try { return super.deleteSurroundingText(before, after); }
+                finally { endEdit(); }
+            }
+
+            @Override
+            public boolean deleteSurroundingTextInCodePoints(int before, int after) {
+                if (!isCurrent()) return false;
+                if (deleteBeforeEmptyEditor(before, after)) return true;
+                beginEdit();
+                try { return super.deleteSurroundingTextInCodePoints(before, after); }
+                finally { endEdit(); }
+            }
+        };
+    }
+
+    private boolean deleteBeforeEmptyEditor(int before, int after) {
+        if (mActive && mGLSurfaceView.isCurrentHost() && before > 0 && after == 0
+                && mGLSurfaceView.getEditText().length() == 0) {
+            // ImGui owns the real cursor/text; this editor only buffers new IME text.
+            mGLSurfaceView.deleteBackward(before);
+            return true;
         }
         return false;
     }
 
+    @Override
+    public void afterTextChanged(final Editable text) {
+        // A TextWatcher can run before the IME installs its composing span.
+        // InputConnection operations flush at their end; plain hardware edits flush
+        // on the next UI task after all spans have been updated.
+        mGLSurfaceView.post(this::flushCommittedText);
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+
+    @Override
+    public void onTextChanged(CharSequence text, int start, int before, int count) {}
+
+    @Override
+    public boolean onEditorAction(TextView view, int action, KeyEvent event) {
+        if (view != mGLSurfaceView.getEditText() || !mActive) return false;
+        if (event != null && event.getAction() != KeyEvent.ACTION_DOWN) return true;
+        if (action == EditorInfo.IME_ACTION_DONE || action == EditorInfo.IME_ACTION_GO
+                || action == EditorInfo.IME_ACTION_SEND || action == EditorInfo.IME_ACTION_SEARCH
+                || action == EditorInfo.IME_NULL) {
+            BaseInputConnection.removeComposingSpans(mGLSurfaceView.getEditText().getText());
+            flushCommittedText();
+            mGLSurfaceView.insertText("\n");
+            // The native delegate consumes Enter before closing the keyboard.
+            // Closing here could drop the queued final commit before a frame.
+            return true;
+        }
+        return false;
+    }
 }
