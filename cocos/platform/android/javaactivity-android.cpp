@@ -54,7 +54,7 @@ void cocos_android_app_init(JNIEnv* env) __attribute__((weak));
 USING_NS_CC;
 
 namespace {
-constexpr const char* HOST_TAG = "LSTGXRenderHost";
+constexpr const char* HOST_TAG = "CocosRenderHost";
 unsigned windowReferences = 0;
 struct WindowRelease {
     void operator()(ANativeWindow* window) const {
