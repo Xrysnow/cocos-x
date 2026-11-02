@@ -32,6 +32,8 @@ import android.media.AudioManager;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -97,6 +99,10 @@ public class CocosEngine {
     private static volatile int[] sSafeInsets = new int[4];
     private static volatile int[] sCornerRadii = new int[4];
     private static volatile int sDPI = -1;
+    private static volatile int[] sDisplayResolution = new int[2];
+    private static volatile boolean sWindowVisible;
+    private static volatile boolean sImeVisible;
+    private static volatile ClipboardManager sClipboard;
     private static volatile boolean sScreenRound;
     private static volatile boolean sCutoutEnabled;
     private static volatile boolean sHasSoftKeys = true;
@@ -145,6 +151,12 @@ public class CocosEngine {
         sActivityVisible = false;
         sSafeInsets = new int[4];
         sCornerRadii = new int[4];
+        sDisplayResolution = new int[2];
+        sWindowVisible = false;
+        sImeVisible = false;
+        // Acquire services on the UI thread; clipboard calls themselves use Binder
+        // and must not wait for a UI callback from the engine thread.
+        sClipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         sDPI = activity.getResources().getDisplayMetrics().densityDpi;
         sCutoutEnabled = false;
         sHasSoftKeys = computeHasSoftKeys(activity);
@@ -170,6 +182,9 @@ public class CocosEngine {
 
             sInited = true;
         }
+        refreshWindowInfo(activity);
+        activity.getWindow().getDecorView().getViewTreeObserver()
+                .addOnGlobalLayoutListener(() -> refreshWindowInfo(activity));
     }
 
     static void unbindActivity(Activity activity) {
@@ -181,6 +196,10 @@ public class CocosEngine {
         sActivity = null;
         sSafeInsets = new int[4];
         sCornerRadii = new int[4];
+        sDisplayResolution = new int[2];
+        sWindowVisible = false;
+        sImeVisible = false;
+        sClipboard = null;
         sCutoutEnabled = false;
         // Native context is rebound by init before the next Activity's host starts.
     }
@@ -247,6 +266,48 @@ public class CocosEngine {
 
     public static boolean isActivityVisible(){
         return sActivityVisible;
+    }
+
+    /** Nonblocking UI snapshots. Physical Surface size is owned by native RenderHost. */
+    public static int[] getDisplayResolution() {
+        return sDisplayResolution.clone();
+    }
+
+    public static boolean isWindowVisible() {
+        return sActivity != null && sActivityVisible && sWindowVisible;
+    }
+
+    public static boolean isImeVisible() {
+        return isWindowVisible() && sImeVisible;
+    }
+
+    public static void setClipboardString(String text) {
+        final ClipboardManager clipboard = sClipboard;
+        if (!isWindowVisible() || clipboard == null) {
+            Log.w(TAG, "setClipboardString rejected without a foreground window");
+            return;
+        }
+        try {
+            clipboard.setPrimaryClip(ClipData.newPlainText("", text));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "setClipboardString failed", e);
+        }
+    }
+
+    public static String getClipboardString() {
+        final ClipboardManager clipboard = sClipboard;
+        if (!isWindowVisible() || clipboard == null) return "";
+        try {
+            // Android enforces input-focus access. Never return a stale cached copy.
+            final ClipData clip = clipboard.getPrimaryClip();
+            if (clip == null || clip.getItemCount() == 0) return "";
+            // This API only transfers text; do not dereference clipboard content URIs.
+            final CharSequence text = clip.getItemAt(0).getText();
+            return text == null ? "" : text.toString();
+        } catch (RuntimeException e) {
+            Log.w(TAG, "getClipboardString failed", e);
+            return "";
+        }
     }
 
     // ===========================================================
@@ -393,6 +454,7 @@ public class CocosEngine {
 
     public static void onPause() {
         sActivityVisible = false;
+        sImeVisible = false;
         if (sAccelerometer != null) sAccelerometer.disable();
     }
 
@@ -659,8 +721,28 @@ public class CocosEngine {
                 || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                 && cutoutMode == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS));
         final View decor = window == null ? null : window.getDecorView();
+        sWindowVisible = decor != null && decor.isShown() && decor.getWindowVisibility() == View.VISIBLE;
+        final Display display = decor == null ? null : decor.getDisplay();
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        if (display != null) display.getRealMetrics(displayMetrics);
+        sDisplayResolution = new int[]{displayMetrics.widthPixels, displayMetrics.heightPixels};
         final WindowInsets insets = currentInsets != null ? currentInsets
                 : Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && decor != null ? decor.getRootWindowInsets() : null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets != null) {
+            sImeVisible = insets.isVisible(WindowInsets.Type.ime());
+        } else if (decor != null) {
+            // Before API30 there is no public IME visibility API. Observe keyboard
+            // occlusion for adjust-pan/resize windows; floating keyboards may not occlude.
+            final android.graphics.Rect frame = new android.graphics.Rect();
+            final int[] location = new int[2];
+            decor.getWindowVisibleDisplayFrame(frame);
+            decor.getLocationOnScreen(location);
+            final int stableBottom = insets == null ? 0 : insets.getStableInsetBottom();
+            final int occluded = location[1] + decor.getHeight() - frame.bottom - stableBottom;
+            sImeVisible = !frame.isEmpty() && occluded > 100 * activity.getResources().getDisplayMetrics().density;
+        } else {
+            sImeVisible = false;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets != null) {
             android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             safeInsets[0] = bars.bottom;

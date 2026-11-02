@@ -41,6 +41,7 @@ THE SOFTWARE.
 #define WIDE_SCREEN_ASPECT_RATIO_ANDROID 2.0f
 
 void cocos_android_render_host_ended();
+cocos2d::Size cocos_android_render_host_size();
 
 NS_CC_BEGIN
 
@@ -110,6 +111,11 @@ void GLViewImpl::end()
 }
 
 void GLViewImpl::swapBuffers() {}
+
+Size GLViewImpl::getNativeSurfaceSize() const
+{
+    return cocos_android_render_host_size();
+}
 
 void GLViewImpl::setIMEKeyboardState(bool bOpen)
 {

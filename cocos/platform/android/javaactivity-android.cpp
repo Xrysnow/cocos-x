@@ -77,6 +77,7 @@ bool firstPresent = false;
 uint64_t presentBaseline = 0;
 int hostWidth = 0;
 int hostHeight = 0;
+Size hostSurfaceSize;
 enum class HostState { WaitingSurface, SurfaceReady, Detaching, Suspended, SurfaceFailed, Closing, Closed };
 HostState hostState = HostState::WaitingSurface;
 bool hostClosing = false;
@@ -113,6 +114,7 @@ void syncDevice()
 void detachWindow()
 {
     hostReady = false;
+    hostSurfaceSize = Size::ZERO;
     if (hostWindow)
     {
         setHostState(HostState::Detaching);
@@ -136,6 +138,7 @@ int resizeWindow(int width, int height)
     if (width <= 0 || height <= 0)
     {
         hostReady = false;
+        hostSurfaceSize = Size::ZERO;
         setHostState(HostState::WaitingSurface);
         __android_log_print(ANDROID_LOG_INFO, HOST_TAG, "waiting-zero-size session=%lld generation=%lld size=%dx%d",
             (long long)hostSession, (long long)hostGeneration, width, height);
@@ -156,6 +159,7 @@ int resizeWindow(int width, int height)
         }
         hostWidth = width;
         hostHeight = height;
+        hostSurfaceSize = Size(float(width), float(height));
         auto* view = hostDirector->getOpenGLView();
         const auto design = view->getDesignResolutionSize();
         const auto policy = view->getResolutionPolicy();
@@ -167,16 +171,24 @@ int resizeWindow(int width, int height)
         hostDirector->getEventDispatcher()->dispatchCustomEvent("glview_window_resized");
         Application::getInstance()->applicationScreenSizeChanged(width, height);
     }
+    hostSurfaceSize = Size(float(width), float(height));
     hostReady = true;
     setHostState(HostState::SurfaceReady);
     return 1;
 }
 }
 
+// Called only on the engine thread, including during Application::run bootstrap.
+Size cocos_android_render_host_size()
+{
+    return hostWindow && !hostClosing && !hostFailed ? hostSurfaceSize : Size::ZERO;
+}
+
 // GLView::end can run from Director::mainLoop before it deletes the device.
 void cocos_android_render_host_ended()
 {
     hostReady = false;
+    hostSurfaceSize = Size::ZERO;
     hostResumed = false;
     hostClosing = true;
     // Director calls here before deleting its renderer/device. Drain and release
@@ -263,6 +275,8 @@ JNIEXPORT jint JNICALL Java_org_cocos_lib_CocosRenderHost_nativeAttach(
         return -1;
     }
 
+    // Publish the accepted attach dimensions before Lua's startup queries.
+    hostSurfaceSize = Size(float(width), float(height));
     auto* config = Configuration::getInstance();
     auto preferred = cc::gfx::API::VULKAN;
     const int configured = config->getValue("GFXDesiredAPI", Value((int)preferred)).asInt();

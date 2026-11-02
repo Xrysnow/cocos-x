@@ -46,6 +46,9 @@ public:
     void setIMEKeyboardState(bool bOpen) override;
     virtual Rect getSafeAreaRect() const override;
 
+    // Engine-thread query of B2's physical Surface size, zero while detached.
+    Size getNativeSurfaceSize() const;
+
     void queueOperation(void (*op)(void*), void* param);
 
 protected:
