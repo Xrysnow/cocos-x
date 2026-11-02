@@ -25,6 +25,9 @@ THE SOFTWARE.
 #include "scripting/lua-bindings/manual/CCLuaValue.h"
 
 #include "network/CCDownloader.h"
+#include "base/CCDirector.h"
+#include "base/CCScheduler.h"
+#include <atomic>
 #include <iostream>
 
 #include <unordered_map>
@@ -36,6 +39,50 @@ THE SOFTWARE.
 USING_NS_CC;
 using namespace cocos2d::network;
 
+struct LuaDownloaderState
+{
+    std::unique_ptr<Downloader> downloader;
+    Scheduler* scheduler;
+    std::atomic_bool alive{true};
+
+    explicit LuaDownloaderState(std::unique_ptr<Downloader> value)
+        : downloader(std::move(value)), scheduler(Director::getInstance()->getScheduler())
+    {
+        scheduler->retain();
+    }
+    ~LuaDownloaderState()
+    {
+        downloader.reset();
+        scheduler->release();
+    }
+};
+
+// A nullable heap holder makes __gc idempotent without leaving a constructed
+// native object in Lua-owned memory after it has been finalized.
+using LuaDownloaderHandle = std::shared_ptr<LuaDownloaderState>*;
+
+static LuaDownloaderHandle* checkDownloaderHandle(lua_State* L)
+{
+    auto handle = static_cast<LuaDownloaderHandle*>(luaL_checkudata(L, 1, "cc.Downloader"));
+    luaL_argcheck(L, handle && *handle, 1, "Downloader has been finalized");
+    return handle;
+}
+
+struct LuaDownloadSnapshot
+{
+    std::string identifier;
+    std::string requestURL;
+    std::string storagePath;
+    int64_t bytesReceived;
+    int64_t totalBytesReceived;
+    int64_t totalBytesExpected;
+
+    explicit LuaDownloadSnapshot(const DownloadTask& task)
+        : identifier(task.identifier), requestURL(task.requestURL), storagePath(task.storagePath),
+          bytesReceived(task.progressInfo.bytesReceived), totalBytesReceived(task.progressInfo.totalBytesReceived),
+          totalBytesExpected(task.progressInfo.totalBytesExpected) {}
+};
+
 static int get_field_int(lua_State* L, const char* field, int def)
 {
     int ret = def;
@@ -44,6 +91,7 @@ static int get_field_int(lua_State* L, const char* field, int def)
     if (lua_isnil(L, -1))
     {
         // luaL_error(L, "get_field_int: field '%s' no exists.", field);
+        lua_pop(L, 1);
         return ret;
     }
     ret = (int)lua_tointeger(L, -1);
@@ -59,6 +107,7 @@ static std::string get_field_string(lua_State* L, const char* field, const char*
     if (lua_isnil(L, -1))
     {
         // luaL_error(L, "get_field_string: field '%s' no exists.", field);
+        lua_pop(L, 1);
         return ret;
     }
     ret = std::string(lua_tostring(L, -1));
@@ -75,12 +124,28 @@ static void set_field_string(lua_State* L, const char* field, const char* value)
 
 static Downloader* checkDownloader(lua_State* L)
 {
-    void* ud = luaL_checkudata(L, 1, "cc.Downloader");
-    luaL_argcheck(L, ud != NULL, 1, "`Downloader' expected");
-    return (Downloader*)ud;
+    return (**checkDownloaderHandle(L))->downloader.get();
 }
 
-static void pushTaskTable(lua_State* L, const DownloadTask& task)
+static int lua_download_task_cancel(lua_State* L)
+{
+    auto weak = static_cast<std::weak_ptr<DownloadTask>**>(lua_touserdata(L, lua_upvalueindex(1)));
+    auto task = *weak ? (*weak)->lock() : std::shared_ptr<DownloadTask>{};
+    if (task)
+        task->cancel();
+    lua_pushboolean(L, task != nullptr);
+    return 1;
+}
+
+static int lua_download_task_cleanup(lua_State* L)
+{
+    auto weak = static_cast<std::weak_ptr<DownloadTask>**>(luaL_checkudata(L, 1, "cc.DownloadTaskCancellation"));
+    delete *weak;
+    *weak = nullptr;
+    return 0;
+}
+
+static void pushTaskTable(lua_State* L, const LuaDownloadSnapshot& task)
 {
     lua_newtable(L);
     set_field_string(L, "identifier", task.identifier.c_str());
@@ -88,11 +153,42 @@ static void pushTaskTable(lua_State* L, const DownloadTask& task)
     set_field_string(L, "storagePath", task.storagePath.c_str());
 }
 
+static void pushTaskTable(lua_State* L, const std::shared_ptr<DownloadTask>& task)
+{
+    pushTaskTable(L, LuaDownloadSnapshot(*task));
+    auto weak = static_cast<std::weak_ptr<DownloadTask>**>(lua_newuserdata(L, sizeof(std::weak_ptr<DownloadTask>*)));
+    *weak = new std::weak_ptr<DownloadTask>(task);
+    luaL_getmetatable(L, "cc.DownloadTaskCancellation");
+    lua_setmetatable(L, -2);
+    lua_pushcclosure(L, lua_download_task_cancel, 1);
+    lua_setfield(L, -2, "cancel");
+}
+
+static void pushCallbackStore(lua_State* L)
+{
+    static char storeKey;
+    lua_pushlightuserdata(L, &storeKey);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    if (lua_istable(L, -1))
+        return;
+    lua_pop(L, 1);
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_pushliteral(L, "v");
+    lua_setfield(L, -2, "__mode");
+    lua_setmetatable(L, -2);
+    lua_pushlightuserdata(L, &storeKey);
+    lua_pushvalue(L, -2);
+    lua_rawset(L, LUA_REGISTRYINDEX);
+}
+
 static void saveCallback(lua_State* L, void* addr, const char* callbackName)
 {
     // stack [fn]
+    pushCallbackStore(L);
     lua_pushlightuserdata(L, (void*)addr);  // stack fn, ud
-    lua_gettable(L, LUA_REGISTRYINDEX);     // stack fn, callbacks_tb
+    lua_rawget(L, -2);
+    lua_remove(L, -2);                     // stack fn, callbacks_tb
     lua_pushstring(L, callbackName);        // stack fn, callbacks_tb, callbackName
     lua_pushvalue(L, -3);                   // stack fn, callbacks_tb, callbackName, fn
     lua_settable(L, -3);                    // stack fn, callbacks_tb
@@ -102,17 +198,62 @@ static void saveCallback(lua_State* L, void* addr, const char* callbackName)
 static int getCallback(lua_State* L, void* addr, const char* callbackName)
 {
     // stack []
+    pushCallbackStore(L);
     lua_pushlightuserdata(L, (void*)addr);  // stack ud
-    lua_gettable(L, LUA_REGISTRYINDEX);     // stack callbacks_tb
+    lua_rawget(L, -2);
+    lua_remove(L, -2);                     // stack callbacks_tb
+    if (!lua_istable(L, -1))
+        return 0;
     lua_pushstring(L, callbackName);        // stack callbacks_tb, callbackName
     lua_gettable(L, -2);                    // stack callbacks_tb, callbackfn
     lua_remove(L, -2);                      // stack callbackfn
     return lua_isfunction(L, -1) ? 1 : 0;
 }
 
+static void postDownloadCallback(std::weak_ptr<LuaDownloaderState> weak, LuaDownloadSnapshot task,
+                                 const char* callbackName, std::function<int(lua_State*)> pushArguments = {})
+{
+    auto state = weak.lock();
+    if (!state || !state->alive)
+        return;
+    // Never run Lua inside the native downloader's update/worker call stack.
+    // Snapshots own all data; the queue retains neither downloader nor task.
+    state->scheduler->performFunctionInCocosThread([weak, task = std::move(task), callbackName,
+                                                   pushArguments = std::move(pushArguments)] {
+        auto state = weak.lock();
+        if (!state || !state->alive)
+            return;
+        auto callbackStack = LuaEngine::getInstance()->getLuaStack();
+        auto key = state->downloader.get();
+        callbackStack->executeCallback([=] {
+            auto L = callbackStack->getLuaState();
+            if (!state->alive)
+                return 0;
+            if (!getCallback(L, key, callbackName))
+            {
+                lua_pop(L, 1);
+                return 0;
+            }
+            pushTaskTable(L, task);
+            int count = 1 + (pushArguments ? pushArguments(L) : 0);
+            if (!state->alive)
+            {
+                lua_pop(L, count + 1);
+                return 0;
+            }
+            if (lua_pcall(L, count, 0, 0) != 0)
+            {
+                lua_pop(L, 1);
+                return luaL_error(L, "cc.Downloader.%s invoke callback error!", callbackName);
+            }
+            return 0;
+        });
+    });
+}
+
 static int lua_downloader_new(lua_State* L)
 {
-    Downloader* downloader = nullptr;
+    std::unique_ptr<Downloader> downloader;
     int argc               = lua_gettop(L) - 1;
     if (argc >= 1)
     {
@@ -127,22 +268,29 @@ static int lua_downloader_new(lua_State* L)
         hints.timeoutInSeconds          = get_field_int(L, "timeoutInSeconds", 45);
         hints.tempFileNameSuffix        = get_field_string(L, "tempFileNameSuffix", ".tmp");
 
-        auto ptr   = lua_newuserdata(L, sizeof(Downloader));
-        downloader = new (ptr) Downloader(hints);
+        downloader = std::make_unique<Downloader>(hints);
     }
     else
     {
-        auto ptr   = lua_newuserdata(L, sizeof(Downloader));
-        downloader = new (ptr) Downloader();
+        downloader = std::make_unique<Downloader>();
     }
+
+    auto key = downloader.get();
+    auto handle = static_cast<LuaDownloaderHandle*>(lua_newuserdata(L, sizeof(LuaDownloaderHandle)));
+    *handle = new std::shared_ptr<LuaDownloaderState>(std::make_shared<LuaDownloaderState>(std::move(downloader)));
 
     luaL_getmetatable(L, "cc.Downloader");
     lua_setmetatable(L, -2);
 
-    // register callback table
-    lua_pushlightuserdata(L, (void*)downloader);
+    // The userdata owns its callback table. A weak registry index lets native
+    // events find it without rooting callbacks that capture this userdata.
+    pushCallbackStore(L);
+    lua_pushlightuserdata(L, (void*)key);
     lua_newtable(L);
-    lua_settable(L, LUA_REGISTRYINDEX);
+    lua_pushvalue(L, -1);
+    lua_setfenv(L, -5);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
 
     return 1;
 }
@@ -167,7 +315,7 @@ static int lua_downloader_createDownloadDataTask(lua_State* L)
     auto tsk = d->createDownloadDataTask(url, identifier);
 
     if (tsk)
-        pushTaskTable(L, *tsk);
+        pushTaskTable(L, tsk);
     else
         lua_pushnil(L);
     return 1;
@@ -208,7 +356,7 @@ static int lua_downloader_createDownloadFileTask(lua_State* L)
     auto tsk = d->createDownloadFileTask(url, storagePath, identifier, md5checksum, background, cacertPath);
 
     if (tsk)
-        pushTaskTable(L, *tsk);
+        pushTaskTable(L, tsk);
     else
         lua_pushnil(L);
     return 1;
@@ -225,28 +373,9 @@ static int lua_downloader_setOnFileTaskSuccess(lua_State* L)
     luaL_argcheck(L, lua_isfunction(L, 2), 2, "should be a function");
     saveCallback(L, d, "setOnFileTaskSuccess");
 
-    d->setOnFileTaskSuccess([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](const DownloadTask& task) {
-        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
-        callbackStack->executeCallback([=, &task]() mutable -> int {
-            auto* L = callbackStack->getLuaState();
-            int ret = getCallback(L, d, "setOnFileTaskSuccess");  // stack callbackfn
-            if (ret)
-            {
-                pushTaskTable(L, task);  // stack callbackfn, task
-                if (lua_pcall(L, 1, 0, 0) != 0)
-                {
-                    lua_pop(L, 1);  // remove callback or nil
-                    luaL_error(L, "cc.Downloader.setOnFileTaskSuccess invoke callback error!");
-                    return 0;
-                }
-            }
-            else
-            {
-                lua_pop(L, 1);  // remove callback or nil
-            }
-
-            return 0;
-        });
+    std::weak_ptr<LuaDownloaderState> weak = **checkDownloaderHandle(L);
+    d->setOnFileTaskSuccess([weak](const DownloadTask& task) {
+        postDownloadCallback(weak, LuaDownloadSnapshot(task), "setOnFileTaskSuccess");
     });
 
     return 0;
@@ -263,30 +392,14 @@ static int lua_downloader_setOnTaskProgress(lua_State* L)
     luaL_argcheck(L, lua_isfunction(L, 2), 2, "should be a function");
     saveCallback(L, d, "setOnTaskProgress");
 
-    d->setOnTaskProgress([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](const DownloadTask& task) {
-        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
-        callbackStack->executeCallback([=, &task]() mutable -> int {
-            auto* L = callbackStack->getLuaState();
-            int ret = getCallback(L, d, "setOnTaskProgress");  // stack callbackfn
-            if (ret)
-            {
-                pushTaskTable(L, task);  // stack callbackfn, task
-                lua_pushnumber(L, (lua_Number)task.progressInfo.bytesReceived);
-                lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesReceived);
-                lua_pushnumber(L, (lua_Number)task.progressInfo.totalBytesExpected);
-                if (lua_pcall(L, 4, 0, 0) != 0)
-                {
-                    lua_pop(L, 1);  // remove callback or nil
-                    luaL_error(L, "cc.Downloader.setOnTaskProgress invoke callback error!");
-                    return 0;
-                }
-            }
-            else
-            {
-                lua_pop(L, 1);  // remove callback or nil
-            }
-
-            return 0;
+    std::weak_ptr<LuaDownloaderState> weak = **checkDownloaderHandle(L);
+    d->setOnTaskProgress([weak](const DownloadTask& task) {
+        auto snapshot = LuaDownloadSnapshot(task);
+        postDownloadCallback(weak, snapshot, "setOnTaskProgress", [snapshot](lua_State* L) {
+            lua_pushnumber(L, static_cast<lua_Number>(snapshot.bytesReceived));
+            lua_pushnumber(L, static_cast<lua_Number>(snapshot.totalBytesReceived));
+            lua_pushnumber(L, static_cast<lua_Number>(snapshot.totalBytesExpected));
+            return 3;
         });
     });
 
@@ -304,31 +417,15 @@ static int lua_downloader_setOnTaskError(lua_State* L)
     luaL_argcheck(L, lua_isfunction(L, 2), 2, "should be a function");
     saveCallback(L, d, "setOnTaskError");
 
-    d->setOnTaskError([d, L = LuaEngine::getInstance()->getLuaStack()->getLuaState()](
+    std::weak_ptr<LuaDownloaderState> weak = **checkDownloaderHandle(L);
+    d->setOnTaskError([weak](
                           const DownloadTask& task, int errorCode, int errorCodeInternal, std::string_view errorSt) {
-        auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
-        callbackStack->executeCallback([=, &task]() mutable -> int {
-            auto* L = callbackStack->getLuaState();
-            int ret = getCallback(L, d, "setOnTaskError");  // stack callbackfn
-            if (ret)
-            {
-                pushTaskTable(L, task);  // stack callbackfn, task
-                lua_pushnumber(L, errorCode);
-                lua_pushnumber(L, errorCodeInternal);
-                lua_pushlstring(L, errorSt.data(), errorSt.length());
-                if (lua_pcall(L, 4, 0, 0) != 0)
-                {
-                    lua_pop(L, 1);  // remove callback or nil
-                    luaL_error(L, "cc.Downloader.setOnTaskError invoke callback error!");
-                    return 0;
-                }
-            }
-            else
-            {
-                lua_pop(L, 1);  // remove callback or nil
-            }
-
-            return 0;
+        postDownloadCallback(weak, LuaDownloadSnapshot(task), "setOnTaskError",
+                             [errorCode, errorCodeInternal, error = std::string(errorSt)](lua_State* L) {
+            lua_pushnumber(L, errorCode);
+            lua_pushnumber(L, errorCodeInternal);
+            lua_pushlstring(L, error.data(), error.size());
+            return 3;
         });
     });
 
@@ -337,14 +434,23 @@ static int lua_downloader_setOnTaskError(lua_State* L)
 
 static int lua_downloader_cleanup(lua_State* L)
 {
-    Downloader* d = checkDownloader(L);
-
-    // std::cout << "cc.Downloader __gc" << std::endl;
+    auto handle = static_cast<LuaDownloaderHandle*>(luaL_checkudata(L, 1, "cc.Downloader"));
+    if (!*handle)
+        return 0;
+    auto state = std::move(**handle);
+    delete *handle;
+    *handle = nullptr;
+    state->alive = false;
 
     // remove callback table
-    lua_pushlightuserdata(L, (void*)d);
+    pushCallbackStore(L);
+    lua_pushlightuserdata(L, (void*)state->downloader.get());
     lua_pushnil(L);
-    lua_settable(L, LUA_REGISTRYINDEX);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
+    // Stops and joins the worker before its owner can disappear. Any already
+    // queued Lua callbacks only hold a weak, now invalid lifetime token.
+    state->downloader.reset();
     return 0;
 }
 
@@ -373,6 +479,11 @@ static const struct luaL_Reg downloaderMemberFns[] = {{"createDownloadDataTask",
 
 int register_downloader(lua_State* L)
 {
+    luaL_newmetatable(L, "cc.DownloadTaskCancellation");
+    lua_pushcfunction(L, lua_download_task_cleanup);
+    lua_setfield(L, -2, "__gc");
+    lua_pop(L, 1);
+
     luaL_newmetatable(L, "cc.Downloader");
     lua_pushstring(L, "__index");
     lua_pushvalue(L, -2); /* pushes the metatable */

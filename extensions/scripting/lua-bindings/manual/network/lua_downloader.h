@@ -36,4 +36,8 @@ extern "C" {
 
 #include "tolua++.h"
 
+// createDownload*Task returns the existing task fields plus cancel(), holding
+// only a weak native task reference. Callback tables remain value snapshots.
+// Lua callbacks always run on the cocos thread, including background tasks;
+// collecting the Downloader stops its worker and discards queued callbacks.
 TOLUA_API int register_downloader(lua_State* L);
