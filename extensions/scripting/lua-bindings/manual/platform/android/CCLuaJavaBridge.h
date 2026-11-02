@@ -174,6 +174,7 @@ private:
         JNIEnv* getEnv() { return m_env; }
 
         int argumentTypeAtIndex(size_t index) { return m_argumentsType.at(index); }
+        int getArgumentsCount() { return m_argumentsCount; }
 
         bool execute();
         bool executeWithArgs(jvalue* args);

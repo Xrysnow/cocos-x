@@ -409,9 +409,11 @@ public class CocosEngine {
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
-    private static void showDialog(final String pTitle, final String pMessage) {
+    public static void showDialog(final String pTitle, final String pMessage) {
         final CocosEngineListener listener = sCocosEngineListener;
-        if (listener != null) listener.showDialog(pTitle, pMessage);
+        if (listener == null) throw new IllegalStateException("No Activity bound for showDialog");
+        // CocosActivity dispatches the dialog through its UI handler.
+        listener.showDialog(pTitle, pMessage);
     }
 
 

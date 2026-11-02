@@ -26,6 +26,7 @@
 #if defined(__ANDROID__)
     #include "platform/android/jni/JniHelper.h"
     #include <android/log.h>
+    #include <algorithm>
     #include "base/ccUTF8.h"
 
     #define LOG_TAG "luajc"
@@ -40,6 +41,8 @@ namespace
 template <class Callback>
 int protectedBridgeCallback(lua_State* L, const Callback& callback)
 {
+    if (!L)
+        return -1;
     struct Context
     {
         const Callback* callback;
@@ -69,6 +72,13 @@ LuaJavaBridge::CallInfo::~CallInfo()
     {
         delete m_ret.stringValue;
     }
+    if (m_env)
+    {
+        if (m_retjs)
+            m_env->DeleteLocalRef(m_retjs);
+        if (m_classID)
+            m_env->DeleteLocalRef(m_classID);
+    }
 }
 
 bool LuaJavaBridge::CallInfo::execute()
@@ -94,6 +104,8 @@ bool LuaJavaBridge::CallInfo::execute()
     case TypeString:
     {
         m_retjs              = (jstring)m_env->CallStaticObjectMethod(m_classID, m_methodID);
+        if (m_env->ExceptionCheck() == JNI_TRUE)
+            break;
         bool bValidStr       = true;
         std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
         m_ret.stringValue    = (false == bValidStr) ? nullptr : new string(strValue);
@@ -140,6 +152,8 @@ bool LuaJavaBridge::CallInfo::executeWithArgs(jvalue* args)
     case TypeString:
     {
         m_retjs              = (jstring)m_env->CallStaticObjectMethodA(m_classID, m_methodID, args);
+        if (m_env->ExceptionCheck() == JNI_TRUE)
+            break;
         bool bValidStr       = true;
         std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
         m_ret.stringValue    = (false == bValidStr) ? nullptr : new string(strValue);
@@ -214,6 +228,11 @@ bool LuaJavaBridge::CallInfo::validateMethodSig()
         LuaJavaBridge::ValueType type = checkType(m_methodSig, &pos);
         if (type == TypeInvalid)
             return false;
+        if (type == TypeVoid || type == TypeVector)
+        {
+            m_error = LUAJ_ERR_TYPE_NOT_SUPPORT;
+            return false;
+        }
 
         m_argumentsCount++;
         m_argumentsType.emplace_back(type);
@@ -227,7 +246,24 @@ bool LuaJavaBridge::CallInfo::validateMethodSig()
     }
 
     pos++;
+    if (pos >= len)
+    {
+        m_error = LUAJ_ERR_INVALID_SIGNATURES;
+        return false;
+    }
     m_returnType = checkType(m_methodSig, &pos);
+    if (m_returnType == TypeInvalid)
+        return false;
+    if (m_returnType == TypeVector)
+    {
+        m_error = LUAJ_ERR_TYPE_NOT_SUPPORT;
+        return false;
+    }
+    if (pos + 1 != len)
+    {
+        m_error = LUAJ_ERR_INVALID_SIGNATURES;
+        return false;
+    }
     return true;
 }
 
@@ -275,50 +311,55 @@ LuaJavaBridge::ValueType LuaJavaBridge::CallInfo::checkType(const string& sig, s
 
 bool LuaJavaBridge::CallInfo::getMethodInfo()
 {
-    m_methodID = 0;
-    m_env      = 0;
+    m_methodID = nullptr;
+    m_env      = nullptr;
 
-    JavaVM* jvm = cocos2d::JniHelper::getJavaVM();
-    jint ret    = jvm->GetEnv((void**)&m_env, JNI_VERSION_1_4);
-    switch (ret)
+    if (!cocos2d::JniHelper::getJavaVM() || !(m_env = cocos2d::JniHelper::getEnv()))
     {
-    case JNI_OK:
-        break;
-
-    case JNI_EDETACHED:
-        if (jvm->AttachCurrentThread(&m_env, NULL) < 0)
-        {
-            LOGD("%s", "Failed to get the environment using AttachCurrentThread()");
-            m_error = LUAJ_ERR_VM_THREAD_DETACHED;
-            return false;
-        }
-        break;
-
-    case JNI_EVERSION:
-    default:
-        LOGD("%s", "Failed to get the environment using GetEnv()");
+        LOGD("Failed to get the JNI environment for %s.%s", m_className.c_str(), m_methodName.c_str());
         m_error = LUAJ_ERR_VM_FAILURE;
         return false;
     }
-    jstring _jstrClassName = m_env->NewStringUTF(m_className.c_str());
-    m_classID              = (jclass)m_env->CallObjectMethod(cocos2d::JniHelper::classloader,
-                                                             cocos2d::JniHelper::loadclassMethod_methodID, _jstrClassName);
 
-    if (NULL == m_classID)
+    // ClassLoader.loadClass takes binary names; Lua helpers also accept JNI slash names.
+    std::string className = m_className;
+    std::replace(className.begin(), className.end(), '/', '.');
+    if (!cocos2d::JniHelper::classloader || !cocos2d::JniHelper::loadclassMethod_methodID)
     {
-        LOGD("Classloader failed to find class of %s", m_className.c_str());
+        LOGD("Classloader is not initialized for %s", className.c_str());
+        m_error = LUAJ_ERR_VM_FAILURE;
+        return false;
     }
-
-    m_env->DeleteLocalRef(_jstrClassName);
-    m_methodID = m_env->GetStaticMethodID(m_classID, m_methodName.c_str(), m_methodSig.c_str());
-    if (!m_methodID)
+    jstring classString = m_env->NewStringUTF(className.c_str());
+    if (!classString || m_env->ExceptionCheck() == JNI_TRUE)
     {
+        m_env->ExceptionDescribe();
         m_env->ExceptionClear();
-        LOGD("Failed to find method id of %s.%s %s", m_className.c_str(), m_methodName.c_str(), m_methodSig.c_str());
+        if (classString)
+            m_env->DeleteLocalRef(classString);
+        m_error = LUAJ_ERR_EXCEPTION_OCCURRED;
+        return false;
+    }
+    m_classID = static_cast<jclass>(m_env->CallObjectMethod(cocos2d::JniHelper::classloader,
+        cocos2d::JniHelper::loadclassMethod_methodID, classString));
+    m_env->DeleteLocalRef(classString);
+    if (!m_classID || m_env->ExceptionCheck() == JNI_TRUE)
+    {
+        m_env->ExceptionDescribe();
+        m_env->ExceptionClear();
+        LOGD("Failed to find class %s", m_className.c_str());
         m_error = LUAJ_ERR_METHOD_NOT_FOUND;
         return false;
     }
-
+    m_methodID = m_env->GetStaticMethodID(m_classID, m_methodName.c_str(), m_methodSig.c_str());
+    if (!m_methodID || m_env->ExceptionCheck() == JNI_TRUE)
+    {
+        m_env->ExceptionDescribe();
+        m_env->ExceptionClear();
+        LOGD("Failed to find %s.%s %s", m_className.c_str(), m_methodName.c_str(), m_methodSig.c_str());
+        m_error = LUAJ_ERR_METHOD_NOT_FOUND;
+        return false;
+    }
     return true;
 }
 
@@ -360,14 +401,52 @@ int LuaJavaBridge::callJavaStaticMethod(lua_State* L)
     const char* methodSig  = lua_tostring(L, -1);
 
     CallInfo call(className, methodName, methodSig);
+    if (!call.isValid())
+    {
+        lua_pushboolean(L, 0);
+        lua_pushinteger(L, call.getErrorCode());
+        return 2;
+    }
 
     // check args
     lua_pop(L, 1);                            /* L: args */
     int count    = fetchArrayElements(L, -1); /* L: args e1 e2 e3 e4 ... */
+    bool validArguments = count == call.getArgumentsCount();
+    for (int i = 0; validArguments && i < count; ++i)
+    {
+        const int index = -count + i;
+        switch (call.argumentTypeAtIndex(i))
+        {
+        case TypeInteger:
+            validArguments = lua_isnumber(L, index) || lua_isfunction(L, index);
+            break;
+        case TypeFloat:
+            validArguments = lua_isnumber(L, index);
+            break;
+        case TypeBoolean:
+            validArguments = lua_isboolean(L, index);
+            break;
+        case TypeString:
+            validArguments = lua_isstring(L, index);
+            break;
+        default:
+            validArguments = false;
+            break;
+        }
+    }
+    if (!validArguments)
+    {
+        lua_pop(L, count);
+        LOGD("Invalid arguments for %s.%s %s", className, methodName, methodSig);
+        lua_pushboolean(L, 0);
+        lua_pushinteger(L, LUAJ_ERR_INVALID_SIGNATURES);
+        return 2;
+    }
     jvalue* args = NULL;
+    std::vector<int> retainedFunctions;
     if (count > 0)
     {
-        args = new jvalue[count];
+        args = new jvalue[count]{};
         for (int i = 0; i < count; ++i)
         {
             int index = -count + i;
@@ -377,6 +456,7 @@ int LuaJavaBridge::callJavaStaticMethod(lua_State* L)
                 if (lua_isfunction(L, index))
                 {
                     args[i].i = retainLuaFunction(L, index, NULL);
+                    retainedFunctions.push_back(args[i].i);
                 }
                 else
                 {
@@ -397,13 +477,39 @@ int LuaJavaBridge::callJavaStaticMethod(lua_State* L)
                 args[i].l = call.getEnv()->NewStringUTF(lua_tostring(L, index));
                 break;
             }
+            if (call.getEnv()->ExceptionCheck() == JNI_TRUE)
+                break;
         }
         lua_pop(L, count); /* L: args */
     }
 
-    bool success = args ? call.executeWithArgs(args) : call.execute();
+    bool argumentException = call.getEnv()->ExceptionCheck() == JNI_TRUE;
+    bool success = false;
+    if (argumentException)
+    {
+        call.getEnv()->ExceptionDescribe();
+        call.getEnv()->ExceptionClear();
+    }
+    else
+        success = args ? call.executeWithArgs(args) : call.execute();
     if (args)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            if (call.argumentTypeAtIndex(i) == TypeString && args[i].l)
+                call.getEnv()->DeleteLocalRef(args[i].l);
+        }
         delete[] args;
+    }
+    if (argumentException)
+    {
+        // No Java call ran, so none of the newly retained callbacks was transferred.
+        for (int functionId : retainedFunctions)
+            releaseLuaFunctionById(functionId);
+        lua_pushboolean(L, 0);
+        lua_pushinteger(L, LUAJ_ERR_EXCEPTION_OCCURRED);
+        return 2;
+    }
 
     if (!success)
     {
@@ -425,6 +531,8 @@ int LuaJavaBridge::callJavaStaticMethod(lua_State* L)
 int LuaJavaBridge::retainLuaFunctionById(int functionId)
 {
     lua_State* L = s_luaState;
+    if (!L)
+        return 0;
 
     lua_pushstring(L, LUAJ_REGISTRY_RETAIN); /* L: key */
     lua_rawget(L, LUA_REGISTRYINDEX);        /* L: id_r */
@@ -461,6 +569,8 @@ int LuaJavaBridge::retainLuaFunctionById(int functionId)
 int LuaJavaBridge::releaseLuaFunctionById(int functionId)
 {
     lua_State* L = s_luaState;
+    if (!L)
+        return 0;
     /* L: */
     lua_pushstring(L, LUAJ_REGISTRY_FUNCTION); /* L: key */
     lua_rawget(L, LUA_REGISTRYINDEX);          /* L: f_id */
