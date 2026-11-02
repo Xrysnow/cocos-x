@@ -24,74 +24,175 @@
 
 package org.cocos.lib;
 
-import java.util.ArrayList;
+import android.util.Log;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameControllerAdapter {
-    private static ArrayList<Runnable> sRunnableFrameStartList = null;
+    private static final String TAG = "GameControllerAdapter";
+    private static final CopyOnWriteArrayList<Runnable> sRunnableFrameStartList = new CopyOnWriteArrayList<>();
+    // Only touched on the engine thread, alongside the native controller state.
+    private static final Map<String, Control> buttons = new HashMap<>();
+    private static final Map<String, Control> axes = new HashMap<>();
+
+    /** Immutable source session; SDK listeners must retain this, never look up the latest view. */
+    public static final class Source implements GameControllerDelegate.ControllerEventListener {
+        private final CocosGLSurfaceView owner;
+        private final long session;
+        private volatile boolean valid = true;
+        private volatile boolean resumed;
+        private volatile long inputEpoch;
+
+        public Source(CocosGLSurfaceView owner) {
+            if (owner == null) throw new IllegalArgumentException("Controller source requires a RenderHost");
+            this.owner = owner;
+            this.session = owner.getSession();
+        }
+
+        public boolean isCurrent() {
+            return valid && owner.isCurrentHost() && session == owner.getSession();
+        }
+
+        public boolean isResumed() {
+            return isCurrent() && resumed;
+        }
+
+        public void setResumed(boolean value) {
+            inputEpoch++;
+            resumed = value;
+        }
+
+        public void invalidate() {
+            valid = false;
+            setResumed(false);
+        }
+
+        private void queueControl(Runnable task) {
+            if (!isCurrent()) return;
+            owner.queueEvent(() -> {
+                if (isCurrent()) task.run();
+            });
+        }
+
+        private void queueInput(Runnable task) {
+            final long epoch = inputEpoch;
+            if (!isCurrent() || !resumed) return;
+            owner.queueInput(() -> {
+                if (isCurrent() && resumed && epoch == inputEpoch) task.run();
+            });
+        }
+
+        @Override
+        public void onConnected(String vendorName, int controller) {
+            queueControl(() -> nativeControllerConnected(vendorName, controller));
+        }
+
+        @Override
+        public void onDisconnected(String vendorName, int controller) {
+            queueControl(() -> {
+                forgetController(buttons, vendorName, controller);
+                forgetController(axes, vendorName, controller);
+                nativeControllerDisconnected(vendorName, controller);
+            });
+        }
+
+        @Override
+        public void onButtonEvent(String vendorName, int controller, int button, boolean isPressed, float value, boolean isAnalog) {
+            queueInput(() -> {
+                if (isPressed) buttons.put(key(vendorName, controller, button), new Control(vendorName, controller, button, isAnalog));
+                else buttons.remove(key(vendorName, controller, button));
+                nativeControllerButtonEvent(vendorName, controller, button, isPressed, value, isAnalog);
+            });
+        }
+
+        @Override
+        public void onAxisEvent(String vendorName, int controller, int axisID, float value, boolean isAnalog) {
+            queueInput(() -> {
+                if (value != 0) axes.put(key(vendorName, controller, axisID), new Control(vendorName, controller, axisID, isAnalog));
+                else axes.remove(key(vendorName, controller, axisID));
+                nativeControllerAxisEvent(vendorName, controller, axisID, value, isAnalog);
+            });
+        }
+    }
+
+    private static final class Control {
+        final String vendor;
+        final int controller;
+        final int code;
+        final boolean analog;
+
+        Control(String vendor, int controller, int code, boolean analog) {
+            this.vendor = vendor;
+            this.controller = controller;
+            this.code = code;
+            this.analog = analog;
+        }
+    }
+
+    private static String key(String vendor, int controller, int code) {
+        return vendor + ":" + controller + ":" + code;
+    }
+
+    static void cancelPendingInput() {
+        for (Control control : buttons.values())
+            nativeControllerButtonEvent(control.vendor, control.controller, control.code, false, 0, control.analog);
+        for (Control control : axes.values())
+            nativeControllerAxisEvent(control.vendor, control.controller, control.code, 0, control.analog);
+        buttons.clear();
+        axes.clear();
+    }
+
+    private static void forgetController(Map<String, Control> controls, String vendor, int controller) {
+        Iterator<Control> iterator = controls.values().iterator();
+        while (iterator.hasNext()) {
+            Control control = iterator.next();
+            if (control.controller == controller && control.vendor.equals(vendor)) iterator.remove();
+        }
+    }
     
     public static void addRunnableToFrameStartList(Runnable runnable) {
-        if (sRunnableFrameStartList == null)
-            sRunnableFrameStartList = new ArrayList<Runnable>();
         sRunnableFrameStartList.add(runnable);
     }
 
     public static void removeRunnableFromFrameStartList(Runnable runnable) {
-        if (sRunnableFrameStartList != null)
-            sRunnableFrameStartList.remove(runnable);
+        sRunnableFrameStartList.remove(runnable);
     }
 
     public static void onDrawFrameStart() {
-        if (sRunnableFrameStartList != null)
-        {
-            int size = sRunnableFrameStartList.size();
-            for (int i = 0; i < size; ++i) {
-                sRunnableFrameStartList.get(i).run();
-            }
-        }
+        for (Runnable runnable : sRunnableFrameStartList) runnable.run();
     }
     
+    @Deprecated
     public static void onConnected(final String vendorName, final int controller)
     {
-        CocosEngine.runOnGLThread(new Runnable() {
-
-            @Override
-            public void run() {
-                nativeControllerConnected(vendorName, controller);
-            }   
-        });
+        rejectUnboundEvent();
     }
     
+    @Deprecated
     public static void onDisconnected(final String vendorName, final int controller)
     {
-        CocosEngine.runOnGLThread(new Runnable() {
-
-            @Override
-            public void run() {
-                nativeControllerDisconnected(vendorName, controller);
-            }   
-        });
+        rejectUnboundEvent();
     }
     
+    @Deprecated
     public static void onButtonEvent(final String vendorName, final int controller, final int button, final boolean isPressed, final float value, final boolean isAnalog)
     {
-        CocosEngine.runOnGLThread(new Runnable() {
-
-            @Override
-            public void run() {
-                nativeControllerButtonEvent(vendorName, controller, button, isPressed, value, isAnalog);
-            }   
-        });
+        rejectUnboundEvent();
     }
     
+    @Deprecated
     public static void onAxisEvent(final String vendorName, final int controller, final int axisID, final float value, final boolean isAnalog)
     {
-        CocosEngine.runOnGLThread(new Runnable() {
+        rejectUnboundEvent();
+    }
 
-            @Override
-            public void run() {
-                nativeControllerAxisEvent(vendorName, controller, axisID, value, isAnalog);
-            }   
-        });
+    private static void rejectUnboundEvent() {
+        // All active adapters use Source. Untagged callbacks cannot be safely
+        // attributed after recreation and must not target the current Activity.
+        Log.w(TAG, "Controller event rejected: bind a Source to the originating RenderHost");
     }
     
     private static native void nativeControllerConnected(final String vendorName, final int controller);

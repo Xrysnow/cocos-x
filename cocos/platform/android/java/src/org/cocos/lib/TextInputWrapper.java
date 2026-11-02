@@ -46,7 +46,7 @@ public class TextInputWrapper implements TextWatcher, OnEditorActionListener {
     // ===========================================================
 
     private final CocosGLSurfaceView mGLSurfaceView;
-    private String mText;
+    private String mText = "";
     private String mOriginText;
 
     // ===========================================================

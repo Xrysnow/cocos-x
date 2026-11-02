@@ -33,37 +33,16 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
-import org.cocos.lib.CocosEngine;
-
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.concurrent.CountDownLatch;
-
-class ShouldStartLoadingWorker implements Runnable {
-    private CountDownLatch mLatch;
-    private boolean[] mResult;
-    private final int mViewTag;
-    private final String mUrlString;
-
-    ShouldStartLoadingWorker(CountDownLatch latch, boolean[] result, int viewTag, String urlString) {
-        this.mLatch = latch;
-        this.mResult = result;
-        this.mViewTag = viewTag;
-        this.mUrlString = urlString;
-    }
-
-    @Override
-    public void run() {
-        this.mResult[0] = WebViewHelper._shouldStartLoading(mViewTag, mUrlString);
-        this.mLatch.countDown(); // notify that result is ready
-    }
-}
 
 public class CocosWebView extends WebView {
     private static final String TAG = WebViewHelper.class.getSimpleName();
 
     private int mViewTag;
     private String mJSScheme;
+    private CocosGLSurfaceView mRenderView;
+    private volatile long mBinding;
 
     public CocosWebView(Context context) {
         this(context, -1);
@@ -99,6 +78,20 @@ public class CocosWebView extends WebView {
         this.mJSScheme = scheme != null ? scheme : "";
     }
 
+    void bindRenderView(CocosGLSurfaceView view) {
+        mBinding++;
+        mRenderView = view;
+    }
+
+    private void queueCallback(Runnable callback) {
+        final CocosGLSurfaceView view = mRenderView;
+        final long binding = mBinding;
+        if (view == null || !view.isCurrentHost()) return;
+        view.queueEvent(() -> {
+            if (binding == mBinding && WebViewHelper.isViewValid(mViewTag)) callback.run();
+        });
+    }
+
     public void setScalesPageToFit(boolean scalesPageToFit) {
         this.getSettings().setSupportZoom(scalesPageToFit);
     }
@@ -106,12 +99,13 @@ public class CocosWebView extends WebView {
     class CocosWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, final String urlString) {
-            CocosActivity activity = (CocosActivity)getContext();
+            final CocosGLSurfaceView renderView = mRenderView;
+            if (renderView == null || !renderView.isCurrentHost()) return true;
 
             try {
                 URI uri = URI.create(urlString);
-                if (uri != null && uri.getScheme().equals(mJSScheme)) {
-                    CocosEngine.runOnGLThread(new Runnable() {
+                if (mJSScheme.equals(uri.getScheme())) {
+                    queueCallback(new Runnable() {
                         @Override
                         public void run() {
                             WebViewHelper._onJsCallback(mViewTag, urlString);
@@ -123,26 +117,25 @@ public class CocosWebView extends WebView {
                 Log.d(TAG, "Failed to create URI from url");
             }
 
-            boolean[] result = new boolean[] { true };
-            CountDownLatch latch = new CountDownLatch(1);
+            // WebView requires a synchronous veto. This is the sole UI -> engine
+            // decision protocol: no frame/startup dependency, no engine -> UI wait,
+            // and stale/uninitialized sessions or callback failures cancel the load.
+            final long binding = mBinding;
+            return renderView.decideNavigation(() -> binding != mBinding || !WebViewHelper.isViewValid(mViewTag)
+                    || WebViewHelper._shouldStartLoading(mViewTag, urlString));
+        }
 
-            // run worker on cocos thread
-            CocosEngine.runOnGLThread(new ShouldStartLoadingWorker(latch, result, mViewTag, urlString));
-
-            // wait for result from cocos thread
-            try {
-                latch.await();
-            } catch (InterruptedException ex) {
-                Log.d(TAG, "'shouldOverrideUrlLoading' failed");
-            }
-
-            return result[0];
+        @Override
+        public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+            super.doUpdateVisitedHistory(view, url, isReload);
+            WebViewHelper.refreshSnapshot(mViewTag, CocosWebView.this);
         }
 
         @Override
         public void onPageFinished(WebView view, final String url) {
             super.onPageFinished(view, url);
-            CocosEngine.runOnGLThread(new Runnable() {
+            WebViewHelper.refreshSnapshot(mViewTag, CocosWebView.this);
+            queueCallback(new Runnable() {
                 @Override
                 public void run() {
                     WebViewHelper._didFinishLoading(mViewTag, url);
@@ -153,8 +146,8 @@ public class CocosWebView extends WebView {
         @Override
         public void onReceivedError(WebView view, int errorCode, String description, final String failingUrl) {
             super.onReceivedError(view, errorCode, description, failingUrl);
-            CocosActivity activity = (CocosActivity)getContext();
-            CocosEngine.runOnGLThread(new Runnable() {
+            WebViewHelper.refreshSnapshot(mViewTag, CocosWebView.this);
+            queueCallback(new Runnable() {
                 @Override
                 public void run() {
                     WebViewHelper._didFailLoading(mViewTag, failingUrl);

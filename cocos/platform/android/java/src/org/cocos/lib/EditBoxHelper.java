@@ -26,6 +26,8 @@ THE SOFTWARE.
 package org.cocos.lib;
 
 import android.content.Context;
+import android.app.Activity;
+import android.content.MutableContextWrapper;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -44,14 +46,21 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 public class EditBoxHelper {
     private static final String TAG = EditBoxHelper.class.getSimpleName();
-    private static CocosActivity mActivity;
+    private static volatile CocosActivity mActivity;
     private static ResizeLayout mFrameLayout;
 
-    private static SparseArray<CocosEditBox> mEditBoxArray;
-    private static int mViewTag = 0;
+    private static final SparseArray<CocosEditBox> mEditBoxArray = new SparseArray<>();
+    private static final AtomicInteger mViewTag = new AtomicInteger();
+    private static final ConcurrentHashMap<Integer, Boolean> activeTags = new ConcurrentHashMap<>();
+    private static volatile long mBinding;
+    private static boolean mRebinding;
+    private static final CocosUiBinding uiBinding = new CocosUiBinding();
     private static float mPadding = 5.0f;
     //Call native methods
     private static native void editBoxEditingDidBegin(int index);
@@ -71,10 +80,78 @@ public class EditBoxHelper {
 
 
     public EditBoxHelper(ResizeLayout layout) {
-        EditBoxHelper.mFrameLayout = layout;
+        if (mActivity != null) unbind(mActivity, true);
+        mBinding++;
+        mFrameLayout = layout;
+        mActivity = (CocosActivity) layout.getContext();
+        uiBinding.bind(mActivity);
+        mRebinding = true;
+        try {
+            for (int i = 0; i < mEditBoxArray.size(); i++) {
+                CocosEditBox box = mEditBoxArray.valueAt(i);
+                if (box.getParent() instanceof android.view.ViewGroup)
+                    ((android.view.ViewGroup) box.getParent()).removeView(box);
+                ((MutableContextWrapper) box.getContext()).setBaseContext(mActivity);
+                mFrameLayout.addView(box);
+            }
+        } finally {
+            mRebinding = false;
+        }
+    }
 
-        EditBoxHelper.mActivity = (CocosActivity) CocosActivity.getContext();
-        EditBoxHelper.mEditBoxArray = new SparseArray<CocosEditBox>();
+    static void pause(Activity activity) {
+        if (mActivity != activity) return;
+        for (int i = 0; i < mEditBoxArray.size(); i++) {
+            CocosEditBox box = mEditBoxArray.valueAt(i);
+            if (box.hasFocus()) closeKeyboardOnUiThread(mEditBoxArray.keyAt(i));
+        }
+        mFrameLayout.setEnableForceDoLayout(false);
+    }
+
+    static void unbind(Activity activity, boolean retain) {
+        if (mActivity != activity) return;
+        uiBinding.unbind(activity);
+        pause(activity);
+        mBinding++;
+        mRebinding = true;
+        try {
+            for (int i = 0; i < mEditBoxArray.size(); i++) {
+                CocosEditBox box = mEditBoxArray.valueAt(i);
+                box.clearFocus();
+                if (box.getParent() instanceof android.view.ViewGroup)
+                    ((android.view.ViewGroup) box.getParent()).removeView(box);
+                ((MutableContextWrapper) box.getContext()).setBaseContext(activity.getApplicationContext());
+                if (!retain) {
+                    box.setOnFocusChangeListener(null);
+                    box.setOnKeyListener(null);
+                    box.setOnEditorActionListener(null);
+                }
+            }
+            if (!retain) {
+                mEditBoxArray.clear();
+                activeTags.clear();
+            }
+            mActivity = null;
+            mFrameLayout = null;
+        } finally {
+            mRebinding = false;
+        }
+    }
+
+    private static boolean runOnUiThread(Runnable task) {
+        return uiBinding.post(task);
+    }
+
+    private static void queueCallback(int index, boolean terminal, Runnable callback) {
+        final CocosActivity activity = mActivity;
+        final CocosGLSurfaceView view = activity == null ? null : activity.getGLSurfaceView();
+        final long binding = mBinding;
+        if (mRebinding || view == null || !view.isCurrentHost()) return;
+        final Runnable guarded = () -> {
+            if (mBinding == binding && activeTags.containsKey(index)) callback.run();
+        };
+        if (terminal) view.queueEvent(guarded);
+        else view.queueInput(guarded);
     }
 
     public static int getPadding(float scaleX){
@@ -82,11 +159,12 @@ public class EditBoxHelper {
     }
 
     public static int createEditBox(final int left, final int top, final int width, final int height, final float scaleX) {
-        final int index = mViewTag;
-        mActivity.runOnUiThread(new Runnable() {
+        final int index = mViewTag.getAndIncrement();
+        activeTags.put(index, true);
+        if (!runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                final CocosEditBox editBox = new CocosEditBox(mActivity);
+                final CocosEditBox editBox = new CocosEditBox(new MutableContextWrapper(mActivity));
                 editBox.setFocusable(true);
                 editBox.setFocusableInTouchMode(true);
                 editBox.setInputFlag(5); //kEditBoxInputFlagLowercaseAllCharacters
@@ -130,10 +208,11 @@ public class EditBoxHelper {
                     public void afterTextChanged(final Editable s) {
                         if (!editBox.getChangedTextProgrammatically()) {
                             if ((Boolean) editBox.getTag()) {
-                                CocosEngine.runOnGLThread(new Runnable() {
+                                final String text = s.toString();
+                                queueCallback(index, false, new Runnable() {
                                     @Override
                                     public void run() {
-                                        EditBoxHelper.__editBoxEditingChanged(index, s.toString());
+                                        EditBoxHelper.__editBoxEditingChanged(index, text);
                                     }
 
                                 });
@@ -149,13 +228,14 @@ public class EditBoxHelper {
 
                     @Override
                     public void onFocusChange(View v, boolean hasFocus) {
+                        if (mRebinding || mActivity == null) return;
                         editBox.setTag(true);
                         editBox.setChangedTextProgrammatically(false);
                         if (hasFocus) {
-                            CocosEngine.runOnGLThread(new Runnable() {
+                            editBox.endAction = CocosEditBox.kEndActionUnknown;
+                            queueCallback(index, false, new Runnable() {
                                 @Override
                                 public void run() {
-                                    editBox.endAction = CocosEditBox.kEndActionUnknown;
                                     EditBoxHelper.__editBoxEditingDidBegin(index);
                                 }
                             });
@@ -168,10 +248,10 @@ public class EditBoxHelper {
                             // Note that we must to copy a string to prevent string content is modified
                             // on UI thread while 's.toString' is invoked at the same time.
                             final String text = new String(editBox.getText().toString());
-                            CocosEngine.runOnGLThread(new Runnable() {
+                            final int action = editBox.endAction;
+                            queueCallback(index, true, new Runnable() {
                                 @Override
                                 public void run() {
-                                    int action = editBox.endAction;
                                     EditBoxHelper.__editBoxEditingDidEnd(index, text, action);
                                 }
                             });
@@ -215,12 +295,16 @@ public class EditBoxHelper {
 
                 mEditBoxArray.put(index, editBox);
             }
-        });
-        return mViewTag++;
+        })) {
+            activeTags.remove(index);
+            return -1;
+        }
+        return index;
     }
 
     public static void removeEditBox(final int index) {
-        mActivity.runOnUiThread(new Runnable() {
+        activeTags.remove(index);
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -234,7 +318,7 @@ public class EditBoxHelper {
     }
 
     public static void setFont(final int index, final String fontName, final float fontSize){
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -269,7 +353,7 @@ public class EditBoxHelper {
     }
 
     public static void setFontColor(final int index, final int red, final int green, final int blue, final int alpha){
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -281,7 +365,7 @@ public class EditBoxHelper {
     }
 
     public static void setPlaceHolderText(final int index, final String text){
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -293,7 +377,7 @@ public class EditBoxHelper {
     }
 
     public static void setPlaceHolderTextColor(final int index, final int red, final int green, final int blue, final int alpha){
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -305,7 +389,7 @@ public class EditBoxHelper {
     }
 
     public static void setMaxLength(final int index, final int maxLength) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -317,7 +401,7 @@ public class EditBoxHelper {
     }
 
     public static void setVisible(final int index, final boolean visible) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -330,7 +414,7 @@ public class EditBoxHelper {
 
 
     public static void setText(final int index, final String text){
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -345,7 +429,7 @@ public class EditBoxHelper {
     }
 
     public static void setReturnType(final int index, final int returnType) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -357,7 +441,7 @@ public class EditBoxHelper {
     }
 
     public static void setTextHorizontalAlignment(final int index, final int alignment) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -369,7 +453,7 @@ public class EditBoxHelper {
     }
 
     public static void setInputMode(final int index, final int inputMode) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -381,7 +465,7 @@ public class EditBoxHelper {
     }
 
     public static void setInputFlag(final int index, final int inputFlag) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -394,7 +478,7 @@ public class EditBoxHelper {
 
 
     public static void setEditBoxViewRect(final int index, final int left, final int top, final int maxWidth, final int maxHeight) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 CocosEditBox editBox = mEditBoxArray.get(index);
@@ -408,16 +492,20 @@ public class EditBoxHelper {
 
 
     public static void openKeyboard(final int index) {
-
-        mActivity.runOnUiThread(new Runnable() {
+        final CocosActivity activity = mActivity;
+        final CocosGLSurfaceView view = activity == null ? null : activity.getGLSurfaceView();
+        if (view == null) return;
+        final long epoch = view.getInputEpoch();
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
-               openKeyboardOnUiThread(index);
+                if (view.isInputCurrent(epoch)) openKeyboardOnUiThread(index);
             }
         });
     }
 
     private static void openKeyboardOnUiThread(int index) {
+        if (mActivity == null || !CocosEngine.isActivityVisible()) return;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             Log.e(TAG, "openKeyboardOnUiThread doesn't run on UI thread!");
             return;
@@ -434,6 +522,7 @@ public class EditBoxHelper {
     }
 
     private static void closeKeyboardOnUiThread(int index) {
+        if (mActivity == null) return;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             Log.e(TAG, "closeKeyboardOnUiThread doesn't run on UI thread!");
             return;
@@ -452,7 +541,7 @@ public class EditBoxHelper {
 
     // Note that closeKeyboard will be invoked on GL thread
     public static void closeKeyboard(final int index) {
-        mActivity.runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 closeKeyboardOnUiThread(index);

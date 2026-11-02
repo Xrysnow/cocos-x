@@ -58,7 +58,7 @@ public class GameControllerOuya implements GameControllerDelegate{
     }
     
     public void onCreate(Context context) {
-        OuyaController.init(context);
+        OuyaController.init(context.getApplicationContext());
     }
     
     private float mOldLeftThumbstickX = 0.0f;
@@ -70,6 +70,7 @@ public class GameControllerOuya implements GameControllerDelegate{
     private float mOldRightTrigger = 0.0f;
     
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (mControllerEventListener == null || event.getDevice() == null) return false;
         boolean handled = OuyaController.onGenericMotionEvent(event);
         
         if (handled && mControllerEventListener != null)
@@ -78,8 +79,9 @@ public class GameControllerOuya implements GameControllerDelegate{
             String deviceName = event.getDevice().getName();
             OuyaController c = OuyaController.getControllerByDeviceId(deviceId);
             if (mGameController.get(deviceId) == null) {
-                GameControllerHelper.gatherControllers(mGameController);
+                GameControllerHelper.gatherControllers(mGameController, mControllerEventListener);
                 mGameController.append(deviceId, deviceName);
+                mControllerEventListener.onConnected(deviceName, deviceId);
             }
             
             float newLeftTrigger = c.getAxisValue(OuyaController.AXIS_L2);
@@ -139,6 +141,7 @@ public class GameControllerOuya implements GameControllerDelegate{
     }
     
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mControllerEventListener == null || event.getDevice() == null) return false;
         boolean handled = false;
         
         int action = event.getAction();
@@ -162,8 +165,9 @@ public class GameControllerOuya implements GameControllerDelegate{
             String deviceName = event.getDevice().getName();
             
             if (mGameController.get(deviceId) == null) {
-                GameControllerHelper.gatherControllers(mGameController);
+                GameControllerHelper.gatherControllers(mGameController, mControllerEventListener);
                 mGameController.append(deviceId, deviceName);
+                mControllerEventListener.onConnected(deviceName, deviceId);
             }
             if (action == KeyEvent.ACTION_DOWN) {
                 mControllerEventListener.onButtonEvent(deviceName, deviceId, mKeyMap.get(keyCode), true, 1.0f, isAnalog);
@@ -176,6 +180,9 @@ public class GameControllerOuya implements GameControllerDelegate{
     }
     
     public void onPause() {
+        mOldLeftThumbstickX = mOldLeftThumbstickY = 0;
+        mOldRightThumbstickX = mOldRightThumbstickY = 0;
+        mOldLeftTrigger = mOldRightTrigger = 0;
         // show the mouse cursor
         OuyaController.showCursor(true);
     }
@@ -186,10 +193,11 @@ public class GameControllerOuya implements GameControllerDelegate{
     }
     
     public void onDestroy() {
-        
+        mControllerEventListener = null;
+        mGameController.clear();
     }
 
-    private ControllerEventListener mControllerEventListener;
+    private volatile ControllerEventListener mControllerEventListener;
     
     @Override
     public void setControllerEventListener(ControllerEventListener listener) {

@@ -26,6 +26,12 @@ public:
 
     bool beginFrame() override;
     void shutdownSurface();
+    bool detachSurface();
+    bool attachSurface(void* windowHandle, uint32_t width, uint32_t height);
+    bool resizeSurface(uint32_t width, uint32_t height);
+    bool hasSurfaceFailed() const;
+    bool hasDeviceLost() const;
+    uint64_t getPresentCount() const;
 
     void beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor) override;
 
@@ -122,6 +128,8 @@ private:
     bool _frameStarted = false;
     bool _surfaceClosed = false;
     bool _surfaceFailed = false;
+    bool _surfaceDetached = false;
+    bool _deviceLost = false;
     EventListenerCustom* _windowResizedListener = nullptr;
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA

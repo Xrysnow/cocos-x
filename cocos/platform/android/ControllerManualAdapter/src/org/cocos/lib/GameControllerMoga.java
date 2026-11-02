@@ -28,6 +28,7 @@ import org.cocos.lib.GameControllerDelegate;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.SparseIntArray;
 
 import com.bda.controller.Controller;
@@ -87,7 +88,8 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
                 GameControllerDelegate.BUTTON_RIGHT_THUMBSTICK);
     }
     
-    public void onKeyEvent(KeyEvent event) {        
+    public void onKeyEvent(KeyEvent event) {
+        final ControllerEventListener listener = mControllerEventListener;
         int keycode = event.getKeyCode();
         if (keycode == KeyEvent.KEYCODE_BUTTON_L2
                 || keycode == KeyEvent.KEYCODE_BUTTON_R2) {
@@ -101,8 +103,8 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
             isAnalog = true;
         }
 
-        if (mKeyMap.get(keycode, Integer.MIN_VALUE) != Integer.MIN_VALUE && mControllerEventListener != null) {
-            mControllerEventListener.onButtonEvent(mVendorName,
+        if (mKeyMap.get(keycode, Integer.MIN_VALUE) != Integer.MIN_VALUE && listener != null) {
+            listener.onButtonEvent(mVendorName,
                     event.getControllerId(), mKeyMap.get(keycode), isPressed,
                     isPressed ? 1.0f : 0.0f, isAnalog);
         }
@@ -110,14 +112,15 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
 
     @Override
     public void onMotionEvent(MotionEvent event) {
-        if (mControllerEventListener == null) {
+        final ControllerEventListener listener = mControllerEventListener;
+        if (listener == null) {
             return;
         }
         int controllerId = event.getControllerId();
         
         float newLeftThumbstickX = event.getAxisValue(MotionEvent.AXIS_X);
         if (newLeftThumbstickX != mOldLeftThumbstickX) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.THUMBSTICK_LEFT_X,
                     newLeftThumbstickX, true);
@@ -126,7 +129,7 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
 
         float newLeftThumbstickY = event.getAxisValue(MotionEvent.AXIS_Y);
         if (newLeftThumbstickY != mOldLeftThumbstickY) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.THUMBSTICK_LEFT_Y,
                     newLeftThumbstickY, true);
@@ -135,7 +138,7 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
 
         float newRightThumbstickX = event.getAxisValue(MotionEvent.AXIS_Z);
         if (newRightThumbstickX != mOldRightThumbstickX) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.THUMBSTICK_RIGHT_X,
                     newRightThumbstickX, true);
@@ -144,7 +147,7 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
 
         float newRightThumbstickY = event.getAxisValue(MotionEvent.AXIS_RZ);
         if (newRightThumbstickY != mOldRightThumbstickY) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.THUMBSTICK_RIGHT_Y,
                     newRightThumbstickY, true);
@@ -153,7 +156,7 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
         
         float newLeftTrigger = event.getAxisValue(MotionEvent.AXIS_LTRIGGER);
         if (newLeftTrigger != mOldLeftTrigger) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.BUTTON_LEFT_TRIGGER,
                     newLeftTrigger, true);
@@ -162,7 +165,7 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
         
         float newRightTrigger = event.getAxisValue(MotionEvent.AXIS_RTRIGGER);
         if (newRightTrigger != mOldRightTrigger) {
-            mControllerEventListener.onAxisEvent(mVendorName,
+            listener.onAxisEvent(mVendorName,
                     controllerId,
                     GameControllerDelegate.BUTTON_RIGHT_TRIGGER,
                     newRightTrigger, true);
@@ -172,18 +175,19 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
 
     @Override
     public void onStateEvent(StateEvent event) {
-        if (mControllerEventListener != null) {
+        final ControllerEventListener listener = mControllerEventListener;
+        if (listener != null) {
             switch (event.getState()) {
             case StateEvent.STATE_CONNECTION:
                 switch (event.getAction()) {
                 case StateEvent.ACTION_DISCONNECTED:
                     // disconnected from controller
-                    mControllerEventListener.onDisconnected(mVendorName,
+                    listener.onDisconnected(mVendorName,
                             event.getControllerId());
                     break;
                 case StateEvent.ACTION_CONNECTED:
                     // connected to controller
-                    mControllerEventListener.onConnected(mVendorName,
+                    listener.onConnected(mVendorName,
                             event.getControllerId());
                     break;
                 case StateEvent.ACTION_CONNECTING:
@@ -203,27 +207,42 @@ public class GameControllerMoga implements ControllerListener, GameControllerDel
     }
 
     private Controller mController = null;
+    private final Handler mSdkHandler = new Handler(Looper.getMainLooper());
 
     public void onCreate(Context context) {
-        mController = Controller.getInstance(context);
+        if (mController != null) mController.exit();
+        mController = Controller.getInstance(context.getApplicationContext());
         
         mController.init();
-        mController.setListener(this, new Handler());
+        mController.setListener(this, mSdkHandler);
     }
 
     public void onPause() {
-        mController.onPause();
+        if (mController != null) {
+            mController.setListener(null, null);
+            mController.onPause();
+        }
+        mSdkHandler.removeCallbacksAndMessages(null);
+        mOldLeftThumbstickX = mOldLeftThumbstickY = 0;
+        mOldRightThumbstickX = mOldRightThumbstickY = 0;
+        mOldLeftTrigger = mOldRightTrigger = 0;
     }
 
     public void onResume() {
-        mController.onResume();
+        if (mController != null) {
+            mController.setListener(this, mSdkHandler);
+            mController.onResume();
+        }
     }
 
     public void onDestroy() {
-        mController.exit();
+        mControllerEventListener = null;
+        mSdkHandler.removeCallbacksAndMessages(null);
+        if (mController != null) mController.exit();
+        mController = null;
     }
     
-    private ControllerEventListener mControllerEventListener;
+    private volatile ControllerEventListener mControllerEventListener;
     @Override
     public void setControllerEventListener(ControllerEventListener listener) {
         mControllerEventListener = listener;

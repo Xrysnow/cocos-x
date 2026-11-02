@@ -29,8 +29,6 @@ THE SOFTWARE.
 #include "platform/android/jni/JniHelper.h"
 #include "CCGL.h"
 
-#include "glad/gl.h"
-#include "glad/egl.h"
 
 #include "gfx-base/GFXDef-common.h"
 #include "GFXDeviceManager.h"
@@ -42,27 +40,9 @@ THE SOFTWARE.
 #define DEFAULT_MARGIN_ANDROID 30.0f
 #define WIDE_SCREEN_ASPECT_RATIO_ANDROID 2.0f
 
+void cocos_android_render_host_ended();
 
 NS_CC_BEGIN
-
-void GLViewImpl::loadGLES2()
-{
-//    auto glesVer = gladLoaderLoadGLES2();
-//    if (!glesVer)
-//        CCLOGERROR("Load GLES fail");
-
-    //
-    if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !eglGetDisplay)
-    {
-        ccMessageBox("Failed to load glad EGL", "OpenGL error");
-        return;
-    }
-    if (!gladLoadGLES2(eglGetProcAddress) || !glGetError)
-    {
-        ccMessageBox("Failed to load glad GLES", "OpenGL error");
-        return;
-    }
-}
 
 GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
 {
@@ -108,61 +88,13 @@ GLViewImpl::~GLViewImpl() {}
 
 bool GLViewImpl::initWithRect(std::string_view /*viewName*/, const Rect& /*rect*/, float /*frameZoomFactor*/, bool /*resizable*/)
 {
-    // NOTE: gfx surface integration is not wired up on Android yet - Java still
-    // owns the surface and EGL ES2 context, no ANativeWindow reaches gfx, and
-    // the nativeInit startup path (initWithFullScreen) does not pass through
-    // here, so this device creation is currently inert.
-    if (!cc::gfx::Device::getInstance())
-    {
-        // create device
-        auto desiredApi = cc::gfx::API::VULKAN;
-        auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt();
-        if (0 < configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
-            desiredApi = (cc::gfx::API)configAPI;
-        if (desiredApi != cc::gfx::API::VULKAN && desiredApi != cc::gfx::API::METAL)
-        {
-            // if (!gladLoaderLoadEGL(EGL_DEFAULT_DISPLAY) || !gladLoadGLES2(glfwGetProcAddress))
-            // {
-            //     CCLOGERROR("Failed to load glad");
-            //     return false;
-            // }
-            if (!eglGetDisplay)
-            {
-                CCLOGERROR("Failed to load EGL");
-                return false;
-            }
-            if (!glGetError)
-            {
-                CCLOGERROR("Failed to load GLES");
-                return false;
-            }
-        }
-
-        void* hdl = nullptr;
-
-        cc::gfx::DeviceInfo info;
-        const auto device = cc::gfx::DeviceManager::create(info, desiredApi);
-        if (!device)
-        {
-            CCLOGERROR("Failed to create device");
-            return false;
-        }
-
-        backend::DeviceGFX::setSwapchainInfo(hdl, true, _screenSize.width, _screenSize.height);
-
-        auto configMT = Configuration::getInstance()->getValue("GFXMultithreaded");
-        const auto agent = dynamic_cast<cc::gfx::DeviceAgent*>(device);
-        if (agent && configMT.getType() == Value::Type::BOOLEAN)
-        {
-            agent->setMultithreaded(configMT.asBool());
-        }
-    }
-    return true;
+    // RenderHost establishes the gfx device and native window before any view.
+    return cc::gfx::Device::getInstance() != nullptr;
 }
 
 bool GLViewImpl::initWithFullScreen(std::string_view viewName)
 {
-    return true;
+    return cc::gfx::Device::getInstance() != nullptr;
 }
 
 bool GLViewImpl::isOpenGLReady()
@@ -172,6 +104,7 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
+    cocos_android_render_host_ended();
     JniHelper::callStaticVoidMethod("org.cocos.lib.CocosEngine", "onExit");
     release();
 }
@@ -215,7 +148,7 @@ Rect GLViewImpl::getSafeAreaRect() const
     float insetLeft = 0.0f;
     float insetRight = 0.0f;
 
-    static axstd::pod_vector<int32_t> cornerRadii =
+    const axstd::pod_vector<int32_t> cornerRadii =
             JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getDeviceCornerRadii");
 
     if (isScreenRound)
@@ -305,7 +238,7 @@ Rect GLViewImpl::getSafeAreaRect() const
     if (isCutoutEnabled)
     {
         // screen with enabled cutout area (ex. Google Pixel 3 XL, Huawei P20, Asus ZenFone 5, etc)
-        static axstd::pod_vector<int32_t> safeInsets =
+        const axstd::pod_vector<int32_t> safeInsets =
                 JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getSafeInsets");
 
         if (safeInsets.size() >= 4)

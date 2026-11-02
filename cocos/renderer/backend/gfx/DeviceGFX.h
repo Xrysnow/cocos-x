@@ -20,6 +20,15 @@ public:
     static void setVsync(bool enabled);
     // Release swapchains before their native window/layer, while the device queue is alive.
     static void shutdownSurface();
+    // Temporary Android window loss keeps the device and scene resources alive.
+    // Synchronous: native window ownership may be released after this returns.
+    // False reports terminal device/context loss; cleanup still runs.
+    static bool detachSurface();
+    static bool attachSurface(void* windowHandle, uint32_t width, uint32_t height);
+    static bool resizeSurface(uint32_t width, uint32_t height);
+    static bool hasSurfaceFailed();
+    static bool hasDeviceLost();
+    static uint64_t getPresentCount();
     static void registerCommandBuffer(CommandBufferGFX* commandBuffer);
     static void unregisterCommandBuffer(CommandBufferGFX* commandBuffer);
     static bool isAvailable();

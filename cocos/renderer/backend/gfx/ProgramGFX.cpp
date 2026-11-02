@@ -330,12 +330,15 @@ ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
     }
     else if (api == gfx::API::GLES3 || api == gfx::API::WEBGL2)
     {
+        // GLES3 includes ES 3.0 devices. The GLES backend advertises compute
+        // only for ES >= 3.1; generate shaders for the actual context capability.
+        const auto version = gfx::Device::getInstance()->hasFeature(gfx::Feature::COMPUTE_SHADER) ? 310 : 300;
         SpirvCodes spirvCodes = compileSpirvCodes(glslangProgram, compileStages);
         for (auto& stage : stages)
         {
             gfx::ShaderStage s;
             s.stage  = stage.stage;
-            s.source = UtilsGFX::compileSPIRVtoGLSL(spirvCodes[stage.stage], 310, true);
+            s.source = UtilsGFX::compileSPIRVtoGLSL(spirvCodes[stage.stage], version, true);
             _info.stages.emplace_back(s);
         }
     }

@@ -100,6 +100,7 @@ public class CocosAccelerometer implements SensorEventListener {
     // ===========================================================
     @Override
     public void onSensorChanged(final SensorEvent sensorEvent) {
+        if (CocosEngine.getActivity() != mContext || !CocosEngine.isActivityVisible()) return;
         if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
             float x = sensorEvent.values[0];

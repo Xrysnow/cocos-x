@@ -26,8 +26,10 @@ package org.cocos.lib;
 
 import android.app.Activity;
 import android.content.Context;
-import android.opengl.GLSurfaceView;
+import android.view.SurfaceView;
+import android.view.SurfaceHolder;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -36,9 +38,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
-import java.util.concurrent.CountDownLatch;
 
-public class CocosGLSurfaceView extends GLSurfaceView {
+/** Compatibility name: this view no longer creates an EGL context. */
+public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     // ===========================================================
     // Constants
     // ===========================================================
@@ -52,11 +54,10 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     // Fields
     // ===========================================================
 
-    // TODO Static handler -> Potential leak!
-    private static Handler sHandler;
+    private Handler mImeHandler;
 
-    private static CocosGLSurfaceView mGLSurfaceView;
-    private static TextInputWrapper sTextInputWraper;
+    private static volatile CocosGLSurfaceView mGLSurfaceView;
+    private TextInputWrapper mTextInputWrapper;
 
     private CocosRenderer mRenderer;
     private CocosEditBox mEditText;
@@ -64,7 +65,17 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     private boolean mSoftKeyboardShown = false;
     private boolean mMultipleTouchEnabled = true;
 
-    private CountDownLatch mNativePauseComplete;
+    private CocosRenderHost mRenderHost;
+
+    private static final class ImeRequest {
+        final String text;
+        final long epoch;
+
+        ImeRequest(String text, long epoch) {
+            this.text = text;
+            this.epoch = epoch;
+        }
+    }
 
     public boolean isSoftKeyboardShown() {
         return mSoftKeyboardShown;
@@ -99,28 +110,33 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     }
 
     protected void initView() {
-        this.setEGLContextClientVersion(2);
+        mRenderHost = new CocosRenderHost((Activity) getContext());
+        getHolder().addCallback(this);
         this.setFocusableInTouchMode(true);
 
         CocosGLSurfaceView.mGLSurfaceView = this;
-        CocosGLSurfaceView.sTextInputWraper = new TextInputWrapper(this);
+        mTextInputWrapper = new TextInputWrapper(this);
 
-        CocosGLSurfaceView.sHandler = new Handler() {
+        mImeHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(final Message msg) {
+                if (!isCurrentHost()) return;
                 switch (msg.what) {
                     case HANDLER_OPEN_IME_KEYBOARD:
+                        final ImeRequest request = (ImeRequest) msg.obj;
+                        if (!mRenderHost.isInputCurrent(request.epoch)) return;
                         if (null != CocosGLSurfaceView.this.mEditText) {
                             CocosGLSurfaceView.this.mEditText.setVisibility(View.VISIBLE);
                             if (CocosGLSurfaceView.this.mEditText.requestFocus()) {
-                                CocosGLSurfaceView.this.mEditText.removeTextChangedListener(CocosGLSurfaceView.sTextInputWraper);
+                                CocosGLSurfaceView.this.mEditText.removeTextChangedListener(mTextInputWrapper);
                                 CocosGLSurfaceView.this.mEditText.setText("");
-                                final String text = (String) msg.obj;
+                                final String text = request.text;
                                 CocosGLSurfaceView.this.mEditText.append(text);
-                                CocosGLSurfaceView.sTextInputWraper.setOriginText(text);
-                                CocosGLSurfaceView.this.mEditText.addTextChangedListener(CocosGLSurfaceView.sTextInputWraper);
-                                final InputMethodManager imm = (InputMethodManager) CocosGLSurfaceView.mGLSurfaceView.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                                mTextInputWrapper.setOriginText(text);
+                                CocosGLSurfaceView.this.mEditText.addTextChangedListener(mTextInputWrapper);
+                                final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                                 imm.showSoftInput(CocosGLSurfaceView.this.mEditText, 0);
+                                mSoftKeyboardShown = true;
                                 Log.d("GLSurfaceView", "showSoftInput");
                             }
                         }
@@ -128,13 +144,14 @@ public class CocosGLSurfaceView extends GLSurfaceView {
 
                     case HANDLER_CLOSE_IME_KEYBOARD:
                         if (null != CocosGLSurfaceView.this.mEditText) {
-                            CocosGLSurfaceView.this.mEditText.removeTextChangedListener(CocosGLSurfaceView.sTextInputWraper);
-                            final InputMethodManager imm = (InputMethodManager) CocosGLSurfaceView.mGLSurfaceView.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                            CocosGLSurfaceView.this.mEditText.removeTextChangedListener(mTextInputWrapper);
+                            final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                             imm.hideSoftInputFromWindow(CocosGLSurfaceView.this.mEditText.getWindowToken(), 0);
                             CocosGLSurfaceView.this.requestFocus();
                             // can take effect after GLSurfaceView has focus
                             CocosGLSurfaceView.this.mEditText.setVisibility(View.GONE);
-                            ((CocosActivity)CocosGLSurfaceView.mGLSurfaceView.getContext()).hideVirtualButton();
+                            mSoftKeyboardShown = false;
+                            ((CocosActivity)getContext()).hideVirtualButton();
                             Log.d("GLSurfaceView", "HideSoftInput");
                         }
                         break;
@@ -153,7 +170,8 @@ public class CocosGLSurfaceView extends GLSurfaceView {
        }
 
        public static void queueAccelerometer(final float x, final float y, final float z, final long timestamp) {
-       mGLSurfaceView.queueEvent(new Runnable() {
+       if (mGLSurfaceView == null) return;
+       mGLSurfaceView.queueInput(new Runnable() {
         @Override
             public void run() {
                 CocosAccelerometer.onSensorChanged(x, y, z, timestamp);
@@ -161,10 +179,8 @@ public class CocosGLSurfaceView extends GLSurfaceView {
         });
     }
 
-    @Override
-    public void setRenderer(GLSurfaceView.Renderer renderer) {
-        this.mRenderer = (CocosRenderer) renderer;
-        super.setRenderer(this.mRenderer);
+    public void setRenderer(CocosRenderer renderer) {
+        this.mRenderer = renderer;
     }
 
     public void setCocosRenderer(final CocosRenderer renderer) {
@@ -185,8 +201,8 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     }
     public void setEditText(final CocosEditBox pEditText) {
         this.mEditText = pEditText;
-        if (null != this.mEditText && null != CocosGLSurfaceView.sTextInputWraper) {
-            this.mEditText.setOnEditorActionListener(CocosGLSurfaceView.sTextInputWraper);
+        if (null != this.mEditText && null != mTextInputWrapper) {
+            this.mEditText.setOnEditorActionListener(mTextInputWrapper);
             this.requestFocus();
         }
     }
@@ -233,7 +249,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                 final float xPointerDown = pMotionEvent.getX(indexPointerDown);
                 final float yPointerDown = pMotionEvent.getY(indexPointerDown);
 
-                this.queueEvent(new Runnable() {
+                this.queueInput(new Runnable() {
                     @Override
                     public void run() {
                         CocosGLSurfaceView.this.mRenderer.handleActionDown(idPointerDown, xPointerDown, yPointerDown);
@@ -247,7 +263,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                 final float xDown = xs[0];
                 final float yDown = ys[0];
 
-                this.queueEvent(new Runnable() {
+                this.queueInput(new Runnable() {
                     @Override
                     public void run() {
                         CocosGLSurfaceView.this.mRenderer.handleActionDown(idDown, xDown, yDown);
@@ -263,7 +279,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                             final int[] idsMove = new int[]{0};
                             final float[] xsMove = new float[]{xs[i]};
                             final float[] ysMove = new float[]{ys[i]};
-                            this.queueEvent(new Runnable() {
+                            this.queueInput(new Runnable() {
                                 @Override
                                 public void run() {
                                     CocosGLSurfaceView.this.mRenderer.handleActionMove(idsMove, xsMove, ysMove);
@@ -273,7 +289,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                         }
                     }
                 } else {
-                    this.queueEvent(new Runnable() {
+                    this.queueInput(new Runnable() {
                         @Override
                         public void run() {
                             CocosGLSurfaceView.this.mRenderer.handleActionMove(ids, xs, ys);
@@ -291,7 +307,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                 final float xPointerUp = pMotionEvent.getX(indexPointUp);
                 final float yPointerUp = pMotionEvent.getY(indexPointUp);
 
-                this.queueEvent(new Runnable() {
+                this.queueInput(new Runnable() {
                     @Override
                     public void run() {
                         CocosGLSurfaceView.this.mRenderer.handleActionUp(idPointerUp, xPointerUp, yPointerUp);
@@ -305,7 +321,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                 final float xUp = xs[0];
                 final float yUp = ys[0];
 
-                this.queueEvent(new Runnable() {
+                this.queueInput(new Runnable() {
                     @Override
                     public void run() {
                         CocosGLSurfaceView.this.mRenderer.handleActionUp(idUp, xUp, yUp);
@@ -321,7 +337,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                             final int[] idsCancel = new int[]{0};
                             final float[] xsCancel = new float[]{xs[i]};
                             final float[] ysCancel = new float[]{ys[i]};
-                            this.queueEvent(new Runnable() {
+                            this.queueInput(new Runnable() {
                                 @Override
                                 public void run() {
                                     CocosGLSurfaceView.this.mRenderer.handleActionCancel(idsCancel, xsCancel, ysCancel);
@@ -331,7 +347,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
                         }
                     }
                 } else {
-                    this.queueEvent(new Runnable() {
+                    this.queueInput(new Runnable() {
                         @Override
                         public void run() {
                             CocosGLSurfaceView.this.mRenderer.handleActionCancel(ids, xs, ys);
@@ -349,15 +365,68 @@ public class CocosGLSurfaceView extends GLSurfaceView {
         return true;
     }
 
-    /*
-     * This function is called before CocosRenderer.nativeInit(), so the
-     * width and height is correct.
-     */
     @Override
-    protected void onSizeChanged(final int pNewSurfaceWidth, final int pNewSurfaceHeight, final int pOldSurfaceWidth, final int pOldSurfaceHeight) {
-        if(!this.isInEditMode()) {
-            this.mRenderer.setScreenWidthAndHeight(pNewSurfaceWidth, pNewSurfaceHeight);
+    public void surfaceCreated(SurfaceHolder holder) {
+        mRenderHost.surfaceCreated();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        cancelPendingInput();
+        mRenderHost.surfaceChanged(holder.getSurface(), width, height);
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        cancelPendingInput();
+        mRenderHost.surfaceDestroyed();
+    }
+
+    public void queueEvent(Runnable event) {
+        mRenderHost.queueEvent(event);
+    }
+
+    void queueInput(Runnable event) {
+        mRenderHost.queueInput(event);
+    }
+
+    boolean isCurrentHost() {
+        return mGLSurfaceView == this && mRenderHost.isCurrent();
+    }
+
+    long getInputEpoch() {
+        return mRenderHost.getInputEpoch();
+    }
+
+    long getSession() {
+        return mRenderHost.getSession();
+    }
+
+    boolean isInputCurrent(long epoch) {
+        return isCurrentHost() && mRenderHost.isInputCurrent(epoch);
+    }
+
+    boolean decideNavigation(java.util.concurrent.Callable<Boolean> decision) {
+        return mRenderHost.decideNavigation(decision);
+    }
+
+    void cancelPendingInput() {
+        mRenderHost.cancelInput(() -> {
+            if (mRenderer != null) mRenderer.cancelPendingInput();
+            GameControllerAdapter.cancelPendingInput();
+        });
+    }
+
+    void dismissIME() {
+        mImeHandler.removeCallbacksAndMessages(null);
+        if (mEditText != null) {
+            mEditText.removeTextChangedListener(mTextInputWrapper);
+            final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) imm.hideSoftInputFromWindow(mEditText.getWindowToken(), 0);
+            mEditText.clearFocus();
+            mEditText.setVisibility(View.GONE);
         }
+        mSoftKeyboardShown = false;
     }
 
     protected boolean isIgnoredKey(final int keyCode) {
@@ -391,7 +460,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     @Override
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
         if (!isIgnoredKey(pKeyCode)) {
-            this.queueEvent(new Runnable() {
+            this.queueInput(new Runnable() {
                 @Override
                 public void run() {
                     CocosGLSurfaceView.this.mRenderer.handleKeyDown(pKeyCode);
@@ -405,7 +474,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     @Override
     public boolean onKeyUp(final int keyCode, KeyEvent event) {
         if (!isIgnoredKey(keyCode)) {
-            this.queueEvent(new Runnable() {
+            this.queueInput(new Runnable() {
                 @Override
                 public void run() {
                     CocosGLSurfaceView.this.mRenderer.handleKeyUp(keyCode);
@@ -421,33 +490,31 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     // ===========================================================
 
     public void handleOnResume() {
-        this.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                CocosGLSurfaceView.this.mRenderer.handleOnResume();
-            }
-        });
+        mRenderHost.setResumed(true);
     }
 
     public void handleOnPause() {
-        mNativePauseComplete = new CountDownLatch(1);
+        cancelPendingInput();
+        mRenderHost.setResumed(false);
+        dismissIME();
+    }
 
-        CountDownLatch complete = mNativePauseComplete;
-        this.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                CocosGLSurfaceView.this.mRenderer.handleOnPause();
-                complete.countDown();
-            }
-        });
+    void handleWindowFocusChanged(boolean hasFocus) {
+        mRenderHost.setFocused(hasFocus);
+        if (!hasFocus) cancelPendingInput();
     }
 
     public void waitForPauseToComplete() {
-        while (mNativePauseComplete.getCount() > 0) {
-            try {
-                mNativePauseComplete.await();
-            } catch (InterruptedException e) {
-            }
+        mRenderHost.waitForPause();
+    }
+
+    public void closeRenderHost(boolean finalClose) {
+        dismissIME();
+        cancelPendingInput();
+        mRenderHost.close(finalClose);
+        if (mEditText != null) mEditText.setOnEditorActionListener(null);
+        if (mGLSurfaceView == this) {
+            mGLSurfaceView = null;
         }
     }
 
@@ -456,20 +523,25 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     // ===========================================================
 
     public static void openIMEKeyboard() {
-        final Message msg = new Message();
-        msg.what = CocosGLSurfaceView.HANDLER_OPEN_IME_KEYBOARD;
-        msg.obj = CocosGLSurfaceView.mGLSurfaceView.getContentText();
-        CocosGLSurfaceView.sHandler.sendMessage(msg);
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        if (view == null) return;
+        final long epoch = view.mRenderHost.getInputEpoch();
+        view.queueInput(() -> {
+            final String text = view.getContentText();
+            final Handler handler = view.mImeHandler;
+            if (view.isCurrentHost()) {
+                handler.obtainMessage(HANDLER_OPEN_IME_KEYBOARD, new ImeRequest(text, epoch)).sendToTarget();
+            }
+        });
     }
 
     public static void closeIMEKeyboard() {
-        final Message msg = new Message();
-        msg.what = CocosGLSurfaceView.HANDLER_CLOSE_IME_KEYBOARD;
-        CocosGLSurfaceView.sHandler.sendMessage(msg);
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        if (view != null) view.mImeHandler.sendEmptyMessage(HANDLER_CLOSE_IME_KEYBOARD);
     }
 
     public void insertText(final String pText) {
-        this.queueEvent(new Runnable() {
+        this.queueInput(new Runnable() {
             @Override
             public void run() {
                 CocosGLSurfaceView.this.mRenderer.handleInsertText(pText);
@@ -478,7 +550,7 @@ public class CocosGLSurfaceView extends GLSurfaceView {
     }
 
     public void deleteBackward(int numChars) {
-        this.queueEvent(new Runnable() {
+        this.queueInput(new Runnable() {
             @Override
             public void run() {
                 CocosGLSurfaceView.this.mRenderer.handleDeleteBackward(numChars);

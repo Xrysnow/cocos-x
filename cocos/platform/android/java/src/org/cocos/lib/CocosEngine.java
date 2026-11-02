@@ -28,7 +28,6 @@ package org.cocos.lib;
 
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
-import android.graphics.Rect;
 import android.media.AudioManager;
 import android.app.Activity;
 import android.content.ComponentName;
@@ -71,7 +70,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -93,10 +91,16 @@ public class CocosEngine {
     private static CocosAccelerometer sAccelerometer = null;
     private static boolean sAccelerometerEnabled;
     private static boolean sCompassEnabled;
-    private static boolean sActivityVisible;
+    private static volatile boolean sActivityVisible;
     private static String sPackageName;
-    private static Activity sActivity = null;
-    private static CocosEngineListener sCocosEngineListener;
+    private static volatile Activity sActivity = null;
+    private static volatile int[] sSafeInsets = new int[4];
+    private static volatile int[] sCornerRadii = new int[4];
+    private static volatile int sDPI = -1;
+    private static volatile boolean sScreenRound;
+    private static volatile boolean sCutoutEnabled;
+    private static volatile boolean sHasSoftKeys = true;
+    private static volatile CocosEngineListener sCocosEngineListener;
     private static Set<OnActivityResultListener> onActivityResultListeners = new LinkedHashSet<OnActivityResultListener>();
     private static Vibrator sVibrateService = null;
 
@@ -111,15 +115,23 @@ public class CocosEngine {
     // ===========================================================
 
     public static void runOnGLThread(final Runnable r) {
-        nativeRunOnGLThread(r);
+        final CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
+        if (view == null) {
+            Log.w(TAG, "runOnGLThread rejected before RenderHost creation");
+            return;
+        }
+        view.queueEvent(r);
     }
 
     public static void runOnUiThread(final Runnable r) {
-        sActivity.runOnUiThread(r);
+        final Activity activity = sActivity;
+        if (activity != null) activity.runOnUiThread(() -> {
+            if (sActivity == activity && !activity.isDestroyed()) r.run();
+        });
     }
 
     public static void queueOperation(final long op, final long param) {
-        ((CocosActivity)sActivity).getGLSurfaceView().queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 CocosEngine.nativeCall0(op, param);
@@ -130,7 +142,22 @@ public class CocosEngine {
     private static boolean sInited = false;
     public static void init(final Activity activity) {
         sActivity = activity;
+        sActivityVisible = false;
+        sSafeInsets = new int[4];
+        sCornerRadii = new int[4];
+        sDPI = activity.getResources().getDisplayMetrics().densityDpi;
+        sCutoutEnabled = false;
+        sHasSoftKeys = computeHasSoftKeys(activity);
+        sScreenRound = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && activity.getResources().getConfiguration().isScreenRound();
         CocosEngine.sCocosEngineListener = (CocosEngineListener)activity;
+        CocosEngine.sAssetManager = activity.getAssets();
+        CocosEngine.nativeSetContext((Context)activity, CocosEngine.sAssetManager);
+        BitmapHelper.setContext(activity.getApplicationContext());
+        CocosEngine.sVibrateService = (Vibrator)activity.getSystemService(Context.VIBRATOR_SERVICE);
+        // Sensor listeners retain their Activity; release them before rebinding.
+        if (sAccelerometer != null) sAccelerometer.disable();
+        sAccelerometer = null;
         if (!sInited) {
 
             PackageManager pm = activity.getPackageManager();
@@ -141,17 +168,21 @@ public class CocosEngine {
 
             CocosEngine.sPackageName = applicationInfo.packageName;
 
-            CocosEngine.sAssetManager = activity.getAssets();
-            CocosEngine.nativeSetContext((Context)activity, CocosEngine.sAssetManager);
-
-            // CocosMediaEngine.setContext(activity);
-
-            BitmapHelper.setContext(activity);
-
-            CocosEngine.sVibrateService = (Vibrator)activity.getSystemService(Context.VIBRATOR_SERVICE);
-
             sInited = true;
         }
+    }
+
+    static void unbindActivity(Activity activity) {
+        if (sActivity != activity) return;
+        if (sAccelerometer != null) sAccelerometer.disable();
+        sAccelerometer = null;
+        sActivityVisible = false;
+        sCocosEngineListener = null;
+        sActivity = null;
+        sSafeInsets = new int[4];
+        sCornerRadii = new int[4];
+        sCutoutEnabled = false;
+        // Native context is rebound by init before the next Activity's host starts.
     }
 
     // This function returns the absolute path to the OBB if it exists,
@@ -229,8 +260,6 @@ public class CocosEngine {
     // ===========================================================
     // Methods
     // ===========================================================
-
-    private static native void nativeRunOnGLThread(final Object runnable);
 
     private static native void nativeSetEditTextDialogResult(final byte[] pBytes);
 
@@ -364,15 +393,14 @@ public class CocosEngine {
 
     public static void onPause() {
         sActivityVisible = false;
-        if (CocosEngine.sAccelerometerEnabled) {
-            CocosEngine.getAccelerometer().disable();
-        }
+        if (sAccelerometer != null) sAccelerometer.disable();
     }
 
     public static void onExit() {
         // Remove it from recent apps.
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            sActivity.finishAndRemoveTask();
+            final Activity activity = sActivity;
+            if (activity != null) runOnUiThread(() -> activity.finishAndRemoveTask());
         }
     }
 
@@ -382,7 +410,8 @@ public class CocosEngine {
     }
 
     private static void showDialog(final String pTitle, final String pMessage) {
-        CocosEngine.sCocosEngineListener.showDialog(pTitle, pMessage);
+        final CocosEngineListener listener = sCocosEngineListener;
+        if (listener != null) listener.showDialog(pTitle, pMessage);
     }
 
 
@@ -401,35 +430,9 @@ public class CocosEngine {
         }
     }
 
-    private static int displayMetricsToDPI(DisplayMetrics metrics)
-    {
-        return metrics.densityDpi;
-    }
-
     public static int getDPI()
     {
-        if (sActivity != null)
-        {
-            DisplayMetrics metrics = new DisplayMetrics();
-            WindowManager wm = sActivity.getWindowManager();
-            if (wm != null)
-            {
-                Display d = wm.getDefaultDisplay();
-                if (d != null)
-                {
-                    try {
-                        Method getRealMetrics = d.getClass().getMethod("getRealMetrics", metrics.getClass());
-                        getRealMetrics.invoke(d, metrics);
-                        return displayMetricsToDPI(metrics);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    d.getMetrics(metrics);
-                    return displayMetricsToDPI(metrics);
-                }
-            }
-        }
-        return -1;
+        return sDPI;
     }
 
     // ===========================================================
@@ -608,13 +611,7 @@ public class CocosEngine {
      * @return true if the screen is rounded, false otherwise
      */
     public static boolean isScreenRound() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (sActivity.getResources().getConfiguration().isScreenRound()) {
-                return true;
-            }
-        }
-
-        return false;
+        return sScreenRound;
     }
 
     /**
@@ -624,12 +621,7 @@ public class CocosEngine {
      */
     @SuppressLint("InlinedApi")
     public static boolean isCutoutEnabled() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WindowManager.LayoutParams lp = sActivity.getWindow().getAttributes();
-            return lp.layoutInDisplayCutoutMode == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
-
-        return false;
+        return sCutoutEnabled;
     }
 
     /**
@@ -639,38 +631,57 @@ public class CocosEngine {
      */
     @SuppressLint("NewApi")
     public static int[] getSafeInsets() {
-        final int[] safeInsets = new int[]{0, 0, 0, 0};
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            Window cocosWindow = sActivity.getWindow();
-            DisplayCutout displayCutout = cocosWindow.getDecorView().getRootWindowInsets().getDisplayCutout();
-            // Judge whether it is cutouts (aka notch) screen phone by judge cutout equle to null
-            if (displayCutout != null) {
-                List<Rect> rects = displayCutout.getBoundingRects();
-                // Judge whether it is cutouts (aka notch) screen phone by judge cutout rects is null or zero size
-                if (rects != null && rects.size() != 0) {
-                    safeInsets[0] = displayCutout.getSafeInsetBottom();
-                    safeInsets[1] = displayCutout.getSafeInsetLeft();
-                    safeInsets[2] = displayCutout.getSafeInsetRight();
-                    safeInsets[3] = displayCutout.getSafeInsetTop();
-                }
-            }
-        }
-
-        return safeInsets;
+        return sSafeInsets.clone();
     }
 
-    /**
-     * Returns rounded corner radius array.
-     *
-     * @return array of int with rounded corner radius values
-     */
+    // UI-owned snapshots: engine queries must never wait for a UI callback.
     @SuppressLint("NewApi")
-    public static int[] getDeviceCornerRadii() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            final int[] radii = new int[]{0, 0, 0, 0};
-            Window cocosWindow = sActivity.getWindow();
-            View view = cocosWindow.getDecorView();
-            WindowInsets insets = view.getRootWindowInsets();
+    static void refreshWindowInfo(Activity activity) {
+        refreshWindowInfo(activity, null);
+    }
+
+    @SuppressLint("NewApi")
+    static void refreshWindowInfo(Activity activity, WindowInsets currentInsets) {
+        if (activity != sActivity || android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) return;
+        final int[] safeInsets = new int[]{0, 0, 0, 0};
+        final int[] radii = new int[4];
+        sDPI = activity.getResources().getDisplayMetrics().densityDpi;
+        sScreenRound = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && activity.getResources().getConfiguration().isScreenRound();
+        sHasSoftKeys = computeHasSoftKeys(activity);
+        final Window window = activity.getWindow();
+        final int cutoutMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && window != null
+                ? window.getAttributes().layoutInDisplayCutoutMode : 0;
+        sCutoutEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && (cutoutMode == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                && cutoutMode == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS));
+        final View decor = window == null ? null : window.getDecorView();
+        final WindowInsets insets = currentInsets != null ? currentInsets
+                : Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && decor != null ? decor.getRootWindowInsets() : null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets != null) {
+            android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+            safeInsets[0] = bars.bottom;
+            safeInsets[1] = bars.left;
+            safeInsets[2] = bars.right;
+            safeInsets[3] = bars.top;
+        } else if (insets != null) {
+            // IME occlusion is separate from the physical window's safe area.
+            safeInsets[0] = Math.min(insets.getSystemWindowInsetBottom(), insets.getStableInsetBottom());
+            safeInsets[1] = insets.getSystemWindowInsetLeft();
+            safeInsets[2] = insets.getSystemWindowInsetRight();
+            safeInsets[3] = insets.getSystemWindowInsetTop();
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && insets != null) {
+            DisplayCutout displayCutout = insets.getDisplayCutout();
+            if (displayCutout != null) {
+                safeInsets[0] = Math.max(safeInsets[0], displayCutout.getSafeInsetBottom());
+                safeInsets[1] = Math.max(safeInsets[1], displayCutout.getSafeInsetLeft());
+                safeInsets[2] = Math.max(safeInsets[2], displayCutout.getSafeInsetRight());
+                safeInsets[3] = Math.max(safeInsets[3], displayCutout.getSafeInsetTop());
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && insets != null) {
             android.view.RoundedCorner topLeft = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_TOP_LEFT);
             android.view.RoundedCorner topRight = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_TOP_RIGHT);
             android.view.RoundedCorner bottomLeft = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_BOTTOM_LEFT);
@@ -693,10 +704,14 @@ public class CocosEngine {
             radii[1] = leftRadius;
             radii[2] = rightRadius;
             radii[3] = topRadius;
-            return radii;
         }
+        sSafeInsets = safeInsets;
+        sCornerRadii = radii;
+    }
 
-        return null;
+    /** Returns the latest UI snapshot in bottom/left/right/top order, never null. */
+    public static int[] getDeviceCornerRadii() {
+        return sCornerRadii.clone();
     }
 
     /**
@@ -708,10 +723,16 @@ public class CocosEngine {
      * otherwise <code>false</code> will returned.
      */
     public static boolean hasSoftKeys() {
+        return sHasSoftKeys;
+    }
+
+    private static boolean computeHasSoftKeys(Activity activity) {
         boolean hasSoftwareKeys = true;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Display display = sActivity.getWindowManager().getDefaultDisplay();
+            WindowManager wm = activity.getWindowManager();
+            Display display = wm == null ? null : wm.getDefaultDisplay();
+            if (display == null) return true;
 
             DisplayMetrics realDisplayMetrics = new DisplayMetrics();
             display.getRealMetrics(realDisplayMetrics);
@@ -728,11 +749,10 @@ public class CocosEngine {
             hasSoftwareKeys = (realWidth - displayWidth) > 0 ||
                     (realHeight - displayHeight) > 0;
         } else {
-            boolean hasMenuKey = ViewConfiguration.get(sActivity).hasPermanentMenuKey();
+            boolean hasMenuKey = ViewConfiguration.get(activity).hasPermanentMenuKey();
             boolean hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
             hasSoftwareKeys = !hasMenuKey && !hasBackKey;
-        }
-        return hasSoftwareKeys;
+        }        return hasSoftwareKeys;
     }
 
     public static float[] getAccelValue() {

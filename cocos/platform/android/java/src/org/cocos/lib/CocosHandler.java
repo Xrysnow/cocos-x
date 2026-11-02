@@ -72,6 +72,8 @@ public class CocosHandler extends Handler {
     
     private void showDialog(Message msg) {
         CocosActivity theActivity = this.mActivity.get();
+        if (theActivity == null || theActivity != CocosActivity.getContext()
+                || theActivity.isFinishing() || theActivity.isDestroyed()) return;
         DialogMessage dialogMessage = (DialogMessage)msg.obj;
         new AlertDialog.Builder(theActivity)
         .setTitle(dialogMessage.title)

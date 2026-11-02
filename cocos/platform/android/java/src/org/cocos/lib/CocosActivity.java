@@ -30,9 +30,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.PixelFormat;
 import android.media.AudioManager;
-import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
@@ -47,10 +45,6 @@ import android.view.WindowManager;
 
 import org.cocos.lib.CocosEngine.CocosEngineListener;
 
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class CocosActivity extends Activity implements CocosEngineListener {
     // ===========================================================
@@ -64,9 +58,8 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     // ===========================================================
 
     private CocosGLSurfaceView mGLSurfaceView = null;
-    private int[] mGLContextAttrs = null;
     private CocosHandler mHandler = null;
-    protected static CocosActivity sContext = null;
+    protected static volatile CocosActivity sContext = null;
     private WebViewHelper mWebViewHelper = null;
     private EditBoxHelper mEditBoxHelper = null;
     private boolean showVirtualButton = false;
@@ -84,7 +77,8 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mGLSurfaceView.setKeepScreenOn(newValue);
+                if (sContext == CocosActivity.this && mGLSurfaceView != null)
+                    mGLSurfaceView.setKeepScreenOn(newValue);
             }
         });
     }
@@ -123,7 +117,9 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     }
 
     protected void performHapticFeedback(int feedback) {
-        getWindow().getDecorView().performHapticFeedback(feedback);
+        CocosEngine.runOnUiThread(() -> {
+            if (sContext == this) getWindow().getDecorView().performHapticFeedback(feedback);
+        });
     }
 
     public void setEnableVirtualButton(boolean value) {
@@ -174,7 +170,6 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
 
         CocosEngine.init(this);
 
-        this.mGLContextAttrs = getGLContextAttrs();
         this.init();
 
         if(mWebViewHelper == null){
@@ -192,9 +187,6 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
-    //native method,call GLViewImpl::getGLContextAttrs() to get the OpenGL ES context attributions
-    private static native int[] getGLContextAttrs();
-
     // ===========================================================
     // Getter & Setter
     // ===========================================================
@@ -208,27 +200,29 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         Log.i(TAG, "onStart()");
         super.onStart();
 
-        mGLSurfaceView.onResume();
     }
 
     @Override
     protected void onResume() {
     	Log.i(TAG, "onResume()");
         super.onResume();
+        if (sContext != this) return;
 
         hideVirtualButton();
         CocosEngine.onResume();
-        mGLSurfaceView.handleOnResume();
-        mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        if (mGLSurfaceView != null) mGLSurfaceView.handleOnResume();
+        if (mWebViewHelper != null) WebViewHelper.setResumed(this, true);
+        CocosEngine.refreshWindowInfo(this);
     }
 
     @Override
     protected void onPause() {
     	Log.i(TAG, "onPause()");
 
-        CocosEngine.onPause();
-        mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        mGLSurfaceView.handleOnPause();
+        if (mEditBoxHelper != null) EditBoxHelper.pause(this);
+        if (mWebViewHelper != null) WebViewHelper.setResumed(this, false);
+        if (mGLSurfaceView != null) mGLSurfaceView.handleOnPause();
+        if (sContext == this) CocosEngine.onPause();
 
         super.onPause();
     }
@@ -237,8 +231,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     protected void onStop() {
         Log.i(TAG, "onStop()");
 
-        mGLSurfaceView.waitForPauseToComplete();
-        mGLSurfaceView.onPause();
+        if (mGLSurfaceView != null) mGLSurfaceView.waitForPauseToComplete();
 
         super.onStop();
     }
@@ -252,6 +245,12 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy()");
+        if (mHandler != null) mHandler.removeCallbacksAndMessages(null);
+        if (mWebViewHelper != null) WebViewHelper.unbind(this, !isFinishing());
+        if (mEditBoxHelper != null) EditBoxHelper.unbind(this, !isFinishing());
+        if (mGLSurfaceView != null) mGLSurfaceView.closeRenderHost(isFinishing());
+        CocosEngine.unbindActivity(this);
+        if (sContext == this) sContext = null;
         super.onDestroy();
     }
 
@@ -259,10 +258,13 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     public void onWindowFocusChanged(boolean hasFocus) {
         Log.i(TAG, "onWindowFocusChanged() hasFocus=" + hasFocus);
         super.onWindowFocusChanged(hasFocus);
+        if (mGLSurfaceView != null) mGLSurfaceView.handleWindowFocusChanged(hasFocus);
+        if (hasFocus) CocosEngine.refreshWindowInfo(this);
     }
 
     @Override
     public void showDialog(final String pTitle, final String pMessage) {
+        if (mHandler == null || sContext != this) return;
         Message msg = new Message();
         msg.what = CocosHandler.HANDLER_SHOW_DIALOG;
         msg.obj = new CocosHandler.DialogMessage(pTitle, pMessage);
@@ -312,18 +314,18 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
 
         // CocosGLSurfaceView
         this.mGLSurfaceView = this.onCreateView();
-        this.mGLSurfaceView.setPreserveEGLContextOnPause(true);
 
         // ...add to FrameLayout
         mFrameLayout.addView(this.mGLSurfaceView);
 
-        // Switch to supported OpenGL (ARGB888) mode on emulator
-        // this line dows not needed on new emulators and also it breaks stencil buffer
-        //if (isAndroidEmulator())
-        //   this.mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
-
         this.mGLSurfaceView.setRenderer(new CocosRenderer());
         this.mGLSurfaceView.setEditText(edittext);
+        mGLSurfaceView.setOnApplyWindowInsetsListener((view, insets) -> {
+            CocosEngine.refreshWindowInfo(this, insets);
+            return insets;
+        });
+        mFrameLayout.addOnLayoutChangeListener((view, l, t, r, b, oldL, oldT, oldR, oldB) ->
+                CocosEngine.refreshWindowInfo(this));
 
         // Set framelayout as the content view
         setContentView(mFrameLayout);
@@ -331,16 +333,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
 
 
     public CocosGLSurfaceView onCreateView() {
-        CocosGLSurfaceView glSurfaceView = new CocosGLSurfaceView(this);
-        //this line is need on some device if we specify an alpha bits
-        // FIXME: is it needed? And it will cause afterimage.
-        // if(this.mGLContextAttrs[3] > 0) glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-
-        // use custom EGLConfigureChooser
-        CocosEGLConfigChooser chooser = new CocosEGLConfigChooser(this.mGLContextAttrs);
-        glSurfaceView.setEGLConfigChooser(chooser);
-
-        return glSurfaceView;
+        return new CocosGLSurfaceView(this);
     }
 
     protected void hideVirtualButton() {
@@ -413,89 +406,4 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     // Inner and Anonymous Classes
     // ===========================================================
 
-    private class CocosEGLConfigChooser implements GLSurfaceView.EGLConfigChooser
-    {
-        private int[] mConfigAttributes;
-        private  final int EGL_OPENGL_ES2_BIT = 0x04;
-        private  final int EGL_OPENGL_ES3_BIT = 0x40;
-        public CocosEGLConfigChooser(int redSize, int greenSize, int blueSize, int alphaSize, int depthSize, int stencilSize, int multisamplingCount)
-        {
-            mConfigAttributes = new int[] {redSize, greenSize, blueSize, alphaSize, depthSize, stencilSize, multisamplingCount};
-        }
-        public CocosEGLConfigChooser(int[] attributes)
-        {
-            mConfigAttributes = attributes;
-        }
-
-        @Override
-        public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display)
-        {
-            int[][] EGLAttributes = {
-                {
-                    // GL ES 2 with user set
-                    EGL10.EGL_RED_SIZE, mConfigAttributes[0],
-                    EGL10.EGL_GREEN_SIZE, mConfigAttributes[1],
-                    EGL10.EGL_BLUE_SIZE, mConfigAttributes[2],
-                    EGL10.EGL_ALPHA_SIZE, mConfigAttributes[3],
-                    EGL10.EGL_DEPTH_SIZE, mConfigAttributes[4],
-                    EGL10.EGL_STENCIL_SIZE, mConfigAttributes[5],
-                    EGL10.EGL_SAMPLE_BUFFERS, (mConfigAttributes[6] > 0) ? 1 : 0,
-                    EGL10.EGL_SAMPLES, mConfigAttributes[6],
-                    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                    EGL10.EGL_NONE
-                },
-                {
-                     // GL ES 2 with user set 16 bit depth buffer
-                     EGL10.EGL_RED_SIZE, mConfigAttributes[0],
-                     EGL10.EGL_GREEN_SIZE, mConfigAttributes[1],
-                     EGL10.EGL_BLUE_SIZE, mConfigAttributes[2],
-                     EGL10.EGL_ALPHA_SIZE, mConfigAttributes[3],
-                     EGL10.EGL_DEPTH_SIZE, mConfigAttributes[4] >= 24 ? 16 : mConfigAttributes[4],
-                     EGL10.EGL_STENCIL_SIZE, mConfigAttributes[5],
-                     EGL10.EGL_SAMPLE_BUFFERS, (mConfigAttributes[6] > 0) ? 1 : 0,
-                     EGL10.EGL_SAMPLES, mConfigAttributes[6],
-                     EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                     EGL10.EGL_NONE
-                },
-                {
-                     // GL ES 2 with user set 16 bit depth buffer without multisampling
-                     EGL10.EGL_RED_SIZE, mConfigAttributes[0],
-                     EGL10.EGL_GREEN_SIZE, mConfigAttributes[1],
-                     EGL10.EGL_BLUE_SIZE, mConfigAttributes[2],
-                     EGL10.EGL_ALPHA_SIZE, mConfigAttributes[3],
-                     EGL10.EGL_DEPTH_SIZE, mConfigAttributes[4] >= 24 ? 16 : mConfigAttributes[4],
-                     EGL10.EGL_STENCIL_SIZE, mConfigAttributes[5],
-                     EGL10.EGL_SAMPLE_BUFFERS, 0,
-                     EGL10.EGL_SAMPLES, 0,
-                     EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                     EGL10.EGL_NONE
-                },
-                {
-                    // GL ES 2 by default
-                    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                    EGL10.EGL_NONE
-                }
-            };
-
-            EGLConfig result = null;
-            for (int[] eglAtribute : EGLAttributes) {
-                result = this.doChooseConfig(egl, display, eglAtribute);
-                if (result != null)
-                    return result;
-            }
-
-            Log.e(DEVICE_POLICY_SERVICE, "Can not select an EGLConfig for rendering.");
-            return null;
-        }
-
-        private EGLConfig doChooseConfig(EGL10 egl, EGLDisplay display, int[] attributes) {
-            EGLConfig[] configs = new EGLConfig[1];
-            int[] matchedConfigNum = new int[1];
-            boolean result = egl.eglChooseConfig(display, attributes, configs, 1, matchedConfigNum);
-            if (result && matchedConfigNum[0] > 0) {
-                return configs[0];
-            }
-            return null;
-        }
-    }
 }

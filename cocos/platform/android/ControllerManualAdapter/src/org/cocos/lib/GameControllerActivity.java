@@ -24,7 +24,9 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos.lib;
 
-import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.cocos.lib.GameControllerDelegate.ControllerEventListener;
 import org.cocos.lib.inputmanagercompat.InputManagerCompat;
@@ -32,6 +34,8 @@ import org.cocos.lib.inputmanagercompat.InputManagerCompat.InputDeviceListener;
 import org.cocos.lib.CocosActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.util.Log;
@@ -52,7 +56,10 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     // ===========================================================
     // Fields
     // ===========================================================
-    private static GameControllerActivity sGameControllerActivity;
+    // Only driver choices survive recreation; Activity/SDK instances never do.
+    private static final Set<Integer> requestedDrivers = new LinkedHashSet<>();
+    private final Handler mControllerHandler = new Handler(Looper.getMainLooper());
+    private GameControllerAdapter.Source mControllerSource;
     private InputManagerCompat mInputManager = null;
     
     protected GameControllerHelper mControllerHelper = null;
@@ -62,9 +69,14 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     protected GameControllerDelegate mControllerOuya = null;
     
     public void connectController(int driveType){
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mControllerHandler.post(() -> connectController(driveType));
+            return;
+        }
+        if (mControllerSource == null || !mControllerSource.isCurrent()) return;
         try {
             
-            ClassLoader loader = sGameControllerActivity.getClassLoader();
+            ClassLoader loader = getClassLoader();
             Class<?> controllerDelegate = null;
             if (driveType == DRIVERTYPE_MOGA) {
                 if (mControllerMoga != null) {
@@ -73,8 +85,6 @@ public abstract class GameControllerActivity extends CocosActivity implements In
                 controllerDelegate = loader.loadClass("org.cocos.lib.GameControllerMoga");
             } else if (driveType == DRIVERTYPE_NIBIRU) {
                 if (mControllerNibiru != null) {
-                    mControllerNibiru.onCreate(sGameControllerActivity);
-                    mControllerNibiru.onResume();
                     return;
                 }
                 controllerDelegate = loader.loadClass("org.cocos.lib.GameControllerNibiru");
@@ -83,22 +93,29 @@ public abstract class GameControllerActivity extends CocosActivity implements In
                     return;
                 }
                 controllerDelegate = loader.loadClass("org.cocos.lib.GameControllerOuya");
-            }
+            } else return;
             
-            GameControllerDelegate instance = (GameControllerDelegate)controllerDelegate.newInstance();         
-            sGameControllerActivity.setGameControllerInstance(instance, driveType);
-            
-            if (driveType == DRIVERTYPE_NIBIRU) {
-                Method method = controllerDelegate.getDeclaredMethod("onResume");
-                method.invoke(instance);
-            }
+            GameControllerDelegate instance = (GameControllerDelegate) controllerDelegate.getDeclaredConstructor().newInstance();
+            setGameControllerInstance(instance, driveType);
         }
-        catch (Exception e) {
-            e.printStackTrace();
+        catch (Exception | LinkageError e) {
+            Log.e(TAG, "Cannot bind controller driver=" + driveType, e);
         }
     }
     
     public void setGameControllerInstance(GameControllerDelegate controllerDelegate, int driveType) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mControllerHandler.post(() -> setGameControllerInstance(controllerDelegate, driveType));
+            return;
+        }
+        if (mControllerSource == null || !mControllerSource.isCurrent() || controllerDelegate == null) return;
+        final GameControllerDelegate previous = getGameControllerDelegate(driveType);
+        if (previous == controllerDelegate) return;
+        if (previous != null) {
+            previous.setControllerEventListener(null);
+            previous.onPause();
+            previous.onDestroy();
+        }
         if (driveType == DRIVERTYPE_NIBIRU) {
             mControllerNibiru = controllerDelegate;
         }else if (driveType == DRIVERTYPE_MOGA) {
@@ -106,9 +123,11 @@ public abstract class GameControllerActivity extends CocosActivity implements In
         }
         else if (driveType == DRIVERTYPE_OUYA) {
             mControllerOuya = controllerDelegate;
-        }
+        } else return;
+        requestedDrivers.add(driveType);
         controllerDelegate.setControllerEventListener(mControllerEventListener);
-        controllerDelegate.onCreate(sGameControllerActivity);
+        controllerDelegate.onCreate(this);
+        if (mControllerSource.isResumed()) controllerDelegate.onResume();
     }
     
     public GameControllerDelegate getGameControllerDelegate(int driveType){
@@ -124,30 +143,7 @@ public abstract class GameControllerActivity extends CocosActivity implements In
         return null;
     }
     
-    ControllerEventListener mControllerEventListener = new ControllerEventListener() {
-        
-        @Override
-        public void onButtonEvent(String vendorName, int controller, int button,
-                boolean isPressed, float value, boolean isAnalog) {
-            GameControllerAdapter.onButtonEvent(vendorName, controller, button, isPressed, value, isAnalog);
-        }
-        
-        @Override
-        public void onAxisEvent(String vendorName, int controller, int axisID,
-                float value, boolean isAnalog) {
-            GameControllerAdapter.onAxisEvent(vendorName, controller, axisID, value, isAnalog);
-        }
-
-        @Override
-        public void onConnected(String vendorName, int controller) {
-            GameControllerAdapter.onConnected(vendorName, controller);
-        }
-
-        @Override
-        public void onDisconnected(String vendorName, int controller) {
-            GameControllerAdapter.onDisconnected(vendorName, controller);
-        }
-    };
+    ControllerEventListener mControllerEventListener;
     
     // ===========================================================
     // Constructors
@@ -156,23 +152,26 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        sGameControllerActivity = this;
+        if (getGLSurfaceView() == null) return; // Ignored non-root launcher Activity.
+        mControllerSource = new GameControllerAdapter.Source(getGLSurfaceView());
+        mControllerEventListener = mControllerSource;
+        mControllerHelper = new GameControllerHelper(this);
         mInputManager = InputManagerCompat.Factory.getInputManager(this);
-        mInputManager.registerInputDeviceListener(this, null);
+        mInputManager.registerInputDeviceListener(this, mControllerHandler);
         
         if (mControllerNibiru != null) {
+            mControllerNibiru.setControllerEventListener(mControllerEventListener);
             mControllerNibiru.onCreate(this);
         }
         if (mControllerMoga != null) {
+            mControllerMoga.setControllerEventListener(mControllerEventListener);
             mControllerMoga.onCreate(this);
         }
         if (mControllerOuya != null) {
+            mControllerOuya.setControllerEventListener(mControllerEventListener);
             mControllerOuya.onCreate(this);
         }
-        if (mControllerHelper == null) {
-            mControllerHelper = new GameControllerHelper(this);
-        }
+        for (int driver : new ArrayList<>(requestedDrivers)) connectController(driver);
     }
     
     // ===========================================================
@@ -185,6 +184,7 @@ public abstract class GameControllerActivity extends CocosActivity implements In
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mControllerSource == null || !mControllerSource.isResumed()) return super.dispatchKeyEvent(event);
         boolean handled = false; 
         if (mControllerNibiru != null) {
             handled |= mControllerNibiru.dispatchKeyEvent(event);
@@ -205,6 +205,8 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (mControllerSource == null || !mControllerSource.isResumed()) return super.dispatchGenericMotionEvent(event);
+        if (mInputManager != null) mInputManager.onGenericMotionEvent(event);
         boolean handled = false;
         if (mControllerNibiru != null) {
             handled |= mControllerNibiru.dispatchGenericMotionEvent(event);
@@ -227,7 +229,7 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     public void onInputDeviceAdded(int deviceId) {  
         Log.d(TAG,"onInputDeviceAdded:" + deviceId);
         
-        mControllerHelper.onInputDeviceAdded(deviceId);
+        if (mControllerSource != null && mControllerSource.isCurrent()) mControllerHelper.onInputDeviceAdded(deviceId);
     }
     /*
      * This is an unusual case. Input devices don't typically change, but they
@@ -241,6 +243,7 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     @Override
     public void onInputDeviceChanged(int deviceId) {
         Log.w(TAG,"onInputDeviceChanged:" + deviceId);
+        if (mControllerSource != null && mControllerSource.isCurrent()) mControllerHelper.onInputDeviceChanged(deviceId);
     }
     
     /*
@@ -254,12 +257,15 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     public void onInputDeviceRemoved(int deviceId) {
         Log.d(TAG,"onInputDeviceRemoved:" + deviceId);
         
-        mControllerHelper.onInputDeviceRemoved(deviceId);
+        if (mControllerSource != null && mControllerSource.isCurrent()) mControllerHelper.onInputDeviceRemoved(deviceId);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (mControllerSource == null || !mControllerSource.isCurrent()) return;
+        mControllerSource.setResumed(true);
+        mInputManager.onResume();
         
         if (mControllerNibiru != null) {
             mControllerNibiru.onResume();
@@ -271,11 +277,14 @@ public abstract class GameControllerActivity extends CocosActivity implements In
             mControllerOuya.onResume();
         }
         
-        GameControllerHelper.gatherControllers(mControllerHelper.mGameController);
+        mControllerHelper.onResume();
     }
     
     @Override
     protected void onPause() {
+        if (mControllerSource != null) mControllerSource.setResumed(false);
+        if (mInputManager != null) mInputManager.onPause();
+        if (mControllerHelper != null) mControllerHelper.resetInputState();
         if (mControllerNibiru != null) {
             mControllerNibiru.onPause();
         }
@@ -291,16 +300,33 @@ public abstract class GameControllerActivity extends CocosActivity implements In
     
     @Override
     protected void onDestroy() {
+        final boolean current = mControllerSource != null && mControllerSource.isCurrent();
+        if (mControllerSource != null) mControllerSource.invalidate();
+        mControllerHandler.removeCallbacksAndMessages(null);
+        if (mInputManager != null) {
+            mInputManager.onPause();
+            mInputManager.unregisterInputDeviceListener(this);
+            mInputManager = null;
+        }
         if (mControllerNibiru != null) {
+            mControllerNibiru.setControllerEventListener(null);
             mControllerNibiru.onDestroy();
         }
         if (mControllerMoga != null) {
+            mControllerMoga.setControllerEventListener(null);
             mControllerMoga.onDestroy();
         }
         if (mControllerOuya != null) {
+            mControllerOuya.setControllerEventListener(null);
             mControllerOuya.onDestroy();
         }
-        
+        mControllerNibiru = null;
+        mControllerMoga = null;
+        mControllerOuya = null;
+        mControllerEventListener = null;
+        if (current && isFinishing() && mControllerHelper != null) mControllerHelper.mGameController.clear();
+        mControllerHelper = null;
+        if (current && isFinishing()) requestedDrivers.clear();
         super.onDestroy();
     }
 

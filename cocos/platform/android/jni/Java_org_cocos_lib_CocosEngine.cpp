@@ -93,26 +93,6 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosEngine_nativeCall0(JNIEnv* env, j
         operation(reinterpret_cast<void*>(static_cast<uintptr_t>(param)));
 }
 
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosEngine_nativeRunOnGLThread(JNIEnv* env, jclass, jobject runnable)
-{
-    using jobject_type = std::remove_pointer_t<jobject>;
-    struct jobject_delete
-    {
-        void operator()(jobject_type* __ptr) const _NOEXCEPT { JniHelper::getEnv()->DeleteGlobalRef(__ptr); }
-    };
-
-    cocos2d::Director::getInstance()->getScheduler()->performFunctionInCocosThread(
-        [wrap = std::make_shared<std::unique_ptr<jobject_type, jobject_delete>>(env->NewGlobalRef(runnable))] {
-            auto curEnv = JniHelper::getEnv();
-
-            JniMethodInfo mi;
-            if (JniHelper::getMethodInfo(mi, "java/lang/Runnable", "run", "()V"))
-            {
-                curEnv->CallVoidMethod(wrap.get()->get(), mi.methodID);
-            }
-        });
-}
-
 }
 
 const char* getApkPath()

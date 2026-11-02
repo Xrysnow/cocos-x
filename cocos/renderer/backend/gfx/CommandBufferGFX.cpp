@@ -50,17 +50,8 @@ void CommandBufferGFX::shutdownSurface()
 {
     if (_surfaceClosed)
         return;
+    detachSurface();
     _surfaceClosed = true;
-    // A recorded frame must finish its submit/present pair before releasing its surface.
-    if (_frameStarted)
-    {
-        if (_currentPass)
-            endRenderPass();
-        endFrame();
-    }
-    _currentFBO = nullptr;
-    _usedFBOs.clear();
-    CC_SAFE_DELETE(_defaultRT);
     for (auto* swapchain : swapchains)
     {
         swapchain->releaseAcquiredDrawable();
@@ -75,7 +66,7 @@ void CommandBufferGFX::shutdownSurface()
 
 bool CommandBufferGFX::beginFrame()
 {
-    if (_surfaceClosed || _surfaceFailed)
+    if (_surfaceClosed || _surfaceDetached || hasSurfaceFailed())
         return false;
 
     auto* device = DeviceGFX::getInstance();
@@ -115,13 +106,8 @@ bool CommandBufferGFX::beginFrame()
 
     if (_screenResized)
     {
-        // Destroy framebuffer references before replacing swapchain attachments.
-        _currentFBO = nullptr;
-        _usedFBOs.clear();
-        CC_SAFE_DELETE(_defaultRT);
-        for (auto* swapchain : swapchains)
-            swapchain->resize((uint32_t)outputSize.width, (uint32_t)outputSize.height,
-                              gfx::SurfaceTransform::IDENTITY);
+        if (!resizeSurface((uint32_t)outputSize.width, (uint32_t)outputSize.height))
+            return false;
         DeviceGFX::setSwapchainInfo(device->getWindowHandle(), device->getVsync(),
             (uint32_t)outputSize.width, (uint32_t)outputSize.height, device->getNativeRenderSurface());
         _screenResized = false;
@@ -154,6 +140,7 @@ bool CommandBufferGFX::beginFrame()
             CCLOGERROR("GFX swapchain initialization failed; rendering is disabled for this surface.");
             if (swapchain)
             {
+                _deviceLost = swapchain->getSurfaceStatus() == gfx::Swapchain::SurfaceStatus::DEVICE_LOST;
                 swapchain->destroy();
                 delete swapchain;
             }
@@ -168,6 +155,7 @@ bool CommandBufferGFX::beginFrame()
     // DeviceAgent synchronizes Metal acquire before exposing the result.
     if (!swapchains[0]->hasAcquiredDrawable())
     {
+        _deviceLost = hasDeviceLost();
         swapchains[0]->releaseAcquiredDrawable();
         return false;
     }
@@ -179,6 +167,152 @@ bool CommandBufferGFX::beginFrame()
     _cb->begin();
     _frameStarted = true;
     return true;
+}
+
+bool CommandBufferGFX::detachSurface()
+{
+    if (_surfaceClosed)
+        return !hasSurfaceFailed();
+    _surfaceDetached = true;
+    if (_frameStarted)
+    {
+        if (_currentPass)
+            endRenderPass();
+        endFrame();
+    }
+    _deviceLost = hasDeviceLost();
+    _currentFBO = nullptr;
+    _usedFBOs.clear();
+    CC_SAFE_DELETE(_defaultRT);
+    bool detached = true;
+    for (auto* swapchain : swapchains)
+    {
+        swapchain->releaseAcquiredDrawable();
+        // The facade synchronizes the Agent and the backend drains GPU use.
+        swapchain->destroySurface();
+        _deviceLost = hasDeviceLost();
+        const auto status = swapchain->getSurfaceStatus();
+        if (status == gfx::Swapchain::SurfaceStatus::FAILED ||
+            status == gfx::Swapchain::SurfaceStatus::SURFACE_LOST ||
+            status == gfx::Swapchain::SurfaceStatus::DEVICE_LOST)
+        {
+            detached = false;
+            _surfaceFailed = true;
+        }
+    }
+    _defaultRTGeneration = 0;
+    _currentFBOSize = {};
+    _screenResized = false;
+    return detached && !_deviceLost;
+}
+
+bool CommandBufferGFX::attachSurface(void* window, uint32_t width, uint32_t height)
+{
+    if (_surfaceClosed || !window || !width || !height || hasDeviceLost())
+        return false;
+    // Rebind is also an explicit retry after SurfaceFailed. Retire references
+    // before any actor can replace the old attachments, even for the same pointer.
+    if (!detachSurface())
+        return false;
+    _surfaceFailed = false;
+    if (swapchains.empty())
+    {
+        gfx::SwapchainInfo info;
+        info.windowHandle = window;
+        info.width = width;
+        info.height = height;
+        info.vsyncMode = DeviceGFX::getInstance()->getVsync() ? gfx::VsyncMode::ON : gfx::VsyncMode::OFF;
+        auto* swapchain = gfx::Device::getInstance()->createSwapchain(info);
+        if (!swapchain || !swapchain->isSurfaceInitialized())
+        {
+            if (swapchain)
+            {
+                _deviceLost = swapchain->getSurfaceStatus() == gfx::Swapchain::SurfaceStatus::DEVICE_LOST;
+                swapchain->destroy();
+                delete swapchain;
+            }
+            _surfaceFailed = true;
+            return false;
+        }
+        swapchains.push_back(swapchain);
+    }
+    else
+    {
+        for (auto* swapchain : swapchains)
+        {
+            swapchain->createSurface(window);
+            if (swapchain->isSurfaceInitialized())
+                swapchain->resize(width, height, gfx::SurfaceTransform::IDENTITY);
+            if (!swapchain->isSurfaceInitialized())
+            {
+                _surfaceFailed = true;
+                _deviceLost = hasDeviceLost();
+                detachSurface();
+                return false;
+            }
+        }
+    }
+    _surfaceDetached = false;
+    _screenResized = false;
+    return true;
+}
+
+bool CommandBufferGFX::resizeSurface(uint32_t width, uint32_t height)
+{
+    if (_surfaceClosed || _surfaceDetached || hasDeviceLost() || _surfaceFailed)
+        return false;
+    if (_frameStarted)
+    {
+        if (_currentPass)
+            endRenderPass();
+        endFrame();
+    }
+    _currentFBO = nullptr;
+    _usedFBOs.clear();
+    CC_SAFE_DELETE(_defaultRT);
+    _defaultRTGeneration = 0;
+    bool ready = width && height;
+    for (auto* swapchain : swapchains)
+    {
+        swapchain->resize(width, height, gfx::SurfaceTransform::IDENTITY);
+        ready = swapchain->isSurfaceInitialized() && ready;
+    }
+    _deviceLost = hasDeviceLost();
+    _screenResized = false;
+    return ready;
+}
+
+bool CommandBufferGFX::hasDeviceLost() const
+{
+    if (_deviceLost)
+        return true;
+    for (auto* swapchain : swapchains)
+        if (swapchain->getSurfaceStatus() == gfx::Swapchain::SurfaceStatus::DEVICE_LOST)
+            return true;
+    return false;
+}
+
+bool CommandBufferGFX::hasSurfaceFailed() const
+{
+    if (_surfaceFailed || hasDeviceLost())
+        return true;
+    for (auto* swapchain : swapchains)
+    {
+        const auto status = swapchain->getSurfaceStatus();
+        if (status == gfx::Swapchain::SurfaceStatus::SURFACE_LOST ||
+            status == gfx::Swapchain::SurfaceStatus::DEVICE_LOST ||
+            status == gfx::Swapchain::SurfaceStatus::FAILED)
+            return true;
+    }
+    return false;
+}
+
+uint64_t CommandBufferGFX::getPresentCount() const
+{
+    uint64_t count = 0;
+    for (auto* swapchain : swapchains)
+        count += swapchain->getPresentCount();
+    return count;
 }
 
 void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
@@ -481,23 +615,11 @@ void CommandBufferGFX::setScissorRect(bool isEnabled, float x, float y, float wi
     }
     else
     {
-        // TODO: use viewport?
-        // rect.width = _currentFBOSize.width;
-        // rect.height = _currentFBOSize.height;
-
-        // rect.x = _viewPort.left;
-        // rect.y = _viewPort.top;
-        // rect.width = _viewPort.width;
-        // rect.height = _viewPort.height;
-        // const auto api = gfx::Device::getInstance()->getGfxAPI();
-        // if (api == gfx::API::VULKAN && _currentFBO)
-        //{
-        //	const auto h = _currentFBOSize.height;
-        //	rect.y = h - rect.y - rect.height;
-        // }
-
-        rect.width  = 32768;
-        rect.height = 32768;
+        // Vulkan still requires a valid scissor when the engine disables its
+        // logical scissor test. An arbitrary large rectangle can exceed the
+        // native device limits; the full current attachment is the valid bound.
+        rect.width = _currentFBOSize.width;
+        rect.height = _currentFBOSize.height;
     }
     _scissorRect = rect;
     _cb->setScissor(rect);

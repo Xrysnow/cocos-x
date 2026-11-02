@@ -42,6 +42,8 @@ import com.nibiru.lib.controller.OnStateListener;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
@@ -54,8 +56,9 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
         
     private Context mContext;
     private SparseIntArray mKeyMap;
-    private ControllerEventListener mControllerEventListener = null;
-    private ControllerService mControllerService = null;
+    private volatile ControllerEventListener mControllerEventListener = null;
+    private volatile ControllerService mControllerService = null;
+    private final Handler mSdkHandler = new Handler(Looper.getMainLooper());
     
     public GameControllerNibiru() {
         mKeyMap = new SparseIntArray(20);
@@ -86,8 +89,11 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
     public void onCreate(Context context) {
         mContext = context;
         
-        mControllerService = Controller.getControllerService(context);
+        // The Context overload caches services globally by Activity identity.
+        // Own a fresh service so unregistering can release the old Activity.
+        mControllerService = Controller.getControllerService();
         if (mControllerService != null) {
+            mControllerService.setHandler(mSdkHandler);
             mControllerService.setControllerServiceListener(this);
             mControllerService.setStateListener(this);
             mControllerService.setKeyListener(this);
@@ -105,6 +111,7 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
         if (mControllerService != null) {
             mControllerService.setEnable(false);
         }
+        mSdkHandler.removeCallbacksAndMessages(null);
     }
     
     public void onResume() {
@@ -126,16 +133,27 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
     }
     
     public void onDestroy() {
-        if( mControllerService != null ){
-            mControllerService.unregister();
+        mControllerEventListener = null;
+        final ControllerService service = mControllerService;
+        mControllerService = null;
+        if (service != null) {
+            service.setEnable(false);
+            service.setControllerServiceListener(null);
+            service.setStateListener(null);
+            service.setKeyListener(null);
+            service.setSimpleStickListener(null);
+            service.unregister();
         }
+        mSdkHandler.removeCallbacksAndMessages(null);
+        mContext = null;
     }
 
     @Override
     public void onControllerServiceReady(boolean isSucc) {
-        if( isSucc )
+        final ControllerService service = mControllerService;
+        if (isSucc && service != null)
         {
-            if( !mControllerService.hasDeviceConnected() ){
+            if (!service.hasDeviceConnected()) {
                 Bundle bun = new Bundle();
                 bun.putBoolean(ControllerService.FLAG_IS_SHOW_GAMEPAD_TIP, false);
                 /*try {
@@ -149,16 +167,19 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
 
     @Override
     public void onControllerKeyDown(int playerOrder, int keyCode, ControllerKeyEvent event) {
+        final ControllerEventListener listener = mControllerEventListener;
+        final ControllerService service = mControllerService;
         if (mKeyMap.get(keyCode) == 0) {
             Log.e(TAG, "Didn't map the key: " + keyCode);
             return;
         }
         
-        if (mControllerEventListener != null) {
+        if (listener != null && service != null) {
             try {
-                ControllerDevice controllerDevice = mControllerService.getDeviceByPlayerOrder(playerOrder);
+                ControllerDevice controllerDevice = service.getDeviceByPlayerOrder(playerOrder);
+                if (controllerDevice == null) return;
                 
-                mControllerEventListener.onButtonEvent(controllerDevice.getDeviceName(), controllerDevice.getDeviceId(), 
+                listener.onButtonEvent(controllerDevice.getDeviceName(), controllerDevice.getDeviceId(),
                         mKeyMap.get(keyCode), true, 1.0f, false);
             } catch (ControllerServiceException e) {
                 e.printStackTrace();
@@ -168,16 +189,19 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
 
     @Override
     public void onControllerKeyUp(int playerOrder, int keyCode, ControllerKeyEvent event) {     
+        final ControllerEventListener listener = mControllerEventListener;
+        final ControllerService service = mControllerService;
         if (mKeyMap.get(keyCode) == 0) {
             Log.e(TAG, "Didn't map the key: " + keyCode);
             return;
         }
         
-        if (mControllerEventListener != null) {
+        if (listener != null && service != null) {
             try {
-                ControllerDevice controllerDevice = mControllerService.getDeviceByPlayerOrder(playerOrder);
+                ControllerDevice controllerDevice = service.getDeviceByPlayerOrder(playerOrder);
+                if (controllerDevice == null) return;
                 
-                mControllerEventListener.onButtonEvent(controllerDevice.getDeviceName(), controllerDevice.getDeviceId(), 
+                listener.onButtonEvent(controllerDevice.getDeviceName(), controllerDevice.getDeviceId(),
                         mKeyMap.get(keyCode), false, 0.0f, false);
             } catch (ControllerServiceException e) {
                 e.printStackTrace();
@@ -187,16 +211,19 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
 
     @Override
     public void onLeftStickChanged(int playerOrder, float x, float y) {
-        if (mControllerEventListener != null) {
+        final ControllerEventListener listener = mControllerEventListener;
+        final ControllerService service = mControllerService;
+        if (listener != null && service != null) {
             try {
-                ControllerDevice controllerDevice = mControllerService.getDeviceByPlayerOrder(playerOrder);
+                ControllerDevice controllerDevice = service.getDeviceByPlayerOrder(playerOrder);
+                if (controllerDevice == null) return;
                 
                 String deviceName = controllerDevice.getDeviceName();
                 int deviceId = controllerDevice.getDeviceId();
                 
-                mControllerEventListener.onAxisEvent(deviceName, deviceId, 
+                listener.onAxisEvent(deviceName, deviceId,
                         GameControllerDelegate.THUMBSTICK_LEFT_X, x, true);
-                mControllerEventListener.onAxisEvent(deviceName, deviceId, 
+                listener.onAxisEvent(deviceName, deviceId,
                         GameControllerDelegate.THUMBSTICK_LEFT_Y, y, true);             
             } catch (ControllerServiceException e) {
                 e.printStackTrace();
@@ -206,16 +233,19 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
 
     @Override
     public void onRightStickChanged(int playerOrder, float x, float y) {
-        if (mControllerEventListener != null) {
+        final ControllerEventListener listener = mControllerEventListener;
+        final ControllerService service = mControllerService;
+        if (listener != null && service != null) {
             try {
-                ControllerDevice controllerDevice = mControllerService.getDeviceByPlayerOrder(playerOrder);
+                ControllerDevice controllerDevice = service.getDeviceByPlayerOrder(playerOrder);
+                if (controllerDevice == null) return;
                 
                 String deviceName = controllerDevice.getDeviceName();
                 int deviceId = controllerDevice.getDeviceId();
                 
-                mControllerEventListener.onAxisEvent(deviceName, deviceId, 
+                listener.onAxisEvent(deviceName, deviceId,
                         GameControllerDelegate.THUMBSTICK_RIGHT_X, x, true);
-                mControllerEventListener.onAxisEvent(deviceName, deviceId, 
+                listener.onAxisEvent(deviceName, deviceId,
                         GameControllerDelegate.THUMBSTICK_RIGHT_Y, y, true);
             } catch (ControllerServiceException e) {
                 e.printStackTrace();
@@ -225,24 +255,27 @@ OnSimpleStickListener, OnAccListener, OnGyroListener, OnStateListener, GameContr
     
     @Override
     public void onControllerStateChanged(int playerOrder, int state, ControllerDevice device) {
-        if (mControllerEventListener != null) {
+        final ControllerEventListener listener = mControllerEventListener;
+        if (listener != null && device != null) {
             if (state == ControllerDevice.STATE_CONN)
             {
-                mControllerEventListener.onConnected(device.getDeviceName(), device.getDeviceId());
+                listener.onConnected(device.getDeviceName(), device.getDeviceId());
             }
             else if (state == ControllerDevice.STATE_DISCONN)
             {
-                mControllerEventListener.onDisconnected(device.getDeviceName(), device.getDeviceId());
+                listener.onDisconnected(device.getDeviceName(), device.getDeviceId());
             }
         }
     }
 
     public boolean dispatchGenericMotionEvent(MotionEvent event){
-        return mControllerService.handleExternalInput(event);
+        final ControllerService service = mControllerService;
+        return service != null && service.handleExternalInput(event);
     }
     
     public boolean dispatchKeyEvent(KeyEvent event){
-        return mControllerService.handleExternalInput(event);
+        final ControllerService service = mControllerService;
+        return service != null && service.handleExternalInput(event);
     }
     
     @Override

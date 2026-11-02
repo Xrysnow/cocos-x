@@ -26,6 +26,7 @@ THE SOFTWARE.
 package org.cocos.lib;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.text.InputFilter;
@@ -287,9 +288,14 @@ public class CocosEditBox extends EditText {
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
         switch (pKeyCode) {
             case KeyEvent.KEYCODE_BACK:
-                CocosActivity activity = (CocosActivity)this.getContext();
+                Context context = getContext();
+                while (context instanceof ContextWrapper && !(context instanceof CocosActivity))
+                    context = ((ContextWrapper) context).getBaseContext();
                 //To prevent program from going to background
-                activity.getGLSurfaceView().requestFocus();
+                if (context instanceof CocosActivity) {
+                    CocosGLSurfaceView view = ((CocosActivity) context).getGLSurfaceView();
+                    if (view != null && view.isCurrentHost()) view.requestFocus();
+                }
                 return true;
             default:
                 return super.onKeyDown(pKeyCode, pKeyEvent);

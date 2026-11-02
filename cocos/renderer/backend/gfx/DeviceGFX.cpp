@@ -79,6 +79,68 @@ bool DeviceGFX::isAvailable()
     return cc::gfx::Device::getInstance() != nullptr;
 }
 
+bool DeviceGFX::detachSurface()
+{
+    bool ready = true;
+    for (auto* commandBuffer : SurfaceCommandBuffers)
+        ready = commandBuffer->detachSurface() && ready;
+    if (DeviceGFXInstance)
+    {
+        DeviceGFXInstance->windowHandle = nullptr;
+        DeviceGFXInstance->nativeRenderSurface = nullptr;
+        DeviceGFXInstance->width = DeviceGFXInstance->height = 0;
+    }
+    return ready;
+}
+
+bool DeviceGFX::attachSurface(void* window, uint32_t w, uint32_t h)
+{
+    if (!window || !w || !h || !DeviceGFXInstance || hasDeviceLost())
+        return false;
+    bool ready = true;
+    for (auto* commandBuffer : SurfaceCommandBuffers)
+        ready = commandBuffer->attachSurface(window, w, h) && ready;
+    if (!ready)
+    {
+        detachSurface();
+        return false;
+    }
+    setSwapchainInfo(window, DeviceGFXInstance->vsync, w, h);
+    return ready;
+}
+
+bool DeviceGFX::resizeSurface(uint32_t w, uint32_t h)
+{
+    if (!DeviceGFXInstance || !DeviceGFXInstance->windowHandle || hasDeviceLost())
+        return false;
+    DeviceGFXInstance->width = w;
+    DeviceGFXInstance->height = h;
+    bool ready = w && h;
+    for (auto* commandBuffer : SurfaceCommandBuffers)
+        ready = commandBuffer->resizeSurface(w, h) && ready;
+    return ready;
+}
+
+bool DeviceGFX::hasDeviceLost()
+{
+    return std::any_of(SurfaceCommandBuffers.begin(), SurfaceCommandBuffers.end(),
+        [](CommandBufferGFX* cb) { return cb->hasDeviceLost(); });
+}
+
+bool DeviceGFX::hasSurfaceFailed()
+{
+    return std::any_of(SurfaceCommandBuffers.begin(), SurfaceCommandBuffers.end(),
+        [](CommandBufferGFX* cb) { return cb->hasSurfaceFailed(); });
+}
+
+uint64_t DeviceGFX::getPresentCount()
+{
+    uint64_t count = 0;
+    for (auto* commandBuffer : SurfaceCommandBuffers)
+        count += commandBuffer->getPresentCount();
+    return count;
+}
+
 void DeviceGFX::destroy()
 {
     delete DeviceGFXInstance;
