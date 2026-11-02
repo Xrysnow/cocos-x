@@ -99,6 +99,7 @@ public:
 
     uint32_t getCurrentIndex() const { return _currentIndex; }
     void setMultithreaded(bool multithreaded);
+    bool isMultithreaded() const { return _multithreaded; }
 
     inline MessageQueue *getMessageQueue() const { return _mainMessageQueue; }
 

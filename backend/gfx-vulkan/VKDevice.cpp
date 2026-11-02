@@ -98,6 +98,8 @@ CCVKDevice::~CCVKDevice() {
 bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
     _gpuContext = std::make_unique<CCVKGPUContext>();
     if (!_gpuContext->initialize()) {
+        _gpuContext->destroy();
+        _gpuContext.reset();
         return false;
     }
 
@@ -238,7 +240,14 @@ bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
         }
     }
 
-    VK_CHECK(vkCreateDevice(_gpuContext->physicalDevice, &deviceCreateInfo, nullptr, &_gpuDevice->vkDevice));
+    const VkResult deviceResult = vkCreateDevice(_gpuContext->physicalDevice, &deviceCreateInfo, nullptr, &_gpuDevice->vkDevice);
+    if (deviceResult != VK_SUCCESS) {
+        CC_LOG_ERROR("Vulkan device initialization failed: %d", deviceResult);
+        _gpuContext->destroy();
+        _gpuContext.reset();
+        _gpuDevice.reset();
+        return false;
+    }
 
     volkLoadDevice(_gpuDevice->vkDevice);
 
@@ -298,6 +307,14 @@ bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
 
     _gpuDevice->useMultiDrawIndirect = deviceFeatures.multiDrawIndirect;
     _gpuDevice->useDescriptorUpdateTemplate = _gpuDevice->minorVersion > 0 || checkExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // The Android minimal scene reads zero UBO values through descriptor templates,
+    // while identical buffers render correctly with standard descriptor writes.
+    // Keep the verified path for Debug and Release; this does not attribute the
+    // observed difference to either the driver or the template implementation.
+    _gpuDevice->useDescriptorUpdateTemplate = false;
+#endif
+    CC_LOG_INFO("Vulkan descriptor updates useTemplate=%u", _gpuDevice->useDescriptorUpdateTemplate ? 1U : 0U);
 
     if (_gpuDevice->minorVersion > 1) {
         _gpuDevice->createRenderPass2 = vkCreateRenderPass2;
@@ -400,7 +417,12 @@ bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
 
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
-    VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_gpuDevice->memoryAllocator));
+    const VkResult allocatorResult = vmaCreateAllocator(&allocatorInfo, &_gpuDevice->memoryAllocator);
+    if (allocatorResult != VK_SUCCESS) {
+        CC_LOG_ERROR("Vulkan allocator initialization failed: %d", allocatorResult);
+        destroy();
+        return false;
+    }
 
     uint32_t backBufferCount = _gpuDevice->backBufferCount;
     for (uint32_t i = 0U; i < backBufferCount; i++) {
@@ -505,7 +527,8 @@ void CCVKDevice::doDestroy() {
     waitAllFences();
     if (_gpuDevice && _gpuDevice->vkDevice != VK_NULL_HANDLE) {
         // Present operations may outlive the last submitted frame's fence.
-        VK_CHECK(vkDeviceWaitIdle(_gpuDevice->vkDevice));
+        const auto idleResult = vkDeviceWaitIdle(_gpuDevice->vkDevice);
+        if (idleResult != VK_SUCCESS) CC_LOG_ERROR("Vulkan teardown idle failed: %d", idleResult);
     }
 
     SPIRVUtils::getInstance()->destroy();
@@ -532,12 +555,7 @@ void CCVKDevice::doDestroy() {
     _gpuDescriptorSetHub = nullptr;
     _gpuIAHub = nullptr;
 
-    if (_gpuDevice) {
-        uint32_t backBufferCount = _gpuDevice->backBufferCount;
-        for (uint32_t i = 0U; i < backBufferCount; i++) {
-            _gpuRecycleBins[i]->clear();
-        }
-    }
+    for (auto &recycleBin : _gpuRecycleBins) recycleBin->clear();
     _gpuStagingBufferPools.clear();
     _gpuRecycleBins.clear();
     _gpuFencePools.clear();
@@ -579,6 +597,7 @@ void CCVKDevice::doDestroy() {
         _gpuDevice = nullptr;
     }
 
+    if (_gpuContext) _gpuContext->destroy();
     _gpuContext = nullptr;
 }
 
@@ -586,6 +605,7 @@ namespace {
 ccstd::vector<VkSwapchainKHR> vkSwapchains;
 ccstd::vector<uint32_t> vkSwapchainIndices;
 ccstd::vector<CCVKGPUSwapchain *> gpuSwapchains;
+ccstd::vector<CCVKSwapchain *> acquiredSwapchains;
 ccstd::vector<VkImageMemoryBarrier> vkAcquireBarriers;
 ccstd::vector<VkImageMemoryBarrier> vkPresentBarriers;
 
@@ -618,13 +638,13 @@ VkImageMemoryBarrier presentBarrier{
 void CCVKDevice::acquire(Swapchain *const *swapchains, uint32_t count) {
     if (_onAcquire) _onAcquire->execute();
 
-    // A frame that reached acquire() but never submitted (rendering is skipped while the
-    // window is being resized/minimized) leaves barrier records in the transport hub: they
-    // reference images acquired with semaphores the upcoming submit will not wait on
-    // (UNASSIGNED-non-acquired-swapchain-image-used). Drop them and reset the per-image
-    // initial-transition flags so the dropped transitions get re-recorded on next use.
-    const bool staleEarly = !_gpuTransportHub->empty(false);
-    const bool staleLate = !_gpuTransportHub->empty(true);
+    auto *queue = static_cast<CCVKQueue *>(_queue);
+    // Only a previous acquire that never reached submit leaves stale image transitions.
+    // Before the first acquire (and between completed frames), early transport commands
+    // are legitimate scene/texture/static-vertex uploads and must reach the next submit.
+    const bool abandonedAcquire = queue->gpuQueue()->frameAcquirePending;
+    const bool staleEarly = abandonedAcquire && !_gpuTransportHub->empty(false);
+    const bool staleLate = abandonedAcquire && !_gpuTransportHub->empty(true);
     if (staleEarly) _gpuTransportHub->discard(false);
     if (staleLate) _gpuTransportHub->discard(true);
     if (staleEarly || staleLate) {
@@ -633,69 +653,73 @@ void CCVKDevice::acquire(Swapchain *const *swapchains, uint32_t count) {
         }
     }
 
-    auto *queue = static_cast<CCVKQueue *>(_queue);
     queue->gpuQueue()->lastSignaledSemaphores.clear();
     queue->gpuQueue()->currentPresentSemaphores.clear();
     vkSwapchainIndices.clear();
     gpuSwapchains.clear();
     vkSwapchains.clear();
-    vkAcquireBarriers.resize(count, acquireBarrier);
-    vkPresentBarriers.resize(count, presentBarrier);
-    for (uint32_t i = 0U; i < count; ++i) {
-        auto *swapchain = static_cast<CCVKSwapchain *>(swapchains[i]);
-        if (swapchain->gpuSwapchain()->lastPresentResult == VK_NOT_READY
-            || swapchain->gpuSwapchain()->lastPresentResult == VK_ERROR_OUT_OF_DATE_KHR
-            || swapchain->gpuSwapchain()->lastPresentResult == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
-            if (!swapchain->checkSwapchainStatus()) {
-                continue;
-            }
-        }
-        vkSwapchains.push_back(swapchain->gpuSwapchain()->vkSwapchain);
-        gpuSwapchains.push_back(swapchain->gpuSwapchain());
-        vkSwapchainIndices.push_back(swapchain->gpuSwapchain()->curImageIndex);
-    }
-
+    acquiredSwapchains.clear();
+    vkAcquireBarriers.clear();
+    vkPresentBarriers.clear();
+    queue->gpuQueue()->frameAcquirePending = false;
     _gpuDescriptorSetHub->flush();
     gpuSemaphorePool()->reset();
 
-    for (uint32_t i = 0; i < vkSwapchains.size(); ++i) {
-        if (!vkSwapchains[i]) {
+    for (uint32_t i = 0U; i < count; ++i) {
+        auto *swapchain = static_cast<CCVKSwapchain *>(swapchains[i]);
+        auto *gpuSwapchain = swapchain->gpuSwapchain();
+        if (!gpuSwapchain || !gpuSwapchain->vkSurface) {
+            swapchain->setAcquireResult(VK_ERROR_SURFACE_LOST_KHR);
             continue;
         }
+        const auto previous = gpuSwapchain->lastPresentResult;
+        // SUBOPTIMAL is still a usable drawable. Android may report it persistently
+        // for a compositor pre-transform; rebuild on out-of-date or an explicit resize.
+        if (previous == VK_NOT_READY || previous == VK_ERROR_OUT_OF_DATE_KHR ||
+            previous == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
+            if (!swapchain->checkSwapchainStatus()) continue;
+        }
+        if (!swapchain->isSurfaceInitialized() || !gpuSwapchain->vkSwapchain) continue;
+
+        uint32_t imageIndex = 0;
         VkSemaphore acquireSemaphore = gpuSemaphorePool()->alloc();
-        VkResult res = vkAcquireNextImageKHR(_gpuDevice->vkDevice, vkSwapchains[i], ~0ULL,
-                                             acquireSemaphore, VK_NULL_HANDLE, &vkSwapchainIndices[i]);
-        //CC_ASSERT(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
-        if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
-            auto* swapchain = static_cast<CCVKSwapchain*>(swapchains[i]);
-            if (!swapchain->checkSwapchainStatus()) {
-                continue;
-            }
-            gpuSwapchains[i] = swapchain->gpuSwapchain();
-            vkSwapchains[i] = swapchain->gpuSwapchain()->vkSwapchain;
+        VkResult result = vkAcquireNextImageKHR(_gpuDevice->vkDevice, gpuSwapchain->vkSwapchain, ~0ULL,
+                                                acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
+        swapchain->setAcquireResult(result);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
+            if (!swapchain->checkSwapchainStatus()) continue;
             acquireSemaphore = gpuSemaphorePool()->alloc();
-            vkAcquireNextImageKHR(_gpuDevice->vkDevice, vkSwapchains[i], ~0ULL,
-                acquireSemaphore, VK_NULL_HANDLE, &vkSwapchainIndices[i]);
+            result = vkAcquireNextImageKHR(_gpuDevice->vkDevice, gpuSwapchain->vkSwapchain, ~0ULL,
+                                           acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
+            swapchain->setAcquireResult(result);
+        }
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            CC_LOG_ERROR("Vulkan drawable acquire failed: %d", result);
+            continue;
         }
 
-        gpuSwapchains[i]->curImageIndex = vkSwapchainIndices[i];
+        gpuSwapchain->curImageIndex = imageIndex;
+        vkSwapchains.push_back(gpuSwapchain->vkSwapchain);
+        gpuSwapchains.push_back(gpuSwapchain);
+        acquiredSwapchains.push_back(swapchain);
+        vkSwapchainIndices.push_back(imageIndex);
         queue->gpuQueue()->lastSignaledSemaphores.push_back(acquireSemaphore);
-        queue->gpuQueue()->currentPresentSemaphores.push_back(gpuSwapchains[i]->presentSemaphores[vkSwapchainIndices[i]]);
+        queue->gpuQueue()->currentPresentSemaphores.push_back(gpuSwapchain->presentSemaphores[imageIndex]);
         queue->gpuQueue()->frameAcquirePending = true;
 
-        // first use of this image since the (re)creation: its layout is UNDEFINED; record
-        // the initial transition now, after the acquire, so the frame's submit executes
-        // it legally (UNASSIGNED-non-acquired-swapchain-image-used)
-        if (!gpuSwapchains[i]->imageInitialized[vkSwapchainIndices[i]]) {
-            gpuSwapchains[i]->imageInitialized[vkSwapchainIndices[i]] = true;
-            static_cast<CCVKSwapchain *>(swapchains[i])->recordInitialTransition(vkSwapchainIndices[i]);
+        if (!gpuSwapchain->imageInitialized[imageIndex]) {
+            gpuSwapchain->imageInitialized[imageIndex] = true;
+            swapchain->recordInitialTransition(imageIndex);
         }
-
-        vkAcquireBarriers[i].image = gpuSwapchains[i]->swapchainImages[vkSwapchainIndices[i]];
-        vkPresentBarriers[i].image = gpuSwapchains[i]->swapchainImages[vkSwapchainIndices[i]];
+        auto acquire = acquireBarrier;
+        auto present = presentBarrier;
+        acquire.image = gpuSwapchain->swapchainImages[imageIndex];
+        present.image = acquire.image;
+        vkAcquireBarriers.push_back(acquire);
+        vkPresentBarriers.push_back(present);
     }
 
-    if (this->_options.enableBarrierDeduce) {
+    if (this->_options.enableBarrierDeduce && !vkSwapchains.empty()) {
         _gpuTransportHub->checkIn(
             [&](const CCVKGPUCommandBuffer *gpuCommandBuffer) {
                 vkCmdPipelineBarrier(gpuCommandBuffer->vkCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -744,19 +768,32 @@ void CCVKDevice::present() {
         presentInfo.pSwapchains = vkSwapchains.data();
         presentInfo.pImageIndices = vkSwapchainIndices.data();
 
-        VkResult res = vkCCPresentFunc(queue->gpuQueue()->vkQueue, &presentInfo);
-        for (auto *gpuSwapchain : gpuSwapchains) {
-            gpuSwapchain->lastPresentResult = res;
+        ccstd::vector<VkResult> results(vkSwapchains.size(), VK_SUCCESS);
+        presentInfo.pResults = results.data();
+        const VkResult result = vkCCPresentFunc(queue->gpuQueue()->vkQueue, &presentInfo);
+        for (uint32_t i = 0; i < acquiredSwapchains.size(); ++i) {
+            // A global device/surface failure wins over an unspecified per-chain result.
+            const VkResult chainResult = (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) ? results[i] : result;
+            acquiredSwapchains[i]->setPresentResult(chainResult);
+            if (chainResult != VK_SUCCESS && chainResult != VK_SUBOPTIMAL_KHR)
+                CC_LOG_ERROR("Vulkan present failed: %d", chainResult);
         }
     }
-
     _gpuDevice->curBackBufferIndex = (_gpuDevice->curBackBufferIndex + 1) % _gpuDevice->backBufferCount;
 
     uint32_t fenceCount = gpuFencePool()->size();
     if (fenceCount) {
-        VK_CHECK(vkWaitForFences(_gpuDevice->vkDevice, fenceCount,
-                                 gpuFencePool()->data(), VK_TRUE, DEFAULT_TIMEOUT));
+        const auto waitResult = vkWaitForFences(_gpuDevice->vkDevice, fenceCount,
+                                                gpuFencePool()->data(), VK_TRUE, UINT64_MAX);
+        if (waitResult != VK_SUCCESS) {
+            CC_LOG_ERROR("Vulkan present fence wait failed: %d", waitResult);
+            for (auto *swapchain : acquiredSwapchains) swapchain->setPresentResult(waitResult);
+        }
     }
+    acquiredSwapchains.clear();
+    vkSwapchains.clear();
+    gpuSwapchains.clear();
+    vkSwapchainIndices.clear();
 
     gpuFencePool()->reset();
     gpuRecycleBin()->clear();
@@ -794,25 +831,13 @@ void CCVKDevice::waitAllFences() {
     }
 
     if (!fences.empty()) {
-        VK_CHECK(vkWaitForFences(_gpuDevice->vkDevice, utils::toUint(fences.size()), fences.data(), VK_TRUE, DEFAULT_TIMEOUT));
+        const auto waitResult = vkWaitForFences(_gpuDevice->vkDevice, utils::toUint(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
+        if (waitResult != VK_SUCCESS) CC_LOG_ERROR("Vulkan waitAllFences failed: %d", waitResult);
 
         for (auto &fencePool : _gpuFencePools) {
             fencePool->reset();
         }
     }
-}
-
-void CCVKDevice::updateBackBufferCount(uint32_t backBufferCount) {
-    if (backBufferCount <= _gpuDevice->backBufferCount) return;
-    for (uint32_t i = _gpuDevice->backBufferCount; i < backBufferCount; i++) {
-        _gpuFencePools.push_back(std::make_unique<CCVKGPUFencePool>(_gpuDevice.get()));
-        _gpuRecycleBins.push_back(std::make_unique<CCVKGPURecycleBin>(_gpuDevice.get()));
-        _gpuStagingBufferPools.push_back(std::make_unique<CCVKGPUStagingBufferPool>(_gpuDevice.get()));
-        _gpuSemaphorePools.push_back(std::make_unique<CCVKGPUSemaphorePool>(_gpuDevice.get()));
-    }
-    _gpuBufferHub->updateBackBufferCount(backBufferCount);
-    _gpuDescriptorSetHub->updateBackBufferCount(backBufferCount);
-    _gpuDevice->backBufferCount = backBufferCount;
 }
 
 void CCVKDevice::initDeviceFeature() {

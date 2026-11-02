@@ -267,14 +267,15 @@ void GLES3Device::doDestroy() {
 }
 
 void GLES3Device::acquire(Swapchain *const *swapchains, uint32_t count) {
-    _gpuContext->makeCurrent();
-
-    if (_onAcquire) _onAcquire->execute();
-
     _swapchains.clear();
+    _acquiredSwapchains.clear();
     for (uint32_t i = 0; i < count; ++i) {
-        _swapchains.push_back(static_cast<GLES3Swapchain *>(swapchains[i])->gpuSwapchain());
+        auto *swapchain = static_cast<GLES3Swapchain *>(swapchains[i]);
+        if (!swapchain->acquireDrawable()) continue;
+        _swapchains.push_back(swapchain->gpuSwapchain());
+        _acquiredSwapchains.push_back(swapchain);
     }
+    if (_onAcquire) _onAcquire->execute();
 }
 
 void GLES3Device::present() {
@@ -284,9 +285,9 @@ void GLES3Device::present() {
     _numInstances = queue->_numInstances;
     _numTriangles = queue->_numTriangles;
 
-    for (auto *swapchain : _swapchains) {
-        _gpuContext->present(swapchain);
-    }
+    for (auto *swapchain : _acquiredSwapchains) swapchain->presentDrawable();
+    _acquiredSwapchains.clear();
+    _swapchains.clear();
 
     // Clear queue stats
     queue->_numDrawCalls = 0;

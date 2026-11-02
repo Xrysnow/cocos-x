@@ -33,6 +33,7 @@ namespace cc {
 namespace gfx {
 
 class GLES3GPUContext;
+class GLES3Swapchain;
 struct GLES3GPUSwapchain;
 class GLES3GPUStateCache;
 class GLES3GPUFramebufferHub;
@@ -139,6 +140,7 @@ protected:
     std::unique_ptr<GLES3PipelineCache> _pipelineCache;
 
     ccstd::vector<GLES3GPUSwapchain *> _swapchains;
+    ccstd::vector<GLES3Swapchain *> _acquiredSwapchains;
 
     GLESBindingMapping _bindingMappings;
 

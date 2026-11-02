@@ -1324,6 +1324,13 @@ void cmdFuncCCVKCreateGeneralBarrier(CCVKDevice * /*device*/, CCVKGPUGeneralBarr
 }
 
 namespace {
+void flushMappedBuffer(CCVKDevice *device, const CCVKGPUBuffer *buffer, VkDeviceSize offset, VkDeviceSize size) {
+    // Required for non-coherent CPU_TO_GPU memory; VMA handles atom alignment and
+    // returns immediately for the coherent CPU_ONLY staging allocations.
+    const auto result = vmaFlushAllocation(device->gpuDevice()->memoryAllocator, buffer->vmaAllocation, offset, size);
+    if (result != VK_SUCCESS) CC_LOG_ERROR("Vulkan mapped buffer flush failed: %d", result);
+}
+
 void bufferUpload(const CCVKGPUBufferView &stagingBuffer, CCVKGPUBuffer &gpuBuffer, VkBufferCopy region, const CCVKGPUCommandBuffer *gpuCommandBuffer) {
 #if BARRIER_DEDUCTION_LEVEL >= BARRIER_DEDUCTION_LEVEL_BASIC
     if (gpuBuffer.transferAccess) {
@@ -1388,6 +1395,7 @@ void cmdFuncCCVKUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         if (!cmdBuffer) {
             uint8_t *dst = gpuBuffer->mappedData + backBufferIndex * gpuBuffer->instanceSize;
             memcpy(dst + offset, dataToUpload, sizeToUpload);
+            flushMappedBuffer(device, gpuBuffer, backBufferIndex * gpuBuffer->instanceSize + offset, sizeToUpload);
             return;
         }
     }
@@ -1402,6 +1410,7 @@ void cmdFuncCCVKUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
 
         IntrusivePtr<CCVKGPUBufferView> stagingBuffer = device->gpuStagingBufferPool()->alloc(chunkSizeToUpload);
         memcpy(stagingBuffer->mappedData(), static_cast<const char *>(dataToUpload) + chunkOffset, chunkSizeToUpload);
+        flushMappedBuffer(device, stagingBuffer->gpuBuffer, stagingBuffer->offset, chunkSizeToUpload);
 
         VkBufferCopy region{
             stagingBuffer->offset,
@@ -1532,6 +1541,7 @@ void cmdFuncCCVKCopyBuffersToTexture(CCVKDevice *device, const uint8_t *const *b
                         buffOffset += buffStrideSize;
                     }
 
+                    flushMappedBuffer(device, stagingBuffer->gpuBuffer, stagingBuffer->offset, stagingBufferSize);
                     VkBufferImageCopy stagingRegion;
                     stagingRegion.bufferOffset = stagingBuffer->offset;
                     stagingRegion.bufferRowLength = rowPitch;
@@ -1846,6 +1856,8 @@ void CCVKGPUBufferHub::flush(CCVKGPUTransportHub *transportHub) {
             uint8_t *src = buffer.first->mappedData + buffer.second.srcIndex * buffer.first->instanceSize;
             uint8_t *dst = buffer.first->mappedData + _device->curBackBufferIndex * buffer.first->instanceSize;
             memcpy(dst, src, buffer.second.size);
+            flushMappedBuffer(CCVKDevice::getInstance(), buffer.first,
+                _device->curBackBufferIndex * buffer.first->instanceSize, buffer.second.size);
         } else {
             needTransferCmds = true;
         }

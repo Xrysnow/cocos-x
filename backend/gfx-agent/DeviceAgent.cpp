@@ -140,10 +140,14 @@ void DeviceAgent::acquire(Swapchain *const *swapchains, uint32_t count) {
             if (device->_onAcquire) device->_onAcquire->execute();
             actor->acquire(swapchains, count);
         });
-    // Metal acquisition can fail for a frame. Publish that result before the
-    // caller chooses whether to begin encoding; no AppKit calls run on the actor.
-    if (_api == API::METAL) {
+    // Drawable acquisition is fallible. Publish the actor result before the
+    // engine chooses whether it may encode commands against this surface.
+    if (_api == API::METAL || _api == API::VULKAN || _api == API::GLES3) {
         _mainMessageQueue->kickAndWait();
+        // Acquire may recreate Vulkan attachments. Publish their new metrics on
+        // the producer thread before it rebuilds the default framebuffer.
+        for (uint32_t i = 0; i < count; ++i)
+            static_cast<SwapchainAgent *>(swapchains[i])->updateInfo();
     }
 }
 

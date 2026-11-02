@@ -31,6 +31,7 @@ namespace cc {
 namespace gfx {
 
 class CC_DLL SwapchainAgent final : public Agent<Swapchain> {
+    friend class DeviceAgent;
 public:
     explicit SwapchainAgent(Swapchain *actor);
     ~SwapchainAgent() override;
@@ -43,6 +44,8 @@ public:
     bool isSurfaceInitialized() const override;
     bool hasAcquiredDrawable() const override;
     void releaseAcquiredDrawable() override;
+    SurfaceStatus getSurfaceStatus() const override;
+    uint64_t getPresentCount() const override;
 
 protected:
     void doInit(const SwapchainInfo &info) override;

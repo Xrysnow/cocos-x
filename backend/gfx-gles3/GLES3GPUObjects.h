@@ -63,10 +63,11 @@ public:
     EGLContext eglDefaultContext{EGL_NO_CONTEXT};
 
     // pass nullptr to keep the current surface
-    void makeCurrent(const GLES3GPUSwapchain *drawSwapchain = nullptr, const GLES3GPUSwapchain *readSwapchain = nullptr);
-    void bindContext(bool bound); // for context switching between threads
+    bool makeCurrent(const GLES3GPUSwapchain *drawSwapchain = nullptr, const GLES3GPUSwapchain *readSwapchain = nullptr);
+    bool bindContext(bool bound); // for context switching between threads
 
-    void present(const GLES3GPUSwapchain *swapchain);
+    EGLint present(const GLES3GPUSwapchain *swapchain);
+    EGLint lastError{EGL_SUCCESS};
 
     inline bool checkExtension(const ccstd::string &extension) const {
         return std::find(_extensions.begin(), _extensions.end(), extension) != _extensions.end();

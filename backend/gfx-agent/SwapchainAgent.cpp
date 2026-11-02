@@ -159,6 +159,14 @@ void SwapchainAgent::setVSyncMode(VsyncMode mode) {
     mq->kickAndWait();
 }
 
+Swapchain::SurfaceStatus SwapchainAgent::getSurfaceStatus() const {
+    return _actor->getSurfaceStatus();
+}
+
+uint64_t SwapchainAgent::getPresentCount() const {
+    return _actor->getPresentCount();
+}
+
 bool SwapchainAgent::isSurfaceInitialized() const {
     return _actor->isSurfaceInitialized();
 }

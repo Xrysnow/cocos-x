@@ -32,6 +32,7 @@ namespace cc {
 namespace gfx {
 
 class CC_DLL SwapchainValidator final : public Agent<Swapchain> {
+    friend class DeviceValidator;
 public:
     explicit SwapchainValidator(Swapchain *actor);
     ~SwapchainValidator() override;
@@ -44,6 +45,8 @@ public:
     bool isSurfaceInitialized() const override;
     bool hasAcquiredDrawable() const override;
     void releaseAcquiredDrawable() override;
+    SurfaceStatus getSurfaceStatus() const override;
+    uint64_t getPresentCount() const override;
 
     inline bool isInited() const { return _inited; }
 

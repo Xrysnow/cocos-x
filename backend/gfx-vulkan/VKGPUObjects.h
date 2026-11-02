@@ -481,7 +481,8 @@ public:
     VkFormat depthStencilFormat{VK_FORMAT_UNDEFINED};
 
     uint32_t curBackBufferIndex{0U};
-    uint32_t backBufferCount{2U};
+    // Fixed frame-resource ring; WSI swapchain image count is independent.
+    const uint32_t backBufferCount{2U};
 
     // monotonic frame counter, incremented per present(): a retired swapchain is
     // destroyed only after backBufferCount presents (recreation frame's fence waited)
@@ -1026,10 +1027,6 @@ public:
         sets.clear();
     }
 
-    void updateBackBufferCount(uint32_t backBufferCount) {
-        _setsToBeUpdated.resize(backBufferCount);
-    }
-
 private:
     void update(const CCVKGPUDescriptorSet *gpuDescriptorSet) {
         const CCVKGPUDescriptorSet::Instance &instance = gpuDescriptorSet->instances[_device->curBackBufferIndex];
@@ -1553,10 +1550,6 @@ public:
                 _buffersToBeUpdated[i].erase(gpuBuffer);
             }
         }
-    }
-
-    void updateBackBufferCount(uint32_t backBufferCount) {
-        _buffersToBeUpdated.resize(backBufferCount);
     }
 
     void flush(CCVKGPUTransportHub *transportHub);

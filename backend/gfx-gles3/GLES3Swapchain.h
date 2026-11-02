@@ -37,6 +37,11 @@ public:
     GLES3Swapchain();
     ~GLES3Swapchain() override;
 
+    bool isSurfaceInitialized() const override { return _surfaceStatus.load() == SurfaceStatus::READY; }
+    bool hasAcquiredDrawable() const override { return _drawableAcquired.load(); }
+    bool acquireDrawable();
+    void presentDrawable();
+
     inline GLES3GPUSwapchain *gpuSwapchain() const { return _gpuSwapchain; }
 
 protected:
@@ -47,6 +52,7 @@ protected:
     void doCreateSurface(void *windowHandle) override;
 
     GLES3GPUSwapchain *_gpuSwapchain{nullptr};
+    std::atomic<bool> _drawableAcquired{false};
 };
 
 } // namespace gfx

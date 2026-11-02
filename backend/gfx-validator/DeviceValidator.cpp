@@ -149,6 +149,8 @@ void DeviceValidator::acquire(Swapchain *const *swapchains, uint32_t count) {
 
     if (_onAcquire) _onAcquire->execute();
     _actor->acquire(swapchainActors.data(), count);
+    for (uint32_t i = 0U; i < count; ++i)
+        static_cast<SwapchainValidator *>(swapchains[i])->updateInfo();
 }
 
 void DeviceValidator::present() {

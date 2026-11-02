@@ -262,8 +262,8 @@ bool CCVKGPUContext::initialize() {
 
     // Create the Vulkan instance
     VkResult res = vkCreateInstance(&instanceInfo, nullptr, &vkInstance);
-    if (res == VK_ERROR_LAYER_NOT_PRESENT) {
-        CC_LOG_ERROR("Create Vulkan instance failed due to missing layers, aborting...");
+    if (res != VK_SUCCESS) {
+        CC_LOG_ERROR("Create Vulkan instance failed: %d", res);
         return false;
     }
 

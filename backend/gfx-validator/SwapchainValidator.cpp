@@ -88,6 +88,14 @@ void SwapchainValidator::doDestroy() {
     _actor->destroy();
 }
 
+Swapchain::SurfaceStatus SwapchainValidator::getSurfaceStatus() const {
+    return _actor->getSurfaceStatus();
+}
+
+uint64_t SwapchainValidator::getPresentCount() const {
+    return _actor->getPresentCount();
+}
+
 bool SwapchainValidator::isSurfaceInitialized() const {
     return _actor->isSurfaceInitialized();
 }

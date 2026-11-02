@@ -88,6 +88,14 @@ bool GLES3GPUContext::initialize(GLES3GPUStateCache *stateCache, GLES3GPUConstan
     _stateCache = stateCache;
     _constantRegistry = constantRegistry;
 
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // gfx owns EGL bootstrap; a Java GLSurfaceView no longer loads these globals.
+    // Before eglInitialize, GLAD may report only EGL 1.0, which is sufficient here.
+    if (!gladLoaderLoadEGL(EGL_NO_DISPLAY) || !eglGetDisplay || !eglInitialize || !eglGetError) {
+        CC_LOG_ERROR("GLES3 EGL bootstrap function loading failed");
+        return false;
+    }
+#endif
     if (!gles3wInit()) {
         return false;
     }
@@ -107,7 +115,20 @@ bool GLES3GPUContext::initialize(GLES3GPUStateCache *stateCache, GLES3GPUConstan
         return false;
     }
 
-    EGL_CHECK(eglBindAPI(EGL_OPENGL_ES_API));
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // Reload against the initialized display so EGL >= 1.2/1.4 entry points exist.
+    if (!gladLoaderLoadEGL(eglDisplay) || !eglBindAPI || !eglGetCurrentContext ||
+        !eglChooseConfig || !eglGetConfigAttrib || !eglCreateContext || !eglCreatePbufferSurface ||
+        !eglMakeCurrent || !eglGetCurrentSurface || !eglDestroySurface || !eglDestroyContext || !eglTerminate ||
+        !eglGetProcAddress || !eglCreateWindowSurface || !eglSwapBuffers || !eglSwapInterval) {
+        CC_LOG_ERROR("GLES3 initialized EGL display function loading failed");
+        return false;
+    }
+#endif
+    if (eglBindAPI(EGL_OPENGL_ES_API) != EGL_TRUE) {
+        CC_LOG_ERROR("GLES3 eglBindAPI failed: 0x%x", eglGetError());
+        return false;
+    }
 
     bool msaaEnabled{false};
     bool qualityPreferred{false};
@@ -239,12 +260,38 @@ bool GLES3GPUContext::initialize(GLES3GPUStateCache *stateCache, GLES3GPUConstan
         EGL_WIDTH, 1,
         EGL_HEIGHT, 1,
         EGL_NONE};
-    EGL_CHECK(eglDefaultSurface = eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs));
+    eglDefaultSurface = eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs);
+    if (eglDefaultSurface == EGL_NO_SURFACE) {
+        CC_LOG_ERROR("Create EGL bootstrap pbuffer failed: 0x%x", eglGetError());
+        return false;
+    }
 
     size_t threadID{std::hash<std::thread::id>{}(std::this_thread::get_id())};
     _sharedContexts[threadID] = eglDefaultContext;
 
-    bindContext(true);
+    if (!makeCurrent(eglDefaultSurface, eglDefaultSurface, eglDefaultContext)) return false;
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // Loading GLES requires a current native context and must precede resetStates().
+    if (!gladLoadGLES2(eglGetProcAddress) || !GLAD_GL_ES_VERSION_3_0 || !glGetError ||
+        !glGetString || !glGetStringi || !glGetIntegerv || !glPixelStorei ||
+        !glActiveTexture || !glBindFramebuffer || !glBindVertexArray) {
+        CC_LOG_ERROR("GLES3 context function loading failed or GLES 3.0 unavailable");
+        return false;
+    }
+    GLint actualMajor = 0;
+    GLint actualMinor = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &actualMajor);
+    glGetIntegerv(GL_MINOR_VERSION, &actualMinor);
+    const auto versionError = glGetError();
+    if (versionError != GL_NO_ERROR || actualMajor < 3 || actualMinor < 0) {
+        CC_LOG_ERROR("GLES3 actual context version unavailable/unsupported: %d.%d (GL error 0x%x)",
+                     actualMajor, actualMinor, versionError);
+        return false;
+    }
+    _constantRegistry->glMinorVersion = static_cast<uint32_t>(actualMinor);
+    CC_LOG_INFO("GLES3 actual native context version: %d.%d", actualMajor, actualMinor);
+#endif
+    resetStates();
 
     return true;
 }
@@ -279,48 +326,50 @@ void GLES3GPUContext::destroy() {
     gles3wExit();
 }
 
-void GLES3GPUContext::bindContext(bool bound) {
+bool GLES3GPUContext::bindContext(bool bound) {
     if (bound) {
-        makeCurrent(eglDefaultSurface, eglDefaultSurface, eglDefaultContext);
+        if (!makeCurrent(eglDefaultSurface, eglDefaultSurface, eglDefaultContext)) return false;
         resetStates();
     } else {
-        makeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT, false);
+        if (!makeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT, false)) return false;
         _eglCurrentDrawSurface = EGL_NO_SURFACE;
         _eglCurrentReadSurface = EGL_NO_SURFACE;
     }
+    return true;
 }
 
-void GLES3GPUContext::makeCurrent(const GLES3GPUSwapchain *drawSwapchain, const GLES3GPUSwapchain *readSwapchain) {
+bool GLES3GPUContext::makeCurrent(const GLES3GPUSwapchain *drawSwapchain, const GLES3GPUSwapchain *readSwapchain) {
     EGLSurface drawSurface = drawSwapchain ? drawSwapchain->eglSurface : _eglCurrentDrawSurface;
     EGLSurface readSurface = readSwapchain ? readSwapchain->eglSurface : _eglCurrentReadSurface;
     EGLContext prevContext = eglGetCurrentContext();
 
-    if (_eglCurrentDrawSurface == drawSurface && _eglCurrentReadSurface == readSurface && _eglCurrentContext == prevContext) {
-        return;
+    if (_eglCurrentDrawSurface == drawSurface && _eglCurrentReadSurface == readSurface && _eglCurrentContext == prevContext &&
+        eglGetCurrentSurface(EGL_DRAW) == drawSurface && eglGetCurrentSurface(EGL_READ) == readSurface) {
+        lastError = EGL_SUCCESS;
+        return true;
     }
 
-    makeCurrent(drawSurface, readSurface, _eglCurrentContext);
+    if (!makeCurrent(drawSurface, readSurface, _eglCurrentContext)) return false;
 
     if (prevContext != _eglCurrentContext) {
         resetStates();
     }
+    return true;
 }
 
-void GLES3GPUContext::present(const GLES3GPUSwapchain *swapchain) {
+EGLint GLES3GPUContext::present(const GLES3GPUSwapchain *swapchain) {
 #if CC_SWAPPY_ENABLED
     if (swapchain->swappyEnabled) {
         // fallback to normal eglswap if swappy swap failed.
         if (SwappyGL_swap(eglDisplay, swapchain->eglSurface)) {
-            return;
+            return EGL_SUCCESS;
         }
     }
 #endif
     // For an example, 2 windows changed to background will cause the eglSurface of both destroyed,
     // and then make one of them foreground, and the other window's eglSurface will stays EGL_NO_SURFACE.
     // But in GLES3Device::present it iterates all swapchains, and now the second window containing the invalid surface exists.
-    if (swapchain->eglSurface == EGL_NO_SURFACE) {
-        return;
-    }
+    if (swapchain->eglSurface == EGL_NO_SURFACE) return EGL_BAD_SURFACE;
     if (_eglCurrentInterval != swapchain->eglSwapInterval) {
         if (!eglSwapInterval(eglDisplay, swapchain->eglSwapInterval)) {
             CC_LOG_ERROR("eglSwapInterval() - FAILED.");
@@ -328,8 +377,14 @@ void GLES3GPUContext::present(const GLES3GPUSwapchain *swapchain) {
 
         _eglCurrentInterval = swapchain->eglSwapInterval;
     }
-    makeCurrent(swapchain, swapchain);
-    EGL_CHECK(eglSwapBuffers(eglDisplay, swapchain->eglSurface));
+    if (!makeCurrent(swapchain, swapchain)) return lastError;
+    if (!eglSwapBuffers(eglDisplay, swapchain->eglSurface)) {
+        lastError = eglGetError();
+        CC_LOG_ERROR("eglSwapBuffers failed: 0x%x", lastError);
+        return lastError;
+    }
+    lastError = EGL_SUCCESS;
+    return EGL_SUCCESS;
 }
 
 EGLContext GLES3GPUContext::getSharedContext() {
@@ -349,8 +404,9 @@ EGLContext GLES3GPUContext::getSharedContext() {
 }
 
 bool GLES3GPUContext::makeCurrent(EGLSurface drawSurface, EGLSurface readSurface, EGLContext context, bool updateCache) {
-    bool succeeded;
-    EGL_CHECK(succeeded = eglMakeCurrent(eglDisplay, drawSurface, readSurface, context));
+    const bool succeeded = eglMakeCurrent(eglDisplay, drawSurface, readSurface, context) == EGL_TRUE;
+    lastError = succeeded ? EGL_SUCCESS : eglGetError();
+    if (!succeeded) CC_LOG_ERROR("eglMakeCurrent failed: 0x%x", lastError);
     if (succeeded && updateCache) {
         _eglCurrentDrawSurface = drawSurface;
         _eglCurrentReadSurface = readSurface;

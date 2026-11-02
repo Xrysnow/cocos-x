@@ -88,6 +88,14 @@ bool GLES2GPUContext::initialize(GLES2GPUStateCache *stateCache, GLES2GPUConstan
     _stateCache = stateCache;
     _constantRegistry = constantRegistry;
 
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // gfx owns EGL bootstrap; a Java GLSurfaceView no longer loads these globals.
+    // Before eglInitialize, GLAD may report only EGL 1.0, which is sufficient here.
+    if (!gladLoaderLoadEGL(EGL_NO_DISPLAY) || !eglGetDisplay || !eglInitialize || !eglGetError) {
+        CC_LOG_ERROR("GLES2 EGL bootstrap function loading failed");
+        return false;
+    }
+#endif
     if (!gles2wInit()) {
         return false;
     }
@@ -107,7 +115,20 @@ bool GLES2GPUContext::initialize(GLES2GPUStateCache *stateCache, GLES2GPUConstan
         return false;
     }
 
-    EGL_CHECK(eglBindAPI(EGL_OPENGL_ES_API));
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    // Reload against the initialized display so EGL >= 1.2/1.4 entry points exist.
+    if (!gladLoaderLoadEGL(eglDisplay) || !eglBindAPI || !eglGetCurrentContext ||
+        !eglChooseConfig || !eglGetConfigAttrib || !eglCreateContext || !eglCreatePbufferSurface ||
+        !eglMakeCurrent || !eglDestroySurface || !eglDestroyContext || !eglTerminate ||
+        !eglGetProcAddress || !eglCreateWindowSurface || !eglSwapBuffers || !eglSwapInterval) {
+        CC_LOG_ERROR("GLES2 initialized EGL display function loading failed");
+        return false;
+    }
+#endif
+    if (eglBindAPI(EGL_OPENGL_ES_API) != EGL_TRUE) {
+        CC_LOG_ERROR("GLES2 eglBindAPI failed: 0x%x", eglGetError());
+        return false;
+    }
 
     bool msaaEnabled{false};
     bool qualityPreferred{false};
@@ -234,12 +255,24 @@ bool GLES2GPUContext::initialize(GLES2GPUStateCache *stateCache, GLES2GPUConstan
         EGL_WIDTH, 1,
         EGL_HEIGHT, 1,
         EGL_NONE};
-    EGL_CHECK(eglDefaultSurface = eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs));
+    eglDefaultSurface = eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs);
+    if (eglDefaultSurface == EGL_NO_SURFACE) {
+        CC_LOG_ERROR("Create EGL bootstrap pbuffer failed: 0x%x", eglGetError());
+        return false;
+    }
 
     size_t threadID{std::hash<std::thread::id>{}(std::this_thread::get_id())};
     _sharedContexts[threadID] = eglDefaultContext;
 
-    bindContext(true);
+    if (!makeCurrent(eglDefaultSurface, eglDefaultSurface, eglDefaultContext)) return false;
+#if CC_PLATFORM == CC_PLATFORM_ANDROID
+    if (!gladLoadGLES2(eglGetProcAddress) || !GLAD_GL_ES_VERSION_2_0 || !glGetError ||
+        !glGetString || !glPixelStorei || !glActiveTexture || !glBindFramebuffer) {
+        CC_LOG_ERROR("GLES2 context function loading failed");
+        return false;
+    }
+#endif
+    resetStates();
 
     return true;
 }

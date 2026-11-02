@@ -46,8 +46,13 @@ void Swapchain::detachOwner() {
 
 void Swapchain::initialize(const SwapchainInfo &info) {
 #if !defined(CC_SERVER_MODE)
-    CC_ASSERT(info.windowHandle);
+    if (!info.windowHandle) {
+        _surfaceStatus = SurfaceStatus::SURFACE_LOST;
+        CC_LOG_ERROR("Swapchain initialization rejected a null window");
+        return;
+    }
 #endif
+
 
     _windowId = info.windowId;
     _windowHandle = info.windowHandle;

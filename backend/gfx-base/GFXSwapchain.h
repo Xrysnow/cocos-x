@@ -36,6 +36,9 @@ class Device;
 
 class CC_DLL Swapchain : public GFXObject {
 public:
+    enum class SurfaceStatus : uint8_t {
+        UNINITIALIZED, READY, ZERO_SIZE, OUT_OF_DATE, SURFACE_LOST, DEVICE_LOST, FAILED
+    };
     Swapchain();
     ~Swapchain() override;
 
@@ -76,9 +79,11 @@ public:
 
     // Backends with fallible drawable acquisition override these. Existing backends
     // retain their previous behavior. Query acquire results only after device sync.
-    virtual bool isSurfaceInitialized() const { return true; }
+    virtual bool isSurfaceInitialized() const { return _surfaceStatus.load() == SurfaceStatus::READY; }
     virtual bool hasAcquiredDrawable() const { return true; }
     virtual void releaseAcquiredDrawable() {}
+    virtual SurfaceStatus getSurfaceStatus() const { return _surfaceStatus.load(); }
+    virtual uint64_t getPresentCount() const { return _presentCount.load(); }
 
 protected:
     friend class Device;
@@ -102,6 +107,8 @@ protected:
     // atomic: the backend increments it on the device thread (recreation), the engine
     // reads it from the main thread (default framebuffer rebuild decision)
     std::atomic<uint32_t> _generation{0};
+    std::atomic<SurfaceStatus> _surfaceStatus{SurfaceStatus::READY};
+    std::atomic<uint64_t> _presentCount{0};
 
     IntrusivePtr<Texture> _colorTexture;
     IntrusivePtr<Texture> _depthStencilTexture;

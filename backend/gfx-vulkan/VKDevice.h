@@ -103,7 +103,6 @@ public:
     CCVKGPUStagingBufferPool *gpuStagingBufferPool();
     void waitAllFences();
 
-    void updateBackBufferCount(uint32_t backBufferCount);
     SampleCount getMaxSampleCount(Format format, TextureUsage usage, TextureFlags flags) const override;
 protected:
     static CCVKDevice *instance;

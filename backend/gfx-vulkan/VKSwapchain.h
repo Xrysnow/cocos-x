@@ -43,6 +43,11 @@ public:
 
     inline CCVKGPUSwapchain *gpuSwapchain() { return _gpuSwapchain; }
 
+    bool isSurfaceInitialized() const override { return _surfaceStatus.load() == SurfaceStatus::READY; }
+    bool hasAcquiredDrawable() const override { return _drawableAcquired.load(); }
+    void setAcquireResult(VkResult result);
+    void setPresentResult(VkResult result);
+
     bool checkSwapchainStatus(uint32_t width = 0, uint32_t height = 0);
 
     // record the initial UNDEFINED→(PRESENT / DEPTH_STENCIL_ATTACHMENT) transition of a
@@ -81,6 +86,7 @@ protected:
 
     // setVSyncMode() changed the mode: the next checkSwapchainStatus rebuilds even if the extent is unchanged
     bool _vsyncModeChanged{false};
+    std::atomic<bool> _drawableAcquired{false};
 
     IntrusivePtr<CCVKGPUSwapchain> _gpuSwapchain;
 };
