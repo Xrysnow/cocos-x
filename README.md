@@ -7,7 +7,7 @@ This is a renderer for [cocos2d-x](https://github.com/cocos2d/cocos2d-x) ported 
 - taskflow
 - glslang
 - spirv-cross
-- PVRVFrame libraries (for GLES backend, Windows and Mac)
+- PVRVFrame libraries (for GLES backend on Windows)
 
 ### CMake usage
 
