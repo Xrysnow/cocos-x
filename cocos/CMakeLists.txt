@@ -206,6 +206,11 @@ endif()
 # engine extensions
 add_subdirectory(${COCOS2DX_ROOT_PATH}/extensions ${ENGINE_BINARY_PATH}/extensions)
 
+# Lua bindings include optional extension modules configured above.
+if(CC_ENABLE_EXT_LUA)
+    add_subdirectory(scripting/lua-bindings)
+endif()
+
 #if(XCODE)
 #    # Later versions of Xcode clang want to compile C++17 with aligned allocation turned on and this is only supported on iOS 11.0+
 #    # TODO: Only turn this off if ${CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET} < 11.0

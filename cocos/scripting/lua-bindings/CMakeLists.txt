@@ -307,12 +307,12 @@ target_include_directories(${COCOS_LUA_LIB}
     PUBLIC ${cocos_root}/external
     PUBLIC ${cocos_root}/external/jni.hpp/include
     PUBLIC ${cocos_root}/external/lua
-    PRIVATE ${cocos_root}/extensions/scripting/lua-bindings/manual
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/manual
     PRIVATE manual/platform/android
     PRIVATE manual/platform/android/jni
     PRIVATE ${cocos_root}/extensions/spine/runtime/include
     PRIVATE ${cocos_root}/extensions/cocostudio
-    INTERFACE ${cocos_root}/extensions/scripting/lua-bindings/manual
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/manual
 )
 
 if(WINDOWS)
@@ -335,7 +335,7 @@ set_target_properties(${COCOS_LUA_LIB}
                       PROPERTIES
                       ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
                       LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-                      FOLDER "Extensions"
+                      FOLDER "Internal"
                       )
 
 if(XCODE OR VS)

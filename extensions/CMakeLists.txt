@@ -108,8 +108,4 @@ if (CC_ENABLE_EXT_EFFEKSEER)
   add_subdirectory(Effekseer)
 endif()
 
-if(CC_ENABLE_EXT_LUA)
-  add_subdirectory(scripting/lua-bindings)
-endif()
-
 message(STATUS "Enabled ${COCOS_CORE_LIB} extensions:${CC_EXTENSION_LIBS}")
