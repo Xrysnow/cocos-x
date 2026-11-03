@@ -54,9 +54,8 @@ THE SOFTWARE.
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
 #include "platform/mac/CCGLViewImpl-desktop-mac.h"
-#if defined(CC_USE_ANGLE) || !defined(CC_USE_METAL) || \
-    defined(CC_USE_VULKAN) || defined(CC_USE_GLES2) || defined(CC_USE_GLES3)
-#error "macOS GLViewImpl requires GFX Metal only (GFX ON, ANGLE OFF)."
+#if !defined(CC_USE_METAL) || defined(CC_USE_VULKAN) || defined(CC_USE_GLES2) || defined(CC_USE_GLES3)
+#error "macOS GLViewImpl requires GFX Metal only."
 #endif
 #else
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)

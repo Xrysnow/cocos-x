@@ -26,9 +26,8 @@ void DepthStencilStateGFX::apply(
         s.stencilRefFront = stRefValueFront;
         s.stencilRefBack  = stRefValueBack;
 
-        const bool requires_same = cc::gfx::Device::getInstance()->getRenderer().substr(0, 5) == "ANGLE";
-        auto& front              = _depthStencilInfo.frontFaceStencil;
-        auto& back = requires_same ? _depthStencilInfo.frontFaceStencil : _depthStencilInfo.backFaceStencil;
+        auto& front = _depthStencilInfo.frontFaceStencil;
+        auto& back  = _depthStencilInfo.backFaceStencil;
 
         s.stencilFuncFront = UtilsGFX::toComareFunction(front.stencilCompareFunction);
         s.stencilFuncBack  = UtilsGFX::toComareFunction(back.stencilCompareFunction);
