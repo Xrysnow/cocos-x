@@ -307,7 +307,6 @@ target_include_directories(${COCOS_LUA_LIB}
     PUBLIC ${cocos_root}/external
     PUBLIC ${cocos_root}/external/jni.hpp/include
     PUBLIC ${cocos_root}/external/lua
-    PUBLIC ${cocos_root}/external/lua/luajit/include
     PRIVATE ${cocos_root}/extensions/scripting/lua-bindings/manual
     PRIVATE manual/platform/android
     PRIVATE manual/platform/android/jni
