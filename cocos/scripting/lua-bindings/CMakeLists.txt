@@ -217,15 +217,15 @@ if(APPLE)
             ${lua_bindings_manual_headers}
             manual/ui/cclua_webview_manual.hpp
             auto/cclua_webview_auto.hpp
-            auto/cclua_video_auto.hpp
-            manual/ui/cclua_video_manual.hpp
+            auto/cclua_video_platform_auto.hpp
+            manual/ui/cclua_video_platform_manual.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
             manual/ui/cclua_webview_manual.cpp
             auto/cclua_webview_auto.cpp
-            manual/ui/cclua_video_manual.cpp
-            auto/cclua_video_auto.cpp
+            manual/ui/cclua_video_platform_manual.cpp
+            auto/cclua_video_platform_auto.cpp
             )
     endif()
 elseif(ANDROID)
@@ -233,27 +233,27 @@ elseif(ANDROID)
         ${lua_bindings_manual_headers}
         manual/ui/cclua_webview_manual.hpp
         auto/cclua_webview_auto.hpp
-        auto/cclua_video_auto.hpp
-        manual/ui/cclua_video_manual.hpp
+        auto/cclua_video_platform_auto.hpp
+        manual/ui/cclua_video_platform_manual.hpp
         )
     set(lua_bindings_manual_files
         ${lua_bindings_manual_files}
         manual/ui/cclua_webview_manual.cpp
         auto/cclua_webview_auto.cpp
-        manual/ui/cclua_video_manual.cpp
-        auto/cclua_video_auto.cpp
+        manual/ui/cclua_video_platform_manual.cpp
+        auto/cclua_video_platform_auto.cpp
         )
 elseif(WINDOWS)
     if(CC_ENABLE_MFMEDIA)
         set(lua_bindings_manual_headers
             ${lua_bindings_manual_headers}
-            auto/cclua_video_auto.hpp
-            manual/ui/cclua_video_manual.hpp
+            auto/cclua_video_platform_auto.hpp
+            manual/ui/cclua_video_platform_manual.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
-            manual/ui/cclua_video_manual.cpp
-            auto/cclua_video_auto.cpp
+            manual/ui/cclua_video_platform_manual.cpp
+            auto/cclua_video_platform_auto.cpp
             )
     endif()
     if(CC_ENABLE_MSEDGE_WEBVIEW2)

@@ -22,7 +22,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#include "scripting/lua-bindings/manual/ui/cclua_video_manual.hpp"
+#include "scripting/lua-bindings/manual/ui/cclua_video_platform_manual.hpp"
 
 #include "ui/UIVideoPlayer/UIVideoPlayer.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
@@ -30,7 +30,7 @@
 #include "scripting/lua-bindings/manual/CCLuaValue.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 
-static int cclua_video_VideoPlayer_addEventListener(lua_State* L)
+static int cclua_video_platform_VideoPlayer_addEventListener(lua_State* L)
 {
 
     int argc                       = 0;
@@ -47,7 +47,7 @@ static int cclua_video_VideoPlayer_addEventListener(lua_State* L)
     #if CC_DEBUG >= 1
     if (nullptr == self)
     {
-        tolua_error(L, "invalid 'self' in function 'cclua_Widget_addTouchEventListener'\n", nullptr);
+        tolua_error(L, "invalid 'self' in function 'cclua_video_platform_VideoPlayer_addEventListener'\n", nullptr);
         return 0;
     }
     #endif
@@ -86,7 +86,7 @@ static int cclua_video_VideoPlayer_addEventListener(lua_State* L)
     return 0;
     #if CC_DEBUG >= 1
 tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_VideoPlayer_addEventListener'.", &tolua_err);
+    tolua_error(L, "#ferror in function 'cclua_video_platform_VideoPlayer_addEventListener'.", &tolua_err);
     #endif
     return 0;
 }
@@ -97,12 +97,12 @@ static void extendVideoPlayer(lua_State* L)
     lua_rawget(L, LUA_REGISTRYINDEX);
     if (lua_istable(L, -1))
     {
-        tolua_function(L, "addEventListener", cclua_video_VideoPlayer_addEventListener);
+        tolua_function(L, "addEventListener", cclua_video_platform_VideoPlayer_addEventListener);
     }
     lua_pop(L, 1);
 }
 
-int register_all_cc_video_manual(lua_State* L)
+int register_all_cc_video_platform_manual(lua_State* L)
 {
     if (nullptr == L)
         return 0;
