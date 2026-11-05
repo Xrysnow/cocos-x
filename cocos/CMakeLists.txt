@@ -177,7 +177,6 @@ if(XCODE OR VS)
     cocos_mark_code_files(${COCOS_CORE_LIB})
 endif()
 
-message("CMake 3.16 target_precompile_headers")
 target_precompile_headers(cocos2d PRIVATE 
     "$<$<COMPILE_LANGUAGE:CXX>:cocos2d.h>")
 
@@ -187,8 +186,8 @@ if(WINDOWS)
             PATHS ${_CC_ROOT_PATH}/tools/external/nuget)
             
         if(NOT NUGET_EXE)
-            message("NUGET.EXE not found.")
-            message(FATAL_ERROR "Please run setup.py again to download NUGET.EXE, and run CMake again.")
+            message(FATAL_ERROR
+                "WebView2 requires NuGet. Add nuget.exe to PATH or configure with -DNUGET_EXE=<full path>.")
         endif()
      
         execute_process(
@@ -218,11 +217,5 @@ add_subdirectory(${COCOS2DX_ROOT_PATH}/extensions ${ENGINE_BINARY_PATH}/extensio
 if(CC_ENABLE_EXT_LUA)
     add_subdirectory(scripting/lua-bindings)
 endif()
-
-#if(XCODE)
-#    # Later versions of Xcode clang want to compile C++17 with aligned allocation turned on and this is only supported on iOS 11.0+
-#    # TODO: Only turn this off if ${CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET} < 11.0
-#    target_compile_options(${COCOS_CORE_LIB} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-fno-aligned-allocation>)
-#endif()
 
 target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_USE_GFX)

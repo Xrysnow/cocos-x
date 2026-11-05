@@ -1,15 +1,4 @@
-If(APPLE)
-    if(${CMAKE_VERSION} VERSION_LESS "3.14")
-        message(FATAL_ERROR "Please use CMake 3.14 or newer for Apple platform (macOS, iOS, tvOS or watchOS)")
-    endif()
-endif()
-
-#Please use them everywhere
-#WINDOWS   =   Windows Desktop
-#ANDROID   =   Android
-#IOS       =   iOS
-#MACOSX    =   MacOS X
-#LINUX     =   Linux
+# Set the engine's platform flags and select its platform source folder.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
     set(PLATFORM_FOLDER win32)
@@ -34,7 +23,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     set(IOS TRUE)
     set(PLATFORM_FOLDER ios)
 else()
-    message(FATAL_ERROR "Unsupported platform, CMake will exit")
+    message(FATAL_ERROR "Unsupported cocos-x target system: ${CMAKE_SYSTEM_NAME}")
     return()
 endif()
 
@@ -67,19 +56,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# check visual studio version
+# Check the MSVC toolset on Windows.
 if(WINDOWS)
-    # not support other compile tools except MSVC for now
     if(MSVC)
-        # Visual Studio 2015, MSVC_VERSION 1900      (v140 toolset)
-        # Visual Studio 2017, MSVC_VERSION 1910-1919 (v141 toolset)
         if(${MSVC_VERSION} EQUAL 1900 OR ${MSVC_VERSION} GREATER 1900)
-            message(STATUS "using Windows MSVC generate cocos-x project, MSVC_VERSION:${MSVC_VERSION}")
+            message(STATUS "MSVC version: ${MSVC_VERSION}")
         else()
-            message(FATAL_ERROR "using Windows MSVC generate cocos-x project, MSVC_VERSION:${MSVC_VERSION} lower than needed")
+            message(FATAL_ERROR "MSVC version ${MSVC_VERSION} is below the required minimum (1900).")
         endif()
     else()
-        message(FATAL_ERROR "please using Windows MSVC compile cocos-x project, support other compile tools not yet")
+        message(FATAL_ERROR "Building cocos-x on Windows requires MSVC.")
     endif()
 endif()
 

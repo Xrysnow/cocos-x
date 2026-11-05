@@ -1,19 +1,17 @@
 include(CMakeParseArguments)
 
-# copy resource `FILES` and `FOLDERS` to TARGET_FILE_DIR/Resources
+# Register resource folders to copy to LINK_TO when the sync target runs.
 function(cocos_copy_target_res cocos_target)
     set(oneValueArgs LINK_TO)
     set(multiValueArgs FOLDERS)
     cmake_parse_arguments(opt "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(NOT TARGET SYNC_RESOURCE-${cocos_target})
-        message(WARNING "SyncResource targe for ${cocos_target} is not defined")
+        message(WARNING "Resource sync target SYNC_RESOURCE-${cocos_target} is not defined")
         return()
     endif()
 
-    # linking folders
     foreach(cc_folder ${opt_FOLDERS})
-        #get_filename_component(link_folder ${opt_LINK_TO} DIRECTORY)
         get_filename_component(link_folder_abs ${opt_LINK_TO} ABSOLUTE)
         add_custom_command(TARGET SYNC_RESOURCE-${cocos_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "    copying to ${link_folder_abs}"
@@ -23,8 +21,7 @@ function(cocos_copy_target_res cocos_target)
     endforeach()
 endfunction()
 
-## create a virtual target SYNC_RESOURCE-${cocos_target}
-## Update resource files in Resources/ folder everytime when `Run/Debug` target.
+# Create the resource sync target and run it before building the application.
 function(cocos_def_copy_resource_target cocos_target)
     add_custom_target(SYNC_RESOURCE-${cocos_target} ALL
         COMMAND ${CMAKE_COMMAND} -E echo "Copying resources for ${cocos_target} ..."
@@ -33,41 +30,6 @@ function(cocos_def_copy_resource_target cocos_target)
     set_target_properties(SYNC_RESOURCE-${cocos_target} PROPERTIES
         FOLDER Utils
     )
-endfunction()
-
-
-function(cocos_copy_lua_scripts cocos_target src_dir dst_dir)
-    set(luacompile_target COPY_LUA-${cocos_target})
-    if(NOT TARGET ${luacompile_target})
-        add_custom_target(${luacompile_target} ALL
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying lua scripts ..."
-        )
-        add_dependencies(${cocos_target} ${luacompile_target})
-        set_target_properties(${luacompile_target} PROPERTIES
-            FOLDER Utils
-        )
-    endif()
-    if(MSVC)
-        add_custom_command(TARGET ${luacompile_target} POST_BUILD
-            COMMAND ${PYTHON_COMMAND} ARGS ${COCOS2DX_ROOT_PATH}/cmake/scripts/sync_folder.py
-                -s ${src_dir} -d ${dst_dir} -l ${LUAJIT32_COMMAND} -m $<CONFIG>
-        )
-    else()
-        if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-            add_custom_command(TARGET ${luacompile_target} POST_BUILD
-                COMMAND ${PYTHON_COMMAND} ARGS ${COCOS2DX_ROOT_PATH}/cmake/scripts/sync_folder.py
-                -s ${src_dir} -d ${dst_dir}
-            )
-        else()
-            add_custom_command(TARGET ${luacompile_target} POST_BUILD
-                COMMAND ${PYTHON_COMMAND} ARGS ${COCOS2DX_ROOT_PATH}/cmake/scripts/sync_folder.py
-                    -s ${src_dir} -d ${dst_dir} -l ${LUAJIT32_COMMAND} -m ${CMAKE_BUILD_TYPE}
-                COMMAND ${PYTHON_COMMAND} ARGS ${COCOS2DX_ROOT_PATH}/cmake/scripts/sync_folder.py
-                    -s ${src_dir} -d ${dst_dir}/64bit -l ${LUAJIT64_COMMAND} -m ${CMAKE_BUILD_TYPE}
-            )
-        endif()
-    endif()
-
 endfunction()
 
 
@@ -321,7 +283,7 @@ macro(cocos_config_target_xcode_property cocos_target)
     endif()
 endmacro()
 
-# This little macro lets you set any XCode specific property, from ios.toolchain.cmake
+# Set an Xcode build attribute on a target.
 function(set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
     set_property(TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY} ${XCODE_VALUE})
 endfunction(set_xcode_property)

@@ -34,14 +34,14 @@ if(XCODE)
   set(CMAKE_XCODE_GENERATE_TOP_LEVEL_PROJECT_ONLY TRUE)
 endif()
 
-# cocos2dx root path
+# Locate the engine and its CMake modules.
 set(COCOS2DX_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_MODULE_PATH ${COCOS2DX_ROOT_PATH}/cmake/Modules/)
 
 # prevent in-source-build
 include(PreventInSourceBuilds)
 
-# works before build libcocos2d
+# Load shared settings before creating engine targets.
 include(CocosBuildSet)
 
 set(BUILD_LUA_LIBS ON) 
