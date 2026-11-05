@@ -2,16 +2,15 @@
 
 using namespace ffmpeg;
 
-AVPixelFormat Hardware::targetFormat = AV_PIX_FMT_NONE;
-
 AVPixelFormat Hardware::getFormat(AVCodecContext* ctx, const AVPixelFormat* pix_fmts)
 {
+	const auto targetFormat = static_cast<const AVCodecHWConfig*>(ctx->opaque)->pix_fmt;
 	for (auto p = pix_fmts; *p != AV_PIX_FMT_NONE; p++)
 	{
 		if (*p == targetFormat)
 			return *p;
 	}
-	return AV_PIX_FMT_NONE;
+	return avcodec_default_get_format(ctx, pix_fmts);
 }
 
 std::vector<AVHWDeviceType> Hardware::getDeviceTypes()
@@ -78,9 +77,7 @@ AVBufferRef* Hardware::createDeviceContext(AVCodecContext* codecCtx, const AVCod
 {
 	if (!codecCtx || !config || !(config->methods&AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX))
 		return nullptr;
-	targetFormat = config->pix_fmt;
-	codecCtx->get_format = getFormat;
-	AVBufferRef* hw_device_ctx;
+	AVBufferRef* hw_device_ctx = nullptr;
 	int err;
 	if ((err = av_hwdevice_ctx_create(&hw_device_ctx,
 		config->device_type, nullptr, nullptr, 0)) < 0)
@@ -88,6 +85,13 @@ AVBufferRef* Hardware::createDeviceContext(AVCodecContext* codecCtx, const AVCod
 		return nullptr;
 	}
 	codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+	if (!codecCtx->hw_device_ctx)
+	{
+		av_buffer_unref(&hw_device_ctx);
+		return nullptr;
+	}
+	codecCtx->opaque = const_cast<AVCodecHWConfig*>(config);
+	codecCtx->get_format = getFormat;
 	return hw_device_ctx;
 }
 
@@ -104,12 +108,12 @@ std::vector<AVPixelFormat> Hardware::getSoftwareFormats(AVBufferRef* deviceCtx)
 	if (deviceCtx)
 	{
 		auto constraints = av_hwdevice_get_hwframe_constraints(deviceCtx, nullptr);
-		if (!constraints || !constraints->valid_sw_formats)
-			return ret;
-		for (auto p = constraints->valid_sw_formats; *p != AV_PIX_FMT_NONE; p++)
+		if (constraints && constraints->valid_sw_formats)
 		{
-			ret.push_back(*p);
+			for (auto p = constraints->valid_sw_formats; *p != AV_PIX_FMT_NONE; p++)
+				ret.push_back(*p);
 		}
+		av_hwframe_constraints_free(&constraints);
 	}
 	return ret;
 }

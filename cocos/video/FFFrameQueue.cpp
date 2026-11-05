@@ -6,7 +6,10 @@ AVFrame* ffmpeg::FrameQueue::alloc()
 	// only alloc when received because it can be discarded
 	if(received)
 	{
-		queue.push_back(newFramePtr());
+		auto frame = newFramePtr();
+		if (!frame)
+			return nullptr;
+		queue.push_back(std::move(frame));
 		received = false;
 	}
 	if (maxSize > 0)
@@ -74,24 +77,26 @@ ffmpeg::frame_ptr ffmpeg::FrameQueue::pop()
 	return f;
 }
 
-ffmpeg::AudioFrameQueue* ffmpeg::AudioFrameQueue::create()
+ffmpeg::AudioFrameQueue* ffmpeg::AudioFrameQueue::create(bool autorelease)
 {
 	auto ret = new (std::nothrow) AudioFrameQueue();
 	if (ret)
 	{
-		ret->autorelease();
+		if (autorelease)
+			ret->autorelease();
 		return ret;
 	}
 	delete ret;
 	return nullptr;
 }
 
-ffmpeg::VideoFrameQueue* ffmpeg::VideoFrameQueue::create()
+ffmpeg::VideoFrameQueue* ffmpeg::VideoFrameQueue::create(bool autorelease)
 {
 	auto ret = new (std::nothrow) VideoFrameQueue();
 	if (ret)
 	{
-		ret->autorelease();
+		if (autorelease)
+			ret->autorelease();
 		return ret;
 	}
 	delete ret;

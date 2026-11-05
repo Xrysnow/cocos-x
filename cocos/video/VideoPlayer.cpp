@@ -1,5 +1,7 @@
 ﻿#include "VideoPlayer.h"
+#include "base/CCRefPtr.h"
 #include "renderer/backend/Device.h"
+#include <cmath>
 
 using namespace video;
 
@@ -49,10 +51,20 @@ bool Player::init_(const std::string& path)
 	tex->autorelease();
 	texture->initWithBackendTexture(tex);
 #endif // CC_VERSION
-	initWithTexture(texture);
+	if (!initWithTexture(texture))
+		return false;
 	setContentSize(size);
-	_running = true;
-	update(0);
+	decoderGeneration = decoder->getGeneration();
+	uint8_t* pixels = nullptr;
+	const auto first = decoder->readFrame(&pixels);
+	if (first == Decoder::ReadResult::Error || first == Decoder::ReadResult::EndOfStream)
+		return false;
+	if (first == Decoder::ReadResult::FrameReady)
+	{
+		presentFrame(pixels);
+		currentTime = decoder->getFrameTime();
+	}
+	atStart = true;
 	return true;
 }
 
@@ -60,13 +72,13 @@ void Player::vplay()
 {
 	if (mode == PlayMode::MANUAL)
 		return;
-	seek(0);
-	if (!isPlaying)
-	{
-		if (mode == PlayMode::REALTIME)
-			scheduleUpdate();
-		isPlaying = true;
-	}
+	syncDecoderGeneration();
+	if (!decoder->isOpened() || (!atStart && !seekFrame(0)))
+		return;
+	atStart = false;
+	if (!isPlaying && mode == PlayMode::REALTIME)
+		scheduleUpdate();
+	isPlaying = true;
 	autoUpdate = true;
 }
 
@@ -74,14 +86,13 @@ void Player::vstop()
 {
 	if (mode == PlayMode::MANUAL)
 		return;
-	if (isPlaying)
-	{
-		if (mode == PlayMode::REALTIME)
-			unscheduleUpdate();
-		isPlaying = false;
-		seek(0);
-	}
+	if (mode == PlayMode::REALTIME)
+		unscheduleUpdate();
+	isPlaying = false;
 	autoUpdate = false;
+	syncDecoderGeneration();
+	if (!atStart)
+		seekFrame(0);
 }
 
 void Player::vpause()
@@ -108,109 +119,150 @@ void Player::vresume()
 	}
 }
 
-void Player::playerSeekTime(double sec)
+void Player::syncDecoderGeneration()
 {
-	if (decoder->playerSeekTime(sec))
-	{
-		currentTime = sec;
-	}
+	if (decoderGeneration == decoder->getGeneration())
+		return;
+	decoderGeneration = decoder->getGeneration();
+	vbuf = nullptr;
+	finished = false;
+	atStart = false;
+	currentTime = 0.0;
+	unschedule("video.remove");
+}
+
+bool Player::seekFrame(uint32_t frame)
+{
+	const auto ok = decoder->seek(frame);
+	syncDecoderGeneration();
+	if (!ok)
+		return false;
+	uint8_t* pixels = nullptr;
+	if (decoder->readFrame(&pixels) != Decoder::ReadResult::FrameReady)
+		return false;
+	presentFrame(pixels);
+	currentTime = decoder->getFrameTime();
+	atStart = frame == 0;
+	return true;
 }
 
 void Player::seek(uint32_t frame)
 {
-	if (decoder->seek(frame))
-	{
-		currentTime = frame / decoder->getVideoFrameRateForPlayer();
-	}
+	seekFrame(frame);
 }
 
 void Player::update(float dt)
 {
+	cocos2d::RefPtr<Player> keepAlive(this);
 	cocos2d::Sprite::update(dt);
+	syncDecoderGeneration();
+	if (finished || !std::isfinite(dt))
+		return;
+	atStart = false;
+	uint8_t* pixels = nullptr;
 	if (dt >= 0)
-	{
-		playerSeekTime(currentTime);
 		currentTime += dt;
-	}
-	else
+	const auto result = dt < 0
+		? decoder->readFrame(&pixels)
+		: decoder->readFrameAt(currentTime, &pixels);
+	switch (result)
 	{
-		currentTime += 1.0 / decoder->getVideoFrameRateForPlayer();
+	case Decoder::ReadResult::FrameReady:
+		presentFrame(pixels);
+		if (dt < 0)
+			currentTime = decoder->getFrameTime();
+		break;
+	case Decoder::ReadResult::EndOfStream:
+		finishPlayback();
+		break;
+	case Decoder::ReadResult::Error:
+		vbuf = nullptr;
+		finished = true;
+		isPlaying = false;
+		autoUpdate = false;
+		if (mode == PlayMode::REALTIME)
+			unscheduleUpdate();
+		break;
+	case Decoder::ReadResult::NeedInput:
+		break;
 	}
-	auto ret = decoder->read(&vbuf);
-	texureDirty = ret != 0 && vbuf;
-	if (decoder->tell() == decoder->getTotalFrames() - 1/* || !vbuf*/)
+}
+
+void Player::finishPlayback()
+{
+	finished = true;
+	isPlaying = false;
+	autoUpdate = false;
+
+	const auto generation = decoderGeneration;
+	auto callback = videoEndCallback;
+	if (callback)
+		callback();
+	if (!isPlaying && mode == PlayMode::REALTIME)
+		unscheduleUpdate();
+	if (autoRemove && getParent() && finished && generation == decoder->getGeneration())
 	{
-		vstop();
-		if (videoEndCallback)
-			videoEndCallback();
-		if (autoRemove)
+		// Removal during visit could invalidate the parent's child iteration.
+		scheduleOnce([this, generation](float)
 		{
-			// stop texture update
-			vbuf = nullptr;
-			// avoid memory conflict
-			scheduleOnce([this](float dt_)
-			{
+			if (finished && generation == decoder->getGeneration())
 				removeFromParentAndCleanup(true);
-			}, 0, "remove");
-		}
+		}, 0, "video.remove");
 	}
 }
 
 void Player::setPlayMode(PlayMode m)
 {
-	if (m != PlayMode::REALTIME)
-	{
+	if (mode == m)
+		return;
+	if (mode == PlayMode::REALTIME)
 		unscheduleUpdate();
-	}
 	mode = m;
+	if (mode == PlayMode::REALTIME && isPlaying)
+		scheduleUpdate();
+	if (mode == PlayMode::MANUAL)
+	{
+		isPlaying = false;
+		autoUpdate = false;
+	}
+}
+
+void Player::presentFrame(uint8_t* pixels)
+{
+	const auto size = decoder->getVideoTargetSize();
+	if (!_texture)
+		return;
+	const auto width = _texture->getPixelsWide();
+	const auto height = _texture->getPixelsHigh();
+	if (size.width != width || size.height != height)
+		return;
+	vbuf = pixels;
+#ifdef CC_VERSION
+	const auto rgba = decoder->getReadFormat() == AV_PIX_FMT_RGBA;
+	const size_t dataSize = static_cast<size_t>(width) * height * (rgba ? 4 : 3);
+	_texture->updateWithData(pixels, dataSize,
+		rgba ? cocos2d::PixelFormat::RGBA8 : cocos2d::PixelFormat::RGB8,
+		cocos2d::PixelFormat::RGBA8888, width, height, false);
+#else
+	_texture->updateWithData(pixels, 0, 0, width, height);
+#endif // CC_VERSION
 }
 
 void Player::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4 &transform, uint32_t flags)
 {
 	if (!_texture)
 		return;
+	cocos2d::RefPtr<Player> keepAlive(this);
+	const auto wasRunning = isRunning();
 	if (isPlaying)
 	{
 		if (mode == PlayMode::STEP)
-		{
 			update(step);
-		}
 		else if (mode == PlayMode::FRAME)
-		{
 			update(-1);
-		}
-		if (texureDirty && vbuf)
-		{
-#ifdef CC_VERSION
-			const int length = _contentSize.width * _contentSize.height;
-			size_t dataSize = 0;
-			cocos2d::PixelFormat format;
-			if (decoder->getReadFormat() == AV_PIX_FMT_RGBA)
-			{
-				dataSize = length * 4;
-				format = cocos2d::PixelFormat::RGBA8;
-			}
-			else
-			{
-				dataSize = length * 3;
-				format = cocos2d::PixelFormat::RGB8;
-			}
-			_texture->updateWithData(
-				vbuf, dataSize,
-				format,
-				cocos2d::PixelFormat::RGBA8888,
-				_texture->getPixelsWide(),
-				_texture->getPixelsHigh(),
-				false);
-#else
-			_texture->updateWithData(vbuf, 0, 0,
-				_texture->getPixelsWide(),
-				_texture->getPixelsHigh());
-#endif // CC_VERSION
-		}
 	}
-
-	cocos2d::Sprite::draw(renderer, transform, flags);
+	if (!wasRunning || isRunning())
+		cocos2d::Sprite::draw(renderer, transform, flags);
 }
 
 void Player::setVideoEndCallback(const std::function<void()>& func)
@@ -220,10 +272,11 @@ void Player::setVideoEndCallback(const std::function<void()>& func)
 
 void Player::saveCurrentFrame(const std::string& path)
 {
-	if (!vbuf)
+	if (!vbuf || decoderGeneration != decoder->getGeneration())
 		return;
 	auto im = new cocos2d::Image();
-	const int length = _contentSize.width * _contentSize.height;
+	const auto size = decoder->getVideoTargetSize();
+	const size_t length = static_cast<size_t>(size.width) * static_cast<size_t>(size.height);
 	const size_t dataSize = length * 4;
 	std::vector<uint8_t> buffer;
 	uint8_t* buf;
@@ -235,7 +288,7 @@ void Player::saveCurrentFrame(const std::string& path)
 	{
 		buffer.resize(dataSize);
 		buf = buffer.data();
-		for (int i = 0; i < length; ++i)
+		for (size_t i = 0; i < length; ++i)
 		{
 			buf[i * 4] = vbuf[i * 3];
 			buf[i * 4 + 1] = vbuf[i * 3 + 1];
@@ -244,7 +297,7 @@ void Player::saveCurrentFrame(const std::string& path)
 		}
 	}
 	im->initWithRawData(buf, dataSize,
-		_contentSize.width, _contentSize.height, 32);
+		size.width, size.height, 32);
 	im->saveToFile(path);
 	delete im;
 }

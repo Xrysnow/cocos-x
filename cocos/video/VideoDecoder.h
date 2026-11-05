@@ -22,15 +22,24 @@ namespace video
 
 		bool isOpened() const;
 		void close();
+		enum class ReadResult { FrameReady, NeedInput, EndOfStream, Error };
+		// A returned buffer is borrowed until the next frame read, seek or close.
+		ReadResult readFrame(uint8_t** vbuf);
+		// At most one frame is returned. NeedInput also means the next frame is not due yet.
+		ReadResult readFrameAt(double seconds, uint8_t** vbuf);
 		uint32_t read(uint8_t** vbuf);
 		AVPixelFormat getReadFormat();
-		/**
-		 * can only seek key frame, not recommand to set a non-0 value. 
-		 * will make next [read] give specified frame.
-		 */
+
+		// Seek to the first decoded frame at or after seconds, relative to the video start.
+		// On success the next read returns the landing frame and actualSeconds gives its time.
+		bool seekTime(double seconds, double& actualSeconds);
+		// Frame-rate estimate for nonzero offsets. Use seekTime for VFR.
 		bool seek(int64_t frameOffset);
 
 		int64_t tell() const;
+		double getFrameTime() const { return frameTime; }
+		double getFrameDuration() const { return frameDuration; }
+		uint64_t getGeneration() const { return generation; }
 
 	protected:
 		int64_t getTotalFrames() const;
@@ -87,13 +96,9 @@ namespace video
 		static bool queryDecoderSupportsHardware(const std::string& name);
 
 	protected:
-		// only used for frame control when playing
-		bool playerSeekTime(double sec);
-
 		Decoder();
 		~Decoder() override;
 		bool opened = false;
-		VideoStream* stream = nullptr;
 		ffmpeg::Demuxer* demuxer = nullptr;
 		ffmpeg::AudioFrameQueue* audioQueue = nullptr;
 		ffmpeg::VideoFrameQueue* videoQueue = nullptr;
@@ -102,30 +107,35 @@ namespace video
 		uint32_t rawHeight = 0;
 		cocos2d::Size targetSize;
 
-		AVRational timeBaseV;
-		AVRational timeBaseA;
-
-		AVFormatContext* pFormatCtx = nullptr;
-		AVCodecContext*  pCodecCtx = nullptr;
-		const AVCodec*         pCodecV = nullptr;
+		AVRational timeBaseV{};
+		const AVCodec* pCodecV = nullptr;
 		int idxVideo = -1;
 		int idxAudio = -1;
-		int idxVideoAtInfo = 0;
-		int idxAudioAtInfo = 0;
+		int idxVideoAtInfo = -1;
+		int idxAudioAtInfo = -1;
 
 		SwsContext* img_convert_ctx = nullptr;
 		uint8_t* sws_pointers[4] = { nullptr };
 		int sws_linesizes[4] = { 0 };
 		AVPixelFormat swsFormat = AV_PIX_FMT_RGBA;
 
-		ffmpeg::frame_ptr vFrame;
-		int64_t lastFrame = -2;
+		ffmpeg::ContainerInfo videoInfo{};
+
+	private:
+		ReadResult fillPendingFrame();
+		ReadResult outputPendingFrame(uint8_t** vbuf);
+		void resetFrameState();
+
+		ffmpeg::frame_ptr pendingFrame;
+		int64_t startTimestamp = AV_NOPTS_VALUE;
 		int64_t currentFrame = -1;
-
-		std::string filePath;
-		int64_t nFramesV = 0;
-		double durationV = 0.0;
-
-		ffmpeg::ContainerInfo videoInfo;
+		int64_t nextFrame = 0;
+		double pendingTime = 0.0;
+		double pendingDuration = 0.0;
+		double frameTime = -1.0;
+		double frameDuration = 0.0;
+		bool readError = false;
+		bool initialPosition = true;
+		uint64_t generation = 0;
 	};
 }

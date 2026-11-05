@@ -1,5 +1,6 @@
 ﻿#include "FFDemuxer.h"
 #include "FFPointer.h"
+#include <new>
 
 using namespace std;
 using namespace ffmpeg;
@@ -26,12 +27,9 @@ Demuxer::~Demuxer()
 	clean();
 }
 
-bool Demuxer::init(const std::string& url, AVFormatContext* containerContext)
+bool Demuxer::init(const std::string& url)
 {
-	if (!containerContext)
-		return false;
 	this->url = url;
-	this->containerContext = containerContext;
 
 	int ret;
 	if ((ret = avformat_open_input(&containerContext, url.c_str(), nullptr, nullptr)) < 0)
@@ -48,14 +46,11 @@ bool Demuxer::init(const std::string& url, AVFormatContext* containerContext)
 	return true;
 }
 
-Demuxer* Demuxer::create(const std::string& url, AVFormatContext* containerContext)
+Demuxer* Demuxer::create(const std::string& url)
 {
 	auto ret = new (std::nothrow) Demuxer();
-	if (ret && ret->init(url, containerContext))
-	{
-		ret->autorelease();
+	if (ret && ret->init(url))
 		return ret;
-	}
 	delete ret;
 	return nullptr;
 }
@@ -80,86 +75,59 @@ bool Demuxer::setVideoReceiver(FrameReceiver* receiver, int streamIndex)
 	return setReceiver(receiver, AVMEDIA_TYPE_VIDEO, streamIndex);
 }
 
-void Demuxer::prepare()
+Demuxer::StepResult Demuxer::step()
 {
-	bool allPrepared;
-	do
-	{
-		step();
-		// see if all input streams are prepared
-		allPrepared = true;
-		for (auto& it : inputStreams)
-		{
-			if (!it.second->prepare())
-				allPrepared = false;
-		}
-	} while (!allPrepared && !isDone());
-}
+	if (state != StepResult::Progress)
+		return state;
 
-bool Demuxer::isDone()
-{
-	return done;
-}
-
-bool Demuxer::step()
-{
-	auto pkt_ = newPacketPtr();
-	auto pkt = pkt_.get();
-	if (!pkt)
+	auto packet = newPacketPtr();
+	if (!packet)
 	{
 		VERRO("failed to allocate packet");
-		return false;
+		return state = StepResult::Error;
 	}
-	// read frames from the file
-	int ret = av_read_frame(containerContext, pkt);
-	// EOF
+
+	const auto ret = av_read_frame(containerContext, packet.get());
 	if (ret == AVERROR_EOF)
 	{
-		VINFO("EOF");
-		pkt->data = nullptr;
-		pkt->size = 0;
+		bool drained = true;
 		for (auto& it : inputStreams)
 		{
-			pkt->stream_index = it.first;
-			decodePacket(pkt);
-			it.second->end();
+			if (!it.second->drain())
+				drained = false;
 		}
-		done = true;
-		return true;
+		return state = drained ? StepResult::EndOfStream : StepResult::Error;
 	}
-	// not ready yet
 	if (ret == AVERROR(EAGAIN))
-	{
-		//VINFO("not ready");
-		return true;
-	}
-	// error
+		return StepResult::NeedInput;
 	if (ret < 0)
 	{
-		VERRO("failed to read frame: %d", ret);
-		return false;
+		VERRO("failed to read packet: %d", ret);
+		return state = StepResult::Error;
 	}
-	return decodePacket(pkt);
+
+	const auto stream = getInputStream(packet->stream_index);
+	if (stream && !stream->decodePacket(packet.get()))
+		return state = StepResult::Error;
+	return StepResult::Progress;
 }
 
-bool Demuxer::seekKeyFrame(int streamIndex, int64_t nFrame)
+bool Demuxer::seekTimestamp(int streamIndex, int64_t timestamp)
 {
+	// Bound the seek to a keyframe at or before the requested stream timestamp.
 	auto ret = avformat_seek_file(containerContext,
-		streamIndex, nFrame, nFrame, nFrame, AVSEEK_FLAG_FRAME);
+		streamIndex, INT64_MIN, timestamp, timestamp, 0);
 	if (ret < 0)
-		ret = av_seek_frame(containerContext, streamIndex, nFrame, AVSEEK_FLAG_FRAME);
-	if (ret < 0)
-		ret = av_seek_frame(containerContext, streamIndex, nFrame, AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY);
+		ret = av_seek_frame(containerContext, streamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
 	if (ret < 0)
 	{
-		VERRO("failed to seek frame to %d: %d", nFrame, ret);
+		VERRO("failed to seek input: %d", ret);
 		return false;
 	}
-	const auto s = inputStreams.at(streamIndex);
-	if (s)
-	{
-		s->onSeek();
-	}
+
+	for (auto& it : inputStreams)
+		it.second->onSeek();
+	state = StepResult::Progress;
 	return true;
 }
 
@@ -191,11 +159,11 @@ int Demuxer::getBestVideoStream()
 
 ContainerInfo Demuxer::getInfo()
 {
-	ContainerInfo info;
-	const auto duration = containerContext->duration +
-		(containerContext->duration <= INT64_MAX - 5000 ? 5000 : 0);
-	info.duration = (double)duration / AV_TIME_BASE;
-	info.start = (double)containerContext->start_time / AV_TIME_BASE;
+	ContainerInfo info{};
+	if (containerContext->duration != AV_NOPTS_VALUE)
+		info.duration = static_cast<double>(containerContext->duration) / AV_TIME_BASE;
+	if (containerContext->start_time != AV_NOPTS_VALUE)
+		info.start = static_cast<double>(containerContext->start_time) / AV_TIME_BASE;
 	info.bitRate = containerContext->bit_rate;
 	info.format = containerContext->iformat;
 
@@ -214,13 +182,10 @@ FrameReceiver* Demuxer::getFrameReceiver(int streamIndex)
 	return nullptr;
 }
 
-bool Demuxer::decodePacket(AVPacket* pkt)
+Decoder* Demuxer::getDecoder(int streamIndex)
 {
-	bool ret = true;
-	auto inputStream = inputStreams.at(pkt->stream_index);
-	if (inputStream)
-		ret = inputStream->decodePacket(pkt);
-	return ret;
+	const auto stream = getInputStream(streamIndex);
+	return stream ? stream->getDecoder() : nullptr;
 }
 
 bool Demuxer::setReceiver(FrameReceiver* receiver, AVMediaType type, int streamIndex)
@@ -253,84 +218,50 @@ bool Demuxer::setReceiver(FrameReceiver* receiver, AVMediaType type, int streamI
 
 InputStream* Demuxer::getOrCreateInputStream(int streamIndex)
 {
-	// already exists
-	if (inputStreams.at(streamIndex))
-		return inputStreams.at(streamIndex);
-
-	if (isDone())
-		return nullptr;
+	if (const auto input = getInputStream(streamIndex))
+		return input;
 
 	const auto stream = containerContext->streams[streamIndex];
-	const auto codec_id = stream->codecpar->codec_id;
+	const auto codecID = stream->codecpar->codec_id;
+	InputStream* input = nullptr;
 	switch (stream->codecpar->codec_type)
 	{
 	case AVMEDIA_TYPE_VIDEO:
+		if (auto decoder = VideoDecoder::createById(codecID, false))
 		{
-			auto decoder = dynamic_cast<VideoDecoder*>(decoders.at(streamIndex));
-			if (!decoder)
+			input = VideoInputStream::create(decoder, containerContext, stream);
+			decoder->release();
+			if (!input)
 			{
-				// find hardware decoder first
-				auto codecs = Codec::getDecoders(AVMEDIA_TYPE_VIDEO, codec_id, true);
-				if (codecs.empty())
-					codecs = Codec::getDecoders(AVMEDIA_TYPE_VIDEO, codec_id);
-				if (codecs.empty())
+				// Start software fallback with a fresh context and stream parameters.
+				if (auto software = VideoDecoder::createById(codecID, false))
 				{
-					VERRO("failed to get codecs for %s", avcodec_get_name(codec_id));
-					return nullptr;
+					input = VideoInputStream::create(software, containerContext, stream, false);
+					software->release();
 				}
-				for (auto& c : codecs)
-				{
-					decoder = VideoDecoder::createByName(c->name);
-					if (decoder)
-						break;
-				}
-				if (!decoder)
-				{
-					VERRO("failed to create decoder for %s", avcodec_get_name(codec_id));
-					return nullptr;
-				}
-				decoders.insert(streamIndex, decoder);
 			}
-			// decoder will be opened in InputStream
-			auto vstream = VideoInputStream::create(decoder, containerContext, stream);
-			if (!vstream)
-			{
-				VERRO("failed to create VideoInputStream");
-				return nullptr;
-			}
-			inputStreams.insert(streamIndex, vstream);
 		}
 		break;
 	case AVMEDIA_TYPE_AUDIO:
+		if (auto decoder = AudioDecoder::createById(codecID, false))
 		{
-			auto decoder = dynamic_cast<AudioDecoder*>(decoders.at(streamIndex));
-			if (!decoder)
-			{
-				decoder = AudioDecoder::createById(codec_id);
-				if (!decoder)
-				{
-					VERRO("failed to create decoder for %s", avcodec_get_name(codec_id));
-					return nullptr;
-				}
-				decoders.insert(streamIndex, decoder);
-			}
-			auto astream = AudioInputStream::create(decoder, containerContext, stream);
-			if(!astream)
-			{
-				VERRO("failed to create AudioInputStream");
-				return nullptr;
-			}
-			inputStreams.insert(streamIndex, astream);
+			input = AudioInputStream::create(decoder, containerContext, stream);
+			decoder->release();
 		}
 		break;
 	default:
 		break;
 	}
-	return inputStreams.at(streamIndex);
+	if (input)
+	{
+		inputStreams.insert(streamIndex, input);
+		input->release();
+	}
+	return input;
 }
 
 void Demuxer::clean()
 {
 	inputStreams.clear();
-	decoders.clear();
+	avformat_close_input(&containerContext);
 }

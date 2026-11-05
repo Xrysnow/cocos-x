@@ -1,6 +1,6 @@
 ﻿#include "FFInputStream.h"
 #include "FFInfo.h"
-#include <cstring>
+#include <new>
 
 using namespace std;
 using namespace ffmpeg;
@@ -14,7 +14,7 @@ InputStream::~InputStream()
 	InputStream::clean();
 }
 
-bool InputStream::init(Decoder* decoder, AVFormatContext* format, AVStream* stream)
+bool InputStream::init(Decoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware)
 {
 	if (!decoder || !format || !stream)
 	{
@@ -27,7 +27,6 @@ bool InputStream::init(Decoder* decoder, AVFormatContext* format, AVStream* stre
 
 	auto codec = decoder->getCodec();
 	codecContext = decoder->getCodecContext();
-	//codecContext->framerate = stream->avg_frame_rate;
 
 	int ret;
 	if ((ret = avcodec_parameters_to_context(codecContext, stream->codecpar)) < 0)
@@ -36,19 +35,18 @@ bool InputStream::init(Decoder* decoder, AVFormatContext* format, AVStream* stre
 		return false;
 	}
 
-	// configure before open
+	codecContext->pkt_timebase = stream->time_base;
 	configureCodecContext();
 
-	if (!decoder->open())
+	if (!(useHardware ? decoder->open() : decoder->Codec::open()))
 	{
-		VERRO("failed to open codec %s: %d", codec->name, ret);
+		VERRO("failed to open codec %s", codec->name);
 		return false;
 	}
 
 	if (!codecContext->codec)
 		codecContext->codec = codec;
 
-	// temperary frame
 	frame = av_frame_alloc();
 	if (!frame)
 	{
@@ -65,16 +63,15 @@ void InputStream::setFrameReceiver(FrameReceiver* newReceiver)
 	CC_SAFE_RETAIN(receiver);
 }
 
-void InputStream::end()
+bool InputStream::drain()
 {
+	if (drained)
+		return true;
+	if (!decodePacket(nullptr))
+		return false;
+	drained = true;
 	if (receiver)
 		receiver->end();
-}
-
-bool InputStream::prepare()
-{
-	if (receiver)
-		return receiver->prepare();
 	return true;
 }
 
@@ -82,70 +79,87 @@ void InputStream::onSeek()
 {
 	if (receiver)
 		receiver->clear();
+	av_frame_unref(frame);
 	decoder->flushBuffers();
+	drained = false;
 }
 
 bool InputStream::decodePacket(AVPacket* pkt)
 {
-	if(!sendPacket(pkt))
-		return false;
-
-	int ret = 0;
-	// receive all output frames
-	while (ret >= 0)
+	while (true)
 	{
-		AVFrame* tmpFrame = nullptr;
-		if (receiver)
-			tmpFrame = receiver->alloc();
-		if (!tmpFrame)
-			tmpFrame = frame;
-
-		ret = avcodec_receive_frame(codecContext, tmpFrame);
-		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-			return true;
-		if (ret < 0)
+		const auto result = avcodec_send_packet(codecContext, pkt);
+		if (result < 0 && result != AVERROR(EAGAIN))
 		{
-			auto err = video::getErrorString(ret);
-			if (ret == AVERROR(EINVAL))
-				err = "the decoder is invalid";
-			VERRO("failed to receive frame: %s", err.c_str());
+			VERRO("failed to send packet: %s", video::getErrorString(result).c_str());
 			return false;
 		}
 
-		// put default settings from the stream into the frame
-		if (!tmpFrame->sample_aspect_ratio.num)
-			tmpFrame->sample_aspect_ratio = stream->sample_aspect_ratio;
+		bool received = false;
+		const auto receiveResult = receiveFrames(received);
+		if (receiveResult != AVERROR(EAGAIN) && receiveResult != AVERROR_EOF)
+			return false;
 
+		if (result != AVERROR(EAGAIN))
+		{
+			// A flush packet transitions the codec to draining until receive reports EOF.
+			const auto expected = pkt ? AVERROR(EAGAIN) : AVERROR_EOF;
+			if (receiveResult == expected)
+				return true;
+		}
+		else if (receiveResult == AVERROR(EAGAIN) && received)
+		{
+			// Output made room. Retry the same packet before reading more input.
+			continue;
+		}
+
+		VERRO("unexpected codec state after %s", pkt ? "packet" : "drain");
+		return false;
+	}
+}
+
+int InputStream::receiveFrames(bool& received)
+{
+	while (true)
+	{
+		const auto result = avcodec_receive_frame(codecContext, frame);
+		if (result < 0)
+		{
+			if (result != AVERROR(EAGAIN) && result != AVERROR_EOF)
+				VERRO("failed to receive frame: %s", video::getErrorString(result).c_str());
+			return result;
+		}
+
+		received = true;
+		if (!receiver)
+			continue;
+		auto output = prepareFrame();
+		if (!output)
+			return AVERROR_EXTERNAL;
+		if (!output->sample_aspect_ratio.num)
+			output->sample_aspect_ratio = stream->sample_aspect_ratio;
 		if (!metaData)
 			discoverMetaData();
 
-		if (receiver)
+		const auto buffer = receiver->alloc();
+		if (!buffer)
 		{
-			receiver->receive(tmpFrame, metaData);
+			av_frame_unref(output);
+			VERRO("failed to allocate receiver frame");
+			return AVERROR(ENOMEM);
 		}
+		if (buffer != output)
+		{
+			av_frame_unref(buffer);
+			av_frame_move_ref(buffer, output);
+		}
+		receiver->receive(buffer, metaData);
 	}
-	return true;
 }
 
-bool InputStream::sendPacket(AVPacket* pkt)
+AVFrame* InputStream::prepareFrame()
 {
-	const auto ret = avcodec_send_packet(codecContext, pkt);
-	if (ret >= 0)
-		return true;
-	if (ret == AVERROR_EOF)
-	{
-		// the decoder has been flushed
-		return true;
-	}
-	auto err = video::getErrorString(ret);
-	if (ret == AVERROR(EAGAIN))
-		err = "input is not accepted in the current state";
-	else if (ret == AVERROR(EINVAL))
-		err = "the decoder is invalid";
-	else if (ret == AVERROR(ENOMEM))
-		err = "failed to add packet to internal queue";
-	VERRO("failed to send packet: %s", err.c_str());
-	return false;
+	return frame;
 }
 
 void InputStream::configureCodecContext()
@@ -218,84 +232,35 @@ VideoInputStream::~VideoInputStream()
 }
 
 VideoInputStream* VideoInputStream::create(
-	VideoDecoder* decoder, AVFormatContext* format, AVStream* stream)
+	VideoDecoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware)
 {
 	auto ret = new (std::nothrow) VideoInputStream();
-	if (ret && ret->init(decoder, format, stream))
+	if (ret && ret->init(decoder, format, stream, useHardware))
 	{
-		ret->frameSW = av_frame_alloc();
-		ret->autorelease();
-		return ret;
+		if (!decoder->isHardware() || (ret->frameSW = av_frame_alloc()))
+			return ret;
 	}
 	delete ret;
 	return nullptr;
 }
 
-bool VideoInputStream::decodePacket(AVPacket* pkt)
+AVFrame* VideoInputStream::prepareFrame()
 {
-	if (!sendPacket(pkt))
-		return false;
+	const auto videoDecoder = static_cast<VideoDecoder*>(decoder);
+	if (!videoDecoder->isHardware() || frame->format != videoDecoder->getHardwareFormat())
+		return frame;
 
-	auto decoder_ = dynamic_cast<VideoDecoder*>(decoder);
-	const auto is_hw = decoder_->isHardware();
-	const auto hw_fmt = decoder_->getHardwareFormat();
-	
-	int ret = 0;
-	while (ret >= 0)
+	av_frame_unref(frameSW);
+	auto result = av_hwframe_transfer_data(frameSW, frame, 0);
+	if (result >= 0)
+		result = av_frame_copy_props(frameSW, frame);
+	if (result < 0)
 	{
-		AVFrame* tmpFrame = nullptr;
-		AVFrame* tmpFrameSW = nullptr;
-		if (is_hw)
-		{
-			tmpFrame = frame;
-			if (receiver)
-				tmpFrameSW = receiver->alloc();
-			else
-				tmpFrameSW = frameSW;
-		}
-		else
-		{
-			if (receiver)
-				tmpFrame = receiver->alloc();
-			if (!tmpFrame)
-				tmpFrame = frame;
-		}
-
-		ret = avcodec_receive_frame(codecContext, tmpFrame);
-		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-			return true;
-		if (ret < 0)
-		{
-			VERRO("Error during decoding: %d", ret);
-			return false;
-		}
-		if (is_hw && tmpFrame->format == hw_fmt)
-		{
-			ret = av_hwframe_transfer_data(tmpFrameSW, tmpFrame, 0);
-			if (ret < 0)
-			{
-				VERRO("failed to transfer hw data: %d", ret);
-				return false;
-			}
-			av_frame_copy_props(tmpFrameSW, tmpFrame);
-			tmpFrame = tmpFrameSW;
-		}
-
-		// put default settings from the stream into the frame
-		if (!tmpFrame->sample_aspect_ratio.num)
-		{
-			tmpFrame->sample_aspect_ratio = stream->sample_aspect_ratio;
-		}
-
-		if (!metaData)
-			discoverMetaData();
-
-		if (receiver)
-		{
-			receiver->receive(tmpFrame, metaData);
-		}
+		VERRO("failed to transfer hardware frame: %s", video::getErrorString(result).c_str());
+		av_frame_unref(frameSW);
+		return nullptr;
 	}
-	return true;
+	return frameSW;
 }
 
 void VideoInputStream::addToContainerInfo(ContainerInfo* containerInfo)
@@ -332,13 +297,8 @@ void VideoInputStream::addToContainerInfo(ContainerInfo* containerInfo)
 	containerInfo->videoStreams.push_back(info);
 }
 
-void VideoInputStream::configureCodecContext()
-{
-}
-
 void VideoInputStream::clean()
 {
-	InputStream::clean();
 	if (frameSW)
 	{
 		av_frame_free(&frameSW);
@@ -351,10 +311,7 @@ AudioInputStream* AudioInputStream::create(
 {
 	auto ret = new (std::nothrow) AudioInputStream();
 	if (ret && ret->init(decoder, format, stream))
-	{
-		ret->autorelease();
 		return ret;
-	}
 	delete ret;
 	return nullptr;
 }

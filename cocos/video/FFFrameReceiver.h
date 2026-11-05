@@ -9,7 +9,7 @@ namespace ffmpeg
 	{
 	public:
 		virtual ~FrameReceiver() = default;
-		// give frame for next receive, return nullptr will use sender's frame
+		// Provide storage for the next received frame. Null indicates allocation failure.
 		virtual AVFrame* alloc() = 0;
 		virtual void receive(AVFrame* frame, MetaData* metaData) = 0;
 		// called at EOF

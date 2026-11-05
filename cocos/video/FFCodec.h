@@ -55,7 +55,7 @@ namespace ffmpeg
 		bool init(const AVCodec* codec_) override;
 	public:
 		static AudioDecoder* createByName(const char* name);
-		static AudioDecoder* createById(AVCodecID id);
+		static AudioDecoder* createById(AVCodecID id, bool autorelease = true);
 	};
 
 	class VideoDecoder : public Decoder
@@ -64,7 +64,7 @@ namespace ffmpeg
 		bool init(const AVCodec* codec_) override;
 	public:
 		static VideoDecoder* createByName(const char* name);
-		static VideoDecoder* createById(AVCodecID id);
+		static VideoDecoder* createById(AVCodecID id, bool autorelease = true);
 		~VideoDecoder() override;
 		bool open() override;
 		bool openHardware(AVPixelFormat desiredSWFormat = AV_PIX_FMT_NONE);

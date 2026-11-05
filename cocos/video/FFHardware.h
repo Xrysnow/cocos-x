@@ -6,7 +6,6 @@ namespace ffmpeg
 {
 	class Hardware
 	{
-		static AVPixelFormat targetFormat;
 		static AVPixelFormat getFormat(AVCodecContext* ctx, const AVPixelFormat* pix_fmts);
 	public:
 		static std::vector<AVHWDeviceType> getDeviceTypes();

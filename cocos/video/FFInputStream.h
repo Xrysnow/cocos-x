@@ -14,21 +14,21 @@ namespace ffmpeg
 	protected:
 		InputStream();
 		virtual ~InputStream();
-		bool init(Decoder* decoder, AVFormatContext* format, AVStream* stream);
+		bool init(Decoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware = true);
 	public:
 		void setFrameReceiver(FrameReceiver* newReceiver);
 		FrameReceiver* getFrameReceiver() const { return receiver; }
-		void end();
-		bool prepare();
+		bool drain();
 		void onSeek();
 		virtual void addToContainerInfo(ContainerInfo* info) = 0;
 
 		Decoder* getDecoder() const { return decoder; }
 		AVStream* getStream() const { return stream; }
 
-		virtual bool decodePacket(AVPacket* pkt);
+		bool decodePacket(AVPacket* pkt);
 	protected:
-		virtual bool sendPacket(AVPacket* pkt);
+		int receiveFrames(bool& received);
+		virtual AVFrame* prepareFrame();
 
 		virtual void configureCodecContext();
 		static int64_t calculateBitRate(AVCodecContext* ctx);
@@ -43,18 +43,19 @@ namespace ffmpeg
 		Decoder* decoder = nullptr;
 		AVFrame* frame = nullptr;
 		MetaData* metaData = nullptr;
+		bool drained = false;
 	};
 
 	class VideoInputStream : public InputStream
 	{
 		virtual ~VideoInputStream();
 	public:
+		// Returns an owned reference.
 		static VideoInputStream* create(
-			VideoDecoder* decoder, AVFormatContext* format, AVStream* stream);
-		bool decodePacket(AVPacket* pkt) override;
+			VideoDecoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware = true);
 		void addToContainerInfo(ContainerInfo* info) override;
 	protected:
-		void configureCodecContext() override;
+		AVFrame* prepareFrame() override;
 		void clean() override;
 		AVFrame* frameSW = nullptr;
 	};
@@ -63,6 +64,7 @@ namespace ffmpeg
 	{
 		virtual ~AudioInputStream() = default;
 	public:
+		// Returns an owned reference.
 		static AudioInputStream* create(
 			AudioDecoder* decoder, AVFormatContext* format, AVStream* stream);
 		void addToContainerInfo(ContainerInfo* info) override;

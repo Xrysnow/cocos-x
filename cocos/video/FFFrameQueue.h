@@ -37,7 +37,7 @@ namespace ffmpeg
 		AudioFrameQueue() = default;
 		virtual ~AudioFrameQueue() = default;
 	public:
-		static AudioFrameQueue* create();
+		static AudioFrameQueue* create(bool autorelease = true);
 		AVMediaType getMediaType() override { return AVMEDIA_TYPE_AUDIO; }
 	};
 
@@ -47,7 +47,7 @@ namespace ffmpeg
 		VideoFrameQueue() = default;
 		virtual ~VideoFrameQueue() = default;
 	public:
-		static VideoFrameQueue* create();
+		static VideoFrameQueue* create(bool autorelease = true);
 		AVMediaType getMediaType() override { return AVMEDIA_TYPE_VIDEO; }
 	};
 }

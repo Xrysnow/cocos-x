@@ -27,7 +27,7 @@ namespace video
 		void vstop();
 		void vpause();
 		void vresume();
-		/** can only seek key frame, not recommended to set a non-0 value */
+		/** Seek to a frame using the decoder's frame-rate estimate. */
 		void seek(uint32_t frame);
 		/** step dt in decoder and get data, will step 1 frame if dt<0 */
 		void update(float dt) override;
@@ -47,7 +47,10 @@ namespace video
 
 	protected:
 		void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
-		void playerSeekTime(double sec);
+		bool seekFrame(uint32_t frame);
+		void syncDecoderGeneration();
+		void presentFrame(uint8_t* pixels);
+		void finishPlayback();
 		Decoder* decoder = nullptr;
 		uint8_t* vbuf = nullptr;
 
@@ -56,7 +59,9 @@ namespace video
 		bool autoUpdate = false;
 		bool autoRemove = false;
 		bool isPlaying = false;
-		bool texureDirty = false;
+		bool finished = false;
+		bool atStart = false;
+		uint64_t decoderGeneration = 0;
 		PlayMode mode = PlayMode::STEP;
 
 		std::function<void()> videoEndCallback;

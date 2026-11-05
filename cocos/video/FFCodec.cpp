@@ -167,7 +167,7 @@ void Codec::setGlobalContainerHeader()
 
 void Codec::flushBuffers()
 {
-	if(codecContext->codec)
+	if (opened)
 	{
 		avcodec_flush_buffers(codecContext);
 	}
@@ -198,12 +198,13 @@ AudioDecoder* AudioDecoder::createByName(const char* name)
 	return nullptr;
 }
 
-AudioDecoder* AudioDecoder::createById(AVCodecID id)
+AudioDecoder* AudioDecoder::createById(AVCodecID id, bool autorelease)
 {
 	auto ret = new (nothrow) AudioDecoder();
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
-		ret->autorelease();
+		if (autorelease)
+			ret->autorelease();
 		return ret;
 	}
 	delete ret;
@@ -227,12 +228,13 @@ VideoDecoder* VideoDecoder::createByName(const char* name)
 	return nullptr;
 }
 
-VideoDecoder* VideoDecoder::createById(AVCodecID id)
+VideoDecoder* VideoDecoder::createById(AVCodecID id, bool autorelease)
 {
 	auto ret = new (nothrow) VideoDecoder();
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
-		ret->autorelease();
+		if (autorelease)
+			ret->autorelease();
 		return ret;
 	}
 	delete ret;
@@ -250,7 +252,7 @@ VideoDecoder::~VideoDecoder()
 bool VideoDecoder::open()
 {
 	if (Hardware::isSupported(codec))
-		return openHardware() || Decoder::open();
+		return openHardware() || (!hwDeviceCtx && Decoder::open());
 	return Decoder::open();
 }
 
@@ -281,11 +283,11 @@ bool VideoDecoder::openHardware(AVPixelFormat desiredSWFormat)
 #endif
 	for (auto&& cfg : configs)
 	{
-		// devideCtx should be released by av_buffer_unref
-		auto devideCtx = Hardware::createDeviceContext(codecContext, cfg);
-		if(!devideCtx)
+		// deviceCtx should be released by av_buffer_unref
+		auto deviceCtx = Hardware::createDeviceContext(codecContext, cfg);
+		if(!deviceCtx)
 			continue;
-		const auto sw = Hardware::getSoftwareFormats(devideCtx);
+		const auto sw = Hardware::getSoftwareFormats(deviceCtx);
 		std::vector<AVPixelFormat> possibleSW;
 		for (auto&& f : sw)
 		{
@@ -307,13 +309,15 @@ bool VideoDecoder::openHardware(AVPixelFormat desiredSWFormat)
 		}
 		if(swFormat == AV_PIX_FMT_NONE)
 		{
-			av_buffer_unref(&devideCtx);
-			codecContext->hw_device_ctx = nullptr;
+			av_buffer_unref(&deviceCtx);
+			av_buffer_unref(&codecContext->hw_device_ctx);
+			codecContext->get_format = avcodec_default_get_format;
+			codecContext->opaque = nullptr;
 			continue;
 		}
 		hwFormat = Hardware::getHardwareFormat(cfg);
 		hwDeviceType = cfg->device_type;
-		hwDeviceCtx = devideCtx;
+		hwDeviceCtx = deviceCtx;
 #if 0
 		std::string sw_str;
 		for (auto&& f : possibleSW)

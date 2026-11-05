@@ -15,18 +15,16 @@ namespace ffmpeg
 	protected:
 		Demuxer();
 		virtual ~Demuxer();
-		bool init(const std::string& url, AVFormatContext* containerContext);
+		bool init(const std::string& url);
 	public:
-		static Demuxer* create(const std::string& url, AVFormatContext* containerContext);
+		// Returns an owned reference.
+		static Demuxer* create(const std::string& url);
 
 		bool setAudioReceiver(FrameReceiver* receiver, int streamIndex = -1);
 		bool setVideoReceiver(FrameReceiver* receiver, int streamIndex = -1);
-		// prepare will call step, so receiver should be set before it
-		virtual void prepare();
-		virtual bool isDone();
-		// step once may or may not give a frame, you need to check receiver outside
-		virtual bool step();
-		virtual bool seekKeyFrame(int streamIndex, int64_t nFrame);
+		enum class StepResult { Progress, NeedInput, EndOfStream, Error };
+		StepResult step();
+		bool seekTimestamp(int streamIndex, int64_t timestamp);
 
 		int getBestAudioStream();
 		int getBestVideoStream();
@@ -35,21 +33,19 @@ namespace ffmpeg
 
 		AVFormatContext* getAVFormatContext() const { return containerContext; }
 		InputStream* getInputStream(int streamIndex) { return inputStreams.at(streamIndex); }
-		Decoder* getDecoder(int streamIndex) { return decoders.at(streamIndex); }
+		Decoder* getDecoder(int streamIndex);
 		FrameReceiver* getFrameReceiver(int streamIndex);
 	protected:
 
-		bool decodePacket(AVPacket* pkt);
 		bool setReceiver(FrameReceiver* receiver, AVMediaType type, int streamIndex = -1);
 		InputStream* getOrCreateInputStream(int index);
 		void clean();
 
-		bool done = false;
+		StepResult state = StepResult::Progress;
 		std::string url;
 		AVFormatContext* containerContext = nullptr;
 		int bestAudioStream = -1;
 		int bestVideoStream = -1;
 		cocos2d::Map<int, InputStream*> inputStreams;
-		cocos2d::Map<int, Decoder*> decoders;
 	};
 }
