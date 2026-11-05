@@ -270,6 +270,12 @@ elseif(WINDOWS)
     endif()
 endif()
 
+if(CC_ENABLE_VIDEO_TEXTURE)
+    list(APPEND lua_bindings_auto_headers auto/cclua_video_texture_auto.hpp)
+    list(APPEND lua_bindings_auto_files auto/cclua_video_texture_auto.cpp)
+    list(APPEND lua_bindings_manual_headers manual/cclua_video_texture_types.hpp)
+endif()
+
 set(lua_bindings_files
     ${lua_bindings_manual_files}
     ${lua_bindings_auto_files}

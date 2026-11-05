@@ -27,6 +27,10 @@
 
 #include "scripting/lua-bindings/manual/lua_module_register.h"
 
+#ifdef CC_ENABLE_VIDEO_TEXTURE
+    #include "scripting/lua-bindings/auto/cclua_video_texture_auto.hpp"
+#endif
+
 #include "scripting/lua-bindings/manual/network/cclua_network_manual.h"
 #include "scripting/lua-bindings/manual/cocostudio/cclua_cocostudio_manual.hpp"
 #include "scripting/lua-bindings/manual/extension/cclua_extension_manual.h"
@@ -73,6 +77,11 @@ int lua_module_register(lua_State* L)
 #endif
 #if CC_USE_NAVMESH
     register_navmesh_module(L);
+#endif
+#ifdef CC_ENABLE_VIDEO_TEXTURE
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    register_all_cc_video_texture(L);
+    lua_pop(L, 1);
 #endif
 
     // register extensions: yaiso, lua-cjson
