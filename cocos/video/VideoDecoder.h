@@ -8,7 +8,7 @@
 
 namespace video
 {
-	class Decoder : public cocos2d::Ref
+	class CC_DLL Decoder : public cocos2d::Ref
 	{
 		friend class Player;
 	public:

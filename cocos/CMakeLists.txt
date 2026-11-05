@@ -42,7 +42,7 @@ if (NOT DEFINED CC_ENABLE_MFMEDIA)
     set(CC_ENABLE_MFMEDIA OFF CACHE INTERNAL "Enabling microsoft media foundation for windows video player" )
 endif()
 
-option(CC_ENABLE_VIDEO_TEXTURE "Link cocos2d with FFmpeg for video textures" OFF)
+option(CC_ENABLE_VIDEO_TEXTURE "Build FFmpeg video textures" OFF)
 
 # extensions to build
 # extensions dependicies: COCOSTUDIO may depend on spine & dragonBones if they are present in buildset
@@ -138,8 +138,10 @@ add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
 target_link_libraries(${COCOS_CORE_LIB} external OpenAL ogg)
 
 if(CC_ENABLE_VIDEO_TEXTURE)
+    include(video/CMakeLists.txt)
     add_subdirectory("${COCOS2DX_ROOT_PATH}/external/ffmpeg-prebuilt"
         "${ENGINE_BINARY_PATH}/external/ffmpeg-prebuilt")
+    target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_ENABLE_VIDEO_TEXTURE=1)
     target_link_libraries(${COCOS_CORE_LIB} ext_ffmpeg)
 endif()
 

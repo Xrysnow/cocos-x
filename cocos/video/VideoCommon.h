@@ -1,13 +1,13 @@
 ﻿#pragma once
-#include "platform/CCPlatformConfig.h"
+#include "platform/CCPlatformMacros.h"
 #include <functional>
 #include <string>
 
 namespace video
 {
-	void setLoggingFunction(const std::function<void(const std::string&)>& callback);
-	void logging(const char* format, ...);
-	std::string getErrorString(int errorCode);
+	CC_DLL void setLoggingFunction(const std::function<void(const std::string&)>& callback);
+	CC_DLL void logging(const char* format, ...);
+	CC_DLL std::string getErrorString(int errorCode);
 }
 
 #define VINFO(_str, ...) video::logging("[VINFO] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)

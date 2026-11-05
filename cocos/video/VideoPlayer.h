@@ -5,7 +5,7 @@
 
 namespace video
 {
-	class Player : public cocos2d::Sprite
+	class CC_DLL Player : public cocos2d::Sprite
 	{
 	public:
 		enum class PlayMode
