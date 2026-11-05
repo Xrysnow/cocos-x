@@ -31,6 +31,20 @@ message(STATUS "HOST_SYSTEM:" ${CMAKE_HOST_SYSTEM_NAME})
 # the default behavior of build module
 option(BUILD_LUA_LIBS "Build lua libraries" OFF)
 
+# AUTO follows cocos' CC_DEBUG > 0 in the binding header. Only explicit
+# overrides are supplied to every target instantiating the templates.
+set(CC_LUA_BINDING_CHECKS "AUTO" CACHE STRING "Lua binding diagnostics: AUTO, ON or OFF")
+set_property(CACHE CC_LUA_BINDING_CHECKS PROPERTY STRINGS AUTO ON OFF)
+string(TOUPPER "${CC_LUA_BINDING_CHECKS}" _cc_lua_binding_checks)
+if(_cc_lua_binding_checks STREQUAL "ON")
+    add_compile_definitions(CC_LUA_BINDING_CHECKS=1)
+elseif(_cc_lua_binding_checks STREQUAL "OFF")
+    add_compile_definitions(CC_LUA_BINDING_CHECKS=0)
+elseif(NOT _cc_lua_binding_checks STREQUAL "AUTO")
+    message(FATAL_ERROR "CC_LUA_BINDING_CHECKS must be AUTO, ON or OFF")
+endif()
+unset(_cc_lua_binding_checks)
+
 # include helper functions
 include(CocosBuildHelpers)
 
@@ -47,6 +61,16 @@ if(XCODE AND "${CMAKE_OSX_DEPLOYMENT_TARGET}" STREQUAL "")
     elseif(MACOSX AND NOT DEFINED CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET)
         set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET 12.0)
     endif()
+endif()
+
+if(APPLE)
+    enable_language(OBJC OBJCXX)
+    # Keep Objective-C and Objective-C++ aligned with the C/C++ settings.
+    set(CMAKE_OBJC_STANDARD ${CMAKE_C_STANDARD})
+    set(CMAKE_OBJC_STANDARD_REQUIRED ${CMAKE_C_STANDARD_REQUIRED})
+    set(CMAKE_OBJCXX_STANDARD ${CMAKE_CXX_STANDARD})
+    set(CMAKE_OBJCXX_STANDARD_REQUIRED ${CMAKE_CXX_STANDARD_REQUIRED})
+    set(CMAKE_OBJCXX_EXTENSIONS ${CMAKE_CXX_EXTENSIONS})
 endif()
 
 # config libraries dependence
