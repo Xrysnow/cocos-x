@@ -26,15 +26,11 @@
 
 # build engine library and all tests
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.28)
 
 project(cocos-x)
 
-# set default minimum deployment target
 if(XCODE)
-  if(NOT DEFINED CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET)
-    SET (CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET 13.0)
-  endif()
   set(CMAKE_XCODE_GENERATE_TOP_LEVEL_PROJECT_ONLY TRUE)
 endif()
 

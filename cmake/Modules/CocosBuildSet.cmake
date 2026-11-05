@@ -39,6 +39,16 @@ include(CocosBuildHelpers)
 # add target compile options function
 include(CocosConfigDefine)
 
+# Apply Xcode defaults after IOS/MACOSX detection and before creating targets.
+# Preserve deployment versions supplied through CMake or Xcode attributes.
+if(XCODE AND "${CMAKE_OSX_DEPLOYMENT_TARGET}" STREQUAL "")
+    if(IOS AND NOT DEFINED CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET)
+        set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET 17.0)
+    elseif(MACOSX AND NOT DEFINED CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET)
+        set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET 12.0)
+    endif()
+endif()
+
 # config libraries dependence
 include(CocosConfigDepend)
 
