@@ -114,7 +114,7 @@ bool Skin::initWithFile(std::string_view filename)
 
 void Skin::setSkinData(const BaseData& var)
 {
-    _skinData = var;
+    _skinData.copy(&var);
 
     setScaleX(_skinData.scaleX);
     setScaleY(_skinData.scaleY);

@@ -61,6 +61,10 @@ class CC_DLL RenderState : public Ref
 public:
     std::string getName() const;
 
+    // Copies rendering values only. Ref identity, ownership and threading policy
+    // belong to the destination object and are never copied by material clones.
+    void copyFrom(const RenderState& other);
+
     /**
      * Binds the render state for this RenderState and any of its parents, top-down,
      * for the given pass.
@@ -237,8 +241,8 @@ public:
         FrontFace _frontFace           = FrontFace::COUNTER_CLOCK_WISE;
         int32_t _modifiedBits          = 0L;
 
-        mutable uint32_t _hash;
-        mutable bool _hashDirty;
+        mutable uint32_t _hash = 0;
+        mutable bool _hashDirty = true;
     };
 
     StateBlock& getStateBlock() const;

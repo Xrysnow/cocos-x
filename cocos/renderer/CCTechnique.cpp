@@ -76,7 +76,7 @@ Technique* Technique::clone() const
     auto technique = new Technique();
 
     technique->_name        = _name;
-    technique->_renderState = _renderState;
+    technique->_renderState.copyFrom(_renderState);
     for (const auto pass : _passes)
     {
         auto p        = pass->clone();

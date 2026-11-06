@@ -195,7 +195,7 @@ Material* MeshMaterial::clone() const
 {
     auto material = new MeshMaterial();
 
-    material->_renderState = _renderState;
+    material->_renderState.copyFrom(_renderState);
 
     for (const auto& technique : _techniques)
     {

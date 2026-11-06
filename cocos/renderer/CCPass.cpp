@@ -110,7 +110,7 @@ Pass::~Pass()
 Pass* Pass::clone() const
 {
     auto pass          = new Pass();
-    pass->_renderState = _renderState;
+    pass->_renderState.copyFrom(_renderState);
 
     pass->setProgramState(_programState->clone());
 

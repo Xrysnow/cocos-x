@@ -27,6 +27,12 @@
 
 NS_CC_BEGIN
 
-EventAcceleration::EventAcceleration(const Acceleration& acc) : Event(Type::ACCELERATION), _acc(acc) {}
+EventAcceleration::EventAcceleration(const Acceleration& acc) : Event(Type::ACCELERATION)
+{
+    _acc.x = acc.x;
+    _acc.y = acc.y;
+    _acc.z = acc.z;
+    _acc.timestamp = acc.timestamp;
+}
 
 NS_CC_END

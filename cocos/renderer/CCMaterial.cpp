@@ -526,7 +526,7 @@ Material* Material::clone() const
 {
     auto material = new Material();
     // RenderState::cloneInto(material);
-    material->_renderState = _renderState;
+    material->_renderState.copyFrom(_renderState);
 
     for (const auto& technique : _techniques)
     {

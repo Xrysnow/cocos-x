@@ -44,6 +44,16 @@ std::string RenderState::getName() const
     return _name;
 }
 
+void RenderState::copyFrom(const RenderState& other)
+{
+    if (this == &other)
+        return;
+    _name = other._name;
+    _state = other._state;
+    _hash = other._hash;
+    _hashDirty = other._hashDirty;
+}
+
 void RenderState::bindPass(Pass* pass, MeshCommand* command)
 {
     CC_ASSERT(pass);
