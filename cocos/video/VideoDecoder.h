@@ -1,13 +1,17 @@
 ﻿#pragma once
-#include "VideoCommon.h"
-#include "VideoStream.h"
-#include "FFDemuxer.h"
-#include "FFFrameQueue.h"
+#include "FFInfo.h"
+#include "base/CCRef.h"
 #include "math/Vec2.h"
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace video
 {
+	class VideoStream;
+
 	class CC_DLL Decoder : public cocos2d::Ref
 	{
 		friend class Player;
@@ -99,24 +103,17 @@ namespace video
 		Decoder();
 		~Decoder() override;
 		bool opened = false;
-		ffmpeg::Demuxer* demuxer = nullptr;
-		ffmpeg::AudioFrameQueue* audioQueue = nullptr;
-		ffmpeg::VideoFrameQueue* videoQueue = nullptr;
 
 		uint32_t rawWidth = 0;
 		uint32_t rawHeight = 0;
 		cocos2d::Size targetSize;
 
 		AVRational timeBaseV{};
-		const AVCodec* pCodecV = nullptr;
 		int idxVideo = -1;
 		int idxAudio = -1;
 		int idxVideoAtInfo = -1;
 		int idxAudioAtInfo = -1;
 
-		SwsContext* img_convert_ctx = nullptr;
-		uint8_t* sws_pointers[4] = { nullptr };
-		int sws_linesizes[4] = { 0 };
 		AVPixelFormat swsFormat = AV_PIX_FMT_RGBA;
 
 		ffmpeg::ContainerInfo videoInfo{};
@@ -126,8 +123,9 @@ namespace video
 		ReadResult outputPendingFrame(uint8_t** vbuf);
 		void resetFrameState();
 
-		ffmpeg::frame_ptr pendingFrame;
-		int64_t startTimestamp = AV_NOPTS_VALUE;
+		struct FFmpegState;
+		std::unique_ptr<FFmpegState> ffmpegState;
+
 		int64_t currentFrame = -1;
 		int64_t nextFrame = 0;
 		double pendingTime = 0.0;

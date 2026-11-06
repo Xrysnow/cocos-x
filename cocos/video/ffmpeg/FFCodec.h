@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "base/CCRef.h"
-#include "VideoCommon.h"
+#include "video/VideoCommon.h"
 #include <vector>
 
 namespace ffmpeg

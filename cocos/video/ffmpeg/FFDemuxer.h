@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "base/CCRef.h"
 #include "base/CCMap.h"
-#include "VideoCommon.h"
-#include "FFInfo.h"
+#include "video/VideoCommon.h"
+#include "video/FFInfo.h"
 #include "FFFrameReceiver.h"
 #include "FFInputStream.h"
 

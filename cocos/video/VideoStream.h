@@ -1,5 +1,8 @@
 #pragma once
 #include "base/CCRef.h"
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <mutex>
 
 namespace video

@@ -1,10 +1,13 @@
 ﻿#pragma once
-#include "VideoDecoder.h"
 #include "2d/CCSprite.h"
+#include <cstdint>
 #include <functional>
+#include <string>
 
 namespace video
 {
+	class Decoder;
+
 	class CC_DLL Player : public cocos2d::Sprite
 	{
 	public:

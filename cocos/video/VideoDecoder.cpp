@@ -1,4 +1,7 @@
 ﻿#include "VideoDecoder.h"
+#include "VideoCommon.h"
+#include "ffmpeg/FFDemuxer.h"
+#include "ffmpeg/FFFrameQueue.h"
 #include "platform/CCFileUtils.h"
 #include <climits>
 #include <cmath>
@@ -7,6 +10,19 @@
 using namespace std;
 using namespace cocos2d;
 using namespace video;
+
+struct Decoder::FFmpegState
+{
+	ffmpeg::Demuxer* demuxer = nullptr;
+	ffmpeg::AudioFrameQueue* audioQueue = nullptr;
+	ffmpeg::VideoFrameQueue* videoQueue = nullptr;
+	const AVCodec* pCodecV = nullptr;
+	SwsContext* img_convert_ctx = nullptr;
+	uint8_t* sws_pointers[4] = { nullptr };
+	int sws_linesizes[4] = { 0 };
+	ffmpeg::frame_ptr pendingFrame;
+	int64_t startTimestamp = AV_NOPTS_VALUE;
+};
 
 Decoder* Decoder::create(const std::string& path)
 {
@@ -32,42 +48,42 @@ bool Decoder::open(const std::string& path)
 		return false;
 	}
 
-	demuxer = ffmpeg::Demuxer::create(filePath);
-	if (!demuxer)
+	ffmpegState->demuxer = ffmpeg::Demuxer::create(filePath);
+	if (!ffmpegState->demuxer)
 		return false;
 
-	idxVideo = demuxer->getBestVideoStream();
+	idxVideo = ffmpegState->demuxer->getBestVideoStream();
 	if (idxVideo >= 0)
-		videoQueue = ffmpeg::VideoFrameQueue::create(false);
-	if (!videoQueue || !demuxer->setVideoReceiver(videoQueue, idxVideo))
+		ffmpegState->videoQueue = ffmpeg::VideoFrameQueue::create(false);
+	if (!ffmpegState->videoQueue || !ffmpegState->demuxer->setVideoReceiver(ffmpegState->videoQueue, idxVideo))
 	{
 		close();
 		return false;
 	}
 
-	idxAudio = demuxer->getBestAudioStream();
+	idxAudio = ffmpegState->demuxer->getBestAudioStream();
 	if (idxAudio >= 0)
 	{
-		audioQueue = ffmpeg::AudioFrameQueue::create(false);
-		if (!audioQueue)
+		ffmpegState->audioQueue = ffmpeg::AudioFrameQueue::create(false);
+		if (!ffmpegState->audioQueue)
 		{
 			close();
 			return false;
 		}
-		audioQueue->setMaxSize(64);
+		ffmpegState->audioQueue->setMaxSize(64);
 		// Audio is optional for this silent player. Retain only an opened receiver.
-		if (!demuxer->setAudioReceiver(audioQueue, idxAudio))
+		if (!ffmpegState->demuxer->setAudioReceiver(ffmpegState->audioQueue, idxAudio))
 		{
-			CC_SAFE_RELEASE_NULL(audioQueue);
+			CC_SAFE_RELEASE_NULL(ffmpegState->audioQueue);
 			idxAudio = -1;
 		}
 	}
 
-	const auto format = demuxer->getAVFormatContext();
+	const auto format = ffmpegState->demuxer->getAVFormatContext();
 	const auto videoStream = format->streams[idxVideo];
-	const auto videoDecoder = demuxer->getDecoder(idxVideo);
+	const auto videoDecoder = ffmpegState->demuxer->getDecoder(idxVideo);
 	const auto codec = videoDecoder->getCodecContext();
-	pCodecV = videoDecoder->getCodec();
+	ffmpegState->pCodecV = videoDecoder->getCodec();
 	rawWidth = codec->width;
 	rawHeight = codec->height;
 	timeBaseV = videoStream->time_base;
@@ -77,11 +93,11 @@ bool Decoder::open(const std::string& path)
 		close();
 		return false;
 	}
-	startTimestamp = videoStream->start_time;
-	if (startTimestamp == AV_NOPTS_VALUE && format->start_time != AV_NOPTS_VALUE)
-		startTimestamp = av_rescale_q(format->start_time, AV_TIME_BASE_Q, timeBaseV);
+	ffmpegState->startTimestamp = videoStream->start_time;
+	if (ffmpegState->startTimestamp == AV_NOPTS_VALUE && format->start_time != AV_NOPTS_VALUE)
+		ffmpegState->startTimestamp = av_rescale_q(format->start_time, AV_TIME_BASE_Q, timeBaseV);
 
-	videoInfo = demuxer->getInfo();
+	videoInfo = ffmpegState->demuxer->getInfo();
 	for (size_t i = 0; i < videoInfo.videoStreams.size(); ++i)
 	{
 		if (videoInfo.videoStreams[i].index == idxVideo)
@@ -109,7 +125,7 @@ bool Decoder::setup()
 
 bool Decoder::setup(const Size& target_size)
 {
-	if (!opened || sws_pointers[0])
+	if (!opened || ffmpegState->sws_pointers[0])
 		return false;
 
 	const auto width = static_cast<double>(target_size.width);
@@ -120,7 +136,7 @@ bool Decoder::setup(const Size& target_size)
 
 	const auto w = static_cast<int>(width);
 	const auto h = static_cast<int>(height);
-	if (av_image_alloc(sws_pointers, sws_linesizes, w, h, swsFormat, 1) < 0)
+	if (av_image_alloc(ffmpegState->sws_pointers, ffmpegState->sws_linesizes, w, h, swsFormat, 1) < 0)
 	{
 		VERRO("can't allocate converted image");
 		return false;
@@ -136,7 +152,7 @@ bool Decoder::isOpened() const
 
 void Decoder::resetFrameState()
 {
-	pendingFrame.reset();
+	ffmpegState->pendingFrame.reset();
 	pendingTime = 0.0;
 	pendingDuration = 0.0;
 	currentFrame = -1;
@@ -153,22 +169,22 @@ void Decoder::close()
 	opened = false;
 	resetFrameState();
 	initialPosition = true;
-	pCodecV = nullptr;
-	CC_SAFE_RELEASE_NULL(demuxer);
-	CC_SAFE_RELEASE_NULL(videoQueue);
-	CC_SAFE_RELEASE_NULL(audioQueue);
-	sws_freeContext(img_convert_ctx);
-	img_convert_ctx = nullptr;
-	av_freep(&sws_pointers[0]);
-	for (auto& ptr : sws_pointers)
+	ffmpegState->pCodecV = nullptr;
+	CC_SAFE_RELEASE_NULL(ffmpegState->demuxer);
+	CC_SAFE_RELEASE_NULL(ffmpegState->videoQueue);
+	CC_SAFE_RELEASE_NULL(ffmpegState->audioQueue);
+	sws_freeContext(ffmpegState->img_convert_ctx);
+	ffmpegState->img_convert_ctx = nullptr;
+	av_freep(&ffmpegState->sws_pointers[0]);
+	for (auto& ptr : ffmpegState->sws_pointers)
 		ptr = nullptr;
-	for (auto& linesize : sws_linesizes)
+	for (auto& linesize : ffmpegState->sws_linesizes)
 		linesize = 0;
 
 	rawWidth = rawHeight = 0;
 	targetSize = Size::ZERO;
 	timeBaseV = {};
-	startTimestamp = AV_NOPTS_VALUE;
+	ffmpegState->startTimestamp = AV_NOPTS_VALUE;
 	idxVideo = idxAudio = idxVideoAtInfo = idxAudioAtInfo = -1;
 	videoInfo = {};
 }
@@ -177,12 +193,12 @@ Decoder::ReadResult Decoder::fillPendingFrame()
 {
 	if (readError)
 		return ReadResult::Error;
-	if (pendingFrame)
+	if (ffmpegState->pendingFrame)
 		return ReadResult::FrameReady;
 
-	while (videoQueue->empty())
+	while (ffmpegState->videoQueue->empty())
 	{
-		switch (demuxer->step())
+		switch (ffmpegState->demuxer->step())
 		{
 		case ffmpeg::Demuxer::StepResult::Progress:
 			continue;
@@ -192,26 +208,26 @@ Decoder::ReadResult Decoder::fillPendingFrame()
 			readError = true;
 			return ReadResult::Error;
 		case ffmpeg::Demuxer::StepResult::EndOfStream:
-			if (videoQueue->empty())
+			if (ffmpegState->videoQueue->empty())
 				return ReadResult::EndOfStream;
 			break;
 		}
 		break;
 	}
 
-	pendingFrame = videoQueue->pop();
-	if (!pendingFrame)
+	ffmpegState->pendingFrame = ffmpegState->videoQueue->pop();
+	if (!ffmpegState->pendingFrame)
 	{
 		VERRO("video queue did not return a frame");
 		readError = true;
 		return ReadResult::Error;
 	}
-	const auto pts = pendingFrame->best_effort_timestamp;
+	const auto pts = ffmpegState->pendingFrame->best_effort_timestamp;
 	if (pts != AV_NOPTS_VALUE)
 	{
-		if (startTimestamp == AV_NOPTS_VALUE)
-			startTimestamp = pts;
-		const auto ticks = av_sat_sub64(pts, startTimestamp);
+		if (ffmpegState->startTimestamp == AV_NOPTS_VALUE)
+			ffmpegState->startTimestamp = pts;
+		const auto ticks = av_sat_sub64(pts, ffmpegState->startTimestamp);
 		pendingTime = static_cast<double>(ticks) * av_q2d(timeBaseV);
 	}
 	else
@@ -219,21 +235,21 @@ Decoder::ReadResult Decoder::fillPendingFrame()
 		// Missing timestamps still allow sequential playback on a nominal timeline.
 		pendingTime = currentFrame < 0 ? 0.0 : frameTime + frameDuration;
 	}
-	pendingDuration = pendingFrame->duration > 0
-		? pendingFrame->duration * av_q2d(timeBaseV)
+	pendingDuration = ffmpegState->pendingFrame->duration > 0
+		? ffmpegState->pendingFrame->duration * av_q2d(timeBaseV)
 		: 1.0 / getVideoFrameRateForPlayer();
 	return ReadResult::FrameReady;
 }
 
 Decoder::ReadResult Decoder::outputPendingFrame(uint8_t** vbuf)
 {
-	const auto frame = pendingFrame.get();
-	img_convert_ctx = sws_getCachedContext(img_convert_ctx,
+	const auto frame = ffmpegState->pendingFrame.get();
+	ffmpegState->img_convert_ctx = sws_getCachedContext(ffmpegState->img_convert_ctx,
 		frame->width, frame->height, static_cast<AVPixelFormat>(frame->format),
 		static_cast<int>(targetSize.width), static_cast<int>(targetSize.height),
 		swsFormat, SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
-	if (!img_convert_ctx || sws_scale(img_convert_ctx, frame->data, frame->linesize,
-		0, frame->height, sws_pointers, sws_linesizes) <= 0)
+	if (!ffmpegState->img_convert_ctx || sws_scale(ffmpegState->img_convert_ctx, frame->data, frame->linesize,
+		0, frame->height, ffmpegState->sws_pointers, ffmpegState->sws_linesizes) <= 0)
 	{
 		VERRO("failed to convert video frame");
 		readError = true;
@@ -245,8 +261,8 @@ Decoder::ReadResult Decoder::outputPendingFrame(uint8_t** vbuf)
 	frameTime = pendingTime;
 	frameDuration = pendingDuration;
 	initialPosition = false;
-	pendingFrame.reset();
-	*vbuf = sws_pointers[0];
+	ffmpegState->pendingFrame.reset();
+	*vbuf = ffmpegState->sws_pointers[0];
 	return ReadResult::FrameReady;
 }
 
@@ -255,7 +271,7 @@ Decoder::ReadResult Decoder::readFrame(uint8_t** vbuf)
 	if (!vbuf)
 		return ReadResult::Error;
 	*vbuf = nullptr;
-	if (!opened || !sws_pointers[0])
+	if (!opened || !ffmpegState->sws_pointers[0])
 		return ReadResult::Error;
 	const auto result = fillPendingFrame();
 	return result == ReadResult::FrameReady ? outputPendingFrame(vbuf) : result;
@@ -266,7 +282,7 @@ Decoder::ReadResult Decoder::readFrameAt(double seconds, uint8_t** vbuf)
 	if (!vbuf)
 		return ReadResult::Error;
 	*vbuf = nullptr;
-	if (!opened || !sws_pointers[0] || !std::isfinite(seconds))
+	if (!opened || !ffmpegState->sws_pointers[0] || !std::isfinite(seconds))
 		return ReadResult::Error;
 	const auto result = fillPendingFrame();
 	// Comparing the next representable time avoids missing an equal PTS due to rounding.
@@ -296,15 +312,15 @@ bool Decoder::seekTime(double seconds, double& actualSeconds)
 	const bool primeFirstFrame = initialPosition && seconds == 0;
 	if (!primeFirstFrame)
 	{
-		if (startTimestamp == AV_NOPTS_VALUE && initialPosition)
+		if (ffmpegState->startTimestamp == AV_NOPTS_VALUE && initialPosition)
 			fillPendingFrame();
-		const auto origin = startTimestamp == AV_NOPTS_VALUE ? 0 : startTimestamp;
+		const auto origin = ffmpegState->startTimestamp == AV_NOPTS_VALUE ? 0 : ffmpegState->startTimestamp;
 		const auto ticks = std::floor(static_cast<long double>(seconds) * timeBaseV.den / timeBaseV.num);
 		constexpr long double timestampLimit = 9223372036854775808.0L;
 		if (ticks >= timestampLimit)
 			return false;
 		const auto offset = static_cast<int64_t>(ticks);
-		if (origin > INT64_MAX - offset || !demuxer->seekTimestamp(idxVideo, origin + offset))
+		if (origin > INT64_MAX - offset || !ffmpegState->demuxer->seekTimestamp(idxVideo, origin + offset))
 			return false;
 		resetFrameState();
 		++generation;
@@ -315,12 +331,12 @@ bool Decoder::seekTime(double seconds, double& actualSeconds)
 	while (fillPendingFrame() == ReadResult::FrameReady)
 	{
 		// Zero means the first decoded video frame, including preroll with negative PTS.
-		if (seconds == 0 || (pendingFrame->best_effort_timestamp != AV_NOPTS_VALUE && pendingTime >= limit))
+		if (seconds == 0 || (ffmpegState->pendingFrame->best_effort_timestamp != AV_NOPTS_VALUE && pendingTime >= limit))
 		{
 			actualSeconds = pendingTime;
 			return true;
 		}
-		pendingFrame.reset();
+		ffmpegState->pendingFrame.reset();
 	}
 	return false;
 }
@@ -357,7 +373,10 @@ double Decoder::getVideoFrameRateForPlayer()
 	return rate.num > 0 && rate.den > 0 ? av_q2d(rate) : 60.0;
 }
 
-Decoder::Decoder() = default;
+Decoder::Decoder()
+	: ffmpegState(std::make_unique<FFmpegState>())
+{
+}
 
 Decoder::~Decoder()
 {
@@ -501,30 +520,30 @@ size_t Decoder::getAudioStreamCount() const
 
 std::string Decoder::getVideoDecoderName() const
 {
-	return pCodecV && pCodecV->name ? pCodecV->name : "";
+	return ffmpegState->pCodecV && ffmpegState->pCodecV->name ? ffmpegState->pCodecV->name : "";
 }
 
 AVPixelFormat Decoder::getVideoDecoderHardwareFormat() const
 {
-	const auto decoder = demuxer ? static_cast<ffmpeg::VideoDecoder*>(demuxer->getDecoder(idxVideo)) : nullptr;
+	const auto decoder = ffmpegState->demuxer ? static_cast<ffmpeg::VideoDecoder*>(ffmpegState->demuxer->getDecoder(idxVideo)) : nullptr;
 	return decoder ? decoder->getHardwareFormat() : AV_PIX_FMT_NONE;
 }
 
 AVPixelFormat Decoder::getVideoDecoderSoftwareFormat() const
 {
-	const auto decoder = demuxer ? static_cast<ffmpeg::VideoDecoder*>(demuxer->getDecoder(idxVideo)) : nullptr;
+	const auto decoder = ffmpegState->demuxer ? static_cast<ffmpeg::VideoDecoder*>(ffmpegState->demuxer->getDecoder(idxVideo)) : nullptr;
 	return decoder ? decoder->getSoftwareFormat() : AV_PIX_FMT_NONE;
 }
 
 bool Decoder::isVideoDecoderHardware() const
 {
-	const auto decoder = demuxer ? static_cast<ffmpeg::VideoDecoder*>(demuxer->getDecoder(idxVideo)) : nullptr;
+	const auto decoder = ffmpegState->demuxer ? static_cast<ffmpeg::VideoDecoder*>(ffmpegState->demuxer->getDecoder(idxVideo)) : nullptr;
 	return decoder ? decoder->isHardware() : false;
 }
 
 std::string Decoder::getAudioDecoderName() const
 {
-	const auto decoder = demuxer ? demuxer->getDecoder(idxAudio) : nullptr;
+	const auto decoder = ffmpegState->demuxer ? ffmpegState->demuxer->getDecoder(idxAudio) : nullptr;
 	if (!decoder)
 		return "";
 	const auto ret = decoder->getCodec()->name;

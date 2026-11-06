@@ -1,6 +1,7 @@
 #include "cclua_video_texture_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/cclua_video_texture_types.hpp"
+#include "video/VideoDecoder.h"
 #include "video/VideoPlayer.h"
 
 int lua_video_Decoder_getAudioBitRate(lua_State* lua_S)

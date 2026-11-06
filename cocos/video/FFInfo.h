@@ -1,6 +1,13 @@
 #pragma once
-#include "VideoCommon.h"
+#include <cstdint>
 #include <vector>
+
+extern "C"
+{
+	#include "libavutil/avutil.h"
+	struct AVCodec;
+	struct AVInputFormat;
+}
 
 namespace ffmpeg
 {

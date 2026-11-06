@@ -1,5 +1,5 @@
 ﻿#include "FFInputStream.h"
-#include "FFInfo.h"
+#include "video/FFInfo.h"
 #include <new>
 
 using namespace std;

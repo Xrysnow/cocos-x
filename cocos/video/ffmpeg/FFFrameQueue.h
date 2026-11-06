@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "VideoCommon.h"
+#include "video/VideoCommon.h"
 #include "FFFrameReceiver.h"
 #include "FFPointer.h"
 #include <deque>

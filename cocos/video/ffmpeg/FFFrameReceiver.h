@@ -1,7 +1,7 @@
 #pragma once
 #include "base/CCRef.h"
-#include "VideoCommon.h"
-#include "FFInfo.h"
+#include "video/VideoCommon.h"
+#include "video/FFInfo.h"
 
 namespace ffmpeg
 {

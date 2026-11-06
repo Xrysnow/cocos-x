@@ -1,4 +1,5 @@
 ﻿#include "VideoPlayer.h"
+#include "VideoDecoder.h"
 #include "base/CCRefPtr.h"
 #include "renderer/backend/Device.h"
 #include <cmath>
