@@ -90,7 +90,7 @@ public:
     PosixFileStream(const PosixFileStream& other) = delete;
 
     PosixFileStream(PosixFileStream&& other) noexcept
-        : FileStream(std::move(other)), _handle(std::move(other._handle)), _iof(other._iof)
+        : FileStream(std::move(other)), _handle(std::move(other._handle)), _iof(other._iof), _options(other._options)
     {
         other.reset();
     }
@@ -101,9 +101,11 @@ public:
     {
         if (this == &other)
             return *this;
+        internalClose();
         FileStream::operator=(std::move(other));
         _handle = std::move(other._handle);
         _iof    = other._iof;
+        _options = other._options;
 
         other.reset();
 
@@ -126,6 +128,12 @@ public:
     int64_t tell() override;
     int64_t size() override;
     bool isOpen() const override;
+    bool isReadable() const noexcept override;
+    bool isWritable() const noexcept override;
+    bool canResize() const noexcept override;
+    bool canSync() const noexcept override;
+    int resize(int64_t length) override;
+    int sync() override;
 
 private:
     int internalClose();
@@ -133,6 +141,7 @@ private:
 
     PXFileHandle _handle{};
     const PXIoF* _iof{};
+    FileStream::OpenOptions _options{};
 };
 
 NS_CC_END

@@ -9,25 +9,17 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <limits>
+#include <algorithm>
 
 #if defined(_WIN32)
 int _ftruncate(int fd, int64_t size)
 {
-    auto handle = (HANDLE)_get_osfhandle(fd);
-    if (handle == INVALID_HANDLE_VALUE)
-        return -1;
-    LARGE_INTEGER offset;
-    offset.QuadPart = size;
-    do
-    {
-        if (!::SetFilePointerEx(handle, offset, nullptr, FILE_BEGIN))
-            break;
-        if (!::SetEndOfFile(handle))
-            break;
-        return 0;
-    } while (false);
-    errno = GetLastError();
-    return -1;
+    // _chsize_s zero-fills extensions and reports CRT errno values, unlike
+    // SetEndOfFile (whose newly extended bytes are unspecified).
+    const auto error = ::_chsize_s(fd, size);
+    if (error)
+        errno = error;
+    return error ? -1 : 0;
 }
 #endif
 
@@ -43,23 +35,40 @@ struct PXIoF
 
 static int pfs_posix_open(std::string_view path, FileStream::Mode mode, PXFileHandle& handle)
 {
-    switch (mode)
+    FileStream::OpenOptions options;
+    if (!FileStream::decodeOpenOptions(mode, options))
+        return -1;
+    int flags = options.access == FileStream::Access::Read ? O_RDONLY :
+                options.access == FileStream::Access::Write ? O_WRONLY : O_RDWR;
+    switch (options.creation)
     {
-    case FileStream::Mode::READ:
-        handle._fd = posix_open_cxx(path, O_READ_FLAGS);
-        break;
-    case FileStream::Mode::WRITE:
-        handle._fd = posix_open_cxx(path, O_WRITE_FLAGS);
-        break;
-    case FileStream::Mode::APPEND:
-        handle._fd = posix_open_cxx(path, O_APPEND_FLAGS);
-        break;
-    case FileStream::Mode::OVERLAPPED:
-        handle._fd = posix_open_cxx(path, O_OVERLAP_FLAGS);
-        break;
-    default:
-        handle._fd = -1;
+    case FileStream::Creation::OpenExisting: break;
+    case FileStream::Creation::CreateNew: flags |= O_CREAT | O_EXCL; break;
+    case FileStream::Creation::OpenOrCreate: flags |= O_CREAT; break;
+    case FileStream::Creation::CreateAlways: flags |= O_CREAT | O_TRUNC; break;
+    case FileStream::Creation::TruncateExisting: flags |= O_TRUNC; break;
     }
+    if (options.append)
+        flags |= O_APPEND;
+    // string_view need not be terminated at its logical end.
+    const std::string terminatedPath(path);
+#if defined(_WIN32)
+    handle._fd = posix_open_cxx(terminatedPath, flags | O_BINARY, S_IWRITE | S_IREAD);
+#else
+    handle._fd = posix_open_cxx(terminatedPath, flags, S_IRWXU);
+    if (handle._fd != -1)
+    {
+        struct stat info{};
+        const int statResult = fstat(handle._fd, &info);
+        if (statResult != 0 || S_ISDIR(info.st_mode))
+        {
+            const int error = statResult == 0 ? EISDIR : errno;
+            posix_close(handle._fd);
+            handle._fd = -1;
+            errno = error;
+        }
+    }
+#endif
     return handle._fd;
 }
 
@@ -177,7 +186,9 @@ PosixFileStream::~PosixFileStream()
 bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
 {
     internalClose();
-    if (path.empty())
+    FileStream::OpenOptions options;
+    if (path.empty() || path.find('\0') != std::string_view::npos ||
+        !FileStream::decodeOpenOptions(mode, options))
     {
         errno = EINVAL;
         return false;
@@ -189,6 +200,11 @@ bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
 #else  // Android
     if (path[0] != '/')
     {  // from package, always readonly
+        if (options.access != FileStream::Access::Read)
+        {
+            errno = EACCES;
+            return false;
+        }
         std::string relativePath;
         size_t position = path.find("assets/");
         if (0 == position)
@@ -220,9 +236,14 @@ bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
         {
             AAssetManager* asMgr = FileUtilsAndroid::getAssetManager();
             if (!asMgr)
+            {
+                errno = ENODEV;
                 return false;
+            }
             AAsset* asset        = AAssetManager_open(asMgr, relativePath.c_str(), AASSET_MODE_UNKNOWN);
             ok                   = !!asset;
+            if (!ok)
+                errno = ENOENT;
             if (ok)
             {
                 _handle._asset = asset;
@@ -239,6 +260,8 @@ bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
 
     if (ok && !_iof)
         _iof = &pfs_posix_iof;
+    if (ok)
+        _options = options;
 
     return ok;
 }
@@ -262,29 +285,95 @@ int PosixFileStream::close()
 int PosixFileStream::seek(int64_t offset, int origin)
 {
     if (!_iof)
+    {
+        errno = EBADF;
         return -1;
-    const auto result = _iof->seek(_handle, offset, origin);  // resulting offset, or -1 for error
+    }
+    int64_t base = 0;
+    if (origin == SEEK_CUR)
+        base = tell();
+    else if (origin == SEEK_END)
+        base = size();
+    else if (origin != SEEK_SET)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    if (base < 0)
+        return -1;
+    if (offset < -base || (offset > 0 && offset > std::numeric_limits<int64_t>::max() - base))
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    const auto result = _iof->seek(_handle, base + offset, SEEK_SET);
     return result < 0 ? -1 : 0;                              // return 0 for success
 }
 
 int PosixFileStream::read(void* buf, unsigned int size)
 {
-    return _iof ? _iof->read(_handle, buf, size) : -1;
+    if (!isReadable())
+    {
+        errno = EBADF;
+        return -1;
+    }
+    if (!size)
+        return 0;
+    if (!buf)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    size = std::min(size, static_cast<unsigned int>(std::numeric_limits<int>::max()));
+    int result;
+    int attempts = 0;
+    do { result = _iof->read(_handle, buf, size); }
+    while (result < 0 && errno == EINTR && ++attempts < 8);
+    return result;
 }
 
 int PosixFileStream::write(const void* buf, unsigned int size)
 {
-    return static_cast<int>(posix_write(_handle._fd, buf, size));
+    if (!isWritable())
+    {
+        errno = EBADF;
+        return -1;
+    }
+    if (!size)
+        return 0;
+    if (!buf)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    const auto position = tell();
+    const auto length = this->size();
+    if (position < 0 || length < 0)
+        return -1;
+    if (!_options.append && position > length && resize(position) != 0)
+        return -1;
+    size = std::min(size, static_cast<unsigned int>(std::numeric_limits<int>::max()));
+    int result;
+    int attempts = 0;
+    do { result = static_cast<int>(posix_write(_handle._fd, buf, size)); }
+    while (result < 0 && errno == EINTR && ++attempts < 8);
+    return result;
 }
 
 int64_t PosixFileStream::tell()
 {
-    return _iof ? _iof->seek(_handle, 0, SEEK_CUR) : -1;
+    if (_iof)
+        return _iof->seek(_handle, 0, SEEK_CUR);
+    errno = EBADF;
+    return -1;
 }
 
 int64_t PosixFileStream::size()
 {
-    return _iof ? _iof->size(_handle) : -1;
+    if (_iof)
+        return _iof->size(_handle);
+    errno = EBADF;
+    return -1;
 }
 
 bool PosixFileStream::isOpen() const
@@ -292,11 +381,57 @@ bool PosixFileStream::isOpen() const
     return _iof != nullptr;
 }
 
+bool PosixFileStream::isReadable() const noexcept
+{
+    return _iof && _options.access != FileStream::Access::Write;
+}
+
+bool PosixFileStream::isWritable() const noexcept
+{
+    return _iof == &pfs_posix_iof && _options.access != FileStream::Access::Read;
+}
+
+bool PosixFileStream::canResize() const noexcept { return isWritable(); }
+bool PosixFileStream::canSync() const noexcept { return isWritable(); }
+
+int PosixFileStream::resize(int64_t length)
+{
+    if (!isWritable())
+    {
+        errno = EBADF;
+        return -1;
+    }
+    if (length < 0)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    const auto position = tell();
+    if (position < 0 || posix_ftruncate64(_handle._fd, length) != 0)
+        return -1;
+    return seek(std::min(position, length), SEEK_SET);
+}
+
+int PosixFileStream::sync()
+{
+    if (!canSync())
+    {
+        errno = EBADF;
+        return -1;
+    }
+#if defined(_WIN32)
+    return ::_commit(_handle._fd);
+#else
+    return ::fsync(_handle._fd);
+#endif
+}
+
 void PosixFileStream::reset()
 {
     memset(&_handle, 0, sizeof(_handle));
     _handle._fd = -1;
     _iof        = nullptr;
+    _options = {};
 }
 
 NS_CC_END

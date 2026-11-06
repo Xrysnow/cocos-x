@@ -3,6 +3,8 @@
 #pragma once
 
 #include <string>
+#include <string_view>
+#include <cstdint>
 
 #include "platform/CCPlatformConfig.h"
 #include "platform/CCPlatformMacros.h"
@@ -21,6 +23,20 @@ public:
         APPEND,
         OVERLAPPED,
     };
+
+    enum class Access { Read, Write, ReadWrite };
+    enum class Creation { OpenExisting, CreateNew, OpenOrCreate, CreateAlways, TruncateExisting };
+    struct OpenOptions
+    {
+        Access access = Access::Read;
+        Creation creation = Creation::OpenExisting;
+        bool append = false;
+    };
+
+    // Keep the original virtual opening hook, including FileUtils delegates.
+    // Extended values are opaque modes produced here; old values remain 0..3.
+    static bool encodeOpenOptions(const OpenOptions& options, Mode& mode) noexcept;
+    static bool decodeOpenOptions(Mode mode, OpenOptions& options) noexcept;
 
     /**
      *  Open a file
@@ -77,6 +93,15 @@ public:
      *  @return true if open, false if closed
      */
     virtual bool isOpen() const = 0;
+
+    // Optional capabilities for richer stream consumers. Legacy backends remain
+    // source-compatible and explicitly decline unsupported mutations.
+    virtual bool isReadable() const noexcept { return true; }
+    virtual bool isWritable() const noexcept { return false; }
+    virtual bool canResize() const noexcept { return false; }
+    virtual bool canSync() const noexcept { return false; }
+    virtual int resize(int64_t length);
+    virtual int sync();
 
     virtual operator bool() const { return isOpen(); }
 

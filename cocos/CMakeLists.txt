@@ -91,6 +91,7 @@ include(math/CMakeLists.txt)
 include(navmesh/CMakeLists.txt)
 include(renderer/CMakeLists.txt)
 include(base/CMakeLists.txt)
+include(io/CMakeLists.txt)
 include(ui/CMakeLists.txt)
 include(network/CMakeLists.txt)
 include(audio/CMakeLists.txt)
@@ -105,6 +106,7 @@ set(COCOS_HEADER cocos2d.h
     ${COCOS_NAVMESH_HEADER}
     ${COCOS_RENDERER_HEADER}
     ${COCOS_BASE_HEADER}
+    ${COCOS_IO_HEADER}
     ${COCOS_AUDIO_HEADER}
     ${COCOS_UI_HEADER}
     ${COCOS_NETWORK_HEADER}
@@ -120,6 +122,7 @@ set(COCOS_SRC cocos2d.cpp
     ${COCOS_NAVMESH_SRC}
     ${COCOS_RENDERER_SRC}
     ${COCOS_BASE_SRC}
+    ${COCOS_IO_SRC}
     ${COCOS_AUDIO_SRC}
     ${COCOS_UI_SRC}
     ${COCOS_NETWORK_SRC}

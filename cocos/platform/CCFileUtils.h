@@ -769,7 +769,8 @@ public:
     /**
      *  Open a FileStream based on the implementation provided in openFileStream or its overrides
      *  @param filePath The path to the file
-     *  @param mode The mode to open the file in, being READ | WRITE | APPEND
+     *  @param mode A legacy Mode or one produced by FileStream::encodeOpenOptions.
+     *              Custom delegates may decode the explicit access/creation options.
      *  @return Returns a pointer to the file stream
      */
     virtual std::unique_ptr<FileStream> openFileStream(std::string_view filePath, FileStream::Mode mode);

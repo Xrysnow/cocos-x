@@ -40,6 +40,9 @@ public:
 	// Bypasses the audio callback, while retaining FileUtils path/delegate behavior.
 	// Uses a new file handle/cursor and requires the usual cocos autorelease pool.
 	static AudioStream* createFromLocalFile(const std::string& path);
+protected:
+	AudioStream() = default;
+	explicit AudioStream(RefConstructionToken token) : Ref(token) {}
 };
 
 NS_CC_END

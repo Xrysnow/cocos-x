@@ -1,0 +1,15 @@
+set(COCOS_IO_HEADER
+    io/StreamTypes.h
+    io/Stream.h
+    io/MemoryBuffer.h
+    io/MemoryStream.h
+    io/FileStream.h
+    io/BufferedStream.h
+)
+set(COCOS_IO_SRC
+    io/Stream.cpp
+    io/MemoryBuffer.cpp
+    io/MemoryStream.cpp
+    io/FileStream.cpp
+    io/BufferedStream.cpp
+)

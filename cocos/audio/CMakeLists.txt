@@ -17,6 +17,7 @@ set(COCOS_AUDIO_HEADER
     audio/AudioSoundData.h
     audio/AudioSource.h
     audio/AudioStream.h
+    audio/AudioStreamAdapter.h
     audio/dr_flac.h
     audio/dr_mp3.h
     audio/NqrCommon.h
@@ -40,6 +41,7 @@ set(COCOS_AUDIO_SRC
     audio/AudioSoundData.cpp
     audio/AudioSource.cpp
     audio/AudioStream.cpp
+    audio/AudioStreamAdapter.cpp
     audio/NqrCommon.cpp
     audio/NqrRiffUtils.cpp
     audio/stb_vorbis.c
