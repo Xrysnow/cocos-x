@@ -31,7 +31,9 @@
 #include "base/CCRef.h"
 #include "base/ccMacros.h"
 #include <functional>
+#include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 NS_CC_BEGIN
 
@@ -89,6 +91,9 @@ struct ReferencedObject
  *
  * The class itself is modelled on C++ 11 std::shared_ptr, and trys to keep some of the methods
  * and functionality consistent with std::shared_ptr.
+ * Reference-count thread safety is determined by the object at construction.
+ * Distinct RefPtr instances may manage an Atomic object concurrently; accessing
+ * the same RefPtr instance concurrently still requires external synchronization.
  */
 template <typename T>
 class RefPtr
@@ -257,6 +262,42 @@ template <class T>
 inline RefPtr<T> makeRef(T* ptr)
 {
     return RefPtr<T>(ptr);
+}
+
+/** Construct an object with an explicit, immutable reference-count policy.
+ * Unlike makeRef(T*), this overload adopts the initial reference (count == 1).
+ * It calls neither init() nor autorelease(); callers perform any initialization
+ * while retaining the returned RefPtr. Allocation/constructor exceptions propagate.
+ *
+ * T must accept RefConstructionToken as its first constructor argument and forward
+ * it through its base constructors, for example:
+ *
+ * class Item : public Ref {
+ * public:
+ *     Item(RefConstructionToken token, int value) : Ref(token), value(value) {}
+ *     int value;
+ * };
+ * auto item = makeRef<Item, RefThreading::Atomic>(42);
+ *
+ * Existing classes without such a constructor are intentionally not supported:
+ * wrapping an existing pointer cannot change its policy. A private constructor
+ * can grant friendship to this factory template, as Ref itself does.
+ * This policy does not make object state, Lua access, autorelease pools, or
+ * thread-affine destructors safe to use on arbitrary threads.
+ */
+template <class T, RefThreading Threading, class... Args>
+RefPtr<T> makeRef(Args&&... args)
+{
+    static_assert(Threading == RefThreading::Local || Threading == RefThreading::Atomic,
+                  "Invalid reference-count threading policy");
+    static_assert(std::is_convertible<T*, Ref*>::value, "T must publicly and unambiguously derive from Ref");
+
+    RefPtr<T> result(ReferencedObject<T>{new T(RefConstructionToken(Threading), std::forward<Args>(args)...)});
+    // A constructor can accidentally accept the token but omit forwarding it.
+    // Reject that mistake in release builds too, before publishing the object.
+    if (static_cast<const Ref*>(result.get())->getReferenceThreading() != Threading)
+        throw std::logic_error("Ref constructor did not forward its RefConstructionToken");
+    return result;
 }
 
 template <class T>

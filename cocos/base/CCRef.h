@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include "platform/CCPlatformMacros.h"
 #include "base/ccConfig.h"
+#include <atomic>
 
 #define CC_REF_LEAK_DETECTION 0
 
@@ -39,6 +40,43 @@ THE SOFTWARE.
 NS_CC_BEGIN
 
 class Ref;
+
+/** Reference-count policy, fixed for the entire lifetime of an object.
+ * Atomic protects reference counting only, not object state or autorelease pools.
+ * @lua NA
+ * @js NA
+ */
+enum class RefThreading
+{
+    Local,
+    Atomic,
+};
+
+template <class T>
+class RefPtr;
+
+template <class T, RefThreading Threading, class... Args>
+RefPtr<T> makeRef(Args&&... args);
+
+/** Construction-only policy token supplied by makeRef<T, Threading>().
+ * Opt-in constructors must forward this token to their Ref base constructor.
+ * @lua NA
+ * @js NA
+ */
+class RefConstructionToken final
+{
+public:
+    RefConstructionToken(const RefConstructionToken&) noexcept = default;
+
+private:
+    explicit constexpr RefConstructionToken(RefThreading threading) noexcept : _threading(threading) {}
+
+    const RefThreading _threading;
+
+    friend class Ref;
+    template <class T, RefThreading Threading, class... Args>
+    friend RefPtr<T> makeRef(Args&&... args);
+};
 
 /**
  * Interface that defines how to clone an Ref.
@@ -66,10 +104,17 @@ public:
 class CC_DLL Ref
 {
 public:
+    Ref(const Ref&) = delete;
+    Ref(Ref&&) = delete;
+    Ref& operator=(const Ref&) = delete;
+    Ref& operator=(Ref&&) = delete;
+
     /**
      * Retains the ownership.
      *
      * This increases the Ref's reference count.
+     * The caller must already have a live reference; this cannot revive an object.
+     * Concurrent calls are supported only for the Atomic policy.
      *
      * @see release, autorelease
      * @js NA
@@ -108,20 +153,35 @@ public:
 
     /**
      * Returns the Ref's current reference count.
+     * For Atomic objects this is a snapshot, not an exclusivity or lifetime test.
      *
      * @returns The Ref's reference count.
      * @js NA
      */
     unsigned int getReferenceCount() const;
 
+    /** Returns the immutable reference-count policy.
+     * @lua NA
+     * @js NA
+     */
+    RefThreading getReferenceThreading() const noexcept { return _threading; }
+
 protected:
     /**
      * Constructor
      *
      * The Ref's reference count is 1 after construction.
+     * Existing default construction always selects the Local policy.
      * @js NA
      */
     Ref();
+
+    /** Opt in to a policy selected by makeRef<T, Threading>().
+     * Every constructor in a participating inheritance chain must forward token.
+     * @lua NA
+     * @js NA
+     */
+    explicit Ref(RefConstructionToken token);
 
 public:
     /**
@@ -132,11 +192,15 @@ public:
      */
     virtual ~Ref();
 
-protected:
-    /// count of references
-    unsigned int _referenceCount;
+private:
+    const RefThreading _threading;
 
-    friend class AutoreleasePool;
+    // Only the counter selected at construction is used. Never switch policies.
+    unsigned int _referenceCount;
+    std::atomic<unsigned int> _atomicReferenceCount;
+
+    template <class T, RefThreading Threading, class... Args>
+    friend RefPtr<T> makeRef(Args&&... args);
 
 #if CC_ENABLE_SCRIPT_BINDING
 public:

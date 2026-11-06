@@ -44,16 +44,22 @@ static void untrackRef(Ref* ref);
 #endif
 
 Ref::Ref()
-    : _referenceCount(1)  // when the Ref is created, the reference count of it is 1
+    : Ref(RefConstructionToken(RefThreading::Local))
+{}
+
+Ref::Ref(RefConstructionToken token)
+    : _threading(token._threading)
+    , _referenceCount(1)
+    , _atomicReferenceCount(1)
 #if CC_ENABLE_SCRIPT_BINDING
     , _luaID(0)
-    , _scriptObject(nullptr)
     , _rooted(false)
+    , _scriptObject(nullptr)
 #endif
 {
 #if CC_ENABLE_SCRIPT_BINDING
-    static unsigned int uObjectCount = 0;
-    _ID                              = ++uObjectCount;
+    static std::atomic<unsigned int> uObjectCount{0};
+    _ID = uObjectCount.fetch_add(1, std::memory_order_relaxed) + 1;
 #endif
 
 #if CC_REF_LEAK_DETECTION
@@ -64,42 +70,55 @@ Ref::Ref()
 Ref::~Ref()
 {
 #if CC_ENABLE_SCRIPT_BINDING
-    ScriptEngineProtocol* pEngine = ScriptEngineManager::getInstance()->getScriptEngine();
-    if (pEngine != nullptr && _luaID)
+    // Unbound objects may be destroyed on a worker without touching the script singleton.
+    // Lua-bound objects still require destruction on the scripting thread.
+    if (_luaID)
     {
-        // if the object is referenced by Lua engine, remove it
-        pEngine->removeScriptObjectByObject(this);
+        ScriptEngineProtocol* pEngine = ScriptEngineManager::getInstance()->getScriptEngine();
+        if (pEngine != nullptr)
+        {
+            // if the object is referenced by Lua engine, remove it
+            pEngine->removeScriptObjectByObject(this);
+        }
     }
 #endif  // CC_ENABLE_SCRIPT_BINDING
 
 #if CC_REF_LEAK_DETECTION
-    if (_referenceCount != 0)
+    if (getReferenceCount() != 0)
         untrackRef(this);
 #endif
 }
 
 void Ref::retain()
 {
-    CCASSERT(_referenceCount > 0, "reference count should be greater than 0");
-    ++_referenceCount;
+    const auto previousCount = _threading == RefThreading::Atomic
+                                   ? _atomicReferenceCount.fetch_add(1, std::memory_order_relaxed)
+                                   : _referenceCount++;
+    CCASSERT(previousCount > 0, "reference count should be greater than 0");
+    (void)previousCount;
 }
 
 void Ref::release()
 {
+    const auto previousCount = _threading == RefThreading::Atomic
+                                   ? _atomicReferenceCount.fetch_sub(1, std::memory_order_acq_rel)
+                                   : _referenceCount--;
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    if (_referenceCount <= 0)
+    if (previousCount == 0)
     {
-        print("Ref::release: invalid reference count in %s, got %d", typeid(*this).name(), _referenceCount);
+        print("Ref::release: invalid reference count in %s, got %u", typeid(*this).name(), previousCount);
         CCASSERT(false, "reference count should be greater than 0");
     }
 #endif
-    --_referenceCount;
 
-    if (_referenceCount == 0)
+    // Only the thread that removed the last reference may destroy the object.
+    // Do not reload the count here: another release may already have destroyed it.
+    if (previousCount == 1)
     {
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
-        auto poolManager = PoolManager::getInstance();
-        if (!poolManager->getCurrentPool()->isClearing() && poolManager->isObjectInPools(this))
+        // PoolManager is thread-confined. Atomic final releases must not inspect it.
+        auto poolManager = _threading == RefThreading::Local ? PoolManager::getInstance() : nullptr;
+        if (poolManager && !poolManager->getCurrentPool()->isClearing() && poolManager->isObjectInPools(this))
         {
             // Trigger an assert if the reference count is 0 but the Ref is still in autorelease pool.
             // This happens when 'autorelease/release' were not used in pairs with 'new/retain'.
@@ -148,7 +167,7 @@ Ref* Ref::autorelease()
 
 unsigned int Ref::getReferenceCount() const
 {
-    return _referenceCount;
+    return _threading == RefThreading::Atomic ? _atomicReferenceCount.load(std::memory_order_relaxed) : _referenceCount;
 }
 
 #if CC_REF_LEAK_DETECTION
