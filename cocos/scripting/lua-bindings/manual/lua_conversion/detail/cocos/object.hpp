@@ -126,4 +126,64 @@ namespace lua
 			}
 		}
 	};
+
+	// Transparent RefPtr ownership and conversion contract: see ../../README.md (RefPtr conversion).
+	template<typename T>
+	struct to_native<cocos2d::RefPtr<T>> {
+		static bool F(lua_State* L, int lo, cocos2d::RefPtr<T>* outValue, const char* fName = "") {
+			if (!L || !outValue) return false;
+			T* value = nullptr;
+			if (!to_native<T*>::F(L, lo, &value, fName)) return false;
+			*outValue = value;
+			return true;
+		}
+	};
+
+	template<typename T>
+	struct to_lua<cocos2d::RefPtr<T>> {
+		static void F(lua_State* L, const cocos2d::RefPtr<T>& inValue) {
+			if (!L) return;
+			auto* value = inValue.get();
+			if (value) {
+				auto* ref = const_cast<cocos2d::Ref*>(static_cast<const cocos2d::Ref*>(value));
+				// Queue first: allocation failure must not strand an extra retain.
+				ref->autorelease();
+				ref->retain();
+			}
+			to_lua<T*>::F(L, value);
+		}
+	};
+
+	template<typename T>
+	struct binding_read<cocos2d::RefPtr<T>> {
+		template<bool Checked>
+		static bool F(lua_State* L, int lo, cocos2d::RefPtr<T>* outValue) {
+			LUA_CHECK_TO_NATIVE;
+			const bool wrapper = lua_istable(L, lo);
+			T* value = nullptr;
+			// Keep a resolved .c_instance on the invocation stack, without replacing
+			// the wrapper. Retaining arbitrary userdata is unsafe even with checks off.
+			if (!binding_read<T*>::template F<true>(L, lo, &value) || (wrapper && !value))
+				return false;
+			*outValue = value;
+			return true;
+		}
+	};
+
+	template<typename T> struct is_ref_ptr : std::false_type {};
+	template<typename T> struct is_ref_ptr<cocos2d::RefPtr<T>> : std::true_type {};
+
+	template<typename Targ>
+	struct binding_argument<Targ, std::enable_if_t<is_ref_ptr<std::remove_cv_t<std::remove_reference_t<Targ>>>::value>> {
+		static_assert(!std::is_lvalue_reference_v<Targ> || std::is_const_v<std::remove_reference_t<Targ>>,
+			"mutable RefPtr reference parameters require an explicit adapter; Lua has no ownership slot to update");
+		static_assert(!std::is_rvalue_reference_v<Targ>,
+			"RefPtr rvalue reference parameters require an explicit adapter; use a by-value parameter");
+		using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
+		T value{};
+		template<bool Checked> bool read(lua_State* L, int index) {
+			return binding_read<T>::template F<Checked>(L, index, &value);
+		}
+		decltype(auto) get() { return std::forward<Targ>(value); }
+	};
 }
