@@ -14,7 +14,6 @@ namespace video
 
 	class CC_DLL Decoder : public cocos2d::Ref
 	{
-		friend class Player;
 	public:
 		static Decoder* create(const std::string& path);
 

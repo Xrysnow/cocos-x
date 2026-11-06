@@ -1,14 +1,15 @@
 ﻿#include "VideoPlayer.h"
 #include "VideoDecoder.h"
+#include "VideoPlayback.h"
 #include "base/CCRefPtr.h"
 #include "renderer/backend/Device.h"
-#include <cmath>
 
 using namespace video;
 
 namespace
 {
 	constexpr auto playbackKey = "video.playback";
+	constexpr auto removalKey = "video.remove";
 }
 
 Player* Player::create(const std::string& path)
@@ -23,24 +24,20 @@ Player* Player::create(const std::string& path)
 	return nullptr;
 }
 
-Player::Player()
-{
-}
+Player::Player() = default;
+Player::~Player() = default;
 
-Player::~Player()
+Decoder* Player::getDecoder() const
 {
-	CC_SAFE_RELEASE_NULL(decoder);
+	return playback ? playback->getDecoder() : nullptr;
 }
 
 bool Player::init_(const std::string& path)
 {
-	decoder = Decoder::create(path);
-	if (!decoder)
+	playback = VideoPlayback::create(path);
+	if (!playback)
 		return false;
-	decoder->retain();
-	if (!decoder->setup())
-		return false;
-	const auto size = decoder->getVideoTargetSize();
+	const auto size = getDecoder()->getVideoTargetSize();
 	auto texture = new (std::nothrow) cocos2d::Texture2D();
 	if (!texture)
 		return false;
@@ -60,220 +57,124 @@ bool Player::init_(const std::string& path)
 	if (!initWithTexture(texture))
 		return false;
 	setContentSize(size);
-	decoderGeneration = decoder->getGeneration();
-	uint8_t* pixels = nullptr;
-	const auto first = decoder->readFrame(&pixels);
-	if (first == Decoder::ReadResult::Error || first == Decoder::ReadResult::EndOfStream)
-		return false;
-	if (first == Decoder::ReadResult::FrameReady)
-	{
-		presentFrame(pixels);
-		currentTime = decoder->getFrameTime();
-	}
-	atStart = true;
+	if (auto frame = playback->getFrame())
+		presentFrame(frame);
 	return true;
 }
 
-void Player::vplay()
+void Player::startPlayback()
 {
-	if (mode == PlayMode::MANUAL)
-		return;
-	syncDecoderGeneration();
-	if (!decoder->isOpened() || (!atStart && !seekFrame(0)))
-		return;
-	atStart = false;
-	isPlaying = true;
-	autoUpdate = true;
-	schedulePlayback();
+	applyPlaybackUpdate(playback->start());
 }
 
-void Player::vstop()
+void Player::stopPlayback()
 {
-	if (mode == PlayMode::MANUAL)
-		return;
-	unschedule(playbackKey);
-	isPlaying = false;
-	autoUpdate = false;
-	syncDecoderGeneration();
-	if (!atStart)
-		seekFrame(0);
+	applyPlaybackUpdate(playback->stop());
 }
 
-void Player::vpause()
+void Player::pausePlayback()
 {
-	if (autoUpdate)
-		isPlaying = false;
+	playback->pause();
 }
 
-void Player::vresume()
+void Player::resumePlayback()
 {
-	if (autoUpdate && !isPlaying)
-	{
-		isPlaying = true;
-		schedulePlayback();
-	}
+	playback->resume();
+	syncPlaybackSchedule();
 }
 
-void Player::schedulePlayback()
+void Player::seekFrame(uint32_t frame)
 {
-	if (isScheduled(playbackKey))
-		return;
+	applyPlaybackUpdate(playback->seekFrame(frame));
+}
 
-	schedule([this](float dt)
-	{
-		if (isPlaying && isRunning())
-			advancePlayback(mode == PlayMode::STEP ? step : dt, mode == PlayMode::FRAME);
-	}, playbackKey);
+void Player::advance(double seconds)
+{
+	applyPlaybackUpdate(playback->advance(seconds));
+}
+
+void Player::advanceFrame()
+{
+	applyPlaybackUpdate(playback->advanceFrame());
+}
+
+void Player::setPlayMode(PlayMode mode)
+{
+	playback->setMode(mode);
+	syncPlaybackSchedule();
+}
+
+void Player::setStep(double seconds)
+{
+	playback->setStep(seconds);
 }
 
 void Player::cleanup()
 {
 	cocos2d::Sprite::cleanup();
-	isPlaying = false;
-	autoUpdate = false;
+	if (playback)
+		playback->cancelAutomaticPlayback();
 }
 
-void Player::syncDecoderGeneration()
+void Player::syncPlaybackSchedule()
 {
-	if (decoderGeneration == decoder->getGeneration())
-		return;
-	decoderGeneration = decoder->getGeneration();
-	vbuf = nullptr;
-	finished = false;
-	atStart = false;
-	currentTime = 0.0;
-	unschedule("video.remove");
-}
-
-bool Player::seekFrame(uint32_t frame)
-{
-	const auto ok = decoder->seek(frame);
-	syncDecoderGeneration();
-	if (!ok)
-		return false;
-	uint8_t* pixels = nullptr;
-	if (decoder->readFrame(&pixels) != Decoder::ReadResult::FrameReady)
-		return false;
-	presentFrame(pixels);
-	currentTime = decoder->getFrameTime();
-	atStart = frame == 0;
-	return true;
-}
-
-void Player::seek(uint32_t frame)
-{
-	seekFrame(frame);
-}
-
-void Player::advance(double dt)
-{
-	if (mode == PlayMode::MANUAL)
-		advancePlayback(dt, false);
-}
-
-void Player::advanceFrame()
-{
-	if (mode == PlayMode::MANUAL)
-		advancePlayback(0, true);
-}
-
-void Player::update(float dt)
-{
-	cocos2d::RefPtr<Player> keepAlive(this);
-	cocos2d::Sprite::update(dt);
-	if (!std::isfinite(dt))
-		return;
-	if (dt < 0)
-		advanceFrame();
-	else
-		advance(dt);
-}
-
-void Player::advancePlayback(double dt, bool nextFrame)
-{
-	cocos2d::RefPtr<Player> keepAlive(this);
-	syncDecoderGeneration();
-	if (finished)
-		return;
-	if (!nextFrame)
+	if (!playback->wantsTicks())
 	{
-		if (dt < 0 || !std::isfinite(dt) || !std::isfinite(currentTime + dt))
-			return;
-		currentTime += dt;
-	}
-	atStart = false;
-	uint8_t* pixels = nullptr;
-	const auto result = nextFrame
-		? decoder->readFrame(&pixels)
-		: decoder->readFrameAt(currentTime, &pixels);
-	switch (result)
-	{
-	case Decoder::ReadResult::FrameReady:
-		presentFrame(pixels);
-		if (nextFrame)
-			currentTime = decoder->getFrameTime();
-		break;
-	case Decoder::ReadResult::EndOfStream:
-		finishPlayback();
-		break;
-	case Decoder::ReadResult::Error:
-		vbuf = nullptr;
-		finished = true;
-		isPlaying = false;
-		autoUpdate = false;
 		unschedule(playbackKey);
-		break;
-	case Decoder::ReadResult::NeedInput:
-		break;
+		return;
 	}
+	if (!isScheduled(playbackKey))
+	{
+		schedule([this](float dt)
+		{
+			if (isRunning() && playback->getState() == VideoPlayback::State::Playing)
+				applyPlaybackUpdate(playback->tick(dt));
+		}, playbackKey);
+	}
+}
+
+void Player::applyPlaybackUpdate(PlaybackUpdate update)
+{
+	cocos2d::RefPtr<Player> keepAlive(this);
+	if (update == PlaybackUpdate::FrameReady)
+	{
+		unschedule(removalKey);
+		presentFrame(playback->getFrame());
+	}
+	else if (update == PlaybackUpdate::Ended)
+	{
+		finishPlayback();
+	}
+	syncPlaybackSchedule();
 }
 
 void Player::finishPlayback()
 {
-	finished = true;
-	isPlaying = false;
-	autoUpdate = false;
-
-	const auto generation = decoderGeneration;
+	const auto generation = getDecoder()->getGeneration();
 	auto callback = videoEndCallback;
 	if (callback)
 		callback();
-	if (!autoUpdate)
-		unschedule(playbackKey);
-	if (autoRemove && getParent() && finished && generation == decoder->getGeneration())
+	if (autoRemove && getParent() && playback->endedAt(generation))
 	{
 		// A manual advance may run during scene traversal. Defer removal.
 		scheduleOnce([this, generation](float)
 		{
-			if (autoRemove && finished && generation == decoder->getGeneration())
+			if (autoRemove && playback->endedAt(generation))
 				removeFromParentAndCleanup(true);
-		}, 0, "video.remove");
-	}
-}
-
-void Player::setPlayMode(PlayMode m)
-{
-	if (mode == m)
-		return;
-	mode = m;
-	if (mode == PlayMode::MANUAL)
-	{
-		unschedule(playbackKey);
-		isPlaying = false;
-		autoUpdate = false;
+		}, 0, removalKey);
 	}
 }
 
 void Player::presentFrame(uint8_t* pixels)
 {
+	const auto decoder = getDecoder();
 	const auto size = decoder->getVideoTargetSize();
-	if (!_texture)
+	if (!_texture || !pixels)
 		return;
 	const auto width = _texture->getPixelsWide();
 	const auto height = _texture->getPixelsHigh();
 	if (size.width != width || size.height != height)
 		return;
-	vbuf = pixels;
 #ifdef CC_VERSION
 	const auto rgba = decoder->getReadFormat() == AV_PIX_FMT_RGBA;
 	const size_t dataSize = static_cast<size_t>(width) * height * (rgba ? 4 : 3);
@@ -292,8 +193,10 @@ void Player::setVideoEndCallback(const std::function<void()>& func)
 
 void Player::saveCurrentFrame(const std::string& path)
 {
-	if (!vbuf || decoderGeneration != decoder->getGeneration())
+	const auto vbuf = playback->getFrame();
+	if (!vbuf)
 		return;
+	const auto decoder = getDecoder();
 	auto im = new cocos2d::Image();
 	const auto size = decoder->getVideoTargetSize();
 	const size_t length = static_cast<size_t>(size.width) * static_cast<size_t>(size.height);

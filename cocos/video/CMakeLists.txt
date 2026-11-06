@@ -23,6 +23,9 @@ target_sources(${COCOS_CORE_LIB} PRIVATE
     video/VideoCommon.h
     video/VideoDecoder.cpp
     video/VideoDecoder.h
+    video/VideoPlayMode.h
+    video/VideoPlayback.cpp
+    video/VideoPlayback.h
     video/VideoPlayer.cpp
     video/VideoPlayer.h
     video/VideoStream.h

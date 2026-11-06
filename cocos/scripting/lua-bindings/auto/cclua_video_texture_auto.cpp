@@ -2,6 +2,7 @@
 #include "lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/cclua_video_texture_types.hpp"
 #include "video/VideoDecoder.h"
+#include "video/VideoPlayMode.h"
 #include "video/VideoPlayer.h"
 
 int lua_video_Decoder_getAudioBitRate(lua_State* lua_S)
@@ -244,14 +245,16 @@ int luaReg_cc_video_texture_videoDecoder(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
-int luaReg_cc_video_texture_videoPlayerPlayMode(lua_State* lua_S)
+int luaReg_cc_video_texture_videoPlayMode(lua_State* lua_S)
 {
+	LUA_ENTRY("video");
 	LUA_ENUM_DEF("PlayMode");
-	LUA_ENUM_ENTRY("STEP", video::Player::PlayMode::STEP);
-	LUA_ENUM_ENTRY("REALTIME", video::Player::PlayMode::REALTIME);
-	LUA_ENUM_ENTRY("FRAME", video::Player::PlayMode::FRAME);
-	LUA_ENUM_ENTRY("MANUAL", video::Player::PlayMode::MANUAL);
+	LUA_ENUM_ENTRY("STEP", video::PlayMode::STEP);
+	LUA_ENUM_ENTRY("REALTIME", video::PlayMode::REALTIME);
+	LUA_ENUM_ENTRY("FRAME", video::PlayMode::FRAME);
+	LUA_ENUM_ENTRY("MANUAL", video::PlayMode::MANUAL);
 	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
 	return 0;
 }
 int lua_video_Player_advance(lua_State* lua_S)
@@ -272,16 +275,28 @@ int lua_video_Player_getDecoder(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<video::Decoder*(video::Player::*)()const>(&video::Player::getDecoder));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_video_Player_pausePlayback(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("video.Player", "video.Player:pausePlayback");
+	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::pausePlayback));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_video_Player_resumePlayback(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("video.Player", "video.Player:resumePlayback");
+	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::resumePlayback));
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_video_Player_saveCurrentFrame(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("video.Player", "video.Player:saveCurrentFrame");
 	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(const std::string&)>(&video::Player::saveCurrentFrame));
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_video_Player_seek(lua_State* lua_S)
+int lua_video_Player_seekFrame(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("video.Player", "video.Player:seek");
-	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(uint32_t)>(&video::Player::seek));
+	LUA_INVOKE_HEADER("video.Player", "video.Player:seekFrame");
+	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(uint32_t)>(&video::Player::seekFrame));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_video_Player_setAutoRemove(lua_State* lua_S)
@@ -293,7 +308,7 @@ int lua_video_Player_setAutoRemove(lua_State* lua_S)
 int lua_video_Player_setPlayMode(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("video.Player", "video.Player:setPlayMode");
-	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(video::Player::PlayMode)>(&video::Player::setPlayMode));
+	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(video::PlayMode)>(&video::Player::setPlayMode));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_video_Player_setStep(lua_State* lua_S)
@@ -308,28 +323,16 @@ int lua_video_Player_setVideoEndCallback(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(const std::function<void ()>&)>(&video::Player::setVideoEndCallback));
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_video_Player_vpause(lua_State* lua_S)
+int lua_video_Player_startPlayback(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("video.Player", "video.Player:vpause");
-	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::vpause));
+	LUA_INVOKE_HEADER("video.Player", "video.Player:startPlayback");
+	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::startPlayback));
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_video_Player_vplay(lua_State* lua_S)
+int lua_video_Player_stopPlayback(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("video.Player", "video.Player:vplay");
-	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::vplay));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_video_Player_vresume(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("video.Player", "video.Player:vresume");
-	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::vresume));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_video_Player_vstop(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("video.Player", "video.Player:vstop");
-	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::vstop));
+	LUA_INVOKE_HEADER("video.Player", "video.Player:stopPlayback");
+	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::stopPlayback));
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_video_Player_create(lua_State* lua_S)
@@ -347,18 +350,17 @@ int luaReg_cc_video_texture_videoPlayer(lua_State* lua_S)
 	LUA_METHOD("advance", lua_video_Player_advance);
 	LUA_METHOD("advanceFrame", lua_video_Player_advanceFrame);
 	LUA_METHOD("getDecoder", lua_video_Player_getDecoder);
+	LUA_METHOD("pausePlayback", lua_video_Player_pausePlayback);
+	LUA_METHOD("resumePlayback", lua_video_Player_resumePlayback);
 	LUA_METHOD("saveCurrentFrame", lua_video_Player_saveCurrentFrame);
-	LUA_METHOD("seek", lua_video_Player_seek);
+	LUA_METHOD("seekFrame", lua_video_Player_seekFrame);
 	LUA_METHOD("setAutoRemove", lua_video_Player_setAutoRemove);
 	LUA_METHOD("setPlayMode", lua_video_Player_setPlayMode);
 	LUA_METHOD("setStep", lua_video_Player_setStep);
 	LUA_METHOD("setVideoEndCallback", lua_video_Player_setVideoEndCallback);
-	LUA_METHOD("vpause", lua_video_Player_vpause);
-	LUA_METHOD("vplay", lua_video_Player_vplay);
-	LUA_METHOD("vresume", lua_video_Player_vresume);
-	LUA_METHOD("vstop", lua_video_Player_vstop);
+	LUA_METHOD("startPlayback", lua_video_Player_startPlayback);
+	LUA_METHOD("stopPlayback", lua_video_Player_stopPlayback);
 	LUA_METHOD("create", lua_video_Player_create);
-	luaReg_cc_video_texture_videoPlayerPlayMode(lua_S);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -367,6 +369,7 @@ int luaReg_cc_video_texture_videoPlayer(lua_State* lua_S)
 int register_all_cc_video_texture(lua_State* lua_S)
 {
 	luaReg_cc_video_texture_videoDecoder(lua_S);
+	luaReg_cc_video_texture_videoPlayMode(lua_S);
 	luaReg_cc_video_texture_videoPlayer(lua_S);
 	return 0;
 }

@@ -17,3 +17,13 @@ libavutil types.
 Demuxing, codec, hardware, and frame queue implementation files live in
 `video/ffmpeg/`. `VideoCommon.h` remains the logging and FFmpeg
 compatibility header.
+
+`VideoPlayback` owns the decoder, playback state, and media time. It
+accepts caller-provided ticks and reports frames, end of stream, and
+errors. `VideoPlayer` connects this session to the scene scheduler and
+uploads frames to its sprite texture.
+
+Player controls are `startPlayback`, `pausePlayback`, `resumePlayback`,
+`stopPlayback`, and `seekFrame`. Set `video::PlayMode::MANUAL` in C++
+or `video.PlayMode.MANUAL` in Lua to use `advance(seconds)` and
+`advanceFrame()`. These methods drive the video explicitly.
