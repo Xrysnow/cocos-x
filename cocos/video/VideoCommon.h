@@ -7,6 +7,7 @@ namespace video
 {
 	CC_DLL void setLoggingFunction(const std::function<void(const std::string&)>& callback);
 	CC_DLL void logging(const char* format, ...);
+	void useWorkerLogging();
 	CC_DLL std::string getErrorString(int errorCode);
 }
 

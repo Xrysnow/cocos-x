@@ -25,6 +25,22 @@ Player* Player::createFromStream(cocos2d::io::StreamPtr source)
 	return createWithDecoder(Decoder::createFromStream(std::move(source)));
 }
 
+Player* Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel)
+{
+	auto player = new (std::nothrow) Player();
+	if (!player)
+		return nullptr;
+	player->playback = VideoPlayback::createAsync(std::move(source), std::move(cancel));
+	if (!player->playback || !player->init())
+	{
+		delete player;
+		return nullptr;
+	}
+	player->autorelease();
+	player->syncPlaybackSchedule();
+	return player;
+}
+
 Player* Player::createWithDecoder(Decoder* source)
 {
 	if (!source)
@@ -47,12 +63,35 @@ Decoder* Player::getDecoder() const
 	return playback ? playback->getDecoder() : nullptr;
 }
 
+std::optional<AsyncVideoSnapshot> Player::getAsyncSnapshot() const
+{
+	return playback ? playback->getAsyncSnapshot() : std::nullopt;
+}
+
+void Player::closeAsync()
+{
+	if (playback && !getDecoder())
+	{
+		playback->closeAsync();
+		unschedule(removalKey);
+		syncPlaybackSchedule();
+	}
+}
+
 bool Player::initPlayback(Decoder* source)
 {
 	playback = VideoPlayback::create(source);
 	if (!playback)
 		return false;
-	const auto size = getDecoder()->getVideoTargetSize();
+	if (!initVideoTexture(getFrameSize(), false))
+		return false;
+	if (auto frame = playback->getFrame())
+		presentFrame(frame);
+	return true;
+}
+
+bool Player::initVideoTexture(const cocos2d::Size& size, bool replace)
+{
 	auto texture = new (std::nothrow) cocos2d::Texture2D();
 	if (!texture)
 		return false;
@@ -69,11 +108,14 @@ bool Player::initPlayback(Decoder* source)
 	tex->autorelease();
 	texture->initWithBackendTexture(tex);
 #endif // CC_VERSION
-	if (!initWithTexture(texture))
+	if (replace)
+	{
+		setTexture(texture);
+		setTextureRect(cocos2d::Rect(cocos2d::Vec2::ZERO, texture->getContentSize()));
+	}
+	else if (!initWithTexture(texture))
 		return false;
 	setContentSize(size);
-	if (auto frame = playback->getFrame())
-		presentFrame(frame);
 	return true;
 }
 
@@ -128,12 +170,17 @@ void Player::cleanup()
 {
 	cocos2d::Sprite::cleanup();
 	if (playback)
-		playback->cancelAutomaticPlayback();
+	{
+		if (getDecoder())
+			playback->cancelAutomaticPlayback();
+		else
+			playback->closeAsync();
+	}
 }
 
 void Player::syncPlaybackSchedule()
 {
-	if (!playback->wantsTicks())
+	if (!playback->needsTick())
 	{
 		unschedule(playbackKey);
 		return;
@@ -142,7 +189,7 @@ void Player::syncPlaybackSchedule()
 	{
 		schedule([this](float dt)
 		{
-			if (isRunning() && playback->getState() == VideoPlayback::State::Playing)
+			if (isRunning() && (!getDecoder() || playback->getState() == VideoPlayback::State::Playing))
 				applyPlaybackUpdate(playback->tick(dt));
 		}, playbackKey);
 	}
@@ -154,7 +201,10 @@ void Player::applyPlaybackUpdate(PlaybackUpdate update)
 	if (update == PlaybackUpdate::FrameReady)
 	{
 		unschedule(removalKey);
-		presentFrame(playback->getFrame());
+		if (presentFrame(playback->getFrame()))
+			playback->onFramePresented();
+		else
+			playback->closeAsync(AsyncVideoError::Present);
 	}
 	else if (update == PlaybackUpdate::Ended)
 	{
@@ -165,7 +215,7 @@ void Player::applyPlaybackUpdate(PlaybackUpdate update)
 
 void Player::finishPlayback()
 {
-	const auto generation = getDecoder()->getGeneration();
+	const auto generation = playback->getGeneration();
 	auto callback = videoEndCallback;
 	if (callback)
 		callback();
@@ -180,24 +230,39 @@ void Player::finishPlayback()
 	}
 }
 
-void Player::presentFrame(uint8_t* pixels)
+cocos2d::Size Player::getFrameSize() const
+{
+	if (const auto decoder = getDecoder())
+		return decoder->getVideoTargetSize();
+	const auto async = getAsyncSnapshot();
+	return {static_cast<float>(async->width), static_cast<float>(async->height)};
+}
+
+bool Player::presentFrame(const uint8_t* pixels)
 {
 	const auto decoder = getDecoder();
-	const auto size = decoder->getVideoTargetSize();
+	const auto size = getFrameSize();
+	if (!decoder && !asyncTextureReady)
+	{
+		asyncTextureReady = initVideoTexture(size, true);
+		if (!asyncTextureReady)
+			return false;
+	}
 	if (!_texture || !pixels)
-		return;
+		return false;
 	const auto width = _texture->getPixelsWide();
 	const auto height = _texture->getPixelsHigh();
 	if (size.width != width || size.height != height)
-		return;
+		return false;
 #ifdef CC_VERSION
-	const auto rgba = decoder->getReadFormat() == AV_PIX_FMT_RGBA;
+	const auto rgba = !decoder || decoder->getReadFormat() == AV_PIX_FMT_RGBA;
 	const size_t dataSize = static_cast<size_t>(width) * height * (rgba ? 4 : 3);
-	_texture->updateWithData(pixels, dataSize,
+	return _texture->updateWithData(pixels, dataSize,
 		rgba ? cocos2d::PixelFormat::RGBA8 : cocos2d::PixelFormat::RGB8,
 		cocos2d::PixelFormat::RGBA8888, width, height, false);
 #else
-	_texture->updateWithData(pixels, 0, 0, width, height);
+	_texture->updateWithData(const_cast<uint8_t*>(pixels), 0, 0, width, height);
+	return true;
 #endif // CC_VERSION
 }
 
@@ -212,30 +277,24 @@ void Player::saveCurrentFrame(const std::string& path)
 	if (!vbuf)
 		return;
 	const auto decoder = getDecoder();
-	auto im = new cocos2d::Image();
-	const auto size = decoder->getVideoTargetSize();
+	const auto size = getFrameSize();
 	const size_t length = static_cast<size_t>(size.width) * static_cast<size_t>(size.height);
 	const size_t dataSize = length * 4;
 	std::vector<uint8_t> buffer;
-	uint8_t* buf;
-	if (decoder->getReadFormat() == AV_PIX_FMT_RGBA)
-	{
-		buf = vbuf;
-	}
-	else
+	const uint8_t* buf = vbuf;
+	if (decoder && decoder->getReadFormat() != AV_PIX_FMT_RGBA)
 	{
 		buffer.resize(dataSize);
-		buf = buffer.data();
 		for (size_t i = 0; i < length; ++i)
 		{
-			buf[i * 4] = vbuf[i * 3];
-			buf[i * 4 + 1] = vbuf[i * 3 + 1];
-			buf[i * 4 + 2] = vbuf[i * 3 + 2];
-			buf[i * 4 + 3] = 255;
+			buffer[i * 4] = vbuf[i * 3];
+			buffer[i * 4 + 1] = vbuf[i * 3 + 1];
+			buffer[i * 4 + 2] = vbuf[i * 3 + 2];
+			buffer[i * 4 + 3] = 255;
 		}
+		buf = buffer.data();
 	}
-	im->initWithRawData(buf, dataSize,
-		size.width, size.height, 32);
-	im->saveToFile(path);
-	delete im;
+	cocos2d::Image image;
+	if (image.initWithRawData(buf, dataSize, size.width, size.height, 32))
+		image.saveToFile(path);
 }

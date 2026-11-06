@@ -1,5 +1,6 @@
 ﻿#include "VideoCommon.h"
 #include <cstdarg>
+#include <cstdio>
 #include <cassert>
 #include <array>
 
@@ -8,6 +9,7 @@ using namespace video;
 namespace
 {
 	std::function<void(const std::string&)> VideoLoggingFunction;
+	thread_local bool workerLogging = false;
 }
 
 void video::setLoggingFunction(const std::function<void(const std::string&)>& callback)
@@ -17,6 +19,16 @@ void video::setLoggingFunction(const std::function<void(const std::string&)>& ca
 
 void video::logging(const char* format, ...)
 {
+	if (workerLogging)
+	{
+		// The host logger may invoke Lua callbacks.
+		va_list args;
+		va_start(args, format);
+		vfprintf(stderr, format, args);
+		va_end(args);
+		fputc('\n', stderr);
+		return;
+	}
 	if (!VideoLoggingFunction)
 		return;
 	constexpr auto BUFFER_LENGTH = 512;
@@ -55,6 +67,11 @@ void video::logging(const char* format, ...)
 		buffer.resize(nret);
 	}
 	VideoLoggingFunction(buffer);
+}
+
+void video::useWorkerLogging()
+{
+	workerLogging = true;
 }
 
 std::string video::getErrorString(int errorCode)

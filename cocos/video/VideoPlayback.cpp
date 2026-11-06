@@ -1,5 +1,7 @@
 #include "VideoPlayback.h"
 #include <cmath>
+#include "VideoDecodeWorker.h"
+#include <limits>
 
 using namespace video;
 
@@ -9,6 +11,18 @@ VideoPlayback::VideoPlayback(Decoder* source)
 }
 
 VideoPlayback::~VideoPlayback() = default;
+
+VideoPlayback::VideoPlayback(std::unique_ptr<VideoDecodeWorker> source)
+	: worker(std::move(source)), async(AsyncVideoSnapshot{}), awaitingLanding(true)
+{
+}
+
+std::unique_ptr<VideoPlayback> VideoPlayback::createAsync(cocos2d::io::StreamPtr source,
+	std::function<void()> cancel)
+{
+	auto worker = VideoDecodeWorker::create(std::move(source), std::move(cancel));
+	return worker ? std::unique_ptr<VideoPlayback>(new (std::nothrow) VideoPlayback(std::move(worker))) : nullptr;
+}
 
 std::unique_ptr<VideoPlayback> VideoPlayback::create(Decoder* source)
 {
@@ -28,6 +42,20 @@ PlaybackUpdate VideoPlayback::start()
 {
 	if (mode == PlayMode::MANUAL)
 		return PlaybackUpdate::NoFrame;
+	if (async)
+	{
+		if (!worker)
+			return PlaybackUpdate::NoFrame;
+		if (!atStart || state == State::Failed)
+		{
+			seekFrame(0);
+			if (!awaitingLanding)
+				return PlaybackUpdate::NoFrame;
+		}
+		atStart = false;
+		state = State::Playing;
+		return PlaybackUpdate::NoFrame;
+	}
 
 	syncDecoderGeneration();
 	if (!decoder->isOpened())
@@ -51,6 +79,12 @@ PlaybackUpdate VideoPlayback::stop()
 		return PlaybackUpdate::NoFrame;
 
 	cancelAutomaticPlayback();
+	if (async)
+	{
+		if (!atStart)
+			return seekFrame(0);
+		return PlaybackUpdate::NoFrame;
+	}
 	syncDecoderGeneration();
 	return atStart ? PlaybackUpdate::NoFrame : seekFrame(0);
 }
@@ -75,6 +109,8 @@ void VideoPlayback::cancelAutomaticPlayback()
 
 void VideoPlayback::setMode(PlayMode newMode)
 {
+	if (mode != newMode)
+		pendingManualAdvance = false;
 	mode = newMode;
 	if (mode == PlayMode::MANUAL)
 		cancelAutomaticPlayback();
@@ -95,17 +131,43 @@ void VideoPlayback::syncDecoderGeneration()
 
 bool VideoPlayback::endedAt(uint64_t generation) const
 {
-	return state == State::Ended && decoderGeneration == generation &&
-		generation == decoder->getGeneration();
+	return state == State::Ended && decoderGeneration == generation && generation == getGeneration();
 }
 
-uint8_t* VideoPlayback::getFrame() const
+uint64_t VideoPlayback::getGeneration() const
 {
+	return async ? async->generation : decoder->getGeneration();
+}
+
+const uint8_t* VideoPlayback::getFrame() const
+{
+	if (async)
+	{
+		const auto frame = worker ? worker->presentedFrame() : nullptr;
+		return frame ? frame->rgba.get() : nullptr;
+	}
 	return decoderGeneration == decoder->getGeneration() ? pixels : nullptr;
 }
 
 PlaybackUpdate VideoPlayback::seekFrame(uint32_t frame)
 {
+	if (async)
+	{
+		if (!worker)
+			return PlaybackUpdate::NoFrame;
+		const auto request = worker->seek(frame);
+		if (!request)
+			return PlaybackUpdate::NoFrame;
+		async->generation = decoderGeneration = *request;
+		async->state = AsyncVideoState::Seeking;
+		async->error = AsyncVideoError::None;
+		awaitingLanding = true;
+		pendingManualAdvance = false;
+		atStart = frame == 0;
+		if (state == State::Ended || state == State::Failed)
+			state = State::Stopped;
+		return PlaybackUpdate::NoFrame;
+	}
 	const auto ok = decoder->seek(frame);
 	syncDecoderGeneration();
 	if (!ok)
@@ -123,6 +185,8 @@ PlaybackUpdate VideoPlayback::seekFrame(uint32_t frame)
 
 PlaybackUpdate VideoPlayback::tick(double seconds)
 {
+	if (async)
+		return worker ? tickAsync(seconds) : PlaybackUpdate::NoFrame;
 	if (state != State::Playing)
 		return PlaybackUpdate::NoFrame;
 	return advanceImpl(mode == PlayMode::STEP ? step : seconds, mode == PlayMode::FRAME);
@@ -130,12 +194,152 @@ PlaybackUpdate VideoPlayback::tick(double seconds)
 
 PlaybackUpdate VideoPlayback::advance(double seconds)
 {
+	if (async)
+		return worker && mode == PlayMode::MANUAL && !awaitingLanding && !pendingManualAdvance
+			? readAsync(seconds, false, true) : PlaybackUpdate::NoFrame;
 	return mode == PlayMode::MANUAL ? advanceImpl(seconds, false) : PlaybackUpdate::NoFrame;
 }
 
 PlaybackUpdate VideoPlayback::advanceFrame()
 {
+	if (async)
+		return worker && mode == PlayMode::MANUAL && !awaitingLanding && !pendingManualAdvance
+			? readAsync(0.0, true, true) : PlaybackUpdate::NoFrame;
 	return mode == PlayMode::MANUAL ? advanceImpl(0.0, true) : PlaybackUpdate::NoFrame;
+}
+
+bool VideoPlayback::needsTick() const
+{
+	return async ? worker && (state == State::Playing || awaitingLanding || pendingManualAdvance) : wantsTicks();
+}
+
+std::optional<AsyncVideoSnapshot> VideoPlayback::getAsyncSnapshot() const
+{
+	if (!async)
+		return async;
+	if (!worker)
+	{
+		auto info = *async;
+		if (closeCompletion->load())
+		{
+			if (info.state == AsyncVideoState::Closing)
+				info.state = AsyncVideoState::Closed;
+			info.allocatedFrameBytes = 0;
+		}
+		return info;
+	}
+	auto info = worker->snapshot();
+	info.state = async->state;
+	info.error = async->error;
+	info.frame = async->frame;
+	info.seconds = async->seconds;
+	info.skippedFrames = async->skippedFrames;
+	return info;
+}
+
+void VideoPlayback::closeAsync(AsyncVideoError error)
+{
+	if (!worker)
+		return;
+	async = getAsyncSnapshot();
+	closeCompletion = worker->completion();
+	worker.reset();
+	++async->generation;
+	async->state = error == AsyncVideoError::None ? AsyncVideoState::Closing : AsyncVideoState::Failed;
+	async->error = error;
+	async->bufferedFrames = 0;
+	state = error == AsyncVideoError::None ? State::Stopped : State::Failed;
+}
+
+PlaybackUpdate VideoPlayback::tickAsync(double seconds)
+{
+	if (awaitingLanding)
+	{
+		const auto read = worker->take();
+		if (read.status == VideoDecodeWorker::ReadStatus::Waiting)
+			return PlaybackUpdate::NoFrame;
+		awaitingLanding = false;
+		if (read.status == VideoDecodeWorker::ReadStatus::FrameReady)
+		{
+			mediaTime = worker->presentedFrame()->seconds;
+			async->state = AsyncVideoState::Ready;
+			return PlaybackUpdate::FrameReady;
+		}
+		return failAsyncRead();
+	}
+	if (pendingManualAdvance)
+		return readAsync(0.0, pendingManualFrame, true);
+	if (state != State::Playing)
+		return PlaybackUpdate::NoFrame;
+	return readAsync(mode == PlayMode::STEP ? step : seconds, mode == PlayMode::FRAME, false);
+}
+
+PlaybackUpdate VideoPlayback::readAsync(double seconds, bool nextFrame, bool manual)
+{
+	using Status = VideoDecodeWorker::ReadStatus;
+	if (state == State::Ended || state == State::Failed)
+		return PlaybackUpdate::NoFrame;
+	const double target = mediaTime + seconds;
+	if (!nextFrame && (seconds < 0 || !std::isfinite(seconds) || !std::isfinite(target)))
+		return PlaybackUpdate::NoFrame;
+
+	const auto read = worker->take(nextFrame ? std::nullopt : std::optional<double>{target},
+		!manual && mode == PlayMode::REALTIME);
+	if (!nextFrame && (read.status != Status::Waiting || manual || mode == PlayMode::REALTIME))
+		mediaTime = target;
+	atStart = false;
+	pendingManualAdvance = manual && read.status == Status::Waiting;
+	pendingManualFrame = nextFrame;
+	switch (read.status)
+	{
+	case Status::FrameReady:
+		async->skippedFrames += read.skipped;
+		if (nextFrame)
+			mediaTime = worker->presentedFrame()->seconds;
+		async->state = AsyncVideoState::Ready;
+		return PlaybackUpdate::FrameReady;
+	case Status::Waiting:
+		async->state = AsyncVideoState::Buffering;
+		return PlaybackUpdate::NoFrame;
+	case Status::Error:
+	case Status::Closed:
+		return failAsyncRead();
+	case Status::EndOfStream:
+		if (!nextFrame)
+		{
+			const auto frame = worker->presentedFrame();
+			if (frame && std::nextafter(mediaTime, std::numeric_limits<double>::infinity()) < frame->seconds + frame->duration)
+			{
+				async->state = AsyncVideoState::Ready;
+				return PlaybackUpdate::NoFrame;
+			}
+		}
+		state = State::Ended;
+		async->state = AsyncVideoState::Ended;
+		return PlaybackUpdate::Ended;
+	case Status::NotDue:
+		async->state = AsyncVideoState::Ready;
+		return PlaybackUpdate::NoFrame;
+	}
+	return PlaybackUpdate::NoFrame;
+}
+
+PlaybackUpdate VideoPlayback::failAsyncRead()
+{
+	state = State::Failed;
+	async->state = AsyncVideoState::Failed;
+	const auto workerError = worker->snapshot().error;
+	async->error = workerError == AsyncVideoError::None ? AsyncVideoError::Decode : workerError;
+	return PlaybackUpdate::Error;
+}
+
+void VideoPlayback::onFramePresented()
+{
+	if (!worker)
+		return;
+	const auto frame = worker->presentedFrame();
+	async->frame = frame->index;
+	async->seconds = frame->seconds;
 }
 
 PlaybackUpdate VideoPlayback::advanceImpl(double seconds, bool nextFrame)

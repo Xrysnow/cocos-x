@@ -23,8 +23,11 @@ target_sources(${COCOS_CORE_LIB} PRIVATE
     video/ffmpeg/FFPointer.h
     video/VideoCommon.cpp
     video/VideoCommon.h
+    video/VideoAsync.h
     video/VideoDecoder.cpp
     video/VideoDecoder.h
+    video/VideoDecodeWorker.cpp
+    video/VideoDecodeWorker.h
     video/VideoPlayMode.h
     video/VideoPlayback.cpp
     video/VideoPlayback.h

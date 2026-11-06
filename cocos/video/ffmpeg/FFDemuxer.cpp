@@ -28,9 +28,9 @@ Demuxer::~Demuxer()
 	clean();
 }
 
-bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name)
+bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
-	input = AvioInput::create(std::move(source));
+	input = AvioInput::create(std::move(source), stop);
 	if (!input)
 	{
 		VERRO("Could not initialize input stream");
@@ -41,6 +41,13 @@ bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name)
 		return false;
 	containerContext->pb = input->get();
 	containerContext->flags |= AVFMT_FLAG_CUSTOM_IO;
+	if (stop)
+	{
+		containerContext->interrupt_callback.callback = [](void* opaque) {
+			return static_cast<AvioInput*>(opaque)->isCancelled() ? 1 : 0;
+		};
+		containerContext->interrupt_callback.opaque = input.get();
+	}
 	// A supplied stream is the only input. Deny secondary files and URLs.
 	containerContext->io_open = [](AVFormatContext*, AVIOContext**, const char*, int, AVDictionary**) {
 		return AVERROR(ENOSYS);
@@ -62,10 +69,10 @@ bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name)
 	return true;
 }
 
-Demuxer* Demuxer::create(cocos2d::io::StreamPtr source, const char* name)
+Demuxer* Demuxer::create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
 	auto ret = new (std::nothrow) Demuxer();
-	if (ret && ret->init(std::move(source), name))
+	if (ret && ret->init(std::move(source), name, stop))
 		return ret;
 	delete ret;
 	return nullptr;
@@ -157,6 +164,11 @@ bool Demuxer::seekTimestamp(int streamIndex, int64_t timestamp)
 bool Demuxer::isSeekable() const
 {
 	return (input->get()->seekable & AVIO_SEEKABLE_NORMAL) != 0;
+}
+
+bool Demuxer::isCancelled() const
+{
+	return input->isCancelled();
 }
 
 int Demuxer::getBestAudioStream()

@@ -45,9 +45,10 @@ namespace
 	}
 }
 
-AvioInput::AvioInput(StreamPtr input) : source(std::move(input)) {}
+AvioInput::AvioInput(StreamPtr input, const std::atomic<bool>* stop)
+	: source(std::move(input)), stop(stop) {}
 
-std::unique_ptr<AvioInput> AvioInput::create(StreamPtr source)
+std::unique_ptr<AvioInput> AvioInput::create(StreamPtr source, const std::atomic<bool>* stop)
 {
 	if (!source || !source->isOpen() || !hasCapability(source->capabilities(), Capability::Read))
 		return nullptr;
@@ -55,7 +56,7 @@ std::unique_ptr<AvioInput> AvioInput::create(StreamPtr source)
 	if (!position || position.value != 0)
 		return nullptr;
 
-	auto input = std::unique_ptr<AvioInput>(new (std::nothrow) AvioInput(std::move(source)));
+	auto input = std::unique_ptr<AvioInput>(new (std::nothrow) AvioInput(std::move(source), stop));
 	if (!input)
 		return nullptr;
 	constexpr int bufferSize = 32 * 1024;
@@ -88,9 +89,16 @@ int AvioInput::readError() const
 	return terminalRead == AVERROR_EOF ? 0 : terminalRead;
 }
 
+bool AvioInput::isCancelled() const
+{
+	return stop && stop->load(std::memory_order_relaxed);
+}
+
 int AvioInput::read(void* opaque, uint8_t* buffer, int length) noexcept
 {
 	auto& input = *static_cast<AvioInput*>(opaque);
+	if (input.isCancelled())
+		return AVERROR_EXIT;
 	if (input.terminalRead)
 		return input.terminalRead;
 	if (length <= 0)
@@ -110,6 +118,8 @@ int AvioInput::read(void* opaque, uint8_t* buffer, int length) noexcept
 int64_t AvioInput::seek(void* opaque, int64_t offset, int whence) noexcept
 {
 	auto& input = *static_cast<AvioInput*>(opaque);
+	if (input.isCancelled())
+		return AVERROR_EXIT;
 	whence &= ~AVSEEK_FORCE;
 	try
 	{

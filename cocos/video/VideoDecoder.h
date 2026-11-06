@@ -3,6 +3,7 @@
 #include "base/CCRef.h"
 #include "io/Stream.h"
 #include "math/Vec2.h"
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -11,6 +12,7 @@
 
 namespace video
 {
+	class VideoDecodeWorker;
 	class CC_DLL Decoder : public cocos2d::Ref
 	{
 	public:
@@ -120,9 +122,13 @@ namespace video
 		ffmpeg::ContainerInfo videoInfo{};
 
 	private:
-		bool openInput(cocos2d::io::StreamPtr source, const char* name);
+		friend class VideoDecodeWorker;
+		bool openInput(cocos2d::io::StreamPtr source, const char* name,
+			bool decodeAudio = true, const std::atomic<bool>* stop = nullptr);
 		ReadResult fillPendingFrame();
 		ReadResult outputPendingFrame(uint8_t** vbuf);
+		ReadResult convertPendingFrame(uint8_t* const* data, const int* stride);
+		size_t countContainerAudioTracks() const;
 		void resetFrameState();
 
 		struct FFmpegState;

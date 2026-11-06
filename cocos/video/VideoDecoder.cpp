@@ -68,9 +68,9 @@ bool Decoder::openStream(io::StreamPtr source)
 	return !opened && openInput(std::move(source), nullptr);
 }
 
-bool Decoder::openInput(io::StreamPtr source, const char* name)
+bool Decoder::openInput(io::StreamPtr source, const char* name, bool decodeAudio, const std::atomic<bool>* stop)
 {
-	ffmpegState->demuxer = ffmpeg::Demuxer::create(std::move(source), name);
+	ffmpegState->demuxer = ffmpeg::Demuxer::create(std::move(source), name, stop);
 	if (!ffmpegState->demuxer)
 		return false;
 
@@ -83,7 +83,7 @@ bool Decoder::openInput(io::StreamPtr source, const char* name)
 		return false;
 	}
 
-	idxAudio = ffmpegState->demuxer->getBestAudioStream();
+	idxAudio = decodeAudio ? ffmpegState->demuxer->getBestAudioStream() : -1;
 	if (idxAudio >= 0)
 	{
 		ffmpegState->audioQueue = ffmpeg::AudioFrameQueue::create(false);
@@ -207,13 +207,15 @@ void Decoder::close()
 
 Decoder::ReadResult Decoder::fillPendingFrame()
 {
-	if (readError)
+	if (readError || ffmpegState->demuxer->isCancelled())
 		return ReadResult::Error;
 	if (ffmpegState->pendingFrame)
 		return ReadResult::FrameReady;
 
 	while (ffmpegState->videoQueue->empty())
 	{
+		if (ffmpegState->demuxer->isCancelled())
+			return ReadResult::Error;
 		switch (ffmpegState->demuxer->step())
 		{
 		case ffmpeg::Demuxer::StepResult::Progress:
@@ -259,13 +261,21 @@ Decoder::ReadResult Decoder::fillPendingFrame()
 
 Decoder::ReadResult Decoder::outputPendingFrame(uint8_t** vbuf)
 {
+	const auto result = convertPendingFrame(ffmpegState->sws_pointers, ffmpegState->sws_linesizes);
+	if (result == ReadResult::FrameReady)
+		*vbuf = ffmpegState->sws_pointers[0];
+	return result;
+}
+
+Decoder::ReadResult Decoder::convertPendingFrame(uint8_t* const* data, const int* stride)
+{
 	const auto frame = ffmpegState->pendingFrame.get();
 	ffmpegState->img_convert_ctx = sws_getCachedContext(ffmpegState->img_convert_ctx,
 		frame->width, frame->height, static_cast<AVPixelFormat>(frame->format),
 		static_cast<int>(targetSize.width), static_cast<int>(targetSize.height),
 		swsFormat, SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
 	if (!ffmpegState->img_convert_ctx || sws_scale(ffmpegState->img_convert_ctx, frame->data, frame->linesize,
-		0, frame->height, ffmpegState->sws_pointers, ffmpegState->sws_linesizes) <= 0)
+		0, frame->height, data, stride) <= 0)
 	{
 		VERRO("failed to convert video frame");
 		readError = true;
@@ -278,8 +288,17 @@ Decoder::ReadResult Decoder::outputPendingFrame(uint8_t** vbuf)
 	frameDuration = pendingDuration;
 	initialPosition = false;
 	ffmpegState->pendingFrame.reset();
-	*vbuf = ffmpegState->sws_pointers[0];
 	return ReadResult::FrameReady;
+}
+
+size_t Decoder::countContainerAudioTracks() const
+{
+	const auto format = ffmpegState->demuxer->getAVFormatContext();
+	size_t count = 0;
+	for (unsigned i = 0; i < format->nb_streams; ++i)
+		if (format->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+			++count;
+	return count;
 }
 
 Decoder::ReadResult Decoder::readFrame(uint8_t** vbuf)

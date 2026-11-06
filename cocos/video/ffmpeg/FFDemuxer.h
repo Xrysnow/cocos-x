@@ -2,6 +2,7 @@
 #include "base/CCRef.h"
 #include "base/CCMap.h"
 #include "io/Stream.h"
+#include <atomic>
 #include <memory>
 #include "video/VideoCommon.h"
 #include "video/FFInfo.h"
@@ -19,10 +20,10 @@ namespace ffmpeg
 	protected:
 		Demuxer();
 		virtual ~Demuxer();
-		bool init(cocos2d::io::StreamPtr source, const char* name);
+		bool init(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 	public:
 		// Returns an owned reference.
-		static Demuxer* create(cocos2d::io::StreamPtr source, const char* name);
+		static Demuxer* create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 
 		bool setAudioReceiver(FrameReceiver* receiver, int streamIndex = -1);
 		bool setVideoReceiver(FrameReceiver* receiver, int streamIndex = -1);
@@ -34,6 +35,7 @@ namespace ffmpeg
 		int getBestVideoStream();
 		ContainerInfo getInfo();
 		bool isSeekable() const;
+		bool isCancelled() const;
 
 		AVFormatContext* getAVFormatContext() const { return containerContext; }
 		InputStream* getInputStream(int streamIndex) { return inputStreams.at(streamIndex); }

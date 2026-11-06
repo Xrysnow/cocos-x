@@ -1,10 +1,12 @@
 ﻿#pragma once
 #include "VideoPlayMode.h"
+#include "VideoAsync.h"
 #include "2d/CCSprite.h"
 #include "io/Stream.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace video
@@ -19,6 +21,11 @@ namespace video
 		static Player* create(const std::string& path);
 		// The input must support seeking and have a dedicated cursor at offset zero.
 		static Player* createFromStream(cocos2d::io::StreamPtr source);
+		// Other than MemoryStream, inputs require a prompt, thread-safe cancel
+		// hook that interrupts in-progress stream operations.
+		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
+		std::optional<AsyncVideoSnapshot> getAsyncSnapshot() const;
+		void closeAsync();
 
 		void startPlayback();
 		void stopPlayback();
@@ -43,6 +50,7 @@ namespace video
 		/** save current frame to file */
 		void saveCurrentFrame(const std::string& path);
 
+		// Async players expose a snapshot instead of a worker-owned decoder.
 		Decoder* getDecoder() const;
 
 	protected:
@@ -52,13 +60,16 @@ namespace video
 	private:
 		static Player* createWithDecoder(Decoder* source);
 		bool initPlayback(Decoder* source);
+		bool initVideoTexture(const cocos2d::Size& size, bool replace);
+		cocos2d::Size getFrameSize() const;
 		void applyPlaybackUpdate(PlaybackUpdate update);
 		void syncPlaybackSchedule();
-		void presentFrame(uint8_t* pixels);
+		bool presentFrame(const uint8_t* pixels);
 		void finishPlayback();
 
 		std::unique_ptr<VideoPlayback> playback;
 		bool autoRemove = false;
+		bool asyncTextureReady = false;
 		std::function<void()> videoEndCallback;
 	};
 }
