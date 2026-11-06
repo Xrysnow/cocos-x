@@ -366,6 +366,218 @@ RefPtr<T> dynamic_pointer_cast(const RefPtr<U>& r)
     return RefPtr<T>(dynamic_cast<T*>(r.get()));
 }
 
+/** A strong reference whose non-null target always uses RefThreading::Atomic.
+ * The private RefPtr stores the same intrusive ownership as an ordinary RefPtr;
+ * this wrapper adds no counter and never changes an object's policy.
+ *
+ * Use makeThreadSafeRef<T>(args...) to create an object, or requireThreadSafe(ref)
+ * to check an existing RefPtr explicitly. There is no public raw-pointer/adoption
+ * constructor, implicit raw-pointer conversion, or mutable access to the RefPtr.
+ *
+ * Distinct instances can manage references concurrently. Concurrent mutation of
+ * the same instance still needs synchronization. Object state, autorelease pools,
+ * Lua access and thread-affine destruction retain their own threading rules.
+ * @lua NA
+ * @js NA
+ */
+template <class T>
+class ThreadSafeRefPtr
+{
+public:
+    ThreadSafeRefPtr() noexcept = default;
+    ThreadSafeRefPtr(std::nullptr_t) noexcept {}
+
+    ThreadSafeRefPtr(const ThreadSafeRefPtr&) = default;
+    ThreadSafeRefPtr(ThreadSafeRefPtr&&) noexcept = default;
+
+    // Pointer-compatible upcasts and adding const preserve the same Ref subobject.
+    template <class U, std::enable_if_t<std::is_convertible<U*, T*>::value, int> = 0>
+    ThreadSafeRefPtr(const ThreadSafeRefPtr<U>& other) : _ptr(other.get())
+    {}
+
+    template <class U, std::enable_if_t<std::is_convertible<U*, T*>::value, int> = 0>
+    ThreadSafeRefPtr(ThreadSafeRefPtr<U>&& other) : _ptr(other.get())
+    {
+        // RefPtr has no converting move constructor. Acquire the adjusted pointer
+        // before releasing the source, so the object remains alive throughout.
+        other.reset();
+    }
+
+    ThreadSafeRefPtr& operator=(ThreadSafeRefPtr other) noexcept
+    {
+        swap(other);
+        return *this;
+    }
+
+    template <class U, std::enable_if_t<std::is_convertible<U*, T*>::value, int> = 0>
+    ThreadSafeRefPtr& operator=(const ThreadSafeRefPtr<U>& other)
+    {
+        ThreadSafeRefPtr copy(other);
+        swap(copy);
+        return *this;
+    }
+
+    template <class U, std::enable_if_t<std::is_convertible<U*, T*>::value, int> = 0>
+    ThreadSafeRefPtr& operator=(ThreadSafeRefPtr<U>&& other)
+    {
+        ThreadSafeRefPtr moved(std::move(other));
+        swap(moved);
+        return *this;
+    }
+
+    ThreadSafeRefPtr& operator=(std::nullptr_t) noexcept
+    {
+        reset();
+        return *this;
+    }
+
+    T* get() const noexcept { return _ptr.get(); }
+    T& operator*() const { return *_ptr; }
+    T* operator->() const { return _ptr.operator->(); }
+    explicit operator bool() const noexcept { return get() != nullptr; }
+
+    void reset() noexcept
+    {
+        // Publish the empty state before releasing the old object.
+        ThreadSafeRefPtr empty;
+        swap(empty);
+    }
+
+    void swap(ThreadSafeRefPtr& other) noexcept { _ptr.swap(other._ptr); }
+
+    /** Explicitly erase the type-level guarantee; the object's policy stays Atomic.
+     * Lvalues copy a reference, while rvalues transfer it and become empty.
+     */
+    RefPtr<T> asRef() const & { return _ptr; }
+    RefPtr<T> asRef() && noexcept { return std::move(_ptr); }
+
+private:
+    static T* checkedPointer(T* ptr)
+    {
+        // Check before retain(): a Local counter must not be touched by a failed
+        // conversion, even when this check runs on a worker thread.
+        if (ptr && static_cast<const Ref*>(ptr)->getReferenceThreading() != RefThreading::Atomic)
+            throw std::invalid_argument("ThreadSafeRefPtr requires RefThreading::Atomic");
+        return ptr;
+    }
+
+    explicit ThreadSafeRefPtr(T* ptr) : _ptr(checkedPointer(ptr)) {}
+
+    explicit ThreadSafeRefPtr(RefPtr<T>&& ptr)
+    {
+        checkedPointer(ptr.get());
+        // Validate before consuming the source; failure leaves it unchanged.
+        _ptr.swap(ptr);
+    }
+
+    RefPtr<T> _ptr;
+
+    static_assert(std::is_convertible<T*, const Ref*>::value,
+                  "T must publicly and unambiguously derive from Ref (optionally const)");
+
+    template <class U>
+    friend ThreadSafeRefPtr<U> requireThreadSafe(const RefPtr<U>& ptr);
+    template <class U>
+    friend ThreadSafeRefPtr<U> requireThreadSafe(RefPtr<U>&& ptr);
+    template <class U, class V>
+    friend ThreadSafeRefPtr<U> static_pointer_cast(const ThreadSafeRefPtr<V>& ptr);
+    template <class U, class V>
+    friend ThreadSafeRefPtr<U> dynamic_pointer_cast(const ThreadSafeRefPtr<V>& ptr);
+};
+
+/** Check an existing strong reference without changing its policy.
+ * Null succeeds as an empty wrapper. A Local target throws std::invalid_argument
+ * in every build configuration, before acquiring a reference. The source must stay
+ * alive and must not be concurrently modified during the call.
+ */
+template <class T>
+ThreadSafeRefPtr<T> requireThreadSafe(const RefPtr<T>& ptr)
+{
+    return ThreadSafeRefPtr<T>(ptr.get());
+}
+
+/** Transfer an existing reference after validation. On failure ptr is unchanged. */
+template <class T>
+ThreadSafeRefPtr<T> requireThreadSafe(RefPtr<T>&& ptr)
+{
+    return ThreadSafeRefPtr<T>(std::move(ptr));
+}
+
+/** Create an Atomic object and adopt its initial reference without an extra retain.
+ * T must accept and forward RefConstructionToken, just as for makeRef<T, Atomic>.
+ * This factory calls neither init() nor autorelease().
+ *
+ * void submit(ThreadSafeRefPtr<Job> job);
+ * auto job = makeThreadSafeRef<Job>(args...);
+ * submit(job);
+ * // submit(ordinaryRefPtr);                  // rejected at compile time
+ * // submit(requireThreadSafe(ordinaryRefPtr)); // explicit runtime policy check
+ */
+template <class T, class... Args>
+ThreadSafeRefPtr<T> makeThreadSafeRef(Args&&... args)
+{
+    return requireThreadSafe(makeRef<T, RefThreading::Atomic>(std::forward<Args>(args)...));
+}
+
+/** Cast while preserving the Atomic guarantee. Validate the target Ref subobject
+ * before retaining it, including cross-casts in multiple-inheritance hierarchies.
+ * static_pointer_cast requires a valid static cast, just as for ordinary RefPtr.
+ */
+template <class T, class U>
+ThreadSafeRefPtr<T> static_pointer_cast(const ThreadSafeRefPtr<U>& ptr)
+{
+    return ThreadSafeRefPtr<T>(static_cast<T*>(ptr.get()));
+}
+
+/** A failed dynamic cast returns an empty wrapper; a Local target is rejected. */
+template <class T, class U>
+ThreadSafeRefPtr<T> dynamic_pointer_cast(const ThreadSafeRefPtr<U>& ptr)
+{
+    return ThreadSafeRefPtr<T>(dynamic_cast<T*>(ptr.get()));
+}
+
+template <class T, class U>
+bool operator==(const ThreadSafeRefPtr<T>& lhs, const ThreadSafeRefPtr<U>& rhs) noexcept
+{
+    return lhs.get() == rhs.get();
+}
+
+template <class T, class U>
+bool operator!=(const ThreadSafeRefPtr<T>& lhs, const ThreadSafeRefPtr<U>& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
+template <class T>
+bool operator==(const ThreadSafeRefPtr<T>& ptr, std::nullptr_t) noexcept
+{
+    return !ptr;
+}
+
+template <class T>
+bool operator==(std::nullptr_t, const ThreadSafeRefPtr<T>& ptr) noexcept
+{
+    return !ptr;
+}
+
+template <class T>
+bool operator!=(const ThreadSafeRefPtr<T>& ptr, std::nullptr_t) noexcept
+{
+    return static_cast<bool>(ptr);
+}
+
+template <class T>
+bool operator!=(std::nullptr_t, const ThreadSafeRefPtr<T>& ptr) noexcept
+{
+    return static_cast<bool>(ptr);
+}
+
+template <class T>
+void swap(ThreadSafeRefPtr<T>& lhs, ThreadSafeRefPtr<T>& rhs) noexcept
+{
+    lhs.swap(rhs);
+}
+
 /**
  * Done with these macros.
  */
