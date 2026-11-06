@@ -253,6 +253,18 @@ int luaReg_cc_video_texture_videoPlayerPlayMode(lua_State* lua_S)
 	LUA_ENUM_END();
 	return 0;
 }
+int lua_video_Player_advance(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("video.Player", "video.Player:advance");
+	LUA_TRY_INVOKE(1, static_cast<void(video::Player::*)(double)>(&video::Player::advance));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_video_Player_advanceFrame(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("video.Player", "video.Player:advanceFrame");
+	LUA_TRY_INVOKE(0, static_cast<void(video::Player::*)()>(&video::Player::advanceFrame));
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_video_Player_getDecoder(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("video.Player", "video.Player:getDecoder");
@@ -331,6 +343,8 @@ int luaReg_cc_video_texture_videoPlayer(lua_State* lua_S)
 	LUA_CLS_DEF_BASE(video::Player, "Player", "video.Player",
 		cocos2d::Sprite, "cc.Sprite",
 		nullptr, nullptr);
+	LUA_METHOD("advance", lua_video_Player_advance);
+	LUA_METHOD("advanceFrame", lua_video_Player_advanceFrame);
 	LUA_METHOD("getDecoder", lua_video_Player_getDecoder);
 	LUA_METHOD("saveCurrentFrame", lua_video_Player_saveCurrentFrame);
 	LUA_METHOD("seek", lua_video_Player_seek);

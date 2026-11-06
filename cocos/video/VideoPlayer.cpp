@@ -5,6 +5,11 @@
 
 using namespace video;
 
+namespace
+{
+	constexpr auto playbackKey = "video.playback";
+}
+
 Player* Player::create(const std::string& path)
 {
 	auto ret = new (std::nothrow) Player();
@@ -76,18 +81,16 @@ void Player::vplay()
 	if (!decoder->isOpened() || (!atStart && !seekFrame(0)))
 		return;
 	atStart = false;
-	if (!isPlaying && mode == PlayMode::REALTIME)
-		scheduleUpdate();
 	isPlaying = true;
 	autoUpdate = true;
+	schedulePlayback();
 }
 
 void Player::vstop()
 {
 	if (mode == PlayMode::MANUAL)
 		return;
-	if (mode == PlayMode::REALTIME)
-		unscheduleUpdate();
+	unschedule(playbackKey);
 	isPlaying = false;
 	autoUpdate = false;
 	syncDecoderGeneration();
@@ -97,26 +100,36 @@ void Player::vstop()
 
 void Player::vpause()
 {
-	if (mode == PlayMode::MANUAL)
-		return;
-	if (isPlaying&&autoUpdate)
-	{
-		if (mode == PlayMode::REALTIME)
-			unscheduleUpdate();
+	if (autoUpdate)
 		isPlaying = false;
-	}
 }
 
 void Player::vresume()
 {
-	if (mode == PlayMode::MANUAL)
-		return;
-	if (!isPlaying&&autoUpdate)
+	if (autoUpdate && !isPlaying)
 	{
-		if (mode == PlayMode::REALTIME)
-			scheduleUpdate();
 		isPlaying = true;
+		schedulePlayback();
 	}
+}
+
+void Player::schedulePlayback()
+{
+	if (isScheduled(playbackKey))
+		return;
+
+	schedule([this](float dt)
+	{
+		if (isPlaying && isRunning())
+			advancePlayback(mode == PlayMode::STEP ? step : dt, mode == PlayMode::FRAME);
+	}, playbackKey);
+}
+
+void Player::cleanup()
+{
+	cocos2d::Sprite::cleanup();
+	isPlaying = false;
+	autoUpdate = false;
 }
 
 void Player::syncDecoderGeneration()
@@ -151,25 +164,52 @@ void Player::seek(uint32_t frame)
 	seekFrame(frame);
 }
 
+void Player::advance(double dt)
+{
+	if (mode == PlayMode::MANUAL)
+		advancePlayback(dt, false);
+}
+
+void Player::advanceFrame()
+{
+	if (mode == PlayMode::MANUAL)
+		advancePlayback(0, true);
+}
+
 void Player::update(float dt)
 {
 	cocos2d::RefPtr<Player> keepAlive(this);
 	cocos2d::Sprite::update(dt);
-	syncDecoderGeneration();
-	if (finished || !std::isfinite(dt))
+	if (!std::isfinite(dt))
 		return;
+	if (dt < 0)
+		advanceFrame();
+	else
+		advance(dt);
+}
+
+void Player::advancePlayback(double dt, bool nextFrame)
+{
+	cocos2d::RefPtr<Player> keepAlive(this);
+	syncDecoderGeneration();
+	if (finished)
+		return;
+	if (!nextFrame)
+	{
+		if (dt < 0 || !std::isfinite(dt) || !std::isfinite(currentTime + dt))
+			return;
+		currentTime += dt;
+	}
 	atStart = false;
 	uint8_t* pixels = nullptr;
-	if (dt >= 0)
-		currentTime += dt;
-	const auto result = dt < 0
+	const auto result = nextFrame
 		? decoder->readFrame(&pixels)
 		: decoder->readFrameAt(currentTime, &pixels);
 	switch (result)
 	{
 	case Decoder::ReadResult::FrameReady:
 		presentFrame(pixels);
-		if (dt < 0)
+		if (nextFrame)
 			currentTime = decoder->getFrameTime();
 		break;
 	case Decoder::ReadResult::EndOfStream:
@@ -180,8 +220,7 @@ void Player::update(float dt)
 		finished = true;
 		isPlaying = false;
 		autoUpdate = false;
-		if (mode == PlayMode::REALTIME)
-			unscheduleUpdate();
+		unschedule(playbackKey);
 		break;
 	case Decoder::ReadResult::NeedInput:
 		break;
@@ -198,14 +237,14 @@ void Player::finishPlayback()
 	auto callback = videoEndCallback;
 	if (callback)
 		callback();
-	if (!isPlaying && mode == PlayMode::REALTIME)
-		unscheduleUpdate();
+	if (!autoUpdate)
+		unschedule(playbackKey);
 	if (autoRemove && getParent() && finished && generation == decoder->getGeneration())
 	{
-		// Removal during visit could invalidate the parent's child iteration.
+		// A manual advance may run during scene traversal. Defer removal.
 		scheduleOnce([this, generation](float)
 		{
-			if (finished && generation == decoder->getGeneration())
+			if (autoRemove && finished && generation == decoder->getGeneration())
 				removeFromParentAndCleanup(true);
 		}, 0, "video.remove");
 	}
@@ -215,13 +254,10 @@ void Player::setPlayMode(PlayMode m)
 {
 	if (mode == m)
 		return;
-	if (mode == PlayMode::REALTIME)
-		unscheduleUpdate();
 	mode = m;
-	if (mode == PlayMode::REALTIME && isPlaying)
-		scheduleUpdate();
 	if (mode == PlayMode::MANUAL)
 	{
+		unschedule(playbackKey);
 		isPlaying = false;
 		autoUpdate = false;
 	}
@@ -246,23 +282,6 @@ void Player::presentFrame(uint8_t* pixels)
 #else
 	_texture->updateWithData(pixels, 0, 0, width, height);
 #endif // CC_VERSION
-}
-
-void Player::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4 &transform, uint32_t flags)
-{
-	if (!_texture)
-		return;
-	cocos2d::RefPtr<Player> keepAlive(this);
-	const auto wasRunning = isRunning();
-	if (isPlaying)
-	{
-		if (mode == PlayMode::STEP)
-			update(step);
-		else if (mode == PlayMode::FRAME)
-			update(-1);
-	}
-	if (!wasRunning || isRunning())
-		cocos2d::Sprite::draw(renderer, transform, flags);
 }
 
 void Player::setVideoEndCallback(const std::function<void()>& func)

@@ -16,7 +16,7 @@ namespace video
 			REALTIME,
 			/** game frame -> video frame */
 			FRAME,
-			/** invoke update manually */
+			/** advance explicitly */
 			MANUAL,
 		};
 		static Player* create(const std::string& path);
@@ -29,8 +29,13 @@ namespace video
 		void vresume();
 		/** Seek to a frame using the decoder's frame-rate estimate. */
 		void seek(uint32_t frame);
-		/** step dt in decoder and get data, will step 1 frame if dt<0 */
+		/** In MANUAL mode, advance by a finite nonnegative number of seconds. */
+		void advance(double dt);
+		/** In MANUAL mode, try to publish the next decoded frame. */
+		void advanceFrame();
+		/** Compatibility for MANUAL mode: negative dt requests the next frame. */
 		void update(float dt) override;
+		void cleanup() override;
 
 		/** see PlayMode */
 		void setPlayMode(PlayMode m);
@@ -46,7 +51,6 @@ namespace video
 		Decoder* getDecoder() const { return decoder; }
 
 	protected:
-		void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
 		bool seekFrame(uint32_t frame);
 		void syncDecoderGeneration();
 		void presentFrame(uint8_t* pixels);
@@ -68,5 +72,9 @@ namespace video
 
 		Player();
 		~Player() override;
+
+	private:
+		void schedulePlayback();
+		void advancePlayback(double dt, bool nextFrame);
 	};
 }
