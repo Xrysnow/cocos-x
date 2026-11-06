@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "VideoPlayMode.h"
 #include "2d/CCSprite.h"
+#include "io/Stream.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -16,9 +17,9 @@ namespace video
 	{
 	public:
 		static Player* create(const std::string& path);
-	protected:
-		bool init_(const std::string& path);
-	public:
+		// The input must support seeking and have a dedicated cursor at offset zero.
+		static Player* createFromStream(cocos2d::io::StreamPtr source);
+
 		void startPlayback();
 		void stopPlayback();
 		void pausePlayback();
@@ -49,6 +50,8 @@ namespace video
 		~Player() override;
 
 	private:
+		static Player* createWithDecoder(Decoder* source);
+		bool initPlayback(Decoder* source);
 		void applyPlaybackUpdate(PlaybackUpdate update);
 		void syncPlaybackSchedule();
 		void presentFrame(uint8_t* pixels);

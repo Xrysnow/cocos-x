@@ -4,7 +4,6 @@
 #include "base/CCRefPtr.h"
 #include <cstdint>
 #include <memory>
-#include <string>
 
 namespace video
 {
@@ -22,7 +21,7 @@ namespace video
 	public:
 		enum class State { Stopped, Playing, Paused, Ended, Failed };
 
-		static std::unique_ptr<VideoPlayback> create(const std::string& path);
+		static std::unique_ptr<VideoPlayback> create(Decoder* source);
 		~VideoPlayback();
 
 		PlaybackUpdate start();

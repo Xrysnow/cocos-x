@@ -10,9 +10,8 @@ VideoPlayback::VideoPlayback(Decoder* source)
 
 VideoPlayback::~VideoPlayback() = default;
 
-std::unique_ptr<VideoPlayback> VideoPlayback::create(const std::string& path)
+std::unique_ptr<VideoPlayback> VideoPlayback::create(Decoder* source)
 {
-	auto source = Decoder::create(path);
 	if (!source || !source->setup())
 		return nullptr;
 

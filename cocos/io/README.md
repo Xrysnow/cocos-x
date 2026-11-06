@@ -1,8 +1,8 @@
 # cocos-x byte streams
 
 The io module supplies synchronous byte streams to cocos2d consumers. Include
-the headers explicitly and link the existing cocos2d target. Network transports
-and FFmpeg AVIO integration are separate future consumers.
+the headers explicitly and link the existing cocos2d target. The video module
+adapts these streams to FFmpeg AVIO.
 
 ## Ownership and locking
 

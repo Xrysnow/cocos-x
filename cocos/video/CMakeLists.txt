@@ -6,6 +6,8 @@ if(WIN32)
 endif()
 
 target_sources(${COCOS_CORE_LIB} PRIVATE
+    video/ffmpeg/FFAvio.cpp
+    video/ffmpeg/FFAvio.h
     video/ffmpeg/FFCodec.cpp
     video/ffmpeg/FFCodec.h
     video/ffmpeg/FFDemuxer.cpp
@@ -28,5 +30,4 @@ target_sources(${COCOS_CORE_LIB} PRIVATE
     video/VideoPlayback.h
     video/VideoPlayer.cpp
     video/VideoPlayer.h
-    video/VideoStream.h
 )

@@ -14,8 +14,23 @@ namespace
 
 Player* Player::create(const std::string& path)
 {
+	return createWithDecoder(Decoder::create(path));
+}
+
+Player* Player::createFromStream(cocos2d::io::StreamPtr source)
+{
+	using namespace cocos2d::io;
+	if (!source || !hasCapability(source->capabilities(), Capability::Seek))
+		return nullptr;
+	return createWithDecoder(Decoder::createFromStream(std::move(source)));
+}
+
+Player* Player::createWithDecoder(Decoder* source)
+{
+	if (!source)
+		return nullptr;
 	auto ret = new (std::nothrow) Player();
-	if (ret&&ret->init_(path))
+	if (ret && ret->initPlayback(source))
 	{
 		ret->autorelease();
 		return ret;
@@ -32,9 +47,9 @@ Decoder* Player::getDecoder() const
 	return playback ? playback->getDecoder() : nullptr;
 }
 
-bool Player::init_(const std::string& path)
+bool Player::initPlayback(Decoder* source)
 {
-	playback = VideoPlayback::create(path);
+	playback = VideoPlayback::create(source);
 	if (!playback)
 		return false;
 	const auto size = getDecoder()->getVideoTargetSize();

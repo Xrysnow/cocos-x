@@ -1,5 +1,6 @@
 ﻿#include "FFDemuxer.h"
 #include "FFPointer.h"
+#include "FFAvio.h"
 #include <new>
 
 using namespace std;
@@ -27,29 +28,44 @@ Demuxer::~Demuxer()
 	clean();
 }
 
-bool Demuxer::init(const std::string& url)
+bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name)
 {
-	this->url = url;
-
-	int ret;
-	if ((ret = avformat_open_input(&containerContext, url.c_str(), nullptr, nullptr)) < 0)
+	input = AvioInput::create(std::move(source));
+	if (!input)
 	{
-		VERRO("Failed to open %s: %d", url.c_str(), ret);
+		VERRO("Could not initialize input stream");
+		return false;
+	}
+	containerContext = avformat_alloc_context();
+	if (!containerContext)
+		return false;
+	containerContext->pb = input->get();
+	containerContext->flags |= AVFMT_FLAG_CUSTOM_IO;
+	// A supplied stream is the only input. Deny secondary files and URLs.
+	containerContext->io_open = [](AVFormatContext*, AVIOContext**, const char*, int, AVDictionary**) {
+		return AVERROR(ENOSYS);
+	};
+
+	const auto label = name ? name : "video stream";
+	int ret;
+	if ((ret = avformat_open_input(&containerContext, name, nullptr, nullptr)) < 0)
+	{
+		VERRO("Failed to open %s: %d", label, input->readError() ? input->readError() : ret);
 		return false;
 	}
 	if ((ret = avformat_find_stream_info(containerContext, nullptr)) < 0)
 	{
-		VERRO("Failed to read streams from %s: %d", url.c_str(), ret);
+		VERRO("Failed to read streams from %s: %d", label, input->readError() ? input->readError() : ret);
 		return false;
 	}
 
 	return true;
 }
 
-Demuxer* Demuxer::create(const std::string& url)
+Demuxer* Demuxer::create(cocos2d::io::StreamPtr source, const char* name)
 {
 	auto ret = new (std::nothrow) Demuxer();
-	if (ret && ret->init(url))
+	if (ret && ret->init(std::move(source), name))
 		return ret;
 	delete ret;
 	return nullptr;
@@ -88,6 +104,11 @@ Demuxer::StepResult Demuxer::step()
 	}
 
 	const auto ret = av_read_frame(containerContext, packet.get());
+	if (const auto error = input->readError(); ret < 0 && error)
+	{
+		VERRO("failed to read video input: %d", error);
+		return state = StepResult::Error;
+	}
 	if (ret == AVERROR_EOF)
 	{
 		bool drained = true;
@@ -114,6 +135,8 @@ Demuxer::StepResult Demuxer::step()
 
 bool Demuxer::seekTimestamp(int streamIndex, int64_t timestamp)
 {
+	if (!isSeekable())
+		return false;
 	// Bound the seek to a keyframe at or before the requested stream timestamp.
 	auto ret = avformat_seek_file(containerContext,
 		streamIndex, INT64_MIN, timestamp, timestamp, 0);
@@ -129,6 +152,11 @@ bool Demuxer::seekTimestamp(int streamIndex, int64_t timestamp)
 		it.second->onSeek();
 	state = StepResult::Progress;
 	return true;
+}
+
+bool Demuxer::isSeekable() const
+{
+	return (input->get()->seekable & AVIO_SEEKABLE_NORMAL) != 0;
 }
 
 int Demuxer::getBestAudioStream()
@@ -195,7 +223,7 @@ bool Demuxer::setReceiver(FrameReceiver* receiver, AVMediaType type, int streamI
 		int ret = av_find_best_stream(containerContext, type, -1, -1, nullptr, 0);
 		if (ret < 0)
 		{
-			VERRO("can't find stream in input %s: %d", url.c_str(), ret);
+			VERRO("can't find stream in input: %d", ret);
 			return false;
 		}
 		streamIndex = ret;
@@ -264,4 +292,5 @@ void Demuxer::clean()
 {
 	inputStreams.clear();
 	avformat_close_input(&containerContext);
+	input.reset();
 }

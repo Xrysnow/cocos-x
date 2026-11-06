@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "base/CCRef.h"
 #include "base/CCMap.h"
+#include "io/Stream.h"
+#include <memory>
 #include "video/VideoCommon.h"
 #include "video/FFInfo.h"
 #include "FFFrameReceiver.h"
@@ -8,6 +10,8 @@
 
 namespace ffmpeg
 {
+	class AvioInput;
+
 	class Demuxer : public cocos2d::Ref
 	{
 	public:
@@ -15,10 +19,10 @@ namespace ffmpeg
 	protected:
 		Demuxer();
 		virtual ~Demuxer();
-		bool init(const std::string& url);
+		bool init(cocos2d::io::StreamPtr source, const char* name);
 	public:
 		// Returns an owned reference.
-		static Demuxer* create(const std::string& url);
+		static Demuxer* create(cocos2d::io::StreamPtr source, const char* name);
 
 		bool setAudioReceiver(FrameReceiver* receiver, int streamIndex = -1);
 		bool setVideoReceiver(FrameReceiver* receiver, int streamIndex = -1);
@@ -29,7 +33,7 @@ namespace ffmpeg
 		int getBestAudioStream();
 		int getBestVideoStream();
 		ContainerInfo getInfo();
-		std::string getUrl() const { return url; }
+		bool isSeekable() const;
 
 		AVFormatContext* getAVFormatContext() const { return containerContext; }
 		InputStream* getInputStream(int streamIndex) { return inputStreams.at(streamIndex); }
@@ -42,7 +46,7 @@ namespace ffmpeg
 		void clean();
 
 		StepResult state = StepResult::Progress;
-		std::string url;
+		std::unique_ptr<AvioInput> input;
 		AVFormatContext* containerContext = nullptr;
 		int bestAudioStream = -1;
 		int bestVideoStream = -1;

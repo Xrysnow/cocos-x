@@ -2,7 +2,7 @@
 #include "VideoCommon.h"
 #include "ffmpeg/FFDemuxer.h"
 #include "ffmpeg/FFFrameQueue.h"
-#include "platform/CCFileUtils.h"
+#include "io/FileStream.h"
 #include <climits>
 #include <cmath>
 #include <limits>
@@ -41,14 +41,36 @@ bool Decoder::open(const std::string& path)
 	if (opened)
 		return false;
 
-	const auto filePath = FileUtils::getInstance()->fullPathForFilename(path);
-	if (filePath.empty())
+	auto source = io::FileStream::open(path);
+	if (!source)
 	{
-		VERRO("no file: %s", path.c_str());
+		VERRO("Could not open video file %s (I/O error %d, native %d)",
+			path.c_str(), static_cast<int>(source.error.code), source.error.nativeCode);
 		return false;
 	}
+	return openInput(std::move(source.value), path.c_str());
+}
 
-	ffmpegState->demuxer = ffmpeg::Demuxer::create(filePath);
+Decoder* Decoder::createFromStream(io::StreamPtr source)
+{
+	auto ret = new (std::nothrow) Decoder();
+	if (ret && ret->openStream(std::move(source)))
+	{
+		ret->autorelease();
+		return ret;
+	}
+	delete ret;
+	return nullptr;
+}
+
+bool Decoder::openStream(io::StreamPtr source)
+{
+	return !opened && openInput(std::move(source), nullptr);
+}
+
+bool Decoder::openInput(io::StreamPtr source, const char* name)
+{
+	ffmpegState->demuxer = ffmpeg::Demuxer::create(std::move(source), name);
 	if (!ffmpegState->demuxer)
 		return false;
 
@@ -110,12 +132,6 @@ bool Decoder::open(const std::string& path)
 	}
 	opened = true;
 	return true;
-}
-
-bool Decoder::open(VideoStream*, double, double)
-{
-	VERRO("VideoStream input is not supported");
-	return false;
 }
 
 bool Decoder::setup()
@@ -306,7 +322,7 @@ AVPixelFormat Decoder::getReadFormat()
 
 bool Decoder::seekTime(double seconds, double& actualSeconds)
 {
-	if (!opened || !std::isfinite(seconds) || seconds < 0)
+	if (!opened || !ffmpegState->demuxer->isSeekable() || !std::isfinite(seconds) || seconds < 0)
 		return false;
 
 	const bool primeFirstFrame = initialPosition && seconds == 0;

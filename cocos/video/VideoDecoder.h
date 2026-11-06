@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "FFInfo.h"
 #include "base/CCRef.h"
+#include "io/Stream.h"
 #include "math/Vec2.h"
 #include <cstddef>
 #include <cstdint>
@@ -10,15 +11,16 @@
 
 namespace video
 {
-	class VideoStream;
-
 	class CC_DLL Decoder : public cocos2d::Ref
 	{
 	public:
 		static Decoder* create(const std::string& path);
+		static Decoder* createFromStream(cocos2d::io::StreamPtr source);
 
 		bool open(const std::string& path);
-		bool open(VideoStream* stream_, double loopA = 0, double loopB = -1);
+		// Supply a synchronous readable stream at offset zero. The decoder must
+		// have sole use of its cursor until close, including during probing.
+		bool openStream(cocos2d::io::StreamPtr source);
 
 		bool setup();
 		bool setup(const cocos2d::Size& target_size);
@@ -118,6 +120,7 @@ namespace video
 		ffmpeg::ContainerInfo videoInfo{};
 
 	private:
+		bool openInput(cocos2d::io::StreamPtr source, const char* name);
 		ReadResult fillPendingFrame();
 		ReadResult outputPendingFrame(uint8_t** vbuf);
 		void resetFrameState();
