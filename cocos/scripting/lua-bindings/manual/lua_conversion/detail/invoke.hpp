@@ -85,9 +85,7 @@ namespace lua
 		}
 	};
 
-	// Preserve existing conversion storage for unregistered types. Explicit value
-	// types instead refer directly to the rooted userdata; invoking a by-value
-	// signature makes the C++ copy, while references keep the original object.
+	// Argument storage and value/reference semantics: see ../README.md (Arguments and invocation).
 	template<typename Targ, class Enable = void>
 	struct binding_argument {
 		using T = std::remove_cv_t<std::remove_reference_t<Targ>>;
@@ -269,8 +267,7 @@ namespace lua
 			return invoke<type>::template F<Checked, KeepInputs, Overload, RequireSelf>(L, std::forward<T>(callable), argCur, outResults, inputTop);
 	}
 
-	// Replace trailing arguments with converted results, preserving the prefix.
-	// Inputs stay rooted through result conversion and argument destruction.
+	// Stack replacement and input lifetimes: see ../README.md (Arguments and invocation).
 	template<typename T>
 	bool invoke_native(lua_State* L, int& argCur, T callable) {
 		return _invoke_native<bool(CC_LUA_BINDING_CHECKS), false, false>(L, argCur, std::move(callable));

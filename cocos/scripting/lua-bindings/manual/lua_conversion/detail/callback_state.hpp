@@ -210,8 +210,7 @@ namespace lua
 		}
 	}
 
-	// Keep C++ ownership outside protected Lua frames; record each acquired root
-	// immediately so partial registration can be cleaned up.
+	// Registration ownership and cleanup: see ../README.md (Error handling and protected frames).
 	struct _owned_callback_registration {
 		std::shared_ptr<_callback_reference> ref;
 		std::shared_ptr<_callback_lifetime> lifetime;
@@ -292,9 +291,7 @@ namespace lua
 			lua_settop(L, top);
 			return nullptr;
 		}
-		// cpcall cannot see the caller's input slot. Its protected preflight has
-		// already grown the physical stack beyond top+4; checkstack here only
-		// updates the caller's C API limit and cannot allocate in Lua 5.1/LuaJIT.
+		// Preflight reserved capacity; only update the C API limit here (see ../README.md).
 		if (!lua_checkstack(L, 4)) return nullptr;
 		lua_pushlightuserdata(L, _owned_callback_registration::finish_key());
 		lua_rawget(L, LUA_REGISTRYINDEX);
@@ -342,8 +339,7 @@ namespace lua
 				return false;
 			if (context->callback->state->pending.load(std::memory_order_acquire))
 				return false;
-			// A capacity limit is an ordinary failure. Allocation failure while
-			// growing this stack is outside the Release recovery contract.
+			// Release stack-allocation failures are outside recovery; see ../README.md.
 			if (!lua_checkstack(L, 8)) {
 				std::fprintf(stderr, "[LUA ERROR] callback (%s): Lua callback setup stack overflow\n",
 					context->callback->name.c_str());

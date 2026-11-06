@@ -24,9 +24,7 @@ namespace lua
 		}
 	};
 
-	// Payloads exclude std::function, including in supported containers.
-	// Converters run in an empty environment and must handle Lua-error cleanup
-	// and borrowed lifetimes.
+	// Payload restrictions and converter lifetimes: see ../README.md (Owned Lua callbacks).
 	template<typename T> struct _callback_has_function;
 	template<typename T>
 	using _callback_value = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -101,12 +99,7 @@ namespace lua
 		return context.completed;
 	}
 
-	// No handler/alias registration; clearing one C++ copy leaves others valid.
-	// Failure preserves *out.
-	// All builds trust scripts, hooks, finalizers and reporters. Bridge frames may
-	// be observed, but private calls/replay or frame/environment/registry mutation
-	// are unguarded and may repeat callbacks or corrupt registration. Use public
-	// APIs for invocation; recursion is supported.
+	// Ownership, failure and script-trust contracts: see ../README.md (Owned Lua callbacks).
 	template<typename R, typename... Args>
 	bool luaval_to_owned_callback(lua_State* L, int index, std::function<R(Args...)>* out,
 		const char* diagnostic_name = "") {

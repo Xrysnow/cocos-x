@@ -113,8 +113,7 @@ namespace lua
 		lua_getfield(L, LUA_REGISTRYINDEX, name);
 		if (!*name || !lua_istable(L, -1))
 			luaL_error(L, "unregistered value userdata type");
-		// A distinct borrow preserves const and ownership even when another userdata
-		// already refers to this address. Keep the pointer-sized tolua representation.
+		// Distinct pointer-sized borrows: see ../README.md (Value userdata ownership).
 		*static_cast<void**>(lua_newuserdata(L, sizeof(void*))) = const_cast<std::remove_cv_t<T>*>(value);
 		lua_pushvalue(L, -2);
 		lua_setmetatable(L, -2);
@@ -162,8 +161,7 @@ namespace lua
 		static_assert(is_value_type_v<T>, "value metatable requires an explicitly registered type");
 		lua_getfield(L, LUA_REGISTRYINDEX, name);
 		if (!lua_istable(L, -1)) luaL_error(L, "missing metatable for value type '%s'", name);
-		// tolua's default collector keys ownership by native address. A borrow can
-		// share that address, so value types collect by userdata ownership instead.
+		// Collect by userdata ownership, not native address; see ../README.md.
 		lua_pushcfunction(L, value_collect<T>);
 		lua_setfield(L, -2, "__gc");
 		lua_pushcfunction(L, value_collect<T>);
