@@ -44,6 +44,20 @@ endif()
 
 option(CC_ENABLE_VIDEO_TEXTURE "Build FFmpeg video textures" OFF)
 
+# The legacy Windows selector supplies the default only. An explicitly set
+# platform option controls source selection and bindings on every platform.
+set(_cc_video_platform_default OFF)
+if(ANDROID OR (IOS AND NOT TVOS))
+    set(_cc_video_platform_default ON)
+elseif(WINDOWS AND CC_ENABLE_MFMEDIA)
+    set(_cc_video_platform_default ON)
+endif()
+option(CC_ENABLE_VIDEO_PLATFORM "Build the platform-native video player" ${_cc_video_platform_default})
+unset(_cc_video_platform_default)
+if(CC_ENABLE_VIDEO_PLATFORM AND NOT (WINDOWS OR ANDROID OR (IOS AND NOT TVOS)))
+    message(FATAL_ERROR "CC_ENABLE_VIDEO_PLATFORM requires Windows, Android or iOS (excluding tvOS)")
+endif()
+
 # extensions to build
 # extensions dependicies: COCOSTUDIO may depend on spine & dragonBones if they are present in buildset
 option(CC_ENABLE_EXT_GUI "Build extension GUI" ON)
@@ -132,6 +146,8 @@ list(APPEND COCOS_SRC ${COCOS_HEADER})
 
 add_library(${COCOS_CORE_LIB} ${COCOS_SRC})
 target_compile_features(${COCOS_CORE_LIB} PUBLIC cxx_std_20)
+target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
+    CC_ENABLE_VIDEO_PLATFORM=$<BOOL:${CC_ENABLE_VIDEO_PLATFORM}>)
 
 if(AUDIO_USE_LIBVORBIS)
     target_compile_definitions(${COCOS_CORE_LIB} PRIVATE AUDIO_USE_LIBVORBIS)

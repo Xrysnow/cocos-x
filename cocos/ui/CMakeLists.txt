@@ -20,7 +20,7 @@ if(WINDOWS)
             )
     endif()
 
-    if (CC_ENABLE_MFMEDIA)
+    if (CC_ENABLE_VIDEO_PLATFORM)
         set(COCOS_UI_SPECIFIC_HEADER ${COCOS_UI_SPECIFIC_HEADER}
             ui/UIVideoPlayer/MFUtils.h
             ui/UIVideoPlayer/MFMediaPlayer.h
@@ -119,6 +119,13 @@ elseif(ANDROID)
         # it's special for android, not a common file
         ui/UIWebView/UIWebView.cpp
         )
+endif()
+
+# Platform video is independent of the FFmpeg texture player. The iOS source
+# is also excluded on tvOS, where its public class is unavailable.
+if(NOT CC_ENABLE_VIDEO_PLATFORM)
+    list(FILTER COCOS_UI_SPECIFIC_HEADER EXCLUDE REGEX "/UIVideoPlayer/")
+    list(FILTER COCOS_UI_SPECIFIC_SRC EXCLUDE REGEX "/UIVideoPlayer/")
 endif()
 
 set(COCOS_UI_HEADER

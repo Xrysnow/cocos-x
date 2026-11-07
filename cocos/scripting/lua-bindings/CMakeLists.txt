@@ -217,15 +217,11 @@ if(APPLE)
             ${lua_bindings_manual_headers}
             manual/ui/cclua_webview_manual.hpp
             auto/cclua_webview_auto.hpp
-            auto/cclua_video_platform_auto.hpp
-            manual/ui/cclua_video_platform_manual.hpp
             )
         set(lua_bindings_manual_files
             ${lua_bindings_manual_files}
             manual/ui/cclua_webview_manual.cpp
             auto/cclua_webview_auto.cpp
-            manual/ui/cclua_video_platform_manual.cpp
-            auto/cclua_video_platform_auto.cpp
             )
     endif()
 elseif(ANDROID)
@@ -233,29 +229,13 @@ elseif(ANDROID)
         ${lua_bindings_manual_headers}
         manual/ui/cclua_webview_manual.hpp
         auto/cclua_webview_auto.hpp
-        auto/cclua_video_platform_auto.hpp
-        manual/ui/cclua_video_platform_manual.hpp
         )
     set(lua_bindings_manual_files
         ${lua_bindings_manual_files}
         manual/ui/cclua_webview_manual.cpp
         auto/cclua_webview_auto.cpp
-        manual/ui/cclua_video_platform_manual.cpp
-        auto/cclua_video_platform_auto.cpp
         )
 elseif(WINDOWS)
-    if(CC_ENABLE_MFMEDIA)
-        set(lua_bindings_manual_headers
-            ${lua_bindings_manual_headers}
-            auto/cclua_video_platform_auto.hpp
-            manual/ui/cclua_video_platform_manual.hpp
-            )
-        set(lua_bindings_manual_files
-            ${lua_bindings_manual_files}
-            manual/ui/cclua_video_platform_manual.cpp
-            auto/cclua_video_platform_auto.cpp
-            )
-    endif()
     if(CC_ENABLE_MSEDGE_WEBVIEW2)
         set(lua_bindings_manual_headers
             ${lua_bindings_manual_headers}
@@ -268,6 +248,15 @@ elseif(WINDOWS)
             auto/cclua_webview_auto.cpp
             )
     endif()
+endif()
+
+if(CC_ENABLE_VIDEO_PLATFORM)
+    list(APPEND lua_bindings_manual_headers
+        auto/cclua_video_platform_auto.hpp
+        manual/ui/cclua_video_platform_manual.hpp)
+    list(APPEND lua_bindings_manual_files
+        auto/cclua_video_platform_auto.cpp
+        manual/ui/cclua_video_platform_manual.cpp)
 endif()
 
 if(CC_ENABLE_VIDEO_TEXTURE)
@@ -325,7 +314,7 @@ if(WINDOWS)
     target_compile_definitions(${COCOS_LUA_LIB} PUBLIC _USRLUASTATIC)
 endif()
 
-if(CC_ENABLE_MFMEDIA)
+if(WINDOWS AND CC_ENABLE_VIDEO_PLATFORM)
     target_compile_definitions(${COCOS_LUA_LIB}
         PUBLIC CC_ENABLE_MFMEDIA=1
     )

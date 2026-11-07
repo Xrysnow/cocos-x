@@ -25,9 +25,11 @@
  ****************************************************************************/
 #pragma once
 
-#if defined(_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS || \
-                        CC_TARGET_PLATFORM == CC_PLATFORM_TIZEN) &&                                           \
-                           !defined(CC_PLATFORM_OS_TVOS)
+#include "platform/CCPlatformConfig.h"
+
+#if CC_ENABLE_VIDEO_PLATFORM && \
+    (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || \
+     (CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)))
 
     #include "ui/UIWidget.h"
 

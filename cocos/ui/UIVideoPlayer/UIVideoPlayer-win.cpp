@@ -26,7 +26,7 @@
 
 #include "ui/UIVideoPlayer/UIVideoPlayer.h"
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if CC_ENABLE_VIDEO_PLATFORM && (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     #include <unordered_map>
     #include <stdlib.h>
     #include <string>

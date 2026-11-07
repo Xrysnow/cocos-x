@@ -38,6 +38,7 @@ import android.os.PowerManager;
 import android.preference.PreferenceManager.OnActivityResultListener;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -180,6 +181,8 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
             mEditBoxHelper = new EditBoxHelper(mFrameLayout);
         }
 
+        VideoHelper.bind(this, mFrameLayout);
+
         Window window = this.getWindow();
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
@@ -212,6 +215,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         CocosEngine.onResume();
         if (mGLSurfaceView != null) mGLSurfaceView.handleOnResume();
         if (mWebViewHelper != null) WebViewHelper.setResumed(this, true);
+        VideoHelper.setResumed(this, true);
         CocosEngine.refreshWindowInfo(this);
     }
 
@@ -221,6 +225,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
 
         if (mEditBoxHelper != null) EditBoxHelper.pause(this);
         if (mWebViewHelper != null) WebViewHelper.setResumed(this, false);
+        VideoHelper.setResumed(this, false);
         if (mGLSurfaceView != null) mGLSurfaceView.handleOnPause();
         if (sContext == this) CocosEngine.onPause();
 
@@ -248,10 +253,25 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         if (mHandler != null) mHandler.removeCallbacksAndMessages(null);
         if (mWebViewHelper != null) WebViewHelper.unbind(this, !isFinishing());
         if (mEditBoxHelper != null) EditBoxHelper.unbind(this, !isFinishing());
+        VideoHelper.unbind(this, !isFinishing());
         if (mGLSurfaceView != null) mGLSurfaceView.closeRenderHost(isFinishing());
         CocosEngine.unbindActivity(this);
         if (sContext == this) sContext = null;
         super.onDestroy();
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK && VideoHelper.hasFullScreen(this)) {
+            if (event.getAction() == KeyEvent.ACTION_UP) VideoHelper.handleBack(this);
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!VideoHelper.handleBack(this)) super.onBackPressed();
     }
 
     @Override

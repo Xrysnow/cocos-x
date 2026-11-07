@@ -25,16 +25,14 @@
 #include "scripting/lua-bindings/manual/ui/cclua_ui_manual.hpp"
 #include "scripting/lua-bindings/auto/cclua_ui_auto.hpp"
 #include "scripting/lua-bindings/auto/cclua_ui_events_auto.hpp"
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
+#if CC_ENABLE_VIDEO_PLATFORM
     #include "scripting/lua-bindings/auto/cclua_video_platform_auto.hpp"
     #include "scripting/lua-bindings/manual/ui/cclua_video_platform_manual.hpp"
+#endif
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
     #include "scripting/lua-bindings/auto/cclua_webview_auto.hpp"
     #include "scripting/lua-bindings/manual/ui/cclua_webview_manual.hpp"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-    #if defined(CC_ENABLE_MFMEDIA)
-        #include "scripting/lua-bindings/auto/cclua_video_platform_auto.hpp"
-        #include "scripting/lua-bindings/manual/ui/cclua_video_platform_manual.hpp"
-    #endif
     #if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
         #include "scripting/lua-bindings/auto/cclua_webview_auto.hpp"
         #include "scripting/lua-bindings/manual/ui/cclua_webview_manual.hpp"
@@ -1019,16 +1017,14 @@ int register_ui_module(lua_State* L)
     {
         register_all_cc_ui(L);
         register_all_cc_ui_manual(L);
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
+#if CC_ENABLE_VIDEO_PLATFORM
         register_all_cc_video_platform(L);
         register_all_cc_video_platform_manual(L);
+#endif
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
         register_all_cc_webview(L);
         register_all_cc_webview_manual(L);
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-    #if defined(CC_ENABLE_MFMEDIA)
-        register_all_cc_video_platform(L);
-        register_all_cc_video_platform_manual(L);
-    #endif
     #if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
         register_all_cc_webview(L);
         register_all_cc_webview_manual(L);
