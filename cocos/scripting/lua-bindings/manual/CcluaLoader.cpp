@@ -31,7 +31,7 @@ THE SOFTWARE.
 #include "scripting/lua-bindings/manual/CCLuaStack.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "platform/CCFileUtils.h"
-#include "yasio/stl/string_view.hpp"
+#include "yasio/tlx/string_view.hpp"
 
 USING_NS_CC;
 

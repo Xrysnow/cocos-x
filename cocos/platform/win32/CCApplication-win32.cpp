@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include <timeapi.h>
 #include <openssl/provider.h>
 
-#include "yasio/stl/string_view.hpp"
+#include "yasio/tlx/string_view.hpp"
 #include "ntcvt/ntcvt.hpp"
 /**
 @brief    This function change the PVRFrame show/hide setting in register.
@@ -385,10 +385,10 @@ static void PVRFrameEnableControlWindow(bool bEnable)
         return;
     }
 
-    using namespace cxx17;
+    using namespace std::literals;
 
     const WCHAR* wszValue = L"hide_gui";
-    const auto svNewData  = (bEnable) ? L"NO"_sv : L"YES"_sv;
+    const auto svNewData  = (bEnable) ? L"NO"sv : L"YES"sv;
     WCHAR wszOldData[256] = {0};
     DWORD dwSize          = static_cast<DWORD>(sizeof(wszOldData));
     LSTATUS status        = RegQueryValueExW(hKey, wszValue, 0, nullptr, (LPBYTE)wszOldData, &dwSize);

@@ -37,7 +37,7 @@
 #include <string>
 #include <sstream>
 
-#include "yasio/detail/byte_buffer.hpp"
+#include "yasio/tlx/byte_buffer.hpp"
 
 USING_NS_CC;
 using namespace cocos2d::network;
@@ -113,7 +113,7 @@ private:
     std::string _url;
     std::string _meth;
     std::string _type;
-    yasio::sbyte_buffer _data;
+    tlx::basic_byte_buffer<char> _data;
     int _readyState;
     int _status;
     std::string _statusText;

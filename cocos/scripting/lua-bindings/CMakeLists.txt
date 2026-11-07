@@ -290,7 +290,7 @@ set(lua_bindings_headers
 set(lua_bindings_files
     ${lua_bindings_files}
     "${cocos_root}/external/yasio/bindings/lyasio.cpp"
-    "${cocos_root}/external/yasio/bindings/yasio_cclua.cpp")
+    "manual/yasio_cclua.cpp")
 
 list(APPEND lua_bindings_files ${lua_bindings_headers})
 

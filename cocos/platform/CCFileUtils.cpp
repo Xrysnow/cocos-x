@@ -46,7 +46,7 @@ THE SOFTWARE.
 
 #if defined(_WIN32)
     #include "ntcvt/ntcvt.hpp"
-    #include "yasio/stl/string_view.hpp"
+    #include "yasio/tlx/string_view.hpp"
 #endif
 
 #include "pugixml/pugixml.hpp"
@@ -934,8 +934,8 @@ bool FileUtils::isAbsolutePathInternal(std::string_view path)
     // see also: https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN
     return ((path.length() > 2 && ((raw[0] >= 'a' && raw[0] <= 'z') || (raw[0] >= 'A' && raw[0] <= 'Z')) &&
              raw[1] == ':')                         // Normal absolute path
-            || cxx20::starts_with(path, R"(\\?\)")  // Win32 File Namespaces for Long Path
-            || cxx20::starts_with(path, R"(\\.\)")  // Win32 Device Namespaces for device
+            || tlx::starts_with(path, R"(\\?\)")  // Win32 File Namespaces for Long Path
+            || tlx::starts_with(path, R"(\\.\)")  // Win32 Device Namespaces for device
             || (raw[0] == '/' || raw[0] == '\\')    // Current disk drive
     );
 #else

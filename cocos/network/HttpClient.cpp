@@ -3,9 +3,9 @@
  Copyright (c) 2012      cocos2d-x.org
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2021-2022 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -27,17 +27,18 @@
  ****************************************************************************/
 
 #include "network/HttpClient.h"
-#include "network/SSLVerification.h"
 #include <errno.h>
 #include "base/ccUtils.h"
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
 #include "yasio/yasio.hpp"
-#include "yasio/obstream.hpp"
+#include "yasio/tlx/string_view.hpp"
+#include "network/SSLVerification.h"
 
 using namespace yasio;
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 namespace network
 {
@@ -133,17 +134,15 @@ HttpClient::HttpClient()
     _scheduler = Director::getInstance()->getScheduler();
 
     _service = new yasio::io_service(HttpClient::MAX_CHANNELS);
-    _service->set_option(yasio::YOPT_S_FORWARD_EVENT, 1);
+    _service->set_option(yasio::YOPT_S_FORWARD_PACKET, 1); // forward packet immediately when got data from OS kernel
     _service->set_option(yasio::YOPT_S_DNS_QUERIES_TIMEOUT, 3);
     _service->set_option(yasio::YOPT_S_DNS_QUERIES_TRIES, 1);
-    _service->start([=](yasio::event_ptr&& e) { handleNetworkEvent(e.get()); });
+    _service->start([this](yasio::event_ptr&& e) { handleNetworkEvent(e.get()); });
 
     for (int i = 0; i < HttpClient::MAX_CHANNELS; ++i)
-    {
         _availChannelQueue.unsafe_emplace_back(i);
-    }
 
-    _scheduler->schedule([=](float) { dispatchResponseCallbacks(); }, this, 0, false, "#");
+    setDispatchOnWorkThread(false);
 
     _isInited = true;
 }
@@ -169,7 +168,24 @@ void HttpClient::setDispatchOnWorkThread(bool bVal)
     _scheduler->unscheduleAllForTarget(this);
     _dispatchOnWorkThread = bVal;
     if (!bVal)
-        _scheduler->schedule([=](float) { dispatchResponseCallbacks(); }, this, 0, false, "#");
+        _scheduler->schedule([this](float) { tickInput(); }, this, 0, false, "#");
+}
+
+
+// Poll and notify main thread if responses exists in queue
+void HttpClient::tickInput()
+{
+    if (_finishedResponseQueue.unsafe_empty())
+        return;
+
+    auto lck = _finishedResponseQueue.get_lock();
+    if (!_finishedResponseQueue.unsafe_empty())
+    {
+        HttpResponse* response = _finishedResponseQueue.front();
+        _finishedResponseQueue.unsafe_pop_front();
+        lck.unlock();
+        invokeResposneCallbackAndRelease(response);
+    }
 }
 
 void HttpClient::handleNetworkStatusChanged()
@@ -193,17 +209,18 @@ bool HttpClient::send(HttpRequest* request)
         return false;
 
     auto response = new HttpResponse(request);
-    processResponse(response, request->getUrl());
+    response->setLocation(request->getUrl(), false);
+    processResponse(response, -1);
     response->release();
     return true;
 }
 
 HttpResponse* HttpClient::sendSync(HttpRequest* request)
 {
+    if (!request)
+        return nullptr;
     request->setSync(true);
-    if (this->send(request))
-        return request->wait();
-    return nullptr;
+    return send(request) ? request->wait() : nullptr;
 }
 
 int HttpClient::tryTakeAvailChannel()
@@ -218,18 +235,19 @@ int HttpClient::tryTakeAvailChannel()
     return -1;
 }
 
-void HttpClient::processResponse(HttpResponse* response, std::string_view url)
+void HttpClient::processResponse(HttpResponse* response, int channelIndex)
 {
-    auto channelIndex = tryTakeAvailChannel();
     response->retain();
 
-    if (channelIndex != -1)
+    if (response->validateUri())
     {
-        if (response->prepareForProcess(url))
+        if (channelIndex == -1)
+            channelIndex = tryTakeAvailChannel();
+
+        if (channelIndex != -1)
         {
-            response->_responseHeaders.clear();  // redirect needs clear old response headers
-            auto& requestUri       = response->getRequestUri();
-            auto channelHandle     = _service->channel_at(channelIndex);
+            auto channelHandle = _service->channel_at(channelIndex);
+            auto& requestUri = response->getRequestUri();
             channelHandle->ud_.ptr = response;
             _service->set_option(YOPT_C_REMOTE_ENDPOINT, channelIndex, requestUri.getHost().data(),
                                  (int)requestUri.getPort());
@@ -242,14 +260,10 @@ void HttpClient::processResponse(HttpResponse* response, std::string_view url)
                 _service->open(channelIndex, YCK_TCP_CLIENT);
         }
         else
-        {
-            finishResponse(response);
-        }
+            _pendingResponseQueue.emplace_back(response);
     }
     else
-    {
-        _pendingResponseQueue.emplace_back(response);
-    }
+        finishResponse(response);
 }
 
 void HttpClient::handleNetworkEvent(yasio::io_event* event)
@@ -267,7 +281,13 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
         if (!responseFinished)
         {
             auto&& pkt = event->packet_view();
-            response->handleInput(pkt.data(), pkt.size());
+            auto err = response->input(reinterpret_cast<const char*>(pkt.data()), pkt.size());
+            if (err != HPE_OK)
+            {
+                response->updateInternalCode(err);
+                _service->close(event->cindex());
+                break;
+            }
         }
         if (response->isFinished())
         {
@@ -285,6 +305,10 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
             {
             case HttpRequest::Type::GET:
                 obs.write_bytes("GET");
+                break;
+            case HttpRequest::Type::PATCH:
+                obs.write_bytes("PATCH");
+                usePostData = true;
                 break;
             case HttpRequest::Type::POST:
                 obs.write_bytes("POST");
@@ -326,17 +350,17 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
             auto& headers   = request->getHeaders();
             if (!headers.empty())
             {
-                using namespace cxx17;  // for string_view literal
+                using namespace std::literals::string_view_literals;  // for string_view literal
                 for (auto&& header : headers)
                 {
                     obs.write_bytes(header);
                     obs.write_bytes("\r\n");
 
-                    if (cxx20::ic::starts_with(cxx17::string_view{header}, "User-Agent:"_sv))
+                    if (tlx::ic::starts_with(std::string_view{header}, "User-Agent:"sv))
                         headerFlags |= HeaderFlag::UESR_AGENT;
-                    else if (cxx20::ic::starts_with(cxx17::string_view{header}, "Content-Type:"_sv))
+                    else if (tlx::ic::starts_with(std::string_view{header}, "Content-Type:"sv))
                         headerFlags |= HeaderFlag::CONTENT_TYPE;
-                    else if (cxx20::ic::starts_with(cxx17::string_view{header}, "Accept:"_sv))
+                    else if (tlx::ic::starts_with(std::string_view{header}, "Accept:"sv))
                         headerFlags |= HeaderFlag::ACCEPT;
                 }
             }
@@ -348,6 +372,7 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
                 {
                     obs.write_bytes("Cookie: ");
                     obs.write_bytes(cookies);
+                    obs.write_bytes("\r\n");
                 }
             }
 
@@ -362,14 +387,14 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
                 if (!(headerFlags & HeaderFlag::CONTENT_TYPE))
                     obs.write_bytes("Content-Type: application/x-www-form-urlencoded;charset=UTF-8\r\n");
 
-                char strContentLength[128] = {0};
                 auto requestData           = request->getRequestData();
                 auto requestDataSize       = request->getRequestDataSize();
-                snprintf(strContentLength, sizeof(strContentLength), "Content-Length: %d\r\n\r\n", static_cast<int>(requestDataSize));
-                obs.write_bytes(strContentLength);
+                char buf[128];
+                snprintf(buf, sizeof(buf), "Content-Length: %d\r\n\r\n", static_cast<int>(requestDataSize));
+                obs.write_bytes(buf);
 
                 if (requestData && requestDataSize > 0)
-                    obs.write_bytes(cxx17::string_view{requestData, static_cast<size_t>(requestDataSize)});
+                    obs.write_bytes(std::string_view{requestData, static_cast<size_t>(requestDataSize)});
             }
             else
             {
@@ -379,9 +404,9 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
             _service->write(event->transport(), std::move(obs.buffer()));
 
             auto& timerForRead = channel->get_user_timer();
-            timerForRead.cancel(*_service);
+            timerForRead.cancel();
             timerForRead.expires_from_now(std::chrono::seconds(this->_timeoutForRead));
-            timerForRead.async_wait(*_service, [=](io_service& s) {
+            timerForRead.async_wait([=](io_service& s) {
                 response->updateInternalCode(yasio::errc::read_timeout);
                 s.close(channelIndex);  // timeout
                 return true;
@@ -393,6 +418,7 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
         }
         break;
     case YEK_ON_CLOSE:
+        response->handleConnectionClose();
         handleNetworkEOF(response, channel, event->status());
         break;
     }
@@ -400,7 +426,9 @@ void HttpClient::handleNetworkEvent(yasio::io_event* event)
 
 void HttpClient::handleNetworkEOF(HttpResponse* response, yasio::io_channel* channel, int internalErrorCode)
 {
-    channel->get_user_timer().cancel(*_service);
+    channel->ud_.ptr = nullptr;
+
+    channel->get_user_timer().cancel();
     response->updateInternalCode(internalErrorCode);
     auto responseCode = response->getResponseCode();
     switch (responseCode)
@@ -408,53 +436,30 @@ void HttpClient::handleNetworkEOF(HttpResponse* response, yasio::io_channel* cha
     case 301:
     case 302:
     case 307:
-        if (response->increaseRedirectCount() < HttpClient::MAX_REDIRECT_COUNT)
+        if (response->tryRedirect())
         {
-            auto iter = response->_responseHeaders.find("location");
-            if (iter != response->_responseHeaders.end())
-            {
-                if (responseCode == 302)
-                    response->getHttpRequest()->setRequestType(HttpRequest::Type::GET);
-                CCLOG("Process url redirect (%d): %s", responseCode, iter->second.c_str());
-                _availChannelQueue.push_front(channel->index());
-                processResponse(response, iter->second);
-                response->release();
-                return;
-            }
+            processResponse(response, channel->index());
+            response->release();
+            break;
         }
-    }
+    default:
+        finishResponse(response);
 
-    finishResponse(response);
+        // try process pending response
+        auto lck = _pendingResponseQueue.get_lock();
+        if (!_pendingResponseQueue.unsafe_empty())
+        {
+            auto pendingResponse = _pendingResponseQueue.unsafe_front();
+            _pendingResponseQueue.unsafe_pop_front();
+            lck.unlock();
 
-    // recycle channel
-    channel->ud_.ptr = nullptr;
-    _availChannelQueue.push_front(channel->index());
-
-    // try process pending response
-    auto lck = _pendingResponseQueue.get_lock();
-    if (!_pendingResponseQueue.unsafe_empty())
-    {
-        auto pendingResponse = _pendingResponseQueue.unsafe_front();
-        _pendingResponseQueue.unsafe_pop_front();
-        lck.unlock();
-
-        processResponse(pendingResponse, pendingResponse->getHttpRequest()->getUrl());
-        pendingResponse->release();
-    }
-}
-
-// Poll and notify main thread if responses exists in queue
-void HttpClient::dispatchResponseCallbacks()
-{
-    if (_finishedResponseQueue.unsafe_empty())
-        return;
-
-    auto CC_UNUSED lck = _finishedResponseQueue.get_lock();
-    if (!_finishedResponseQueue.unsafe_empty())
-    {
-        HttpResponse* response = _finishedResponseQueue.front();
-        _finishedResponseQueue.pop_front();
-        invokeResposneCallbackAndRelease(response);
+            processResponse(pendingResponse, channel->index());
+            pendingResponse->release();
+        }
+        else
+        {  // recycle channel
+            _availChannelQueue.push_front(channel->index());
+        }
     }
 }
 
@@ -485,8 +490,8 @@ void HttpClient::finishResponse(HttpResponse* response)
 
 void HttpClient::invokeResposneCallbackAndRelease(HttpResponse* response)
 {
-    HttpRequest* request                  = response->getHttpRequest();
-    const ccHttpRequestCallback& callback = request->getCallback();
+    auto request   = response->getHttpRequest();
+    auto& callback = request->getCompleteCallback();
 
     if (callback != nullptr)
         callback(this, response);
@@ -551,4 +556,4 @@ std::string_view HttpClient::getSSLVerification()
 
 }  // namespace network
 
-NS_CC_END
+}

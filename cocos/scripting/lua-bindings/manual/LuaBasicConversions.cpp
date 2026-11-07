@@ -332,7 +332,7 @@ bool luaval_to_std_string(lua_State* L, int lo, std::string* outValue, const cha
     return ok;
 }
 
-bool luaval_to_std_string_view(lua_State* L, int lo, cxx17::string_view* outValue, const char* funcName)
+bool luaval_to_std_string_view(lua_State* L, int lo, std::string_view* outValue, const char* funcName)
 {
     if (NULL == L || NULL == outValue)
         return false;
@@ -352,7 +352,7 @@ bool luaval_to_std_string_view(lua_State* L, int lo, cxx17::string_view* outValu
     {
         size_t size;
         auto rawString = lua_tolstring(L, lo, &size);
-        *outValue      = cxx17::string_view(rawString, size);
+        *outValue      = std::string_view(rawString, size);
     }
 
     return ok;

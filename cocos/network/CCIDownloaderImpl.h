@@ -2,8 +2,9 @@
  Copyright (c) 2015-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
  Copyright (c) 2021 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +28,10 @@
 #pragma once
 
 #include <string>
+#include <string_view>
+#include <functional>
+#include <cstdint>
+#include <vector>
 #include <unordered_map>
 #include <memory>
 
@@ -34,9 +39,9 @@
 
 // #define CC_DOWNLOADER_DEBUG
 #if defined(CC_DOWNLOADER_DEBUG) || defined(_DEBUG)
-    #define DLLOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
+#    define DLLOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
 #else
-    #define DLLOG(...) \
+#    define DLLOG(...) \
         do             \
         {              \
         } while (0)
@@ -48,21 +53,22 @@ namespace network
 {
 class DownloadTask;
 
-class CC_DLL IDownloadTask
+class CC_DLL IDownloadContext
 {
 public:
-    virtual ~IDownloadTask() {}
+    virtual ~IDownloadContext() {}
     virtual void cancel() {}
 };
+
+// Compatibility name for existing downloader implementations.
+using IDownloadTask = IDownloadContext;
 
 class IDownloaderImpl
 {
 public:
     virtual ~IDownloaderImpl() {}
 
-    std::function<void(const DownloadTask& task,
-                       std::function<int64_t(void* buffer, int64_t len)>& transferDataToBuffer)>
-        onTaskProgress;
+    std::function<void(const DownloadTask& task)> onTaskProgress;
 
     std::function<void(const DownloadTask& task,
                        int errorCode,

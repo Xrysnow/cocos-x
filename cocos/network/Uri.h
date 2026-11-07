@@ -23,6 +23,7 @@
 #include "platform/CCPlatformMacros.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <stdint.h>
 
@@ -83,6 +84,8 @@ public:
 
     /** Checks whether it's a SSL connection */
     bool isSecure() const { return _isSecure; }
+
+    void invalid() { _isValid = false; }
 
     /** Gets the scheme name for this URI. */
     std::string_view getScheme() const { return _scheme; }

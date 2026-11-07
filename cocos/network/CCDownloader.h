@@ -2,8 +2,9 @@
  Copyright (c) 2015-2016 cocos2d-x.org
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
  Copyright (c) 2021 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +29,8 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -38,7 +41,8 @@ NS_CC_BEGIN
 namespace network
 {
 
-class IDownloadTask;
+class IDownloadContext;
+using IDownloadTask = IDownloadContext;
 class IDownloaderImpl;
 class Downloader;
 class DownloaderCURL;
@@ -60,7 +64,7 @@ public:
     std::string identifier;
     std::string requestURL;
     std::string storagePath;
-    
+
     // PEM CA bundle; empty uses curl's default trust sources. HTTPS always
     // verifies the certificate chain and hostname.
     std::string cacertPath;
@@ -90,12 +94,12 @@ public:
     void cancel();
 
     std::string checksum;  // The MD5 checksum for check only when download finished.
-    bool background;       // Does the task is background (all callback will invoke on downloader thread)
+    bool background = false;  // Does the task is background (all callback will invoke on downloader thread)
 
 private:
     friend class Downloader;
     friend class DownloaderCURL;
-    std::unique_ptr<IDownloadTask> _coTask;
+    std::shared_ptr<IDownloadContext> _context{nullptr};
 };
 
 class CC_DLL DownloaderHints

@@ -46,7 +46,7 @@
 #include "renderer/backend/VertexLayout.h"
 #include "ui/GUIDefine.h"
 
-#include "yasio/stl/string_view.hpp"
+#include "yasio/tlx/string_view.hpp"
 #include <thread>
 
 USING_NS_CC;
@@ -222,7 +222,7 @@ extern bool luaval_to_long_long(lua_State* L, int lo, long long* outValue, const
 extern CC_LUA_DLL bool luaval_to_std_string(lua_State* L, int lo, std::string* outValue, const char* funcName = "");
 extern CC_LUA_DLL bool luaval_to_std_string_view(lua_State* L,
                                                  int lo,
-                                                 cxx17::string_view* outValue,
+                                                 std::string_view* outValue,
                                                  const char* funcName = "");
 
 /**

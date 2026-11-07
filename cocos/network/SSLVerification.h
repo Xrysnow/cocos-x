@@ -2,7 +2,7 @@
 
 #include "platform/CCPlatformMacros.h"
 #include "yasio/yasio.hpp"
-#include "yasio/detail/logging.hpp"
+#include "yasio/logging.hpp"
 #include <string>
 
 #if YASIO_SSL_BACKEND == 1

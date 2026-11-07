@@ -35,10 +35,10 @@
     #include "platform/CCFileUtils.h"
     #include "ui/UIHelper.h"
     #include "ui/UIVideoPlayer/MFMediaPlayer.h"
-    #include "yasio/detail/byte_buffer.hpp"
+    #include "yasio/tlx/byte_buffer.hpp"
     #include "ntcvt/ntcvt.hpp"
     #include "ui/LayoutHelper.h"
-    #include "yasio/detail/sz.hpp"
+    #include "yasio/sz.hpp"
 //-----------------------------------------------------------------------------------------------------------
 
 USING_NS_CC;
@@ -206,7 +206,7 @@ struct PrivateVideoDescriptor
     Sprite* _vrender        = nullptr;
 
     VideoSampleFormat _sampleFormat = VideoSampleFormat::UNKNOWN;
-    yasio::byte_buffer _sampleBuffer;
+    tlx::byte_buffer _sampleBuffer;
     std::recursive_mutex _sampleBufferMtx;
     bool _sampleDirty = false;
 

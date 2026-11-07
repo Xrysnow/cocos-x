@@ -3,9 +3,9 @@
  Copyright (c) 2012      cocos2d-x.org
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2021-2023 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __CCHTTPCLIENT_H__
-#define __CCHTTPCLIENT_H__
+#pragma once
 
 #include <thread>
 #include <condition_variable>
 #include <deque>
+
 #include "base/CCScheduler.h"
 #include "network/HttpRequest.h"
 #include "network/HttpResponse.h"
@@ -45,7 +45,8 @@
  * @{
  */
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 namespace network
 {
@@ -63,7 +64,7 @@ public:
      * How many requests could be perform concurrency.
      */
     static const int MAX_CHANNELS       = 21;
-    static const int MAX_REDIRECT_COUNT = 3;
+    static const int MAX_REDIRECT_COUNT = HttpRequest::MAX_REDIRECT_COUNT;
 
     /**
      * Get instance of HttpClient.
@@ -124,11 +125,9 @@ public:
      *      https://stackoverflow.com/questions/23714383/what-are-all-the-possible-values-for-http-content-type-header
      */
     bool send(HttpRequest* request);
+    void sendImmediate(HttpRequest* request) { this->send(request); }
 
-    /**
-     * Send http request sync, will block caller thread until request finished.
-     * @remark  Caller must call release manually when the response never been used.
-     */
+    /** Send synchronously. The caller must release the returned response. */
     HttpResponse* sendSync(HttpRequest* request);
 
     /**
@@ -210,7 +209,7 @@ private:
     HttpClient();
     virtual ~HttpClient();
 
-    void processResponse(HttpResponse* response, std::string_view url);
+    void processResponse(HttpResponse* response, int channelIndex);
 
     int tryTakeAvailChannel();
 
@@ -218,7 +217,7 @@ private:
 
     void handleNetworkEOF(HttpResponse* response, yasio::io_channel* channel, int internalErrorCode);
 
-    void dispatchResponseCallbacks();
+    void tickInput();
 
     void finishResponse(HttpResponse* response);
 
@@ -257,9 +256,7 @@ private:
 
 }  // namespace network
 
-NS_CC_END
+}
 
 // end group
 /// @}
-
-#endif  //__CCHTTPCLIENT_H__

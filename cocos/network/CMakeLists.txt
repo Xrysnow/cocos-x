@@ -6,10 +6,14 @@ set(COCOS_NETWORK_HEADER
     network/HttpClient.h
     network/HttpResponse.h
     network/HttpRequest.h
+    network/WebSocket.h
+    network/ConcurrentRefCountedBase.h
+    network/SSLVerification.h
     network/HttpCookie.h
     )
 
 set(COCOS_NETWORK_SRC
+    network/WebSocket.cpp
     network/HttpClient.cpp
     network/CCDownloader.cpp
     network/CCDownloader-curl.cpp

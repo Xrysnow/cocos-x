@@ -40,7 +40,7 @@
 
 #include "3d/CC3DProgramInfo.h"
 
-#include "yasio/detail/byte_buffer.hpp"
+#include "yasio/tlx/byte_buffer.hpp"
 
 NS_CC_BEGIN
 
@@ -65,8 +65,10 @@ public:
     IndexArray(backend::IndexFormat indexFormat) : _stride(formatToStride(indexFormat)) {}
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
-    IndexArray(std::initializer_list<_Ty> rhs) : _stride(sizeof(_Ty)), _buffer(rhs)
-    {}
+    IndexArray(std::initializer_list<_Ty> rhs) : _stride(sizeof(_Ty))
+    {
+        _buffer.assign(reinterpret_cast<const uint8_t*>(rhs.begin()), reinterpret_cast<const uint8_t*>(rhs.end()));
+    }
 
     IndexArray(const IndexArray& rhs) : _stride(rhs._stride), _buffer(rhs._buffer) {}
     IndexArray(IndexArray&& rhs) noexcept : _stride(rhs._stride), _buffer(std::move(rhs._buffer)) {}
@@ -107,62 +109,72 @@ public:
     void emplace_back(const _Ty& val)
     {
         assert(_stride == sizeof(_Ty));
-        _buffer.insert(_buffer.end(), &val, &val + 1);
+        auto first = reinterpret_cast<const uint8_t*>(&val);
+        _buffer.insert(_buffer.end(), first, first + sizeof(val));
     }
 
     /** Inserts a list containing unsigned int (uint16_t/uint32_t) data. */
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     void insert(_Ty* position, std::initializer_list<_Ty> ilist)
     {
-        _buffer.insert((yasio::byte_buffer::iterator)position, ilist.begin(), ilist.end());
+        assert(_stride == sizeof(_Ty));
+        const auto offset = empty() ? 0 : reinterpret_cast<uint8_t*>(position) - _buffer.data();
+        _buffer.insert(_buffer.begin() + offset, reinterpret_cast<const uint8_t*>(ilist.begin()),
+                       reinterpret_cast<const uint8_t*>(ilist.end()));
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     void insert(_Ty* position, _Ty* first, _Ty* last)
     {
         assert(_stride == sizeof(_Ty));
-        _buffer.insert((yasio::byte_buffer::iterator)position, first, last);
+        const auto offset = empty() ? 0 : reinterpret_cast<uint8_t*>(position) - _buffer.data();
+        _buffer.insert(_buffer.begin() + offset, reinterpret_cast<const uint8_t*>(first),
+                       reinterpret_cast<const uint8_t*>(last));
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     void insert(size_t offset, std::initializer_list<_Ty> ilist)
     {
         assert(_stride == sizeof(_Ty));
-        _buffer.insert((yasio::byte_buffer::iterator)(begin<_Ty>() + offset), ilist.begin(), ilist.end());
+        _buffer.insert(_buffer.begin() + offset * _stride, reinterpret_cast<const uint8_t*>(ilist.begin()),
+                       reinterpret_cast<const uint8_t*>(ilist.end()));
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     const _Ty* begin() const
     {
-        return (const _Ty*)_buffer.begin();
+        return reinterpret_cast<const _Ty*>(_buffer.data());
     }
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     _Ty* begin()
     {
-        return (_Ty*)_buffer.begin();
+        return reinterpret_cast<_Ty*>(_buffer.data());
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     const _Ty* end() const
     {
-        return (const _Ty*)_buffer.end();
+        return empty() ? begin<_Ty>() : begin<_Ty>() + size();
     }
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     _Ty* end()
     {
-        return (_Ty*)_buffer.end();
+        return empty() ? begin<_Ty>() : begin<_Ty>() + size();
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     _Ty* erase(_Ty* position)
     {
-        return (_Ty*)_buffer.erase((uint8_t*)position);
+        return erase(position, position + 1);
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
     _Ty* erase(_Ty* first, _Ty* last)
     {
-        return (_Ty*)_buffer.erase((uint8_t*)first, (uint8_t*)last);
+        const auto offset = empty() ? 0 : reinterpret_cast<uint8_t*>(first) - _buffer.data();
+        const auto bytes = first == last ? 0 : (last - first) * sizeof(_Ty);
+        _buffer.erase(_buffer.begin() + offset, _buffer.begin() + offset + bytes);
+        return empty() ? begin<_Ty>() : reinterpret_cast<_Ty*>(_buffer.data() + offset);
     }
 
     template <typename _Ty = uint16_t, std::enable_if_t<is_index_format_type_v<_Ty>, int> = 0>
@@ -212,17 +224,17 @@ public:
     void for_each(_Fty cb) const
     {
         assert(_stride == 2 || _stride == 4);
-        for (auto it = _buffer.begin(); it != _buffer.end(); it += _stride)
+        for (size_t offset = 0; offset < _buffer.size(); offset += _stride)
         {
             uint32_t val = 0;
-            memcpy(&val, it, _stride);
+            memcpy(&val, _buffer.data() + offset, _stride);
             cb(val);
         }
     }
 
 protected:
     unsigned char _stride;
-    yasio::byte_buffer _buffer;
+    tlx::byte_buffer _buffer;
 };
 
 /**mesh vertex attribute

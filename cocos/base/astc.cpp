@@ -20,7 +20,7 @@
 #include <deque>
 #include "astc/astcenc.h"
 #include "astc/astcenc_internal_entry.h"
-#include "yasio/detail/utils.hpp"
+#include "yasio/tlx/chrono.hpp"
 
 #define ASTCDEC_NO_CONTEXT 1
 #define ASTCDEC_PRINT_BENCHMARK 0
@@ -272,13 +272,13 @@ int astc_decompress_image(const uint8_t* in,
     struct benchmark_printer
     {
         benchmark_printer(const char* fmt, int w, int h, float den)
-            : _fmt(fmt), _w(w), _h(h), _den(den), _start(yasio::highp_clock())
+            : _fmt(fmt), _w(w), _h(h), _den(den), _start(tlx::highp_clock())
         {}
-        ~benchmark_printer() { cocos2d::log(_fmt, _w, _h, (yasio::highp_clock() - _start) / _den); }
+        ~benchmark_printer() { cocos2d::log(_fmt, _w, _h, (tlx::highp_clock() - _start) / _den); }
         const char* _fmt;
         int _w, _h;
         float _den;
-        yasio::highp_time_t _start;
+        tlx::highp_time_t _start;
     };
     benchmark_printer __printer("decompress astc image (%dx%d) cost: %.3lf(ms)", dim_x, dim_y, (float)std::milli::den);
 #endif

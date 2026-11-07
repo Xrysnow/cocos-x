@@ -44,7 +44,7 @@ THE SOFTWARE.
 
 #include "yasio/ibstream.hpp"
 #include "yasio/obstream.hpp"
-#include "yasio/detail/sz.hpp"
+#include "yasio/sz.hpp"
 
 #include "base/CCUserDefault.h"
 #include "platform/CCCommon.h"
@@ -72,7 +72,7 @@ NS_CC_BEGIN
 
 UserDefault* UserDefault::_userDefault = nullptr;
 
-static void ud_setkey(std::string& lhs, const cxx17::string_view& rhs)
+static void ud_setkey(std::string& lhs, const std::string_view& rhs)
 {
     static const size_t keyLen = 16;
     if (!rhs.empty())
@@ -85,16 +85,16 @@ static void ud_setkey(std::string& lhs, const cxx17::string_view& rhs)
         lhs.assign(keyLen, '\0');
 }
 
-static void ud_write_v_s(UserDefault* ud, yasio::obstream& obs, const cxx17::string_view value)
+static void ud_write_v_s(UserDefault* ud, yasio::obstream& obs, const std::string_view value)
 {
     size_t value_offset = obs.length();
     obs.write_v(value);
     value_offset += (obs.length() - value_offset - value.length());
     if (!value.empty())
-        ud->encrypt(obs.data() + value_offset, value.length(), AES_ENCRYPT);
+        ud->encrypt(reinterpret_cast<char*>(obs.data() + value_offset), value.length(), AES_ENCRYPT);
 }
 
-void UserDefault::setEncryptEnabled(bool enabled, cxx17::string_view key, cxx17::string_view iv)
+void UserDefault::setEncryptEnabled(bool enabled, std::string_view key, std::string_view iv)
 {
     _encryptEnabled = enabled;
     if (_encryptEnabled)

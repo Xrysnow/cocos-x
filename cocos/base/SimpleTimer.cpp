@@ -1,22 +1,7 @@
 #include "SimpleTimer.h"
-#include "yasio/detail/object_pool.hpp"
-#include "yasio/detail/ref_ptr.hpp"
+#include "yasio/object_pool.hpp"
+#include <memory>
 #include "cocos2d.h"
-
-#define STIMER_DEFINE_REFERENCE_CLASS    \
-private:                                 \
-    unsigned int referenceCount_;        \
-                                         \
-public:                                  \
-    void retain() { ++referenceCount_; } \
-    void release()                       \
-    {                                    \
-        --referenceCount_;               \
-        if (referenceCount_ == 0)        \
-            delete this;                 \
-    }                                    \
-                                         \
-private:
 
 // Retrive the fake target of Simple Timer, well, any system's malloc never return a object address
 // 0xffffffff, 0xfffffffe, so it's always works well.
@@ -30,13 +15,12 @@ static const uintptr_t STIMER_TARGET_SCRIPT = STIMER_TARGET_NATIVE - 1;
 
 struct TimerObject
 {
-    TimerObject(vcallback_t&& callback) : callback_(std::move(callback)), referenceCount_(1) {}
+    TimerObject(vcallback_t&& callback) : callback_(std::move(callback)) {}
 
     vcallback_t callback_;
     static uintptr_t s_timerId;
 
-    DEFINE_OBJECT_POOL_ALLOCATION(TimerObject, 128)
-    STIMER_DEFINE_REFERENCE_CLASS
+    DEFINE_FAST_OBJECT_POOL_ALLOCATION(TimerObject, 128)
 };
 
 uintptr_t TimerObject::s_timerId = 0;
@@ -45,7 +29,7 @@ TIMER_ID loop(unsigned int n, float interval, vcallback_t callback, bool bNative
 {
     if (n > 0 && interval >= 0)
     {
-        yasio::gc::ref_ptr<TimerObject> timerObj(new TimerObject(std::move(callback)));
+        std::shared_ptr<TimerObject> timerObj(new TimerObject(std::move(callback)));
 
         auto timerId = reinterpret_cast<TIMER_ID>(++TimerObject::s_timerId);
 
@@ -66,7 +50,7 @@ TIMER_ID delay(float delay, vcallback_t callback, bool bNative)
 {
     if (delay > 0)
     {
-        yasio::gc::ref_ptr<TimerObject> timerObj(new TimerObject(std::move(callback)));
+        std::shared_ptr<TimerObject> timerObj(new TimerObject(std::move(callback)));
         auto timerId = reinterpret_cast<TIMER_ID>(++TimerObject::s_timerId);
 
         std::string key = StringUtils::format("STMR#%p", timerId);

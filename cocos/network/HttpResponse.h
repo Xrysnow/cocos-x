@@ -2,9 +2,9 @@
  Copyright (c) 2010-2012 cocos2d-x.org
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2021 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,9 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __HTTP_RESPONSE__
-#define __HTTP_RESPONSE__
+#pragma once
 #include <ctype.h>
+#include <algorithm>
 #include <map>
 #include <unordered_map>
 #include "network/HttpRequest.h"
@@ -39,7 +39,8 @@
  * @{
  */
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 namespace network
 {
@@ -51,7 +52,7 @@ class HttpClient;
  * @since v2.0.2.
  * @lua NA
  */
-class CC_DLL HttpResponse : public cocos2d::Ref
+class CC_DLL HttpResponse : public ConcurrentRefCountedBase
 {
     friend class HttpClient;
 
@@ -106,9 +107,9 @@ public:
 
     /**
      * Get the http response data.
-     * @return yasio::sbyte_buffer* the pointer that point to the _responseData.
+     * @return tlx::basic_byte_buffer<char>* the pointer that point to the _responseData.
      */
-    yasio::sbyte_buffer* getResponseData() { return &_responseData; }
+    tlx::basic_byte_buffer<char>* getResponseData() { return &_responseData; }
 
     bool isSucceed() const { return _responseCode == 200; }
 
@@ -129,7 +130,13 @@ public:
 
     const ResponseHeaderMap& getResponseHeaders() const { return _responseHeaders; }
 
+    const std::string& getStatusText() const { return _statusText; }
+
+    uint64_t getContentLength() const { return _contentLength; }
+
 private:
+    void setResponseCode(int value) { _responseCode = value; }
+
     void updateInternalCode(int value)
     {
         if (_internalCode == 0)
@@ -141,60 +148,103 @@ private:
      */
     bool isFinished() const { return _finished; }
 
-    void handleInput(const char* d, size_t n)
+    llhttp_errno_t input(const char* d, size_t n)
     {
-        enum llhttp_errno err = llhttp_execute(&_context, d, n);
-        if (err != HPE_OK)
+        return llhttp_execute(&_context, d, n);
+    }
+
+    bool tryRedirect()
+    {
+        if ((_redirectCount < HttpRequest::MAX_REDIRECT_COUNT))
         {
-            _finished = true;
+            auto iter = _responseHeaders.find("location");
+            if (iter != _responseHeaders.end())
+            {
+                auto redirectUrl = iter->second;
+                if (_responseCode == 302)
+                    getHttpRequest()->setRequestType(HttpRequest::Type::GET);
+                CCLOG("Process url redirect (%d): %s", _responseCode, redirectUrl.c_str());
+                return setLocation(redirectUrl, true);
+            }
         }
+        return false;
     }
 
     /**
-     * Set the response data by the string pointer and the defined size.
-     * @param value a string pointer that point to response data buffer.
-     * @param n the defined size that the response data buffer would be copied.
+     * Set new request location with url
+     * @param url the actually url to request
+     * @param redirect wither redirect
      */
-    bool prepareForProcess(std::string_view url)
+    bool setLocation(std::string_view url, bool redirect)
     {
-        /* Resets response status */
-        _finished = false;
-        _responseData.clear();
-        _currentHeader.clear();
-        _responseCode = -1;
-        _internalCode = 0;
+        if (redirect)
+        {
+            ++_redirectCount;
+            _requestUri.invalid();
+        }
 
-        Uri uri = Uri::parse(url);
-        if (!uri.isValid())
-            return false;
+        if (!_requestUri.isValid())
+        {
+            Uri uri = Uri::parse(url);
+            if (!uri.isValid())
+                return false;
+            _requestUri = std::move(uri);
 
-        _requestUri = std::move(uri);
+            /* Resets response status */
+            _responseHeaders.clear();
+            _finished = false;
+            _contentLength = 0;
+            _responseData.clear();
+            _currentHeader.clear();
+            _statusText.clear();
+            _responseCode = -1;
+            _internalCode = 0;
 
-        /* Initialize user callbacks and settings */
-        llhttp_settings_init(&_contextSettings);
+            /* Initialize user callbacks and settings */
+            llhttp_settings_init(&_contextSettings);
 
-        /* Initialize the parser in HTTP_BOTH mode, meaning that it will select between
-         * HTTP_REQUEST and HTTP_RESPONSE parsing automatically while reading the first
-         * input.
-         */
-        llhttp_init(&_context, HTTP_RESPONSE, &_contextSettings);
+            /* Initialize the parser in HTTP_BOTH mode, meaning that it will select between
+             * HTTP_REQUEST and HTTP_RESPONSE parsing automatically while reading the first
+             * input.
+             */
+            llhttp_init(&_context, HTTP_RESPONSE, &_contextSettings);
 
-        _context.data = this;
+            _context.data = this;
 
-        /* Set user callbacks */
-        _contextSettings.on_header_field          = on_header_field;
-        _contextSettings.on_header_field_complete = on_header_field_complete;
-        _contextSettings.on_header_value          = on_header_value;
-        _contextSettings.on_header_value_complete = on_header_value_complete;
-        _contextSettings.on_body                  = on_body;
-        _contextSettings.on_message_complete      = on_complete;
+            /* Set user callbacks */
+            _contextSettings.on_header_field          = on_header_field;
+            _contextSettings.on_header_field_complete = on_header_field_complete;
+            _contextSettings.on_header_value          = on_header_value;
+            _contextSettings.on_header_value_complete = on_header_value_complete;
+            _contextSettings.on_headers_complete      = on_headers_complete;
+            _contextSettings.on_body                  = on_body;
+            _contextSettings.on_status                = on_status;
+            _contextSettings.on_message_complete      = on_complete;
+        }
 
         return true;
     }
 
+    bool validateUri() const { return _requestUri.isValid(); }
+
     const Uri& getRequestUri() const { return _requestUri; }
 
-    int increaseRedirectCount() { return ++_redirectCount; }
+    void handleConnectionClose()
+    {
+        if (_finished)
+            return;
+        if (llhttp_message_needs_eof(&_context))
+            llhttp_finish(&_context);
+        else
+            _internalCode = -1;
+    }
+
+    static int on_status(llhttp_t* context, const char* at, size_t length)
+    {
+        auto thiz = (HttpResponse*)context->data;
+        thiz->_statusText.append(at, length);
+        return 0;
+    }
 
     static int on_header_field(llhttp_t* context, const char* at, size_t length)
     {
@@ -219,12 +269,27 @@ private:
     {
         auto thiz = (HttpResponse*)context->data;
         thiz->_responseHeaders.emplace(std::move(thiz->_currentHeader), std::move(thiz->_currentHeaderValue));
+
+        return 0;
+    }
+    static int on_headers_complete(llhttp_t* context)
+    {
+        auto thiz            = (HttpResponse*)context->data;
+        thiz->_contentLength = context->content_length;
+        auto request         = thiz->getHttpRequest();
+        if (!request->getDataCallback() && thiz->_contentLength > 0)
+            thiz->_responseData.reserve(thiz->_contentLength);
         return 0;
     }
     static int on_body(llhttp_t* context, const char* at, size_t length)
     {
         auto thiz = (HttpResponse*)context->data;
-        thiz->_responseData.insert(thiz->_responseData.end(), at, at + length);
+        auto request = thiz->getHttpRequest();
+        auto dataCallback = request->getDataCallback();
+        if (!dataCallback)
+            thiz->_responseData.insert(thiz->_responseData.end(), at, at + length);
+        else
+            dataCallback(thiz, at, length);
         return 0;
     }
     static int on_complete(llhttp_t* context)
@@ -242,21 +307,21 @@ protected:
 
     Uri _requestUri;
     bool _finished = false;             /// to indicate if the http request is successful simply
-    yasio::sbyte_buffer _responseData;  /// the returned raw data. You can also dump it as a string
+    uint64_t _contentLength{0};
+    tlx::basic_byte_buffer<char> _responseData;  /// the returned raw data. You can also dump it as a string
     std::string _currentHeader;
     std::string _currentHeaderValue;
     ResponseHeaderMap _responseHeaders;  /// the returned raw header data. You can also dump it as a string
-    int _responseCode = -1;              /// the status code returned from libcurl, e.g. 200, 404
+    int _responseCode = -1;              /// the status code returned from server, e.g. 200, 404
     int _internalCode = 0;               /// the ret code of perform
+    std::string _statusText;
     llhttp_t _context;
     llhttp_settings_t _contextSettings;
 };
 
 }  // namespace network
 
-NS_CC_END
+}  // namespace cocos2d
 
 // end group
 /// @}
-
-#endif  //__HTTP_RESPONSE_H__

@@ -3,6 +3,7 @@
  * Copyright (c) 2017 Chukong Technologies
  * Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
  * Copyright (c) 2021 Bytedance Inc.
+ * Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@
  */
 
 #include "network/Uri.h"
-#include "base/CCConsole.h"  // For CCLOGERROR macro
+#include "base/CCConsole.h"
 
 #include <regex>
 #include <sstream>
@@ -31,11 +32,11 @@
 #undef UNLIKELY
 
 #if defined(__GNUC__) && __GNUC__ >= 4
-    #define LIKELY(x) (__builtin_expect((x), 1))
-    #define UNLIKELY(x) (__builtin_expect((x), 0))
+#    define LIKELY(x) (__builtin_expect((x), 1))
+#    define UNLIKELY(x) (__builtin_expect((x), 0))
 #else
-    #define LIKELY(x) (x)
-    #define UNLIKELY(x) (x)
+#    define LIKELY(x) (x)
+#    define UNLIKELY(x) (x)
 #endif
 
 namespace
@@ -169,12 +170,12 @@ bool Uri::doParse(std::string_view str)
 
     if (str.empty())
     {
-        CCLOGERROR("%s", "Empty URI is invalid!");
+        CCLOGERROR("Empty URI is invalid!");
         return false;
     }
 
     bool hasScheme = true;
-	
+
     std::string copied(str);
     if (copied.find("://") == std::string::npos)
     {
@@ -185,7 +186,7 @@ bool Uri::doParse(std::string_view str)
     std::smatch match;
     if (UNLIKELY(!std::regex_match(copied.cbegin(), copied.cend(), match, uriRegex)))
     {
-        CCLOGERROR("Invalid URI: %s", str.data());
+        CCLOGERROR("Invalid URI: %.*s", static_cast<int>(str.size()), str.data());
         return false;
     }
 
@@ -206,7 +207,7 @@ bool Uri::doParse(std::string_view str)
                                            // dotted-IPv4, or named host)
             "(?::(\\d*))?");               // port
 
-        auto authority = authorityAndPathMatch[1];
+        auto& authority = authorityAndPathMatch[1];
         std::smatch authorityMatch;
         if (!std::regex_match(authority.first, authority.second, authorityMatch, authorityRegex))
         {

@@ -1,9 +1,9 @@
 /****************************************************************************
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- Copyright (c) 2021 Bytedance Inc.
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
 
- https://axmolengine.github.io/
+ https://axmol.dev/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef HTTP_COOKIE_H
-#define HTTP_COOKIE_H
+#pragma once
 /// @cond DO_NOT_SHOW
 
 #include "platform/CCPlatformMacros.h"
@@ -34,7 +33,8 @@
 #include <string>
 #include <vector>
 
-NS_CC_BEGIN
+namespace cocos2d
+{
 
 namespace network
 {
@@ -106,7 +106,6 @@ private:
 };
 }  // namespace network
 
-NS_CC_END
+}
 
 /// @endcond
-#endif /* HTTP_COOKIE_H */

@@ -40,7 +40,7 @@
 #include "scripting/lua-bindings/manual/physics3d/cclua_physics3d_manual.h"
 #include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_manual.h"
 #include "lua_cjson.h"
-#include "yasio/bindings/yasio_cclua.hpp"
+#include "yasio_cclua.hpp"
 
 static void lua_register_extensions(lua_State* L)
 {
