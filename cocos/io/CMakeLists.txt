@@ -5,6 +5,7 @@ set(COCOS_IO_HEADER
     io/MemoryStream.h
     io/FileStream.h
     io/BufferedStream.h
+    io/HttpStream.h
 )
 set(COCOS_IO_SRC
     io/Stream.cpp
@@ -12,4 +13,5 @@ set(COCOS_IO_SRC
     io/MemoryStream.cpp
     io/FileStream.cpp
     io/BufferedStream.cpp
+    io/HttpStream.cpp
 )

@@ -30,7 +30,7 @@ enum class ErrorCode
     AlreadyExists, OutOfRange, Overflow, NoSpace, OutOfMemory, IoError,
     NoProgress, LimitExceeded, InvalidBackend, WouldBlock, Cancelled, Timeout
 };
-enum class ErrorDomain { None, Errno, Win32 };
+enum class ErrorDomain { None, Errno, Win32, Curl, CurlMulti, Http };
 struct StreamError
 {
     ErrorCode code = ErrorCode::None;

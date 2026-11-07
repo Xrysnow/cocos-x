@@ -157,3 +157,89 @@ auto decoder = cocos2d::AudioDecoder::createFromStream(
 
 Generic network input does not imply that current decoders accept unknown length
 or nonseekable streams. Decoder and LuaSTG resource API migration is separate.
+
+## HTTP and HTTPS
+
+HttpStream is read-only, nonseekable HTTP/HTTPS GET input. open validates the URL
+and options, creates an Atomic stream, and starts a dedicated curl multi worker;
+it does not wait for connection or response headers. Include io/HttpStream.h.
+Input URLs require an explicit http or https scheme and reject embedded NULs and user
+credentials. Redirects permit only HTTP/HTTPS, and an HTTPS request cannot
+redirect to HTTP, including after an initial HTTP-to-HTTPS upgrade. Only complete
+2xx resources are accepted: unsolicited 206 and Content-Range are rejected.
+There is no upload, Range seek, implicit complete download, or automatic content
+decompression. Content-encoded response bodies retain their original bytes.
+
+```cpp
+#include "io/HttpStream.h"
+
+cocos2d::io::HttpStreamOptions options;
+options.receiveCapacity = 128 * 1024;
+options.transferBufferSize = 32 * 1024;
+options.totalTimeoutMs = 30000;
+auto input = cocos2d::io::HttpStream::open("https://example.com/resource", options);
+if (!input)
+    return;
+// read returns immediately. Retain transferred bytes before handling its status.
+// waitReadable(std::chrono::milliseconds(1000)) waits when read WouldBlock;
+// a wait timeout alone does not cancel the transfer.
+// Check read/snapshot for the transfer outcome, then explicitly close the stream.
+```
+
+Each stream preallocates a receive queue with a hard capacity, defaulting to
+64 KiB. The minimum is CURL_MAX_WRITE_SIZE (16 KiB in the bundled curl), so every
+body callback block can fit. A callback that cannot fit in the remaining space
+pauses without accepting any of that block; consumption allows the worker to
+resume and accept curl's complete replay exactly once. transferBufferSize is a
+separate curl buffer-size request, defaulting to 16 KiB and permitting 1 KiB to
+10 MiB. curl may choose another internal size. Options are fixed before startup;
+there is no active-transfer buffer reconfiguration. These bounds cover this
+stream's receive queue, not curl, TLS, OS buffers, or a BufferedStream wrapper.
+
+maxHeaderBytes defaults to 64 KiB and independently bounds cumulative response
+headers, including redirects, informational responses, and trailers. Redirect
+bodies and informational headers do not become resource data. Final response
+Content-Length supplies size when valid and no Transfer-Encoding is present;
+otherwise length stays unknown until a successful transfer records the actual
+received length. Trailers do not replace response metadata. tell counts only
+bytes consumed by the caller, while snapshot reports accepted body bytes,
+current and peak queue occupancy, pause/completion state, final HTTP status,
+known length, and the terminal error. The snapshot remains available after close.
+
+read returns WouldBlock when its request cannot be filled from the currently
+available queue and the transfer is still active. It can carry partial progress.
+An exactly filled request returns Ok even at the final byte; the next nonempty
+read reports EOF or a terminal error. Transfer errors preserve queued data and
+are reported after consumption. IoStatus::Cancelled and Timeout carry no
+IoResult error; snapshot retains their ErrorCode and native diagnostic. HTTP
+errors use ErrorDomain::Http and the status code; curl and multi errors use Curl
+and CurlMulti. Network completion and failure leave isOpen true until close.
+
+waitReadable accepts a nonnegative duration. Zero polls and returns WouldBlock
+when not ready; a positive wait returns Timeout if that wait expires. Queued
+data and successful EOF are ready. A terminal failure is returned when no queued
+data remains. The whole-transfer totalTimeoutMs includes queue pauses and is
+independent of individual wait durations; zero disables it. connectTimeoutMs
+uses curl's connection deadline, with zero selecting curl's default.
+
+cancel is safe across threads, wakes waiters immediately, and preserves queued
+bytes before Cancelled. close is safe across threads, wakes waiters, stops the
+worker, joins it, discards queued data, and releases per-stream resources;
+repeated close succeeds. Workers own private state rather than a stream Ref,
+so the last client reference can safely run destruction without a reference
+cycle or worker self-join. The worker never takes the external Stream lock.
+Normal multi polling is bounded to 50 ms, but close/destruction can still wait
+for an OS DNS resolver call or its cleanup to finish. No strict cross-platform
+shutdown deadline is promised. Keep an owning pointer throughout every call,
+and use StreamLock to serialize complete consumer operations as with other
+streams.
+
+TLS certificate-chain and hostname verification are always enabled. An explicit
+caFile uses that PEM trust file with the native-CA option and default CA directory
+disabled; NUL-containing paths are rejected. With no caFile, Windows enables
+curl's native certificate store; other platforms use curl's configured trust
+source. The bundled Android OpenSSL configuration has no default CA bundle or
+directory, so applications must supply caFile there. Verification failures remain
+ordinary curl errors; there is no option to disable verification. curl global
+initialization runs once and remains for the process lifetime because existing
+cocos network users do not coordinate global cleanup with this stream.
