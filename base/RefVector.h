@@ -107,7 +107,7 @@ public:
     const_reverse_iterator crend() const { return _data.crend(); }
 
     /** Constructor. */
-    RefVector<T>()
+    RefVector()
     : _data() {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
     }
@@ -116,7 +116,7 @@ public:
      * Constructor with a capacity.
      * @param capacity Capacity of the Vector.
      */
-    explicit RefVector<T>(uint32_t capacity)
+    explicit RefVector(uint32_t capacity)
     : _data() {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
         //        CC_LOG_INFO("In the default constructor with capacity of Vector.");
@@ -124,20 +124,20 @@ public:
     }
 
     /** Constructor with initializer list. */
-    RefVector<T>(std::initializer_list<T> list) {
+    RefVector(std::initializer_list<T> list) {
         for (auto &element : list) {
             pushBack(element);
         }
     }
 
     /** Destructor. */
-    ~RefVector<T>() {
+    ~RefVector() {
         //        CC_LOG_INFO("In the destructor of Vector.");
         clear();
     }
 
     /** Copy constructor. */
-    RefVector<T>(const RefVector<T> &other) {
+    RefVector(const RefVector<T> &other) {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
         //        CC_LOG_INFO("In the copy constructor!");
         _data = other._data;
@@ -145,7 +145,7 @@ public:
     }
 
     /** Copy constructor. */
-    explicit RefVector<T>(const ccstd::vector<T> &other) {
+    explicit RefVector(const ccstd::vector<T> &other) {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
         //        CC_LOG_INFO("In the copy constructor!");
         _data = other;
@@ -153,14 +153,14 @@ public:
     }
 
     /** Constructor with std::move semantic. */
-    RefVector<T>(RefVector<T> &&other) noexcept {
+    RefVector(RefVector<T> &&other) noexcept {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
         //        CC_LOG_INFO("In the move constructor of Vector!");
         _data = std::move(other._data);
     }
 
     /** Constructor with std::move semantic. */
-    explicit RefVector<T>(ccstd::vector<T> &&other) noexcept {
+    explicit RefVector(ccstd::vector<T> &&other) noexcept {
         static_assert(std::is_convertible<T, RefCounted *>::value, "Invalid Type for cc::Vector<T>!");
         //        CC_LOG_INFO("In the move constructor of Vector!");
         _data = std::move(other);

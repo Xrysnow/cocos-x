@@ -5,6 +5,9 @@ set(target_name ext_${lib_name})
 
 project(${lib_name})
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_OBJCXX_STANDARD 20)
+
 if(WINDOWS)
     set(CC_USE_VULKAN ON)
     set(CC_USE_GLES3 ON)
@@ -144,6 +147,7 @@ endif()
 add_library(${target_name} STATIC
     ${gfx_src}
 )
+target_compile_features(${target_name} PUBLIC cxx_std_20)
 
 if(CC_USE_VULKAN)
     target_compile_definitions(${target_name} PUBLIC VK_NO_PROTOTYPES)

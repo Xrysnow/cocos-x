@@ -66,25 +66,25 @@ public:
     const_iterator cend() const { return _data.cend(); }
 
     /** Default constructor */
-    RefMap<K, V>() {
+    RefMap() {
         static_assert(std::is_convertible<V, RefCounted *>::value, "Invalid Type for cc::Map<K, V>!");
     }
 
     /** Constructor with capacity. */
-    explicit RefMap<K, V>(uint32_t capacity) {
+    explicit RefMap(uint32_t capacity) {
         static_assert(std::is_convertible<V, RefCounted *>::value, "Invalid Type for cc::Map<K, V>!");
         _data.reserve(capacity);
     }
 
     /** Copy constructor. */
-    RefMap<K, V>(const RefMap<K, V> &other) {
+    RefMap(const RefMap<K, V> &other) {
         static_assert(std::is_convertible<V, RefCounted *>::value, "Invalid Type for cc::Map<K, V>!");
         _data = other._data;
         addRefForAllObjects();
     }
 
     /** Move constructor. */
-    RefMap<K, V>(RefMap<K, V> &&other) noexcept {
+    RefMap(RefMap<K, V> &&other) noexcept {
         static_assert(std::is_convertible<V, RefCounted *>::value, "Invalid Type for cc::Map<K, V>!");
         _data = std::move(other._data);
     }
@@ -93,7 +93,7 @@ public:
      * Destructor.
      * It will release all objects in map.
      */
-    ~RefMap<K, V>() {
+    ~RefMap() {
         clear();
     }
 
