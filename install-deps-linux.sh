@@ -14,7 +14,6 @@ sudo apt-get update
 DEPENDS=''
 
 # common
-DEPENDS+=' libpng-dev'
 DEPENDS+=' libxxf86vm-dev'
 
 # glfw
