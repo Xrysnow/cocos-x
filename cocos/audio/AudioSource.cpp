@@ -4,12 +4,30 @@
 #include "AudioEngine.h"
 #include "AudioFilter.h"
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <new>
 
 NS_CC_BEGIN
 using namespace AudioInternal;
+
+namespace
+{
+	double queueSteadySeconds()
+	{
+		return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	}
+
+	// Accessed only with the process-lifetime AudioPool lock held. A query
+	// failure latches uncalibrated output until a new context is created.
+	int latencyGeneration = -1;
+	bool latencyFailed = false;
+#ifdef AL_SOFT_source_latency
+	LPALGETSOURCEI64VSOFT queueGetSourcei64v = nullptr;
+#endif
+}
 
 constexpr double PI = 3.14159265358979323846;
 constexpr double TORAD_ = PI / 180.0;
@@ -161,7 +179,7 @@ bool AudioSource::init(int _sampleRate, int _bitDepth, int _channels, int _buffe
 	bitDepth = _bitDepth;
 	buffers = _buffers;
 	ALenum fmt = AudioEngine::getFormat(bitDepth, channels);
-	if (fmt == AL_NONE)
+	if (fmt == AL_NONE || sampleRate <= 0)
 	{
 		InvalidFormatException(channels, bitDepth);
 		return false;
@@ -172,6 +190,7 @@ bool AudioSource::init(int _sampleRate, int _bitDepth, int _channels, int _buffe
 	if (buffers > MAX_BUFFERS)
 		buffers = MAX_BUFFERS;
 
+	alGetError();
 	for (int i = 0; i < buffers; i++)
 	{
 		ALuint buf;
@@ -193,7 +212,7 @@ bool AudioSource::init(int _sampleRate, int _bitDepth, int _channels, int _buffe
 
 	for (int i = 0; i < AudioEngine::getMaxSourceEffectCount(); i++)
 		slotlist.push(i);
-	return true;
+	return buffers > 0;
 }
 
 bool AudioSource::initWithOther(const AudioSource &s)
@@ -281,6 +300,8 @@ bool AudioSource::initWithOther(const AudioSource &s)
 AudioSource::~AudioSource()
 {
 	AudioSource::stop();
+	// Buffer disposal participates in the same lock as context recreation.
+	auto disposalLock = pool ? pool->lock() : std::unique_lock<std::mutex>();
 
 	if (sourceType != Type::STATIC)
 	{
@@ -339,14 +360,26 @@ AudioSource* AudioSource::createFromDecoder(AudioDecoder* decoder)
 
 AudioSource* AudioSource::create(int sampleRate, int bitDepth, int channels, int buffers)
 {
+	auto ret = createOwnedQueue(sampleRate, bitDepth, channels, buffers);
+	if (ret)
+		ret->autorelease();
+	return ret;
+}
+
+AudioSource* AudioSource::createOwnedQueue(int sampleRate, int bitDepth, int channels, int buffers)
+{
 	if (!AudioEngine::isValid())
 		return nullptr;
+	auto ownerPool = AudioPool::getInstance();
 	auto ret = new (std::nothrow) AudioSource();
-	if (ret&&ret->init(sampleRate, bitDepth, channels, buffers))
+	bool initialized = false;
 	{
-		ret->autorelease();
-		return ret;
+		auto lock = ownerPool->lock();
+		if (ret && AudioEngine::isValid())
+			initialized = ret->init(sampleRate, bitDepth, channels, buffers);
 	}
+	if (initialized)
+		return ret;
 	delete ret;
 	return nullptr;
 }
@@ -370,12 +403,32 @@ bool AudioSource::play()
 	if (!AudioEngine::isValid() || !pool)
 		return false;
 	auto l = pool->lock();
+	if (!AudioEngine::isValid())
+		return false;
+	if (sourceType == Type::QUEUE && sessionControlled &&
+		(!queuePlaybackAllowed || AudioEngine::isSuspended() ||
+		 bufferGeneration != AudioEngine::getDeviceGeneration()))
+		return false;
 	ALuint out;
 	char wasPlaying;
 	if (!pool->assignSource(this, out, wasPlaying))
 		return valid = false;
 	if (!wasPlaying)
 		return valid = playAtomic(out);
+	if (sourceType == Type::QUEUE)
+	{
+		alGetError();
+		alSourcePlay(out);
+		queueError = alGetError();
+		if (queueError != AL_NO_ERROR)
+		{
+			releaseSource();
+			return false;
+		}
+		queueStarted = true;
+		queueStopReason = QueueStopReason::None;
+		return valid = true;
+	}
 	resumeAtomic();
 	return valid = true;
 }
@@ -385,6 +438,11 @@ void AudioSource::stop()
 	if (!pool)
 		return;
 	auto l = pool->lock();
+	if (sourceType == Type::QUEUE)
+	{
+		clearQueueAtomic(QueueStopReason::Explicit);
+		return;
+	}
 	if (!valid)
 		return;
 	releaseSource();
@@ -392,7 +450,10 @@ void AudioSource::stop()
 
 void AudioSource::pause()
 {
-	if (pool->isPlaying(this)) // lock in isPlaying
+	if (!pool)
+		return;
+	auto lock = pool->lock();
+	if (bufferGeneration == AudioEngine::getDeviceGeneration())
 		pauseAtomic();
 }
 
@@ -502,22 +563,7 @@ bool AudioSource::update()
 		}
 		return false;
 	case Type::QUEUE:
-	{
-		ALint processed;
-		ALuint buffers[MAX_BUFFERS];
-
-		alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
-		alSourceUnqueueBuffers(source, processed, buffers);
-
-		for (int i = 0; i < processed; i++)
-		{
-			ALint size;
-			alGetBufferi(buffers[i], AL_SIZE, &size);
-			bufferedBytes -= size;
-			unusedBuffers.push(buffers[i]);
-		}
-		return !isFinished();
-	}
+		return updateQueueAtomic();
 	case Type::MAX_ENUM:
 		break;
 	}
@@ -913,8 +959,6 @@ double AudioSource::getLoopingEnd() const
 
 bool AudioSource::queueData(void *data, size_t length, int dataSampleRate, int dataBitDepth, int dataChannels)
 {
-	auto l = pool->lock();
-
 	if (sourceType != Type::QUEUE)
 	{
 		QueueTypeMismatchException();
@@ -927,29 +971,278 @@ bool AudioSource::queueData(void *data, size_t length, int dataSampleRate, int d
 		return false;
 	}
 
-	if (length % (bitDepth / 8 * channels) != 0)
+	if (bitDepth <= 0 || channels <= 0 || length % (bitDepth / 8 * channels) != 0)
 	{
 		QueueMalformedLengthException(bitDepth / 8 * channels);
 		return false;
 	}
 
-	if (length == 0)
-		return true;
+	const auto snapshot = getQueuePlaybackSnapshot();
+	return submitQueueData(data, length, snapshot.generation, snapshot.deviceGeneration) == QueueSubmitResult::Accepted;
+}
 
+AudioSource::QueueSubmitResult AudioSource::submitQueueData(const void* data, size_t length,
+	uint64_t expectedGeneration, int expectedDeviceGeneration)
+{
+	if (!pool)
+		return QueueSubmitResult::OutputError;
+	auto lock = pool->lock();
+	if (!AudioEngine::isValid() || expectedDeviceGeneration != AudioEngine::getDeviceGeneration() ||
+		bufferGeneration != expectedDeviceGeneration)
+		return QueueSubmitResult::DeviceChanged;
+	if (expectedGeneration != queueGeneration)
+		return QueueSubmitResult::StaleGeneration;
+	const size_t bytesPerFrame = size_t(bitDepth / 8) * channels;
+	if (sourceType != Type::QUEUE || bytesPerFrame == 0 || length % bytesPerFrame ||
+		(length && !data) || length > size_t(std::numeric_limits<ALsizei>::max()))
+		return QueueSubmitResult::InvalidData;
+	if (!length)
+		return QueueSubmitResult::Accepted;
+	if (queueError != AL_NO_ERROR)
+		return QueueSubmitResult::OutputError;
+	// Retire a naturally stopped assignment before attaching new payloads. A
+	// stopped source marks new buffers processed too; it must not consume them.
+	if (valid && !updateQueueAtomic())
+		pool->releaseSource(this);
+	if (queueError != AL_NO_ERROR)
+		return QueueSubmitResult::OutputError;
 	if (unusedBuffers.empty())
-		return false;
-
-	auto buffer = unusedBuffers.top();
-	unusedBuffers.pop();
-	alBufferData(buffer, AudioEngine::getFormat(bitDepth, channels), data, length, sampleRate);
-	bufferedBytes += length;
-
-	if (valid)
+		return QueueSubmitResult::Full;
+	const uint64_t frames = length / bytesPerFrame;
+	if (frames > std::numeric_limits<uint64_t>::max() - queueSubmittedFrames ||
+		length > uint64_t(std::numeric_limits<int64_t>::max() - bufferedBytes))
+		return QueueSubmitResult::InvalidData;
+	const ALuint buffer = unusedBuffers.top();
+	alGetError();
+	alBufferData(buffer, AudioEngine::getFormat(bitDepth, channels), data, ALsizei(length), sampleRate);
+	ALenum error = alGetError();
+	if (error == AL_NO_ERROR && valid)
+	{
 		alSourceQueueBuffers(source, 1, &buffer);
-	else
+		error = alGetError();
+	}
+	if (error != AL_NO_ERROR)
+	{
+		queueError = error;
+		queueStopReason = QueueStopReason::OutputError;
+		lastError = "QUEUE PCM upload/submit failed";
+		return QueueSubmitResult::OutputError;
+	}
+	unusedBuffers.pop();
+	if (!valid)
 		streamBuffers.push(buffer);
+	queueBufferFrames[buffer] = frames;
+	queueSubmittedFrames += frames;
+	bufferedBytes += int64_t(length);
+	queueStopReason = QueueStopReason::None;
+	return QueueSubmitResult::Accepted;
+}
 
-	return true;
+AudioSource::QueuePlaybackSnapshot AudioSource::queueSnapshotAtomic()
+{
+	QueuePlaybackSnapshot result;
+	result.generation = queueGeneration;
+	result.deviceGeneration = AudioEngine::getDeviceGeneration();
+	result.outputRevision = AudioEngine::getOutputRevision();
+	result.suspended = AudioEngine::isSuspended();
+	result.submittedFrames = queueSubmittedFrames;
+	result.reclaimedFrames = queueReclaimedFrames;
+	result.naturalEndFrames = queueNaturalEndFrames;
+	result.stopReason = queueStopReason;
+	result.sampledSeconds = queueSteadySeconds();
+	result.error = queueError;
+	for (const auto& buffer : queueBufferFrames)
+		result.residentFrames += buffer.second;
+	if (!AudioEngine::isValid() || bufferGeneration != result.deviceGeneration)
+	{
+		result.stopReason = QueueStopReason::DeviceChanged;
+		return result;
+	}
+	if (result.error != AL_NO_ERROR)
+		return result;
+	if (!valid)
+	{
+		result.clockValid = queueError == AL_NO_ERROR;
+		result.state = queueStarted ? AL_STOPPED : AL_INITIAL;
+		return result;
+	}
+	if (latencyGeneration != result.deviceGeneration)
+	{
+		latencyGeneration = result.deviceGeneration;
+		latencyFailed = false;
+#ifdef AL_SOFT_source_latency
+		queueGetSourcei64v = nullptr;
+		if (alIsExtensionPresent("AL_SOFT_source_latency") == AL_TRUE)
+			queueGetSourcei64v = reinterpret_cast<LPALGETSOURCEI64VSOFT>(alGetProcAddress("alGetSourcei64vSOFT"));
+		if (!queueGetSourcei64v)
+			AINFO("QUEUE output uses uncalibrated core sample offsets (source latency unavailable)");
+#endif
+	}
+	alGetError();
+#ifdef AL_SOFT_source_latency
+	if (queueGetSourcei64v && !latencyFailed)
+	{
+		ALint64SOFT values[2] = {};
+		queueGetSourcei64v(source, AL_SAMPLE_OFFSET_LATENCY_SOFT, values);
+		const ALenum error = alGetError();
+		if (error == AL_NO_ERROR && values[0] >= 0 && values[1] >= 0 &&
+			double(values[0]) / 4294967296.0 <= double(queueSubmittedFrames - queueReclaimedFrames))
+		{
+			result.queueOffsetFrames = double(values[0]) / 4294967296.0;
+			result.outputLatencySeconds = double(values[1]) * 1e-9;
+			result.latencyValid = true;
+		}
+		else
+		{
+			latencyFailed = true;
+			AWARN("QUEUE source latency query failed; using core sample offsets for this device generation");
+		}
+	}
+#endif
+	if (!result.latencyValid)
+	{
+		ALint offset = 0;
+		alGetSourcei(source, AL_SAMPLE_OFFSET, &offset);
+		result.error = alGetError();
+		result.queueOffsetFrames = double(offset);
+	}
+	// State is queried after the offset/latency pair, while no reclaim can
+	// change the matching cumulative count under this same pool lock.
+	alGetSourcei(source, AL_SOURCE_STATE, &result.state);
+	const ALenum stateError = alGetError();
+	if (result.error == AL_NO_ERROR)
+		result.error = stateError;
+	result.sampledSeconds = queueSteadySeconds();
+	if (result.state == AL_STOPPED && queueStarted && result.error == AL_NO_ERROR)
+	{
+		queueNaturalEndFrames = queueSubmittedFrames;
+		queueStopReason = QueueStopReason::Natural;
+		result.naturalEndFrames = queueNaturalEndFrames;
+		result.stopReason = queueStopReason;
+		// OpenAL resets the sample offset at STOPPED; use the known endpoint.
+		result.queueOffsetFrames = double(queueSubmittedFrames - queueReclaimedFrames);
+		result.latencyValid = false;
+	}
+	result.clockValid = result.error == AL_NO_ERROR &&
+		std::isfinite(result.queueOffsetFrames) && result.queueOffsetFrames >= 0.0 &&
+		result.queueOffsetFrames <= double(queueSubmittedFrames - queueReclaimedFrames);
+	return result;
+}
+
+AudioSource::QueuePlaybackSnapshot AudioSource::getQueuePlaybackSnapshot()
+{
+	if (!pool)
+		return {};
+	auto lock = pool->lock();
+	return queueSnapshotAtomic();
+}
+
+bool AudioSource::updateQueueAtomic()
+{
+	const auto snapshot = queueSnapshotAtomic();
+	if (!snapshot.clockValid)
+		return true; // The session applies the bounded output-query failure policy.
+	ALint processed = 0;
+	alGetError();
+	alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+	const ALenum processedError = alGetError();
+	if (processedError != AL_NO_ERROR || processed < 0 || processed > MAX_BUFFERS)
+	{
+		queueError = processedError != AL_NO_ERROR ? processedError : AL_INVALID_VALUE;
+		queueStopReason = QueueStopReason::OutputError;
+		return true;
+	}
+	while (processed-- > 0)
+	{
+		ALuint buffer = 0;
+		alSourceUnqueueBuffers(source, 1, &buffer);
+		const ALenum error = alGetError();
+		if (error != AL_NO_ERROR)
+		{
+			queueError = error;
+			queueStopReason = QueueStopReason::OutputError;
+			return true;
+		}
+		const auto found = queueBufferFrames.find(buffer);
+		if (found == queueBufferFrames.end())
+		{
+			queueError = AL_INVALID_NAME;
+			queueStopReason = QueueStopReason::OutputError;
+			return true;
+		}
+		queueReclaimedFrames += found->second;
+		bufferedBytes -= int64_t(found->second * size_t(bitDepth / 8) * channels);
+		queueBufferFrames.erase(found);
+		unusedBuffers.push(buffer);
+	}
+	return snapshot.state != AL_STOPPED;
+}
+
+void AudioSource::clearQueueAtomic(QueueStopReason reason)
+{
+	queueStopReason = reason;
+	if (bufferGeneration == AudioEngine::getDeviceGeneration())
+	{
+		if (valid)
+			pool->releaseSource(this);
+		while (!streamBuffers.empty())
+		{
+			unusedBuffers.push(streamBuffers.front());
+			streamBuffers.pop();
+		}
+	}
+	else
+	{
+		valid = false;
+		source = 0;
+		while (!streamBuffers.empty()) streamBuffers.pop();
+		while (!unusedBuffers.empty()) unusedBuffers.pop();
+		if (AudioEngine::isValid())
+			regenerateBuffers();
+	}
+	queueBufferFrames.clear();
+	bufferedBytes = 0;
+	queueSubmittedFrames = queueReclaimedFrames = queueNaturalEndFrames = 0;
+	queueStarted = false;
+	queueError = AL_NO_ERROR;
+	++queueGeneration;
+}
+
+uint64_t AudioSource::resetQueue()
+{
+	if (!pool)
+		return 0;
+	auto lock = pool->lock();
+	clearQueueAtomic(QueueStopReason::Explicit);
+	return queueGeneration;
+}
+
+void AudioSource::setSessionControlled(bool controlled)
+{
+	if (!pool)
+		return;
+	auto lock = pool->lock();
+	sessionControlled = controlled;
+}
+
+void AudioSource::setQueuePlaybackAllowed(bool allowed)
+{
+	if (!pool)
+		return;
+	auto lock = pool->lock();
+	queuePlaybackAllowed = allowed;
+	if (!allowed && bufferGeneration == AudioEngine::getDeviceGeneration())
+		pauseAtomic();
+}
+
+void AudioSource::setQueueGain(float gain)
+{
+	if (!pool)
+		return;
+	auto lock = pool->lock();
+	volume = gain;
+	if (valid && bufferGeneration == AudioEngine::getDeviceGeneration())
+		alSourcef(source, AL_GAIN, gain);
 }
 
 bool AudioSource::queue(AudioSoundData* data, ssize_t offset, ssize_t length)
@@ -965,6 +1258,9 @@ bool AudioSource::queue(AudioSoundData* data, ssize_t offset, ssize_t length)
 
 int AudioSource::getFreeBufferCount() const
 {
+	if (!pool)
+		return 0;
+	auto lock = pool->lock();
 	switch (sourceType) //why not :^)
 	{
 	case Type::STATIC:
@@ -1014,7 +1310,14 @@ void AudioSource::prepareAtomic()
 	{
 		while (!streamBuffers.empty())
 		{
+			alGetError();
 			alSourceQueueBuffers(source, 1, &streamBuffers.front());
+			const ALenum error = alGetError();
+			if (error != AL_NO_ERROR)
+			{
+				queueError = error;
+				break;
+			}
 			streamBuffers.pop();
 		}
 		break;
@@ -1024,6 +1327,8 @@ void AudioSource::prepareAtomic()
 	}
 	// Seek to the current/pending offset.
 	alSourcei(source, AL_SAMPLE_OFFSET, offsetSamples);
+	if (sourceType == Type::QUEUE && queueError == AL_NO_ERROR)
+		queueError = alGetError();
 }
 
 void AudioSource::regenerateBuffers()
@@ -1077,6 +1382,12 @@ void AudioSource::regenerateBuffers()
 			else
 				break;
 		}
+		queueBufferFrames.clear();
+		bufferedBytes = 0;
+		queueSubmittedFrames = queueReclaimedFrames = queueNaturalEndFrames = 0;
+		queueStarted = false;
+		queueStopReason = QueueStopReason::DeviceChanged;
+		++queueGeneration;
 		break;
 	}
 
@@ -1156,6 +1467,12 @@ bool AudioSource::playAtomic(ALuint source)
 {
 	this->source = source;
 	prepareAtomic();
+	if (sourceType == Type::QUEUE && queueError != AL_NO_ERROR)
+	{
+		valid = true; // ensure the failed assignment is detached and returned
+		releaseSource();
+		return false;
+	}
 
 	// Clear errors.
 	alGetError();
@@ -1178,12 +1495,22 @@ bool AudioSource::playAtomic(ALuint source)
 
 	if (!success)
 	{
+		if (sourceType == Type::QUEUE)
+		{
+			queueError = AL_INVALID_OPERATION;
+			valid = true;
+		}
 		//valid = true; //stop() needs source to be valid
 		releaseSource();
 	}
 	// Static sources: reset the pending offset since it's not valid anymore.
 	if (sourceType != Type::STREAM)
 		offsetSamples = 0;
+	if (success && sourceType == Type::QUEUE)
+	{
+		queueStarted = true;
+		queueStopReason = QueueStopReason::None;
+	}
 
 	return success;
 }
@@ -1192,6 +1519,8 @@ void AudioSource::stopAtomic()
 {
 	if (!valid)
 		return;
+	if (sourceType == Type::QUEUE && queueStopReason != QueueStopReason::Natural)
+		queueStopReason = queueError == AL_NO_ERROR ? QueueStopReason::Explicit : QueueStopReason::OutputError;
 	alSourceStop(source);
 	teardownAtomic();
 }
@@ -1275,6 +1604,13 @@ bool AudioSource::playBatchAtomic(AudioPool* pool, const std::vector<AudioSource
 {
 	if (sources.empty())
 		return true;
+	if (!AudioEngine::isValid())
+		return false;
+	for (const auto* source : sources)
+		if (source->sourceType == Type::QUEUE && source->sessionControlled &&
+			(!source->queuePlaybackAllowed || AudioEngine::isSuspended() ||
+			 source->bufferGeneration != AudioEngine::getDeviceGeneration()))
+			return false;
 
 	// NOTE: not bool, because std::vector<bool> is implemented as a bitvector
 	// which means no bool references can be created.
@@ -1321,6 +1657,11 @@ bool AudioSource::playBatchAtomic(AudioPool* pool, const std::vector<AudioSource
 		source->valid = source->valid || success;
 		if (success && source->sourceType != Type::STREAM)
 			source->offsetSamples = 0;
+		if (success && source->sourceType == Type::QUEUE)
+		{
+			source->queueStarted = true;
+			source->queueStopReason = QueueStopReason::None;
+		}
 	}
 
 	return success;
@@ -1334,11 +1675,20 @@ void AudioSource::stopBatch(const std::vector<AudioSource*> &sources)
 	if (!pool)
 		return;
 	auto l = pool->lock();
+	stopBatchAtomic(sources);
+}
 
+void AudioSource::stopBatchAtomic(const std::vector<AudioSource*>& sources)
+{
 	std::vector<ALuint> sourceIds;
 	sourceIds.reserve(sources.size());
 	for (auto& source : sources)
 	{
+		if (source->sourceType == Type::QUEUE)
+		{
+			source->clearQueueAtomic(QueueStopReason::Explicit);
+			continue;
+		}
 		if (source->valid)
 			sourceIds.push_back(source->source);
 	}
@@ -1378,18 +1728,25 @@ std::vector<AudioSource*> AudioSource::pauseAll()
 	auto pool = AudioPool::getInstance();
 	if (!pool)
 		return {};
-	std::vector<AudioSource*> sources;
-	{
-		auto l = pool->lock();
-		sources = pool->getPlayingSources();
-	}
+	auto lock = pool->lock();
+	auto sources = pool->getPlayingSources();
 
 	const auto newend = std::remove_if(sources.begin(), sources.end(), [](AudioSource* s) {
 		return !s->isPlaying();
 	});
 	sources.erase(newend, sources.end());
 
-	pauseBatch(sources);
+	std::vector<ALuint> ids;
+	ids.reserve(sources.size());
+	for (auto* source : sources)
+		ids.push_back(source->source);
+	alSourcePausev(ALsizei(ids.size()), ids.data());
+	// Private worker-owned sources can disappear immediately after releasing
+	// the pool lock. Pause them, but never expose their borrowed pointers for
+	// an unrelated caller to retain or resume outside the session gate.
+	sources.erase(std::remove_if(sources.begin(), sources.end(), [](AudioSource* source) {
+		return source->sessionControlled;
+	}), sources.end());
 	return sources;
 }
 
@@ -1398,12 +1755,8 @@ void AudioSource::stopAll()
 	auto pool = AudioPool::getInstance();
 	if (!pool)
 		return;
-	std::vector<AudioSource*> sources;
-	{
-		auto l = pool->lock();
-		sources = pool->getPlayingSources();
-	}
-	stopBatch(sources);
+	auto lock = pool->lock();
+	stopBatchAtomic(pool->getPlayingSources());
 }
 
 bool AudioSource::releaseSource(bool stop)

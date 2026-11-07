@@ -24,6 +24,8 @@ namespace video
 		// Shutdown cooperatively waits for the current stream operation to return.
 		// An optional prompt, thread-safe cancel hook can unblock that operation.
 		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
+		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+			const PlaybackOptions& options);
 		std::optional<AsyncVideoSnapshot> getAsyncSnapshot() const;
 		void closeAsync();
 
@@ -33,11 +35,19 @@ namespace video
 		void resumePlayback();
 		/** Seek to a frame using the decoder's frame-rate estimate. */
 		void seekFrame(uint32_t frame);
+		/** Accept a media-time seek. Async completion is reported in the snapshot. */
+		bool seekTime(double seconds);
+		void setAudioVolume(float volume);
+		float getAudioVolume() const;
+		void setAudioMuted(bool muted);
+		bool isAudioMuted() const;
 		/** In MANUAL mode, advance by a finite nonnegative number of seconds. */
 		void advance(double dt);
 		/** In MANUAL mode, try to publish the next decoded frame. */
 		void advanceFrame();
 		void cleanup() override;
+		void onEnter() override;
+		void onExit() override;
 
 		/** see PlayMode */
 		void setPlayMode(PlayMode m);

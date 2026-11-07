@@ -6,6 +6,7 @@
 #include "base/CCRef.h"
 #include "math/Vec3.h"
 #include <array>
+#include <map>
 #include <cstdint>
 #include <limits>
 #include <stack>
@@ -88,6 +89,30 @@ NS_CC_BEGIN
 			MAX_ENUM
 		};
 
+		// Internal QUEUE API. All fields are sampled under the AudioPool lock;
+		// frames always mean one sample per channel, including short buffers.
+		enum class QueueSubmitResult { Accepted, Full, DeviceChanged, StaleGeneration, InvalidData, OutputError };
+		enum class QueueStopReason { None, Explicit, Natural, DeviceChanged, OutputError };
+		struct QueuePlaybackSnapshot
+		{
+			uint64_t generation = 0;
+			int deviceGeneration = 0;
+			int outputRevision = 0;
+			uint64_t submittedFrames = 0;
+			uint64_t reclaimedFrames = 0;
+			uint64_t naturalEndFrames = 0;
+			uint64_t residentFrames = 0;
+			double queueOffsetFrames = 0.0;
+			double sampledSeconds = 0.0;
+			double outputLatencySeconds = 0.0;
+			bool latencyValid = false;
+			bool clockValid = false;
+			bool suspended = false;
+			ALenum state = AL_INITIAL;
+			ALenum error = AL_NO_ERROR;
+			QueueStopReason stopReason = QueueStopReason::None;
+		};
+
 	private:
 
 		AudioSource();
@@ -112,6 +137,15 @@ NS_CC_BEGIN
 		 * Creates AudioSource from without data source. The audio data must be manually queued by the user.
 		 */
 		static AudioSource* create(int sampleRate, int bitDepth, int channels, int buffers);
+		/** Internal owned factory: initial reference belongs to the caller; no autorelease. */
+		static AudioSource* createOwnedQueue(int sampleRate, int bitDepth, int channels, int buffers);
+		QueueSubmitResult submitQueueData(const void* data, size_t length,
+			uint64_t expectedGeneration, int expectedDeviceGeneration);
+		QueuePlaybackSnapshot getQueuePlaybackSnapshot();
+		uint64_t resetQueue();
+		void setSessionControlled(bool controlled);
+		void setQueuePlaybackAllowed(bool allowed);
+		void setQueueGain(float gain);
 		/**
 		 * Creates an identical copy of the AudioSource in the stopped state.
 		 * Will save memory and time when the AudioSource is static.
@@ -485,10 +519,14 @@ NS_CC_BEGIN
 
 		// Caller holds the pool lock, including across device recovery.
 		static bool playBatchAtomic(AudioPool* pool, const std::vector<AudioSource*>& sources);
+		static void stopBatchAtomic(const std::vector<AudioSource*>& sources);
 
 		bool releaseSource(bool stop = true);
 
 		void reset();
+		QueuePlaybackSnapshot queueSnapshotAtomic();
+		bool updateQueueAtomic();
+		void clearQueueAtomic(QueueStopReason reason);
 
 		int streamAtomic(ALuint buffer, AudioDecoder *d);
 
@@ -551,6 +589,16 @@ NS_CC_BEGIN
 		uint64_t toLoop = 0;
 		int64_t bufferedBytes = 0;
 		int buffers = 0;
+		std::map<ALuint, uint64_t> queueBufferFrames;
+		uint64_t queueGeneration = 1;
+		uint64_t queueSubmittedFrames = 0;
+		uint64_t queueReclaimedFrames = 0;
+		uint64_t queueNaturalEndFrames = 0;
+		QueueStopReason queueStopReason = QueueStopReason::Explicit;
+		ALenum queueError = AL_NO_ERROR;
+		bool queueStarted = false;
+		bool sessionControlled = false;
+		bool queuePlaybackAllowed = true;
 
 		AudioFilter* directfilter = nullptr;
 

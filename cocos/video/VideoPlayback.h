@@ -28,6 +28,8 @@ namespace video
 		static std::unique_ptr<VideoPlayback> create(Decoder* source);
 		static std::unique_ptr<VideoPlayback> createAsync(cocos2d::io::StreamPtr source,
 			std::function<void()> cancel);
+		static std::unique_ptr<VideoPlayback> createAsync(cocos2d::io::StreamPtr source,
+			std::function<void()> cancel, const PlaybackOptions& options);
 		~VideoPlayback();
 
 		PlaybackUpdate start();
@@ -37,8 +39,14 @@ namespace video
 		void cancelAutomaticPlayback();
 		void setMode(PlayMode mode);
 		void setStep(double seconds) { step = seconds; }
+		void setSceneActive(bool active);
+		void setAudioVolume(float volume);
+		float getAudioVolume() const { return audioVolume; }
+		void setAudioMuted(bool muted);
+		bool isAudioMuted() const { return audioMuted; }
 
 		PlaybackUpdate seekFrame(uint32_t frame);
+		bool seekTime(double seconds);
 		PlaybackUpdate tick(double seconds);
 		PlaybackUpdate advance(double seconds);
 		PlaybackUpdate advanceFrame();
@@ -57,7 +65,7 @@ namespace video
 
 	private:
 		explicit VideoPlayback(Decoder* source);
-		explicit VideoPlayback(std::unique_ptr<VideoDecodeWorker> source);
+		explicit VideoPlayback(std::unique_ptr<VideoDecodeWorker> source, const PlaybackOptions& options);
 		VideoPlayback(const VideoPlayback&) = delete;
 		VideoPlayback& operator=(const VideoPlayback&) = delete;
 
@@ -66,6 +74,9 @@ namespace video
 		PlaybackUpdate tickAsync(double seconds);
 		PlaybackUpdate readAsync(double seconds, bool nextFrame, bool manual);
 		PlaybackUpdate failAsyncRead();
+		void syncPlaybackPermission();
+		void beginAsyncSeek(uint64_t generation, bool atOrigin);
+		bool usesDeviceClock() const { return audioEnabled && mode == PlayMode::REALTIME; }
 
 		cocos2d::RefPtr<Decoder> decoder;
 		std::unique_ptr<VideoDecodeWorker> worker;
@@ -79,6 +90,10 @@ namespace video
 		double mediaTime = 0.0;
 		double step = 1.0 / 60;
 		bool atStart = true;
+		bool audioEnabled = false;
+		bool sceneActive = true;
+		bool audioMuted = false;
+		float audioVolume = 1.0f;
 		PlayMode mode = PlayMode::STEP;
 		State state = State::Stopped;
 	};

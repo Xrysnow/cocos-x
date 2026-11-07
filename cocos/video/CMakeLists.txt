@@ -1,7 +1,8 @@
 # The Windows cocos PCH includes yasio, which redefines EAGAIN as WSATRY_AGAIN.
-# FFmpeg uses the C runtime errno value in these two translation units.
+# FFmpeg uses the C runtime errno value in these translation units.
 if(WIN32)
     set_source_files_properties(video/ffmpeg/FFDemuxer.cpp video/ffmpeg/FFInputStream.cpp
+        video/VideoAVDecoder.cpp
         PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 endif()
 
@@ -24,6 +25,10 @@ target_sources(${COCOS_CORE_LIB} PRIVATE
     video/VideoCommon.cpp
     video/VideoCommon.h
     video/VideoAsync.h
+    video/VideoAudioSink.cpp
+    video/VideoAudioSink.h
+    video/VideoAVDecoder.cpp
+    video/VideoAVDecoder.h
     video/VideoDecoder.cpp
     video/VideoDecoder.h
     video/VideoDecodeWorker.cpp

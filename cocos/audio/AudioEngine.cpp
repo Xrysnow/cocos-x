@@ -32,6 +32,7 @@ namespace
 	// (re)created/destroyed; Sources use it to detect stale AL ids after a
 	// context swap.
 	std::atomic<int> sDeviceGeneration{ 0 };
+	std::atomic<int> sOutputRevision{ 0 };
 	bool sAppBackground = false;
 	bool sSessionInterrupted = false;
 	std::atomic<bool> sSuspended{ false };
@@ -184,6 +185,16 @@ int AudioEngine::getMaxSourceCount()
 int AudioEngine::getDeviceGeneration()
 {
 	return sDeviceGeneration.load(std::memory_order_acquire);
+}
+
+bool AudioEngine::isSuspended()
+{
+	return sSuspended.load(std::memory_order_acquire);
+}
+
+int AudioEngine::getOutputRevision()
+{
+	return sOutputRevision.load(std::memory_order_acquire);
 }
 
 bool AudioEngine::play(const std::vector<AudioSource*> &sources)
@@ -553,9 +564,17 @@ void AudioEngine::updateSuspension()
 	if (suspended)
 	{
 		// Capture once across overlapping app/session notifications.
-		auto sources = AudioSource::pauseAll();
-		for (auto* source : sources)
-			tempSources.pushBack(source);
+		{
+			auto lock = pool->lock();
+			for (auto* source : pool->getPlayingSources())
+			{
+				if (!source->isPlaying())
+					continue;
+				source->pauseAtomic();
+				if (!source->sessionControlled)
+					tempSources.pushBack(source);
+			}
+		}
 #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS && defined(ALC_SOFT_pause_device)
 		if (sPauseDevice)
 			sPauseDevice(device);
@@ -571,7 +590,7 @@ void AudioEngine::updateSuspension()
 		for (auto* source : tempSources)
 		{
 			// A source explicitly stopped while suspended must stay stopped.
-			if (pool->isPlaying(source))
+			if (!source->sessionControlled && pool->isPlaying(source))
 				sources.push_back(source);
 		}
 		AudioSource::playBatch(sources);
@@ -745,6 +764,10 @@ void AudioEngine::end()
 	effectmap.clear();
 	resetEFX();
 
+	// A surviving video/QUEUE owner may dispose buffers concurrently with
+	// shutdown. Serialize the final context destruction and generation change
+	// with source disposal, snapshots and queue submission too.
+	auto shutdownLock = pool ? pool->lock() : std::unique_lock<std::mutex>();
 	if (context)
 	{
 		alcMakeContextCurrent(nullptr);
@@ -966,6 +989,9 @@ bool AudioEngine::reopenDevice(const std::string& name)
 		AWARN("ALC_SOFT_reopen_device not supported; cannot switch the audio device");
 		return false;
 	}
+	auto outputLock = pool->lock();
+	if (!valid || !device)
+		return false;
 
 	if (name.empty())
 	{
@@ -984,6 +1010,7 @@ bool AudioEngine::reopenDevice(const std::string& name)
 			AINFO("switched to default device: \"%s\"",
 				lastAppliedDevice.empty() ? "<unknown>" : lastAppliedDevice.c_str());
 			AudioALSupport::refresh();
+			++sOutputRevision;
 			return true;
 		}
 		AWARN("alcReopenDeviceSOFT(NULL) failed (%s)", getErrorString(alcGetError(device)));
@@ -1004,6 +1031,7 @@ bool AudioEngine::reopenDevice(const std::string& name)
 		lastAppliedDevice = actual ? actual : name;
 		AINFO("device reopened: \"%s\"", lastAppliedDevice.c_str());
 		AudioALSupport::refresh();
+		++sOutputRevision;
 		return true;
 	}
 	AWARN("alcReopenDeviceSOFT(\"%s\") failed (%s)", name.c_str(), getErrorString(alcGetError(device)));
@@ -1023,6 +1051,8 @@ bool AudioEngine::recoverDisconnectedDevice()
 	// context has reassigned them. In particular, a host such as FairyGUI must
 	// not observe the pool's temporary empty state and release its last owner.
 	auto recoveryLock = pool->lock();
+	if (!valid || !device || !context)
+		return false;
 
 	// Snapshot context-level state for restoration.
 	ALfloat pos[3], vel[3], orient[6];
@@ -1120,6 +1150,9 @@ bool AudioEngine::recoverDisconnectedDevice()
 		// Queue sources cannot be resumed
 		if (s->getType() == AudioSource::Type::QUEUE)
 		{
+			s->valid = false;
+			s->source = 0;
+			s->queueStopReason = AudioSource::QueueStopReason::DeviceChanged;
 			AINFO("queue-type audio source cannot be resumed automatically; re-queue it to play again");
 			continue;
 		}

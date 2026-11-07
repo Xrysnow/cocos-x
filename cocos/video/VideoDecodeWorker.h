@@ -27,10 +27,17 @@ namespace video
 
 		static std::unique_ptr<VideoDecodeWorker> create(cocos2d::io::StreamPtr source,
 			std::function<void()> cancel);
+		static std::unique_ptr<VideoDecodeWorker> create(cocos2d::io::StreamPtr source,
+			std::function<void()> cancel, const PlaybackOptions& options);
 		~VideoDecodeWorker();
 
 		// All consumer operations run on the owning thread.
 		std::optional<uint64_t> seek(uint32_t frame);
+		std::optional<uint64_t> seekTime(double seconds);
+		void setMode(PlayMode mode);
+		void setPlaybackActive(bool active);
+		void setAudioVolume(float volume);
+		void setAudioMuted(bool muted);
 		Read take(std::optional<double> deadline = {}, bool latest = false);
 		const Frame* presentedFrame() const;
 		AsyncVideoSnapshot snapshot() const;
@@ -42,6 +49,8 @@ namespace video
 		struct Threads;
 		explicit VideoDecodeWorker(std::shared_ptr<State> state);
 		static void run(State& state, cocos2d::io::StreamPtr source);
+		static void runSilent(State& state, cocos2d::io::StreamPtr source);
+		static void runWithAudio(State& state, cocos2d::io::StreamPtr source);
 
 		std::shared_ptr<State> state;
 		int presented = -1;

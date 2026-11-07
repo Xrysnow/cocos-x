@@ -255,6 +255,10 @@ NS_CC_BEGIN
 		 * (re)created or destroyed.
 		 */
 		static int getDeviceGeneration();
+		/** Host background/session interruption, also observed by video-only clocks. */
+		static bool isSuspended();
+		/** Changes on an in-context endpoint switch; invalidates latency samples. */
+		static int getOutputRevision();
 
 		// ---------------------------------------------------------------------
 		// Audio device management overview

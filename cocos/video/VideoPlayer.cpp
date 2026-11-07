@@ -27,16 +27,23 @@ Player* Player::createFromStream(cocos2d::io::StreamPtr source)
 
 Player* Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel)
 {
+	return createAsync(std::move(source), std::move(cancel), PlaybackOptions{});
+}
+
+Player* Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+	const PlaybackOptions& options)
+{
 	auto player = new (std::nothrow) Player();
 	if (!player)
 		return nullptr;
-	player->playback = VideoPlayback::createAsync(std::move(source), std::move(cancel));
+	player->playback = VideoPlayback::createAsync(std::move(source), std::move(cancel), options);
 	if (!player->playback || !player->init())
 	{
 		delete player;
 		return nullptr;
 	}
 	player->autorelease();
+	player->playback->setSceneActive(player->isRunning());
 	player->syncPlaybackSchedule();
 	return player;
 }
@@ -132,6 +139,7 @@ void Player::stopPlayback()
 void Player::pausePlayback()
 {
 	playback->pause();
+	syncPlaybackSchedule();
 }
 
 void Player::resumePlayback()
@@ -143,6 +151,40 @@ void Player::resumePlayback()
 void Player::seekFrame(uint32_t frame)
 {
 	applyPlaybackUpdate(playback->seekFrame(frame));
+}
+
+bool Player::seekTime(double seconds)
+{
+	if (!playback->seekTime(seconds))
+		return false;
+	if (getDecoder() && playback->getFrame())
+		applyPlaybackUpdate(PlaybackUpdate::FrameReady);
+	else
+	{
+		unschedule(removalKey);
+		syncPlaybackSchedule();
+	}
+	return true;
+}
+
+void Player::setAudioVolume(float volume)
+{
+	playback->setAudioVolume(volume);
+}
+
+float Player::getAudioVolume() const
+{
+	return playback->getAudioVolume();
+}
+
+void Player::setAudioMuted(bool muted)
+{
+	playback->setAudioMuted(muted);
+}
+
+bool Player::isAudioMuted() const
+{
+	return playback->isAudioMuted();
 }
 
 void Player::advance(double seconds)
@@ -176,6 +218,23 @@ void Player::cleanup()
 		else
 			playback->closeAsync();
 	}
+}
+
+void Player::onEnter()
+{
+	cocos2d::Sprite::onEnter();
+	if (playback)
+	{
+		playback->setSceneActive(true);
+		syncPlaybackSchedule();
+	}
+}
+
+void Player::onExit()
+{
+	if (playback)
+		playback->setSceneActive(false);
+	cocos2d::Sprite::onExit();
 }
 
 void Player::syncPlaybackSchedule()
