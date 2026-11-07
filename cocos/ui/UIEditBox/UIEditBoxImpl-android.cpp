@@ -39,7 +39,7 @@
     #include "ui/UIHelper.h"
     #include "base/CCDirector.h"
     #include "platform/CCFileUtils.h"
-    #include "yasio/tlx/string_view.hpp"
+    #include <string_view>
 
 NS_CC_BEGIN
 
@@ -125,7 +125,7 @@ void EditBoxImplAndroid::setNativeFont(const char* pFontName, int fontSize)
     {
         realFontPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(pFontName);
         using namespace std::literals;  // for std::string_view literal
-        if (tlx::starts_with(std::string_view{realFontPath}, "assets/"sv))
+        if (realFontPath.starts_with("assets/"sv))
         {
             realFontPath = realFontPath.substr(sizeof("assets/") - 1);  // Chop out the 'assets/' portion of the path.
         }

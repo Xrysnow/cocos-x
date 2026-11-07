@@ -48,7 +48,7 @@
 #include <map>
 #include <mutex>
 
-#include "yasio/tlx/string_view.hpp"
+#include <string_view>
 
 // minizip 1.2.0 is same with other platforms
 #define unzGoToFirstFile64(A, B, C, D) unzGoToFirstFile2(A, B, C, D, NULL, 0, NULL, 0)
@@ -771,7 +771,7 @@ std::vector<std::string> ZipFile::listFiles(std::string_view pathname) const
     for (auto&& item : _data->fileList)
     {
         std::string_view filename = item.first;
-        if (tlx::starts_with(filename, std::string_view{dirname}))
+        if (filename.starts_with(dirname))
         {
             std::string_view suffix{filename.substr(dirname.length())};
             auto pos = suffix.find('/');

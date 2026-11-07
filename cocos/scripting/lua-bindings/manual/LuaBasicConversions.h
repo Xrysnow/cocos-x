@@ -46,7 +46,7 @@
 #include "renderer/backend/VertexLayout.h"
 #include "ui/GUIDefine.h"
 
-#include "yasio/tlx/string_view.hpp"
+#include <string_view>
 #include <thread>
 
 USING_NS_CC;

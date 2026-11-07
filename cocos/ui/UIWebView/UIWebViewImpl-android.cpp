@@ -35,7 +35,7 @@
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
 #include "ui/UIHelper.h"
-#include "yasio/tlx/string_view.hpp"
+#include <string_view>
 
 static const char* className = "org.cocos.lib.WebViewHelper";
 
@@ -58,7 +58,7 @@ static std::string getFixedBaseUrl(std::string_view baseUrl)
     else if (baseUrl[0] != '/')
     {
         using namespace std::literals;  // for std::string_view literal
-        if (tlx::starts_with(baseUrl, "assets/"sv))
+        if (baseUrl.starts_with("assets/"sv))
         {
             fixedBaseUrl.assign(s_assetsBaseUrl).push_back(baseUrl[7]);
         }
@@ -174,7 +174,7 @@ std::string getUrlStringByFileName(std::string_view fileName)
 
     if (urlString[0] == '/')
         urlString.insert(urlString.begin(), s_sdRootBaseUrl.begin(), s_sdRootBaseUrl.end());
-    else if (tlx::starts_with(std::string_view{urlString}, "assets/"sv))
+    else if (urlString.starts_with("assets/"sv))
         urlString.replace(0, sizeof("assets/") - 1, s_assetsBaseUrl);
     else
         urlString.insert(urlString.begin(), s_assetsBaseUrl.begin(), s_assetsBaseUrl.end());

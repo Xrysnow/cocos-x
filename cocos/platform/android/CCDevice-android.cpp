@@ -31,7 +31,6 @@ THE SOFTWARE.
 #include "base/ccTypes.h"
 #include "platform/android/jni/JniHelper.h"
 #include "platform/CCFileUtils.h"
-#include "yasio/tlx/string_view.hpp"
 
 static const char* deviceHelperClassName = "org.cocos.lib.CocosEngine";
 
