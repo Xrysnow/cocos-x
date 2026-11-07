@@ -1,7 +1,6 @@
 #include "VideoDecodeWorker.h"
 #include "VideoCommon.h"
 #include "VideoDecoder.h"
-#include "io/MemoryStream.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -181,8 +180,7 @@ VideoDecodeWorker::VideoDecodeWorker(std::shared_ptr<State> state) : state(std::
 std::unique_ptr<VideoDecodeWorker> VideoDecodeWorker::create(StreamPtr source, std::function<void()> cancel)
 {
 	if (!source || !source->isOpen() ||
-		!hasCapability(source->capabilities(), Capability::Read | Capability::Seek) ||
-		(!cancel && !dynamic_cast<MemoryStream*>(source.get())))
+		!hasCapability(source->capabilities(), Capability::Read | Capability::Seek))
 		return nullptr;
 
 	try
@@ -293,6 +291,8 @@ void VideoDecodeWorker::run(State& state, StreamPtr source)
 		state.error = AsyncVideoError::Open;
 		return;
 	}
+	if (state.stop)
+		return;
 
 	const size_t width = decoder->rawWidth;
 	const size_t height = decoder->rawHeight;
@@ -347,7 +347,7 @@ void VideoDecodeWorker::run(State& state, StreamPtr source)
 		auto& frame = state.frames[slot];
 		lock.unlock();
 		auto result = decoder->fillPendingFrame();
-		if (result == Decoder::ReadResult::FrameReady)
+		if (result == Decoder::ReadResult::FrameReady && !state.stop)
 		{
 			uint8_t* data[] = {frame.rgba.get(), nullptr, nullptr, nullptr};
 			const int stride[] = {static_cast<int>(width * 4), 0, 0, 0};

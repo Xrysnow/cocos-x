@@ -41,10 +41,11 @@ or `video.PlayMode.MANUAL` in Lua to use `advance(seconds)` and
 
 `Player::createAsync(stream, cancel)` is a C++ entry point for prefetching
 video on a worker. Pass a readable, seekable stream at offset zero with a
-dedicated cursor. `io::MemoryStream` works directly. Other streams require a
-thread-safe cancel hook that returns promptly and unblocks pending operations.
-The hook may run during a read, probe or seek. The worker retains the stream and
-owns the decoder. Lua and rendering stay on the Player's thread.
+dedicated cursor. Ordinary file and memory streams use cooperative shutdown,
+which waits for the current stream operation to return. An optional thread-safe
+cancel hook can unblock pending operations and must return promptly. The hook
+may run during a read, probe or seek. The worker retains the stream and owns the
+decoder. Lua and rendering stay on the Player's thread.
 
 Attach the returned Player to a running scene to publish frames. Opening and
 seek return before the first or landing frame appears. Poll `getAsyncSnapshot()`
@@ -52,6 +53,9 @@ for state, errors, metadata and the last presented frame. `getDecoder()` returns
 null for this entry point. A MANUAL advance can wait for a frame, and the session
 accepts one pending MANUAL advance at a time. `closeAsync()` requests terminal
 shutdown. The snapshot changes from `Closing` to `Closed` after worker exit.
+If an input operation remains blocked, the session remains `Closing` and process
+shutdown waits for the worker. File opening is performed by the caller before
+passing its stream to `createAsync()`.
 Node cleanup also closes the session. Detaching without cleanup pauses delivery.
 
 The RGBA pool shares a limit of three slots and 64 MiB across ready,

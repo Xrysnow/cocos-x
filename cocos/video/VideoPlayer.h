@@ -21,8 +21,8 @@ namespace video
 		static Player* create(const std::string& path);
 		// The input must support seeking and have a dedicated cursor at offset zero.
 		static Player* createFromStream(cocos2d::io::StreamPtr source);
-		// Other than MemoryStream, inputs require a prompt, thread-safe cancel
-		// hook that interrupts in-progress stream operations.
+		// Shutdown cooperatively waits for the current stream operation to return.
+		// An optional prompt, thread-safe cancel hook can unblock that operation.
 		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
 		std::optional<AsyncVideoSnapshot> getAsyncSnapshot() const;
 		void closeAsync();
