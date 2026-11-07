@@ -10,6 +10,8 @@ function(setup_ax_extension_config target_name)
     cmake_parse_arguments(opt "" "${options}" ""
                           "" ${ARGN} )
 
+  target_compile_features(${target_name} PUBLIC cxx_std_20)
+
   if(ANDROID)
     # An INTERFACE link does not apply cocos definitions to this target itself.
     target_compile_definitions(${target_name} PUBLIC CC_USE_GFX)

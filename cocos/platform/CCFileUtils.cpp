@@ -1070,17 +1070,9 @@ std::vector<std::string> FileUtils::listFiles(std::string_view dirPath) const
         if (isDir || entry.is_regular_file())
         {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-            /*
-            * Because the object memory model of std::u8string is identical to std::string
-            * so we use force cast to std::string without `memory alloc & copy`, the ASM code will be:
-            *   00F03204  lea         eax,[ebp-28h]  
-            *   00F03207  lea         ecx,[edi+20h]  
-            *   00F0320A  push        eax  
-            *   008E320B  call        std::filesystem::path::u8string (08E1C40h)  
-            *   008E3210  mov         esi,eax  
-            *   008E3212  mov         byte ptr [ebp-4],6
-            */
-            auto&& pathStr = (std::string &&)(entry.path().u8string());
+            // Copy UTF-8 bytes into the engine's char-based path string.
+            const auto utf8Path = entry.path().u8string();
+            std::string pathStr(reinterpret_cast<const char*>(utf8Path.data()), utf8Path.size());
             std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
 #else
             std::string pathStr = entry.path().string();
@@ -1107,7 +1099,8 @@ void FileUtils::listFilesRecursively(std::string_view dirPath, std::vector<std::
         if (isDir || entry.is_regular_file())
         {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-            auto&& pathStr = (std::string &&)(entry.path().u8string());
+            const auto utf8Path = entry.path().u8string();
+            std::string pathStr(reinterpret_cast<const char*>(utf8Path.data()), utf8Path.size());
             std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
 #else
             std::string pathStr = entry.path().string();

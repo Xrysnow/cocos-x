@@ -131,6 +131,7 @@ set(COCOS_SRC cocos2d.cpp
 list(APPEND COCOS_SRC ${COCOS_HEADER})
 
 add_library(${COCOS_CORE_LIB} ${COCOS_SRC})
+target_compile_features(${COCOS_CORE_LIB} PUBLIC cxx_std_20)
 
 if(AUDIO_USE_LIBVORBIS)
     target_compile_definitions(${COCOS_CORE_LIB} PRIVATE AUDIO_USE_LIBVORBIS)
