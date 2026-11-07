@@ -27,6 +27,7 @@ DEPENDS+=' libxext-dev'
 
 # openal
 DEPENDS+=' libasound2-dev'
+DEPENDS+=' libpulse-dev'
 
 # cocos UIEditBox
 DEPENDS+=' libgtk-3-dev'
