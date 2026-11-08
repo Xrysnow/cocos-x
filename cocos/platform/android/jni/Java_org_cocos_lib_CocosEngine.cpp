@@ -57,6 +57,29 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosEngine_nativeSetContext(JNIEnv* e
     FileUtilsAndroid::setAssetManagerFromJava(assetManager);
 }
 
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosEngine_nativeUsesExternalWritablePath(JNIEnv*, jclass)
+{
+    return FileUtilsAndroid::usesExternalWritablePath() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosEngine_nativeSetDefaultWritablePath(JNIEnv* env, jclass, jstring path)
+{
+    std::string text;
+    if (path)
+    {
+        const auto length = env->GetStringLength(path);
+        const jchar* chars = env->GetStringChars(path, nullptr);
+        if (!chars)
+            return; // Preserve the pending JNI exception (for example allocation failure).
+        const bool valid = StringUtils::UTF16ToUTF8(
+            std::u16string_view{reinterpret_cast<const char16_t*>(chars), static_cast<size_t>(length)}, text);
+        env->ReleaseStringChars(path, chars);
+        if (!valid)
+            text.clear();
+    }
+    FileUtilsAndroid::setDefaultWritablePathFromJava(std::move(text));
+}
+
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosEngine_nativeSetEditTextDialogResult(JNIEnv* env,
                                                                                           jclass,
                                                                                           jbyteArray text)

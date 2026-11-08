@@ -26,8 +26,10 @@ THE SOFTWARE.
 ****************************************************************************/
 #include "platform/win32/CCFileUtils-win32.h"
 #include "platform/CCCommon.h"
+#include "base/ccUTF8.h"
 #include <Shlobj.h>
 #include <cstdlib>
+#include <memory>
 #include <regex>
 #include <sstream>
 
@@ -47,6 +49,15 @@ NS_CC_BEGIN
 static std::string s_workingDir;
 static std::string s_exeDir;
 
+static bool utf16PathToUtf8(std::wstring_view path, std::string& text)
+{
+    if (!StringUtils::UTF16ToUTF8(
+            std::u16string_view{reinterpret_cast<const char16_t*>(path.data()), path.size()}, text))
+        return false;
+    std::replace(text.begin(), text.end(), '\\', '/');
+    return true;
+}
+
 // D:\aaa\bbb\ccc\ddd\abc.txt --> D:/aaa/bbb/ccc/ddd/abc.txt
 static std::string convertPathFormatToUnixStyle(const std::string_view& path)
 {
@@ -64,29 +75,63 @@ static std::string convertPathFormatToWinStyle(const std::string_view& path)
     return ret;
 }
 
-static void _checkWorkingPath()
+static bool queryExecutablePath(std::wstring& path)
 {
-    if (s_workingDir.empty())
+    std::vector<WCHAR> buffer(512);
+    for (;;)
     {
-        WCHAR utf16Path[CC_MAX_PATH + 2] = {0};
-        size_t nNum                      = GetCurrentDirectoryW(CC_MAX_PATH, utf16Path);
-        utf16Path[nNum++]                = '\\';
-        s_workingDir                     = ntcvt::from_chars(std::wstring_view{utf16Path, static_cast<size_t>(nNum)});
-        std::replace(s_workingDir.begin(), s_workingDir.end(), '\\', '/');
+        const DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+        if (!length)
+            return false;
+        if (length < buffer.size())
+        {
+            path.assign(buffer.data(), length);
+            return true;
+        }
+        if (buffer.size() >= 32768)
+            return false;
+        buffer.resize(std::min<size_t>(buffer.size() * 2, 32768));
     }
 }
 
-static void _checkExePath()
+static bool _checkWorkingPath()
+{
+    if (s_workingDir.empty())
+    {
+        std::vector<WCHAR> buffer(512);
+        for (;;)
+        {
+            const DWORD length = GetCurrentDirectoryW(static_cast<DWORD>(buffer.size()), buffer.data());
+            if (!length)
+                return false;
+            if (length < buffer.size())
+            {
+                if (!utf16PathToUtf8(std::wstring_view{buffer.data(), length}, s_workingDir))
+                    return false;
+                if (s_workingDir.back() != '/')
+                    s_workingDir += '/';
+                break;
+            }
+            buffer.resize(length);
+        }
+    }
+    return true;
+}
+
+static bool _checkExePath()
 {
     if (s_exeDir.empty())
     {
-        WCHAR utf16Path[CC_MAX_PATH + 1] = {0};
-        size_t nNum                      = GetModuleFileNameW(NULL, utf16Path, CC_MAX_PATH);
-        std::wstring_view u16pathsv{utf16Path, nNum};
-        u16pathsv.remove_suffix(u16pathsv.length() - u16pathsv.find_last_of('\\') - 1);
-        s_exeDir = ntcvt::from_chars(u16pathsv);
-        std::replace(s_exeDir.begin(), s_exeDir.end(), '\\', '/');
+        std::wstring executable;
+        if (!queryExecutablePath(executable))
+            return false;
+        const auto separator = executable.find_last_of(L"\\/");
+        if (separator == std::wstring::npos)
+            return false;
+        if (!utf16PathToUtf8(std::wstring_view{executable}.substr(0, separator + 1), s_exeDir))
+            return false;
     }
+    return true;
 }
 
 FileUtils* FileUtils::getInstance()
@@ -108,8 +153,8 @@ FileUtilsWin32::FileUtilsWin32() {}
 
 bool FileUtilsWin32::init()
 {
-    _checkWorkingPath();
-    _checkExePath();
+    if (!_checkWorkingPath() || !_checkExePath())
+        return false;
 
     bool startedFromSelfLocation = s_workingDir == s_exeDir;
     if (!startedFromSelfLocation || !isDirectoryExistInternal(CC_PC_RESOURCES_DIR))
@@ -218,65 +263,32 @@ int64_t FileUtilsWin32::getFileSize(std::string_view filepath) const
     return -1;
 }
 
-std::string FileUtilsWin32::getWritablePath() const
+bool FileUtilsWin32::queryDefaultWritablePath(std::string& path) const
 {
-    DECLARE_GUARD;
-    return getNativeWritableAbsolutePath();
-}
-
-std::string FileUtilsWin32::getNativeWritableAbsolutePath() const
-{
-    DECLARE_GUARD;
-    if (_writablePath.length())
+    std::wstring executable;
+    if (!queryExecutablePath(executable))
+        return false;
+    const auto separator = executable.find_last_of(L"\\/");
+    if (separator == std::wstring::npos)
+        return false;
+    PWSTR appData = nullptr;
+    const HRESULT status = SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DONT_VERIFY, nullptr, &appData);
+    const std::unique_ptr<WCHAR, decltype(&CoTaskMemFree)> appDataOwner(appData, &CoTaskMemFree);
+    std::wstring directory;
+    if (SUCCEEDED(status) && appData && *appData)
     {
-        return _writablePath;
+        directory = appData;
+        if (directory.back() != L'\\' && directory.back() != L'/')
+            directory += L'\\';
+        auto name = executable.substr(separator + 1);
+        const auto extension = name.find_last_of(L'.');
+        if (extension != std::wstring::npos)
+            name.resize(extension);
+        directory += name;
     }
-
-    // Get full path of executable, e.g. c:\Program Files (x86)\My Game Folder\MyGame.exe
-    WCHAR full_path[CC_MAX_PATH + 1] = {0};
-    ::GetModuleFileNameW(nullptr, full_path, CC_MAX_PATH + 1);
-
-    // Debug app uses executable directory; Non-debug app uses local app data directory
-    //#ifndef _DEBUG
-    // Get filename of executable only, e.g. MyGame.exe
-    WCHAR* base_name = wcsrchr(full_path, '\\');
-    std::wstring retPath;
-    if (base_name)
-    {
-        WCHAR app_data_path[CC_MAX_PATH + 1];
-
-        // Get local app data directory, e.g. C:\Documents and Settings\username\Local Settings\Application Data
-        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, app_data_path)))
-        {
-            std::wstring ret(app_data_path);
-
-            // Adding executable filename, e.g. C:\Documents and Settings\username\Local Settings\Application
-            // Data\MyGame.exe
-            ret += base_name;
-
-            // Remove ".exe" extension, e.g. C:\Documents and Settings\username\Local Settings\Application Data\MyGame
-            ret = ret.substr(0, ret.rfind(L"."));
-
-            ret += L"\\";
-
-            // Create directory
-            if (SUCCEEDED(SHCreateDirectoryExW(nullptr, ret.c_str(), nullptr)))
-            {
-                retPath = ret;
-            }
-        }
-    }
-    if (retPath.empty())
-    //#endif // not defined _DEBUG
-    {
-        // If fetching of local app data directory fails, use the executable one
-        retPath = full_path;
-
-        // remove xxx.exe
-        retPath = retPath.substr(0, retPath.rfind(L"\\") + 1);
-    }
-
-    return convertPathFormatToUnixStyle(ntcvt::from_chars(retPath));
+    else
+        directory = executable.substr(0, separator + 1); // Preserve the legacy query-failure fallback.
+    return utf16PathToUtf8(directory, path) && !path.empty();
 }
 
 std::string FileUtilsWin32::getSuitableFOpen(std::string_view path)

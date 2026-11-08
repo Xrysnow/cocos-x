@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include "base/ccUtils.h"
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "base/CCEventType.h"
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
@@ -425,9 +426,11 @@ bool RenderTexture::saveToFileAsNonPMA(std::string_view fileName,
     if (isRGBA && format == Image::Format::JPG)
         CCLOG("RGBA is not supported for JPG format");
 
+    const auto writablePath = FileUtils::getInstance()->getWritablePath();
+    if (!detail::ensureNativeDirectory(writablePath))
+        return false;
+    std::string fullpath = writablePath + std::string(fileName);
     _saveFileCallback = callback;
-
-    std::string fullpath = FileUtils::getInstance()->getWritablePath().append(fileName);
 
     auto renderer          = _director->getRenderer();
     auto saveToFileCommand = renderer->nextCallbackCommand();
@@ -448,9 +451,11 @@ bool RenderTexture::saveToFile(std::string_view fileName,
     if (isRGBA && format == Image::Format::JPG)
         CCLOG("RGBA is not supported for JPG format");
 
+    const auto writablePath = FileUtils::getInstance()->getWritablePath();
+    if (!detail::ensureNativeDirectory(writablePath))
+        return false;
+    std::string fullpath = writablePath + std::string(fileName);
     _saveFileCallback = callback;
-
-    std::string fullpath = FileUtils::getInstance()->getWritablePath().append(fileName);
 
     auto renderer          = _director->getRenderer();
     auto saveToFileCommand = renderer->nextCallbackCommand();

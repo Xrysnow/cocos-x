@@ -165,6 +165,7 @@ public class CocosEngine {
         CocosEngine.sCocosEngineListener = (CocosEngineListener)activity;
         CocosEngine.sAssetManager = activity.getAssets();
         CocosEngine.nativeSetContext((Context)activity, CocosEngine.sAssetManager);
+        prepareWritableDirectorySnapshot(activity.getApplicationContext());
         BitmapHelper.setContext(activity.getApplicationContext());
         CocosEngine.sVibrateService = (Vibrator)activity.getSystemService(Context.VIBRATOR_SERVICE);
         // Sensor listeners retain their Activity; release them before rebinding.
@@ -325,6 +326,25 @@ public class CocosEngine {
     private static native void nativeSetEditTextDialogResult(final byte[] pBytes);
 
     private static native void nativeSetContext(final Object pContext, final Object pAssetManager);
+
+    private static native boolean nativeUsesExternalWritablePath();
+    private static native void nativeSetDefaultWritablePath(final String path);
+
+    // Explicit storage preparation: these Android APIs may create their directory.
+    // Native FileUtils getters and reset only consume the published snapshot.
+    private static void prepareWritableDirectorySnapshot(final Context context) {
+        String path = "";
+        if (context != null) {
+            try {
+                final File directory = nativeUsesExternalWritablePath()
+                        ? context.getExternalFilesDir(null) : context.getFilesDir();
+                if (directory != null) path = directory.getAbsolutePath();
+            } catch (RuntimeException failure) {
+                Log.w(TAG, "Unable to prepare the default writable directory", failure);
+            }
+        }
+        nativeSetDefaultWritablePath(path);
+    }
 
     // private static native void nativeSetAudioDeviceInfo(boolean isSupportLowLatency, int deviceSampleRate, int audioBufferSizeInFames);
 

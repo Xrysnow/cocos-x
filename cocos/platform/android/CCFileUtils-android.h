@@ -59,17 +59,21 @@ public:
     static AAssetManager* getAssetManager() { return assetmanager; }
     static ZipFile* getObbFile() { return obbfile; }
 
+    // Platform bootstrap publishes this snapshot; FileUtils queries never call storage APIs.
+    static bool usesExternalWritablePath();
+    static void setDefaultWritablePathFromJava(std::string path);
+
     /* override functions */
     bool init() override;
 
-    virtual std::string getWritablePath() const override;
-    std::string getNativeWritableAbsolutePath() const override;
     virtual bool isAbsolutePath(std::string_view strPath) const override;
 
     virtual int64_t getFileSize(std::string_view filepath) const override;
     virtual std::vector<std::string> listFiles(std::string_view dirPath) const override;
 
 protected:
+    bool queryDefaultWritablePath(std::string& path) const override;
+
     virtual bool isFileExistInternal(std::string_view strFilePath) const override;
     virtual bool isDirectoryExistInternal(std::string_view dirPath) const override;
 

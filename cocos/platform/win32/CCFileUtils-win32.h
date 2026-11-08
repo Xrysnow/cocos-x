@@ -51,11 +51,11 @@ protected:
 public:
     /* override functions */
     bool init() override;
-    virtual std::string getWritablePath() const override;
-    virtual std::string getNativeWritableAbsolutePath() const override;
     std::string getSuitableFOpen(std::string_view path) override;
 
 protected:
+    bool queryDefaultWritablePath(std::string& path) const override;
+
     virtual bool isFileExistInternal(std::string_view strFilePath) const override;
 
     /**

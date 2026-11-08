@@ -53,6 +53,7 @@ THE SOFTWARE.
 
 #include "platform/CCImage.h"
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "2d/CCSprite.h"
 #include "2d/CCRenderTexture.h"
 
@@ -198,7 +199,16 @@ void captureScreen(std::function<void(bool, std::string_view)> afterCap, std::st
     if (FileUtils::getInstance()->isAbsolutePath(filename))
         outfile = filename;
     else
-        outfile = FileUtils::getInstance()->getWritablePath().append(filename);
+    {
+        const auto writablePath = FileUtils::getInstance()->getWritablePath();
+        if (!detail::ensureNativeDirectory(writablePath))
+        {
+            if (afterCap)
+                afterCap(false, "");
+            return;
+        }
+        outfile = writablePath + std::string(filename);
+    }
 
     captureScreen([_afterCap = std::move(afterCap), _outfile = std::move(outfile)](RefPtr<Image> image) mutable {
         AsyncTaskPool::getInstance()->enqueue(

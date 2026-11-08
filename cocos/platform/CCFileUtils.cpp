@@ -30,10 +30,13 @@ THE SOFTWARE.
 #include <stack>
 #include <sstream>
 #include <algorithm>
+#include <stdexcept>
+#include <system_error>
 
 #include "base/CCData.h"
 #include "base/ccMacros.h"
 #include "base/CCDirector.h"
+#include "base/ccUTF8.h"
 #include "platform/CCSAXParser.h"
 #include "platform/CCPosixFileStream.h"
 
@@ -68,6 +71,151 @@ inline stdfs::path toFspath(const std::string_view& pathSV)
 #endif
 
 NS_CC_BEGIN
+
+namespace
+{
+bool validWritableText(std::string_view path)
+{
+    return !path.empty() && path.find('\0') == std::string_view::npos &&
+           StringUtils::isLegalUTF8String(path.data(), path.size());
+}
+
+#if defined(_WIN32)
+bool validWindowsComponent(std::string_view component)
+{
+    if (component == "." || component == "..")
+        return true;
+    if (component.empty() || component.back() == ' ' || component.back() == '.')
+        return false;
+    for (const unsigned char ch : component)
+        if (ch < 32 || std::string_view("<>:\"|?*").find(ch) != std::string_view::npos)
+            return false;
+
+    auto stem = component.substr(0, component.find('.'));
+    while (!stem.empty() && stem.back() == ' ')
+        stem.remove_suffix(1);
+    std::string upper{stem};
+    for (char& ch : upper)
+        if (ch >= 'a' && ch <= 'z')
+            ch -= 'a' - 'A';
+    if (upper == "CON" || upper == "PRN" || upper == "AUX" || upper == "NUL" ||
+        upper == "CONIN$" || upper == "CONOUT$")
+        return false;
+    if (upper.starts_with("COM") || upper.starts_with("LPT"))
+    {
+        const auto suffix = std::string_view{upper}.substr(3);
+        if ((suffix.size() == 1 && suffix[0] >= '1' && suffix[0] <= '9') ||
+            suffix == "\xc2\xb9" || suffix == "\xc2\xb2" || suffix == "\xc2\xb3")
+            return false;
+    }
+    return true;
+}
+#endif
+
+// Lexical physical-path parsing only. An empty root denotes an ordinary relative path.
+bool splitWritablePath(std::string_view text, std::string& root, std::vector<std::string>& components)
+{
+    if (!validWritableText(text))
+        return false;
+    std::string path{text};
+    size_t offset = 0;
+#if defined(_WIN32)
+    std::replace(path.begin(), path.end(), '\\', '/');
+    if (path.starts_with("//"))
+    {
+        // Never reinterpret Win32 devices or extended namespaces as ordinary UNC paths.
+        if (path.starts_with("//?/") || path.starts_with("//./"))
+            return false;
+        const auto serverEnd = path.find('/', 2);
+        if (serverEnd == std::string::npos || serverEnd == 2)
+            return false;
+        const auto shareEnd = path.find('/', serverEnd + 1);
+        const auto server = std::string_view{path}.substr(2, serverEnd - 2);
+        const auto share = std::string_view{path}.substr(serverEnd + 1,
+            shareEnd == std::string::npos ? shareEnd : shareEnd - serverEnd - 1);
+        if (server == "." || server == ".." || share == "." || share == ".." ||
+            !validWindowsComponent(server) || !validWindowsComponent(share))
+            return false;
+        root = "//" + std::string{server} + "/" + std::string{share} + "/";
+        offset = shareEnd == std::string::npos ? path.size() : shareEnd + 1;
+    }
+    else if (path.size() >= 2 && path[1] == ':')
+    {
+        if (!((path[0] >= 'a' && path[0] <= 'z') || (path[0] >= 'A' && path[0] <= 'Z')) ||
+            path.size() < 3 || path[2] != '/')
+            return false;
+        root = path.substr(0, 3);
+        offset = 3;
+    }
+    else if (path[0] == '/')
+        return false;  // Current-volume roots are not fully qualified.
+#else
+    if (path[0] == '/')
+    {
+        root = "/";
+        offset = 1;
+    }
+#endif
+    while (offset < path.size())
+    {
+        const auto end = path.find('/', offset);
+        const auto component = std::string_view{path}.substr(offset,
+            end == std::string::npos ? end : end - offset);
+        if (!component.empty())
+        {
+#if defined(_WIN32)
+            if (!validWindowsComponent(component))
+                return false;
+#endif
+            components.emplace_back(component);
+        }
+        offset = end == std::string::npos ? path.size() : end + 1;
+    }
+    return true;
+}
+
+bool normalizeWritablePath(std::string_view text, bool allowRelative, std::string& result)
+{
+    std::string root;
+    std::vector<std::string> components;
+    if (!splitWritablePath(text, root, components))
+        return false;
+    if (root.empty())
+    {
+        if (!allowRelative)
+            return false;
+        std::error_code error;
+        const auto cwd = stdfs::current_path(error);
+        if (error)
+            return false;
+        const auto bytes = cwd.u8string();
+        std::vector<std::string> base;
+        if (!splitWritablePath(std::string_view{reinterpret_cast<const char*>(bytes.data()), bytes.size()}, root, base) ||
+            root.empty())
+            return false;
+        base.insert(base.end(), components.begin(), components.end());
+        components.swap(base);
+    }
+
+    std::vector<std::string_view> normalized;
+    for (const auto& component : components)
+    {
+        if (component == ".")
+            continue;
+        if (component == "..")
+        {
+            if (!normalized.empty())
+                normalized.pop_back();
+        }
+        else
+            normalized.emplace_back(component);
+    }
+    result = std::move(root);
+    for (const auto component : normalized)
+        result.append(component).append("/");
+    return true;
+}
+}  // namespace
 
 // Implement DictMaker
 
@@ -530,7 +678,19 @@ bool FileUtils::writeBinaryToFile(const void* data, size_t dataSize, std::string
 
 bool FileUtils::init()
 {
+    std::string platformDefault;
+    std::string candidate;
+    bool haveDefault = false;
+    try
+    {
+        haveDefault = queryDefaultWritablePath(platformDefault) &&
+                      normalizeWritablePath(platformDefault, false, candidate);
+    }
+    catch (const std::system_error&) {}
+    catch (const std::range_error&) {}
     DECLARE_GUARD;
+    if (haveDefault)
+        _defaultWritablePath = std::move(candidate);
     _searchPathArray.emplace_back(_defaultResRootPath);
     return true;
 }
@@ -776,10 +936,52 @@ const std::vector<std::string> FileUtils::getOriginalSearchPaths() const
     return _originalSearchPaths;
 }
 
-void FileUtils::setWritablePath(std::string_view writablePath)
+std::string FileUtils::getWritablePath() const
 {
     DECLARE_GUARD;
-    _writablePath = writablePath;
+    return _writablePath.empty() ? _defaultWritablePath : _writablePath;
+}
+
+std::string FileUtils::getNativeWritableAbsolutePath() const
+{
+    DECLARE_GUARD;
+    return _writablePath.empty() ? _defaultWritablePath : _writablePath;
+}
+
+bool FileUtils::queryDefaultWritablePath(std::string&) const
+{
+    return false;
+}
+
+bool FileUtils::setWritablePath(std::string_view writablePath) try
+{
+    std::string candidate;
+    if (writablePath.empty())
+    {
+        std::string platformDefault;
+        if (!queryDefaultWritablePath(platformDefault) ||
+            !normalizeWritablePath(platformDefault, false, candidate))
+            return false;
+        DECLARE_GUARD;
+        _defaultWritablePath.swap(candidate);
+        _writablePath.clear();
+    }
+    else
+    {
+        if (!normalizeWritablePath(writablePath, true, candidate))
+            return false;
+        DECLARE_GUARD;
+        _writablePath.swap(candidate);
+    }
+    return true;
+}
+catch (const std::system_error&)
+{
+    return false;
+}
+catch (const std::range_error&)
+{
+    return false;
 }
 
 const std::string FileUtils::getDefaultResourceRootPath() const

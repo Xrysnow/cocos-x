@@ -84,7 +84,11 @@ else
 end
 
 device.language = language_
+-- Snapshot captured when this module loads; query the function after reconfiguration.
 device.writablePath = cc.FileUtils:getInstance():getWritablePath()
+function device.getWritablePath()
+    return cc.FileUtils:getInstance():getWritablePath()
+end
 device.directorySeparator = "/"
 device.pathSeparator = ":"
 if device.platform == "windows" then

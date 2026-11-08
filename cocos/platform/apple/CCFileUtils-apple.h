@@ -49,8 +49,6 @@ public:
     FileUtilsApple();
     virtual ~FileUtilsApple();
     /* override functions */
-    virtual std::string getWritablePath() const override;
-    virtual std::string getNativeWritableAbsolutePath() const override;
     virtual std::string getFullPathForFilenameWithinDirectory(std::string_view directory,
                                                               std::string_view filename) const override;
 
@@ -61,6 +59,9 @@ public:
     virtual bool createDirectory(std::string_view path) const override;
     virtual std::string getPathForDirectory(std::string_view dir,
                                             std::string_view searchPath) const override;
+
+protected:
+    bool queryDefaultWritablePath(std::string& path) const override;
 
 private:
     virtual bool isFileExistInternal(std::string_view filePath) const override;

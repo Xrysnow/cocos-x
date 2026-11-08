@@ -47,6 +47,8 @@ THE SOFTWARE.
 NS_CC_BEGIN
 
 static jobject s_assetmanager_hold = nullptr;
+static std::mutex s_writablePathMutex;
+static std::string s_defaultWritablePath;
 AAssetManager* FileUtilsAndroid::assetmanager = nullptr;
 ZipFile* FileUtilsAndroid::obbfile            = nullptr;
 
@@ -302,24 +304,26 @@ std::vector<std::string> FileUtilsAndroid::listFiles(std::string_view dirPath) c
     return fileList;
 }
 
-std::string FileUtilsAndroid::getWritablePath() const
+bool FileUtilsAndroid::usesExternalWritablePath()
 {
-    return getNativeWritableAbsolutePath();
+#ifdef CC_USE_ANDROID_EXTERNAL_FILES_DIR
+    return true;
+#else
+    return false;
+#endif
 }
 
-std::string FileUtilsAndroid::getNativeWritableAbsolutePath() const
+void FileUtilsAndroid::setDefaultWritablePathFromJava(std::string path)
 {
-    // Fix for Nexus 10 (Android 4.2 multi-user environment)
-    // the path is retrieved through Java Context.getCacheDir() method
-#ifdef CC_USE_ANDROID_EXTERNAL_FILES_DIR
-    std::string path = JniHelper::callStaticStringMethod("org.cocos.lib.CocosEngine", "getExternalFilesDir");
-#else
-    std::string path = JniHelper::callStaticStringMethod("org.cocos.lib.CocosEngine", "getInternalFilesDir");
-#endif
-    if (!path.empty())
-        path.append("/");
+    std::lock_guard<std::mutex> guard(s_writablePathMutex);
+    s_defaultWritablePath = std::move(path);
+}
 
-    return path;
+bool FileUtilsAndroid::queryDefaultWritablePath(std::string& path) const
+{
+    std::lock_guard<std::mutex> guard(s_writablePathMutex);
+    path = s_defaultWritablePath;
+    return !path.empty();
 }
 
 NS_CC_END

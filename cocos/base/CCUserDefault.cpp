@@ -48,6 +48,7 @@ THE SOFTWARE.
 #include "base/CCUserDefault.h"
 #include "platform/CCCommon.h"
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "pugixml/pugixml.hpp"
 #include "base/ccUtils.h"
 
@@ -379,8 +380,15 @@ void UserDefault::lazyInit()
     if (_initialized)
         return;
 
+    const auto writablePath = FileUtils::getInstance()->getNativeWritableAbsolutePath();
+    if (!detail::ensureNativeDirectory(writablePath))
+    {
+        log("[Warning] UserDefault writable directory is unavailable");
+        return;
+    }
+
 #if !USER_DEFAULT_PLAIN_MODE
-    _filePath = FileUtils::getInstance()->getNativeWritableAbsolutePath() + USER_DEFAULT_FILENAME;
+    _filePath = writablePath + USER_DEFAULT_FILENAME;
 
     // construct file mapping
     _fd = posix_open(_filePath.c_str(), O_OVERLAP_FLAGS);
@@ -436,7 +444,7 @@ void UserDefault::lazyInit()
 #else
     pugi::xml_document doc;
 
-    _filePath = FileUtils::getInstance()->getWritablePath() + USER_DEFAULT_FILENAME;
+    _filePath = writablePath + USER_DEFAULT_FILENAME;
 
     if (FileUtils::getInstance()->isFileExist(_filePath))
     {
@@ -460,6 +468,8 @@ void UserDefault::lazyInit()
 
 void UserDefault::flush()
 {
+    if (!_initialized || !detail::ensureNativeParentDirectory(_filePath))
+        return;
 #if !USER_DEFAULT_PLAIN_MODE
     if (_rwmmap)
     {

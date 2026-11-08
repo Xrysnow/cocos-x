@@ -421,7 +421,7 @@ int lua_cocos2d_FileUtils_setPopupNotify(lua_State* lua_S)
 int lua_cocos2d_FileUtils_setWritablePath(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:setWritablePath");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::FileUtils::*)(std::string_view)>(&cocos2d::FileUtils::setWritablePath));
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::FileUtils::*)(std::string_view)>(&cocos2d::FileUtils::setWritablePath));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_FileUtils_getFileShortName(lua_State* lua_S)

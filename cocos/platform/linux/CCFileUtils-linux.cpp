@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include <sys/stat.h>
 #include <cstdio>
 #include <cerrno>
+#include <cstring>
+#include <cstdlib>
 
 using namespace std;
 
@@ -57,68 +59,58 @@ FileUtils* FileUtils::getInstance()
 
 FileUtilsLinux::FileUtilsLinux() {}
 
+static bool queryExecutablePath(std::string& path)
+{
+    std::vector<char> buffer(256);
+    for (;;)
+    {
+        const ssize_t length = readlink("/proc/self/exe", buffer.data(), buffer.size());
+        if (length <= 0)
+            return false;
+        if (static_cast<size_t>(length) < buffer.size())
+        {
+            path.assign(buffer.data(), static_cast<size_t>(length));
+            return path.find_last_of('/') != std::string::npos;
+        }
+        if (buffer.size() > buffer.max_size() / 2)
+            return false;
+        buffer.resize(buffer.size() * 2);
+    }
+}
+
 bool FileUtilsLinux::init()
 {
     DECLARE_GUARD;
-    // get application path
-    char fullpath[256] = {0};
-    ssize_t length     = readlink("/proc/self/exe", fullpath, sizeof(fullpath) - 1);
-
-    if (length <= 0)
-    {
+    std::string appPath;
+    if (!queryExecutablePath(appPath))
         return false;
-    }
-
-    fullpath[length]    = '\0';
-    std::string appPath = fullpath;
     _defaultResRootPath = appPath.substr(0, appPath.find_last_of('/') + 1);
     _defaultResRootPath += CC_PC_RESOURCES_DIR;
-
-    // Set writable path to $XDG_CONFIG_HOME or ~/.config/<app name>/ if $XDG_CONFIG_HOME not exists.
-    const char* xdg_config_path = getenv("XDG_CONFIG_HOME");
-    std::string xdgConfigPath;
-    if (xdg_config_path == NULL)
-    {
-        xdgConfigPath = getenv("HOME");
-        xdgConfigPath += "/.config";
-    }
-    else
-    {
-        xdgConfigPath = xdg_config_path;
-    }
-    _writablePath = xdgConfigPath;
-    _writablePath += appPath.substr(appPath.find_last_of('/'));
-    _writablePath += "/";
-
     return FileUtils::init();
 }
 
-string FileUtilsLinux::getWritablePath() const
+bool FileUtilsLinux::queryDefaultWritablePath(std::string& path) const
 {
-    DECLARE_GUARD;
-    return getNativeWritableAbsolutePath();
-}
-
-std::string FileUtilsLinux::getNativeWritableAbsolutePath() const
-{
-    struct stat st;
-    stat(_writablePath.c_str(), &st);
-    if (!S_ISDIR(st.st_mode))
+    const auto validRoot = [](const char* value) {
+        return value && value[0] == '/' && StringUtils::isLegalUTF8String(value, strlen(value));
+    };
+    // Keep the legacy configuration-directory layout; invalid/empty XDG values are ignored.
+    const char* xdg = getenv("XDG_CONFIG_HOME");
+    if (validRoot(xdg))
+        path = xdg;
+    else
     {
-        mkdir(_writablePath.c_str(), 0744);
+        const char* home = getenv("HOME");
+        if (!validRoot(home))
+            return false;
+        path = home;
+        path += "/.config";
     }
-
-    return _writablePath;
-}
-
-void FileUtilsLinux::setWritablePath(std::string_view writablePath)
-{
-    DECLARE_GUARD;
-    struct stat st;
-    stat(writablePath.data(), &st);
-    if (!S_ISDIR(st.st_mode) || access(writablePath.data(), W_OK) != 0)
-        return;
-    _writablePath = writablePath;
+    std::string executable;
+    if (!queryExecutablePath(executable))
+        return false;
+    path += executable.substr(executable.find_last_of('/'));
+    return true;
 }
 
 bool FileUtilsLinux::isFileExistInternal(std::string_view path) const

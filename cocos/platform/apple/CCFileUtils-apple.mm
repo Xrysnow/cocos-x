@@ -80,26 +80,18 @@ FileUtils* FileUtils::getInstance()
     return s_sharedFileUtils;
 }
 
-std::string FileUtilsApple::getWritablePath() const
+bool FileUtilsApple::queryDefaultWritablePath(std::string& path) const
 {
-    DECLARE_GUARD;
-    return getNativeWritableAbsolutePath();
-}
-
-std::string FileUtilsApple::getNativeWritableAbsolutePath() const
-{
-    DECLARE_GUARD;
-    if (_writablePath.length())
-    {
-        return _writablePath;
-    }
-
-    // save to document folder
+    // Location query only: do not create or inspect Documents here.
     NSArray* paths               = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    if ([paths count] == 0)
+        return false;
     NSString* documentsDirectory = [paths objectAtIndex:0];
-    std::string strRet           = [documentsDirectory UTF8String];
-    strRet.append("/");
-    return strRet;
+    const char* text = [documentsDirectory UTF8String];
+    if (!text || !*text)
+        return false;
+    path = text;
+    return true;
 }
 
 bool FileUtilsApple::isFileExistInternal(std::string_view filePath) const

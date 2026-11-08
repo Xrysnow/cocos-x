@@ -53,6 +53,7 @@
 #include "base/CCConfiguration.h"
 #include "2d/CCScene.h"
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "renderer/CCTextureCache.h"
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
@@ -1540,7 +1541,13 @@ void Console::commandUpload(socket_native_type fd)
     }
     *ptr = 0;
 
-    static std::string writablePath = FileUtils::getInstance()->getWritablePath();
+    const std::string writablePath = FileUtils::getInstance()->getWritablePath();
+    if (!detail::ensureNativeDirectory(writablePath))
+    {
+        const char err[] = "writable directory is unavailable!\n";
+        Console::Utility::sendToConsole(fd, err, strlen(err));
+        return;
+    }
     std::string filepath            = writablePath + std::string(buf);
 
     auto fs = FileUtils::getInstance()->openFileStream(filepath, FileStream::Mode::WRITE);

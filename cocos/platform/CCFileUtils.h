@@ -361,23 +361,30 @@ public:
     virtual const std::vector<std::string> getOriginalSearchPaths() const;
 
     /**
-     *  Gets the writable path that may not be in the format of an absolute path
-     *  @return  The path that can be write/read a file in
-     *  @note This may return the same value as getNativeWritableAbsolutePath(). If you require the absolute path
-     *  to the underlying file system, then call getNativeWritableAbsolutePath() instead.
+     *  Gets the configured physical directory as a fully qualified UTF-8 path ending in '/'.
+     *  This query does not check, create or repair the directory. An empty result means that
+     *  no platform default is available and no override has been configured.
      */
-    virtual std::string getWritablePath() const = 0;
+    virtual std::string getWritablePath() const;
 
     /**
-     *  Gets the writable path in the native file-system format
-     *  @return  The path that can be write/read a file in
+     *  Gets the same physical UTF-8 directory snapshot as getWritablePath().
+     *  Native means the physical file system, not a resource name or an ANSI-encoded path.
      */
-    virtual std::string getNativeWritableAbsolutePath() const = 0;
+    virtual std::string getNativeWritableAbsolutePath() const;
 
     /**
-     *  Sets writable path.
+     *  Configures a physical directory without testing its existence or writability.
+     *  Ordinary relative paths are resolved once against this call's process CWD snapshot.
+     *  Empty input reloads the platform default and removes the override. Invalid UTF-8,
+     *  embedded NUL, invalid native syntax, or unavailable required path information fails
+     *  without changing the previous state. Windows drive-relative, root-relative, device
+     *  and extended namespace paths are rejected. No shell/URI expansion is performed.
+     *  Normalization is lexical and does not resolve symlinks. Callers must synchronize
+     *  concurrent process-CWD changes and explicitly prepare directories before writing.
+     *  @return True if the configuration was accepted; this does not guarantee successful I/O.
      */
-    virtual void setWritablePath(std::string_view writablePath);
+    virtual bool setWritablePath(std::string_view writablePath);
 
     /**
      *  Sets whether to pop-up a message box when failed to load an image.
@@ -868,7 +875,18 @@ protected:
     mutable hlookup::string_map<std::string> _fullPathCacheDir;
 
     /**
-     * Writable path.
+     * Queries the platform default without checking or creating its target directory.
+     * Android consumes a snapshot published by explicit platform storage preparation.
+     */
+    virtual bool queryDefaultWritablePath(std::string& path) const;
+
+    /**
+     * Default physical directory snapshot. Empty when platform information is unavailable.
+     */
+    std::string _defaultWritablePath;
+
+    /**
+     * Writable directory override. Empty selects _defaultWritablePath.
      */
     std::string _writablePath;
 

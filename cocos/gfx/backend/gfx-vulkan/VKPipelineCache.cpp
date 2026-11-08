@@ -29,14 +29,17 @@
 #include "base/BinaryArchive.h"
 
 #include "gfx-base/GFXUtil.h"
+#include "platform/CCFileUtilsDirectory.h"
 
 namespace {
-const char *fileName = "/pipeline_cache_vk.bin";
+const char *fileName = "pipeline_cache_vk.bin";
 const uint32_t MAGIC = 0x4343564B; // "CCVK"
 const uint32_t VERSION = 1;
 
 void loadData(const ccstd::string &path, ccstd::vector<char> &data) {
-    std::ifstream stream(path, std::ios::binary);
+    if (path.empty())
+        return;
+    std::ifstream stream(stdfs::u8path(path).c_str(), std::ios::binary);
     if (!stream.is_open()) {
         CC_LOG_INFO("Load program cache, no cached files.");
         return;
@@ -64,7 +67,12 @@ void loadData(const ccstd::string &path, ccstd::vector<char> &data) {
 namespace cc::gfx {
 
 CCVKPipelineCache::CCVKPipelineCache() {
-    _savePath = getPipelineCacheFolder() + fileName;
+    auto folder = getPipelineCacheFolder();
+    if (!folder.empty()) {
+        if (folder.back() != '/' && folder.back() != '\\')
+            folder += '/';
+        _savePath = folder + fileName;
+    }
 }
 
 CCVKPipelineCache::~CCVKPipelineCache() {
@@ -99,7 +107,11 @@ void CCVKPipelineCache::saveCache() {
     if (!_dirty) {
         return;
     }
-    std::ofstream stream(_savePath, std::ios::binary);
+    if (!cocos2d::detail::ensureNativeParentDirectory(_savePath)) {
+        CC_LOG_INFO("Save pipeline cache directory unavailable.");
+        return;
+    }
+    std::ofstream stream(stdfs::u8path(_savePath).c_str(), std::ios::binary);
     if (!stream.is_open()) {
         CC_LOG_INFO("Save program cache failed.");
         return;

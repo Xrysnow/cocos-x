@@ -31,6 +31,7 @@
 #include "base/ccUtils.h"
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "yasio/yasio.hpp"
 #include "yasio/tlx/string_view.hpp"
 #include "network/SSLVerification.h"
@@ -97,7 +98,13 @@ void HttpClient::enableCookies(const char* cookieFile)
     }
     else
     {
-        _cookieFilename = (FileUtils::getInstance()->getNativeWritableAbsolutePath() + "cookieFile.txt");
+        const auto directory = FileUtils::getInstance()->getNativeWritableAbsolutePath();
+        if (!detail::ensureNativeDirectory(directory))
+        {
+            CCLOG("HttpClient cookie directory is unavailable");
+            return;
+        }
+        _cookieFilename = directory + "cookieFile.txt";
     }
 
     if (!_cookie)
