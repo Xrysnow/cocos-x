@@ -26,6 +26,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "platform/CCFileUtils.h"
+#include "platform/CCFileUtilsDirectory.h"
 
 #include <stack>
 #include <sstream>
@@ -1381,65 +1382,7 @@ bool FileUtils::isDirectoryExistInternal(std::string_view dirPath) const
 
 bool FileUtils::createDirectory(std::string_view path) const
 {
-    CCASSERT(!path.empty(), "Invalid path");
-
-    if (isDirectoryExist(path))
-        return true;
-
-    // Split the path
-    size_t start = 0;
-    size_t found = path.find_first_of("/\\", start);
-    std::string_view subpath;
-    std::vector<std::string> dirs;
-
-    if (found != std::string::npos)
-    {
-        while (true)
-        {
-            subpath = path.substr(start, found - start + 1);
-            if (!subpath.empty())
-                dirs.emplace_back(std::string{subpath});
-            start = found + 1;
-            found = path.find_first_of("/\\", start);
-            if (found == std::string::npos)
-            {
-                if (start < path.length())
-                {
-                    dirs.emplace_back(std::string{path.substr(start)});
-                }
-                break;
-            }
-        }
-    }
-
-    DIR* dir = NULL;
-
-    // Create path recursively
-    std::string strSubpath;
-    for (const auto& iter : dirs)
-    {
-        strSubpath += iter;
-        dir = opendir(strSubpath.c_str());
-
-        if (!dir)
-        {
-            // directory doesn't exist, should create a new one
-
-            int ret = mkdir(strSubpath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
-            if (ret != 0 && (errno != EEXIST))
-            {
-                // current directory can not be created, sub directories can not be created too
-                // should return
-                return false;
-            }
-        }
-        else
-        {
-            // directory exists, should close opened dir
-            closedir(dir);
-        }
-    }
-    return true;
+    return detail::ensureNativeDirectory(path);
 }
 
 namespace

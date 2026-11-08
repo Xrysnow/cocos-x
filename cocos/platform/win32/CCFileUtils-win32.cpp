@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 #include "platform/win32/CCFileUtils-win32.h"
+#include "platform/CCFileUtilsDirectory.h"
 #include "platform/CCCommon.h"
 #include "base/ccUTF8.h"
 #include <Shlobj.h>
@@ -341,59 +342,7 @@ bool FileUtilsWin32::renameFile(std::string_view path, std::string_view oldname,
 
 bool FileUtilsWin32::createDirectory(std::string_view dirPath) const
 {
-    CCASSERT(!dirPath.empty(), "Invalid path");
-
-    if (isDirectoryExist(dirPath))
-        return true;
-
-    std::wstring path = ntcvt::from_chars(dirPath);
-
-    // Split the path
-    size_t start = 0;
-    size_t found = path.find_first_of(L"/\\", start);
-    std::wstring subpath;
-    std::vector<std::wstring> dirs;
-
-    if (found != std::wstring::npos)
-    {
-        while (true)
-        {
-            subpath = path.substr(start, found - start + 1);
-            if (!subpath.empty())
-                dirs.emplace_back(subpath);
-            start = found + 1;
-            found = path.find_first_of(L"/\\", start);
-            if (found == std::wstring::npos)
-            {
-                if (start < path.length())
-                {
-                    dirs.emplace_back(path.substr(start));
-                }
-                break;
-            }
-        }
-    }
-
-    if ((GetFileAttributesW(path.c_str())) == INVALID_FILE_ATTRIBUTES)
-    {
-        subpath = L"";
-        for (unsigned int i = 0, size = dirs.size(); i < size; ++i)
-        {
-            subpath += dirs[i];
-
-            std::string utf8Path = ntcvt::from_chars(subpath);
-            if (!isDirectoryExist(utf8Path))
-            {
-                BOOL ret = CreateDirectoryW(subpath.c_str(), NULL);
-                if (!ret && ERROR_ALREADY_EXISTS != GetLastError())
-                {
-                    CCLOGERROR("Fail create directory %s !Error code is 0x%x", utf8Path.c_str(), GetLastError());
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
+    return detail::ensureNativeDirectory(dirPath);
 }
 
 bool FileUtilsWin32::removeFile(std::string_view filepath) const

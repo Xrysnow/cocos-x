@@ -166,29 +166,34 @@ bool FileUtilsApple::removeDirectory(std::string_view path) const
 std::string FileUtilsApple::getPathForDirectory(std::string_view dir,
                                                 std::string_view searchPath) const
 {
+    if (dir.find('\0') != std::string_view::npos || searchPath.find('\0') != std::string_view::npos)
+        return "";
+
     std::string path{searchPath};
     path.append(dir);
+    while (path.length() > 1 && path.back() == '/')
+        path.pop_back();
+    if (path.empty())
+        return "";
 
-    if (!path.empty() && path[path.length() - 1] == '/')
-    {
-        path.erase(path.end() - 1);
-    }
+    NSString* candidate = [NSString stringWithUTF8String:path.c_str()];
+    if (candidate == nil)
+        return "";
 
+    BOOL isDir = NO;
     if (path[0] == '/')
     {
-        BOOL isDir = false;
-        if ([s_fileManager fileExistsAtPath:[NSString stringWithUTF8String:dir.data()] isDirectory:&isDir])
-        {
-            return isDir ? path : "";
-        }
+        if ([s_fileManager fileExistsAtPath:candidate isDirectory:&isDir] && isDir)
+            return path;
     }
     else
     {
-        NSString* fullpath = [pimpl_->getBundle() pathForResource:[NSString stringWithUTF8String:path.c_str()]
-                                                           ofType:nil];
-        if (fullpath != nil)
+        NSString* fullpath = [pimpl_->getBundle() pathForResource:candidate ofType:nil];
+        if (fullpath != nil && [s_fileManager fileExistsAtPath:fullpath isDirectory:&isDir] && isDir)
         {
-            return [fullpath UTF8String];
+            const char* text = [fullpath UTF8String];
+            if (text != nullptr)
+                return text;
         }
     }
     return "";
@@ -222,24 +227,31 @@ std::string FileUtilsApple::getFullPathForFilenameWithinDirectory(std::string_vi
 
 bool FileUtilsApple::createDirectory(std::string_view path) const
 {
-    CCASSERT(!path.empty(), "Invalid path");
+    if (path.empty() || path.find('\0') != std::string_view::npos)
+        return false;
 
-    if (isDirectoryExist(path))
+    const std::string directory{path};
+    NSString* nativePath = [NSString stringWithUTF8String:directory.c_str()];
+    if (nativePath == nil)
+        return false;
+
+    NSError* error = nil;
+    const BOOL created = [s_fileManager createDirectoryAtPath:nativePath
+                                withIntermediateDirectories:YES
+                                                 attributes:nil
+                                                      error:&error];
+
+    // Query the physical target, including when another creator won the race.
+    BOOL isDir = NO;
+    if ([s_fileManager fileExistsAtPath:nativePath isDirectory:&isDir] && isDir)
         return true;
 
-    NSError* error;
-
-    bool result = [s_fileManager createDirectoryAtPath:[NSString stringWithUTF8String:path.data()]
-                           withIntermediateDirectories:YES
-                                            attributes:nil
-                                                 error:&error];
-
-    if (!result && error != nil)
+    if (!created && error != nil)
     {
-        CCLOGERROR("Fail to create directory \"%s\": %s", path.data(), [error.localizedDescription UTF8String]);
+        CCLOGERROR("Fail to create directory \"%s\": %s", directory.c_str(), [error.localizedDescription UTF8String]);
     }
 
-    return result;
+    return false;
 }
 
 NS_CC_END

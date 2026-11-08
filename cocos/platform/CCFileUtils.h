@@ -599,19 +599,20 @@ public:
     virtual void isDirectoryExist(std::string_view fullPath, std::function<void(bool)> callback) const;
 
     /**
-     *  Creates a directory.
+     *  Creates a physical directory and any missing parent directories without resource lookup.
      *
-     *  @param dirPath The path of the directory, it must be an absolute path.
-     *  @return True if the directory have been created successfully, false if not.
+     *  @param dirPath Native path; relative paths use the process CWD when the operation executes.
+     *  @return True if the target is a directory after the operation (including an existing one).
+     *  Empty or NUL-containing paths, file occupants and creation failures return false.
      */
     virtual bool createDirectory(std::string_view dirPath) const;
 
     /**
      * Create a directory, async off the main cocos thread.
      *
-     * @param dirPath the path of the directory, it must be an absolute path
+     * @param dirPath Native path; relative paths use the worker's process CWD when it executes.
      * @param callback The function that will be called when the operation is complete. Will have one boolean
-     * argument, true if the directory was successfully, false otherwise.
+     * argument, true if the physical target is a directory, false otherwise (including empty/NUL input).
      */
     virtual void createDirectory(std::string_view dirPath, std::function<void(bool)> callback) const;
 
