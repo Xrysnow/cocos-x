@@ -333,6 +333,64 @@ int luaReg_Core_ccUserDefault(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
+int luaReg_Core_ccAppDirectory(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENUM_DEF("AppDirectory");
+	LUA_ENUM_ENTRY("PersistentData", cocos2d::AppDirectory::PersistentData);
+	LUA_ENUM_ENTRY("TransientData", cocos2d::AppDirectory::TransientData);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+
+int luaReg_Core_ccDirectoryStatus(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENUM_DEF("DirectoryStatus");
+	LUA_ENUM_ENTRY("Ok", cocos2d::DirectoryStatus::Ok);
+	LUA_ENUM_ENTRY("NotInitialized", cocos2d::DirectoryStatus::NotInitialized);
+	LUA_ENUM_ENTRY("InvalidArgument", cocos2d::DirectoryStatus::InvalidArgument);
+	LUA_ENUM_ENTRY("InUse", cocos2d::DirectoryStatus::InUse);
+	LUA_ENUM_ENTRY("Unavailable", cocos2d::DirectoryStatus::Unavailable);
+	LUA_ENUM_ENTRY("PermissionDenied", cocos2d::DirectoryStatus::PermissionDenied);
+	LUA_ENUM_ENTRY("NotDirectory", cocos2d::DirectoryStatus::NotDirectory);
+	LUA_ENUM_ENTRY("IoError", cocos2d::DirectoryStatus::IoError);
+	LUA_ENUM_ENTRY("Unsupported", cocos2d::DirectoryStatus::Unsupported);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+
+int lua_cocos2d_FileUtils_queryAppDirectory(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:queryAppDirectory");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::DirectoryResult(cocos2d::FileUtils::*)(cocos2d::AppDirectory)const>(&cocos2d::FileUtils::queryAppDirectory));
+	LUA_INVOKE_FOOTER("1");
+}
+
+int lua_cocos2d_FileUtils_ensureAppDirectory(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:ensureAppDirectory");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::DirectoryResult(cocos2d::FileUtils::*)(cocos2d::AppDirectory, std::string_view)const>(&cocos2d::FileUtils::ensureAppDirectory)));
+	LUA_TRY_INVOKE_R(1, ([](const cocos2d::FileUtils* obj,cocos2d::AppDirectory arg0){{return obj->ensureAppDirectory(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2");
+}
+
+int lua_cocos2d_FileUtils_getPersistentDataPath(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:getPersistentDataPath");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string(cocos2d::FileUtils::*)()const>(&cocos2d::FileUtils::getPersistentDataPath));
+	LUA_INVOKE_FOOTER("0");
+}
+
+int lua_cocos2d_FileUtils_getTransientDataPath(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:getTransientDataPath");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string(cocos2d::FileUtils::*)()const>(&cocos2d::FileUtils::getTransientDataPath));
+	LUA_INVOKE_FOOTER("0");
+}
+
 int lua_cocos2d_FileUtils_addSearchPath(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:addSearchPath");
@@ -442,17 +500,21 @@ int luaReg_Core_ccFileUtils(lua_State* lua_S)
 	LUA_CLS_DEF(cocos2d::FileUtils, "FileUtils", "cc.FileUtils",
 		nullptr, nullptr);
 	LUA_METHOD("addSearchPath", lua_cocos2d_FileUtils_addSearchPath);
+	LUA_METHOD("ensureAppDirectory", lua_cocos2d_FileUtils_ensureAppDirectory);
 	LUA_METHOD("fullPathForFilename", lua_cocos2d_FileUtils_fullPathForFilename);
 	LUA_METHOD("fullPathFromRelativeFile", lua_cocos2d_FileUtils_fullPathFromRelativeFile);
 	LUA_METHOD("getDefaultResourceRootPath", lua_cocos2d_FileUtils_getDefaultResourceRootPath);
 	LUA_METHOD("getFileExtension", lua_cocos2d_FileUtils_getFileExtension);
 	LUA_METHOD("getNativeWritableAbsolutePath", lua_cocos2d_FileUtils_getNativeWritableAbsolutePath);
+	LUA_METHOD("getPersistentDataPath", lua_cocos2d_FileUtils_getPersistentDataPath);
+	LUA_METHOD("getTransientDataPath", lua_cocos2d_FileUtils_getTransientDataPath);
 	LUA_METHOD("getWritablePath", lua_cocos2d_FileUtils_getWritablePath);
 	LUA_METHOD("isAbsolutePath", lua_cocos2d_FileUtils_isAbsolutePath);
 	LUA_METHOD("isDirectoryExistInternal", lua_cocos2d_FileUtils_isDirectoryExistInternal);
 	LUA_METHOD("isFileExistInternal", lua_cocos2d_FileUtils_isFileExistInternal);
 	LUA_METHOD("isPopupNotify", lua_cocos2d_FileUtils_isPopupNotify);
 	LUA_METHOD("purgeCachedEntries", lua_cocos2d_FileUtils_purgeCachedEntries);
+	LUA_METHOD("queryAppDirectory", lua_cocos2d_FileUtils_queryAppDirectory);
 	LUA_METHOD("setDefaultResourceRootPath", lua_cocos2d_FileUtils_setDefaultResourceRootPath);
 	LUA_METHOD("setPopupNotify", lua_cocos2d_FileUtils_setPopupNotify);
 	LUA_METHOD("setWritablePath", lua_cocos2d_FileUtils_setWritablePath);

@@ -149,6 +149,20 @@ target_compile_features(${COCOS_CORE_LIB} PUBLIC cxx_std_20)
 target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
     CC_ENABLE_VIDEO_PLATFORM=$<BOOL:${CC_ENABLE_VIDEO_PLATFORM}>)
 
+# Hosts should provide a stable product ID before adding cocos-x. Do not derive
+# application storage identity from the executable name, CWD or release version.
+if(NOT DEFINED CC_APP_DIRECTORY_DEFAULT_ID)
+    set(CC_APP_DIRECTORY_DEFAULT_ID "org.cocos2d.application")
+endif()
+if(NOT CC_APP_DIRECTORY_DEFAULT_ID MATCHES "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$")
+    message(FATAL_ERROR "CC_APP_DIRECTORY_DEFAULT_ID must be a stable lowercase dotted application ID")
+endif()
+target_compile_definitions(${COCOS_CORE_LIB} PRIVATE
+    "CC_APP_DIRECTORY_DEFAULT_ID=\"${CC_APP_DIRECTORY_DEFAULT_ID}\"")
+if(WINDOWS)
+    target_link_libraries(${COCOS_CORE_LIB} shell32 ole32)
+endif()
+
 if(AUDIO_USE_LIBVORBIS)
     target_compile_definitions(${COCOS_CORE_LIB} PRIVATE AUDIO_USE_LIBVORBIS)
 endif()

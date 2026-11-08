@@ -937,6 +937,31 @@ const std::vector<std::string> FileUtils::getOriginalSearchPaths() const
     return _originalSearchPaths;
 }
 
+DirectoryStatus FileUtils::configureAppDirectories(const AppDirectoryConfig& config)
+{
+    return detail::configureAppDirectories(config);
+}
+
+DirectoryResult FileUtils::queryAppDirectory(AppDirectory kind) const
+{
+    return detail::queryAppDirectory(kind);
+}
+
+DirectoryResult FileUtils::ensureAppDirectory(AppDirectory kind, std::string_view relativeSubdirectory) const
+{
+    return detail::ensureAppDirectory(kind, relativeSubdirectory);
+}
+
+std::string FileUtils::getPersistentDataPath() const
+{
+    return queryAppDirectory(AppDirectory::PersistentData).path;
+}
+
+std::string FileUtils::getTransientDataPath() const
+{
+    return queryAppDirectory(AppDirectory::TransientData).path;
+}
+
 std::string FileUtils::getWritablePath() const
 {
     DECLARE_GUARD;

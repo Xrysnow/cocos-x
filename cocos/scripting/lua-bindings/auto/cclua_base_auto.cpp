@@ -1257,6 +1257,8 @@ extern int luaReg_Core_ccTargetedAction(lua_State* lua_S);
 extern int luaReg_Core_ccActionFloat(lua_State* lua_S);
 extern int luaReg_Core_ccProperties(lua_State* lua_S);
 extern int luaReg_Core_ccUserDefault(lua_State* lua_S);
+extern int luaReg_Core_ccAppDirectory(lua_State* lua_S);
+extern int luaReg_Core_ccDirectoryStatus(lua_State* lua_S);
 extern int luaReg_Core_ccFileUtils(lua_State* lua_S);
 extern int luaReg_Core_ccEventAcceleration(lua_State* lua_S);
 extern int luaReg_Core_ccEventCustom(lua_State* lua_S);
@@ -1528,6 +1530,8 @@ int register_all_cc_base(lua_State* lua_S)
 	luaReg_Core_ccActionFloat(lua_S);
 	luaReg_Core_ccProperties(lua_S);
 	luaReg_Core_ccUserDefault(lua_S);
+	luaReg_Core_ccAppDirectory(lua_S);
+	luaReg_Core_ccDirectoryStatus(lua_S);
 	luaReg_Core_ccFileUtils(lua_S);
 	luaReg_Core_ccEventAcceleration(lua_S);
 	luaReg_Core_ccEventCustom(lua_S);

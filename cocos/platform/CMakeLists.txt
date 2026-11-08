@@ -58,6 +58,7 @@ elseif(APPLE)
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/apple/CCFileUtils-apple.mm
+        platform/apple/CCAppDirectories-apple.mm
         platform/apple/CCDevice-apple.mm
         )
     if(MACOSX)
@@ -142,6 +143,7 @@ set(COCOS_PLATFORM_HEADER
     platform/CCCommon.h
     platform/CCDevice.h
     platform/CCFileUtils.h
+    platform/CCAppDirectories.h
     platform/CCFileStream.h
     platform/CCGL.h
     platform/CCGLView.h
@@ -157,6 +159,7 @@ set(COCOS_PLATFORM_HEADER
 set(COCOS_PLATFORM_SRC
     ${COCOS_PLATFORM_SPECIFIC_SRC}
     platform/CCFileUtils.cpp
+    platform/CCAppDirectories.cpp
     platform/CCFileStream.cpp
     platform/CCGLView.cpp
     platform/CCImage.cpp

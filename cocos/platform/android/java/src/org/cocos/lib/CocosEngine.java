@@ -164,6 +164,9 @@ public class CocosEngine {
                 && activity.getResources().getConfiguration().isScreenRound();
         CocosEngine.sCocosEngineListener = (CocosEngineListener)activity;
         CocosEngine.sAssetManager = activity.getAssets();
+        // The native directory service retains only Application Context. Publish it
+        // before callbacks which may query storage, and keep it across Activity teardown.
+        nativeSetAppDirectoryContext(activity.getApplicationContext());
         CocosEngine.nativeSetContext((Context)activity, CocosEngine.sAssetManager);
         prepareWritableDirectorySnapshot(activity.getApplicationContext());
         BitmapHelper.setContext(activity.getApplicationContext());
@@ -326,6 +329,8 @@ public class CocosEngine {
     private static native void nativeSetEditTextDialogResult(final byte[] pBytes);
 
     private static native void nativeSetContext(final Object pContext, final Object pAssetManager);
+
+    private static native void nativeSetAppDirectoryContext(final Context applicationContext);
 
     private static native boolean nativeUsesExternalWritablePath();
     private static native void nativeSetDefaultWritablePath(final String path);

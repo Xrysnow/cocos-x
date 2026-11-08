@@ -35,6 +35,7 @@ THE SOFTWARE.
 #include <memory>
 
 #include "platform/CCFileStream.h"
+#include "platform/CCAppDirectories.h"
 #include "platform/CCPlatformMacros.h"
 #include "base/ccTypes.h"
 #include "base/CCValue.h"
@@ -359,6 +360,37 @@ public:
      *  @return The array of the original search paths
      */
     virtual const std::vector<std::string> getOriginalSearchPaths() const;
+
+    /**
+     * Optionally replace the process-wide application-directory configuration.
+     * Defaults work without this call. A valid first query/ensure freezes both roots,
+     * even if platform resolution fails; equal configuration then remains idempotent.
+     * Invalid configuration leaves the previous value intact. This is independent of
+     * setWritablePath(), search paths and FileUtils delegate replacement.
+     * @lua NA
+     */
+    static DirectoryStatus configureAppDirectories(const AppDirectoryConfig& config);
+
+    /**
+     * Resolve a physical application root without explicitly creating or inspecting it.
+     * Native platform APIs may prepare directories themselves (notably Android Context).
+     * Success gives a fully qualified UTF-8 path with '/' separators and a trailing '/'.
+     * Errors carry no path; no fallback to CWD, installation or another root occurs.
+     * TransientData may be lost at any time and is not automatically cleared on exit.
+     */
+    DirectoryResult queryAppDirectory(AppDirectory kind) const;
+
+    /**
+     * Recursively create and verify a root or relative child using native filesystem I/O.
+     * Child components must be nonempty, without '.', '..', NUL, backslash or drive syntax;
+     * empty input means the root. This is not a sandbox against hostile symlinks.
+     * Success does not promise that subsequent writes will succeed.
+     */
+    DirectoryResult ensureAppDirectory(AppDirectory kind, std::string_view relativeSubdirectory = {}) const;
+
+    /** Query-only convenience getters; failure returns an empty string. Check before concatenating. */
+    std::string getPersistentDataPath() const;
+    std::string getTransientDataPath() const;
 
     /**
      *  Gets the configured physical directory as a fully qualified UTF-8 path ending in '/'.
