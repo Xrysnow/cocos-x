@@ -155,7 +155,9 @@ endif()
 
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
-target_link_libraries(${COCOS_CORE_LIB} external OpenAL ogg)
+# gfx is an engine-owned static library; its dependencies are created above.
+add_subdirectory(gfx)
+target_link_libraries(${COCOS_CORE_LIB} external OpenAL ogg cocos_gfx)
 
 if(CC_ENABLE_VIDEO_TEXTURE)
     include(video/CMakeLists.txt)
