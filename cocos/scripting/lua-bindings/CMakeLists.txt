@@ -121,9 +121,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_retained.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
-    auto/cclua_extension_auto01.cpp
-    auto/cclua_extension_auto02.cpp
-    auto/cclua_extension_auto03.cpp
     auto/cclua_physics_auto.cpp
     auto/cclua_ui_auto.cpp
     auto/cclua_ui_auto01.cpp
