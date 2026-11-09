@@ -29,6 +29,7 @@
     #include <climits>
     #include <cmath>
     #include <unordered_map>
+    #include <vector>
 
     #include "chipmunk/chipmunk.h"
     #include "chipmunk/chipmunk_unsafe.h"
@@ -229,14 +230,14 @@ void PhysicsShape::setSensor(bool sensor)
 
 void PhysicsShape::recenterPoints(Vec2* points, int count, const Vec2& center)
 {
-    cpVect* cpvs    = new cpVect[count];
-    cpVect centroid = cpCentroidForPoly(count, cpvs);
+    std::vector<cpVect> cpvs(count);
+    PhysicsHelper::points2cpvs(points, cpvs.data(), count);
+    cpVect centroid = cpCentroidForPoly(count, cpvs.data());
     for (int i = 0; i < count; i++)
     {
         cpvs[i] = cpvsub(cpvs[i], centroid);
     }
-    PhysicsHelper::cpvs2points(cpvs, points, count);
-    delete[] cpvs;
+    PhysicsHelper::cpvs2points(cpvs.data(), points, count);
 
     if (center != Vec2::ZERO)
     {
