@@ -112,7 +112,9 @@ Pass* Pass::clone() const
     auto pass          = new Pass();
     pass->_renderState.copyFrom(_renderState);
 
-    pass->setProgramState(_programState->clone());
+    auto* state = _programState->clone();
+    pass->setProgramState(state);
+    state->release();
 
     pass->_vertexAttribBinding = _vertexAttribBinding;
     CC_SAFE_RETAIN(pass->_vertexAttribBinding);

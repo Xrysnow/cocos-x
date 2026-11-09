@@ -273,12 +273,13 @@ void Texture2DGFX::getBytes(
 
 TextureCubeGFX::TextureCubeGFX(const TextureDescriptor& descriptor)
 {
-    if (_width == 0 || _height == 0 || _width != _height)
+    if (descriptor.width == 0 || descriptor.height == 0 || descriptor.width != descriptor.height)
     {
         CCASSERT(false, "invalid texture size");
     }
     _textureType = TextureType::TEXTURE_CUBE;
     _info.type   = gfx::TextureType::CUBE;
+    _info.layerCount = 6;
     TextureCubeGFX::updateTextureDescriptor(descriptor);
     _sampler = gfx::Device::getInstance()->getSampler(_sinfo);
     _texture = gfx::Device::getInstance()->createTexture(_info);

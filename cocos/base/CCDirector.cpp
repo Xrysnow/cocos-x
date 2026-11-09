@@ -40,6 +40,9 @@ THE SOFTWARE.
 #include "2d/CCFontFNT.h"
 #include "2d/CCFontAtlasCache.h"
 #include "2d/CCAnimationCache.h"
+#include "3d/CCAnimation3D.h"
+#include "3d/CCMeshRenderer.h"
+#include "3d/CCMeshMaterial.h"
 #include "2d/CCTransition.h"
 #include "2d/CCFontFreeType.h"
 #include "2d/CCLabelAtlas.h"
@@ -1047,6 +1050,13 @@ void Director::reset()
     destroyTextureCache();
     AsyncTaskPool::destroyInstance();
     getScheduler()->removeAllPendingActions();
+    // 3D caches retain meshes, textures and program-state buffers. Release them
+    // after pending loads are discarded and before the graphics device shuts down.
+    MeshRendererCache::destroyInstance();
+    MeshMaterialCache::destroyInstance();
+    MeshMaterial::releaseCachedMaterial();
+    MeshMaterial::releaseBuiltInMaterial();
+    Animation3DCache::destroyInstance();
     FileUtils::destroyInstance();
     backend::ProgramManager::destroyInstance();
 

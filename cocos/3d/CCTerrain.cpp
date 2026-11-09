@@ -73,15 +73,15 @@ bool Terrain::initWithTerrainData(TerrainData& parameter, CrackFixedType fixedTy
     this->_isCameraViewChanged = true;
     // chunksize
     this->_chunkSize = parameter._chunkSize;
-    bool initResult  = true;
-
-    // init heightmap
-    initResult &= this->initHeightMap(parameter._heightMapSrc);
-    // init textures alpha map,detail Maps
-    initResult &= this->initTextures();
-    initResult &= this->initProperties();
-
-    return initResult;
+    if (!std::isfinite(_chunkSize.x) || !std::isfinite(_chunkSize.y) ||
+        _chunkSize.x < 8 || _chunkSize.y < 8 || _chunkSize.x > 65536 || _chunkSize.y > 65536 ||
+        _chunkSize.x != std::floor(_chunkSize.x) || _chunkSize.y != std::floor(_chunkSize.y) ||
+        (_chunkSize.x + 1) * (_chunkSize.y + 1) > 65536 ||
+        !utils::isPOT(static_cast<int>(_chunkSize.x)) || !utils::isPOT(static_cast<int>(_chunkSize.y)) ||
+        parameter._detailMapAmount < 0 || parameter._detailMapAmount > 4 ||
+        (!parameter._alphaMapSrc.empty() && parameter._detailMapAmount == 0) ||
+        !std::isfinite(parameter._mapScale) || parameter._mapScale <= 0) return false;
+    return initHeightMap(parameter._heightMapSrc) && initTextures() && initProperties();
 }
 
 void cocos2d::Terrain::setLightMap(std::string_view fileName)
@@ -133,6 +133,15 @@ void Terrain::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, 
     _programState->setUniform(_mvpMatrixLocation, &finalMatrix.m, sizeof(finalMatrix.m));
 
     _programState->setUniform(_lightDirLocation, &_lightDir, sizeof(_lightDir));
+    // All statically declared samplers need valid descriptors, even when the
+    // shader's alpha/light-map branches are disabled.
+    for (int i = 0; i < 4; ++i)
+    {
+        const auto* texture = _detailMapTextures[i] ? _detailMapTextures[i] : _detailMapTextures[0];
+        _programState->setTexture(_detailMapLocation[i], i, texture->getBackendTexture());
+    }
+    _programState->setTexture(_alphaMapLocation, 4,
+        (_alphaMap ? _alphaMap : _detailMapTextures[0])->getBackendTexture());
     if (!_alphaMap)
     {
         _programState->setTexture(_detailMapLocation[0], 0, _detailMapTextures[0]->getBackendTexture());
@@ -165,6 +174,8 @@ void Terrain::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, 
         _programState->setUniform(_lightMapCheckLocation, &hasLightMap, sizeof(hasLightMap));
 #ifdef CC_USE_METAL
         _programState->setTexture(_lightMapLocation, 5, _dummyTexture->getBackendTexture());
+#else
+        _programState->setTexture(_lightMapLocation, 5, _detailMapTextures[0]->getBackendTexture());
 #endif
     }
     auto camera = Camera::getVisitingCamera();
@@ -201,10 +212,14 @@ void Terrain::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, 
 bool Terrain::initHeightMap(std::string_view heightMap)
 {
     _heightMapImage = new Image();
-    _heightMapImage->initWithImageFile(heightMap);
+    if (!_heightMapImage->initWithImageFile(heightMap)) return false;
     _data        = _heightMapImage->getData();
     _imageWidth  = _heightMapImage->getWidth();
     _imageHeight = _heightMapImage->getHeight();
+    if (_imageWidth < _chunkSize.x || _imageHeight < _chunkSize.y ||
+        _imageWidth / _chunkSize.x > MAX_CHUNKES || _imageHeight / _chunkSize.y > MAX_CHUNKES) return false;
+    // QuadTree subdivides both axes together; every chunk must have one leaf.
+    if (static_cast<int>(_imageWidth / _chunkSize.x) != static_cast<int>(_imageHeight / _chunkSize.y)) return false;
 
     // only the image size  is the Powers Of Two(POT) or POT+1
     if ((utils::isPOT(_imageWidth) && utils::isPOT(_imageHeight)) ||
@@ -253,13 +268,20 @@ bool Terrain::initHeightMap(std::string_view heightMap)
 }
 
 Terrain::Terrain()
-    : _alphaMap(nullptr)
+    : _data(nullptr)
+    , _alphaMap(nullptr)
     , _lightMap(nullptr)
     , _lightDir(-1.f, -1.f, 0.f)
+    , _quadRoot(nullptr)
+    , _imageWidth(0)
+    , _imageHeight(0)
+    , _heightMapImage(nullptr)
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     , _backToForegroundListener(nullptr)
 #endif
 {
+    std::fill(std::begin(_detailMapTextures), std::end(_detailMapTextures), nullptr);
+    memset(_chunkesArray, 0, sizeof(_chunkesArray));
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     _backToForegroundListener =
         EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { reload(); });
@@ -364,6 +386,7 @@ float Terrain::getImageHeight(int pixel_x, int pixel_y) const
     int byte_stride = 1;
     switch (_heightMapImage->getPixelFormat())
     {
+    case backend::PixelFormat::RGBA8:
     case backend::PixelFormat::BGRA8:
         byte_stride = 4;
         break;
@@ -570,6 +593,8 @@ bool Terrain::getIntersectionPoint(const Ray& ray_, Vec3& intersectionPoint) con
                 }
             }
         }
+        // A vertical ray has no XZ traversal: the current chunks are sufficient.
+        if (delta.isZero()) break;
         if ((delta.x > 0 && start.x > width) || (delta.x < 0 && start.x < 0))
         {
             break;
@@ -586,7 +611,7 @@ bool Terrain::getIntersectionPoint(const Ray& ray_, Vec3& intersectionPoint) con
 
 void Terrain::setMaxDetailMapAmount(int max_value)
 {
-    _maxDetailMapValue = max_value;
+    _maxDetailMapValue = std::clamp(max_value, 0, 4);
 }
 
 cocos2d::Vec2 Terrain::convertToTerrainSpace(const Vec2& worldSpaceXZ) const
@@ -808,23 +833,14 @@ void Terrain::cacheUniformAttribLocation()
 
     _alphaIsHasAlphaMapLocation = _programState->getUniformLocation("u_has_alpha");
     _lightMapCheckLocation      = _programState->getUniformLocation("u_has_light_map");
-    if (!_alphaMap)
+    for (int i = 0; i < 4; ++i)
     {
-        _detailMapLocation[0] = _programState->getUniformLocation("u_tex0");
+        char name[20];
+        snprintf(name, sizeof(name), "u_texture%d", i);
+        _detailMapLocation[i] = _programState->getUniformLocation(name);
     }
-    else
-    {
-        for (int i = 0; i < _maxDetailMapValue; ++i)
-        {
-            char str[20];
-            snprintf(str, sizeof(str), "u_tex%d", i);
-            _detailMapLocation[i] = _programState->getUniformLocation(str);
-        }
-
-        _detailMapSizeLocation = _programState->getUniformLocation("u_detailSize");  // float[4]
-
-        _alphaMapLocation = _programState->getUniformLocation("u_alphaMap");
-    }
+    _detailMapSizeLocation = _programState->getUniformLocation("u_detailSize");
+    _alphaMapLocation = _programState->getUniformLocation("u_alphaMap");
     _lightMapLocation  = _programState->getUniformLocation("u_lightMap");
     _lightDirLocation  = _programState->getUniformLocation("u_lightDir");
     _mvpMatrixLocation = _programState->getUniformLocation("u_MVPMatrix");
@@ -834,8 +850,9 @@ bool Terrain::initTextures()
 {
     for (int i = 0; i < 4; ++i)
     {
-        _detailMapTextures[i] = nullptr;
+        CC_SAFE_RELEASE_NULL(_detailMapTextures[i]);
     }
+    CC_SAFE_RELEASE_NULL(_alphaMap);
 
     Texture2D::TexParams texParam;
     texParam.sAddressMode = backend::SamplerAddressMode::REPEAT;
@@ -843,7 +860,11 @@ bool Terrain::initTextures()
     if (_terrainData._alphaMapSrc.empty())
     {
         auto textImage = new Image();
-        textImage->initWithImageFile(_terrainData._detailMaps[0]._detailMapSrc);
+        if (!textImage->initWithImageFile(_terrainData._detailMaps[0]._detailMapSrc))
+        {
+            delete textImage;
+            return false;
+        }
         auto texture = new Texture2D();
         texture->initWithImage(textImage);
         texture->generateMipmap();
@@ -857,7 +878,11 @@ bool Terrain::initTextures()
     {
         // alpha map
         auto image = new Image();
-        image->initWithImageFile(_terrainData._alphaMapSrc);
+        if (!image->initWithImageFile(_terrainData._alphaMapSrc))
+        {
+            delete image;
+            return false;
+        }
         _alphaMap = new Texture2D();
         _alphaMap->initWithImage(image);
         texParam.sAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
@@ -870,7 +895,11 @@ bool Terrain::initTextures()
         for (int i = 0; i < _terrainData._detailMapAmount; ++i)
         {
             auto textImage = new Image();
-            textImage->initWithImageFile(_terrainData._detailMaps[i]._detailMapSrc);
+            if (!textImage->initWithImageFile(_terrainData._detailMaps[i]._detailMapSrc))
+            {
+                delete textImage;
+                return false;
+            }
             auto texture = new Texture2D();
             texture->initWithImage(textImage);
             delete textImage;

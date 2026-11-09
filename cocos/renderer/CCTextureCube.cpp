@@ -30,6 +30,7 @@
 #include "platform/CCFileUtils.h"
 #include "renderer/backend/Texture.h"
 #include "renderer/backend/Device.h"
+#include <memory>
 #include "renderer/backend/PixelFormatUtils.h"
 
 NS_CC_BEGIN
@@ -183,27 +184,27 @@ bool TextureCube::init(std::string_view positive_x,
     _imgPath[4] = positive_z;
     _imgPath[5] = negative_z;
 
-    std::vector<Image*> images(6);
+    std::vector<std::unique_ptr<Image>> images(6);
 
-    images[0] = createImage(positive_x);
-    images[1] = createImage(negative_x);
-    images[2] = createImage(positive_y);
-    images[3] = createImage(negative_y);
-    images[4] = createImage(positive_z);
-    images[5] = createImage(negative_z);
+    images[0].reset(createImage(positive_x));
+    images[1].reset(createImage(negative_x));
+    images[2].reset(createImage(positive_y));
+    images[3].reset(createImage(negative_y));
+    images[4].reset(createImage(positive_z));
+    images[5].reset(createImage(negative_z));
 
+    for (const auto& image : images)
+        if (!image) return false;
     int imageSize = images[0]->getHeight();
     for (int i = 0; i < 6; i++)
     {
-        Image* img = images[i];
+        Image* img = images[i].get();
         if (img->getWidth() != img->getHeight())
         {
-            CCASSERT(false, "TextureCubemap: width should be equal to height!");
             return false;
         }
         if (imageSize != img->getWidth())
         {
-            CCASSERT(imageSize == img->getWidth(), "TextureCubmap: texture of each face should have same dimension");
             return false;
         }
     }
@@ -215,13 +216,14 @@ bool TextureCube::init(std::string_view positive_x,
     textureDescriptor.samplerDescriptor.magFilter      = backend::SamplerFilter::LINEAR;
     textureDescriptor.samplerDescriptor.sAddressMode   = backend::SamplerAddressMode::CLAMP_TO_EDGE;
     textureDescriptor.samplerDescriptor.tAddressMode   = backend::SamplerAddressMode::CLAMP_TO_EDGE;
+    CC_SAFE_RELEASE_NULL(_texture);
     _texture =
         static_cast<backend::TextureCubemapBackend*>(backend::Device::getInstance()->newTexture(textureDescriptor));
     CCASSERT(_texture != nullptr, "TextureCubemap: texture can not be nullptr");
 
     for (int i = 0; i < 6; i++)
     {
-        Image* img = images[i];
+        Image* img = images[i].get();
 
         backend::PixelFormat ePixelFmt;
         unsigned char* pData = getImageData(img, ePixelFmt);
@@ -252,11 +254,6 @@ bool TextureCube::init(std::string_view positive_x,
 
         if (pData != img->getData())
             free(pData);
-    }
-
-    for (auto&& img : images)
-    {
-        CC_SAFE_RELEASE(img);
     }
 
     return true;

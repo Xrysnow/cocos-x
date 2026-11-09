@@ -167,6 +167,8 @@ void MeshMaterial::releaseBuiltInMaterial()
     CC_SAFE_RELEASE_NULL(_vertexLitMaterialSkin);
     CC_SAFE_RELEASE_NULL(_diffuseMaterialSkin);
     CC_SAFE_RELEASE_NULL(_bumpedDiffuseMaterialSkin);
+    CC_SAFE_RELEASE_NULL(_quadTextureMaterial);
+    CC_SAFE_RELEASE_NULL(_quadColorMaterial);
     // release program states
     CC_SAFE_RELEASE_NULL(_unLitMaterialProgState);
     CC_SAFE_RELEASE_NULL(_unLitNoTexMaterialProgState);
@@ -179,6 +181,8 @@ void MeshMaterial::releaseBuiltInMaterial()
     CC_SAFE_RELEASE_NULL(_vertexLitMaterialSkinProgState);
     CC_SAFE_RELEASE_NULL(_diffuseMaterialSkinProgState);
     CC_SAFE_RELEASE_NULL(_bumpedDiffuseMaterialSkinProgState);
+    CC_SAFE_RELEASE_NULL(_quadTextureMaterialProgState);
+    CC_SAFE_RELEASE_NULL(_quadColorMaterialProgState);
 }
 
 void MeshMaterial::releaseCachedMaterial()
