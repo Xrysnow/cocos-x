@@ -9,6 +9,7 @@ set(lua_bindings_manual_headers
     manual/lua_module_register.h
     manual/CCLuaBridge.h
     manual/extension/cclua_extension_manual.h
+    manual/extension/cclua_extension_conversions.h
     manual/LuaBasicConversions.h
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
@@ -88,7 +89,6 @@ set(lua_bindings_auto_headers
     auto/cclua_ui_events_auto.hpp
     auto/cclua_physics_auto.hpp
     auto/cclua_extension_auto.hpp
-    auto/cclua_extension_compat.hpp
     auto/cclua_backend_auto.hpp
     )
 

@@ -1,5 +1,5 @@
 #include "cclua_extension_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_extension_compat.hpp"
+#include "scripting/lua-bindings/manual/extension/cclua_extension_conversions.h"
 #include "assets-manager/AssetsManager.h"
 #include "assets-manager/AssetsManagerEx.h"
 #include "assets-manager/Manifest.h"
@@ -7,14 +7,6 @@
 #include "assets-manager/CCEventListenerAssetsManagerEx.h"
 #include "Particle3D/CCParticleSystem3D.h"
 #include "Particle3D/PU/CCPUParticleSystem3D.h"
-#include "Particle3D/CCParticle3DRender.h"
-#include "Particle3D/PU/CCPUEmitter.h"
-#include "Particle3D/PU/CCPUAffector.h"
-#include "Particle3D/PU/CCPUObserver.h"
-#include "Particle3D/CCParticle3DAffector.h"
-#include "Particle3D/PU/CCPUBehaviour.h"
-#include "Particle3D/PU/CCPUListener.h"
-#include "Particle3D/CCParticle3DEmitter.h"
 
 int lua_cocos2d_extension_AssetsManager_checkUpdate(lua_State* lua_S)
 {
@@ -88,11 +80,19 @@ int lua_cocos2d_extension_AssetsManager_update(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::extension::AssetsManager::*)()>(&cocos2d::extension::AssetsManager::update));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_extension_AssetsManager_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.AssetsManager", "cc.AssetsManager:create");
+	if (argc == 6 && !ok && lua_isnil(lua_S, 5)) { arg_cur = 4; } else if (argc == 6 && !ok && lua_isnil(lua_S, 6)) { arg_cur = 5; } else if (argc == 6 && !ok && lua_isnil(lua_S, 7)) { arg_cur = 6; } else {
+	LUA_TRY_INVOKE_R(6, (static_cast<cocos2d::extension::AssetsManager*(*)(const char*, const char*, const char*, cocos2d::extension::AssetsManager::ErrorCallback, cocos2d::extension::AssetsManager::ProgressCallback, cocos2d::extension::AssetsManager::SuccessCallback)>(&cocos2d::extension::AssetsManager::create)));
+	}
+	LUA_SINVOKE_FOOTER("6");
+}
 int luaReg_Extension_ccAssetsManager(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::extension::AssetsManager, "AssetsManager", "cc.AssetsManager",
-		cocos2d::Node, "cc.Node",
+		cocos2d::extension::AssetsManager, "cc.Node",
 		nullptr, nullptr);
 	LUA_METHOD("checkUpdate", lua_cocos2d_extension_AssetsManager_checkUpdate);
 	LUA_METHOD("deleteVersion", lua_cocos2d_extension_AssetsManager_deleteVersion);
@@ -106,6 +106,7 @@ int luaReg_Extension_ccAssetsManager(lua_State* lua_S)
 	LUA_METHOD("setStoragePath", lua_cocos2d_extension_AssetsManager_setStoragePath);
 	LUA_METHOD("setVersionFileUrl", lua_cocos2d_extension_AssetsManager_setVersionFileUrl);
 	LUA_METHOD("update", lua_cocos2d_extension_AssetsManager_update);
+	LUA_METHOD("create", lua_cocos2d_extension_AssetsManager_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -162,7 +163,7 @@ int luaReg_Extension_ccEventAssetsManagerEx(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::extension::EventAssetsManagerEx, "EventAssetsManagerEx", "cc.EventAssetsManagerEx",
-		cocos2d::EventCustom, "cc.EventCustom",
+		cocos2d::extension::EventAssetsManagerEx, "cc.EventCustom",
 		nullptr, nullptr);
 	LUA_METHOD("getAssetId", lua_cocos2d_extension_EventAssetsManagerEx_getAssetId);
 	LUA_METHOD("getAssetsManagerEx", lua_cocos2d_extension_EventAssetsManagerEx_getAssetsManagerEx);

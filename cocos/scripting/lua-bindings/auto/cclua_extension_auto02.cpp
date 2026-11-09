@@ -1,5 +1,5 @@
 #include "cclua_extension_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_extension_compat.hpp"
+#include "scripting/lua-bindings/manual/extension/cclua_extension_conversions.h"
 #include "assets-manager/AssetsManager.h"
 #include "assets-manager/AssetsManagerEx.h"
 #include "assets-manager/Manifest.h"
@@ -7,37 +7,34 @@
 #include "assets-manager/CCEventListenerAssetsManagerEx.h"
 #include "Particle3D/CCParticleSystem3D.h"
 #include "Particle3D/PU/CCPUParticleSystem3D.h"
-#include "Particle3D/CCParticle3DRender.h"
-#include "Particle3D/PU/CCPUEmitter.h"
-#include "Particle3D/PU/CCPUAffector.h"
-#include "Particle3D/PU/CCPUObserver.h"
-#include "Particle3D/CCParticle3DAffector.h"
-#include "Particle3D/PU/CCPUBehaviour.h"
-#include "Particle3D/PU/CCPUListener.h"
-#include "Particle3D/CCParticle3DEmitter.h"
 
+int lua_cocos2d_extension_EventListenerAssetsManagerEx_init(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.EventListenerAssetsManagerEx", "cc.EventListenerAssetsManagerEx:init");
+	if (argc == 2 && !ok && lua_isnil(lua_S, 3)) { arg_cur = 2; } else {
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::extension::EventListenerAssetsManagerEx::*)(const cocos2d::extension::AssetsManagerEx*, const std::function<void(cocos2d::extension::EventAssetsManagerEx*)>&)>(&cocos2d::extension::EventListenerAssetsManagerEx::init)));
+	}
+	LUA_INVOKE_FOOTER("2");
+}
 int lua_cocos2d_extension_EventListenerAssetsManagerEx_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.EventListenerAssetsManagerEx", "cc.EventListenerAssetsManagerEx:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::extension::EventListenerAssetsManagerEx*(*)(cocos2d::extension::AssetsManagerEx*, const std::function<void (cocos2d::extension::EventAssetsManagerEx *)>&)>(&cocos2d::extension::EventListenerAssetsManagerEx::create));
+	if (argc == 2 && !ok && lua_isnil(lua_S, 3)) { arg_cur = 2; } else {
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::extension::EventListenerAssetsManagerEx*(*)(cocos2d::extension::AssetsManagerEx*, const std::function<void(cocos2d::extension::EventAssetsManagerEx*)>&)>(&cocos2d::extension::EventListenerAssetsManagerEx::create)));
+	}
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Extension_ccEventListenerAssetsManagerEx(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::extension::EventListenerAssetsManagerEx, "EventListenerAssetsManagerEx", "cc.EventListenerAssetsManagerEx",
-		cocos2d::EventListenerCustom, "cc.EventListenerCustom",
+		cocos2d::extension::EventListenerAssetsManagerEx, "cc.EventListenerCustom",
 		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_extension_EventListenerAssetsManagerEx_init);
 	LUA_METHOD("create", lua_cocos2d_extension_EventListenerAssetsManagerEx_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
-}
-int lua_cocos2d_ParticleSystem3D_addAffector(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:addAffector");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ParticleSystem3D::*)(cocos2d::Particle3DAffector*)>(&cocos2d::ParticleSystem3D::addAffector));
-	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_ParticleSystem3D_getAliveParticleCount(lua_State* lua_S)
 {
@@ -45,16 +42,16 @@ int lua_cocos2d_ParticleSystem3D_getAliveParticleCount(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::ParticleSystem3D::*)()const>(&cocos2d::ParticleSystem3D::getAliveParticleCount));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_ParticleSystem3D_getBlendFunc(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:getBlendFunc");
+	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::BlendFunc&(cocos2d::ParticleSystem3D::*)()const>(&cocos2d::ParticleSystem3D::getBlendFunc));
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_cocos2d_ParticleSystem3D_getParticleQuota(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:getParticleQuota");
 	LUA_TRY_INVOKE_R(0, static_cast<unsigned int(cocos2d::ParticleSystem3D::*)()const>(&cocos2d::ParticleSystem3D::getParticleQuota));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ParticleSystem3D_getRender(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:getRender");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Particle3DRender*(cocos2d::ParticleSystem3D::*)()>(&cocos2d::ParticleSystem3D::getRender));
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_ParticleSystem3D_getState(lua_State* lua_S)
@@ -99,10 +96,10 @@ int lua_cocos2d_ParticleSystem3D_resumeParticleSystem(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::ParticleSystem3D::*)()>(&cocos2d::ParticleSystem3D::resumeParticleSystem));
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cocos2d_ParticleSystem3D_setEmitter(lua_State* lua_S)
+int lua_cocos2d_ParticleSystem3D_setBlendFunc(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:setEmitter");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ParticleSystem3D::*)(cocos2d::Particle3DEmitter*)>(&cocos2d::ParticleSystem3D::setEmitter));
+	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:setBlendFunc");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ParticleSystem3D::*)(const cocos2d::BlendFunc&)>(&cocos2d::ParticleSystem3D::setBlendFunc));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_ParticleSystem3D_setEnabled(lua_State* lua_S)
@@ -123,12 +120,6 @@ int lua_cocos2d_ParticleSystem3D_setParticleQuota(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ParticleSystem3D::*)(unsigned int)>(&cocos2d::ParticleSystem3D::setParticleQuota));
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cocos2d_ParticleSystem3D_setRender(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:setRender");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ParticleSystem3D::*)(cocos2d::Particle3DRender*)>(&cocos2d::ParticleSystem3D::setRender));
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cocos2d_ParticleSystem3D_startParticleSystem(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ParticleSystem3D", "cc.ParticleSystem3D:startParticleSystem");
@@ -145,12 +136,11 @@ int luaReg_Extension_ccParticleSystem3D(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::ParticleSystem3D, "ParticleSystem3D", "cc.ParticleSystem3D",
-		cocos2d::Node, "cc.Node",
+		cocos2d::ParticleSystem3D, "cc.Node",
 		nullptr, nullptr);
-	LUA_METHOD("addAffector", lua_cocos2d_ParticleSystem3D_addAffector);
 	LUA_METHOD("getAliveParticleCount", lua_cocos2d_ParticleSystem3D_getAliveParticleCount);
+	LUA_METHOD("getBlendFunc", lua_cocos2d_ParticleSystem3D_getBlendFunc);
 	LUA_METHOD("getParticleQuota", lua_cocos2d_ParticleSystem3D_getParticleQuota);
-	LUA_METHOD("getRender", lua_cocos2d_ParticleSystem3D_getRender);
 	LUA_METHOD("getState", lua_cocos2d_ParticleSystem3D_getState);
 	LUA_METHOD("isEnabled", lua_cocos2d_ParticleSystem3D_isEnabled);
 	LUA_METHOD("isKeepLocal", lua_cocos2d_ParticleSystem3D_isKeepLocal);
@@ -158,11 +148,10 @@ int luaReg_Extension_ccParticleSystem3D(lua_State* lua_S)
 	LUA_METHOD("removeAffector", lua_cocos2d_ParticleSystem3D_removeAffector);
 	LUA_METHOD("removeAllAffector", lua_cocos2d_ParticleSystem3D_removeAllAffector);
 	LUA_METHOD("resumeParticleSystem", lua_cocos2d_ParticleSystem3D_resumeParticleSystem);
-	LUA_METHOD("setEmitter", lua_cocos2d_ParticleSystem3D_setEmitter);
+	LUA_METHOD("setBlendFunc", lua_cocos2d_ParticleSystem3D_setBlendFunc);
 	LUA_METHOD("setEnabled", lua_cocos2d_ParticleSystem3D_setEnabled);
 	LUA_METHOD("setKeepLocal", lua_cocos2d_ParticleSystem3D_setKeepLocal);
 	LUA_METHOD("setParticleQuota", lua_cocos2d_ParticleSystem3D_setParticleQuota);
-	LUA_METHOD("setRender", lua_cocos2d_ParticleSystem3D_setRender);
 	LUA_METHOD("startParticleSystem", lua_cocos2d_ParticleSystem3D_startParticleSystem);
 	LUA_METHOD("stopParticleSystem", lua_cocos2d_ParticleSystem3D_stopParticleSystem);
 	LUA_CLS_END();

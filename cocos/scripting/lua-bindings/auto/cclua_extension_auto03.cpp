@@ -1,5 +1,5 @@
 #include "cclua_extension_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_extension_compat.hpp"
+#include "scripting/lua-bindings/manual/extension/cclua_extension_conversions.h"
 #include "assets-manager/AssetsManager.h"
 #include "assets-manager/AssetsManagerEx.h"
 #include "assets-manager/Manifest.h"
@@ -7,39 +7,7 @@
 #include "assets-manager/CCEventListenerAssetsManagerEx.h"
 #include "Particle3D/CCParticleSystem3D.h"
 #include "Particle3D/PU/CCPUParticleSystem3D.h"
-#include "Particle3D/CCParticle3DRender.h"
-#include "Particle3D/PU/CCPUEmitter.h"
-#include "Particle3D/PU/CCPUAffector.h"
-#include "Particle3D/PU/CCPUObserver.h"
-#include "Particle3D/CCParticle3DAffector.h"
-#include "Particle3D/PU/CCPUBehaviour.h"
-#include "Particle3D/PU/CCPUListener.h"
-#include "Particle3D/CCParticle3DEmitter.h"
 
-int lua_cocos2d_PUParticleSystem3D_addBehaviourTemplate(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:addBehaviourTemplate");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUBehaviour*)>(&cocos2d::PUParticleSystem3D::addBehaviourTemplate));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_PUParticleSystem3D_addEmitter(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:addEmitter");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUEmitter*)>(&cocos2d::PUParticleSystem3D::addEmitter));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_PUParticleSystem3D_addListener(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:addListener");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUListener*)>(&cocos2d::PUParticleSystem3D::addListener));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_PUParticleSystem3D_addObserver(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:addObserver");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUObserver*)>(&cocos2d::PUParticleSystem3D::addObserver));
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cocos2d_PUParticleSystem3D_calulateRotationOffset(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:calulateRotationOffset");
@@ -63,12 +31,6 @@ int lua_cocos2d_PUParticleSystem3D_copyAttributesTo(lua_State* lua_S)
 	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:copyAttributesTo");
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUParticleSystem3D*)>(&cocos2d::PUParticleSystem3D::copyAttributesTo));
 	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_PUParticleSystem3D_forceEmission(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:forceEmission");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUEmitter*, unsigned int)>(&cocos2d::PUParticleSystem3D::forceEmission));
-	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_PUParticleSystem3D_forceUpdate(lua_State* lua_S)
 {
@@ -163,7 +125,7 @@ int lua_cocos2d_PUParticleSystem3D_initWithFilePath(lua_State* lua_S)
 int lua_cocos2d_PUParticleSystem3D_initWithFilePathAndMaterialPath(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:initWithFilePathAndMaterialPath");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::PUParticleSystem3D::*)(std::string_view, std::string_view)>(&cocos2d::PUParticleSystem3D::initWithFilePathAndMaterialPath));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::PUParticleSystem3D::*)(std::string_view, std::string_view)>(&cocos2d::PUParticleSystem3D::initWithFilePathAndMaterialPath)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_PUParticleSystem3D_isMarkedForEmission(lua_State* lua_S)
@@ -171,12 +133,6 @@ int lua_cocos2d_PUParticleSystem3D_isMarkedForEmission(lua_State* lua_S)
 	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:isMarkedForEmission");
 	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::PUParticleSystem3D::*)()const>(&cocos2d::PUParticleSystem3D::isMarkedForEmission));
 	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_PUParticleSystem3D_makeParticleLocal(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:makeParticleLocal");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::PUParticleSystem3D::*)(cocos2d::PUParticle3D*)>(&cocos2d::PUParticleSystem3D::makeParticleLocal));
-	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_PUParticleSystem3D_removeAllBehaviourTemplate(lua_State* lua_S)
 {
@@ -196,17 +152,17 @@ int lua_cocos2d_PUParticleSystem3D_removeAllListener(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::PUParticleSystem3D::*)()>(&cocos2d::PUParticleSystem3D::removeAllListener));
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cocos2d_PUParticleSystem3D_removeListener(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:removeListener");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::PUListener*)>(&cocos2d::PUParticleSystem3D::removeListener));
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cocos2d_PUParticleSystem3D_removerAllObserver(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:removerAllObserver");
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::PUParticleSystem3D::*)()>(&cocos2d::PUParticleSystem3D::removerAllObserver));
 	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_PUParticleSystem3D_rotationOffset(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:rotationOffset");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::PUParticleSystem3D::*)(cocos2d::Vec3&)>(&cocos2d::PUParticleSystem3D::rotationOffset));
+	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_PUParticleSystem3D_setDefaultDepth(lua_State* lua_S)
 {
@@ -265,7 +221,7 @@ int lua_cocos2d_PUParticleSystem3D_setParticleSystemScaleVelocity(lua_State* lua
 int lua_cocos2d_PUParticleSystem3D_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.PUParticleSystem3D", "cc.PUParticleSystem3D:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::PUParticleSystem3D*(*)(std::string_view, std::string_view)>(&cocos2d::PUParticleSystem3D::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::PUParticleSystem3D*(*)(std::string_view, std::string_view)>(&cocos2d::PUParticleSystem3D::create)));
 	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::PUParticleSystem3D*(*)(std::string_view)>(&cocos2d::PUParticleSystem3D::create));
 	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::PUParticleSystem3D*(*)()>(&cocos2d::PUParticleSystem3D::create));
 	LUA_SINVOKE_FOOTER("0,1,2");
@@ -274,17 +230,12 @@ int luaReg_Extension_ccPUParticleSystem3D(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::PUParticleSystem3D, "PUParticleSystem3D", "cc.PUParticleSystem3D",
-		cocos2d::ParticleSystem3D, "cc.ParticleSystem3D",
+		cocos2d::PUParticleSystem3D, "cc.ParticleSystem3D",
 		nullptr, nullptr);
-	LUA_METHOD("addBehaviourTemplate", lua_cocos2d_PUParticleSystem3D_addBehaviourTemplate);
-	LUA_METHOD("addEmitter", lua_cocos2d_PUParticleSystem3D_addEmitter);
-	LUA_METHOD("addListener", lua_cocos2d_PUParticleSystem3D_addListener);
-	LUA_METHOD("addObserver", lua_cocos2d_PUParticleSystem3D_addObserver);
 	LUA_METHOD("calulateRotationOffset", lua_cocos2d_PUParticleSystem3D_calulateRotationOffset);
 	LUA_METHOD("clearAllParticles", lua_cocos2d_PUParticleSystem3D_clearAllParticles);
 	LUA_METHOD("clone", lua_cocos2d_PUParticleSystem3D_clone);
 	LUA_METHOD("copyAttributesTo", lua_cocos2d_PUParticleSystem3D_copyAttributesTo);
-	LUA_METHOD("forceEmission", lua_cocos2d_PUParticleSystem3D_forceEmission);
 	LUA_METHOD("forceUpdate", lua_cocos2d_PUParticleSystem3D_forceUpdate);
 	LUA_METHOD("getDefaultDepth", lua_cocos2d_PUParticleSystem3D_getDefaultDepth);
 	LUA_METHOD("getDefaultHeight", lua_cocos2d_PUParticleSystem3D_getDefaultHeight);
@@ -302,12 +253,11 @@ int luaReg_Extension_ccPUParticleSystem3D(lua_State* lua_S)
 	LUA_METHOD("initWithFilePath", lua_cocos2d_PUParticleSystem3D_initWithFilePath);
 	LUA_METHOD("initWithFilePathAndMaterialPath", lua_cocos2d_PUParticleSystem3D_initWithFilePathAndMaterialPath);
 	LUA_METHOD("isMarkedForEmission", lua_cocos2d_PUParticleSystem3D_isMarkedForEmission);
-	LUA_METHOD("makeParticleLocal", lua_cocos2d_PUParticleSystem3D_makeParticleLocal);
 	LUA_METHOD("removeAllBehaviourTemplate", lua_cocos2d_PUParticleSystem3D_removeAllBehaviourTemplate);
 	LUA_METHOD("removeAllEmitter", lua_cocos2d_PUParticleSystem3D_removeAllEmitter);
 	LUA_METHOD("removeAllListener", lua_cocos2d_PUParticleSystem3D_removeAllListener);
-	LUA_METHOD("removeListener", lua_cocos2d_PUParticleSystem3D_removeListener);
 	LUA_METHOD("removerAllObserver", lua_cocos2d_PUParticleSystem3D_removerAllObserver);
+	LUA_METHOD("rotationOffset", lua_cocos2d_PUParticleSystem3D_rotationOffset);
 	LUA_METHOD("setDefaultDepth", lua_cocos2d_PUParticleSystem3D_setDefaultDepth);
 	LUA_METHOD("setDefaultHeight", lua_cocos2d_PUParticleSystem3D_setDefaultHeight);
 	LUA_METHOD("setDefaultWidth", lua_cocos2d_PUParticleSystem3D_setDefaultWidth);

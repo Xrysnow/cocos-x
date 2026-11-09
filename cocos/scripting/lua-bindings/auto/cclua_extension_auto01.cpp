@@ -1,5 +1,5 @@
 #include "cclua_extension_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_extension_compat.hpp"
+#include "scripting/lua-bindings/manual/extension/cclua_extension_conversions.h"
 #include "assets-manager/AssetsManager.h"
 #include "assets-manager/AssetsManagerEx.h"
 #include "assets-manager/Manifest.h"
@@ -7,14 +7,6 @@
 #include "assets-manager/CCEventListenerAssetsManagerEx.h"
 #include "Particle3D/CCParticleSystem3D.h"
 #include "Particle3D/PU/CCPUParticleSystem3D.h"
-#include "Particle3D/CCParticle3DRender.h"
-#include "Particle3D/PU/CCPUEmitter.h"
-#include "Particle3D/PU/CCPUAffector.h"
-#include "Particle3D/PU/CCPUObserver.h"
-#include "Particle3D/CCParticle3DAffector.h"
-#include "Particle3D/PU/CCPUBehaviour.h"
-#include "Particle3D/PU/CCPUListener.h"
-#include "Particle3D/CCParticle3DEmitter.h"
 
 int lua_cocos2d_extension_Manifest_getManifestFileUrl(lua_State* lua_S)
 {
@@ -62,7 +54,7 @@ int luaReg_Extension_ccManifest(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::extension::Manifest, "Manifest", "cc.Manifest",
-		cocos2d::Ref, "cc.Ref",
+		cocos2d::extension::Manifest, "cc.Ref",
 		nullptr, nullptr);
 	LUA_METHOD("getManifestFileUrl", lua_cocos2d_extension_Manifest_getManifestFileUrl);
 	LUA_METHOD("getPackageUrl", lua_cocos2d_extension_Manifest_getPackageUrl);
@@ -123,6 +115,18 @@ int lua_cocos2d_extension_AssetsManagerEx_setMaxConcurrentTask(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::extension::AssetsManagerEx::*)(const int)>(&cocos2d::extension::AssetsManagerEx::setMaxConcurrentTask));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_extension_AssetsManagerEx_setVerifyCallback(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AssetsManagerEx", "cc.AssetsManagerEx:setVerifyCallback");
+	LUA_TRY_INVOKE(1, (static_cast<void(cocos2d::extension::AssetsManagerEx::*)(const std::function<bool(std::string_view, cocos2d::extension::Manifest::Asset)>&)>(&cocos2d::extension::AssetsManagerEx::setVerifyCallback)));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_extension_AssetsManagerEx_setVersionCompareHandle(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AssetsManagerEx", "cc.AssetsManagerEx:setVersionCompareHandle");
+	LUA_TRY_INVOKE(1, (static_cast<void(cocos2d::extension::AssetsManagerEx::*)(const std::function<int(std::string_view, std::string_view)>&)>(&cocos2d::extension::AssetsManagerEx::setVersionCompareHandle)));
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cocos2d_extension_AssetsManagerEx_update(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.AssetsManagerEx", "cc.AssetsManagerEx:update");
@@ -132,14 +136,14 @@ int lua_cocos2d_extension_AssetsManagerEx_update(lua_State* lua_S)
 int lua_cocos2d_extension_AssetsManagerEx_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.AssetsManagerEx", "cc.AssetsManagerEx:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::extension::AssetsManagerEx*(*)(std::string_view, std::string_view)>(&cocos2d::extension::AssetsManagerEx::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::extension::AssetsManagerEx*(*)(std::string_view, std::string_view)>(&cocos2d::extension::AssetsManagerEx::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Extension_ccAssetsManagerEx(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::extension::AssetsManagerEx, "AssetsManagerEx", "cc.AssetsManagerEx",
-		cocos2d::Ref, "cc.Ref",
+		cocos2d::extension::AssetsManagerEx, "cc.Ref",
 		nullptr, nullptr);
 	LUA_METHOD("checkUpdate", lua_cocos2d_extension_AssetsManagerEx_checkUpdate);
 	LUA_METHOD("downloadFailedAssets", lua_cocos2d_extension_AssetsManagerEx_downloadFailedAssets);
@@ -149,6 +153,8 @@ int luaReg_Extension_ccAssetsManagerEx(lua_State* lua_S)
 	LUA_METHOD("getState", lua_cocos2d_extension_AssetsManagerEx_getState);
 	LUA_METHOD("getStoragePath", lua_cocos2d_extension_AssetsManagerEx_getStoragePath);
 	LUA_METHOD("setMaxConcurrentTask", lua_cocos2d_extension_AssetsManagerEx_setMaxConcurrentTask);
+	LUA_METHOD("setVerifyCallback", lua_cocos2d_extension_AssetsManagerEx_setVerifyCallback);
+	LUA_METHOD("setVersionCompareHandle", lua_cocos2d_extension_AssetsManagerEx_setVersionCompareHandle);
 	LUA_METHOD("update", lua_cocos2d_extension_AssetsManagerEx_update);
 	LUA_METHOD("create", lua_cocos2d_extension_AssetsManagerEx_create);
 	LUA_CLS_END();
