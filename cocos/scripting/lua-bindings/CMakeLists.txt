@@ -104,20 +104,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto06.cpp
     auto/cclua_base_auto07.cpp
     auto/cclua_base_auto08.cpp
-    auto/cclua_base_auto09.cpp
-    auto/cclua_base_auto10.cpp
-    auto/cclua_base_auto11.cpp
-    auto/cclua_base_auto12.cpp
-    auto/cclua_base_auto13.cpp
-    auto/cclua_base_auto14.cpp
-    auto/cclua_base_auto15.cpp
-    auto/cclua_base_auto16.cpp
-    auto/cclua_base_auto17.cpp
-    auto/cclua_base_auto18.cpp
-    auto/cclua_base_auto19.cpp
-    auto/cclua_base_auto20.cpp
-    auto/cclua_base_auto21.cpp
-    auto/cclua_base_auto22.cpp
     auto/cclua_base_retained.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
