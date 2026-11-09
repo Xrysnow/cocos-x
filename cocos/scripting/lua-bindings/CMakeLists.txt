@@ -160,6 +160,7 @@ if(CC_ENABLE_EXT_COCOSTUDIO)
     list(APPEND lua_bindings_manual_headers
         manual/cocostudio/lua-cocostudio-conversions.h
         manual/cocostudio/CustomGUIReader.h
+        manual/cocostudio/cclua_csloader_manual.hpp
     )
     list(APPEND lua_bindings_manual_files
         manual/cocostudio/CustomGUIReader.cpp

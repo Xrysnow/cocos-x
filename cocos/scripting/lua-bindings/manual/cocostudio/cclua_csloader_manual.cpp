@@ -23,140 +23,49 @@
  THE SOFTWARE.
  ****************************************************************************/
 #include "scripting/lua-bindings/manual/cocostudio/cclua_csloader_manual.hpp"
-#include "scripting/lua-bindings/manual/tolua_fix.h"
-#include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#include "scripting/lua-bindings/manual/CCLuaValue.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#include "ActionTimeline/CCActionTimeline.h"
-#include "ActionTimeline/CSLoader.h"
-#include "ActionTimeline/CCActionTimelineNode.h"
+#include "lua_conversion/lua_conversion.hpp"
+#include "cocostudio/ActionTimeline/CSLoader.h"
 
-int cclua_csloader_CSLoader_createTimeline(lua_State* tolua_S)
+namespace
 {
-    int argc = 0;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S, 1, "cc.CSLoader", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 1)
-    {
-        std::string arg0;
-        ok &= luaval_to_std_string(tolua_S, 2, &arg0, "cc.CSLoader:createTimeline");
-        if (!ok)
-            return 0;
-        cocostudio::timeline::ActionTimeline* ret = cocos2d::CSLoader::createTimeline(arg0);
-        object_to_luaval<cocostudio::timeline::ActionTimeline>(tolua_S, "ccs.ActionTimeline",
-                                                               (cocostudio::timeline::ActionTimeline*)ret);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.CSLoader:createTimeline", argc,
-               1);
-    return 0;
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'cclua_CSLoader_createTimeline'.", &tolua_err);
-#endif
-    return 0;
+// This parameter is a native precondition, not a second Lua userdata type.
+struct CSLoaderSender
+{
+    cocos2d::ui::Widget* value = nullptr;
+};
 }
 
-int cclua_csloader_CSLoader_createNode(lua_State* tolua_S)
+namespace lua
 {
-    int argc = 0;
-    bool ok  = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S, 1, "cc.CSLoader", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    do
+template<>
+struct binding_argument<CSLoaderSender>
+{
+    CSLoaderSender value;
+    template<bool Checked>
+    bool read(lua_State* L, int index)
     {
-        if (argc == 2)
-        {
-            std::string filename;
-            ok &= luaval_to_std_string(tolua_S, 2, &filename, "cc.CSLoader:createNode");
-            if (!ok)
-            {
-                break;
-            }
+        return binding_read<cocos2d::ui::Widget*>::template F<Checked>(L, index, &value.value)
+            && value.value != nullptr;
+    }
+    CSLoaderSender get() { return value; }
+};
+}
 
-#if CC_DEBUG >= 1
-            if (!toluafix_isfunction(tolua_S, 3, "LUA_FUNCTION", 0, &tolua_err))
-            {
-                goto tolua_lerror;
-            }
-#endif
-
-            LUA_FUNCTION handler = (toluafix_ref_function(tolua_S, 3, 0));
-            auto callback        = [handler](cocos2d::Ref* ref) {
-                auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
-                callbackStack->executeCallback([=]() mutable -> int {
-                    if (nullptr == ref)
-                        return 0;
-                    auto stack = LuaEngine::getInstance()->getLuaStack();
-                    toluafix_pushusertype_ccobject(stack->getLuaState(), ref->_ID, &(ref->_luaID), (void*)ref, "cc.Ref");
-                    stack->executeFunctionByHandler(handler, 1);
-
-                    return 0;
-                });
-            };
-
-            cocos2d::Node* ret = cocos2d::CSLoader::createNode(filename, callback);
-            ScriptHandlerMgr::getInstance()->addCustomHandler((void*)ret, handler);
-            object_to_luaval<cocos2d::Node>(tolua_S, "cc.Node", (cocos2d::Node*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 1)
-        {
-            std::string filename;
-            ok &= luaval_to_std_string(tolua_S, 2, &filename, "cc.CSLoader:createNode");
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Node* ret = cocos2d::CSLoader::createNode(filename);
-            object_to_luaval<cocos2d::Node>(tolua_S, "cc.Node", (cocos2d::Node*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d", "cc.CSLoader:createNode", argc, 1);
-    return 0;
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'cclua_csloader_CSLoader_createNode'.", &tolua_err);
-#endif
-    return 0;
+static int csloader_bindCallback(lua_State* lua_S)
+{
+    LUA_INVOKE_HEADER("cc.CSLoader", "cc.CSLoader:bindCallback");
+    const auto bind = [](cocos2d::CSLoader* self, std::string_view name, std::string_view type,
+                         CSLoaderSender sender, cocos2d::Node* handler) {
+        return self->bindCallback(name, type, sender.value, handler);
+    };
+    LUA_TRY_INVOKE_R(4, bind);
+    LUA_INVOKE_FOOTER("4");
 }
 
 int register_all_cc_csloader_manual(lua_State* L)
 {
-    lua_pushstring(L, "cc.CSLoader");
-    lua_rawget(L, LUA_REGISTRYINDEX);
-    if (lua_istable(L, -1))
-    {
-        tolua_function(L, "createTimeline", cclua_csloader_CSLoader_createTimeline);
-        tolua_function(L, "createNode", cclua_csloader_CSLoader_createNode);
-    }
+    luaL_getmetatable(L, "cc.CSLoader");
+    tolua_function(L, "bindCallback", csloader_bindCallback);
     lua_pop(L, 1);
-
     return 0;
 }

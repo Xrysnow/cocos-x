@@ -25,7 +25,6 @@
 #include "scripting/lua-bindings/manual/cocostudio/cclua_cocostudio_manual.hpp"
 #include "scripting/lua-bindings/auto/cclua_studio_auto.hpp"
 #include "scripting/lua-bindings/auto/cclua_csloader_auto.hpp"
-#include "scripting/lua-bindings/manual/cocostudio/cclua_csloader_manual.hpp"
 
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
@@ -407,7 +406,6 @@ int register_cocostudio_module(lua_State* L)
         register_all_cc_studio(L);
         register_all_cc_csloader(L);
         register_all_cc_coco_studio_manual(L);
-        register_all_cc_csloader_manual(L);
         lua_register_cc_coco_studio_CustomGUIReader(L);
     }
     lua_pop(L, 1);
