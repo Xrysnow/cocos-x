@@ -308,26 +308,6 @@ extern bool luaval_to_color4b(lua_State* L, int lo, Color4B* outValue, const cha
  * @return Return true if the value at the given acceptable index of stack is a table, otherwise return false.
  */
 extern bool luaval_to_color4f(lua_State* L, int lo, Color4F* outValue, const char* funcName = "");
-#if CC_USE_PHYSICS
-
-/**
- * Get a PhysicsMaterial object value from the given acceptable index of stack.
- * If the value at the given acceptable index of stack is a table it returns true, otherwise returns false.
- * If the table has the `density`,`restitution` and 'friction' keys and the corresponding values are not nil, this
- * function would assign the values to the corresponding members of outValue. Otherwise, the value of members of
- * outValue would be 0.
- *
- * @param L the current lua_State.
- * @param lo the given acceptable index of stack.
- * @param outValue the pointer to a cocos2d::PhysicsMaterial object which stores the values from the Lua table.
- * @param funcName the name of calling function, it is used for error output in the debug model.
- * @return Return true if the value at the given acceptable index of stack is a table, otherwise return false.
- */
-extern bool luaval_to_physics_material(lua_State* L,
-                                       int lo,
-                                       cocos2d::PhysicsMaterial* outValue,
-                                       const char* funcName = "");
-#endif  //#if CC_USE_PHYSICS
 
 /**
  * If the value at the given acceptable index of stack is a table it returns true, otherwise returns false.
@@ -371,23 +351,6 @@ extern bool luaval_to_fontdefinition(lua_State* L, int lo, FontDefinition* outVa
  * @return Return true if the value at the given acceptable index of stack is a table, otherwise return false.
  */
 extern bool luaval_to_mat4(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* funcName = "");
-
-/**
- * Get a array of Vec2 object from the given acceptable index of stack.
- * If the value at the given acceptable index of stack is a table it returns true, otherwise returns false.
- *
- * @param L the current lua_State.
- * @param lo the given acceptable index of stack.
- * @param points the pointer to a array of Vec2 object which stores the values from the Lua table.
- * @param numPoints a int pointer to store the size of a Vec2 object array.
- * @param funcName the name of calling function, it is used for error output in the debug model.
- * @return Return true if the value at the given acceptable index of stack is a table, otherwise return false.
- */
-extern bool luaval_to_array_of_vec2(lua_State* L,
-                                    int lo,
-                                    cocos2d::Vec2** points,
-                                    int* numPoints,
-                                    const char* funcName = "");
 
 /**
  * Get a cocos2d::ValueVector object value by the argc numbers of Lua values in the stack.
@@ -487,15 +450,6 @@ CC_DEPRECATED_ATTRIBUTE static inline bool luaval_to_kmMat4(lua_State* L,
 {
     return luaval_to_mat4(L, lo, outValue);
 }
-CC_DEPRECATED_ATTRIBUTE static inline bool luaval_to_array_of_Point(lua_State* L,
-                                                                    int lo,
-                                                                    cocos2d::Vec2** points,
-                                                                    int* numPoints,
-                                                                    const char* funcName = "")
-{
-    return luaval_to_array_of_vec2(L, lo, points, numPoints);
-}
-
 /**
  * Get a cocos2d::Vector of type T objects by the argc numbers of Lua values in the stack.
  *
@@ -973,36 +927,6 @@ extern void color4f_to_luaval(lua_State* L, const Color4F& cc);
 
 void std_thread_id_to_luaval(lua_State* L, const std::thread::id& value);
 
-#if CC_USE_PHYSICS
-
-/**
- * Push a table converted from a cocos2d::PhysicsMaterial object into the Lua stack.
- * The format of table as follows: {density=numberValue1, restitution=numberValue2, friction=numberValue3}
- *
- * @param L the current lua_State.
- * @param pm a cocos2d::PhysicsMaterial object.
- */
-extern void physics_material_to_luaval(lua_State* L, const PhysicsMaterial& pm);
-
-/**
- * Push a table converted from a cocos2d::PhysicsRayCastInfo object into the Lua stack.
- * The format of table as follows: {shape=userdata, start=vec2_table1, ended=vec2_table2, contact=vec2_table3,
- * normal=vec2_table4, fraction=numberValue}
- *
- * @param L the current lua_State.
- * @param info a cocos2d::PhysicsRayCastInfo object.
- */
-extern void physics_raycastinfo_to_luaval(lua_State* L, const PhysicsRayCastInfo& info);
-
-/**
- * Push a table converted from a cocos2d::PhysicsContactData object into the Lua stack.
- * The format of table as follows: {points=vec2_array_table, normal=vec2_table, POINT_MAX=numberValue}
- *
- * @param L the current lua_State.
- * @param data a cocos2d::PhysicsContactData object.
- */
-extern void physics_contactdata_to_luaval(lua_State* L, const PhysicsContactData* data);
-#endif  //#if CC_USE_PHYSICS
 
 /**
  * Push a table converted from a cocos2d::AffineTransform object into the Lua stack.

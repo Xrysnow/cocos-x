@@ -521,43 +521,6 @@ bool luaval_to_blendfunc(lua_State* L, int lo, cocos2d::BlendFunc* outValue, con
     return ok;
 }
 
-#if CC_USE_PHYSICS
-bool luaval_to_physics_material(lua_State* L, int lo, PhysicsMaterial* outValue, const char* funcName)
-{
-    if (NULL == L || NULL == outValue)
-        return false;
-
-    bool ok = true;
-
-    tolua_Error tolua_err;
-    if (!tolua_istable(L, lo, 0, &tolua_err))
-    {
-    #if CC_DEBUG >= 1
-        luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-    #endif
-        ok = false;
-    }
-
-    if (ok)
-    {
-        lua_pushstring(L, "density");
-        lua_gettable(L, lo);
-        outValue->density = lua_isnil(L, -1) ? 0.0f : (float)lua_tonumber(L, -1);
-        lua_pop(L, 1);
-
-        lua_pushstring(L, "restitution");
-        lua_gettable(L, lo);
-        outValue->restitution = lua_isnil(L, -1) ? 0.0f : (float)lua_tonumber(L, -1);
-        lua_pop(L, 1);
-
-        lua_pushstring(L, "friction");
-        lua_gettable(L, lo);
-        outValue->friction = lua_isnil(L, -1) ? 0.0f : (float)lua_tonumber(L, -1);
-        lua_pop(L, 1);
-    }
-    return ok;
-}
-#endif  //#if CC_USE_PHYSICS
 
 bool luaval_to_ssize_t(lua_State* L, int lo, ssize_t* outValue, const char* funcName)
 {
@@ -1126,61 +1089,6 @@ bool luaval_to_mat4(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* f
         } while (0);
     }
 
-    return ok;
-}
-
-bool luaval_to_array_of_vec2(lua_State* L, int lo, cocos2d::Vec2** points, int* numPoints, const char* funcName)
-{
-    if (NULL == L)
-        return false;
-
-    bool ok = true;
-
-    tolua_Error tolua_err;
-
-    if (!tolua_istable(L, lo, 0, &tolua_err))
-    {
-#if CC_DEBUG >= 1
-        luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#endif
-        ok = false;
-    }
-
-    if (ok)
-    {
-        size_t len = lua_objlen(L, lo);
-        if (len > 0)
-        {
-            cocos2d::Vec2* array = (cocos2d::Vec2*)new Vec2[len];
-            if (NULL == array)
-                return false;
-            for (size_t i = 0; i < len; ++i)
-            {
-                lua_pushnumber(L, i + 1);
-                lua_gettable(L, lo);
-                if (!tolua_istable(L, -1, 0, &tolua_err))
-                {
-#if CC_DEBUG >= 1
-                    luaval_to_native_err(L, "#ferror:", &tolua_err, funcName);
-#endif
-                    lua_pop(L, 1);
-                    CC_SAFE_DELETE_ARRAY(array);
-                    return false;
-                }
-                ok &= luaval_to_vec2(L, lua_gettop(L), &array[i]);
-                if (!ok)
-                {
-                    lua_pop(L, 1);
-                    CC_SAFE_DELETE_ARRAY(array);
-                    return false;
-                }
-                lua_pop(L, 1);
-            }
-
-            *numPoints = (int)len;
-            *points    = array;
-        }
-    }
     return ok;
 }
 
@@ -2270,85 +2178,6 @@ int vec4_to_luaval(lua_State* L, const cocos2d::Vec4& vec4)
     return 1;
 }
 
-#if CC_USE_PHYSICS
-void physics_material_to_luaval(lua_State* L, const PhysicsMaterial& pm)
-{
-    if (nullptr == L)
-        return;
-    lua_newtable(L);                               /* L: table */
-    lua_pushstring(L, "density");                  /* L: table key */
-    lua_pushnumber(L, (lua_Number)pm.density);     /* L: table key value*/
-    lua_rawset(L, -3);                             /* table[key] = value, L: table */
-    lua_pushstring(L, "restitution");              /* L: table key */
-    lua_pushnumber(L, (lua_Number)pm.restitution); /* L: table key value*/
-    lua_rawset(L, -3);                             /* table[key] = value, L: table */
-    lua_pushstring(L, "friction");                 /* L: table key */
-    lua_pushnumber(L, (lua_Number)pm.friction);    /* L: table key value*/
-    lua_rawset(L, -3);                             /* table[key] = value, L: table */
-}
-
-void physics_raycastinfo_to_luaval(lua_State* L, const PhysicsRayCastInfo& info)
-{
-    if (NULL == L)
-        return;
-
-    lua_newtable(L); /* L: table */
-
-    lua_pushstring(L, "shape"); /* L: table key */
-    PhysicsShape* shape = info.shape;
-    if (shape == nullptr)
-    {
-        lua_pushnil(L);
-    }
-    else
-    {
-        int ID     = (int)(shape->_ID);
-        int* luaID = &(shape->_luaID);
-        toluafix_pushusertype_ccobject(L, ID, luaID, (void*)shape, "cc.PhysicsShape");
-    }
-    lua_rawset(L, -3); /* table[key] = value, L: table */
-
-    lua_pushstring(L, "start"); /* L: table key */
-    vec2_to_luaval(L, info.start);
-    lua_rawset(L, -3); /* table[key] = value, L: table */
-
-    lua_pushstring(L, "ended"); /* L: table key */
-    vec2_to_luaval(L, info.end);
-    lua_rawset(L, -3); /* table[key] = value, L: table */
-
-    lua_pushstring(L, "contact"); /* L: table key */
-    vec2_to_luaval(L, info.contact);
-    lua_rawset(L, -3); /* table[key] = value, L: table */
-
-    lua_pushstring(L, "normal"); /* L: table key */
-    vec2_to_luaval(L, info.normal);
-    lua_rawset(L, -3); /* table[key] = value, L: table */
-
-    lua_pushstring(L, "fraction");                /* L: table key */
-    lua_pushnumber(L, (lua_Number)info.fraction); /* L: table key value*/
-    lua_rawset(L, -3);                            /* table[key] = value, L: table */
-}
-
-void physics_contactdata_to_luaval(lua_State* L, const PhysicsContactData* data)
-{
-    if (nullptr == L || nullptr == data)
-        return;
-
-    lua_newtable(L); /* L: table */
-
-    lua_pushstring(L, "points");
-    vec2_array_to_luaval(L, data->points, data->count);
-    lua_rawset(L, -3);
-
-    lua_pushstring(L, "normal");
-    vec2_to_luaval(L, data->normal);
-    lua_rawset(L, -3);
-
-    lua_pushstring(L, "POINT_MAX");
-    lua_pushnumber(L, data->POINT_MAX);
-    lua_rawset(L, -3);
-}
-#endif  //#if CC_USE_PHYSICS
 
 void size_to_luaval(lua_State* L, const Size& sz)
 {

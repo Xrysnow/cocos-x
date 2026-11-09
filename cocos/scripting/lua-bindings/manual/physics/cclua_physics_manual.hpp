@@ -25,6 +25,8 @@
 #ifndef COCOS2DX_SCRIPT_LUA_COCOS2DX_SUPPORT_GENERATED_LUA_COCOS2DX_PHYSICS_MANUAL_H
 #define COCOS2DX_SCRIPT_LUA_COCOS2DX_SUPPORT_GENERATED_LUA_COCOS2DX_PHYSICS_MANUAL_H
 
+#include "base/ccConfig.h"
+
 #if CC_USE_PHYSICS
 
 #ifdef __cplusplus
@@ -35,8 +37,6 @@ extern "C" {
 }
 #endif
 
-
-#include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
 
 int register_all_cc_physics_manual(lua_State* tolua_S);
 

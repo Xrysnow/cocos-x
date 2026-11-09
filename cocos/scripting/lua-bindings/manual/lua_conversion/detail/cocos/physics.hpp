@@ -48,7 +48,7 @@ namespace lua
 			}
 			lua_createtable(L, 0, 3);
 			native_to_luaval_field(L, -1, "normal", inValue.normal);
-			native_to_luaval_field(L, -1, "POINT_MAX", inValue.POINT_MAX);
+			native_to_luaval_field(L, -1, "POINT_MAX", int(inValue.POINT_MAX));
 			lua_pushstring(L, "points");
 			native_array_to_luaval(L, inValue.points, inValue.count);
 			lua_settable(L, -3);
