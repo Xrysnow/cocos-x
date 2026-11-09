@@ -90,7 +90,6 @@ set(lua_bindings_auto_headers
     auto/cclua_extension_auto.hpp
     auto/cclua_extension_compat.hpp
     auto/cclua_backend_auto.hpp
-    auto/cclua_backend_compat.hpp
     )
 
 set(lua_bindings_auto_files
@@ -139,9 +138,7 @@ set(lua_bindings_auto_files
     auto/cclua_physics3d_auto02.cpp
     auto/cclua_navmesh_auto.cpp
     auto/cclua_backend_auto.cpp
-    auto/cclua_backend_auto01.cpp
-    auto/cclua_backend_retained.cpp
-    auto/cclua_backend_retained01.cpp
+    manual/backend/cclua_backend_manual.cpp
     )
 
 if(CC_ENABLE_EXT_SPINE)

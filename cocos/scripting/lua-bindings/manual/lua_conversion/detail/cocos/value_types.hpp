@@ -1,11 +1,14 @@
 #pragma once
 #include "../conversion.hpp"
 #include "object.hpp"
+#include "../value_userdata.hpp"
+#include "renderer/backend/VertexLayout.h"
 #include "cocos2d.h"
 #include <new>
 
 namespace lua
 {
+	template<> struct value_type<cocos2d::backend::VertexLayout> : std::true_type {};
 	template<>
 	struct to_native<cocos2d::Vec2> {
 		static bool F(lua_State* L, int lo, cocos2d::Vec2* outValue, const char* fName = "") {
@@ -264,21 +267,30 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::Texture2D::TexParams> {
-		static bool F(lua_State* L, int lo, cocos2d::Texture2D::TexParams* outValue, const char* fName = "") {
+	struct to_native<cocos2d::backend::SamplerDescriptor> {
+		static bool F(lua_State* L, int lo, cocos2d::backend::SamplerDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::Texture2D::TexParams v;
-			bool ok = luaval_field_to_native(L, lo, "minFilter", &v.minFilter, fName) &&
-				luaval_field_to_native(L, lo, "magFilter", &v.magFilter, fName);
-			ok = ok && (luaval_field_to_native(L, lo, "wrapS", &v.sAddressMode, fName) || luaval_field_to_native(L, lo, "sAddressMode", &v.sAddressMode, fName));
-			ok = ok && (luaval_field_to_native(L, lo, "wrapT", &v.tAddressMode, fName) || luaval_field_to_native(L, lo, "tAddressMode", &v.tAddressMode, fName));
-			if (ok) *outValue = v;
-			return ok;
+			cocos2d::backend::SamplerDescriptor value;
+			const auto field = [&](const char* key, auto* out, const char* alias = nullptr) {
+				lua_getfield(L, lo, key);
+				if (lua_isnil(L, -1) && alias) {
+					lua_pop(L, 1);
+					lua_getfield(L, lo, alias);
+				}
+				const bool ok = lua_isnil(L, -1) || luaval_to_native(L, -1, out, fName);
+				lua_pop(L, 1);
+				return ok;
+			};
+			if (!field("magFilter", &value.magFilter) || !field("minFilter", &value.minFilter) ||
+				!field("sAddressMode", &value.sAddressMode, "wrapS") || !field("tAddressMode", &value.tAddressMode, "wrapT")) return false;
+			*outValue = value;
+			return true;
 		}
 	};
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Texture2D::TexParams, minFilter, magFilter, sAddressMode, tAddressMode);
+	// Texture2D::TexParams aliases this exact native type, including its legacy wrapS/wrapT keys.
+	LUA_TO_LUA_STRUCT4(cocos2d::backend::SamplerDescriptor, minFilter, magFilter, sAddressMode, tAddressMode);
 
 	template<>
 	struct to_native<cocos2d::backend::UniformLocation> {

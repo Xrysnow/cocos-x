@@ -1338,41 +1338,6 @@ CC_LUA_DLL extern bool luaval_to_node(lua_State* L, int lo, const char* type, co
 CC_LUA_DLL extern void node_to_luaval(lua_State* L, const char* type, cocos2d::Node* node);
 
 /**
- * convert lua object VertexLayout to native object
- */
-CC_LUA_DLL bool luaval_to_vertexLayout(lua_State* L,
-                                       int pos,
-                                       cocos2d::backend::VertexLayout& outLayout,
-                                       const char* message);
-
-/**
- * convert lua object SamplerDescriptor to native object
- */
-CC_LUA_DLL bool luaval_to_samplerDescriptor(lua_State* L,
-                                            int pos,
-                                            cocos2d::backend::SamplerDescriptor& desc,
-                                            const char* message);
-
-/**
- * convert lua object to cocos2d::backend::UniformLocation
- */
-CC_LUA_DLL bool luaval_to_uniformLocation(lua_State* L,
-                                          int pos,
-                                          cocos2d::backend::UniformLocation& desc,
-                                          const char* message);
-
-/**
- * convert cocos2d::backend::UniformLocation to lua object
- */
-CC_LUA_DLL void uniformLocation_to_luaval(lua_State* L, const cocos2d::backend::UniformLocation& desc);
-
-CC_LUA_DLL void program_activeattrs_to_luaval(lua_State* L,
-                                              const hlookup::string_map<cocos2d::backend::AttributeBindInfo>& map);
-
-CC_LUA_DLL void program_activeattrs_to_luaval(lua_State* L,
-                                              const std::unordered_map<std::string, cocos2d::backend::AttributeBindInfo>& map);
-
-/**
  * convert cocos2d::ResourceData to lua object
  */
 CC_LUA_DLL void resourceData_to_luaval(lua_State* L, const cocos2d::ResourceData& data);
