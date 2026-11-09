@@ -1,5 +1,5 @@
 #include "cclua_base_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_base_compat.hpp"
+#include "lua_conversion/lua_conversion.hpp"
 #include "cocos2d.h"
 #include "2d/CCProtectedNode.h"
 #include "base/CCAsyncTaskPool.h"
@@ -7,6 +7,8 @@
 #include "renderer/CCRenderer.h"
 #include "renderer/CCPipelineDescriptor.h"
 #include "renderer/backend/RenderTarget.h"
+#include "renderer/backend/ShaderCache.h"
+#include "renderer/backend/Buffer.h"
 
 int lua_cocos2d_EaseBounceOut_create(lua_State* lua_S)
 {
@@ -18,7 +20,7 @@ int luaReg_Core_ccEaseBounceOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseBounceOut, "EaseBounceOut", "cc.EaseBounceOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseBounceOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseBounceOut_create);
 	LUA_CLS_END();
@@ -35,7 +37,7 @@ int luaReg_Core_ccEaseBounceInOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseBounceInOut, "EaseBounceInOut", "cc.EaseBounceInOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseBounceInOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseBounceInOut_create);
 	LUA_CLS_END();
@@ -52,7 +54,7 @@ int luaReg_Core_ccEaseBackIn(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseBackIn, "EaseBackIn", "cc.EaseBackIn",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseBackIn, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseBackIn_create);
 	LUA_CLS_END();
@@ -69,7 +71,7 @@ int luaReg_Core_ccEaseBackOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseBackOut, "EaseBackOut", "cc.EaseBackOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseBackOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseBackOut_create);
 	LUA_CLS_END();
@@ -86,7 +88,7 @@ int luaReg_Core_ccEaseBackInOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseBackInOut, "EaseBackInOut", "cc.EaseBackInOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseBackInOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseBackInOut_create);
 	LUA_CLS_END();
@@ -103,7 +105,7 @@ int luaReg_Core_ccEaseQuadraticActionIn(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuadraticActionIn, "EaseQuadraticActionIn", "cc.EaseQuadraticActionIn",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuadraticActionIn, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuadraticActionIn_create);
 	LUA_CLS_END();
@@ -120,7 +122,7 @@ int luaReg_Core_ccEaseQuadraticActionOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuadraticActionOut, "EaseQuadraticActionOut", "cc.EaseQuadraticActionOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuadraticActionOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuadraticActionOut_create);
 	LUA_CLS_END();
@@ -137,7 +139,7 @@ int luaReg_Core_ccEaseQuadraticActionInOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuadraticActionInOut, "EaseQuadraticActionInOut", "cc.EaseQuadraticActionInOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuadraticActionInOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuadraticActionInOut_create);
 	LUA_CLS_END();
@@ -154,7 +156,7 @@ int luaReg_Core_ccEaseQuarticActionIn(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuarticActionIn, "EaseQuarticActionIn", "cc.EaseQuarticActionIn",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuarticActionIn, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuarticActionIn_create);
 	LUA_CLS_END();
@@ -171,7 +173,7 @@ int luaReg_Core_ccEaseQuarticActionOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuarticActionOut, "EaseQuarticActionOut", "cc.EaseQuarticActionOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuarticActionOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuarticActionOut_create);
 	LUA_CLS_END();
@@ -188,7 +190,7 @@ int luaReg_Core_ccEaseQuarticActionInOut(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuarticActionInOut, "EaseQuarticActionInOut", "cc.EaseQuarticActionInOut",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuarticActionInOut, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuarticActionInOut_create);
 	LUA_CLS_END();
@@ -205,7 +207,7 @@ int luaReg_Core_ccEaseQuinticActionIn(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::EaseQuinticActionIn, "EaseQuinticActionIn", "cc.EaseQuinticActionIn",
-		cocos2d::ActionEase, "cc.ActionEase",
+		cocos2d::EaseQuinticActionIn, "cc.ActionEase",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_EaseQuinticActionIn_create);
 	LUA_CLS_END();

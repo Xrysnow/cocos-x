@@ -168,8 +168,6 @@ bool LuaStack::init()
     LuaJavaBridge::luaopen_luaj(_state);
 #endif
 
-    tolua_script_handler_mgr_open(_state);
-
     // add cocos2dx loader
     addLuaLoader(cclua_loader);
 

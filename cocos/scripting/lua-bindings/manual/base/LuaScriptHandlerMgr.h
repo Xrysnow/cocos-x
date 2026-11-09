@@ -90,19 +90,19 @@ public:
      *
      * @param func a function pointer for callback.
      */
-    static LuaCallFunc* create(const std::function<void(void* self, Node*)>& func);
+    static LuaCallFunc* create(const std::function<void(Node*)>& func);
 
     /**
      * Init a LuaCallFunc object by a function pointer for callback.
      *
      * @param func a function pointer for callback.
      */
-    bool initWithFunction(const std::function<void(void* self, Node*)>& func);
+    bool initWithFunction(const std::function<void(Node*)>& func);
     virtual LuaCallFunc* clone() const override;
     virtual void execute() override;
 
 protected:
-    std::function<void(void* self, Node*)> _functionLua;
+    std::function<void(Node*)> _functionLua;
 };
 
 /**
@@ -325,9 +325,5 @@ NS_CC_END
 
 // end group
 /// @}
-
-/// @cond
-TOLUA_API int tolua_script_handler_mgr_open(lua_State* tolua_S);
-/// @endcond
 
 #endif  //__LUA_SCRIPT_HANDLER_MGR_H__

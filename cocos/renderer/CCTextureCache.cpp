@@ -94,6 +94,11 @@ TextureCache::~TextureCache()
 {
     CCLOGINFO("deallocing TextureCache: %p", this);
     waitForQuit();
+    // An independently owned cache can be destroyed with pending responses.
+    // Remove its selector before freeing the queued records and target object.
+    if (_asyncRefCount != 0)
+        Director::getInstance()->getScheduler()->unschedule(CC_SCHEDULE_SELECTOR(TextureCache::addImageAsyncCallBack),
+                                                            this);
     // The queues alias these records. Destroy captures on the main thread only
     // at cache destruction; public waitForQuit must preserve pending delivery.
     for (auto* pending : _asyncStructQueue)

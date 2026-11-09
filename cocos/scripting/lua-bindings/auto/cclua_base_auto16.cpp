@@ -1,5 +1,5 @@
 #include "cclua_base_auto.hpp"
-#include "scripting/lua-bindings/auto/cclua_base_compat.hpp"
+#include "lua_conversion/lua_conversion.hpp"
 #include "cocos2d.h"
 #include "2d/CCProtectedNode.h"
 #include "base/CCAsyncTaskPool.h"
@@ -7,164 +7,9 @@
 #include "renderer/CCRenderer.h"
 #include "renderer/CCPipelineDescriptor.h"
 #include "renderer/backend/RenderTarget.h"
+#include "renderer/backend/ShaderCache.h"
+#include "renderer/backend/Buffer.h"
 
-int lua_cocos2d_ProgressTimer_getPercentage(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:getPercentage");
-	LUA_TRY_INVOKE_R(0, static_cast<float(cocos2d::ProgressTimer::*)()const>(&cocos2d::ProgressTimer::getPercentage));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProgressTimer_getSprite(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:getSprite");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Sprite*(cocos2d::ProgressTimer::*)()const>(&cocos2d::ProgressTimer::getSprite));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProgressTimer_getType(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:getType");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ProgressTimer::Type(cocos2d::ProgressTimer::*)()const>(&cocos2d::ProgressTimer::getType));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProgressTimer_initWithSprite(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:initWithSprite");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::ProgressTimer::*)(cocos2d::Sprite*)>(&cocos2d::ProgressTimer::initWithSprite));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProgressTimer_isReverseDirection(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:isReverseDirection");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::ProgressTimer::*)()>(&cocos2d::ProgressTimer::isReverseDirection));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProgressTimer_setPercentage(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:setPercentage");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProgressTimer::*)(float)>(&cocos2d::ProgressTimer::setPercentage));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProgressTimer_setReverseDirection(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:setReverseDirection");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProgressTimer::*)(bool)>(&cocos2d::ProgressTimer::setReverseDirection));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProgressTimer_setSprite(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:setSprite");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProgressTimer::*)(cocos2d::Sprite*)>(&cocos2d::ProgressTimer::setSprite));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProgressTimer_setType(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:setType");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProgressTimer::*)(cocos2d::ProgressTimer::Type)>(&cocos2d::ProgressTimer::setType));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProgressTimer_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.ProgressTimer", "cc.ProgressTimer:create");
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ProgressTimer*(*)(cocos2d::Sprite*)>(&cocos2d::ProgressTimer::create));
-	LUA_SINVOKE_FOOTER("1");
-}
-int luaReg_Core_ccProgressTimer(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::ProgressTimer, "ProgressTimer", "cc.ProgressTimer",
-		cocos2d::Node, "cc.Node",
-		nullptr, nullptr);
-	LUA_METHOD("getPercentage", lua_cocos2d_ProgressTimer_getPercentage);
-	LUA_METHOD("getSprite", lua_cocos2d_ProgressTimer_getSprite);
-	LUA_METHOD("getType", lua_cocos2d_ProgressTimer_getType);
-	LUA_METHOD("initWithSprite", lua_cocos2d_ProgressTimer_initWithSprite);
-	LUA_METHOD("isReverseDirection", lua_cocos2d_ProgressTimer_isReverseDirection);
-	LUA_METHOD("setPercentage", lua_cocos2d_ProgressTimer_setPercentage);
-	LUA_METHOD("setReverseDirection", lua_cocos2d_ProgressTimer_setReverseDirection);
-	LUA_METHOD("setSprite", lua_cocos2d_ProgressTimer_setSprite);
-	LUA_METHOD("setType", lua_cocos2d_ProgressTimer_setType);
-	LUA_METHOD("create", lua_cocos2d_ProgressTimer_create);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_ProtectedNode_addProtectedChild(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:addProtectedChild");
-	LUA_TRY_INVOKE(3, static_cast<void(cocos2d::ProtectedNode::*)(cocos2d::Node*, int, int)>(&cocos2d::ProtectedNode::addProtectedChild));
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::ProtectedNode::*)(cocos2d::Node*, int)>(&cocos2d::ProtectedNode::addProtectedChild));
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProtectedNode::*)(cocos2d::Node*)>(&cocos2d::ProtectedNode::addProtectedChild));
-	LUA_INVOKE_FOOTER("1,2,3");
-}
-int lua_cocos2d_ProtectedNode_getProtectedChildByTag(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:getProtectedChildByTag");
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::Node*(cocos2d::ProtectedNode::*)(int)>(&cocos2d::ProtectedNode::getProtectedChildByTag));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProtectedNode_removeAllProtectedChildren(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:removeAllProtectedChildren");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::ProtectedNode::*)()>(&cocos2d::ProtectedNode::removeAllProtectedChildren));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProtectedNode_removeAllProtectedChildrenWithCleanup(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:removeAllProtectedChildrenWithCleanup");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ProtectedNode::*)(bool)>(&cocos2d::ProtectedNode::removeAllProtectedChildrenWithCleanup));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ProtectedNode_removeProtectedChild(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:removeProtectedChild");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::ProtectedNode::*)(cocos2d::Node*, bool)>(&cocos2d::ProtectedNode::removeProtectedChild));
-	LUA_TRY_INVOKE(1, [](cocos2d::ProtectedNode* obj,cocos2d::Node* arg0){{return obj->removeProtectedChild(arg0);}});
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocos2d_ProtectedNode_removeProtectedChildByTag(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:removeProtectedChildByTag");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::ProtectedNode::*)(int, bool)>(&cocos2d::ProtectedNode::removeProtectedChildByTag));
-	LUA_TRY_INVOKE(1, [](cocos2d::ProtectedNode* obj,int arg0){{return obj->removeProtectedChildByTag(std::move(arg0));}});
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocos2d_ProtectedNode_reorderProtectedChild(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:reorderProtectedChild");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::ProtectedNode::*)(cocos2d::Node*, int)>(&cocos2d::ProtectedNode::reorderProtectedChild));
-	LUA_INVOKE_FOOTER("2");
-}
-int lua_cocos2d_ProtectedNode_sortAllProtectedChildren(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:sortAllProtectedChildren");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::ProtectedNode::*)()>(&cocos2d::ProtectedNode::sortAllProtectedChildren));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ProtectedNode_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.ProtectedNode", "cc.ProtectedNode:create");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ProtectedNode*(*)()>(&cocos2d::ProtectedNode::create));
-	LUA_SINVOKE_FOOTER("0");
-}
-int luaReg_Core_ccProtectedNode(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::ProtectedNode, "ProtectedNode", "cc.ProtectedNode",
-		cocos2d::Node, "cc.Node",
-		nullptr, nullptr);
-	LUA_METHOD("addProtectedChild", lua_cocos2d_ProtectedNode_addProtectedChild);
-	LUA_METHOD("getProtectedChildByTag", lua_cocos2d_ProtectedNode_getProtectedChildByTag);
-	LUA_METHOD("removeAllProtectedChildren", lua_cocos2d_ProtectedNode_removeAllProtectedChildren);
-	LUA_METHOD("removeAllProtectedChildrenWithCleanup", lua_cocos2d_ProtectedNode_removeAllProtectedChildrenWithCleanup);
-	LUA_METHOD("removeProtectedChild", lua_cocos2d_ProtectedNode_removeProtectedChild);
-	LUA_METHOD("removeProtectedChildByTag", lua_cocos2d_ProtectedNode_removeProtectedChildByTag);
-	LUA_METHOD("reorderProtectedChild", lua_cocos2d_ProtectedNode_reorderProtectedChild);
-	LUA_METHOD("sortAllProtectedChildren", lua_cocos2d_ProtectedNode_sortAllProtectedChildren);
-	LUA_METHOD("create", lua_cocos2d_ProtectedNode_create);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
 int lua_cocos2d_RenderTexture_begin(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:begin");
@@ -174,15 +19,15 @@ int lua_cocos2d_RenderTexture_begin(lua_State* lua_S)
 int lua_cocos2d_RenderTexture_beginWithClear(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:beginWithClear");
-	LUA_TRY_INVOKE(6, static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float, float, int)>(&cocos2d::RenderTexture::beginWithClear));
-	LUA_TRY_INVOKE(5, static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float, float)>(&cocos2d::RenderTexture::beginWithClear));
-	LUA_TRY_INVOKE(4, static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float)>(&cocos2d::RenderTexture::beginWithClear));
+	LUA_TRY_INVOKE(6, (static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float, float, int)>(&cocos2d::RenderTexture::beginWithClear)));
+	LUA_TRY_INVOKE(5, (static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float, float)>(&cocos2d::RenderTexture::beginWithClear)));
+	LUA_TRY_INVOKE(4, (static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float)>(&cocos2d::RenderTexture::beginWithClear)));
 	LUA_INVOKE_FOOTER("4,5,6");
 }
 int lua_cocos2d_RenderTexture_clear(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:clear");
-	LUA_TRY_INVOKE(4, static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float)>(&cocos2d::RenderTexture::clear));
+	LUA_TRY_INVOKE(4, (static_cast<void(cocos2d::RenderTexture::*)(float, float, float, float)>(&cocos2d::RenderTexture::clear)));
 	LUA_INVOKE_FOOTER("4");
 }
 int lua_cocos2d_RenderTexture_clearDepth(lua_State* lua_S)
@@ -203,6 +48,12 @@ int lua_cocos2d_RenderTexture_endToLua(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::RenderTexture::*)()>(&cocos2d::RenderTexture::end));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_RenderTexture_getClearColor(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:getClearColor");
+	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Color4F&(cocos2d::RenderTexture::*)()const>(&cocos2d::RenderTexture::getClearColor));
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_cocos2d_RenderTexture_getClearDepth(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:getClearDepth");
@@ -221,11 +72,26 @@ int lua_cocos2d_RenderTexture_getClearStencil(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::RenderTexture::*)()const>(&cocos2d::RenderTexture::getClearStencil));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_RenderTexture_getRenderTarget(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:getRenderTarget");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::RenderTarget*(cocos2d::RenderTexture::*)()const>(&cocos2d::RenderTexture::getRenderTarget));
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_cocos2d_RenderTexture_getSprite(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:getSprite");
 	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Sprite*(cocos2d::RenderTexture::*)()const>(&cocos2d::RenderTexture::getSprite));
 	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_RenderTexture_initWithWidthAndHeight(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:initWithWidthAndHeight");
+	LUA_TRY_INVOKE_R(5, (static_cast<bool(cocos2d::RenderTexture::*)(int, int, cocos2d::backend::PixelFormat, cocos2d::backend::PixelFormat, bool)>(&cocos2d::RenderTexture::initWithWidthAndHeight)));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, ([](cocos2d::RenderTexture* obj,int arg0,int arg1,cocos2d::backend::PixelFormat arg2,cocos2d::backend::PixelFormat arg3){{return obj->initWithWidthAndHeight(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, (static_cast<bool(cocos2d::RenderTexture::*)(int, int, cocos2d::backend::PixelFormat, bool)>(&cocos2d::RenderTexture::initWithWidthAndHeight)));
+	LUA_TRY_INVOKE_R(3, ([](cocos2d::RenderTexture* obj,int arg0,int arg1,cocos2d::backend::PixelFormat arg2){{return obj->initWithWidthAndHeight(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_INVOKE_FOOTER("3,4,5");
 }
 int lua_cocos2d_RenderTexture_isAutoDraw(lua_State* lua_S)
 {
@@ -239,10 +105,36 @@ int lua_cocos2d_RenderTexture_isSharedRenderTarget(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::RenderTexture::*)()const>(&cocos2d::RenderTexture::isSharedRenderTarget));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_RenderTexture_saveToFile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:saveToFile");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::RenderTexture::*)(std::string_view, cocos2d::Image::Format, bool, cocos2d::RenderTexture::SaveFileCallbackType)>(&cocos2d::RenderTexture::saveToFile)));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, ([](cocos2d::RenderTexture* obj,std::string_view arg0,cocos2d::Image::Format arg1,bool arg2){{return obj->saveToFile(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, (static_cast<bool(cocos2d::RenderTexture::*)(std::string_view, bool, cocos2d::RenderTexture::SaveFileCallbackType)>(&cocos2d::RenderTexture::saveToFile)));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](cocos2d::RenderTexture* obj,std::string_view arg0,cocos2d::Image::Format arg1){{return obj->saveToFile(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](cocos2d::RenderTexture* obj,std::string_view arg0,bool arg1){{return obj->saveToFile(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R(1, ([](cocos2d::RenderTexture* obj,std::string_view arg0){{return obj->saveToFile(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2,3,4");
+}
+int lua_cocos2d_RenderTexture_saveToFileAsNonPMA(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:saveToFileAsNonPMA");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::RenderTexture::*)(std::string_view, cocos2d::Image::Format, bool, cocos2d::RenderTexture::SaveFileCallbackType)>(&cocos2d::RenderTexture::saveToFileAsNonPMA)));
+	LUA_TRY_INVOKE_R(3, (static_cast<bool(cocos2d::RenderTexture::*)(std::string_view, bool, cocos2d::RenderTexture::SaveFileCallbackType)>(&cocos2d::RenderTexture::saveToFileAsNonPMA)));
+	LUA_TRY_INVOKE_R(2, ([](cocos2d::RenderTexture* obj,std::string_view arg0,bool arg1){{return obj->saveToFileAsNonPMA(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R(1, ([](cocos2d::RenderTexture* obj,std::string_view arg0){{return obj->saveToFileAsNonPMA(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2,3,4");
+}
 int lua_cocos2d_RenderTexture_setAutoDraw(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:setAutoDraw");
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::RenderTexture::*)(bool)>(&cocos2d::RenderTexture::setAutoDraw));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_RenderTexture_setClearColor(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:setClearColor");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::RenderTexture::*)(const cocos2d::Color4F&)>(&cocos2d::RenderTexture::setClearColor));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_RenderTexture_setClearDepth(lua_State* lua_S)
@@ -275,11 +167,28 @@ int lua_cocos2d_RenderTexture_setSprite(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::RenderTexture::*)(cocos2d::Sprite*)>(&cocos2d::RenderTexture::setSprite));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_RenderTexture_setVirtualViewport(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:setVirtualViewport");
+	LUA_TRY_INVOKE(3, (static_cast<void(cocos2d::RenderTexture::*)(const cocos2d::Vec2&, const cocos2d::Rect&, const cocos2d::Rect&)>(&cocos2d::RenderTexture::setVirtualViewport)));
+	LUA_INVOKE_FOOTER("3");
+}
+int lua_cocos2d_RenderTexture_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:create");
+	LUA_TRY_INVOKE_R(5, (static_cast<cocos2d::RenderTexture*(*)(int, int, cocos2d::backend::PixelFormat, cocos2d::backend::PixelFormat, bool)>(&cocos2d::RenderTexture::create)));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, (static_cast<cocos2d::RenderTexture*(*)(int, int, cocos2d::backend::PixelFormat, bool)>(&cocos2d::RenderTexture::create)));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, ([](int arg0,int arg1,cocos2d::backend::PixelFormat arg2,cocos2d::backend::PixelFormat arg3){{return cocos2d::RenderTexture::create(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, (static_cast<cocos2d::RenderTexture*(*)(int, int, bool)>(&cocos2d::RenderTexture::create)));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, ([](int arg0,int arg1,cocos2d::backend::PixelFormat arg2){{return cocos2d::RenderTexture::create(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE_R(2, ([](int arg0,int arg1){{return cocos2d::RenderTexture::create(std::move(arg0),std::move(arg1));}}));
+	LUA_SINVOKE_FOOTER("2,3,4,5");
+}
 int luaReg_Core_ccRenderTexture(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::RenderTexture, "RenderTexture", "cc.RenderTexture",
-		cocos2d::Node, "cc.Node",
+		cocos2d::RenderTexture, "cc.Node",
 		nullptr, nullptr);
 	LUA_METHOD("begin", lua_cocos2d_RenderTexture_begin);
 	LUA_METHOD("beginWithClear", lua_cocos2d_RenderTexture_beginWithClear);
@@ -287,34 +196,26 @@ int luaReg_Core_ccRenderTexture(lua_State* lua_S)
 	LUA_METHOD("clearDepth", lua_cocos2d_RenderTexture_clearDepth);
 	LUA_METHOD("clearStencil", lua_cocos2d_RenderTexture_clearStencil);
 	LUA_METHOD("endToLua", lua_cocos2d_RenderTexture_endToLua);
+	LUA_METHOD("getClearColor", lua_cocos2d_RenderTexture_getClearColor);
 	LUA_METHOD("getClearDepth", lua_cocos2d_RenderTexture_getClearDepth);
 	LUA_METHOD("getClearFlags", lua_cocos2d_RenderTexture_getClearFlags);
 	LUA_METHOD("getClearStencil", lua_cocos2d_RenderTexture_getClearStencil);
+	LUA_METHOD("getRenderTarget", lua_cocos2d_RenderTexture_getRenderTarget);
 	LUA_METHOD("getSprite", lua_cocos2d_RenderTexture_getSprite);
+	LUA_METHOD("initWithWidthAndHeight", lua_cocos2d_RenderTexture_initWithWidthAndHeight);
 	LUA_METHOD("isAutoDraw", lua_cocos2d_RenderTexture_isAutoDraw);
 	LUA_METHOD("isSharedRenderTarget", lua_cocos2d_RenderTexture_isSharedRenderTarget);
+	LUA_METHOD("saveToFile", lua_cocos2d_RenderTexture_saveToFile);
+	LUA_METHOD("saveToFileAsNonPMA", lua_cocos2d_RenderTexture_saveToFileAsNonPMA);
 	LUA_METHOD("setAutoDraw", lua_cocos2d_RenderTexture_setAutoDraw);
+	LUA_METHOD("setClearColor", lua_cocos2d_RenderTexture_setClearColor);
 	LUA_METHOD("setClearDepth", lua_cocos2d_RenderTexture_setClearDepth);
 	LUA_METHOD("setClearFlags", lua_cocos2d_RenderTexture_setClearFlags);
 	LUA_METHOD("setClearStencil", lua_cocos2d_RenderTexture_setClearStencil);
 	LUA_METHOD("setKeepMatrix", lua_cocos2d_RenderTexture_setKeepMatrix);
 	LUA_METHOD("setSprite", lua_cocos2d_RenderTexture_setSprite);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_TransitionEaseScene_easeActionWithAction(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.TransitionEaseScene", "cc.TransitionEaseScene:easeActionWithAction");
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ActionInterval*(cocos2d::TransitionEaseScene::*)(cocos2d::ActionInterval*)>(&cocos2d::TransitionEaseScene::easeActionWithAction));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_Core_ccTransitionEaseScene(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF(cocos2d::TransitionEaseScene, "TransitionEaseScene", "cc.TransitionEaseScene",
-		nullptr, nullptr);
-	LUA_METHOD("easeActionWithAction", lua_cocos2d_TransitionEaseScene_easeActionWithAction);
+	LUA_METHOD("setVirtualViewport", lua_cocos2d_RenderTexture_setVirtualViewport);
+	LUA_METHOD("create", lua_cocos2d_RenderTexture_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -346,20 +247,20 @@ int lua_cocos2d_TransitionScene_hideOutShowIn(lua_State* lua_S)
 int lua_cocos2d_TransitionScene_initWithDuration(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.TransitionScene", "cc.TransitionScene:initWithDuration");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::TransitionScene::*)(float, cocos2d::Scene*)>(&cocos2d::TransitionScene::initWithDuration));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::TransitionScene::*)(float, cocos2d::Scene*)>(&cocos2d::TransitionScene::initWithDuration)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_TransitionScene_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionScene", "cc.TransitionScene:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionScene*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionScene::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionScene*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionScene::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionScene(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionScene, "TransitionScene", "cc.TransitionScene",
-		cocos2d::Scene, "cc.Scene",
+		cocos2d::TransitionScene, "cc.Scene",
 		nullptr, nullptr);
 	LUA_METHOD("finish", lua_cocos2d_TransitionScene_finish);
 	LUA_METHOD("getDuration", lua_cocos2d_TransitionScene_getDuration);
@@ -374,20 +275,20 @@ int luaReg_Core_ccTransitionScene(lua_State* lua_S)
 int lua_cocos2d_TransitionSceneOriented_initWithDuration(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.TransitionSceneOriented", "cc.TransitionSceneOriented:initWithDuration");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(cocos2d::TransitionSceneOriented::*)(float, cocos2d::Scene*, cocos2d::TransitionScene::Orientation)>(&cocos2d::TransitionSceneOriented::initWithDuration));
+	LUA_TRY_INVOKE_R(3, (static_cast<bool(cocos2d::TransitionSceneOriented::*)(float, cocos2d::Scene*, cocos2d::TransitionScene::Orientation)>(&cocos2d::TransitionSceneOriented::initWithDuration)));
 	LUA_INVOKE_FOOTER("3");
 }
 int lua_cocos2d_TransitionSceneOriented_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionSceneOriented", "cc.TransitionSceneOriented:create");
-	LUA_TRY_INVOKE_R(3, static_cast<cocos2d::TransitionSceneOriented*(*)(float, cocos2d::Scene*, cocos2d::TransitionScene::Orientation)>(&cocos2d::TransitionSceneOriented::create));
+	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::TransitionSceneOriented*(*)(float, cocos2d::Scene*, cocos2d::TransitionScene::Orientation)>(&cocos2d::TransitionSceneOriented::create)));
 	LUA_SINVOKE_FOOTER("3");
 }
 int luaReg_Core_ccTransitionSceneOriented(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionSceneOriented, "TransitionSceneOriented", "cc.TransitionSceneOriented",
-		cocos2d::TransitionScene, "cc.TransitionScene",
+		cocos2d::TransitionSceneOriented, "cc.TransitionScene",
 		nullptr, nullptr);
 	LUA_METHOD("initWithDuration", lua_cocos2d_TransitionSceneOriented_initWithDuration);
 	LUA_METHOD("create", lua_cocos2d_TransitionSceneOriented_create);
@@ -398,14 +299,14 @@ int luaReg_Core_ccTransitionSceneOriented(lua_State* lua_S)
 int lua_cocos2d_TransitionRotoZoom_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionRotoZoom", "cc.TransitionRotoZoom:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionRotoZoom*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionRotoZoom::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionRotoZoom*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionRotoZoom::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionRotoZoom(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionRotoZoom, "TransitionRotoZoom", "cc.TransitionRotoZoom",
-		cocos2d::TransitionScene, "cc.TransitionScene",
+		cocos2d::TransitionRotoZoom, "cc.TransitionScene",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_TransitionRotoZoom_create);
 	LUA_CLS_END();
@@ -415,14 +316,14 @@ int luaReg_Core_ccTransitionRotoZoom(lua_State* lua_S)
 int lua_cocos2d_TransitionJumpZoom_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionJumpZoom", "cc.TransitionJumpZoom:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionJumpZoom*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionJumpZoom::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionJumpZoom*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionJumpZoom::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionJumpZoom(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionJumpZoom, "TransitionJumpZoom", "cc.TransitionJumpZoom",
-		cocos2d::TransitionScene, "cc.TransitionScene",
+		cocos2d::TransitionJumpZoom, "cc.TransitionScene",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_TransitionJumpZoom_create);
 	LUA_CLS_END();
@@ -435,19 +336,26 @@ int lua_cocos2d_TransitionMoveInL_action(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ActionInterval*(cocos2d::TransitionMoveInL::*)()>(&cocos2d::TransitionMoveInL::action));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_TransitionMoveInL_easeActionWithAction(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TransitionMoveInL", "cc.TransitionMoveInL:easeActionWithAction");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ActionInterval*(cocos2d::TransitionMoveInL::*)(cocos2d::ActionInterval*)>(&cocos2d::TransitionMoveInL::easeActionWithAction));
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cocos2d_TransitionMoveInL_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionMoveInL", "cc.TransitionMoveInL:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionMoveInL*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInL::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionMoveInL*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInL::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionMoveInL(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionMoveInL, "TransitionMoveInL", "cc.TransitionMoveInL",
-		cocos2d::TransitionScene, "cc.TransitionScene",
+		cocos2d::TransitionMoveInL, "cc.TransitionScene",
 		nullptr, nullptr);
 	LUA_METHOD("action", lua_cocos2d_TransitionMoveInL_action);
+	LUA_METHOD("easeActionWithAction", lua_cocos2d_TransitionMoveInL_easeActionWithAction);
 	LUA_METHOD("create", lua_cocos2d_TransitionMoveInL_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
@@ -456,14 +364,14 @@ int luaReg_Core_ccTransitionMoveInL(lua_State* lua_S)
 int lua_cocos2d_TransitionMoveInR_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionMoveInR", "cc.TransitionMoveInR:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionMoveInR*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInR::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionMoveInR*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInR::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionMoveInR(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionMoveInR, "TransitionMoveInR", "cc.TransitionMoveInR",
-		cocos2d::TransitionMoveInL, "cc.TransitionMoveInL",
+		cocos2d::TransitionMoveInR, "cc.TransitionMoveInL",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_TransitionMoveInR_create);
 	LUA_CLS_END();
@@ -473,14 +381,14 @@ int luaReg_Core_ccTransitionMoveInR(lua_State* lua_S)
 int lua_cocos2d_TransitionMoveInT_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionMoveInT", "cc.TransitionMoveInT:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionMoveInT*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInT::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionMoveInT*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInT::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionMoveInT(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionMoveInT, "TransitionMoveInT", "cc.TransitionMoveInT",
-		cocos2d::TransitionMoveInL, "cc.TransitionMoveInL",
+		cocos2d::TransitionMoveInT, "cc.TransitionMoveInL",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_TransitionMoveInT_create);
 	LUA_CLS_END();
@@ -490,16 +398,81 @@ int luaReg_Core_ccTransitionMoveInT(lua_State* lua_S)
 int lua_cocos2d_TransitionMoveInB_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.TransitionMoveInB", "cc.TransitionMoveInB:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::TransitionMoveInB*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInB::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionMoveInB*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionMoveInB::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_Core_ccTransitionMoveInB(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::TransitionMoveInB, "TransitionMoveInB", "cc.TransitionMoveInB",
-		cocos2d::TransitionMoveInL, "cc.TransitionMoveInL",
+		cocos2d::TransitionMoveInB, "cc.TransitionMoveInL",
 		nullptr, nullptr);
 	LUA_METHOD("create", lua_cocos2d_TransitionMoveInB_create);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_TransitionSlideInL_action(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TransitionSlideInL", "cc.TransitionSlideInL:action");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ActionInterval*(cocos2d::TransitionSlideInL::*)()>(&cocos2d::TransitionSlideInL::action));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TransitionSlideInL_easeActionWithAction(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TransitionSlideInL", "cc.TransitionSlideInL:easeActionWithAction");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ActionInterval*(cocos2d::TransitionSlideInL::*)(cocos2d::ActionInterval*)>(&cocos2d::TransitionSlideInL::easeActionWithAction));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TransitionSlideInL_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TransitionSlideInL", "cc.TransitionSlideInL:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionSlideInL*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionSlideInL::create)));
+	LUA_SINVOKE_FOOTER("2");
+}
+int luaReg_Core_ccTransitionSlideInL(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::TransitionSlideInL, "TransitionSlideInL", "cc.TransitionSlideInL",
+		cocos2d::TransitionSlideInL, "cc.TransitionScene",
+		nullptr, nullptr);
+	LUA_METHOD("action", lua_cocos2d_TransitionSlideInL_action);
+	LUA_METHOD("easeActionWithAction", lua_cocos2d_TransitionSlideInL_easeActionWithAction);
+	LUA_METHOD("create", lua_cocos2d_TransitionSlideInL_create);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_TransitionSlideInR_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TransitionSlideInR", "cc.TransitionSlideInR:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionSlideInR*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionSlideInR::create)));
+	LUA_SINVOKE_FOOTER("2");
+}
+int luaReg_Core_ccTransitionSlideInR(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::TransitionSlideInR, "TransitionSlideInR", "cc.TransitionSlideInR",
+		cocos2d::TransitionSlideInR, "cc.TransitionSlideInL",
+		nullptr, nullptr);
+	LUA_METHOD("create", lua_cocos2d_TransitionSlideInR_create);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_TransitionSlideInB_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TransitionSlideInB", "cc.TransitionSlideInB:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TransitionSlideInB*(*)(float, cocos2d::Scene*)>(&cocos2d::TransitionSlideInB::create)));
+	LUA_SINVOKE_FOOTER("2");
+}
+int luaReg_Core_ccTransitionSlideInB(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::TransitionSlideInB, "TransitionSlideInB", "cc.TransitionSlideInB",
+		cocos2d::TransitionSlideInB, "cc.TransitionSlideInL",
+		nullptr, nullptr);
+	LUA_METHOD("create", lua_cocos2d_TransitionSlideInB_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

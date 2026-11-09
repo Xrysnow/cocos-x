@@ -34,12 +34,6 @@
 #include "2d/CCNode.h"
 
 NS_CC_BEGIN
-class LuaEventListenerCustom
-{
-public:
-    static EventListenerCustom* create(std::string_view eventName);
-};
-
 class LuaEventListenerAcceleration
 {
 public:

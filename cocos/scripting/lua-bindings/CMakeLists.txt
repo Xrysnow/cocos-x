@@ -82,7 +82,6 @@ set(lua_bindings_auto_headers
     auto/cclua_geometry_auto.hpp
     auto/cclua_controller_auto.hpp
     auto/cclua_base_auto.hpp
-    auto/cclua_base_compat.hpp
     auto/cclua_navmesh_auto.hpp
     auto/cclua_physics3d_auto.hpp
     auto/cclua_ui_auto.hpp
@@ -127,13 +126,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto21.cpp
     auto/cclua_base_auto22.cpp
     auto/cclua_base_retained.cpp
-    auto/cclua_base_retained01.cpp
-    auto/cclua_base_retained02.cpp
-    auto/cclua_base_retained03.cpp
-    auto/cclua_base_retained04.cpp
-    auto/cclua_base_retained05.cpp
-    auto/cclua_base_retained06.cpp
-    auto/cclua_base_retained07.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
     auto/cclua_extension_auto01.cpp
