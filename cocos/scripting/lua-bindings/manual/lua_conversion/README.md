@@ -14,7 +14,29 @@ automatic fields always use checked conversion.
 Unregistered value types use temporary conversion storage. Classes explicitly
 registered through `value_type<T>` instead refer to the original, rooted userdata:
 a by-value native signature makes the C++ copy, while a reference signature keeps
-the original object.
+the original object. By-value inputs require copying; they never move from the
+Lua-owned object. Rvalue-reference inputs require an explicit adapter.
+
+A non-reference native result of a registered value type becomes owned userdata.
+Mutable results prefer construction from an rvalue, including move-only values;
+copy-only types with an explicitly deleted move constructor fall back to copying.
+Const results keep const-qualified construction and do not move through a cast.
+Output does not require a default constructor. `T&` and `const T&` results remain
+borrowed, with their existing constness and owner rules. Rvalue-reference results
+keep the existing non-consuming conversion and require an explicit adapter in
+generated bindings.
+
+`native_to_luaval` and its field helpers preserve the supplied value category.
+Lvalues copy through the registered value converter; mutable rvalues may move.
+Converters that only accept a mutable lvalue retain their existing calling path.
+Container output and Lua callback argument output keep their existing element
+and argument copying behavior.
+
+Lua-to-native sequence and map conversion may move its own local element, key
+and mapped-value temporaries, with copy-only fallbacks. Vector conversion reserves
+its final size before insertion. Reading a value userdata still copies from it;
+failed sequence or map conversion leaves the destination unchanged. Pair and
+tuple conversion retain their existing partial-update failure behavior.
 
 Invocation keeps inputs and dynamically resolved `.c_instance` objects rooted
 through native execution, result conversion and argument destruction. Resolving
@@ -41,6 +63,24 @@ Tolua's default collector keys ownership by native address. Since a borrowed
 value can share an owned value's address, value types instead collect according
 to each userdata's ownership flag. Only the owning userdata deletes the native
 value.
+
+Value conversion prepares a rooted userdata with a null pointer, metatable and
+ownership flags before constructing the native copy or move. Publishing the
+constructed pointer makes no further Lua calls. A C++ construction exception
+restores the converter's stack and leaves an empty userdata safe for collection;
+field helpers also remove their temporary key when C++ conversion throws.
+
+`push_value_owned`, including a converted `own_value` marker, adopts a raw pointer
+exactly once. It protects Lua registration, deletes the adopted pointer if
+registration fails, and propagates the Lua error; a null Lua state deletes it.
+After successful adoption, ordinary GC deletes it once. `owned_value` itself is
+a transfer marker, so an unpushed marker does not manage the allocation.
+
+This is a local registration guarantee, not general C++ unwinding across Lua
+errors. Lua errors can still skip native caller locals, including an invocation's
+by-value result while userdata setup is running. Constructors, custom converters
+and callers remain responsible for their Lua-error lifetimes. Scripts, hooks and
+registry mutation follow the trusted-script contract described below.
 
 Implementation: [value_userdata.hpp](detail/value_userdata.hpp).
 

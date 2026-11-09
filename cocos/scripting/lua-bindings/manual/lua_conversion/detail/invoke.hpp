@@ -149,7 +149,10 @@ namespace lua
 				using result_t = std::invoke_result_t<Callable&, Fargs...>;
 				if constexpr (std::is_lvalue_reference_v<result_t> && is_value_type_v<std::remove_reference_t<result_t>>)
 					push_value_borrowed(L, &value);
+				else if constexpr (!std::is_reference_v<result_t>)
+					native_to_luaval(L, std::forward<result_t>(value));
 				else
+					// Rvalue-reference returns keep their existing non-consuming conversion.
 					native_to_luaval(L, value);
 				results = lua_gettop(L) - top;
 #if CC_LUA_BINDING_CHECKS

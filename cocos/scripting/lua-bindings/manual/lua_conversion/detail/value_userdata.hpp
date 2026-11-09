@@ -104,17 +104,16 @@ namespace lua
 	}
 
 	template<typename T>
-	void _push_value_pointer(lua_State* L, T* value, bool owned, int ownerIndex) {
+	void** _prepare_value_userdata(lua_State* L, bool owned, int ownerIndex) {
 		static_assert(is_value_type_v<T>, "value userdata requires an explicitly registered value type");
-		if (!L) return;
-		if (!value) { lua_pushnil(L); return; }
 		ownerIndex = ownerIndex ? _absolute_index(L, ownerIndex) : 0;
 		const auto* name = _getClassNameByType<std::remove_cv_t<T>>();
 		lua_getfield(L, LUA_REGISTRYINDEX, name);
 		if (!*name || !lua_istable(L, -1))
 			luaL_error(L, "unregistered value userdata type");
 		// Distinct pointer-sized borrows: see ../README.md (Value userdata ownership).
-		*static_cast<void**>(lua_newuserdata(L, sizeof(void*))) = const_cast<std::remove_cv_t<T>*>(value);
+		auto** slot = static_cast<void**>(lua_newuserdata(L, sizeof(void*)));
+		*slot = nullptr;
 		lua_pushvalue(L, -2);
 		lua_setmetatable(L, -2);
 		lua_remove(L, -2);
@@ -131,16 +130,74 @@ namespace lua
 			lua_rawset(L, -3);
 		}
 		lua_setfenv(L, -2);
+		return slot;
 	}
+
+	// Raw-pointer adoption already owns a native allocation, so protect Lua setup.
+	template<typename T>
+	struct _owned_value_registration {
+		void** slot = nullptr;
+		int reference = LUA_NOREF;
+		static int enter(lua_State* L) {
+			auto* context = static_cast<_owned_value_registration*>(lua_touserdata(L, 1));
+			lua_settop(L, 0);
+			luaL_checkstack(L, 8, "value userdata registration stack overflow");
+			// Reserve luaL_unref's free-list entry before publishing native ownership.
+			lua_rawgeti(L, LUA_REGISTRYINDEX, 0);
+			const bool missing = lua_isnil(L, -1);
+			lua_pop(L, 1);
+			if (missing) {
+				lua_pushinteger(L, 0);
+				lua_rawseti(L, LUA_REGISTRYINDEX, 0);
+			}
+			context->slot = _prepare_value_userdata<T>(L, true, 0);
+			context->reference = luaL_ref(L, LUA_REGISTRYINDEX);
+			return 0;
+		}
+	};
 
 	template<typename T>
 	void push_value_owned(lua_State* L, T* value) {
 		static_assert(!std::is_const_v<T>, "owned value must be mutable");
-		_push_value_pointer(L, value, true, 0);
+		if (!L) { delete value; return; }
+		if (!value) { lua_pushnil(L); return; }
+		_owned_value_registration<T> context;
+		if (lua_cpcall(L, _owned_value_registration<T>::enter, &context) != 0) {
+			luaL_unref(L, LUA_REGISTRYINDEX, context.reference);
+			delete value;
+			lua_error(L);
+			return;
+		}
+		// Protected setup reserved physical capacity; this only updates the API limit.
+		if (!lua_checkstack(L, 2)) {
+			luaL_unref(L, LUA_REGISTRYINDEX, context.reference);
+			delete value;
+			luaL_error(L, "value userdata registration stack overflow");
+			return;
+		}
+		lua_rawgeti(L, LUA_REGISTRYINDEX, context.reference);
+		luaL_unref(L, LUA_REGISTRYINDEX, context.reference);
+		*context.slot = value;
 	}
 	template<typename T>
 	void push_value_borrowed(lua_State* L, T* value, int ownerIndex = 0) {
-		_push_value_pointer(L, value, false, ownerIndex);
+		if (!L) return;
+		if (!value) { lua_pushnil(L); return; }
+		*_prepare_value_userdata<T>(L, false, ownerIndex) = const_cast<std::remove_cv_t<T>*>(value);
+	}
+
+	template<typename T, typename Source>
+	void _push_value_constructed(lua_State* L, Source&& value) {
+		if (!L) return;
+		const int top = lua_gettop(L);
+		auto** slot = _prepare_value_userdata<T>(L, true, 0);
+		try {
+			// No Lua calls after construction: an allocation error cannot strand T.
+			*slot = new T(std::forward<Source>(value));
+		} catch (...) {
+			lua_settop(L, top);
+			throw;
+		}
 	}
 
 	template<typename T>
@@ -214,7 +271,14 @@ namespace lua
 	};
 	template<typename T>
 	struct to_lua<T, std::enable_if_t<is_value_type_v<T>>> {
-		static void F(lua_State* L, const T& value) { push_value_owned(L, new T(value)); }
+		static void F(lua_State* L, const T& value) { _push_value_constructed<T>(L, value); }
+		static void F(lua_State* L, T&& value) {
+			if constexpr (std::is_constructible_v<T, T&&>)
+				_push_value_constructed<T>(L, std::move(value));
+			else
+				// An explicitly deleted move constructor must still permit copying.
+				_push_value_constructed<T>(L, value);
+		}
 	};
 	template<typename T>
 	struct to_lua<T*, std::enable_if_t<is_value_type_v<T>>> {

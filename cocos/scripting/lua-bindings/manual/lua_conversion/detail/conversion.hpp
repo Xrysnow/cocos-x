@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace lua
@@ -50,8 +51,12 @@ namespace lua
 		if(!to_native<std::vector<T>>::F(L, lo, &value, fName))
 			return false;
 		if (value.size() != size) return false;
-		for (size_t i = 0; i < size; ++i)
-			outValue[i] = value[i];
+		for (size_t i = 0; i < size; ++i) {
+			if constexpr (std::is_same_v<T, bool>)
+				outValue[i] = value[i]; // vector<bool> exposes a proxy temporary.
+			else
+				outValue[i] = _move_local_assignment(value[i]);
+		}
 		return true;
 	}
 
@@ -74,37 +79,63 @@ namespace lua
 		return ok;
 	}
 
+	template<typename T, class Enable = void>
+	struct _can_forward_to_lua : std::false_type {};
+	template<typename T>
+	struct _can_forward_to_lua<T, std::void_t<decltype(
+		to_lua<std::remove_cv_t<std::remove_reference_t<T>>>::F(
+			std::declval<lua_State*>(), std::declval<T>()))>> : std::true_type {};
+
 	template<typename T>
 	void native_to_luaval(lua_State* L, T&& inValue) {
 		using type = std::remove_cv_t<std::remove_reference_t<T>>;
-		to_lua<type>::F(L, inValue);
+		if constexpr (_can_forward_to_lua<T&&>::value)
+			to_lua<type>::F(L, std::forward<T>(inValue));
+		else
+			// Preserve converters that only accept a named, mutable lvalue.
+			to_lua<type>::F(L, inValue);
 	}
 
 	template<typename T>
 	void native_to_luaval_field(lua_State* L, int lo, const char* field, T&& inValue) {
-		using type = std::remove_cv_t<std::remove_reference_t<T>>;
 		if (!field) return;
 		if (!L || !(lo = _absolute_index(L, lo))) return;
+		const int top = lua_gettop(L);
 		lua_pushstring(L, field);
-		to_lua<type>::F(L, inValue);
+		try {
+			native_to_luaval(L, std::forward<T>(inValue));
+		} catch (...) {
+			lua_settop(L, top);
+			throw;
+		}
 		lua_settable(L, lo);
 	}
 
 	template<typename T>
 	void native_to_luaval_field(lua_State* L, int lo, const std::string& field, T&& inValue) {
-		using type = std::remove_cv_t<std::remove_reference_t<T>>;
 		if (!L || !(lo = _absolute_index(L, lo))) return;
+		const int top = lua_gettop(L);
 		lua_pushlstring(L, field.c_str(), field.size());
-		to_lua<type>::F(L, inValue);
+		try {
+			native_to_luaval(L, std::forward<T>(inValue));
+		} catch (...) {
+			lua_settop(L, top);
+			throw;
+		}
 		lua_settable(L, lo);
 	}
 
 	template<typename T>
 	void native_to_luaval_field(lua_State* L, int lo, int field, T&& inValue) {
-		using type = std::remove_cv_t<std::remove_reference_t<T>>;
 		if (!L || !(lo = _absolute_index(L, lo))) return;
+		const int top = lua_gettop(L);
 		lua_pushinteger(L, field);
-		to_lua<type>::F(L, inValue);
+		try {
+			native_to_luaval(L, std::forward<T>(inValue));
+		} catch (...) {
+			lua_settop(L, top);
+			throw;
+		}
 		lua_settable(L, lo);
 	}
 

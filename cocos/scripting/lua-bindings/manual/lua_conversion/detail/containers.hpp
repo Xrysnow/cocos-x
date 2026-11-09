@@ -16,6 +16,26 @@
 
 namespace lua
 {
+	// These sources are conversion-local temporaries, never Lua-owned userdata.
+	template<typename T>
+	decltype(auto) _move_local_value(T& value) {
+		if constexpr (std::is_move_constructible_v<T>)
+			return std::move(value);
+		else
+			return static_cast<const T&>(value);
+	}
+	template<typename T>
+	decltype(auto) _move_local_assignment(T& value) {
+		if constexpr (std::is_move_assignable_v<T>)
+			return std::move(value);
+		else
+			return static_cast<const T&>(value);
+	}
+	template<typename Container>
+	void _reserve_native_sequence(Container&, size_t) {}
+	template<typename T>
+	void _reserve_native_sequence(std::vector<T>& value, size_t size) { value.reserve(size); }
+
 	template<typename K>
 	bool _to_native_map_key(lua_State* L, int lo, K* outValue, const char* fName) {
 		// String keys are strict; ordinary string arguments keep their coercion rules.
@@ -42,6 +62,7 @@ namespace lua
 				return false;\
 			const size_t len = lua_objlen(L, lo);\
 			_Ty<T> result;\
+			_reserve_native_sequence(result, len);\
 			for (size_t i = 0; i < len; i++) {\
 				T value{};\
 				lua_pushnumber(L, i + 1);\
@@ -49,7 +70,7 @@ namespace lua
 				const bool ok = to_native<T>::F(L, top + 1, &value, fName);\
 				lua_settop(L, top);\
 				if (!ok) return false;\
-				result._Setter(value);\
+				result._Setter(_move_local_value(value));\
 			}\
 			*outValue = std::move(result);\
 			return true; } };
@@ -131,7 +152,7 @@ namespace lua
 			ok &= to_native<T1>::F(L, top + 1, &value1, fName);
 			lua_pop(L, 1);
 			if (ok)
-				outValue->first = value1;
+				outValue->first = _move_local_assignment(value1);
 			else
 				return false;
 			lua_pushnumber(L, 2);
@@ -139,7 +160,7 @@ namespace lua
 			ok &= to_native<T2>::F(L, top + 1, &value2, fName);
 			lua_pop(L, 1);
 			if (ok)
-				outValue->second = value2;
+				outValue->second = _move_local_assignment(value2);
 			return ok;
 		}
 	};
@@ -209,8 +230,8 @@ namespace lua
 	LUA_TO_NATIVE_VECTOR(std::queue, push);
 	LUA_TO_NATIVE_VECTOR(std::priority_queue, push);
 
-	LUA_TO_NATIVE_MAP(std::map, [key] = value);
-	LUA_TO_NATIVE_MAP(std::unordered_map, [key] = value);
+	LUA_TO_NATIVE_MAP(std::map, [_move_local_value(key)] = _move_local_assignment(value));
+	LUA_TO_NATIVE_MAP(std::unordered_map, [_move_local_value(key)] = _move_local_assignment(value));
 
 	template<typename T, size_t Size>
 	struct to_lua<std::array<T, Size>> {
