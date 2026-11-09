@@ -62,6 +62,7 @@ typedef struct RayCastCallbackInfo
     Vec2 p1;
     Vec2 p2;
     void* data;
+    bool continues = true;
 } RayCastCallbackInfo;
 
 typedef struct RectQueryCallbackInfo
@@ -69,6 +70,7 @@ typedef struct RectQueryCallbackInfo
     PhysicsWorld* world;
     PhysicsQueryRectCallbackFunc func;
     void* data;
+    bool continues = true;
 } RectQueryCallbackInfo;
 
 typedef struct PointQueryCallbackInfo
@@ -76,6 +78,7 @@ typedef struct PointQueryCallbackInfo
     PhysicsWorld* world;
     PhysicsQueryPointCallbackFunc func;
     void* data;
+    bool continues = true;
 } PointQueryCallbackInfo;
 }  // namespace
 
@@ -103,11 +106,7 @@ public:
                                      cpVect gradient,
                                      Vector<PhysicsShape*>* arr);
 
-public:
-    static bool continues;
 };
-
-bool PhysicsWorldCallback::continues = true;
 
 cpBool PhysicsWorldCallback::collisionBeginCallbackFunc(cpArbiter* arb, struct cpSpace* /*space*/, PhysicsWorld* world)
 {
@@ -149,7 +148,7 @@ void PhysicsWorldCallback::rayCastCallbackFunc(cpShape* shape,
                                                cpFloat alpha,
                                                RayCastCallbackInfo* info)
 {
-    if (!PhysicsWorldCallback::continues)
+    if (!info->continues)
     {
         return;
     }
@@ -166,7 +165,7 @@ void PhysicsWorldCallback::rayCastCallbackFunc(cpShape* shape,
         static_cast<float>(alpha),
     };
 
-    PhysicsWorldCallback::continues = info->func(*info->world, callbackInfo, info->data);
+    info->continues = info->func(*info->world, callbackInfo, info->data);
 }
 
 void PhysicsWorldCallback::queryRectCallbackFunc(cpShape* shape, RectQueryCallbackInfo* info)
@@ -174,12 +173,12 @@ void PhysicsWorldCallback::queryRectCallbackFunc(cpShape* shape, RectQueryCallba
     PhysicsShape* physicsShape = static_cast<PhysicsShape*>(cpShapeGetUserData(shape));
     CC_ASSERT(physicsShape != nullptr);
 
-    if (!PhysicsWorldCallback::continues)
+    if (!info->continues)
     {
         return;
     }
 
-    PhysicsWorldCallback::continues = info->func(*info->world, *physicsShape, info->data);
+    info->continues = info->func(*info->world, *physicsShape, info->data);
 }
 
 void PhysicsWorldCallback::getShapesAtPointFunc(cpShape* shape,
@@ -201,7 +200,10 @@ void PhysicsWorldCallback::queryPointFunc(cpShape* shape,
 {
     PhysicsShape* physicsShape = static_cast<PhysicsShape*>(cpShapeGetUserData(shape));
     CC_ASSERT(physicsShape != nullptr);
-    PhysicsWorldCallback::continues = info->func(*info->world, *physicsShape, info->data);
+    if (info->continues)
+    {
+        info->continues = info->func(*info->world, *physicsShape, info->data);
+    }
 }
 
 static inline cpSpaceDebugColor RGBAColor(float r, float g, float b, float a)
@@ -455,7 +457,6 @@ void PhysicsWorld::rayCast(PhysicsRayCastCallbackFunc func, const Vec2& point1, 
         }
         RayCastCallbackInfo info = {this, func, point1, point2, data};
 
-        PhysicsWorldCallback::continues = true;
         cpSpaceSegmentQuery(_cpSpace, PhysicsHelper::vec22cpv(point1), PhysicsHelper::vec22cpv(point2), 0.0f,
                             CP_SHAPE_FILTER_ALL, (cpSpaceSegmentQueryFunc)PhysicsWorldCallback::rayCastCallbackFunc,
                             &info);
@@ -474,7 +475,6 @@ void PhysicsWorld::queryRect(PhysicsQueryRectCallbackFunc func, const Rect& rect
         }
         RectQueryCallbackInfo info = {this, func, data};
 
-        PhysicsWorldCallback::continues = true;
         cpSpaceBBQuery(_cpSpace, PhysicsHelper::rect2cpbb(rect), CP_SHAPE_FILTER_ALL,
                        (cpSpaceBBQueryFunc)PhysicsWorldCallback::queryRectCallbackFunc, &info);
     }
@@ -492,7 +492,6 @@ void PhysicsWorld::queryPoint(PhysicsQueryPointCallbackFunc func, const Vec2& po
         }
         PointQueryCallbackInfo info = {this, func, data};
 
-        PhysicsWorldCallback::continues = true;
         cpSpacePointQuery(_cpSpace, PhysicsHelper::vec22cpv(point), 0, CP_SHAPE_FILTER_ALL,
                           (cpSpacePointQueryFunc)PhysicsWorldCallback::queryPointFunc, &info);
     }
@@ -721,6 +720,22 @@ void PhysicsWorld::updateJoints()
         joint->_world = this;
         if (joint->initJoint())
         {
+            // A detached, initialized joint keeps its constraints, but no longer belongs to
+            // a space or either body's list. Reattach those objects without rebuilding them.
+            for (auto* constraint : joint->_cpConstraints)
+            {
+                if (!cpSpaceContainsConstraint(_cpSpace, constraint))
+                {
+                    cpSpaceAddConstraint(_cpSpace, constraint);
+                }
+            }
+            for (auto* body : {joint->_bodyA, joint->_bodyB})
+            {
+                if (body && std::find(body->_joints.begin(), body->_joints.end(), joint) == body->_joints.end())
+                {
+                    body->_joints.emplace_back(joint);
+                }
+            }
             _joints.emplace_back(joint);
         }
         else
@@ -912,8 +927,9 @@ void PhysicsWorld::step(float delta)
 void PhysicsWorld::update(float delta, bool userCall /* = false*/)
 {
 
-    if (_preUpdateCallback)
-        _preUpdateCallback();  // fix #11154
+    // Keep the executing callable alive when its callback replaces or clears the slot.
+    if (auto callback = _preUpdateCallback)
+        callback();  // fix #11154
 
     if (!_delayAddBodies.empty())
     {
@@ -994,8 +1010,9 @@ void PhysicsWorld::update(float delta, bool userCall /* = false*/)
     // PhysicsWorld::afterSimulation() will depend on the sequence.
     afterSimulation(_scene, sceneToWorldTransform, 0.f);
 
-    if (_postUpdateCallback)
-        _postUpdateCallback();  // fix #11154
+    // Keep the executing callable alive when its callback replaces or clears the slot.
+    if (auto callback = _postUpdateCallback)
+        callback();  // fix #11154
 }
 
 PhysicsWorld* PhysicsWorld::construct(Scene* scene)

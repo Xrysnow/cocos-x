@@ -187,10 +187,12 @@ void EventListenerPhysicsContact::onEvent(EventCustom* event)
     {
         bool ret = true;
 
-        if (onContactBegin != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
+        // A handler may clear/replace itself while the copied callable is executing.
+        const auto callback = onContactBegin;
+        if (callback != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
         {
             contact->generateContactData();
-            ret = onContactBegin(*contact);
+            ret = callback(*contact);
         }
 
         contact->setResult(ret);
@@ -200,12 +202,14 @@ void EventListenerPhysicsContact::onEvent(EventCustom* event)
     {
         bool ret = true;
 
-        if (onContactPreSolve != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
+        // A handler may clear/replace itself while the copied callable is executing.
+        const auto callback = onContactPreSolve;
+        if (callback != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
         {
             PhysicsContactPreSolve solve(contact->_contactInfo);
             contact->generateContactData();
 
-            ret = onContactPreSolve(*contact, solve);
+            ret = callback(*contact, solve);
         }
 
         contact->setResult(ret);
@@ -213,18 +217,22 @@ void EventListenerPhysicsContact::onEvent(EventCustom* event)
     }
     case PhysicsContact::EventCode::POSTSOLVE:
     {
-        if (onContactPostSolve != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
+        // A handler may clear/replace itself while the copied callable is executing.
+        const auto callback = onContactPostSolve;
+        if (callback != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
         {
             PhysicsContactPostSolve solve(contact->_contactInfo);
-            onContactPostSolve(*contact, solve);
+            callback(*contact, solve);
         }
         break;
     }
     case PhysicsContact::EventCode::SEPARATE:
     {
-        if (onContactSeparate != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
+        // A handler may clear/replace itself while the copied callable is executing.
+        const auto callback = onContactSeparate;
+        if (callback != nullptr && hitTest(contact->getShapeA(), contact->getShapeB()))
         {
-            onContactSeparate(*contact);
+            callback(*contact);
         }
         break;
     }
