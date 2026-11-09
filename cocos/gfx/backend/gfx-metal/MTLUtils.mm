@@ -936,7 +936,8 @@ ccstd::string mu::spirv2MSL(const uint32_t *ir, size_t word_count,
         auto binding = msl.get_decoration(sampler.id, spv::DecorationBinding);
         int size = 1;
         const spirv_cross::SPIRType &type = msl.get_type(sampler.type_id);
-        if (type.array_size_literal[0]) {
+        // Scalar samplers have no array metadata in SPIRV-Cross.
+        if (!type.array.empty() && !type.array_size_literal.empty() && type.array_size_literal[0]) {
             size = type.array[0];
         }
 
