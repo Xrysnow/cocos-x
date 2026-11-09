@@ -102,7 +102,11 @@ public:
     void setRecordJsonPath(bool record) { _recordJsonPath = record; }
     bool isRecordJsonPath() const { return _recordJsonPath; }
 
-    void setJsonPath(std::string jsonPath) { _jsonPath = jsonPath; }
+    void setJsonPath(std::string jsonPath)
+    {
+        _jsonPath = jsonPath;
+        ++_jsonPathRevision;
+    }
     std::string getJsonPath() const { return _jsonPath; }
 
     cocos2d::Node* createNodeWithFlatBuffersFile(std::string_view filename);
@@ -150,7 +154,7 @@ protected:
     std::string_view getGUIClassName(std::string_view name);
     std::string_view getWidgetReaderClassName(cocos2d::ui::Widget* widget);
 
-    inline void reconstructNestNode(cocos2d::Node* node);
+    class LoadingContext;
     static inline std::string_view getExtentionName(std::string_view name);
 
     typedef std::function<cocos2d::Node*(const rapidjson::Value& json)> NodeCreateFunc;
@@ -166,6 +170,8 @@ protected:
     bool _recordJsonPath;
 
     std::string _jsonPath;
+    size_t _jsonPathRevision = 0;
+    size_t _loadingDepth = 0;
 
     std::string _monoCocos2dxVersion;
 

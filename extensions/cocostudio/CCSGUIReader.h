@@ -42,6 +42,10 @@ namespace tinyxml2
 class XMLElement;
 }
 
+NS_CC_BEGIN
+class CSLoader;
+NS_CC_END
+
 namespace cocostudio
 {
 
@@ -76,7 +80,11 @@ public:
      */
     cocos2d::Size getFileDesignSize(const char* fileName) const;
 
-    void setFilePath(std::string_view strFilePath) { m_strFilePath = strFilePath; }
+    void setFilePath(std::string_view strFilePath)
+    {
+        m_strFilePath = strFilePath;
+        ++_filePathRevision;
+    }
     std::string_view getFilePath() const { return m_strFilePath; }
 
     void registerTypeAndCallBack(std::string_view classType,
@@ -88,6 +96,11 @@ public:
                                  cocos2d::ObjectFactory::InstanceFunc ins,
                                  Ref* object,
                                  SEL_ParseEvent callBack);
+
+private:
+    friend class cocos2d::CSLoader;
+    // CSLoader restores only its temporary automatic paths, never an explicit setter.
+    size_t _filePathRevision = 0;
 
 protected:
     GUIReader();

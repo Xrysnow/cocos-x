@@ -95,6 +95,7 @@
 #include "WidgetCallBackHandlerProtocol.h"
 
 #include <fstream>
+#include <vector>
 
 using namespace cocos2d::ui;
 using namespace cocostudio;
@@ -183,6 +184,63 @@ static const char* MONO_COCOS2D_VERSION = "cocos2dVersion";
 
 // CSLoader
 static CSLoader* _sharedCSLoader = nullptr;
+
+// A synchronous load may invoke another load from a child notification or a custom
+// reader. Restore the caller's handler stack even when a reader throws. JSON paths
+// persist for a top-level load; nested automatic updates are temporary. Explicit
+// setters are tracked separately and keep their usual persistent effect.
+class CSLoader::LoadingContext
+{
+public:
+    explicit LoadingContext(CSLoader& loader, bool isolateHandlers = false)
+        : _loader(loader),
+          _rootNode(loader._rootNode),
+          _callbackHandlers(loader._callbackHandlers),
+          _jsonPath(loader._jsonPath),
+          _jsonPathRevision(loader._jsonPathRevision),
+          _monoCocos2dxVersion(loader._monoCocos2dxVersion),
+          _guiReader(GUIReader::getInstance()),
+          _guiPath(_guiReader->m_strFilePath),
+          _guiPathRevision(_guiReader->_filePathRevision),
+          _restorePaths(loader._loadingDepth++ != 0)
+    {
+        if (isolateHandlers)
+        {
+            loader._rootNode = nullptr;
+            loader._callbackHandlers.clear();
+        }
+    }
+
+    ~LoadingContext()
+    {
+        _loader._rootNode = _rootNode;
+        _loader._callbackHandlers = std::move(_callbackHandlers);
+        if (_restorePaths)
+        {
+            if (_loader._jsonPathRevision == _jsonPathRevision)
+                _loader._jsonPath = std::move(_jsonPath);
+            if (_guiReader->_filePathRevision == _guiPathRevision)
+                _guiReader->m_strFilePath = std::move(_guiPath);
+            _loader._monoCocos2dxVersion = std::move(_monoCocos2dxVersion);
+        }
+        --_loader._loadingDepth;
+    }
+
+    LoadingContext(const LoadingContext&) = delete;
+    LoadingContext& operator=(const LoadingContext&) = delete;
+
+private:
+    CSLoader& _loader;
+    Node* _rootNode;
+    cocos2d::Vector<cocos2d::Node*> _callbackHandlers;
+    std::string _jsonPath;
+    size_t _jsonPathRevision;
+    std::string _monoCocos2dxVersion;
+    GUIReader* _guiReader;
+    std::string _guiPath;
+    size_t _guiPathRevision;
+    bool _restorePaths;
+};
 
 CSLoader* CSLoader::getInstance()
 {
@@ -415,16 +473,17 @@ loop)
 
 Node* CSLoader::createNodeFromJson(std::string_view filename)
 {
+    LoadingContext context(*this);
     if (_recordJsonPath)
     {
         auto jsonPath = filename.substr(0, filename.find_last_of('/') + 1);
-        GUIReader::getInstance()->setFilePath(jsonPath);
+        GUIReader::getInstance()->m_strFilePath = jsonPath;
 
         _jsonPath = jsonPath;
     }
     else
     {
-        GUIReader::getInstance()->setFilePath("");
+        GUIReader::getInstance()->m_strFilePath.clear();
     }
 
     Node* node = loadNodeWithFile(filename);
@@ -434,6 +493,7 @@ Node* CSLoader::createNodeFromJson(std::string_view filename)
 
 Node* CSLoader::loadNodeWithFile(std::string_view fileName)
 {
+    LoadingContext context(*this);
     // Read content from file
     std::string contentStr = FileUtils::getInstance()->getStringFromFile(fileName);
 
@@ -447,6 +507,7 @@ Node* CSLoader::loadNodeWithFile(std::string_view fileName)
 
 Node* CSLoader::loadNodeWithContent(std::string_view content)
 {
+    LoadingContext context(*this);
     rapidjson::Document doc;
     doc.Parse<0>(content.data(), content.length());
     if (doc.HasParseError())
@@ -471,8 +532,8 @@ Node* CSLoader::loadNodeWithContent(std::string_view content)
 
     // decode node tree
     const rapidjson::Value& subJson = DICTOOL->getSubDictionary_json(doc, NODE);
+    // The node factories return autoreleased objects; there is no matching retain.
     Node* root                      = loadNode(subJson);
-    root->release();
 
     return root;
 }
@@ -560,7 +621,7 @@ Node* CSLoader::loadNode(const rapidjson::Value& json)
 
                     node->addChild(child);
                 }
-                child->release();
+                // addChild owns the child; its initial reference belongs to the autorelease pool.
             }
         }
     }
@@ -894,6 +955,7 @@ inline void fast_split(_Elem* s, typename std::remove_const<_Elem>::type delim, 
 Node* CSLoader::createNode(const Data& data, const ccNodeLoadCallback& callback)
 {
     CSLoader* loader = CSLoader::getInstance();
+    LoadingContext context(*loader);
     Node* node       = nullptr;
     do
     {
@@ -956,8 +1018,6 @@ Node* CSLoader::createNode(const Data& data, const ccNodeLoadCallback& callback)
         node = loader->nodeWithFlatBuffers(csparsebinary->nodeTree(), callback);
     } while (0);
 
-    loader->reconstructNestNode(node);
-
     return node;
 }
 
@@ -968,31 +1028,8 @@ Node* CSLoader::createNodeWithFlatBuffersFile(std::string_view filename)
 
 Node* CSLoader::createNodeWithFlatBuffersFile(std::string_view filename, const ccNodeLoadCallback& callback)
 {
-    Node* node = nodeWithFlatBuffersFile(filename, callback);
-
-    reconstructNestNode(node);
-
-    return node;
-}
-
-inline void CSLoader::reconstructNestNode(cocos2d::Node* node)
-{
-    /* To reconstruct nest node as WidgetCallBackHandlerProtocol. */
-    auto callbackHandler = dynamic_cast<WidgetCallBackHandlerProtocol*>(node);
-    if (callbackHandler)
-    {
-        _callbackHandlers.popBack();
-        if (_callbackHandlers.empty())
-        {
-            _rootNode = nullptr;
-            CCLOG("Call back handler container has been clear.");
-        }
-        else
-        {
-            _rootNode = _callbackHandlers.back();
-            CCLOG("after pop back _rootNode name = %s", _rootNode->getName().data());
-        }
-    }
+    LoadingContext context(*this);
+    return nodeWithFlatBuffersFile(filename, callback);
 }
 
 Node* CSLoader::nodeWithFlatBuffersFile(std::string_view fileName)
@@ -1002,6 +1039,7 @@ Node* CSLoader::nodeWithFlatBuffersFile(std::string_view fileName)
 
 Node* CSLoader::nodeWithFlatBuffersFile(std::string_view fileName, const ccNodeLoadCallback& callback)
 {
+    LoadingContext context(*this);
     std::string fullPath = FileUtils::getInstance()->fullPathForFilename(fileName);
 
     CC_ASSERT(FileUtils::getInstance()->isFileExist(fullPath));
@@ -1237,6 +1275,8 @@ Node* CSLoader::nodeWithFlatBuffers(const flatbuffers::NodeTree* nodetree, const
 
                 if (callback)
                 {
+                    // Loads initiated by a notification start independently of this tree.
+                    LoadingContext context(*this, true);
                     callback(child);
                 }
             }
@@ -1427,11 +1467,26 @@ void CSLoader::registReaderObject(std::string_view className, ObjectFactory::Ins
 
 Node* CSLoader::createNodeWithFlatBuffersForSimulator(std::string_view filename)
 {
-    FlatBuffersSerialize* fbs  = FlatBuffersSerialize::getInstance();
-    fbs->_isSimulator          = true;
-    FlatBufferBuilder* builder = fbs->createFlatBuffersWithXMLFileForSimulator(filename);
+    LoadingContext context(*this);
+    struct SimulatorState
+    {
+        FlatBuffersSerialize* serializer = FlatBuffersSerialize::getInstance();
+        bool previousSimulator = serializer->_isSimulator;
+        SimulatorState() { serializer->_isSimulator = true; }
+        ~SimulatorState()
+        {
+            serializer->deleteFlatBufferBuilder();
+            serializer->_isSimulator = previousSimulator;
+        }
+    } state;
+    // Readers such as TabItemReader use the shared serializer and its builder.
+    FlatBufferBuilder* builder = state.serializer->createFlatBuffersWithXMLFileForSimulator(filename);
+    // A nested ProjectNode must not replace/delete the outer tree's backing buffer.
+    // Detach the complete data before any node construction can start another load.
+    std::vector<uint8_t> buffer(builder->GetBufferPointer(), builder->GetBufferPointer() + builder->GetSize());
+    state.serializer->deleteFlatBufferBuilder();
 
-    auto csparsebinary = GetCSParseBinary(builder->GetBufferPointer());
+    auto csparsebinary = GetCSParseBinary(buffer.data());
 
     // decode plist
     auto textures   = csparsebinary->textures();
@@ -1445,10 +1500,6 @@ Node* CSLoader::createNodeWithFlatBuffersForSimulator(std::string_view filename)
     auto nodeTree = csparsebinary->nodeTree();
 
     Node* node = nodeWithFlatBuffersForSimulator(nodeTree);
-
-    _rootNode = nullptr;
-
-    fbs->deleteFlatBufferBuilder();
 
     return node;
 }
