@@ -214,10 +214,11 @@ end
 #undef TO_NATIVE_SIGNED
 #undef TO_NATIVE_UNSIGNED
 
-	// Cover long/unsigned long when fixed-width aliases omit them on LP64/LLP64.
+	// Plain char is distinct from int8_t/uint8_t; preserve its native signedness.
+	// Also cover long/unsigned long when fixed-width aliases omit them on LP64/LLP64.
 	template<typename T>
 	struct to_native<T, std::enable_if_t<(std::is_same_v<T, long> ||
-		std::is_same_v<T, unsigned long>) && (sizeof(T) <= sizeof(uint64_t))>> {
+		std::is_same_v<T, unsigned long> || std::is_same_v<T, char>) && (sizeof(T) <= sizeof(uint64_t))>> {
 		static bool F(lua_State* L, int lo, T* outValue, const char* funcName = "") {
 			if (!outValue) return false;
 			using type = std::conditional_t<std::is_signed_v<T>, int64_t, uint64_t>;

@@ -11,7 +11,28 @@
 
 namespace lua
 {
-	LUA_TO_NATIVE_VECTOR(cocos2d::Vector, pushBack);
+	// cocos::Vector requires non-null Ref pointers. Shared Ref conversion allows
+	// nil for ordinary pointer arguments, so reject it before native pushBack.
+	template<typename T>
+	struct to_native<cocos2d::Vector<T>> {
+		static bool F(lua_State* L, int lo, cocos2d::Vector<T>* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!lua_istable(L, lo)) return false;
+			const size_t len = lua_objlen(L, lo);
+			cocos2d::Vector<T> result;
+			for (size_t i = 0; i < len; ++i) {
+				T value{};
+				lua_pushnumber(L, i + 1);
+				lua_gettable(L, lo);
+				const bool ok = to_native<T>::F(L, top + 1, &value, fName);
+				lua_settop(L, top);
+				if (!ok || !value) return false;
+				result.pushBack(value);
+			}
+			*outValue = std::move(result);
+			return true;
+		}
+	};
 
 	LUA_TO_LUA_VECTOR(cocos2d::Vector);
 
