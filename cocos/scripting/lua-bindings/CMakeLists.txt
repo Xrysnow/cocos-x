@@ -201,12 +201,8 @@ elseif(WINDOWS)
 endif()
 
 if(CC_ENABLE_VIDEO_PLATFORM)
-    list(APPEND lua_bindings_manual_headers
-        auto/cclua_video_platform_auto.hpp
-        manual/ui/cclua_video_platform_manual.hpp)
-    list(APPEND lua_bindings_manual_files
-        auto/cclua_video_platform_auto.cpp
-        manual/ui/cclua_video_platform_manual.cpp)
+    list(APPEND lua_bindings_auto_headers auto/cclua_video_platform_auto.hpp)
+    list(APPEND lua_bindings_auto_files auto/cclua_video_platform_auto.cpp)
 endif()
 
 if(CC_ENABLE_VIDEO_TEXTURE)

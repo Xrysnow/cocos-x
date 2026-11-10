@@ -30,7 +30,6 @@
 #include "ui/CocosGUI.h"
 #if CC_ENABLE_VIDEO_PLATFORM
 #include "scripting/lua-bindings/auto/cclua_video_platform_auto.hpp"
-#include "scripting/lua-bindings/manual/ui/cclua_video_platform_manual.hpp"
 #endif
 #if ((CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)) || (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2))
 #include "scripting/lua-bindings/auto/cclua_webview_auto.hpp"
@@ -170,7 +169,6 @@ int register_ui_module(lua_State* L)
         register_all_cc_ui_manual(L);
 #if CC_ENABLE_VIDEO_PLATFORM
         register_all_cc_video_platform(L);
-        register_all_cc_video_platform_manual(L);
 #endif
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
         register_all_cc_webview(L);
