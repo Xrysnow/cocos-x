@@ -1390,21 +1390,6 @@ tolua_lerror:
 #endif
 }
 
-static int tolua_cocos2d_RenderTexture_newImage(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.RenderTexture", "cc.RenderTexture:newImage");
-    if ((argc == 1 || argc == 2) && lua_isnil(lua_S, 2))
-        arg_cur = 1;
-    else
-    {
-        LUA_TRY_INVOKE(1, [](cocos2d::RenderTexture* texture, std::function<void(cocos2d::RefPtr<cocos2d::Image>)> callback) {
-            texture->newImage(std::move(callback));
-        });
-        LUA_TRY_INVOKE(2, &cocos2d::RenderTexture::newImage);
-    }
-    LUA_INVOKE_FOOTER("1,2");
-}
-
 static int tolua_cocos2d_Sequence_create(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.Sequence", "cc.Sequence:create");
@@ -2095,19 +2080,6 @@ static void extendScheduler(lua_State* tolua_S)
     lua_pop(tolua_S, 1);
 }
 
-static void extendRenderTexture(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.RenderTexture");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        lua_pushstring(tolua_S, "newImage");
-        lua_pushcfunction(tolua_S, tolua_cocos2d_RenderTexture_newImage);
-        lua_rawset(tolua_S, -3);
-    }
-    lua_pop(tolua_S, 1);
-}
-
 static void extendSequence(lua_State* tolua_S)
 {
     lua_pushstring(tolua_S, "cc.Sequence");
@@ -2321,44 +2293,6 @@ static void extendEventListenerAcceleration(lua_State* tolua_S)
     lua_pop(tolua_S, 1);
 }
 
-static int tocclua_EventListenerKeyboard_create(lua_State* tolua_S)
-{
-    if (nullptr == tolua_S)
-        return 0;
-
-    int argc = 0;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertable(tolua_S, 1, "cc.EventListenerKeyboard", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 0)
-    {
-        cocos2d::EventListenerKeyboard* tolua_ret = cocos2d::EventListenerKeyboard::create();
-        if (nullptr == tolua_ret)
-            return 0;
-
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)tolua_ret, "cc.EventListenerKeyboard");
-
-        return 1;
-    }
-
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n", "cc.EventListenerKeyboard:create",
-               argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'tocclua_EventListenerKeyboard_create'.", &tolua_err);
-    return 0;
-#endif
-}
-
 static void cloneKeyboardHandler(const EventListenerKeyboard* src,
                                  EventListenerKeyboard* dst,
                                  ScriptHandlerMgr::HandlerType type)
@@ -2535,49 +2469,10 @@ static void extendEventListenerKeyboard(lua_State* tolua_S)
     lua_rawget(tolua_S, LUA_REGISTRYINDEX);
     if (lua_istable(tolua_S, -1))
     {
-        tolua_function(tolua_S, "create", tocclua_EventListenerKeyboard_create);
         tolua_function(tolua_S, "registerScriptHandler", tocclua_EventListenerKeyboard_registerScriptHandler);
         tolua_function(tolua_S, "clone", tocclua_EventListenerKeyboard_clone);
     }
     lua_pop(tolua_S, 1);
-}
-
-static int tocclua_EventListenerTouchOneByOne_create(lua_State* tolua_S)
-{
-    if (nullptr == tolua_S)
-        return 0;
-
-    int argc = 0;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertable(tolua_S, 1, "cc.EventListenerTouchOneByOne", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 0)
-    {
-        cocos2d::EventListenerTouchOneByOne* tolua_ret = cocos2d::EventListenerTouchOneByOne::create();
-        if (nullptr == tolua_ret)
-            return 0;
-
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)tolua_ret, "cc.EventListenerTouchOneByOne");
-
-        return 1;
-    }
-
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n",
-               "cc.EventListenerTouchOneByOne:create", argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'tocclua_EventListenerTouchOneByOne_create'.", &tolua_err);
-    return 0;
-#endif
 }
 
 static void cloneTouchOneByOneHandler(const EventListenerTouchOneByOne* src,
@@ -2799,50 +2694,11 @@ static void extendEventListenerTouchOneByOne(lua_State* tolua_S)
     lua_rawget(tolua_S, LUA_REGISTRYINDEX);
     if (lua_istable(tolua_S, -1))
     {
-        tolua_function(tolua_S, "create", tocclua_EventListenerTouchOneByOne_create);
         tolua_function(tolua_S, "registerScriptHandler",
                        tocclua_EventListenerTouchOneByOne_registerScriptHandler);
         tolua_function(tolua_S, "clone", tocclua_EventListenerTouchOneByOne_clone);
     }
     lua_pop(tolua_S, 1);
-}
-
-static int tocclua_EventListenerTouchAllAtOnce_create(lua_State* tolua_S)
-{
-    if (nullptr == tolua_S)
-        return 0;
-
-    int argc = 0;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertable(tolua_S, 1, "cc.EventListenerTouchAllAtOnce", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 0)
-    {
-        cocos2d::EventListenerTouchAllAtOnce* tolua_ret = cocos2d::EventListenerTouchAllAtOnce::create();
-        if (nullptr == tolua_ret)
-            return 0;
-
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)tolua_ret, "cc.EventListenerTouchAllAtOnce");
-
-        return 1;
-    }
-
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n",
-               "cc.EventListenerTouchAllAtOnce:registerScriptHandler", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'tocclua_EventListenerTouchAllAtOnce_create'.", &tolua_err);
-    return 0;
-#endif
 }
 
 static void cloneTouchAllAtOnceHandler(const EventListenerTouchAllAtOnce* src,
@@ -3064,50 +2920,11 @@ static void extendEventListenerTouchAllAtOnce(lua_State* tolua_S)
     lua_rawget(tolua_S, LUA_REGISTRYINDEX);
     if (lua_istable(tolua_S, -1))
     {
-        tolua_function(tolua_S, "create", tocclua_EventListenerTouchAllAtOnce_create);
         tolua_function(tolua_S, "registerScriptHandler",
                        tocclua_EventListenerTouchAllAtOnce_registerScriptHandler);
         tolua_function(tolua_S, "clone", tocclua_EventListenerTouchAllAtOnce_clone);
     }
     lua_pop(tolua_S, 1);
-}
-
-static int tocclua_EventListenerMouse_create(lua_State* tolua_S)
-{
-    if (nullptr == tolua_S)
-        return 0;
-
-    int argc = 0;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertable(tolua_S, 1, "cc.EventListenerMouse", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 0)
-    {
-        cocos2d::EventListenerMouse* tolua_ret = cocos2d::EventListenerMouse::create();
-        if (nullptr == tolua_ret)
-            return 0;
-
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)tolua_ret, "cc.EventListenerMouse");
-
-        return 1;
-    }
-
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n", "cc.EventListenerMouse:create",
-               argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(tolua_S, "#ferror in function 'tocclua_EventListenerMouse_create'.", &tolua_err);
-    return 0;
-#endif
 }
 
 static void cloneMouseHandler(const EventListenerMouse* src,
@@ -3327,45 +3144,8 @@ static void extendEventListenerMouse(lua_State* tolua_S)
     lua_rawget(tolua_S, LUA_REGISTRYINDEX);
     if (lua_istable(tolua_S, -1))
     {
-        tolua_function(tolua_S, "create", tocclua_EventListenerMouse_create);
         tolua_function(tolua_S, "registerScriptHandler", tocclua_EventListenerMouse_registerScriptHandler);
         tolua_function(tolua_S, "clone", tocclua_EventListenerMouse_clone);
-    }
-    lua_pop(tolua_S, 1);
-}
-
-static int tocclua_ActionCamera_reverse(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.ActionCamera", "cc.ActionCamera:reverse");
-    LUA_TRY_INVOKE_R(0, &cocos2d::ActionCamera::reverse);
-    LUA_INVOKE_FOOTER("0");
-}
-
-static void extendActionCamera(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.ActionCamera");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        tolua_function(tolua_S, "reverse", tocclua_ActionCamera_reverse);
-    }
-    lua_pop(tolua_S, 1);
-}
-
-static int tocclua_GridAction_reverse(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.GridAction", "cc.GridAction:reverse");
-    LUA_TRY_INVOKE_R(0, &cocos2d::GridAction::reverse);
-    LUA_INVOKE_FOOTER("0");
-}
-
-static void extendGridAction(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.GridAction");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        tolua_function(tolua_S, "reverse", tocclua_GridAction_reverse);
     }
     lua_pop(tolua_S, 1);
 }
@@ -3898,8 +3678,6 @@ int register_all_cc_manual(lua_State* tolua_S)
     extendEventListenerTouchAllAtOnce(tolua_S);
     extendEventListenerMouse(tolua_S);
     extendEventListenerAcceleration(tolua_S);
-    extendActionCamera(tolua_S);
-    extendGridAction(tolua_S);
     extendPipelineDescriptor(tolua_S);
 
     extendConsole(tolua_S);
@@ -3908,7 +3686,6 @@ int register_all_cc_manual(lua_State* tolua_S)
     extendFastTMXLayer(tolua_S);
     extendApplication(tolua_S);
     extendCamera(tolua_S);
-    extendRenderTexture(tolua_S);
     return 0;
 }
 

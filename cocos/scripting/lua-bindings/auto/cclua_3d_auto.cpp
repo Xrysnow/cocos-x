@@ -745,6 +745,12 @@ int lua_cocos2d_Terrain_getImageHeight(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(2, (static_cast<float(cocos2d::Terrain::*)(int, int)const>(&cocos2d::Terrain::getImageHeight)));
 	LUA_INVOKE_FOOTER("2");
 }
+int lua_cocos2d_Terrain_getIntersectionPoint_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getIntersectionPoint");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::Vec3(cocos2d::Terrain::*)(const cocos2d::Ray&)const>(&cocos2d::Terrain::getIntersectionPoint));
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cocos2d_Terrain_getMaxHeight(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getMaxHeight");
@@ -847,6 +853,13 @@ int lua_cocos2d_Terrain_setSkirtHeightRatio(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Terrain::*)(float)>(&cocos2d::Terrain::setSkirtHeightRatio));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_Terrain_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Terrain", "cc.Terrain:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Terrain*(*)(cocos2d::Terrain::TerrainData&, cocos2d::Terrain::CrackFixedType)>(&cocos2d::Terrain::create)));
+	LUA_TRY_INVOKE_R(1, [](cocos2d::Terrain::TerrainData& arg0){{return cocos2d::Terrain::create(arg0);}});
+	LUA_SINVOKE_FOOTER("1,2");
+}
 int luaReg_ThreeD_ccTerrain(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -856,6 +869,7 @@ int luaReg_ThreeD_ccTerrain(lua_State* lua_S)
 	LUA_METHOD("convertToTerrainSpace", lua_cocos2d_Terrain_convertToTerrainSpace);
 	LUA_METHOD("getHeightData", lua_cocos2d_Terrain_getHeightData);
 	LUA_METHOD("getImageHeight", lua_cocos2d_Terrain_getImageHeight);
+	LUA_METHOD("getIntersectionPoint", lua_cocos2d_Terrain_getIntersectionPoint_1);
 	LUA_METHOD("getMaxHeight", lua_cocos2d_Terrain_getMaxHeight);
 	LUA_METHOD("getMinHeight", lua_cocos2d_Terrain_getMinHeight);
 	LUA_METHOD("getNormal", lua_cocos2d_Terrain_getNormal);
@@ -873,6 +887,7 @@ int luaReg_ThreeD_ccTerrain(lua_State* lua_S)
 	LUA_METHOD("setLightMap", lua_cocos2d_Terrain_setLightMap);
 	LUA_METHOD("setMaxDetailMapAmount", lua_cocos2d_Terrain_setMaxDetailMapAmount);
 	LUA_METHOD("setSkirtHeightRatio", lua_cocos2d_Terrain_setSkirtHeightRatio);
+	LUA_METHOD("create", lua_cocos2d_Terrain_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

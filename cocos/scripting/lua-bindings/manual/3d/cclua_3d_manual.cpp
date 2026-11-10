@@ -91,18 +91,6 @@ int cclua_3d_MeshRenderer_createAsync(lua_State* lua_S)
     LUA_SINVOKE_FOOTER("2,3");
 }
 
-int cclua_3d_Terrain_create(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("cc.Terrain", "cc.Terrain:create");
-    const auto create = [](cocos2d::Terrain::TerrainData data, cocos2d::Terrain::CrackFixedType fixed) {
-        return cocos2d::Terrain::create(data, fixed);
-    };
-    LUA_TRY_INVOKE_R(2, create);
-    const auto shortCreate = [](cocos2d::Terrain::TerrainData data) { return cocos2d::Terrain::create(data); };
-    LUA_TRY_INVOKE_R(1, shortCreate);
-    LUA_SINVOKE_FOOTER("1,2");
-}
-
 int cclua_3d_Terrain_getHeight(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getHeight");
@@ -127,16 +115,6 @@ int cclua_3d_Terrain_getHeightWithNormal(lua_State* lua_S)
     LUA_INVOKE_FOOTER("1,2");
 }
 
-int cclua_3d_Terrain_getIntersectionPoint(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getIntersectionPoint");
-    const auto intersect = [](const cocos2d::Terrain* self, const cocos2d::Ray& ray) {
-        return self->getIntersectionPoint(ray);
-    };
-    LUA_TRY_INVOKE_R(1, intersect);
-    LUA_INVOKE_FOOTER("1");
-}
-
 int cclua_3d_Terrain_intersectRay(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:intersectRay");
@@ -158,10 +136,8 @@ static int register_all_cc_3d_manual(lua_State* L)
     lua_pop(L, 1);
     lua_pushstring(L, "cc.Terrain");
     lua_rawget(L, LUA_REGISTRYINDEX);
-    tolua_function(L, "create", cclua_3d_Terrain_create);
     tolua_function(L, "getHeight", cclua_3d_Terrain_getHeight);
     tolua_function(L, "getHeightWithNormal", cclua_3d_Terrain_getHeightWithNormal);
-    tolua_function(L, "getIntersectionPoint", cclua_3d_Terrain_getIntersectionPoint);
     tolua_function(L, "intersectRay", cclua_3d_Terrain_intersectRay);
     lua_pop(L, 1);
     return 0;

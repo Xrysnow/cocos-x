@@ -27,7 +27,6 @@
 #include "scripting/lua-bindings/auto/cclua_csloader_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
 #include "cocostudio/CocoStudio.h"
-#include "scripting/lua-bindings/manual/cocostudio/CustomGUIReader.h"
 
 namespace studio_binding {
 struct AnimationSnapshot {
@@ -39,11 +38,6 @@ struct AnimationResult {
     bool present = false;
     AnimationSnapshot value;
 };
-// The native loader/factory requires functions; conversion and ownership stay shared.
-template<class Function> struct RequiredCallback { Function value; };
-using Progress = RequiredCallback<std::function<void(float)>>;
-using Create = RequiredCallback<std::function<cocos2d::Ref*()>>;
-using Properties = RequiredCallback<std::function<void(std::string_view, cocos2d::Ref*, std::string_view)>>;
 }
 
 namespace lua {
@@ -54,13 +48,6 @@ template<> struct to_lua<studio_binding::AnimationResult> {
         if (result.present) native_to_luaval(L, result.value);
         else lua_pushnil(L);
     }
-};
-template<class Function> struct binding_argument<studio_binding::RequiredCallback<Function>> {
-    studio_binding::RequiredCallback<Function> value;
-    template<bool Checked> bool read(lua_State* L, int index) {
-        return binding_read<Function>::template F<Checked>(L, index, &value.value) && bool(value.value);
-    }
-    auto get() { return value; }
 };
 }
 
@@ -89,51 +76,12 @@ static int studio_getAnimationInfo(lua_State* lua_S)
     LUA_INVOKE_FOOTER("1");
 }
 
-static int studio_addArmatureFileInfoAsync(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("ccs.ArmatureDataManager", "ccs.ArmatureDataManager:addArmatureFileInfoAsync");
-    const auto config = [](cocostudio::ArmatureDataManager* self, std::string_view file, studio_binding::Progress callback) {
-        self->addArmatureFileInfoAsync(file, std::move(callback.value));
-    };
-    const auto full = [](cocostudio::ArmatureDataManager* self, std::string_view image, std::string_view plist,
-                         std::string_view file, studio_binding::Progress callback) {
-        self->addArmatureFileInfoAsync(image, plist, file, std::move(callback.value));
-    };
-    LUA_TRY_INVOKE(2, config);
-    LUA_TRY_INVOKE(4, full);
-    LUA_INVOKE_FOOTER("2,4");
-}
-
-static int studio_CustomGUIReader_create(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("ccs.CustomGUIReader", "ccs.CustomGUIReader:create");
-    const auto create = [](std::string name, studio_binding::Create constructor, studio_binding::Properties properties) {
-        return cocostudio::CustomGUIReader::create(name, std::move(constructor.value), std::move(properties.value));
-    };
-    LUA_TRY_INVOKE_R(3, create);
-    LUA_SINVOKE_FOOTER("3");
-}
-
 int register_all_cc_coco_studio_manual(lua_State* L)
 {
     luaL_getmetatable(L, "ccs.ActionTimeline");
     tolua_function(L, "addAnimationInfo", studio_addAnimationInfo);
     tolua_function(L, "getAnimationInfo", studio_getAnimationInfo);
     lua_pop(L, 1);
-    luaL_getmetatable(L, "ccs.ArmatureDataManager");
-    tolua_function(L, "addArmatureFileInfoAsync", studio_addArmatureFileInfoAsync);
-    lua_pop(L, 1);
-    return 0;
-}
-
-static int register_CustomGUIReader(lua_State* lua_S)
-{
-    LUA_ENTRY("ccs");
-    LUA_CLS_DEF_BASE(cocostudio::CustomGUIReader, "CustomGUIReader", "ccs.CustomGUIReader",
-                     cocos2d::Ref, "cc.Ref", nullptr, nullptr);
-    LUA_METHOD("create", studio_CustomGUIReader_create);
-    LUA_CLS_END();
-    LUA_ENTRY_END(1);
     return 0;
 }
 
@@ -144,7 +92,6 @@ int register_cocostudio_module(lua_State* L)
         register_all_cc_studio(L);
         register_all_cc_csloader(L);
         register_all_cc_coco_studio_manual(L);
-        register_CustomGUIReader(L);
     }
     lua_pop(L, 1);
     return 1;

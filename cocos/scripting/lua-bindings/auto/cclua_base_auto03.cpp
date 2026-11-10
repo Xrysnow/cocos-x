@@ -10,11 +10,48 @@
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 
+int lua_cocos2d_EventListenerFocus_clone_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:clone");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerFocus*(cocos2d::EventListenerFocus::*)()>(&cocos2d::EventListenerFocus::clone));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_EventListenerFocus_init(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerFocus::*)()>(&cocos2d::EventListenerFocus::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_EventListenerFocus_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerFocus*(*)()>(&cocos2d::EventListenerFocus::create));
+	LUA_SINVOKE_FOOTER("0");
+}
+int luaReg_Core_ccEventListenerFocus(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::EventListenerFocus, "EventListenerFocus", "cc.EventListenerFocus",
+		cocos2d::EventListenerFocus, "cc.EventListener",
+		nullptr, nullptr);
+	LUA_METHOD("clone", lua_cocos2d_EventListenerFocus_clone_1);
+	LUA_METHOD("init", lua_cocos2d_EventListenerFocus_init);
+	LUA_METHOD("create", lua_cocos2d_EventListenerFocus_create_1);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_EventListenerKeyboard_init(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.EventListenerKeyboard", "cc.EventListenerKeyboard:init");
 	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerKeyboard::*)()>(&cocos2d::EventListenerKeyboard::init));
 	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_EventListenerKeyboard_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.EventListenerKeyboard", "cc.EventListenerKeyboard:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerKeyboard*(*)()>(&cocos2d::EventListenerKeyboard::create));
+	LUA_SINVOKE_FOOTER("0");
 }
 int luaReg_Core_ccEventListenerKeyboard(lua_State* lua_S)
 {
@@ -23,6 +60,7 @@ int luaReg_Core_ccEventListenerKeyboard(lua_State* lua_S)
 		cocos2d::EventListenerKeyboard, "cc.EventListener",
 		nullptr, nullptr);
 	LUA_METHOD("init", lua_cocos2d_EventListenerKeyboard_init);
+	LUA_METHOD("create", lua_cocos2d_EventListenerKeyboard_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -148,6 +186,12 @@ int lua_cocos2d_EventListenerMouse_init(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerMouse::*)()>(&cocos2d::EventListenerMouse::init));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_EventListenerMouse_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.EventListenerMouse", "cc.EventListenerMouse:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerMouse*(*)()>(&cocos2d::EventListenerMouse::create));
+	LUA_SINVOKE_FOOTER("0");
+}
 int luaReg_Core_ccEventListenerMouse(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -155,6 +199,7 @@ int luaReg_Core_ccEventListenerMouse(lua_State* lua_S)
 		cocos2d::EventListenerMouse, "cc.EventListener",
 		nullptr, nullptr);
 	LUA_METHOD("init", lua_cocos2d_EventListenerMouse_init);
+	LUA_METHOD("create", lua_cocos2d_EventListenerMouse_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -177,6 +222,12 @@ int lua_cocos2d_EventListenerTouchOneByOne_setSwallowTouches(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::EventListenerTouchOneByOne::*)(bool)>(&cocos2d::EventListenerTouchOneByOne::setSwallowTouches));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_EventListenerTouchOneByOne_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.EventListenerTouchOneByOne", "cc.EventListenerTouchOneByOne:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerTouchOneByOne*(*)()>(&cocos2d::EventListenerTouchOneByOne::create));
+	LUA_SINVOKE_FOOTER("0");
+}
 int luaReg_Core_ccEventListenerTouchOneByOne(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -186,6 +237,7 @@ int luaReg_Core_ccEventListenerTouchOneByOne(lua_State* lua_S)
 	LUA_METHOD("init", lua_cocos2d_EventListenerTouchOneByOne_init);
 	LUA_METHOD("isSwallowTouches", lua_cocos2d_EventListenerTouchOneByOne_isSwallowTouches);
 	LUA_METHOD("setSwallowTouches", lua_cocos2d_EventListenerTouchOneByOne_setSwallowTouches);
+	LUA_METHOD("create", lua_cocos2d_EventListenerTouchOneByOne_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -196,6 +248,12 @@ int lua_cocos2d_EventListenerTouchAllAtOnce_init(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerTouchAllAtOnce::*)()>(&cocos2d::EventListenerTouchAllAtOnce::init));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_EventListenerTouchAllAtOnce_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.EventListenerTouchAllAtOnce", "cc.EventListenerTouchAllAtOnce:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerTouchAllAtOnce*(*)()>(&cocos2d::EventListenerTouchAllAtOnce::create));
+	LUA_SINVOKE_FOOTER("0");
+}
 int luaReg_Core_ccEventListenerTouchAllAtOnce(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -203,6 +261,7 @@ int luaReg_Core_ccEventListenerTouchAllAtOnce(lua_State* lua_S)
 		cocos2d::EventListenerTouchAllAtOnce, "cc.EventListener",
 		nullptr, nullptr);
 	LUA_METHOD("init", lua_cocos2d_EventListenerTouchAllAtOnce_init);
+	LUA_METHOD("create", lua_cocos2d_EventListenerTouchAllAtOnce_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -223,6 +282,12 @@ int lua_cocos2d_ActionCamera_getUp(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ActionCamera", "cc.ActionCamera:getUp");
 	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Vec3&(cocos2d::ActionCamera::*)()const>(&cocos2d::ActionCamera::getUp));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_ActionCamera_reverse_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ActionCamera", "cc.ActionCamera:reverse");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ActionCamera*(cocos2d::ActionCamera::*)()const>(&cocos2d::ActionCamera::reverse));
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_ActionCamera_setCenter(lua_State* lua_S)
@@ -253,6 +318,7 @@ int luaReg_Core_ccActionCamera(lua_State* lua_S)
 	LUA_METHOD("getCenter", lua_cocos2d_ActionCamera_getCenter);
 	LUA_METHOD("getEye", lua_cocos2d_ActionCamera_getEye);
 	LUA_METHOD("getUp", lua_cocos2d_ActionCamera_getUp);
+	LUA_METHOD("reverse", lua_cocos2d_ActionCamera_reverse_1);
 	LUA_METHOD("setCenter", lua_cocos2d_ActionCamera_setCenter);
 	LUA_METHOD("setEye", lua_cocos2d_ActionCamera_setEye);
 	LUA_METHOD("setUp", lua_cocos2d_ActionCamera_setUp);
@@ -1241,6 +1307,12 @@ int lua_cocos2d_GridAction_initWithDuration(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::GridAction::*)(float, const cocos2d::Vec2&)>(&cocos2d::GridAction::initWithDuration)));
 	LUA_INVOKE_FOOTER("2");
 }
+int lua_cocos2d_GridAction_reverse_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.GridAction", "cc.GridAction:reverse");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::GridAction*(cocos2d::GridAction::*)()const>(&cocos2d::GridAction::reverse));
+	LUA_INVOKE_FOOTER("0");
+}
 int luaReg_Core_ccGridAction(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -1249,6 +1321,7 @@ int luaReg_Core_ccGridAction(lua_State* lua_S)
 		nullptr, nullptr);
 	LUA_METHOD("getGrid", lua_cocos2d_GridAction_getGrid);
 	LUA_METHOD("initWithDuration", lua_cocos2d_GridAction_initWithDuration);
+	LUA_METHOD("reverse", lua_cocos2d_GridAction_reverse_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -2314,100 +2387,6 @@ int luaReg_Core_ccActionTween(lua_State* lua_S)
 		nullptr, nullptr);
 	LUA_METHOD("initWithDuration", lua_cocos2d_ActionTween_initWithDuration);
 	LUA_METHOD("create", lua_cocos2d_ActionTween_create);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_AtlasNode_getBlendFunc(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getBlendFunc");
-	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::BlendFunc&(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getBlendFunc));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_AtlasNode_getQuadsToDraw(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getQuadsToDraw");
-	LUA_TRY_INVOKE_R(0, static_cast<size_t(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getQuadsToDraw));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_AtlasNode_getTexture(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getTexture");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Texture2D*(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getTexture));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_AtlasNode_getTextureAtlas(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getTextureAtlas");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::TextureAtlas*(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getTextureAtlas));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_AtlasNode_initWithTexture(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:initWithTexture");
-	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::AtlasNode::*)(cocos2d::Texture2D*, int, int, int)>(&cocos2d::AtlasNode::initWithTexture)));
-	LUA_INVOKE_FOOTER("4");
-}
-int lua_cocos2d_AtlasNode_initWithTileFile(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:initWithTileFile");
-	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::AtlasNode::*)(std::string_view, int, int, int)>(&cocos2d::AtlasNode::initWithTileFile)));
-	LUA_INVOKE_FOOTER("4");
-}
-int lua_cocos2d_AtlasNode_setBlendFunc(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setBlendFunc");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(const cocos2d::BlendFunc&)>(&cocos2d::AtlasNode::setBlendFunc));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_AtlasNode_setQuadsToDraw(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setQuadsToDraw");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(ssize_t)>(&cocos2d::AtlasNode::setQuadsToDraw));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_AtlasNode_setTexture(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setTexture");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(cocos2d::Texture2D*)>(&cocos2d::AtlasNode::setTexture));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_AtlasNode_setTextureAtlas(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setTextureAtlas");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(cocos2d::TextureAtlas*)>(&cocos2d::AtlasNode::setTextureAtlas));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_AtlasNode_updateAtlasValues(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:updateAtlasValues");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::AtlasNode::*)()>(&cocos2d::AtlasNode::updateAtlasValues));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_AtlasNode_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:create");
-	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::AtlasNode*(*)(std::string_view, int, int, int)>(&cocos2d::AtlasNode::create)));
-	LUA_SINVOKE_FOOTER("4");
-}
-int luaReg_Core_ccAtlasNode(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::AtlasNode, "AtlasNode", "cc.AtlasNode",
-		cocos2d::AtlasNode, "cc.Node",
-		nullptr, nullptr);
-	LUA_METHOD("getBlendFunc", lua_cocos2d_AtlasNode_getBlendFunc);
-	LUA_METHOD("getQuadsToDraw", lua_cocos2d_AtlasNode_getQuadsToDraw);
-	LUA_METHOD("getTexture", lua_cocos2d_AtlasNode_getTexture);
-	LUA_METHOD("getTextureAtlas", lua_cocos2d_AtlasNode_getTextureAtlas);
-	LUA_METHOD("initWithTexture", lua_cocos2d_AtlasNode_initWithTexture);
-	LUA_METHOD("initWithTileFile", lua_cocos2d_AtlasNode_initWithTileFile);
-	LUA_METHOD("setBlendFunc", lua_cocos2d_AtlasNode_setBlendFunc);
-	LUA_METHOD("setQuadsToDraw", lua_cocos2d_AtlasNode_setQuadsToDraw);
-	LUA_METHOD("setTexture", lua_cocos2d_AtlasNode_setTexture);
-	LUA_METHOD("setTextureAtlas", lua_cocos2d_AtlasNode_setTextureAtlas);
-	LUA_METHOD("updateAtlasValues", lua_cocos2d_AtlasNode_updateAtlasValues);
-	LUA_METHOD("create", lua_cocos2d_AtlasNode_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

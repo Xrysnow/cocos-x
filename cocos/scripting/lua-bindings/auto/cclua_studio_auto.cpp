@@ -2,6 +2,7 @@
 #include "lua_conversion/lua_conversion.hpp"
 #include "cocostudio/CocoStudio.h"
 #include "cocostudio/CCComExtensionData.h"
+#include "scripting/lua-bindings/manual/cocostudio/CustomGUIReader.h"
 
 int lua_cocostudio_ActionFrame_getAction(lua_State* lua_S)
 {
@@ -1456,6 +1457,17 @@ int lua_cocostudio_ArmatureDataManager_addArmatureFileInfo(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocostudio::ArmatureDataManager::*)(std::string_view)>(&cocostudio::ArmatureDataManager::addArmatureFileInfo));
 	LUA_INVOKE_FOOTER("1,3");
 }
+int lua_cocostudio_ArmatureDataManager_addArmatureFileInfoAsync_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("ccs.ArmatureDataManager", "ccs.ArmatureDataManager:addArmatureFileInfoAsync");
+	if (argc == 2 && !ok && lua_isnil(lua_S, 3)) { arg_cur = 2; } else {
+	LUA_TRY_INVOKE(2, (static_cast<void(cocostudio::ArmatureDataManager::*)(std::string_view, std::function<void(float)>)>(&cocostudio::ArmatureDataManager::addArmatureFileInfoAsync)));
+	}
+	if (argc == 4 && !ok && lua_isnil(lua_S, 5)) { arg_cur = 4; } else {
+	LUA_TRY_INVOKE(4, (static_cast<void(cocostudio::ArmatureDataManager::*)(std::string_view, std::string_view, std::string_view, std::function<void(float)>)>(&cocostudio::ArmatureDataManager::addArmatureFileInfoAsync)));
+	}
+	LUA_INVOKE_FOOTER("2,4");
+}
 int lua_cocostudio_ArmatureDataManager_addRelativeData(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccs.ArmatureDataManager", "ccs.ArmatureDataManager:addRelativeData");
@@ -1563,6 +1575,7 @@ int luaReg_Studio_ccsArmatureDataManager(lua_State* lua_S)
 	LUA_METHOD("addAnimationData", lua_cocostudio_ArmatureDataManager_addAnimationData);
 	LUA_METHOD("addArmatureData", lua_cocostudio_ArmatureDataManager_addArmatureData);
 	LUA_METHOD("addArmatureFileInfo", lua_cocostudio_ArmatureDataManager_addArmatureFileInfo);
+	LUA_METHOD("addArmatureFileInfoAsync", lua_cocostudio_ArmatureDataManager_addArmatureFileInfoAsync_1);
 	LUA_METHOD("addRelativeData", lua_cocostudio_ArmatureDataManager_addRelativeData);
 	LUA_METHOD("addSpriteFrameFromFile", lua_cocostudio_ArmatureDataManager_addSpriteFrameFromFile);
 	LUA_METHOD("addTextureData", lua_cocostudio_ArmatureDataManager_addTextureData);
@@ -1817,97 +1830,6 @@ int luaReg_Studio_ccsSkin(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
-int lua_cocostudio_ComAttribute_getBool(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:getBool");
-	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocostudio::ComAttribute::*)(std::string_view, bool)const>(&cocostudio::ComAttribute::getBool)));
-	LUA_TRY_INVOKE_R(1, ([](const cocostudio::ComAttribute* obj,std::string_view arg0){{return obj->getBool(std::move(arg0));}}));
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocostudio_ComAttribute_getFloat(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:getFloat");
-	LUA_TRY_INVOKE_R(2, (static_cast<float(cocostudio::ComAttribute::*)(std::string_view, float)const>(&cocostudio::ComAttribute::getFloat)));
-	LUA_TRY_INVOKE_R(1, ([](const cocostudio::ComAttribute* obj,std::string_view arg0){{return obj->getFloat(std::move(arg0));}}));
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocostudio_ComAttribute_getInt(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:getInt");
-	LUA_TRY_INVOKE_R(2, (static_cast<int(cocostudio::ComAttribute::*)(std::string_view, int)const>(&cocostudio::ComAttribute::getInt)));
-	LUA_TRY_INVOKE_R(1, ([](const cocostudio::ComAttribute* obj,std::string_view arg0){{return obj->getInt(std::move(arg0));}}));
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocostudio_ComAttribute_getString(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:getString");
-	LUA_TRY_INVOKE_R(2, (static_cast<std::string(cocostudio::ComAttribute::*)(std::string_view, std::string_view)const>(&cocostudio::ComAttribute::getString)));
-	LUA_TRY_INVOKE_R(1, ([](const cocostudio::ComAttribute* obj,std::string_view arg0){{return obj->getString(std::move(arg0));}}));
-	LUA_INVOKE_FOOTER("1,2");
-}
-int lua_cocostudio_ComAttribute_parse(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:parse");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(cocostudio::ComAttribute::*)(std::string_view)>(&cocostudio::ComAttribute::parse));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocostudio_ComAttribute_setBool(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:setBool");
-	LUA_TRY_INVOKE(2, (static_cast<void(cocostudio::ComAttribute::*)(std::string_view, bool)>(&cocostudio::ComAttribute::setBool)));
-	LUA_INVOKE_FOOTER("2");
-}
-int lua_cocostudio_ComAttribute_setFloat(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:setFloat");
-	LUA_TRY_INVOKE(2, (static_cast<void(cocostudio::ComAttribute::*)(std::string_view, float)>(&cocostudio::ComAttribute::setFloat)));
-	LUA_INVOKE_FOOTER("2");
-}
-int lua_cocostudio_ComAttribute_setInt(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:setInt");
-	LUA_TRY_INVOKE(2, (static_cast<void(cocostudio::ComAttribute::*)(std::string_view, int)>(&cocostudio::ComAttribute::setInt)));
-	LUA_INVOKE_FOOTER("2");
-}
-int lua_cocostudio_ComAttribute_setString(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:setString");
-	LUA_TRY_INVOKE(2, (static_cast<void(cocostudio::ComAttribute::*)(std::string_view, std::string_view)>(&cocostudio::ComAttribute::setString)));
-	LUA_INVOKE_FOOTER("2");
-}
-int lua_cocostudio_ComAttribute_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:create");
-	LUA_TRY_INVOKE_R(0, static_cast<cocostudio::ComAttribute*(*)()>(&cocostudio::ComAttribute::create));
-	LUA_SINVOKE_FOOTER("0");
-}
-int lua_cocostudio_ComAttribute_createInstance(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("ccs.ComAttribute", "ccs.ComAttribute:createInstance");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Ref*(*)()>(&cocostudio::ComAttribute::createInstance));
-	LUA_SINVOKE_FOOTER("0");
-}
-int luaReg_Studio_ccsComAttribute(lua_State* lua_S)
-{
-	LUA_ENTRY("ccs");
-	LUA_CLS_DEF_BASE(cocostudio::ComAttribute, "ComAttribute", "ccs.ComAttribute",
-		cocostudio::ComAttribute, "cc.Component",
-		nullptr, nullptr);
-	LUA_METHOD("getBool", lua_cocostudio_ComAttribute_getBool);
-	LUA_METHOD("getFloat", lua_cocostudio_ComAttribute_getFloat);
-	LUA_METHOD("getInt", lua_cocostudio_ComAttribute_getInt);
-	LUA_METHOD("getString", lua_cocostudio_ComAttribute_getString);
-	LUA_METHOD("parse", lua_cocostudio_ComAttribute_parse);
-	LUA_METHOD("setBool", lua_cocostudio_ComAttribute_setBool);
-	LUA_METHOD("setFloat", lua_cocostudio_ComAttribute_setFloat);
-	LUA_METHOD("setInt", lua_cocostudio_ComAttribute_setInt);
-	LUA_METHOD("setString", lua_cocostudio_ComAttribute_setString);
-	LUA_METHOD("create", lua_cocostudio_ComAttribute_create);
-	LUA_METHOD("createInstance", lua_cocostudio_ComAttribute_createInstance);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
 extern int luaReg_Studio_ccsActionFrame(lua_State* lua_S);
 extern int luaReg_Studio_ccsActionMoveFrame(lua_State* lua_S);
 extern int luaReg_Studio_ccsActionScaleFrame(lua_State* lua_S);
@@ -1967,6 +1889,7 @@ extern int luaReg_Studio_ccsActionTimelineNode(lua_State* lua_S);
 extern int luaReg_Studio_ccsBoneNode(lua_State* lua_S);
 extern int luaReg_Studio_ccsSkeletonNode(lua_State* lua_S);
 extern int luaReg_Studio_ccsComExtensionData(lua_State* lua_S);
+extern int luaReg_Studio_ccsCustomGUIReader(lua_State* lua_S);
 
 int register_all_cc_studio(lua_State* lua_S)
 {
@@ -2030,5 +1953,6 @@ int register_all_cc_studio(lua_State* lua_S)
 	luaReg_Studio_ccsBoneNode(lua_S);
 	luaReg_Studio_ccsSkeletonNode(lua_S);
 	luaReg_Studio_ccsComExtensionData(lua_S);
+	luaReg_Studio_ccsCustomGUIReader(lua_S);
 	return 0;
 }

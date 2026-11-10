@@ -103,6 +103,7 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto06.cpp
     auto/cclua_base_auto07.cpp
     auto/cclua_base_auto08.cpp
+    auto/cclua_base_auto09.cpp
     auto/cclua_base_retained.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
@@ -148,6 +149,7 @@ if(CC_ENABLE_EXT_COCOSTUDIO)
     list(APPEND lua_bindings_auto_files
         auto/cclua_studio_auto.cpp
         auto/cclua_studio_auto01.cpp
+        auto/cclua_studio_auto02.cpp
         auto/cclua_csloader_auto.cpp
     )
 endif()

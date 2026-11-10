@@ -1318,6 +1318,12 @@ int lua_cocos2d_ui_EditBox_openKeyboard(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::ui::EditBox::*)()const>(&cocos2d::ui::EditBox::openKeyboard));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_ui_EditBox_registerScriptEditBoxHandler_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("ccui.EditBox", "ccui.EditBox:registerScriptEditBoxHandler");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ui::EditBox::*)(const cocos2d::ui::EditBox::ScriptEditBoxCallback&)>(&cocos2d::ui::EditBox::setScriptEditBoxCallback));
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cocos2d_ui_EditBox_setCapInsets(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.EditBox", "ccui.EditBox:setCapInsets");
@@ -1477,6 +1483,7 @@ int luaReg_UI_ccuiEditBox(lua_State* lua_S)
 	LUA_METHOD("loadTexturePressed", lua_cocos2d_ui_EditBox_loadTexturePressed);
 	LUA_METHOD("loadTextures", lua_cocos2d_ui_EditBox_loadTextures);
 	LUA_METHOD("openKeyboard", lua_cocos2d_ui_EditBox_openKeyboard);
+	LUA_METHOD("registerScriptEditBoxHandler", lua_cocos2d_ui_EditBox_registerScriptEditBoxHandler_1);
 	LUA_METHOD("setCapInsets", lua_cocos2d_ui_EditBox_setCapInsets);
 	LUA_METHOD("setCapInsetsDisabledRenderer", lua_cocos2d_ui_EditBox_setCapInsetsDisabledRenderer);
 	LUA_METHOD("setCapInsetsNormalRenderer", lua_cocos2d_ui_EditBox_setCapInsetsNormalRenderer);

@@ -2072,20 +2072,3 @@ int luaReg_Core_ccEventListenerAcceleration(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
-int lua_cocos2d_EventListenerFocus_init(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:init");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerFocus::*)()>(&cocos2d::EventListenerFocus::init));
-	LUA_INVOKE_FOOTER("0");
-}
-int luaReg_Core_ccEventListenerFocus(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::EventListenerFocus, "EventListenerFocus", "cc.EventListenerFocus",
-		cocos2d::EventListenerFocus, "cc.EventListener",
-		nullptr, nullptr);
-	LUA_METHOD("init", lua_cocos2d_EventListenerFocus_init);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}

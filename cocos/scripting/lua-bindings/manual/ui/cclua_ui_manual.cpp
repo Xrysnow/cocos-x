@@ -93,32 +93,11 @@ int textFieldSetCursorChar(lua_State* lua_S)
     LUA_INVOKE_FOOTER("1");
 }
 
-int editBoxRegister(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("ccui.EditBox", "ccui.EditBox:registerScriptEditBoxHandler");
-    LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ui::EditBox::*)(const cocos2d::ui::EditBox::ScriptEditBoxCallback&)>(&cocos2d::ui::EditBox::setScriptEditBoxCallback));
-    LUA_INVOKE_FOOTER("1");
-}
-
 int editBoxUnregister(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("ccui.EditBox", "ccui.EditBox:unregisterScriptEditBoxHandler");
     const auto clear = [](cocos2d::ui::EditBox* self) { self->setScriptEditBoxCallback(nullptr); };
     LUA_TRY_INVOKE(0, clear);
-    LUA_INVOKE_FOOTER("0");
-}
-
-int focusCreate(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:create");
-    LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerFocus*(*)()>(&cocos2d::EventListenerFocus::create));
-    LUA_SINVOKE_FOOTER("0");
-}
-
-int focusClone(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:clone");
-    LUA_TRY_INVOKE_R(0, static_cast<cocos2d::EventListenerFocus*(cocos2d::EventListenerFocus::*)()>(&cocos2d::EventListenerFocus::clone));
     LUA_INVOKE_FOOTER("0");
 }
 
@@ -147,10 +126,8 @@ int register_all_cc_ui_manual(lua_State* L)
 {
     const luaL_Reg widget[] = {{"hitTest", widgetHitTest}, {nullptr, nullptr}};
     const luaL_Reg field[] = {{"setCursorChar", textFieldSetCursorChar}, {nullptr, nullptr}};
-    const luaL_Reg edit[] = {{"registerScriptEditBoxHandler", editBoxRegister},
-                             {"unregisterScriptEditBoxHandler", editBoxUnregister}, {nullptr, nullptr}};
-    const luaL_Reg focus[] = {{"create", focusCreate}, {"clone", focusClone},
-                              {"registerScriptHandler", focusRegister}, {nullptr, nullptr}};
+    const luaL_Reg edit[] = {{"unregisterScriptEditBoxHandler", editBoxUnregister}, {nullptr, nullptr}};
+    const luaL_Reg focus[] = {{"registerScriptHandler", focusRegister}, {nullptr, nullptr}};
     extend(L, "ccui.Widget", widget);
     extend(L, "ccui.TextField", field);
     extend(L, "ccui.EditBox", edit);

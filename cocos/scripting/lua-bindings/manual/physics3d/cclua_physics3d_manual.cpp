@@ -322,121 +322,6 @@ void extendPhysics3DRigidBody(lua_State* L)
     lua_pop(L, 1);
 }
 
-int cclua_physics3d_Physics3DComponent_create(lua_State* L)
-{
-    int argc = 0;
-    bool ok  = true;
-    #if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    #endif
-
-    #if CC_DEBUG >= 1
-    if (!tolua_isusertable(L, 1, "cc.Physics3DComponent", 0, &tolua_err))
-        goto tolua_lerror;
-    #endif
-
-    argc = lua_gettop(L) - 1;
-
-    do
-    {
-        if (argc == 1)
-        {
-            cocos2d::Physics3DObject* arg0;
-            ok &= luaval_to_object<cocos2d::Physics3DObject>(L, 2, "cc.Physics3DObject", &arg0);
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Physics3DComponent* ret = cocos2d::Physics3DComponent::create(arg0);
-            object_to_luaval<cocos2d::Physics3DComponent>(L, "cc.Physics3DComponent",
-                                                          (cocos2d::Physics3DComponent*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 2)
-        {
-            cocos2d::Physics3DObject* arg0;
-            ok &= luaval_to_object<cocos2d::Physics3DObject>(L, 2, "cc.Physics3DObject", &arg0);
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Vec3 arg1;
-            ok &= luaval_to_vec3(L, 3, &arg1, "cc.Physics3DComponent:create");
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Physics3DComponent* ret = cocos2d::Physics3DComponent::create(arg0, arg1);
-            object_to_luaval<cocos2d::Physics3DComponent>(L, "cc.Physics3DComponent",
-                                                          (cocos2d::Physics3DComponent*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 3)
-        {
-            cocos2d::Physics3DObject* arg0;
-            ok &= luaval_to_object<cocos2d::Physics3DObject>(L, 2, "cc.Physics3DObject", &arg0);
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Vec3 arg1;
-            ok &= luaval_to_vec3(L, 3, &arg1, "cc.Physics3DComponent:create");
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Quaternion arg2;
-            ok &= luaval_to_quaternion(L, 4, &arg2);
-            if (!ok)
-            {
-                break;
-            }
-            cocos2d::Physics3DComponent* ret = cocos2d::Physics3DComponent::create(arg0, arg1, arg2);
-            object_to_luaval<cocos2d::Physics3DComponent>(L, "cc.Physics3DComponent",
-                                                          (cocos2d::Physics3DComponent*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    do
-    {
-        if (argc == 0)
-        {
-            cocos2d::Physics3DComponent* ret = cocos2d::Physics3DComponent::create();
-            object_to_luaval<cocos2d::Physics3DComponent>(L, "cc.Physics3DComponent",
-                                                          (cocos2d::Physics3DComponent*)ret);
-            return 1;
-        }
-    } while (0);
-    ok = true;
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d", "cc.Physics3DComponent:create", argc, 0);
-    return 0;
-    #if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_physics3d_Physics3DComponent_create'.", &tolua_err);
-    #endif
-    return 0;
-}
-
-void extendPhysics3DComponent(lua_State* L)
-{
-    lua_pushstring(L, "cc.Physics3DComponent");
-    lua_rawget(L, LUA_REGISTRYINDEX);
-    if (lua_istable(L, -1))
-    {
-        tolua_function(L, "create", cclua_physics3d_Physics3DComponent_create);
-    }
-    lua_pop(L, 1);
-}
-
 int cclua_physics3d_Physics3DWorld_rayCast(lua_State* L)
 {
     int argc                      = 0;
@@ -720,7 +605,6 @@ int register_all_physics3d_manual(lua_State* L)
 
     extendPhysicsMeshRenderer(L);
     extendPhysics3DRigidBody(L);
-    extendPhysics3DComponent(L);
     extendPhysics3DWorld(L);
     extendPhysics3DShape(L);
 

@@ -19,13 +19,13 @@ int lua_cocos2d_Physics3DShape_initBox(lua_State* lua_S)
 int lua_cocos2d_Physics3DShape_initCapsule(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DShape", "cc.Physics3DShape:initCapsule");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::Physics3DShape::*)(float, float)>(&cocos2d::Physics3DShape::initCapsule));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::Physics3DShape::*)(float, float)>(&cocos2d::Physics3DShape::initCapsule)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DShape_initCylinder(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DShape", "cc.Physics3DShape:initCylinder");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::Physics3DShape::*)(float, float)>(&cocos2d::Physics3DShape::initCylinder));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::Physics3DShape::*)(float, float)>(&cocos2d::Physics3DShape::initCylinder)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DShape_initSphere(lua_State* lua_S)
@@ -43,13 +43,13 @@ int lua_cocos2d_Physics3DShape_createBox(lua_State* lua_S)
 int lua_cocos2d_Physics3DShape_createCapsule(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DShape", "cc.Physics3DShape:createCapsule");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Physics3DShape*(*)(float, float)>(&cocos2d::Physics3DShape::createCapsule));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Physics3DShape*(*)(float, float)>(&cocos2d::Physics3DShape::createCapsule)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DShape_createCylinder(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DShape", "cc.Physics3DShape:createCylinder");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Physics3DShape*(*)(float, float)>(&cocos2d::Physics3DShape::createCylinder));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Physics3DShape*(*)(float, float)>(&cocos2d::Physics3DShape::createCylinder)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DShape_createSphere(lua_State* lua_S)
@@ -170,13 +170,13 @@ int lua_cocos2d_Physics3DRigidBody_applyDamping(lua_State* lua_S)
 int lua_cocos2d_Physics3DRigidBody_applyForce(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DRigidBody", "cc.Physics3DRigidBody:applyForce");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DRigidBody::*)(const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::applyForce));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DRigidBody::*)(const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::applyForce)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DRigidBody_applyImpulse(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DRigidBody", "cc.Physics3DRigidBody:applyImpulse");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DRigidBody::*)(const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::applyImpulse));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DRigidBody::*)(const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::applyImpulse)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DRigidBody_applyTorque(lua_State* lua_S)
@@ -364,7 +364,7 @@ int lua_cocos2d_Physics3DRigidBody_setCenterOfMassTransform(lua_State* lua_S)
 int lua_cocos2d_Physics3DRigidBody_setDamping(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DRigidBody", "cc.Physics3DRigidBody:setDamping");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DRigidBody::*)(float, float)>(&cocos2d::Physics3DRigidBody::setDamping));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DRigidBody::*)(float, float)>(&cocos2d::Physics3DRigidBody::setDamping)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DRigidBody_setFriction(lua_State* lua_S)
@@ -412,7 +412,7 @@ int lua_cocos2d_Physics3DRigidBody_setLinearVelocity(lua_State* lua_S)
 int lua_cocos2d_Physics3DRigidBody_setMassProps(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DRigidBody", "cc.Physics3DRigidBody:setMassProps");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DRigidBody::*)(float, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::setMassProps));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DRigidBody::*)(float, const cocos2d::Vec3&)>(&cocos2d::Physics3DRigidBody::setMassProps)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DRigidBody_setRestitution(lua_State* lua_S)
@@ -520,6 +520,15 @@ int lua_cocos2d_Physics3DComponent_syncPhysicsToNode(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::Physics3DComponent::*)()>(&cocos2d::Physics3DComponent::syncPhysicsToNode));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_Physics3DComponent_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Physics3DComponent", "cc.Physics3DComponent:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Physics3DComponent*(*)()>(&cocos2d::Physics3DComponent::create));
+	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::Physics3DComponent*(*)(cocos2d::Physics3DObject*, const cocos2d::Vec3&, const cocos2d::Quaternion&)>(&cocos2d::Physics3DComponent::create)));
+	LUA_TRY_INVOKE_R(2, ([](cocos2d::Physics3DObject* arg0,const cocos2d::Vec3& arg1){{return cocos2d::Physics3DComponent::create(arg0,arg1);}}));
+	LUA_TRY_INVOKE_R(1, [](cocos2d::Physics3DObject* arg0){{return cocos2d::Physics3DComponent::create(arg0);}});
+	LUA_SINVOKE_FOOTER("0,1,2,3");
+}
 int lua_cocos2d_Physics3DComponent_getPhysics3DComponentName(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DComponent", "cc.Physics3DComponent:getPhysics3DComponentName");
@@ -538,6 +547,7 @@ int luaReg_Physics3D_ccPhysics3DComponent(lua_State* lua_S)
 	LUA_METHOD("setSyncFlag", lua_cocos2d_Physics3DComponent_setSyncFlag);
 	LUA_METHOD("syncNodeToPhysics", lua_cocos2d_Physics3DComponent_syncNodeToPhysics);
 	LUA_METHOD("syncPhysicsToNode", lua_cocos2d_Physics3DComponent_syncPhysicsToNode);
+	LUA_METHOD("create", lua_cocos2d_Physics3DComponent_create_1);
 	LUA_METHOD("getPhysics3DComponentName", lua_cocos2d_Physics3DComponent_getPhysics3DComponentName);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
@@ -584,8 +594,8 @@ int luaReg_Physics3D_ccPhysicsMeshRenderer(lua_State* lua_S)
 int lua_cocos2d_Physics3DWorld_addPhysics3DConstraint(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DWorld", "cc.Physics3DWorld:addPhysics3DConstraint");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DWorld::*)(cocos2d::Physics3DConstraint*, bool)>(&cocos2d::Physics3DWorld::addPhysics3DConstraint));
-	LUA_TRY_INVOKE(1, [](cocos2d::Physics3DWorld* obj,cocos2d::Physics3DConstraint* arg0){{return obj->addPhysics3DConstraint(arg0);}});
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DWorld::*)(cocos2d::Physics3DConstraint*, bool)>(&cocos2d::Physics3DWorld::addPhysics3DConstraint)));
+	LUA_TRY_INVOKE(1, ([](cocos2d::Physics3DWorld* obj,cocos2d::Physics3DConstraint* arg0){{return obj->addPhysics3DConstraint(arg0);}}));
 	LUA_INVOKE_FOOTER("1,2");
 }
 int lua_cocos2d_Physics3DWorld_addPhysics3DObject(lua_State* lua_S)
@@ -785,8 +795,8 @@ int lua_cocos2d_Physics3DPointToPointConstraint_getPivotPointInB(lua_State* lua_
 int lua_cocos2d_Physics3DPointToPointConstraint_init(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DPointToPointConstraint", "cc.Physics3DPointToPointConstraint:init");
-	LUA_TRY_INVOKE_R(4, static_cast<bool(cocos2d::Physics3DPointToPointConstraint::*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::init));
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::Physics3DPointToPointConstraint::*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::init));
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::Physics3DPointToPointConstraint::*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::init)));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::Physics3DPointToPointConstraint::*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::init)));
 	LUA_INVOKE_FOOTER("2,4");
 }
 int lua_cocos2d_Physics3DPointToPointConstraint_setPivotPointInA(lua_State* lua_S)
@@ -804,8 +814,8 @@ int lua_cocos2d_Physics3DPointToPointConstraint_setPivotPointInB(lua_State* lua_
 int lua_cocos2d_Physics3DPointToPointConstraint_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DPointToPointConstraint", "cc.Physics3DPointToPointConstraint:create");
-	LUA_TRY_INVOKE_R(4, static_cast<cocos2d::Physics3DPointToPointConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::create));
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Physics3DPointToPointConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::create));
+	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::Physics3DPointToPointConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::create)));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Physics3DPointToPointConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&)>(&cocos2d::Physics3DPointToPointConstraint::create)));
 	LUA_SINVOKE_FOOTER("2,4");
 }
 int luaReg_Physics3D_ccPhysics3DPointToPointConstraint(lua_State* lua_S)
@@ -827,7 +837,7 @@ int luaReg_Physics3D_ccPhysics3DPointToPointConstraint(lua_State* lua_S)
 int lua_cocos2d_Physics3DHingeConstraint_enableAngularMotor(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DHingeConstraint", "cc.Physics3DHingeConstraint:enableAngularMotor");
-	LUA_TRY_INVOKE(3, static_cast<void(cocos2d::Physics3DHingeConstraint::*)(bool, float, float)>(&cocos2d::Physics3DHingeConstraint::enableAngularMotor));
+	LUA_TRY_INVOKE(3, (static_cast<void(cocos2d::Physics3DHingeConstraint::*)(bool, float, float)>(&cocos2d::Physics3DHingeConstraint::enableAngularMotor)));
 	LUA_INVOKE_FOOTER("3");
 }
 int lua_cocos2d_Physics3DHingeConstraint_enableMotor(lua_State* lua_S)
@@ -875,7 +885,7 @@ int lua_cocos2d_Physics3DHingeConstraint_getFrameOffsetB(lua_State* lua_S)
 int lua_cocos2d_Physics3DHingeConstraint_getHingeAngle(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DHingeConstraint", "cc.Physics3DHingeConstraint:getHingeAngle");
-	LUA_TRY_INVOKE_R(2, static_cast<float(cocos2d::Physics3DHingeConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DHingeConstraint::getHingeAngle));
+	LUA_TRY_INVOKE_R(2, (static_cast<float(cocos2d::Physics3DHingeConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DHingeConstraint::getHingeAngle)));
 	LUA_TRY_INVOKE_R(0, static_cast<float(cocos2d::Physics3DHingeConstraint::*)()const>(&cocos2d::Physics3DHingeConstraint::getHingeAngle));
 	LUA_INVOKE_FOOTER("0,2");
 }
@@ -924,16 +934,16 @@ int lua_cocos2d_Physics3DHingeConstraint_setAxis(lua_State* lua_S)
 int lua_cocos2d_Physics3DHingeConstraint_setFrames(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DHingeConstraint", "cc.Physics3DHingeConstraint:setFrames");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DHingeConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DHingeConstraint::setFrames));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DHingeConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DHingeConstraint::setFrames)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DHingeConstraint_setLimit(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DHingeConstraint", "cc.Physics3DHingeConstraint:setLimit");
-	LUA_TRY_INVOKE(5, static_cast<void(cocos2d::Physics3DHingeConstraint::*)(float, float, float, float, float)>(&cocos2d::Physics3DHingeConstraint::setLimit));
-	LUA_TRY_INVOKE(4, [](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1,float arg2,float arg3){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}});
-	LUA_TRY_INVOKE(3, [](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1,float arg2){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE(2, [](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1){{return obj->setLimit(std::move(arg0),std::move(arg1));}});
+	LUA_TRY_INVOKE(5, (static_cast<void(cocos2d::Physics3DHingeConstraint::*)(float, float, float, float, float)>(&cocos2d::Physics3DHingeConstraint::setLimit)));
+	LUA_TRY_INVOKE(4, ([](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1,float arg2,float arg3){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
+	LUA_TRY_INVOKE(3, ([](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1,float arg2){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE(2, ([](cocos2d::Physics3DHingeConstraint* obj,float arg0,float arg1){{return obj->setLimit(std::move(arg0),std::move(arg1));}}));
 	LUA_INVOKE_FOOTER("2,3,4,5");
 }
 int lua_cocos2d_Physics3DHingeConstraint_setMaxMotorImpulse(lua_State* lua_S)
@@ -951,14 +961,14 @@ int lua_cocos2d_Physics3DHingeConstraint_setUseFrameOffset(lua_State* lua_S)
 int lua_cocos2d_Physics3DHingeConstraint_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DHingeConstraint", "cc.Physics3DHingeConstraint:create");
-	LUA_TRY_INVOKE_R(7, static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&, cocos2d::Vec3&, cocos2d::Vec3&, bool)>(&cocos2d::Physics3DHingeConstraint::create));
-	LUA_TRY_INVOKE_R(6, [](cocos2d::Physics3DRigidBody* arg0,cocos2d::Physics3DRigidBody* arg1,const cocos2d::Vec3& arg2,const cocos2d::Vec3& arg3,cocos2d::Vec3& arg4,cocos2d::Vec3& arg5){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2,arg3,arg4,arg5);}});
-	LUA_TRY_INVOKE_R(5, static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3DHingeConstraint::create));
-	LUA_TRY_INVOKE_R_OVERLOAD(4, [](cocos2d::Physics3DRigidBody* arg0,cocos2d::Physics3DRigidBody* arg1,const cocos2d::Mat4& arg2,const cocos2d::Mat4& arg3){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2,arg3);}});
-	LUA_TRY_INVOKE_R_OVERLOAD(4, static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&, bool)>(&cocos2d::Physics3DHingeConstraint::create));
-	LUA_TRY_INVOKE_R_OVERLOAD(3, [](cocos2d::Physics3DRigidBody* arg0,const cocos2d::Vec3& arg1,const cocos2d::Vec3& arg2){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2);}});
-	LUA_TRY_INVOKE_R_OVERLOAD(3, static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3DHingeConstraint::create));
-	LUA_TRY_INVOKE_R(2, [](cocos2d::Physics3DRigidBody* arg0,const cocos2d::Mat4& arg1){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(7, (static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&, cocos2d::Vec3&, cocos2d::Vec3&, bool)>(&cocos2d::Physics3DHingeConstraint::create)));
+	LUA_TRY_INVOKE_R(6, ([](cocos2d::Physics3DRigidBody* arg0,cocos2d::Physics3DRigidBody* arg1,const cocos2d::Vec3& arg2,const cocos2d::Vec3& arg3,cocos2d::Vec3& arg4,cocos2d::Vec3& arg5){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2,arg3,arg4,arg5);}}));
+	LUA_TRY_INVOKE_R(5, (static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3DHingeConstraint::create)));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, ([](cocos2d::Physics3DRigidBody* arg0,cocos2d::Physics3DRigidBody* arg1,const cocos2d::Mat4& arg2,const cocos2d::Mat4& arg3){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2,arg3);}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(4, (static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Vec3&, const cocos2d::Vec3&, bool)>(&cocos2d::Physics3DHingeConstraint::create)));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, ([](cocos2d::Physics3DRigidBody* arg0,const cocos2d::Vec3& arg1,const cocos2d::Vec3& arg2){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1,arg2);}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, (static_cast<cocos2d::Physics3DHingeConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3DHingeConstraint::create)));
+	LUA_TRY_INVOKE_R(2, ([](cocos2d::Physics3DRigidBody* arg0,const cocos2d::Mat4& arg1){{return cocos2d::Physics3DHingeConstraint::create(arg0,arg1);}}));
 	LUA_SINVOKE_FOOTER("2,3,4,5,6,7");
 }
 int luaReg_Physics3D_ccPhysics3DHingeConstraint(lua_State* lua_S)
@@ -1235,7 +1245,7 @@ int lua_cocos2d_Physics3DSliderConstraint_setDampingOrthoLin(lua_State* lua_S)
 int lua_cocos2d_Physics3DSliderConstraint_setFrames(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DSliderConstraint", "cc.Physics3DSliderConstraint:setFrames");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DSliderConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DSliderConstraint::setFrames));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DSliderConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DSliderConstraint::setFrames)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DSliderConstraint_setLowerAngLimit(lua_State* lua_S)
@@ -1376,6 +1386,12 @@ int lua_cocos2d_Physics3DSliderConstraint_setUseFrameOffset(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Physics3DSliderConstraint::*)(bool)>(&cocos2d::Physics3DSliderConstraint::setUseFrameOffset));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_Physics3DSliderConstraint_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Physics3DSliderConstraint", "cc.Physics3DSliderConstraint:create");
+	LUA_TRY_INVOKE_R(5, (static_cast<cocos2d::Physics3DSliderConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3DSliderConstraint::create)));
+	LUA_SINVOKE_FOOTER("5");
+}
 int luaReg_Physics3D_ccPhysics3DSliderConstraint(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -1446,6 +1462,7 @@ int luaReg_Physics3D_ccPhysics3DSliderConstraint(lua_State* lua_S)
 	LUA_METHOD("setUpperAngLimit", lua_cocos2d_Physics3DSliderConstraint_setUpperAngLimit);
 	LUA_METHOD("setUpperLinLimit", lua_cocos2d_Physics3DSliderConstraint_setUpperLinLimit);
 	LUA_METHOD("setUseFrameOffset", lua_cocos2d_Physics3DSliderConstraint_setUseFrameOffset);
+	LUA_METHOD("create", lua_cocos2d_Physics3DSliderConstraint_create_1);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -1453,7 +1470,7 @@ int luaReg_Physics3D_ccPhysics3DSliderConstraint(lua_State* lua_S)
 int lua_cocos2d_Physics3DConeTwistConstraint_GetPointForAngle(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DConeTwistConstraint", "cc.Physics3DConeTwistConstraint:GetPointForAngle");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Vec3(cocos2d::Physics3DConeTwistConstraint::*)(float, float)const>(&cocos2d::Physics3DConeTwistConstraint::GetPointForAngle));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Vec3(cocos2d::Physics3DConeTwistConstraint::*)(float, float)const>(&cocos2d::Physics3DConeTwistConstraint::GetPointForAngle)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DConeTwistConstraint_enableMotor(lua_State* lua_S)
@@ -1531,16 +1548,16 @@ int lua_cocos2d_Physics3DConeTwistConstraint_setFixThresh(lua_State* lua_S)
 int lua_cocos2d_Physics3DConeTwistConstraint_setFrames(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DConeTwistConstraint", "cc.Physics3DConeTwistConstraint:setFrames");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::Physics3DConeTwistConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::setFrames));
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::Physics3DConeTwistConstraint::*)(const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::setFrames)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_Physics3DConeTwistConstraint_setLimit(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Physics3DConeTwistConstraint", "cc.Physics3DConeTwistConstraint:setLimit");
-	LUA_TRY_INVOKE(6, static_cast<void(cocos2d::Physics3DConeTwistConstraint::*)(float, float, float, float, float, float)>(&cocos2d::Physics3DConeTwistConstraint::setLimit));
-	LUA_TRY_INVOKE(5, [](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2,float arg3,float arg4){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3),std::move(arg4));}});
-	LUA_TRY_INVOKE(4, [](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2,float arg3){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}});
-	LUA_TRY_INVOKE(3, [](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2));}});
+	LUA_TRY_INVOKE(6, (static_cast<void(cocos2d::Physics3DConeTwistConstraint::*)(float, float, float, float, float, float)>(&cocos2d::Physics3DConeTwistConstraint::setLimit)));
+	LUA_TRY_INVOKE(5, ([](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2,float arg3,float arg4){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3),std::move(arg4));}}));
+	LUA_TRY_INVOKE(4, ([](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2,float arg3){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
+	LUA_TRY_INVOKE(3, ([](cocos2d::Physics3DConeTwistConstraint* obj,float arg0,float arg1,float arg2){{return obj->setLimit(std::move(arg0),std::move(arg1),std::move(arg2));}}));
 	LUA_INVOKE_FOOTER("3,4,5,6");
 }
 int lua_cocos2d_Physics3DConeTwistConstraint_setMaxMotorImpulse(lua_State* lua_S)
@@ -1558,8 +1575,8 @@ int lua_cocos2d_Physics3DConeTwistConstraint_setMaxMotorImpulseNormalized(lua_St
 int lua_cocos2d_Physics3DConeTwistConstraint_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3DConeTwistConstraint", "cc.Physics3DConeTwistConstraint:create");
-	LUA_TRY_INVOKE_R(4, static_cast<cocos2d::Physics3DConeTwistConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::create));
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Physics3DConeTwistConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::create));
+	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::Physics3DConeTwistConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::create)));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Physics3DConeTwistConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&)>(&cocos2d::Physics3DConeTwistConstraint::create)));
 	LUA_SINVOKE_FOOTER("2,4");
 }
 int luaReg_Physics3D_ccPhysics3DConeTwistConstraint(lua_State* lua_S)
@@ -1659,8 +1676,8 @@ int lua_cocos2d_Physics3D6DofConstraint_setUseFrameOffset(lua_State* lua_S)
 int lua_cocos2d_Physics3D6DofConstraint_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Physics3D6DofConstraint", "cc.Physics3D6DofConstraint:create");
-	LUA_TRY_INVOKE_R(5, static_cast<cocos2d::Physics3D6DofConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3D6DofConstraint::create));
-	LUA_TRY_INVOKE_R(3, static_cast<cocos2d::Physics3D6DofConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3D6DofConstraint::create));
+	LUA_TRY_INVOKE_R(5, (static_cast<cocos2d::Physics3D6DofConstraint*(*)(cocos2d::Physics3DRigidBody*, cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3D6DofConstraint::create)));
+	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::Physics3D6DofConstraint*(*)(cocos2d::Physics3DRigidBody*, const cocos2d::Mat4&, bool)>(&cocos2d::Physics3D6DofConstraint::create)));
 	LUA_SINVOKE_FOOTER("3,5");
 }
 int luaReg_Physics3D_ccPhysics3D6DofConstraint(lua_State* lua_S)
@@ -1686,6 +1703,8 @@ int luaReg_Physics3D_ccPhysics3D6DofConstraint(lua_State* lua_S)
 	return 0;
 }
 #endif
+
+int register_all_cc_physics3d_retained(lua_State* lua_S);
 
 int register_all_cc_physics3d(lua_State* lua_S)
 {

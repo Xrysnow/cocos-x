@@ -10,6 +10,100 @@
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 
+int lua_cocos2d_AtlasNode_getBlendFunc(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getBlendFunc");
+	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::BlendFunc&(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getBlendFunc));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_AtlasNode_getQuadsToDraw(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getQuadsToDraw");
+	LUA_TRY_INVOKE_R(0, static_cast<size_t(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getQuadsToDraw));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_AtlasNode_getTexture(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getTexture");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Texture2D*(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getTexture));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_AtlasNode_getTextureAtlas(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:getTextureAtlas");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::TextureAtlas*(cocos2d::AtlasNode::*)()const>(&cocos2d::AtlasNode::getTextureAtlas));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_AtlasNode_initWithTexture(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:initWithTexture");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::AtlasNode::*)(cocos2d::Texture2D*, int, int, int)>(&cocos2d::AtlasNode::initWithTexture)));
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cocos2d_AtlasNode_initWithTileFile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:initWithTileFile");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::AtlasNode::*)(std::string_view, int, int, int)>(&cocos2d::AtlasNode::initWithTileFile)));
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cocos2d_AtlasNode_setBlendFunc(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setBlendFunc");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(const cocos2d::BlendFunc&)>(&cocos2d::AtlasNode::setBlendFunc));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_AtlasNode_setQuadsToDraw(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setQuadsToDraw");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(ssize_t)>(&cocos2d::AtlasNode::setQuadsToDraw));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_AtlasNode_setTexture(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setTexture");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(cocos2d::Texture2D*)>(&cocos2d::AtlasNode::setTexture));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_AtlasNode_setTextureAtlas(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:setTextureAtlas");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::AtlasNode::*)(cocos2d::TextureAtlas*)>(&cocos2d::AtlasNode::setTextureAtlas));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_AtlasNode_updateAtlasValues(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:updateAtlasValues");
+	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::AtlasNode::*)()>(&cocos2d::AtlasNode::updateAtlasValues));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_AtlasNode_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.AtlasNode", "cc.AtlasNode:create");
+	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::AtlasNode*(*)(std::string_view, int, int, int)>(&cocos2d::AtlasNode::create)));
+	LUA_SINVOKE_FOOTER("4");
+}
+int luaReg_Core_ccAtlasNode(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::AtlasNode, "AtlasNode", "cc.AtlasNode",
+		cocos2d::AtlasNode, "cc.Node",
+		nullptr, nullptr);
+	LUA_METHOD("getBlendFunc", lua_cocos2d_AtlasNode_getBlendFunc);
+	LUA_METHOD("getQuadsToDraw", lua_cocos2d_AtlasNode_getQuadsToDraw);
+	LUA_METHOD("getTexture", lua_cocos2d_AtlasNode_getTexture);
+	LUA_METHOD("getTextureAtlas", lua_cocos2d_AtlasNode_getTextureAtlas);
+	LUA_METHOD("initWithTexture", lua_cocos2d_AtlasNode_initWithTexture);
+	LUA_METHOD("initWithTileFile", lua_cocos2d_AtlasNode_initWithTileFile);
+	LUA_METHOD("setBlendFunc", lua_cocos2d_AtlasNode_setBlendFunc);
+	LUA_METHOD("setQuadsToDraw", lua_cocos2d_AtlasNode_setQuadsToDraw);
+	LUA_METHOD("setTexture", lua_cocos2d_AtlasNode_setTexture);
+	LUA_METHOD("setTextureAtlas", lua_cocos2d_AtlasNode_setTextureAtlas);
+	LUA_METHOD("updateAtlasValues", lua_cocos2d_AtlasNode_updateAtlasValues);
+	LUA_METHOD("create", lua_cocos2d_AtlasNode_create);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_ClippingNode_getAlphaThreshold(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ClippingNode", "cc.ClippingNode:getAlphaThreshold");
@@ -1857,112 +1951,6 @@ int luaReg_Core_ccMenuItemSprite(lua_State* lua_S)
 	LUA_METHOD("setNormalImage", lua_cocos2d_MenuItemSprite_setNormalImage);
 	LUA_METHOD("setSelectedImage", lua_cocos2d_MenuItemSprite_setSelectedImage);
 	LUA_METHOD("create", lua_cocos2d_MenuItemSprite_create_1);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_MenuItemImage_init_1(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:init");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::MenuItemImage::*)()>(&cocos2d::MenuItemImage::init));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_MenuItemImage_initWithNormalImage(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:initWithNormalImage");
-	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::MenuItemImage::*)(std::string_view, std::string_view, std::string_view, const cocos2d::ccMenuCallback&)>(&cocos2d::MenuItemImage::initWithNormalImage)));
-	LUA_INVOKE_FOOTER("4");
-}
-int lua_cocos2d_MenuItemImage_setDisabledSpriteFrame(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:setDisabledSpriteFrame");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemImage::*)(cocos2d::SpriteFrame*)>(&cocos2d::MenuItemImage::setDisabledSpriteFrame));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemImage_setNormalSpriteFrame(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:setNormalSpriteFrame");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemImage::*)(cocos2d::SpriteFrame*)>(&cocos2d::MenuItemImage::setNormalSpriteFrame));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemImage_setSelectedSpriteFrame(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:setSelectedSpriteFrame");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemImage::*)(cocos2d::SpriteFrame*)>(&cocos2d::MenuItemImage::setSelectedSpriteFrame));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemImage_create_1(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:create");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::MenuItemImage*(*)()>(&cocos2d::MenuItemImage::create));
-	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::MenuItemImage*(*)(std::string_view, std::string_view)>(&cocos2d::MenuItemImage::create)));
-	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::MenuItemImage*(*)(std::string_view, std::string_view, std::string_view)>(&cocos2d::MenuItemImage::create)));
-	LUA_SINVOKE_FOOTER("0,2,3");
-}
-int luaReg_Core_ccMenuItemImage(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::MenuItemImage, "MenuItemImage", "cc.MenuItemImage",
-		cocos2d::MenuItemImage, "cc.MenuItemSprite",
-		nullptr, nullptr);
-	LUA_METHOD("init", lua_cocos2d_MenuItemImage_init_1);
-	LUA_METHOD("initWithNormalImage", lua_cocos2d_MenuItemImage_initWithNormalImage);
-	LUA_METHOD("setDisabledSpriteFrame", lua_cocos2d_MenuItemImage_setDisabledSpriteFrame);
-	LUA_METHOD("setNormalSpriteFrame", lua_cocos2d_MenuItemImage_setNormalSpriteFrame);
-	LUA_METHOD("setSelectedSpriteFrame", lua_cocos2d_MenuItemImage_setSelectedSpriteFrame);
-	LUA_METHOD("create", lua_cocos2d_MenuItemImage_create_1);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_MenuItemToggle_addSubItem(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:addSubItem");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemToggle::*)(cocos2d::MenuItem*)>(&cocos2d::MenuItemToggle::addSubItem));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemToggle_getSelectedIndex(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:getSelectedIndex");
-	LUA_TRY_INVOKE_R(0, static_cast<unsigned int(cocos2d::MenuItemToggle::*)()const>(&cocos2d::MenuItemToggle::getSelectedIndex));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_MenuItemToggle_getSelectedItem(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:getSelectedItem");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::MenuItem*(cocos2d::MenuItemToggle::*)()>(&cocos2d::MenuItemToggle::getSelectedItem));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_MenuItemToggle_initWithItem(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:initWithItem");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::MenuItemToggle::*)(cocos2d::MenuItem*)>(&cocos2d::MenuItemToggle::initWithItem));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemToggle_setSelectedIndex(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:setSelectedIndex");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemToggle::*)(unsigned int)>(&cocos2d::MenuItemToggle::setSelectedIndex));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_MenuItemToggle_setSubItems(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.MenuItemToggle", "cc.MenuItemToggle:setSubItems");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemToggle::*)(const cocos2d::Vector<cocos2d::MenuItem *>&)>(&cocos2d::MenuItemToggle::setSubItems));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_Core_ccMenuItemToggle(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::MenuItemToggle, "MenuItemToggle", "cc.MenuItemToggle",
-		cocos2d::MenuItemToggle, "cc.MenuItem",
-		nullptr, nullptr);
-	LUA_METHOD("addSubItem", lua_cocos2d_MenuItemToggle_addSubItem);
-	LUA_METHOD("getSelectedIndex", lua_cocos2d_MenuItemToggle_getSelectedIndex);
-	LUA_METHOD("getSelectedItem", lua_cocos2d_MenuItemToggle_getSelectedItem);
-	LUA_METHOD("initWithItem", lua_cocos2d_MenuItemToggle_initWithItem);
-	LUA_METHOD("setSelectedIndex", lua_cocos2d_MenuItemToggle_setSelectedIndex);
-	LUA_METHOD("setSubItems", lua_cocos2d_MenuItemToggle_setSubItems);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

@@ -783,51 +783,6 @@ int lua_cc_physics3d_Physics3DSliderConstraint_constructor(lua_State* tolua_S)
     return 0;
 }
 
-int lua_cc_physics3d_Physics3DSliderConstraint_create(lua_State* tolua_S)
-{
-    int argc = 0;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S,1,"cc.Physics3DSliderConstraint",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 5)
-    {
-        cocos2d::Physics3DRigidBody* arg0;
-        cocos2d::Physics3DRigidBody* arg1;
-        cocos2d::Mat4 arg2;
-        cocos2d::Mat4 arg3;
-        bool arg4;
-        ok &= luaval_to_object<cocos2d::Physics3DRigidBody>(tolua_S, 2, "cc.Physics3DRigidBody",&arg0, "cc.Physics3DSliderConstraint:create");
-        ok &= luaval_to_object<cocos2d::Physics3DRigidBody>(tolua_S, 3, "cc.Physics3DRigidBody",&arg1, "cc.Physics3DSliderConstraint:create");
-        ok &= luaval_to_mat4(tolua_S, 4, &arg2, "cc.Physics3DSliderConstraint:create");
-        ok &= luaval_to_mat4(tolua_S, 5, &arg3, "cc.Physics3DSliderConstraint:create");
-        ok &= luaval_to_boolean(tolua_S, 6,&arg4, "cc.Physics3DSliderConstraint:create");
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DSliderConstraint_create'", nullptr);
-            return 0;
-        }
-        auto&& ret = cocos2d::Physics3DSliderConstraint::create(arg0, arg1, arg2, arg3, arg4);
-        object_to_luaval<cocos2d::Physics3DSliderConstraint>(tolua_S, "cc.Physics3DSliderConstraint",(cocos2d::Physics3DSliderConstraint*)ret);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DSliderConstraint:create",argc, 5);
-    return 0;
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_physics3d_Physics3DSliderConstraint_create'.",&tolua_err);
-#endif
-    return 0;
-}
-
 int lua_cc_physics3d_Physics3DConeTwistConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
@@ -960,7 +915,6 @@ int register_all_cc_physics3d_retained(lua_State* L)
     lua_getfield(L, LUA_REGISTRYINDEX, "cc.Physics3DSliderConstraint");
     if (lua_istable(L, -1)) {
         tolua_function(L, "new", lua_cc_physics3d_Physics3DSliderConstraint_constructor);
-        tolua_function(L, "create", lua_cc_physics3d_Physics3DSliderConstraint_create);
     }
     lua_pop(L, 1);
     lua_getfield(L, LUA_REGISTRYINDEX, "cc.Physics3DConeTwistConstraint");
