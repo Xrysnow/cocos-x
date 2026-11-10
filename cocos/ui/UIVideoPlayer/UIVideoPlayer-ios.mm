@@ -36,6 +36,9 @@ using namespace cocos2d::ui;
 #    import <AVKit/AVPlayerViewController.h>
 #    import <CoreMedia/CMTime.h>
     #include "base/CCDirector.h"
+    #include "base/CCRefPtr.h"
+    #include <cmath>
+    #include <limits>
     #include "platform/CCFileUtils.h"
 
 @interface UIVideoViewWrapperIos : NSObject
@@ -67,6 +70,7 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
 
 - (id)init:(void*)videoPlayer;
 - (void)videoFinished:(NSNotification*)notification;
+- (void)invalidate;
 
 @end
 
@@ -88,6 +92,7 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
     if (self = [super init])
     {
         self.playerController = [AVPlayerViewController new];
+        if (!self.playerController) { [self release]; return nil; }
 
         [self setRepeatEnabled:FALSE];
         [self showPlaybackControls:TRUE];
@@ -101,10 +106,15 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
     return self;
 }
 
-- (void)dealloc
+- (void)invalidate
 {
     _videoPlayer = nullptr;
     [self clean];
+}
+
+- (void)dealloc
+{
+    [self invalidate];
     [self.playerController release];
     [super dealloc];
 }
@@ -184,17 +194,21 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
 
 - (void)videoFinished:(NSNotification*)notification
 {
-    if (_videoPlayer != nullptr)
+    // Lua may release the final VideoPlayer reference while handling COMPLETED.
+    // Keep the wrapper alive, and check its detached owner before looping.
+    [self retain];
+    _state = PlayerbackStateCompleted;
+    if (_videoPlayer)
     {
+        cocos2d::RefPtr<VideoPlayer> keepAlive(_videoPlayer);
         _videoPlayer->onPlayEvent((int)VideoPlayer::EventType::COMPLETED);
-        _state = PlayerbackStateCompleted;
-
-        if (_repeatEnabled)
+        if (_videoPlayer && _repeatEnabled)
         {
             [self seekTo:0];
             [self play];
         }
     }
+    [self release];
 }
 
 - (void)seekTo:(float)sec
@@ -289,16 +303,24 @@ VideoPlayer::VideoPlayer()
     #endif
 }
 
+bool VideoPlayer::init()
+{
+    return _videoContext && Widget::init();
+}
+
 VideoPlayer::~VideoPlayer()
 {
     if (_videoContext)
     {
-        [((UIVideoViewWrapperIos*)_videoContext) dealloc];
+        [((UIVideoViewWrapperIos*)_videoContext) invalidate];
+        [((UIVideoViewWrapperIos*)_videoContext) release];
+        _videoContext = nullptr;
     }
 }
 
 void VideoPlayer::setFileName(std::string_view fileName)
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     _videoURL    = FileUtils::getInstance()->fullPathForFilename(fileName);
     _videoSource = VideoPlayer::Source::FILENAME;
     [((UIVideoViewWrapperIos*)_videoContext) setURL:(int) _videoSource:_videoURL];
@@ -306,6 +328,7 @@ void VideoPlayer::setFileName(std::string_view fileName)
 
 void VideoPlayer::setURL(std::string_view videoUrl)
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     _videoURL    = videoUrl;
     _videoSource = VideoPlayer::Source::URL;
     [((UIVideoViewWrapperIos*)_videoContext) setURL:(int) _videoSource:_videoURL];
@@ -395,6 +418,7 @@ void VideoPlayer::setKeepAspectRatioEnabled(bool enable)
 
 void VideoPlayer::play()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) play];
@@ -403,6 +427,7 @@ void VideoPlayer::play()
 
 void VideoPlayer::pause()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) pause];
@@ -411,6 +436,7 @@ void VideoPlayer::pause()
 
 void VideoPlayer::resume()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) resume];
@@ -419,6 +445,7 @@ void VideoPlayer::resume()
 
 void VideoPlayer::stop()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) stop];
@@ -427,6 +454,8 @@ void VideoPlayer::stop()
 
 void VideoPlayer::seekTo(float sec)
 {
+    if (!std::isfinite(sec) || sec < 0 ||
+        static_cast<double>(sec) >= static_cast<double>(std::numeric_limits<int64_t>::max())) return;
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) seekTo:sec];
@@ -464,6 +493,7 @@ void VideoPlayer::setVisible(bool visible)
 
 void VideoPlayer::onEnter()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     Widget::onEnter();
     if (isVisible())
     {
@@ -473,6 +503,7 @@ void VideoPlayer::onEnter()
 
 void VideoPlayer::onExit()
 {
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
     Widget::onExit();
     [((UIVideoViewWrapperIos*)_videoContext) setVisible:NO];
 }
@@ -484,19 +515,11 @@ void VideoPlayer::addEventListener(const VideoPlayer::ccVideoPlayerCallback& cal
 
 void VideoPlayer::onPlayEvent(int event)
 {
-    if (event == (int)VideoPlayer::EventType::PLAYING)
-    {
-        _isPlaying = true;
-    }
-    else
-    {
-        _isPlaying = false;
-    }
-
-    if (_eventCallback)
-    {
-        _eventCallback(this, (VideoPlayer::EventType)event);
-    }
+    if (event < static_cast<int>(EventType::PLAYING) || event > static_cast<int>(EventType::ERROR)) return;
+    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    _isPlaying = event == static_cast<int>(EventType::PLAYING);
+    const auto callback = _eventCallback;
+    if (callback) callback(this, static_cast<EventType>(event));
 }
 
 cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
@@ -506,21 +529,16 @@ cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
 
 void VideoPlayer::copySpecialProperties(Widget* widget)
 {
-    VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(widget);
-    if (videoPlayer)
-    {
-        _isPlaying              = videoPlayer->_isPlaying;
-        _isLooping              = videoPlayer->_isLooping;
-        _isUserInputEnabled     = videoPlayer->_isUserInputEnabled;
-        _styleType              = videoPlayer->_styleType;
-        _fullScreenEnabled      = videoPlayer->_fullScreenEnabled;
-        _fullScreenDirty        = videoPlayer->_fullScreenDirty;
-        _videoURL               = videoPlayer->_videoURL;
-        _keepAspectRatioEnabled = videoPlayer->_keepAspectRatioEnabled;
-        _videoSource            = videoPlayer->_videoSource;
-        _videoPlayerIndex       = videoPlayer->_videoPlayerIndex;
-        _eventCallback          = videoPlayer->_eventCallback;
-    }
+    const auto model = dynamic_cast<VideoPlayer*>(widget);
+    if (!model) return;
+    setLooping(model->_isLooping);
+    setUserInputEnabled(model->_isUserInputEnabled);
+    setStyle(model->_styleType);
+    setKeepAspectRatioEnabled(model->_keepAspectRatioEnabled);
+    setFullScreenEnabled(model->_fullScreenEnabled);
+    if (model->_videoSource == Source::FILENAME) setFileName(model->_videoURL);
+    else setURL(model->_videoURL);
+    addEventListener(model->_eventCallback);
 }
 
 #endif

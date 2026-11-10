@@ -30,6 +30,13 @@
     #include <unordered_map>
     #include <stdlib.h>
     #include <string>
+    #include <cmath>
+    #include <limits>
+    #include "base/CCScheduler.h"
+    #include "base/CCEventDispatcher.h"
+    #include "base/CCEventListenerCustom.h"
+    #include "base/CCRefPtr.h"
+    #include "ui/UIVideoPlayer/VideoPlayerEventQueue.h"
     #include "base/CCDirector.h"
     #include "base/CCEventListenerKeyboard.h"
     #include "platform/CCFileUtils.h"
@@ -199,6 +206,15 @@ enum class VideoSampleFormat
     YUY2,
     NV12,
 };
+using PlayerEventQueue = cocos2d::ui::detail::VideoPlayerEventQueue<VideoPlayer, VideoPlayer::EventType>;
+
+struct VideoSampleBuffer
+{
+    tlx::byte_buffer data;
+    std::recursive_mutex mutex;
+    bool dirty = false;
+};
+
 struct PrivateVideoDescriptor
 {
     MFMediaPlayer* _vplayer = nullptr;
@@ -206,9 +222,10 @@ struct PrivateVideoDescriptor
     Sprite* _vrender        = nullptr;
 
     VideoSampleFormat _sampleFormat = VideoSampleFormat::UNKNOWN;
-    tlx::byte_buffer _sampleBuffer;
-    std::recursive_mutex _sampleBufferMtx;
-    bool _sampleDirty = false;
+    std::shared_ptr<VideoSampleBuffer> _samples = std::make_shared<VideoSampleBuffer>();
+    std::shared_ptr<PlayerEventQueue> _events;
+    Scheduler* _scheduler = nullptr;
+    EventListenerCustom* _resetListener = nullptr;
 
     bool _scaleDirty = false;
 
@@ -217,10 +234,27 @@ struct PrivateVideoDescriptor
 
     Vec2 _originalViewSize;
 
+    void resetSamples()
+    {
+        // A sampler may outlive its session briefly. Its weak buffer belongs to
+        // that session only, so late samples cannot overwrite a replacement.
+        _samples = std::make_shared<VideoSampleBuffer>();
+        if (!_vplayer) return;
+        const std::weak_ptr<VideoSampleBuffer> samples = _samples;
+        _vplayer->SampleEvent = [samples](uint8_t* buffer, size_t len) {
+            if (auto state = samples.lock())
+            {
+                std::lock_guard<std::recursive_mutex> lock(state->mutex);
+                state->data.assign(buffer, buffer + len);
+                state->dirty = true;
+            }
+        };
+    }
+
     void closePlayer()
     {
-        if (_vplayer)
-            _vplayer->Close();
+        if (_vplayer) _vplayer->Close();
+        resetSamples();
     }
 
     void rescaleTo(VideoPlayer* videoView)
@@ -272,79 +306,86 @@ VideoPlayer::VideoPlayer()
 {
     auto pvd      = new PrivateVideoDescriptor{};
     _videoContext = pvd;
+    pvd->_scheduler = _director->getScheduler();
+    pvd->_scheduler->retain();
+    pvd->_events = PlayerEventQueue::create(this, [](VideoPlayer* owner,
+        const PlayerEventQueue::Callback& callback, EventType event) {
+        RefPtr<VideoPlayer> keepAlive(owner);
+        if (event == EventType::PLAYING && owner->_isPlaying) return;
+        owner->_isPlaying = event == EventType::PLAYING;
+        if (callback) callback(owner, event);
+    });
+    const std::weak_ptr<PlayerEventQueue> events = pvd->_events;
+    pvd->_resetListener = _eventDispatcher->addCustomEventListener(Director::EVENT_RESET,
+        [this](EventCustom*) {
+            RefPtr<VideoPlayer> keepAlive(this);
+            const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
+            state->_events->shutdown();
+            _isPlaying = false;
+            if (state->_vplayer) state->_vplayer->Shutdown();
+            state->_samples = std::make_shared<VideoSampleBuffer>();
+        });
     #if CC_VIDEOPLAYER_DEBUG_DRAW
     _debugDrawNode = DrawNode::create();
     addChild(_debugDrawNode);
     #endif
 
-    // Initialize mediaPlayer backend
-    auto hr = MFMediaPlayer::CreateInstance(&pvd->_vplayer);
-    if (SUCCEEDED(hr))
-    {
-        /// create video render sprite
-        pvd->_vrender = new Sprite();
-        this->addProtectedChild(pvd->_vrender);
-        /// setup media session callbacks
-        // Invoke at system media session thread
-        pvd->_vplayer->SampleEvent = [=](uint8_t* sampleBuffer, size_t len) {
-            std::lock_guard<std::recursive_mutex> lck(pvd->_sampleBufferMtx);
-            pvd->_sampleBuffer.assign(sampleBuffer, sampleBuffer + len);
-            pvd->_sampleDirty = true;
-        };
-        pvd->_vplayer->SessionEvent = [=](int event) {
-            switch (event)
-            {
-            case MESessionStarted:
-                if (!isPlaying())
-                    onPlayEvent((int)EventType::PLAYING);
-                break;
-
-            case MESessionPaused:
-                onPlayEvent((int)EventType::PAUSED);
-                break;
-
-            case MESessionStopped:
-                onPlayEvent((int)EventType::STOPPED);
-                break;
-
-            /* Raised by a media source when a presentation ends. This event signals that all streams in the
-            presentation are complete. The Media Session forwards this event to the application. */
-            // case MEEndOfPresentation:
-            //    onPlayEvent((int)EventType::COMPLETED);
-            //    break;
-
-            /* Raised by the Media Session when it has finished playing the last presentation in the playback queue.
-             * We send complete event at this case
-             */
-            case MESessionEnded:
-                onPlayEvent((int)EventType::COMPLETED);
-                break;
-            }
-        };
-    }
-    else
+    // The backend callbacks are installed before opening a session. SessionEvent
+    // is immutable; SampleEvent changes only after Close has detached the old
+    // session. Neither producer captures a VideoPlayer or its descriptor.
+    const auto hr = MFMediaPlayer::CreateInstance(&pvd->_vplayer);
+    if (FAILED(hr))
     {
         cocos2d::log("Create VideoPlayer backend failed, hr=%d", (int)hr);
+        return;
     }
+    pvd->_vrender = new Sprite();
+    addProtectedChild(pvd->_vrender);
+    pvd->resetSamples();
+    auto scheduler = pvd->_scheduler;
+    pvd->_vplayer->SessionEvent = [events, scheduler](int event) {
+        EventType notification;
+        switch (event)
+        {
+        case MESessionStarted: notification = EventType::PLAYING; break;
+        case MESessionPaused: notification = EventType::PAUSED; break;
+        case MESessionStopped: notification = EventType::STOPPED; break;
+        case MESessionEnded: notification = EventType::COMPLETED; break;
+        case MEError: notification = EventType::ERROR; break;
+        default: return;
+        }
+        if (auto queue = events.lock())
+            queue->post(notification, [scheduler](PlayerEventQueue::Task task) {
+                scheduler->performFunctionInCocosThread(std::move(task));
+            });
+    };
+}
+
+bool VideoPlayer::init()
+{
+    const auto pvd = static_cast<PrivateVideoDescriptor*>(_videoContext);
+    return pvd && pvd->_vplayer && Widget::init();
 }
 
 VideoPlayer::~VideoPlayer()
 {
-    auto pvd = (PrivateVideoDescriptor*)_videoContext;
-
-    removeAllProtectedChildren();
-
+    auto pvd = static_cast<PrivateVideoDescriptor*>(_videoContext);
+    if (!pvd) return;
+    // Stop accepting work before closing the media session. In-flight producers
+    // can only hold shared sample/notification state, never this descriptor.
+    pvd->_events->shutdown();
+    _eventDispatcher->removeEventListener(pvd->_resetListener);
     if (pvd->_vplayer)
     {
         pvd->_vplayer->Shutdown();
         pvd->_vplayer->Release();
     }
-    if (pvd->_vrender)
-        pvd->_vrender->release();
-    if (pvd->_vtexture)
-        pvd->_vtexture->release();
-
+    removeAllProtectedChildren();
+    if (pvd->_vrender) pvd->_vrender->release();
+    if (pvd->_vtexture) pvd->_vtexture->release();
+    pvd->_scheduler->release();
     delete pvd;
+    _videoContext = nullptr;
 }
 
 void VideoPlayer::setFileName(std::string_view fileName)
@@ -352,7 +393,10 @@ void VideoPlayer::setFileName(std::string_view fileName)
     auto fullPath = FileUtils::getInstance()->fullPathForFilename(fileName);
     if (fullPath != _videoURL)
     {
-        reinterpret_cast<PrivateVideoDescriptor*>(_videoContext)->closePlayer();
+        const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
+        state->closePlayer();
+        state->_events->invalidate();
+        _isPlaying = false;
         _videoURL = std::move(fullPath);
     }
     _videoSource = VideoPlayer::Source::FILENAME;
@@ -362,7 +406,10 @@ void VideoPlayer::setURL(std::string_view videoUrl)
 {
     if (_videoURL != videoUrl)
     {
-        reinterpret_cast<PrivateVideoDescriptor*>(_videoContext)->closePlayer();
+        const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
+        state->closePlayer();
+        state->_events->invalidate();
+        _isPlaying = false;
         _videoURL = videoUrl;
     }
     _videoSource = VideoPlayer::Source::URL;
@@ -395,14 +442,20 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
     auto vrender = pvd->_vrender;
     if (!vrender)
         return;
-    if (pvd->_sampleDirty)
+    tlx::byte_buffer sampleBuffer;
+    bool sampleDirty;
     {
-        pvd->_sampleDirty = false;
+        std::lock_guard<std::recursive_mutex> sampleLock(pvd->_samples->mutex);
+        sampleDirty = pvd->_samples->dirty;
+        pvd->_samples->dirty = false;
+        if (sampleDirty && vrender->isVisible()) sampleBuffer = std::move(pvd->_samples->data);
+    }
+    if (sampleDirty)
+    {
         if (vrender->isVisible())
         {
-            std::lock_guard<std::recursive_mutex> lck(pvd->_sampleBufferMtx);
-            uint8_t* sampleData  = pvd->_sampleBuffer.data();
-            size_t sampleDataLen = pvd->_sampleBuffer.size();
+            uint8_t* sampleData  = sampleBuffer.data();
+            size_t sampleDataLen = sampleBuffer.size();
             auto rWidth = pvd->_videoWidth = pvd->_vplayer->GetVideoWidth();
             auto rHeight = pvd->_videoHeight = pvd->_vplayer->GetVideoHeight();
 
@@ -415,7 +468,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
 
                 auto programManager = ProgramManager::getInstance();
 
-                auto& sampleOutFormat = pvd->_vplayer->GetVideoOutputFormat();
+                const auto sampleOutFormat = pvd->_vplayer->GetVideoOutputFormat();
 
                 if (sampleOutFormat == MFVideoFormat_YUY2)
                     pvd->_sampleFormat = VideoSampleFormat::YUY2;
@@ -542,6 +595,8 @@ void VideoPlayer::setKeepAspectRatioEnabled(bool enable)
 
 void VideoPlayer::setPlayRate(float fRate)
 {
+    if (!std::isfinite(fRate)) return;
+    _playRate = fRate;
     if (!_videoURL.empty())
     {
         auto vplayer = reinterpret_cast<PrivateVideoDescriptor*>(_videoContext)->_vplayer;
@@ -561,8 +616,11 @@ void VideoPlayer::play()
             {
             case MFPlayerState::Closed:
             case MFPlayerState::Ready:
+                static_cast<PrivateVideoDescriptor*>(_videoContext)->resetSamples();
                 vplayer->SetPlayOnOpen(TRUE);
-                vplayer->OpenURL(ntcvt::from_chars(_videoURL).c_str());
+                const auto hr = vplayer->OpenURL(ntcvt::from_chars(_videoURL).c_str());
+                if (FAILED(hr)) onPlayEvent(static_cast<int>(EventType::ERROR));
+                else vplayer->SetRate(_playRate);
                 break;
             default:
                 vplayer->Play();
@@ -610,11 +668,13 @@ void VideoPlayer::stop()
 
 void VideoPlayer::seekTo(float sec)
 {
+    if (!std::isfinite(sec) || sec < 0 ||
+        static_cast<double>(sec) * 10000000.0 >= static_cast<double>(std::numeric_limits<MFTIME>::max())) return;
     if (!_videoURL.empty())
     {
         auto vplayer = reinterpret_cast<PrivateVideoDescriptor*>(_videoContext)->_vplayer;
         if (vplayer)
-            vplayer->SetPosition(static_cast<MFTIME>((std::nano::den / 100) * sec));
+            vplayer->SetPosition(static_cast<MFTIME>(static_cast<double>(sec) * 10000000.0));
     }
 }
 
@@ -640,28 +700,33 @@ void VideoPlayer::setVisible(bool visible)
 
 void VideoPlayer::onEnter()
 {
+    RefPtr<VideoPlayer> keepAlive(this);
+    static_cast<PrivateVideoDescriptor*>(_videoContext)->_events->activate(this);
     Widget::onEnter();
 }
 
 void VideoPlayer::onExit()
 {
+    RefPtr<VideoPlayer> keepAlive(this);
+    const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
+    state->_events->deactivate();
+    state->closePlayer();
+    _isPlaying = false;
     Widget::onExit();
 }
 
 void VideoPlayer::addEventListener(const VideoPlayer::ccVideoPlayerCallback& callback)
 {
-    _eventCallback = callback;
+    static_cast<PrivateVideoDescriptor*>(_videoContext)->_events->setCallback(callback);
 }
 
 void VideoPlayer::onPlayEvent(int event)
 {
-    _isPlaying = (event == (int)VideoPlayer::EventType::PLAYING);
-
-    if (_eventCallback)
-    {
-        _director->getScheduler()->performFunctionInCocosThread(
-            std::bind(_eventCallback, this, (VideoPlayer::EventType)event));
-    }
+    if (event < static_cast<int>(EventType::PLAYING) || event > static_cast<int>(EventType::ERROR)) return;
+    auto pvd = static_cast<PrivateVideoDescriptor*>(_videoContext);
+    pvd->_events->post(static_cast<EventType>(event), [pvd](PlayerEventQueue::Task task) {
+        pvd->_scheduler->performFunctionInCocosThread(std::move(task));
+    });
 }
 
 cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
@@ -671,21 +736,17 @@ cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
 
 void VideoPlayer::copySpecialProperties(Widget* widget)
 {
-    VideoPlayer* videoPlayer = dynamic_cast<VideoPlayer*>(widget);
-    if (videoPlayer)
-    {
-        _isPlaying              = videoPlayer->_isPlaying;
-        _isLooping              = videoPlayer->_isLooping;
-        _isUserInputEnabled     = videoPlayer->_isUserInputEnabled;
-        _styleType              = videoPlayer->_styleType;
-        _fullScreenEnabled      = videoPlayer->_fullScreenEnabled;
-        _fullScreenDirty        = videoPlayer->_fullScreenDirty;
-        _videoURL               = videoPlayer->_videoURL;
-        _keepAspectRatioEnabled = videoPlayer->_keepAspectRatioEnabled;
-        _videoSource            = videoPlayer->_videoSource;
-        _videoPlayerIndex       = videoPlayer->_videoPlayerIndex;
-        _eventCallback          = videoPlayer->_eventCallback;
-    }
+    const auto model = dynamic_cast<VideoPlayer*>(widget);
+    if (!model) return;
+    setLooping(model->_isLooping);
+    setUserInputEnabled(model->_isUserInputEnabled);
+    setStyle(model->_styleType);
+    setKeepAspectRatioEnabled(model->_keepAspectRatioEnabled);
+    setFullScreenEnabled(model->_fullScreenEnabled);
+    if (model->_videoSource == Source::FILENAME) setFileName(model->_videoURL);
+    else setURL(model->_videoURL);
+    setPlayRate(model->_playRate);
+    addEventListener(static_cast<PrivateVideoDescriptor*>(model->_videoContext)->_events->getCallback());
 }
 
 #endif

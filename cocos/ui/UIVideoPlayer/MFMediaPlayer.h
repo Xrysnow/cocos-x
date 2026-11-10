@@ -99,6 +99,7 @@ class MFMediaPlayer : public IMFAsyncCallback
     };
 
 public:
+    // Install before OpenURL; change these only after Close detaches the session.
     SampleEventCallback SampleEvent;
     SessionEventCallback SessionEvent;
 
@@ -123,17 +124,17 @@ public:
     HRESULT Close();
     HRESULT Shutdown();
     HRESULT HandleEvent(IMFMediaEvent* pUnkPtr);
-    MFPlayerState GetState() const { return m_state; }
+    MFPlayerState GetState() const { AutoLock lock(m_critsec); return m_state; }
 
-    UINT32 GetVideoWidth() const { return m_uVideoWidth; }
-    UINT32 GetVideoHeight() const { return m_uVideoHeight; }
+    UINT32 GetVideoWidth() const { AutoLock lock(m_critsec); return m_uVideoWidth; }
+    UINT32 GetVideoHeight() const { AutoLock lock(m_critsec); return m_uVideoHeight; }
 
-    const GUID& GetVideoOutputFormat() const { return m_VideoOutputFormat; }
+    GUID GetVideoOutputFormat() const { AutoLock lock(m_critsec); return m_VideoOutputFormat; }
 
     // Video functionality
-    void SetLooping(BOOL bLooping) { m_bLooping = bLooping; }
+    void SetLooping(BOOL bLooping) { AutoLock lock(m_critsec); m_bLooping = bLooping; }
 
-    void SetPlayOnOpen(BOOL bPlayOnOpen) { m_bPlayOnOpen = bPlayOnOpen; }
+    void SetPlayOnOpen(BOOL bPlayOnOpen) { AutoLock lock(m_critsec); m_bPlayOnOpen = bPlayOnOpen; }
 
     BOOL CanSeek() const;
     MFTIME GetDuration() const;
@@ -156,7 +157,7 @@ public:
     HRESULT Pause();
     HRESULT Stop();
 
-    BOOL IsH264() const { return m_bIsH264; }
+    BOOL IsH264() const { AutoLock lock(m_critsec); return m_bIsH264; }
 
 protected:
     HRESULT SetPositionInternal(const MFTIME& hnsPosition);
@@ -226,6 +227,8 @@ protected:
     HWND m_hwndEvent;      // App window to receive events.
     MFPlayerState m_state;  // Current state of the media session.
     HANDLE m_hCloseEvent;  // Event to wait on while closing
+    bool m_platformStarted = false;
+    bool m_shutdown = false;
 
     UINT32 m_uVideoWidth  = 0;
     UINT32 m_uVideoHeight = 0;

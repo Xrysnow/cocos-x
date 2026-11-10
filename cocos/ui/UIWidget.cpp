@@ -1124,6 +1124,8 @@ std::string Widget::getDescription() const
 Widget* Widget::clone()
 {
     Widget* clonedWidget = createCloneInstance();
+    if (!clonedWidget)
+        return nullptr;
     clonedWidget->copyProperties(this);
     clonedWidget->copyClonedWidgetChildren(this);
     return clonedWidget;
@@ -1143,7 +1145,8 @@ void Widget::copyClonedWidgetChildren(Widget* model)
         Widget* child = dynamic_cast<Widget*>(subWidget);
         if (child)
         {
-            addChild(child->clone());
+            if (auto clonedChild = child->clone())
+                addChild(clonedChild);
         }
     }
 }

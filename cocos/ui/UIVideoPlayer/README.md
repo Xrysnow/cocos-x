@@ -40,8 +40,8 @@ All player and view operations execute on Android's UI thread. Events return
 through the CocosEngine dispatcher before touching C++ or Lua. Independent
 handles, command generations, media-player identities and host epochs reject
 callbacks from replaced sources, destroyed nodes and previous activities.
-Clones allocate independent handles and begin stopped without inherited
-listeners.
+Clones allocate independent handles and begin stopped. They copy the event
+callable; each clone has an independently replaceable listener slot.
 
 Scene exit, visibility changes (including hidden ancestors), activity pause
 and surface loss suspend output without replacing the user's play/pause

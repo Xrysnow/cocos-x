@@ -180,6 +180,7 @@ HRESULT MFMediaPlayer::CreateInstance(MFMediaPlayer** ppPlayer, HWND hwndEvent)
         return E_POINTER;
     }
 
+    *ppPlayer = nullptr;
     HRESULT hr = S_OK;
 
     auto pPlayer = new MFMediaPlayer(hwndEvent);
@@ -253,6 +254,7 @@ HRESULT MFMediaPlayer::Initialize()
 
     // Start up Media Foundation platform.
     CHECK_HR(hr = MFStartup(MF_VERSION));
+    m_platformStarted = true;
 
     m_hCloseEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (m_hCloseEvent == NULL)
@@ -331,73 +333,68 @@ HRESULT MFMediaPlayer::OpenURL(const WCHAR* sURL)
     // 4. Queue the topology [asynchronous]
     // 5. Start playback [asynchronous - does not happen in this method.]
 
-    HRESULT hr = S_OK;
-    TComPtr<IMFTopology> pTopology;
-    TComPtr<IMFClock> pClock;
-
-    // Create the media session.
-    CHECK_HR(hr = CreateSession());
-
-    // Create the media source.
-    CHECK_HR(hr = CreateMediaSource(sURL));
-
-    // Create a partial topology.
-    CHECK_HR(hr = CreateTopologyFromSource(&pTopology));
-
-    // Set the topology on the media session.
-    CHECK_HR(hr = m_pSession->SetTopology(0, pTopology.Get()));
-
-    // If SetTopology succeeded, the media session will queue an
-    // MESessionTopologySet event.
-
-    // ======> Read media properties
-    // Get the session capabilities.
-    CHECK_HR(hr = m_pSession->GetSessionCapabilities(&m_caps));
-
-    // Get the duration from the presentation descriptor (optional)
-    (void)m_PresentDescriptor->GetUINT64(MF_PD_DURATION, (UINT64*)&m_hnsDuration);
-
-    // Get the presentation clock (optional)
-    hr = m_pSession->GetClock(&pClock);
-    if (SUCCEEDED(hr))
-        CHECK_HR(hr = pClock->QueryInterface(IID_PPV_ARGS(&m_pClock)));
-
-    // Get the rate control interface (optional)
-    CHECK_HR(hr = MFGetService(m_pSession.Get(), MF_RATE_CONTROL_SERVICE, IID_PPV_ARGS(&m_RateControl)));
-
-    CHECK_HR(hr = MFGetService(m_pSession.Get(), MF_RATE_CONTROL_SERVICE, IID_PPV_ARGS(&m_RateSupport)));
-
-    // Check if rate 0 (scrubbing) is supported.
-    if (SUCCEEDED(m_RateSupport->IsRateSupported(TRUE, 0, NULL)))
-        m_bCanScrub = TRUE;
-
-    // if m_pRate is NULL, m_bCanScrub must be FALSE.
-    assert(m_RateControl || !m_bCanScrub);
-
-    // Set our state to "open pending"
-    m_state = MFPlayerState::OpenPending;
-
-done:
-    if (FAILED(hr))
+    // Never hold the state lock while waiting for MESessionClosed: Invoke
+    // needs it to signal the close event. Control operations run on cocos.
+    HRESULT hr = CloseSession();
+    if (FAILED(hr)) return hr;
     {
-        m_state = MFPlayerState::Closed;
+        AutoLock lock(m_critsec);
+        if (m_shutdown) return MF_E_SHUTDOWN;
+        TComPtr<IMFTopology> pTopology;
+        TComPtr<IMFClock> pClock;
+
+        // Create the media session.
+        CHECK_HR(hr = CreateSession());
+
+        // Create the media source.
+        CHECK_HR(hr = CreateMediaSource(sURL));
+
+        // Create a partial topology.
+        CHECK_HR(hr = CreateTopologyFromSource(&pTopology));
+
+        // Set the topology on the media session.
+        CHECK_HR(hr = m_pSession->SetTopology(0, pTopology.Get()));
+
+        // If SetTopology succeeded, the media session will queue an
+        // MESessionTopologySet event.
+
+        // ======> Read media properties
+        // Get the session capabilities.
+        CHECK_HR(hr = m_pSession->GetSessionCapabilities(&m_caps));
+
+        // Get the duration from the presentation descriptor (optional)
+        (void)m_PresentDescriptor->GetUINT64(MF_PD_DURATION, (UINT64*)&m_hnsDuration);
+
+        // Get the presentation clock (optional)
+        hr = m_pSession->GetClock(&pClock);
+        if (SUCCEEDED(hr))
+            CHECK_HR(hr = pClock->QueryInterface(IID_PPV_ARGS(&m_pClock)));
+
+        // Get the rate control interface (optional)
+        CHECK_HR(hr = MFGetService(m_pSession.Get(), MF_RATE_CONTROL_SERVICE, IID_PPV_ARGS(&m_RateControl)));
+
+        CHECK_HR(hr = MFGetService(m_pSession.Get(), MF_RATE_CONTROL_SERVICE, IID_PPV_ARGS(&m_RateSupport)));
+
+        // Check if rate 0 (scrubbing) is supported.
+        if (SUCCEEDED(m_RateSupport->IsRateSupported(TRUE, 0, NULL)))
+            m_bCanScrub = TRUE;
+
+        // if m_pRate is NULL, m_bCanScrub must be FALSE.
+        assert(m_RateControl || !m_bCanScrub);
+
+        // Set our state to "open pending"
+        m_state = MFPlayerState::OpenPending;
+
+    done:
+        ;
     }
-
-    // SAFE_RELEASE(pTopology);
-
+    if (FAILED(hr)) CloseSession();
     return hr;
 }
 
 HRESULT MFMediaPlayer::Close()
 {
-    HRESULT hr = S_OK;
-    auto state = GetState();
-    if (state > MFPlayerState::Ready && state < MFPlayerState::Closing)
-    {
-        Stop();
-        hr = CloseSession();
-    }
-    return hr;
+    return CloseSession();
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -409,55 +406,29 @@ HRESULT MFMediaPlayer::Close()
 
 HRESULT MFMediaPlayer::Invoke(IMFAsyncResult* pResult)
 {
-    HRESULT hr            = S_OK;
-    MediaEventType meType = MEUnknown;  // Event type
+    // The async state holds the actual originating session. A late callback
+    // must never consume an event from a replacement session or a reset pointer.
+    TComPtr<IUnknown> state;
+    TComPtr<IMFMediaSession> session;
+    TComPtr<IMFMediaEvent> event;
+    MediaEventType type = MEUnknown;
+    if (FAILED(pResult->GetState(&state)) || !state ||
+        FAILED(state.As(&session)) || FAILED(session->EndGetEvent(pResult, &event)) ||
+        FAILED(event->GetType(&type))) return S_OK;
 
-    TComPtr<IMFMediaEvent> pEvent;
-
-    // Get the event from the event queue.
-    CHECK_HR(hr = m_pSession->EndGetEvent(pResult, &pEvent));
-
-    // Get the event type.
-    CHECK_HR(hr = pEvent->GetType(&meType));
-
-    // If the session is closed, the application is waiting on the
-    // m_hCloseEvent event handle. Also, do not get any more
-    // events from the session.
-
-    if (meType == MESessionClosed)
+    AutoLock lock(m_critsec);
+    if (session.Get() != m_pSession.Get()) return S_OK;
+    if (type == MESessionClosed)
     {
-        SetEvent(m_hCloseEvent);
+        if (m_hCloseEvent) SetEvent(m_hCloseEvent);
+        return S_OK;
     }
-    else
+    const auto hr = session->BeginGetEvent(this, session.Get());
+    if (!m_shutdown && m_state != MFPlayerState::Closing)
     {
-        // For all other events, ask the media session for the
-        // next event in the queue.
-        CHECK_HR(hr = m_pSession->BeginGetEvent(this, NULL));
+        HandleEvent(event.Get());
+        if (FAILED(hr) && SessionEvent) SessionEvent(MEError);
     }
-
-    // For most events, we post the event as a private window message to the
-    // application. This lets the application process the event on it's
-    // main thread.
-
-    // However, if call to IMFMediaSession::Close is pending, it means the
-    // application is waiting on the m_hCloseEvent event handle. (Blocking
-    // call.) In that case, we simply discard the event.
-
-    // NOTE: When IMFMediaSession::Close is called, MESessionClosed is NOT
-    // necessarily the next event that we will receive. We may receive
-    // any number of other events before receiving MESessionClosed.
-    if (m_state != MFPlayerState::Closing)
-    {
-        HandleEvent(pEvent.Get());
-
-        // if (!m_hwndEvent)
-        //    HandleEvent((WPARAM)pEvent.Get());
-        // else
-        //    PostMessage(m_hwndEvent, WM_APP_PLAYER_EVENT, (WPARAM)pEvent.Get(), (LPARAM)0);
-    }
-
-done:
-    // SAFE_RELEASE(pEvent);
     return S_OK;
 }
 
@@ -476,6 +447,7 @@ done:
 
 HRESULT MFMediaPlayer::HandleEvent(IMFMediaEvent* pEvent)
 {
+    AutoLock lock(m_critsec);
     HRESULT hr               = S_OK;
     HRESULT hrStatus         = S_OK;                   // Event status
     MediaEventType meType    = MEUnknown;              // Event type
@@ -568,6 +540,7 @@ HRESULT MFMediaPlayer::HandleEvent(IMFMediaEvent* pEvent)
     else
     {
         hr = hrStatus;
+        if (SessionEvent) SessionEvent(MEError);
     }
 
 done:
@@ -581,22 +554,24 @@ done:
 
 HRESULT MFMediaPlayer::Shutdown()
 {
-    TRACE((L"MFMediaPlayer::ShutDown\n"));
-
-    HRESULT hr = S_OK;
-
-    // Close the session
-    hr = CloseSession();
-
-    // Shutdown the Media Foundation platform
-    MFShutdown();
-
-    if (m_hCloseEvent)
     {
-        CloseHandle(m_hCloseEvent);
-        m_hCloseEvent = NULL;
+        AutoLock lock(m_critsec);
+        if (m_shutdown) return S_OK;
+        m_shutdown = true;
     }
-
+    const auto hr = CloseSession();
+    bool platformStarted;
+    {
+        AutoLock lock(m_critsec);
+        platformStarted = m_platformStarted;
+        m_platformStarted = false;
+        if (m_hCloseEvent)
+        {
+            CloseHandle(m_hCloseEvent);
+            m_hCloseEvent = NULL;
+        }
+    }
+    if (platformStarted) MFShutdown();
     return hr;
 }
 
@@ -636,6 +611,7 @@ HRESULT MFMediaPlayer::OnTopologyReady(IMFMediaEvent* pEvent)
 
 HRESULT MFMediaPlayer::Play()
 {
+    AutoLock stateLock(m_critsec);
     HRESULT hr = S_OK;
 
     TRACE((L"MFMediaPlayer::Play\n"));
@@ -645,8 +621,6 @@ HRESULT MFMediaPlayer::Play()
 
     if (m_pSession == NULL || m_pSource == NULL)
         return E_UNEXPECTED;
-
-    AutoLock lock(m_critsec);
 
     // If another operation is pending, cache the request.
     // Otherwise, start the media session.
@@ -669,12 +643,11 @@ HRESULT MFMediaPlayer::Play()
 
 HRESULT MFMediaPlayer::Pause()
 {
+    AutoLock stateLock(m_critsec);
     HRESULT hr = S_OK;
 
     if (m_pSession == NULL || m_pSource == NULL)
         return E_UNEXPECTED;
-
-    AutoLock lock(m_critsec);
 
     // If another operation is pending, cache the request.
     // Otherwise, pause the media session.
@@ -700,12 +673,11 @@ HRESULT MFMediaPlayer::Pause()
 
 HRESULT MFMediaPlayer::Stop()
 {
+    AutoLock stateLock(m_critsec);
     HRESULT hr = S_OK;
 
     if (m_pSession == NULL || m_pSource == NULL)
         return E_UNEXPECTED;
-
-    AutoLock lock(m_critsec);
 
     if (m_state == MFPlayerState::Stopped)
         return S_OK;
@@ -732,22 +704,23 @@ HRESULT MFMediaPlayer::Stop()
 
 BOOL MFMediaPlayer::CanSeek() const
 {
+    AutoLock stateLock(m_critsec);
     bool bCanSeek = (((m_caps & MFSESSIONCAP_SEEK) == MFSESSIONCAP_SEEK) && (m_hnsDuration > 0) && (m_pClock != NULL));
     return bCanSeek;
 }
 
 MFTIME MFMediaPlayer::GetDuration() const
 {
+    AutoLock stateLock(m_critsec);
     return m_hnsDuration;
 }
 
 MFTIME MFMediaPlayer::GetCurrentPosition() const
 {
+    AutoLock stateLock(m_critsec);
     HRESULT hr = S_OK;
 
     // TODO:
-    AutoLock lock(m_critsec);
-
     MFTIME hnsPosition = 0;
 
     if (m_pClock == NULL)
@@ -778,7 +751,7 @@ MFTIME MFMediaPlayer::GetCurrentPosition() const
 
 HRESULT MFMediaPlayer::SetPosition(MFTIME hnsPosition)
 {
-    AutoLock lock(m_critsec);
+    AutoLock stateLock(m_critsec);
 
     HRESULT hr = S_OK;
 
@@ -798,14 +771,14 @@ HRESULT MFMediaPlayer::SetPosition(MFTIME hnsPosition)
 
 BOOL MFMediaPlayer::CanScrub() const
 {
+    AutoLock stateLock(m_critsec);
     return m_bCanScrub;
 }
 
 HRESULT MFMediaPlayer::Scrub(BOOL bScrub)
 {
+    AutoLock stateLock(m_critsec);
     // Scrubbing is implemented as rate = 0.
-
-    AutoLock lock(m_critsec);
 
     if (!m_RateControl)
     {
@@ -844,18 +817,21 @@ HRESULT MFMediaPlayer::Scrub(BOOL bScrub)
 
 BOOL MFMediaPlayer::CanFastForward() const
 {
+    AutoLock stateLock(m_critsec);
     BOOL bCanFF = ((m_caps & MFSESSIONCAP_RATE_FORWARD) == MFSESSIONCAP_RATE_FORWARD);
     return bCanFF;
 }
 
 BOOL MFMediaPlayer::CanRewind() const
 {
+    AutoLock stateLock(m_critsec);
     BOOL bCanRewind = ((m_caps & MFSESSIONCAP_RATE_REVERSE) == MFSESSIONCAP_RATE_REVERSE);
     return bCanRewind;
 }
 
 HRESULT MFMediaPlayer::FastForward()
 {
+    AutoLock stateLock(m_critsec);
     if (!m_RateControl)
     {
         return MF_E_INVALIDREQUEST;
@@ -876,6 +852,7 @@ HRESULT MFMediaPlayer::FastForward()
 
 HRESULT MFMediaPlayer::Rewind()
 {
+    AutoLock stateLock(m_critsec);
     if (!m_RateControl)
     {
         return MF_E_INVALIDREQUEST;
@@ -896,10 +873,9 @@ HRESULT MFMediaPlayer::Rewind()
 
 HRESULT MFMediaPlayer::SetRate(float fRate)
 {
+    AutoLock stateLock(m_critsec);
     HRESULT hr = S_OK;
     BOOL bThin = FALSE;
-
-    AutoLock lock(m_critsec);
 
     if (fRate == GetNominalRate())
     {
@@ -1258,9 +1234,6 @@ HRESULT MFMediaPlayer::CreateSession()
     TComPtr<IMFAttributes> pAttributes;
     // IMFActivate   *pEnablerActivate = NULL;
 
-    // Close the old session, if any.
-    CHECK_HR(hr = CloseSession());
-
     assert(m_state == MFPlayerState::Closed);
 
     // Create a new attribute store.
@@ -1270,7 +1243,6 @@ HRESULT MFMediaPlayer::CreateSession()
     CHECK_HR(hr = MFCreateMediaSession(pAttributes.Get(), &m_pSession));
 
     // TODO:
-
     // If MFCreatePMPMediaSession fails it might return an IMFActivate pointer.
     // This indicates that a trusted binary failed to load in the protected process.
     // An application can use the IMFActivate pointer to create an enabler object, which
@@ -1281,7 +1253,7 @@ HRESULT MFMediaPlayer::CreateSession()
     // case as a playback failure.
 
     // Start pulling events from the media session
-    CHECK_HR(hr = m_pSession->BeginGetEvent((IMFAsyncCallback*)this, NULL));
+    CHECK_HR(hr = m_pSession->BeginGetEvent((IMFAsyncCallback*)this, m_pSession.Get()));
 
 done:
     // SAFE_RELEASE(pAttributes);
@@ -1301,56 +1273,44 @@ done:
 
 HRESULT MFMediaPlayer::CloseSession()
 {
-    HRESULT hr = S_OK;
-
-    // SAFE_RELEASE(m_pVideoDisplay);
-
-    if (m_pSession)
+    TComPtr<IMFMediaSession> session;
+    TComPtr<IMFMediaSource> source;
+    HANDLE closeEvent;
     {
-        DWORD dwWaitResult = 0;
-
+        AutoLock lock(m_critsec);
+        session = m_pSession;
+        source = m_pSource;
+        closeEvent = m_hCloseEvent;
         m_state = MFPlayerState::Closing;
+        if (closeEvent) ResetEvent(closeEvent);
+    }
 
-        CHECK_HR(hr = m_pSession->Close());
-
-        // Wait for the close operation to complete
-
-        dwWaitResult = WaitForSingleObject(m_hCloseEvent, 5000);
-
-        if (dwWaitResult == WAIT_TIMEOUT)
+    HRESULT hr = S_OK;
+    if (session)
+    {
+        hr = session->Close();
+        if (SUCCEEDED(hr) && closeEvent)
         {
-            TRACE((L"CloseSession timed out!\n"));
+            const auto waitResult = WaitForSingleObject(closeEvent, 5000);
+            if (waitResult != WAIT_OBJECT_0)
+                hr = HRESULT_FROM_WIN32(waitResult == WAIT_TIMEOUT ? ERROR_TIMEOUT : GetLastError());
         }
-
-        // Now there will be no more events from this session.
+        // Even a failed Close or timeout must shut down and release the session.
+        // Invoke retains its own session snapshot and ignores detached sessions.
+        session->Shutdown();
     }
-
-    // Complete shutdown operations.
-
-    // Shut down the media source. (Synchronous operation, no events.)
-    if (m_pSource)
+    if (source) source->Shutdown();
     {
-        m_pSource->Shutdown();
+        AutoLock lock(m_critsec);
+        m_PresentDescriptor.Reset();
+        m_RateControl.Reset();
+        m_RateSupport.Reset();
+        m_pClock.Reset();
+        m_pSource.Reset();
+        m_pSession.Reset();
+        m_state = MFPlayerState::Closed;
+        m_bPending = FALSE;
     }
-
-    // Shut down the media session. (Synchronous operation, no events.)
-    if (m_pSession)
-    {
-        m_pSession->Shutdown();
-    }
-
-    m_PresentDescriptor.Reset();
-    m_RateControl.Reset();
-    m_RateSupport.Reset();
-    m_pClock.Reset();
-
-    m_pSource.Reset();
-    m_pSession.Reset();
-
-    m_state = MFPlayerState::Closed;
-    m_bPending = false;
-
-done:
     return hr;
 }
 

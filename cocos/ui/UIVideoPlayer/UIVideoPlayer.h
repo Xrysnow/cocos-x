@@ -91,6 +91,7 @@ public:
      *Static create method for instancing a VideoPlayer.
      */
     CREATE_FUNC(VideoPlayer);
+    bool init() override;
 
     /**
      * Sets a file path as a video source for VideoPlayer.
@@ -269,7 +270,8 @@ protected:
     StyleType _styleType = StyleType::DEFAULT;
 
     std::string _videoURL;
-    Source _videoSource;
+    Source _videoSource = Source::FILENAME;
+    float _playRate = 1.0f;
 
     int _videoPlayerIndex                = -1;
     ccVideoPlayerCallback _eventCallback = nullptr;

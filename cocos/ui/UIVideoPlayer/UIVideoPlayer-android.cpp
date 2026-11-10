@@ -148,11 +148,21 @@ VideoPlayer::VideoPlayer()
 #endif
 }
 
+bool VideoPlayer::init()
+{
+    // Java view creation is asynchronous; only native handle allocation and
+    // Widget initialization can be checked synchronously here.
+    return _videoPlayerIndex >= 0 && Widget::init();
+}
+
 VideoPlayer::~VideoPlayer()
 {
     // Revoke native delivery before posting asynchronous UI destruction.
-    players.erase(_videoPlayerIndex);
-    JniHelper::callStaticVoidMethod(videoHelperClassName, "removeVideoWidget", _videoPlayerIndex);
+    if (_videoPlayerIndex >= 0)
+    {
+        players.erase(_videoPlayerIndex);
+        JniHelper::callStaticVoidMethod(videoHelperClassName, "removeVideoWidget", _videoPlayerIndex);
+    }
 }
 
 void VideoPlayer::setFileName(std::string_view fileName)
@@ -333,11 +343,9 @@ void VideoPlayer::copySpecialProperties(Widget* widget)
     setStyle(model->_styleType);
     setKeepAspectRatioEnabled(model->_keepAspectRatioEnabled);
     setFullScreenEnabled(model->_fullScreenEnabled);
-    if (!model->_videoURL.empty())
-    {
-        if (model->_videoSource == Source::FILENAME) setFileName(model->_videoURL);
-        else setURL(model->_videoURL);
-    }
-    // A clone has its own handle and starts stopped, with no inherited listener.
+    if (model->_videoSource == Source::FILENAME) setFileName(model->_videoURL);
+    else setURL(model->_videoURL);
+    addEventListener(model->_eventCallback);
+    // The clone keeps its own platform handle and starts stopped.
 }
 #endif
