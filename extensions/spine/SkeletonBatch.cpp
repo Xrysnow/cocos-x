@@ -67,14 +67,23 @@ namespace spine {
 		reset();
 		// callback after drawing is finished so we can clear out the batch state
 		// for the next frame
-		Director::getInstance()->getEventDispatcher()->addCustomEventListener(EVENT_AFTER_DRAW_RESET_POSITION, [this](EventCustom *eventCustom) {
+		auto *dispatcher = Director::getInstance()->getEventDispatcher();
+		_afterDrawListener = dispatcher->addCustomEventListener(EVENT_AFTER_DRAW_RESET_POSITION, [this](EventCustom *eventCustom) {
 			this->update(0);
 		});
-		;
+		_resetListener = dispatcher->addCustomEventListener(Director::EVENT_RESET, [](EventCustom *) {
+			SkeletonBatch::destroyInstance();
+		});
+		CC_SAFE_RETAIN(_afterDrawListener);
+		CC_SAFE_RETAIN(_resetListener);
 	}
 
 	SkeletonBatch::~SkeletonBatch() {
-		Director::getInstance()->getEventDispatcher()->removeCustomEventListeners(EVENT_AFTER_DRAW_RESET_POSITION);
+		auto *dispatcher = Director::getInstance()->getEventDispatcher();
+		dispatcher->removeEventListener(_afterDrawListener);
+		dispatcher->removeEventListener(_resetListener);
+		CC_SAFE_RELEASE_NULL(_afterDrawListener);
+		CC_SAFE_RELEASE_NULL(_resetListener);
 
 		for (unsigned int i = 0; i < _commandsPool.size(); i++) {
 			CC_SAFE_RELEASE(_commandsPool[i]->getPipelineDescriptor().programState);

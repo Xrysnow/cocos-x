@@ -68,6 +68,8 @@ namespace spine {
 		SkeletonCommand* newCommand();
 
 		cocos2d::backend::ProgramState*                     _programState; // The default program state
+		cocos2d::EventListenerCustom *_afterDrawListener = nullptr;
+		cocos2d::EventListenerCustom *_resetListener = nullptr;
 
 		// pool of commands
 		std::vector<SkeletonCommand *> _commandsPool;

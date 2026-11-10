@@ -136,6 +136,8 @@ namespace spine {
 
 		// pool of commands
 		std::vector<TwoColorTrianglesCommand *> _commandsPool;
+		cocos2d::EventListenerCustom *_afterDrawListener = nullptr;
+		cocos2d::EventListenerCustom *_resetListener = nullptr;
 		uint32_t _nextFreeCommand;
 
 		// pool of vertices

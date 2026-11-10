@@ -39,6 +39,14 @@ using std::vector;
 
 namespace spine {
 
+	namespace {
+		// Keep the active callable alive when a callback replaces or clears its own slot.
+		template<typename Listener, typename... Args>
+		void invokeListener(Listener listener, Args... args) {
+			if (listener) listener(args...);
+		}
+	}
+
 	typedef struct _TrackEntryListeners {
 		StartListener startListener;
 		InterruptListener interruptListener;
@@ -125,6 +133,18 @@ namespace spine {
 	}
 
 	SkeletonAnimation::~SkeletonAnimation() {
+		// Detach callbacks before releasing state. Never retain a node during destruction.
+		_state->setListener(static_cast<AnimationStateListenerObject *>(nullptr));
+		_state->setRendererObject(nullptr);
+		_startListener = nullptr;
+		_interruptListener = nullptr;
+		_endListener = nullptr;
+		_disposeListener = nullptr;
+		_completeListener = nullptr;
+		_eventListener = nullptr;
+		_preUpdateListener = nullptr;
+		_postUpdateListener = nullptr;
+
 		if (_ownsAnimationStateData) delete _state->getData();
 		delete _state;
 	}
@@ -132,17 +152,26 @@ namespace spine {
 	void SkeletonAnimation::update(float deltaTime) {
 		if (_updateOnlyIfVisible && !isVisible()) return;
 
+		// Callbacks may remove the last external owner; retain through all native work.
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		super::update(deltaTime);
 
 		deltaTime *= _timeScale;
-		if (_preUpdateListener) _preUpdateListener(this);
+		invokeListener(_preUpdateListener, this);
 		_state->update(deltaTime);
 		_state->apply(*_skeleton);
 		_skeleton->updateWorldTransform();
-		if (_postUpdateListener) _postUpdateListener(this);
+		invokeListener(_postUpdateListener, this);
+	}
+
+	void SkeletonAnimation::visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) {
+		// Node::visit continues using this node after draw's initial update(0) callbacks.
+		const RefPtr<SkeletonAnimation> keepAlive(this);
+		super::visit(renderer, parentTransform, parentFlags);
 	}
 
 	void SkeletonAnimation::draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		if (_firstDraw) {
 			_firstDraw = false;
 			update(0);
@@ -167,6 +196,7 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::setAnimation(int trackIndex, const std::string &name, bool loop) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		Animation *animation = _skeleton->getData()->findAnimation(name.c_str());
 		if (!animation) {
 			log("Spine: Animation not found: %s", name.c_str());
@@ -176,6 +206,7 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::addAnimation(int trackIndex, const std::string &name, bool loop, float delay) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		Animation *animation = _skeleton->getData()->findAnimation(name.c_str());
 		if (!animation) {
 			log("Spine: Animation not found: %s", name.c_str());
@@ -185,14 +216,17 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::setEmptyAnimation(int trackIndex, float mixDuration) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		return _state->setEmptyAnimation(trackIndex, mixDuration);
 	}
 
 	void SkeletonAnimation::setEmptyAnimations(float mixDuration) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		_state->setEmptyAnimations(mixDuration);
 	}
 
 	TrackEntry *SkeletonAnimation::addEmptyAnimation(int trackIndex, float mixDuration, float delay) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		return _state->addEmptyAnimation(trackIndex, mixDuration, delay);
 	}
 
@@ -205,32 +239,34 @@ namespace spine {
 	}
 
 	void SkeletonAnimation::clearTracks() {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		_state->clearTracks();
 	}
 
 	void SkeletonAnimation::clearTrack(int trackIndex) {
+		const RefPtr<SkeletonAnimation> keepAlive(this);
 		_state->clearTrack(trackIndex);
 	}
 
 	void SkeletonAnimation::onAnimationStateEvent(TrackEntry *entry, EventType type, Event *event) {
 		switch (type) {
 			case EventType_Start:
-				if (_startListener) _startListener(entry);
+				invokeListener(_startListener, entry);
 				break;
 			case EventType_Interrupt:
-				if (_interruptListener) _interruptListener(entry);
+				invokeListener(_interruptListener, entry);
 				break;
 			case EventType_End:
-				if (_endListener) _endListener(entry);
+				invokeListener(_endListener, entry);
 				break;
 			case EventType_Dispose:
-				if (_disposeListener) _disposeListener(entry);
+				invokeListener(_disposeListener, entry);
 				break;
 			case EventType_Complete:
-				if (_completeListener) _completeListener(entry);
+				invokeListener(_completeListener, entry);
 				break;
 			case EventType_Event:
-				if (_eventListener) _eventListener(entry, event);
+				invokeListener(_eventListener, entry, event);
 				break;
 		}
 	}
@@ -240,22 +276,22 @@ namespace spine {
 		_TrackEntryListeners *listeners = (_TrackEntryListeners *) entry->getRendererObject();
 		switch (type) {
 			case EventType_Start:
-				if (listeners->startListener) listeners->startListener(entry);
+				invokeListener(listeners->startListener, entry);
 				break;
 			case EventType_Interrupt:
-				if (listeners->interruptListener) listeners->interruptListener(entry);
+				invokeListener(listeners->interruptListener, entry);
 				break;
 			case EventType_End:
-				if (listeners->endListener) listeners->endListener(entry);
+				invokeListener(listeners->endListener, entry);
 				break;
 			case EventType_Dispose:
-				if (listeners->disposeListener) listeners->disposeListener(entry);
+				invokeListener(listeners->disposeListener, entry);
 				break;
 			case EventType_Complete:
-				if (listeners->completeListener) listeners->completeListener(entry);
+				invokeListener(listeners->completeListener, entry);
 				break;
 			case EventType_Event:
-				if (listeners->eventListener) listeners->eventListener(entry, event);
+				invokeListener(listeners->eventListener, entry, event);
 				break;
 		}
 	}

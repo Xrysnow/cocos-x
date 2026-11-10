@@ -67,6 +67,8 @@ namespace spine {
 		}
 
 		virtual void update(float deltaTime) override;
+		using SkeletonRenderer::visit;
+		virtual void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) override;
 		virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) override;
 
 		void setAnimationStateData(AnimationStateData *stateData);
@@ -101,6 +103,8 @@ namespace spine {
 		virtual void onAnimationStateEvent(TrackEntry *entry, EventType type, Event *event);
 		virtual void onTrackEntryEvent(TrackEntry *entry, EventType type, Event *event);
 
+		// Direct runtime callers must keep this node alive until the complete queue drain returns.
+		// Keeping the node alive does not extend disposed TrackEntry lifetimes.
 		AnimationState *getState() const;
 		void setUpdateOnlyIfVisible(bool status);
 

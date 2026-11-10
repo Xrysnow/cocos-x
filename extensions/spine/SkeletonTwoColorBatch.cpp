@@ -46,51 +46,69 @@ using std::max;
 #define MAX_VERTICES 64000
 #define MAX_INDICES 64000
 
-#define STRINGIFY(A) #A
 
 namespace {
 
-	const char *TWO_COLOR_TINT_VERTEX_SHADER = STRINGIFY(
-			uniform mat4 u_PMatrix;
-			attribute vec4 a_position;
-			attribute vec4 a_color;
-			attribute vec4 a_color2;
-			attribute vec2 a_texCoords;
+	const char *TWO_COLOR_TINT_VERTEX_SHADER = R"(
+#if __VERSION__ >= 300
+layout(location=0) in vec4 a_position;
+layout(location=1) in vec4 a_color;
+layout(location=2) in vec2 a_texCoords;
+layout(location=3) in vec4 a_color2;
+layout(std140, binding=0) uniform VSBlock { mat4 u_PMatrix; };
+layout(location=0) out vec4 v_light;
+layout(location=1) out vec4 v_dark;
+layout(location=2) out vec2 v_texCoord;
+#else
+uniform mat4 u_PMatrix;
+attribute vec4 a_position;
+attribute vec4 a_color;
+attribute vec4 a_color2;
+attribute vec2 a_texCoords;
+varying vec4 v_light;
+varying vec4 v_dark;
+varying vec2 v_texCoord;
+#endif
+void main() {
+    v_light = a_color;
+    v_dark = a_color2;
+    v_texCoord = a_texCoords;
+    gl_Position = u_PMatrix * a_position;
+}
+)";
 
-    \n #ifdef GL_ES\n
-					varying lowp vec4 v_light;
-			varying lowp vec4 v_dark;
-			varying mediump vec2 v_texCoord;
-    \n #else \n
-					varying vec4 v_light;
-			varying vec4 v_dark;
-			varying vec2 v_texCoord;
-
-    \n #endif \n
-
-			void main() {
-				v_light = a_color;
-				v_dark = a_color2;
-				v_texCoord = a_texCoords;
-				gl_Position = u_PMatrix * a_position;
-			});
-
-	const char *TWO_COLOR_TINT_FRAGMENT_SHADER = STRINGIFY(
-        \n #ifdef GL_ES\n
-					precision lowp float;
-    \n #endif \n
-							uniform sampler2D u_texture;
-			varying vec4 v_light;
-			varying vec4 v_dark;
-			varying vec2 v_texCoord;
-
-			void main() {
-				vec4 texColor = texture2D(u_texture, v_texCoord);
-				float alpha = texColor.a * v_light.a;
-				gl_FragColor.a = alpha;
-				gl_FragColor.rgb = ((texColor.a - 1.0) * v_dark.a + 1.0 - texColor.rgb) * v_dark.rgb + texColor.rgb * v_light.rgb;
-			});
-
+	const char *TWO_COLOR_TINT_FRAGMENT_SHADER = R"(
+#ifdef GL_ES
+precision lowp float;
+#endif
+#if __VERSION__ >= 300
+layout(binding=2) uniform sampler2D u_texture;
+layout(location=0) in vec4 v_light;
+layout(location=1) in vec4 v_dark;
+layout(location=2) in vec2 v_texCoord;
+layout(location=0) out vec4 cc_FragColor;
+#else
+uniform sampler2D u_texture;
+varying vec4 v_light;
+varying vec4 v_dark;
+varying vec2 v_texCoord;
+#endif
+void main() {
+#if __VERSION__ >= 300
+    vec4 texColor = texture(u_texture, v_texCoord);
+#else
+    vec4 texColor = texture2D(u_texture, v_texCoord);
+#endif
+    vec4 color;
+    color.a = texColor.a * v_light.a;
+    color.rgb = ((texColor.a - 1.0) * v_dark.a + 1.0 - texColor.rgb) * v_dark.rgb + texColor.rgb * v_light.rgb;
+#if __VERSION__ >= 300
+    cc_FragColor = color;
+#else
+    gl_FragColor = color;
+#endif
+}
+)";
 
 	std::shared_ptr<backend::ProgramState> __twoColorProgramState = nullptr;
 	backend::UniformLocation __locPMatrix;
@@ -271,13 +289,23 @@ namespace spine {
 
 		// callback after drawing is finished so we can clear out the batch state
 		// for the next frame
-		Director::getInstance()->getEventDispatcher()->addCustomEventListener(EVENT_AFTER_DRAW_RESET_POSITION, [this](EventCustom *eventCustom) {
+		auto *dispatcher = Director::getInstance()->getEventDispatcher();
+		_afterDrawListener = dispatcher->addCustomEventListener(EVENT_AFTER_DRAW_RESET_POSITION, [this](EventCustom *eventCustom) {
 			this->update(0);
 		});
+		_resetListener = dispatcher->addCustomEventListener(Director::EVENT_RESET, [](EventCustom *) {
+			SkeletonTwoColorBatch::destroyInstance();
+		});
+		CC_SAFE_RETAIN(_afterDrawListener);
+		CC_SAFE_RETAIN(_resetListener);
 	}
 
 	SkeletonTwoColorBatch::~SkeletonTwoColorBatch() {
-		Director::getInstance()->getEventDispatcher()->removeCustomEventListeners(EVENT_AFTER_DRAW_RESET_POSITION);
+		auto *dispatcher = Director::getInstance()->getEventDispatcher();
+		dispatcher->removeEventListener(_afterDrawListener);
+		dispatcher->removeEventListener(_resetListener);
+		CC_SAFE_RELEASE_NULL(_afterDrawListener);
+		CC_SAFE_RELEASE_NULL(_resetListener);
 
 		for (unsigned int i = 0; i < _commandsPool.size(); i++) {
 			delete _commandsPool[i];
@@ -286,6 +314,8 @@ namespace spine {
 
 		delete[] _vertexBuffer;
 		delete[] _indexBuffer;
+		// Release the shared shader while the graphics device is still alive.
+		__twoColorProgramState.reset();
 	}
 
 	void SkeletonTwoColorBatch::update(float delta) {
