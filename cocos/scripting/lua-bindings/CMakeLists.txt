@@ -126,11 +126,10 @@ set(lua_bindings_auto_files
 
 if(CC_ENABLE_EXT_SPINE)
     list(APPEND lua_bindings_manual_headers
-        manual/spine/LuaSkeletonAnimation.h
+        manual/spine/cclua_spine_manual.hpp
     )
     list(APPEND lua_bindings_manual_files
         manual/spine/cclua_spine_manual.cpp
-        manual/spine/LuaSkeletonAnimation.cpp
     )
     list(APPEND lua_bindings_auto_headers
         auto/cclua_spine_auto.hpp
