@@ -24,1059 +24,625 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(_CC_HAVE_WEBVIEW2)
+#include "platform/CCPlatformConfig.h"
 
-    #include "UIWebViewImpl-win32.h"
-    #include "UIWebView.h"
-    #include "base/CCDirector.h"
-    #include "platform/CCFileUtils.h"
-    #include "platform/CCGLView.h"
-    #include "ui/UIHelper.h"
-    #include "rapidjson/document.h"
-    #include "rapidjson/stringbuffer.h"
-    #include "rapidjson/writer.h"
-    #include "base/ccUtils.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2
 
-    #define WIN32_LEAN_AND_MEAN
-    #include <Shlwapi.h>
-    #include <codecvt>
-    #include <utility>
-    #include <stdlib.h>
-    #include <Windows.h>
+#include "UIWebViewImpl-win32.h"
+#include "UIWebView.h"
+#include "base/CCDirector.h"
+#include "base/CCRefPtr.h"
+#include "base/ccUtils.h"
+#include "platform/CCFileUtils.h"
+#include "platform/CCGLView.h"
+#include "ui/UIHelper.h"
 
-    #pragma comment(lib, "user32.lib")
-    #pragma comment(lib, "Shlwapi.lib")
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Shlwapi.h>
+#include <wrl.h>
+#include <cstdlib>
+#include <memory>
+#include <string>
+#include <utility>
+#include "WebView2.h"
+#include "ntcvt/ntcvt.hpp"
 
-// Edge/Chromium headers and libs
-    #include "WebView2.h"
-    #pragma comment(lib, "ole32.lib")
-    #pragma comment(lib, "oleaut32.lib")
-
-    #include "platform/CCPlatformConfig.h"
-
-    #include "ntcvt/ntcvt.hpp"
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "Shlwapi.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "oleaut32.lib")
 
 USING_NS_CC;
-using namespace rapidjson;
+using Microsoft::WRL::Callback;
+using Microsoft::WRL::ComPtr;
 
-using msg_cb_t = std::function<void(std::string_view)>;
-
-inline std::string htmlFromUri(std::string_view s)
+namespace
 {
-    if (s.substr(0, 15) == "data:text/html,")
-    {
-        return utils::urlDecode(s.substr(15));
-    }
-    return "";
+// WebView2 does not support nested message loops inside its callbacks. A
+// synchronous create/clone in such a callback must fail rather than hang.
+thread_local unsigned webViewCallbackDepth = 0;
+struct WebViewCallbackScope
+{
+    WebViewCallbackScope() { ++webViewCallbackDepth; }
+    ~WebViewCallbackScope() { --webViewCallbackDepth; }
+};
+
+std::wstring toWide(std::string_view text)
+{
+    if (text.empty())
+        return {};
+    const int length = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
+    std::wstring result(length, L'\0');
+    if (length)
+        MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), length);
+    return result;
 }
 
-inline int jsonUnescape(const char* s, size_t n, char* out)
+std::string takeUtf8(LPWSTR text)
 {
-    int r = 0;
-    if (*s++ != '"')
-    {
-        return -1;
-    }
-    while (n > 2)
-    {
-        char c = *s;
-        if (c == '\\')
-        {
-            s++;
-            n--;
-            switch (*s)
-            {
-            case 'b':
-                c = '\b';
-                break;
-            case 'f':
-                c = '\f';
-                break;
-            case 'n':
-                c = '\n';
-                break;
-            case 'r':
-                c = '\r';
-                break;
-            case 't':
-                c = '\t';
-                break;
-            case '\\':
-                c = '\\';
-                break;
-            case '/':
-                c = '/';
-                break;
-            case '\"':
-                c = '\"';
-                break;
-            default:  // TODO: support unicode decoding
-                return -1;
-            }
-        }
-        if (out != NULL)
-        {
-            *out++ = c;
-        }
-        s++;
-        n--;
-        r++;
-    }
-    if (*s != '"')
-    {
-        return -1;
-    }
-    if (out != NULL)
-    {
-        *out = '\0';
-    }
-    return r;
+    std::string result;
+    if (text)
+        result = ntcvt::from_chars(text, CP_UTF8);
+    CoTaskMemFree(text);
+    return result;
 }
 
-// These are the results that must be returned by this method
-// assert(jsonParse(R"({"foo":"bar"})", "foo", -1) == "bar");
-// assert(jsonParse(R"({"foo":""})", "foo", -1) == "");
-// assert(jsonParse(R"(["foo", "bar", "baz"])", "", 0) == "foo");
-// assert(jsonParse(R"(["foo", "bar", "baz"])", "", 2) == "baz");
-// The following is a special case, where the exact json string is not returned due
-// to how rapidjson re-creates the nested object, original: "{"bar": 1}", parsed result: "{"bar":1}"
-// assert(jsonParse(R"({"foo": {"bar": 1}})", "foo", -1) == R"({"bar":1})");
-inline std::string jsonParse(std::string_view s, std::string_view key, const int index)
+std::string sourceURL(ICoreWebView2* view)
 {
-    const char* value = nullptr;
-    size_t value_sz{};
-    StringBuffer sb;
-    Writer<StringBuffer> writer(sb);
-    Document d;
-    d.Parse(s.data());
-    if (key.empty() && index > -1)
-    {
-        if (d.IsArray())
-        {
-            auto&& jsonArray = d.GetArray();
-            if (SizeType(index) < jsonArray.Size())
-            {
-                auto&& arrayValue = jsonArray[SizeType(index)];
-                value             = arrayValue.GetString();
-                value_sz          = arrayValue.GetStringLength();
-            }
-        }
-    }
-    else
-    {
-        auto&& fieldItr = d.FindMember(key.data());
-        if (fieldItr != d.MemberEnd())
-        {
-            auto&& jsonValue = fieldItr->value;
-            if (jsonValue.IsString())
-            {
-                value    = jsonValue.GetString();
-                value_sz = jsonValue.GetStringLength();
-            }
-            else
-            {
-                jsonValue.Accept(writer);
-                value    = sb.GetString();
-                value_sz = sb.GetLength();
-            }
-        }
-    }
-
-    if (value != nullptr)
-    {
-        if (value[0] != '"')
-        {
-            return std::string(value, value_sz);
-        }
-
-        const auto n = jsonUnescape(value, value_sz, nullptr);
-        if (n > 0)
-        {
-            const auto decoded = std::unique_ptr<char[]>(new char[n + 1]);
-            jsonUnescape(value, value_sz, decoded.get());
-            return std::string(decoded.get(), n);
-        }
-    }
-    return "";
+    LPWSTR uri = nullptr;
+    if (view)
+        view->get_Source(&uri);
+    return takeUtf8(uri);
 }
 
-template <class ArgType>
-static std::string getUriStringFromArgs(ArgType* args)
+std::string htmlFromUri(std::string_view text)
 {
-    if (args != nullptr)
-    {
-        LPWSTR uri;
-        args->get_Uri(&uri);
-        std::wstring ws(uri);
-        std::string result = std::string(ws.begin(), ws.end());
-
-        return result;
-    }
-
-    return {};
+    return text.substr(0, 15) == "data:text/html," ? utils::urlDecode(text.substr(15)) : std::string{};
 }
 
-static std::string getDataURI(std::string_view data, std::string_view mime_type)
+std::string getDataURI(std::string_view data, std::string_view mimeType)
 {
-    auto encodedData = utils::base64Encode(data);
-    return std::string{"data:"}.append(mime_type).append(";base64,").append(utils::urlEncode(encodedData));
+    return std::string{"data:"}.append(mimeType).append(";base64,").append(utils::urlEncode(utils::base64Encode(data)));
 }
 
-static double getDeviceScaleFactor()
+double getDeviceScaleFactor()
 {
-    static double scale_factor = 1.0;
-    static bool initialized    = false;
-
-    if (!initialized)
-    {
-        // This value is safe to cache for the life time of the app since the user
-        // must logout to change the DPI setting. This value also applies to all
-        // screens.
-    #if _WIN32
-        HDC screen_dc = ::GetDC(NULL);
-        int dpi_x     = GetDeviceCaps(screen_dc, LOGPIXELSX);
-        scale_factor  = static_cast<double>(dpi_x) / 96.0;
-        ::ReleaseDC(NULL, screen_dc);
-    #endif
-        initialized = true;
-    }
-
-    return scale_factor;
+    HDC screen = GetDC(nullptr);
+    const double scale = static_cast<double>(GetDeviceCaps(screen, LOGPIXELSX)) / 96.0;
+    ReleaseDC(nullptr, screen);
+    return scale;
 }
+}  // namespace
 
-// declarate
 class Win32WebControl
 {
-public:
-    Win32WebControl();
-
-    bool createWebView(const std::function<bool(std::string_view)>& shouldStartLoading,
-                       const std::function<void(std::string_view)>& didFinishLoading,
-                       const std::function<void(std::string_view)>& didFailLoading,
-                       const std::function<void(std::string_view)>& onJsCallback);
-    void removeWebView();
-
-    void setWebViewRect(const int left, const int top, const int width, const int height);
-    void setJavascriptInterfaceScheme(std::string_view scheme);
-    void loadHTMLString(std::string_view html, std::string_view baseURL);
-    void loadURL(std::string_view url, bool cleanCachedData);
-    void loadFile(std::string_view filePath);
-    void stopLoading();
-    void reload() const;
-    bool canGoBack() const;
-    bool canGoForward() const;
-    void goBack() const;
-    void goForward() const;
-    void evaluateJS(std::string_view js);
-    void setScalesPageToFit(const bool scalesPageToFit);
-    void setWebViewVisible(const bool visible) const;
-    void setBounces(bool bounces);
-    void setOpacityWebView(float opacity);
-    float getOpacityWebView() const;
-    void setBackgroundTransparent();
-
-private:
-    ICoreWebView2* m_webview              = nullptr;
-    ICoreWebView2Controller* m_controller = nullptr;
-    HWND m_window{};
-    POINT m_minsz       = POINT{0, 0};
-    POINT m_maxsz       = POINT{0, 0};
-    DWORD m_main_thread = GetCurrentThreadId();
-
-    std::string m_jsScheme;
-    bool _scalesPageToFit{};
-
-    std::function<bool(std::string_view)> _shouldStartLoading;
-    std::function<void(std::string_view)> _didFinishLoading;
-    std::function<void(std::string_view)> _didFailLoading;
-    std::function<void(std::string_view)> _onJsCallback;
-
-    static bool s_isInitialized;
-    static void lazyInit();
-
-    static LPWSTR to_lpwstr(std::string_view s)
+    enum class Phase { Uncreated, Creating, Ready, Closing, Closed, Failed };
+    struct Apartment
     {
-        const int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), -1, NULL, 0);
-        auto* ws    = new wchar_t[n];
-        MultiByteToWideChar(CP_UTF8, 0, s.data(), -1, ws, n);
-        return ws;
-    }
-
-    bool embed(HWND wnd, bool debug, msg_cb_t cb)
-    {
-        std::atomic_flag flag = ATOMIC_FLAG_INIT;
-        flag.test_and_set();
-
-        char currentExePath[MAX_PATH];
-        GetModuleFileNameA(NULL, currentExePath, MAX_PATH);
-        char* currentExeName = PathFindFileNameA(currentExePath);
-
-        /*
-        * Note: New OS feature 'Beta: Use Unicode UTF-8 for worldwide language support' since win10/win11 
-        *   - OFF: GetACP() equal to current system locale, such as chinese simplified is 936, english is 437
-        *   - ON: GetACP() always equal to 65001(UTF-8)
-        * Remark: 
-        *   The macro CP_ACP for ntcvt::from_chars works for converting chraset from current code page(936,437,65001) to utf-16
-        */
-        std::wstring userDataFolder  = ntcvt::from_chars(std::getenv("APPDATA"), CP_ACP);
-        std::wstring currentExeNameW = ntcvt::from_chars(currentExeName, CP_ACP);
-
-        HRESULT res = CreateCoreWebView2EnvironmentWithOptions(
-            nullptr, (userDataFolder + L"/" + currentExeNameW).c_str(), nullptr,
-            new webview2_com_handler(
-                wnd, cb,
-                [&](ICoreWebView2Controller* controller) {
-                    m_controller = controller;
-                    m_controller->get_CoreWebView2(&m_webview);
-                    m_webview->AddRef();
-                    flag.clear();
-                },
-                [this](std::string_view url) -> bool {
-                    const auto scheme = url.substr(0, url.find_first_of(':'));
-                    if (scheme == m_jsScheme)
-                    {
-                        if (_onJsCallback)
-                        {
-                            _onJsCallback(url);
-                        }
-                        return true;
-                    }
-
-                    if (_shouldStartLoading && !url.empty())
-                    {
-                        return _shouldStartLoading(url);
-                    }
-                    return true;
-                },
-                [this]() {
-                    LPWSTR uri;
-                    this->m_webview->get_Source(&uri);
-                    std::wstring ws(uri);
-                    const auto result = std::string(ws.begin(), ws.end());
-                    if (_didFinishLoading)
-                        _didFinishLoading(result);
-                },
-                [this]() {
-                    LPWSTR uri;
-                    this->m_webview->get_Source(&uri);
-                    std::wstring ws(uri);
-                    const auto result = std::string(ws.begin(), ws.end());
-                    if (_didFailLoading)
-                        _didFailLoading(result);
-                },
-                [this](std::string_view url) { loadURL(url, false); }));
-
-        if (res != S_OK)
+        const bool initialized = SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
+        ~Apartment()
         {
-            CoUninitialize();
+            if (initialized)
+                CoUninitialize();
+        }
+    };
+    struct Token
+    {
+        EventRegistrationToken value{};
+        bool installed = false;
+    };
+    struct State
+    {
+        Phase phase = Phase::Uncreated;
+        const DWORD thread = GetCurrentThreadId();
+        // Async completion handlers and event callback objects also hold this
+        // lease, keeping COM initialized after an owner closes in a callback.
+        const std::shared_ptr<Apartment> apartment = std::make_shared<Apartment>();
+        HWND window = nullptr;
+        ComPtr<ICoreWebView2> webview;
+        ComPtr<ICoreWebView2Controller> controller;
+        Token message, permission, starting, completed, newWindow;
+        std::string jsScheme;
+        bool scalesPageToFit = false;
+        std::function<bool(std::string_view)> shouldStart;
+        std::function<void(std::string_view)> didFinish, didFail, onJS;
+
+        bool ready() const { return phase == Phase::Ready && thread == GetCurrentThreadId(); }
+        void close()
+        {
+            if (phase == Phase::Closing || phase == Phase::Closed)
+                return;
+            phase = Phase::Closing;
+            // Invalidate notification owners before COM calls can reenter us.
+            shouldStart = nullptr;
+            didFinish = didFail = onJS = nullptr;
+            auto view = std::move(webview);
+            auto control = std::move(controller);
+            if (view)
+            {
+                if (message.installed) view->remove_WebMessageReceived(message.value);
+                if (permission.installed) view->remove_PermissionRequested(permission.value);
+                if (starting.installed) view->remove_NavigationStarting(starting.value);
+                if (completed.installed) view->remove_NavigationCompleted(completed.value);
+                if (newWindow.installed) view->remove_NewWindowRequested(newWindow.value);
+            }
+            message = permission = starting = completed = newWindow = {};
+            if (control)
+                control->Close();
+            const auto hwnd = std::exchange(window, nullptr);
+            if (hwnd && IsWindow(hwnd))
+            {
+                SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+                DestroyWindow(hwnd);
+            }
+            phase = Phase::Closed;
+        }
+    };
+
+public:
+    Win32WebControl() = default;
+    ~Win32WebControl() { removeWebView(); }
+
+    bool createWebView(const std::function<bool(std::string_view)>& shouldStart,
+                       const std::function<void(std::string_view)>& didFinish,
+                       const std::function<void(std::string_view)>& didFail,
+                       const std::function<void(std::string_view)>& onJS)
+    {
+        const auto state = _state;
+        if (!state->apartment->initialized || webViewCallbackDepth || state->phase != Phase::Uncreated)
+            return false;
+        state->phase = Phase::Creating;
+        state->shouldStart = shouldStart;
+        state->didFinish = didFinish;
+        state->didFail = didFail;
+        state->onJS = onJS;
+        const auto hostView = Director::getInstance()->getOpenGLView();
+        const auto parent = hostView ? hostView->getWin32Window() : nullptr;
+        if (!parent || !IsWindow(parent))
+        {
+            state->close();
             return false;
         }
-        MSG msg = {};
-        while (flag.test_and_set() && GetMessage(&msg, NULL, 0, 0))
+        SetWindowLongPtr(parent, GWL_STYLE, GetWindowLongPtr(parent, GWL_STYLE) | WS_CLIPCHILDREN);
+        const auto instance = GetModuleHandle(nullptr);
+        WNDCLASSEXW windowClass{};
+        windowClass.cbSize = sizeof(windowClass);
+        windowClass.hInstance = instance;
+        windowClass.lpszClassName = L"cocos-webview";
+        windowClass.lpfnWndProc = windowProcedure;
+        if (!RegisterClassExW(&windowClass) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            state->close();
+            return false;
         }
-        init("window.external={invoke:s=>window.chrome.webview.postMessage(s)}");
+        state->window = CreateWindowExW(0, windowClass.lpszClassName, L"", WS_VISIBLE | WS_CHILD,
+                                        0, 0, 0, 0, parent, nullptr, instance, state.get());
+        if (!state->window)
+        {
+            state->close();
+            return false;
+        }
+        char executable[MAX_PATH]{};
+        const auto executableLength = GetModuleFileNameA(nullptr, executable, MAX_PATH);
+        const char* appData = std::getenv("APPDATA");
+        if (!appData || !executableLength || executableLength >= MAX_PATH)
+        {
+            state->close();
+            return false;
+        }
+        const auto userData = ntcvt::from_chars(appData, CP_ACP) + L"/" +
+                              ntcvt::from_chars(PathFindFileNameA(executable), CP_ACP);
+        const HRESULT result = CreateCoreWebView2EnvironmentWithOptions(nullptr, userData.c_str(), nullptr,
+            Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
+                [state](HRESULT result, ICoreWebView2Environment* environment) -> HRESULT {
+                    if (state->phase != Phase::Creating)
+                        return S_OK;
+                    if (FAILED(result) || !environment)
+                    {
+                        state->phase = Phase::Failed;
+                        return S_OK;
+                    }
+                    const HRESULT controllerResult = environment->CreateCoreWebView2Controller(state->window,
+                        Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
+                            [state](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
+                                if (state->phase != Phase::Creating)
+                                {
+                                    if (controller) controller->Close();
+                                    return S_OK;
+                                }
+                                if (FAILED(result) || !controller)
+                                {
+                                    state->phase = Phase::Failed;
+                                    return S_OK;
+                                }
+                                const ComPtr<ICoreWebView2Controller> control = controller;
+                                state->controller = control;
+                                ComPtr<ICoreWebView2> view;
+                                const HRESULT viewResult = control->get_CoreWebView2(view.GetAddressOf());
+                                if (state->phase != Phase::Creating)
+                                {
+                                    control->Close();
+                                    return S_OK;
+                                }
+                                if (FAILED(viewResult) || !view)
+                                {
+                                    state->phase = Phase::Failed;
+                                    return S_OK;
+                                }
+                                state->webview = view;
+                                if (!installEvents(state))
+                                {
+                                    if (state->phase == Phase::Creating)
+                                        state->phase = Phase::Failed;
+                                    return S_OK;
+                                }
+                                if (state->phase != Phase::Creating)
+                                    return S_OK;
+                                state->phase = Phase::Ready;
+                                RECT bounds{};
+                                GetClientRect(state->window, &bounds);
+                                control->put_Bounds(bounds);
+                                if (state->ready())
+                                    view->AddScriptToExecuteOnDocumentCreated(
+                                        L"window.external={invoke:s=>window.chrome.webview.postMessage(s)}", nullptr);
+                                return S_OK;
+                            }).Get());
+                    if (FAILED(controllerResult) && state->phase == Phase::Creating)
+                        state->phase = Phase::Failed;
+                    return S_OK;
+                }).Get());
+        if (FAILED(result) && state->phase == Phase::Creating)
+            state->phase = Phase::Failed;
+
+        // Preserve synchronous factory failure semantics without an unbounded
+        // GetMessage wait. Completion handlers own only state, never this.
+        const auto deadline = GetTickCount64() + 30000;
+        while (state->phase == Phase::Creating && GetTickCount64() < deadline)
+        {
+            MsgWaitForMultipleObjectsEx(0, nullptr, 50, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+            MSG message{};
+            while (state->phase == Phase::Creating && GetTickCount64() < deadline &&
+                   PeekMessage(&message, nullptr, 0, 0, PM_REMOVE))
+            {
+                if (message.message == WM_QUIT)
+                {
+                    PostQuitMessage(static_cast<int>(message.wParam));
+                    state->phase = Phase::Failed;
+                    break;
+                }
+                TranslateMessage(&message);
+                DispatchMessage(&message);
+            }
+        }
+        if (!state->ready())
+        {
+            state->close();
+            CCLOG("Cannot initialize WebView2 (creation failed, closed, or timed out)");
+            return false;
+        }
         return true;
     }
 
-    void resize(HWND wnd)
+    void removeWebView() { _state->close(); }
+    bool isInitialized() const { return _state->ready(); }
+    void setWebViewRect(int left, int top, int width, int height)
     {
-        if (m_controller == nullptr)
+        const auto state = _state;
+        if (!state->ready()) return;
+        const auto controller = state->controller;
+        SetWindowPos(state->window, nullptr, left, top, width, height, SWP_NOZORDER);
+        if (!state->ready()) return;
+        RECT bounds{};
+        GetClientRect(state->window, &bounds);
+        controller->put_Bounds(bounds);
+        if (state->ready()) controller->put_ZoomFactor(state->scalesPageToFit ? getDeviceScaleFactor() : 1.0);
+    }
+    void setJavascriptInterfaceScheme(std::string_view scheme) { _state->jsScheme = scheme; }
+    void loadHTMLString(std::string_view html, std::string_view)
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->NavigateToString(toWide(html).c_str());
+    }
+    void loadURL(std::string_view url, bool cleanCachedData)
+    {
+        const auto state = _state;
+        if (!state->ready()) return;
+        const auto view = state->webview;
+        if (cleanCachedData) view->CallDevToolsProtocolMethod(L"Network.clearBrowserCache", L"{}", nullptr);
+        if (state->ready()) view->Navigate(toWide(url).c_str());
+    }
+    void loadFile(std::string_view file)
+    {
+        auto path = FileUtils::getInstance()->fullPathForFilename(file);
+        if (path.find("file:///") != 0)
+            path = (path.empty() || path.front() != '/' ? "file:///" : "file://") + path;
+        loadURL(path, false);
+    }
+    void stopLoading()
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->Stop();
+    }
+    void reload()
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->Reload();
+    }
+    bool canGoBack() const
+    {
+        BOOL result = FALSE;
+        const auto state = _state;
+        const auto view = state->webview;
+        return state->ready() && SUCCEEDED(view->get_CanGoBack(&result)) && result;
+    }
+    bool canGoForward() const
+    {
+        BOOL result = FALSE;
+        const auto state = _state;
+        const auto view = state->webview;
+        return state->ready() && SUCCEEDED(view->get_CanGoForward(&result)) && result;
+    }
+    void goBack()
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->GoBack();
+    }
+    void goForward()
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->GoForward();
+    }
+    void evaluateJS(std::string_view js)
+    {
+        const auto state = _state;
+        const auto view = state->webview;
+        if (state->ready()) view->ExecuteScript(toWide(js).c_str(), nullptr);
+    }
+    void setScalesPageToFit(bool scalesPageToFit)
+    {
+        const auto state = _state;
+        const auto controller = state->controller;
+        state->scalesPageToFit = scalesPageToFit;
+        if (state->ready()) controller->put_ZoomFactor(scalesPageToFit ? getDeviceScaleFactor() : 1.0);
+    }
+    void setWebViewVisible(bool visible)
+    {
+        const auto state = _state;
+        if (!state->ready()) return;
+        ShowWindow(state->window, visible ? SW_SHOW : SW_HIDE);
+        if (!visible && state->ready())
+            SetWindowPos(state->window, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    }
+    void setBounces(bool) {}
+    void setOpacityWebView(float) {}
+    float getOpacityWebView() const { return 1.0f; }
+    void setBackgroundTransparent()
+    {
+        const auto state = _state;
+        const auto baseController = state->controller;
+        if (!state->ready()) return;
+        ComPtr<ICoreWebView2Controller2> controller;
+        if (SUCCEEDED(baseController.As(&controller)))
         {
-            return;
+            COREWEBVIEW2_COLOR color{};
+            if (SUCCEEDED(controller->get_DefaultBackgroundColor(&color)))
+            {
+                color.A = 0;
+                controller->put_DefaultBackgroundColor(color);
+            }
         }
-        RECT bounds;
-        GetClientRect(wnd, &bounds);
-        m_controller->put_Bounds(bounds);
     }
 
-    void navigate(std::string_view url)
+private:
+    static LRESULT CALLBACK windowProcedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
     {
-        auto wurl = to_lpwstr(url);
-        m_webview->Navigate(wurl);
-        delete[] wurl;
+        auto state = reinterpret_cast<State*>(GetWindowLongPtr(window, GWLP_USERDATA));
+        if (message == WM_NCCREATE)
+        {
+            state = static_cast<State*>(reinterpret_cast<CREATESTRUCT*>(lparam)->lpCreateParams);
+            SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(state));
+        }
+        if (state && message == WM_SIZE && state->controller)
+        {
+            const auto controller = state->controller;
+            RECT bounds{};
+            GetClientRect(window, &bounds);
+            controller->put_Bounds(bounds);
+        }
+        if (state && message == WM_NCDESTROY)
+        {
+            SetWindowLongPtr(window, GWLP_USERDATA, 0);
+            state->window = nullptr;
+            state->close();
+        }
+        return DefWindowProc(window, message, wparam, lparam);
     }
 
-    void init(std::string_view js)
+    static bool installEvents(const std::shared_ptr<State>& state)
     {
-        LPCWSTR wjs = to_lpwstr(js);
-        m_webview->AddScriptToExecuteOnDocumentCreated(wjs, nullptr);
-        delete[] wjs;
+        const std::weak_ptr<State> weak = state;
+        const auto apartment = state->apartment;
+        const auto view = state->webview;
+        const auto install = [&](Token& slot, auto add, auto remove, const auto& handler) {
+            if (state->phase != Phase::Creating)
+                return false;
+            EventRegistrationToken token{};
+            if (FAILED((view.Get()->*add)(handler.Get(), &token)))
+                return false;
+            if (state->phase != Phase::Creating)
+            {
+                // A window/owner close during registration cannot publish a
+                // token into a closed state or leave this new handler installed.
+                (view.Get()->*remove)(token);
+                return false;
+            }
+            slot.value = token;
+            slot.installed = true;
+            return true;
+        };
+        if (!install(state->message, &ICoreWebView2::add_WebMessageReceived,
+                     &ICoreWebView2::remove_WebMessageReceived,
+            Callback<ICoreWebView2WebMessageReceivedEventHandler>(
+                [weak, apartment](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+                    const auto state = weak.lock();
+                    if (!state || !state->ready()) return S_OK;
+                    WebViewCallbackScope scope;
+                    LPWSTR text = nullptr;
+                    if (SUCCEEDED(args->TryGetWebMessageAsString(&text)) && text)
+                        sender->PostWebMessageAsString(text);
+                    CoTaskMemFree(text);
+                    return S_OK;
+                }))) return false;
+        if (!install(state->permission, &ICoreWebView2::add_PermissionRequested,
+                     &ICoreWebView2::remove_PermissionRequested,
+            Callback<ICoreWebView2PermissionRequestedEventHandler>(
+                [weak, apartment](ICoreWebView2*, ICoreWebView2PermissionRequestedEventArgs* args) -> HRESULT {
+                    const auto state = weak.lock();
+                    if (!state || !state->ready()) return S_OK;
+                    WebViewCallbackScope scope;
+                    COREWEBVIEW2_PERMISSION_KIND kind{};
+                    if (SUCCEEDED(args->get_PermissionKind(&kind)) && kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ)
+                        args->put_State(COREWEBVIEW2_PERMISSION_STATE_ALLOW);
+                    return S_OK;
+                }))) return false;
+        if (!install(state->starting, &ICoreWebView2::add_NavigationStarting,
+                     &ICoreWebView2::remove_NavigationStarting,
+            Callback<ICoreWebView2NavigationStartingEventHandler>(
+                [weak, apartment](ICoreWebView2*, ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT {
+                    const auto state = weak.lock();
+                    if (!state || !state->ready())
+                    {
+                        args->put_Cancel(TRUE);
+                        return S_OK;
+                    }
+                    WebViewCallbackScope scope;
+                    LPWSTR uri = nullptr;
+                    if (FAILED(args->get_Uri(&uri)) || !uri)
+                    {
+                        CoTaskMemFree(uri);
+                        args->put_Cancel(TRUE);
+                        return S_OK;
+                    }
+                    const auto url = takeUtf8(uri);
+                    const auto js = state->onJS;
+                    const auto shouldStart = state->shouldStart;
+                    const auto scheme = url.substr(0, url.find(':'));
+                    bool allow = true;
+                    if (scheme == state->jsScheme)
+                    {
+                        if (js) js(url);
+                    }
+                    else if (shouldStart)
+                    {
+                        allow = shouldStart(url);
+                    }
+                    if (!allow || !state->ready()) args->put_Cancel(TRUE);
+                    return S_OK;
+                }))) return false;
+        if (!install(state->completed, &ICoreWebView2::add_NavigationCompleted,
+                     &ICoreWebView2::remove_NavigationCompleted,
+            Callback<ICoreWebView2NavigationCompletedEventHandler>(
+                [weak, apartment](ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
+                    const auto state = weak.lock();
+                    if (!state || !state->ready()) return S_OK;
+                    WebViewCallbackScope scope;
+                    BOOL success = FALSE;
+                    const auto callback = SUCCEEDED(args->get_IsSuccess(&success)) && success ? state->didFinish : state->didFail;
+                    const auto url = sourceURL(sender);
+                    if (callback) callback(url);
+                    return S_OK;
+                }))) return false;
+        if (!install(state->newWindow, &ICoreWebView2::add_NewWindowRequested,
+                     &ICoreWebView2::remove_NewWindowRequested,
+            Callback<ICoreWebView2NewWindowRequestedEventHandler>(
+                [weak, apartment](ICoreWebView2*, ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT {
+                    // Keep the existing no-popup policy. A separate browser
+                    // owner is deliberately not created during this event.
+                    const auto state = weak.lock();
+                    if (state) args->put_Handled(TRUE);
+                    return S_OK;
+                }))) return false;
+        return state->phase == Phase::Creating;
     }
 
-    void eval(std::string_view js)
-    {
-        LPCWSTR wjs = to_lpwstr(js);
-        m_webview->ExecuteScript(wjs, nullptr);
-        delete[] wjs;
-    }
-
-    void on_message(std::string_view msg)
-    {
-        const auto seq  = jsonParse(msg, "id", 0);
-        const auto name = jsonParse(msg, "method", 0);
-        const auto args = jsonParse(msg, "params", 0);
-        if (bindings.find(name) == bindings.end())
-        {
-            return;
-        }
-        const auto fn = bindings[name];
-        (*fn->first)(seq, args, fn->second);
-    }
-
-    using binding_t     = std::function<void(std::string, std::string, void*)>;
-    using binding_ctx_t = std::pair<binding_t*, void*>;
-    std::map<std::string, binding_ctx_t*> bindings;
-
-    class webview2_com_handler : public ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
-                                 public ICoreWebView2CreateCoreWebView2ControllerCompletedHandler,
-                                 public ICoreWebView2WebMessageReceivedEventHandler,
-                                 public ICoreWebView2PermissionRequestedEventHandler,
-                                 public ICoreWebView2NavigationStartingEventHandler,
-                                 public ICoreWebView2NavigationCompletedEventHandler,
-                                 public ICoreWebView2NewWindowRequestedEventHandler,
-                                 public ICoreWebView2ContentLoadingEventHandler,
-                                 public ICoreWebView2DOMContentLoadedEventHandler
-    {
-        using webview2_com_handler_cb_t = std::function<void(ICoreWebView2Controller*)>;
-
-    public:
-        webview2_com_handler(HWND hwnd,
-                             msg_cb_t msgCb,
-                             webview2_com_handler_cb_t cb,
-                             std::function<bool(std::string_view)> navStartingCallback,
-                             std::function<void()> navCompleteCallback,
-                             std::function<void()> navErrorCallback,
-                             std::function<void(std::string_view url)> loadUrlCallback)
-            : m_window(hwnd)
-            , m_msgCb(std::move(msgCb))
-            , m_cb(std::move(cb))
-            , m_navStartingCallback(std::move(navStartingCallback))
-            , m_navCompleteCallback(std::move(navCompleteCallback))
-            , m_navErrorCallback(std::move(navErrorCallback))
-            , m_loadUrlCallback(std::move(loadUrlCallback))
-        {}
-        ULONG STDMETHODCALLTYPE AddRef() { return 1; }
-        ULONG STDMETHODCALLTYPE Release() { return 1; }
-        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID* ppv) { return S_OK; }
-
-        // ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler
-        HRESULT STDMETHODCALLTYPE Invoke(HRESULT res, ICoreWebView2Environment* env)
-        {
-            env->CreateCoreWebView2Controller(m_window, this);
-            return S_OK;
-        }
-
-        // ICoreWebView2CreateCoreWebView2ControllerCompletedHandler
-        HRESULT STDMETHODCALLTYPE Invoke(HRESULT res, ICoreWebView2Controller* controller)
-        {
-            controller->AddRef();
-
-            ICoreWebView2* webview;
-            ::EventRegistrationToken token;
-            controller->get_CoreWebView2(&webview);
-            webview->add_WebMessageReceived(this, &token);
-            webview->add_PermissionRequested(this, &token);
-            webview->add_NavigationStarting(this, &token);
-            webview->add_NavigationCompleted(this, &token);
-            webview->add_ContentLoading(this, &token);
-            webview->add_NewWindowRequested(this, &token);
-
-            m_cb(controller);
-            return S_OK;
-        }
-
-        // ICoreWebView2WebMessageReceivedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args)
-        {
-            LPWSTR message;
-            args->TryGetWebMessageAsString(&message);
-
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wideCharConverter;
-            m_msgCb(wideCharConverter.to_bytes(message));
-            sender->PostWebMessageAsString(message);
-
-            CoTaskMemFree(message);
-            return S_OK;
-        }
-
-        // ICoreWebView2PermissionRequestedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2PermissionRequestedEventArgs* args)
-        {
-            COREWEBVIEW2_PERMISSION_KIND kind;
-            args->get_PermissionKind(&kind);
-            if (kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ)
-            {
-                args->put_State(COREWEBVIEW2_PERMISSION_STATE_ALLOW);
-            }
-            return S_OK;
-        }
-
-        // ICoreWebView2NavigationStartingEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2NavigationStartingEventArgs* args)
-        {
-            if (m_navStartingCallback)
-            {
-                const auto uriString = getUriStringFromArgs(args);
-                if (!m_navStartingCallback(uriString))
-                {
-                    args->put_Cancel(true);
-                }
-            }
-
-            return S_OK;
-        }
-
-        // ICoreWebView2NavigationCompletedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args)
-        {
-            BOOL success;
-            if (SUCCEEDED(args->get_IsSuccess(&success)) && success)
-            {
-                if (m_navCompleteCallback)
-                {
-                    m_navCompleteCallback();
-                }
-            }
-            else
-            {
-                // example of how to get status error if required
-                // COREWEBVIEW2_WEB_ERROR_STATUS status;
-                // if (SUCCEEDED(args->get_WebErrorStatus(&status)))
-                //{
-                //}
-
-                if (m_navErrorCallback)
-                {
-                    m_navErrorCallback();
-                }
-            }
-            return S_OK;
-        }
-
-        // ICoreWebView2ContentLoadingEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2ContentLoadingEventArgs* args)
-        {
-            return S_OK;
-        }
-
-        // ICoreWebView2NewWindowRequestedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2NewWindowRequestedEventArgs* args)
-        {
-            args->put_Handled(true);
-            return S_OK;
-        }
-
-        // ICoreWebView2NewWindowRequestedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2NewWindowRequestedEventArgs2* args)
-        {
-            args->put_Handled(true);
-
-            if (m_loadUrlCallback)
-            {
-                const auto uriString = getUriStringFromArgs(args);
-                m_loadUrlCallback(uriString);
-            }
-            args->put_Handled(true);
-            return S_OK;
-        }
-
-        // ICoreWebView2DOMContentLoadedEventHandler
-        HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, ICoreWebView2DOMContentLoadedEventArgs* args)
-        {
-            return S_OK;
-        }
-
-    private:
-        HWND m_window;
-        msg_cb_t m_msgCb;
-        webview2_com_handler_cb_t m_cb;
-        std::function<bool(std::string_view)> m_navStartingCallback;
-        std::function<void()> m_navCompleteCallback;
-        std::function<void()> m_navErrorCallback;
-        std::function<void(std::string_view url)> m_loadUrlCallback;
-    };
+    std::shared_ptr<State> _state = std::make_shared<State>();
 };
 
 NS_CC_BEGIN
-
 namespace ui
 {
-WebViewImpl::WebViewImpl(WebView* webView) : _createSucceeded(false), _systemWebControl(nullptr), _webView(webView)
+WebViewImpl::WebViewImpl(WebView* webView) : _systemWebControl(new Win32WebControl()), _webView(webView)
 {
-    _systemWebControl = new Win32WebControl();
-    if (_systemWebControl == nullptr)
-    {
-        return;
-    }
-
-    _createSucceeded = _systemWebControl->createWebView(
-        [this](std::string_view url) -> bool {
-            const auto shouldStartLoading = _webView->getOnShouldStartLoading();
-            if (shouldStartLoading != nullptr)
-            {
-                return shouldStartLoading(_webView, url);
-            }
-            return true;
+    _systemWebControl->createWebView(
+        [webView](std::string_view url) -> bool {
+            const RefPtr<WebView> sender(webView);
+            const auto callback = sender->getOnShouldStartLoading();
+            return callback ? callback(sender.get(), url) : true;
         },
-        [this](std::string_view url) {
-            WebView::ccWebViewCallback didFinishLoading = _webView->getOnDidFinishLoading();
-            if (didFinishLoading != nullptr)
-            {
-                didFinishLoading(_webView, url);
-            }
+        [webView](std::string_view url) {
+            const RefPtr<WebView> sender(webView);
+            const auto callback = sender->getOnDidFinishLoading();
+            if (callback) callback(sender.get(), url);
         },
-        [this](std::string_view url) {
-            WebView::ccWebViewCallback didFailLoading = _webView->getOnDidFailLoading();
-            if (didFailLoading != nullptr)
-            {
-                didFailLoading(_webView, url);
-            }
+        [webView](std::string_view url) {
+            const RefPtr<WebView> sender(webView);
+            const auto callback = sender->getOnDidFailLoading();
+            if (callback) callback(sender.get(), url);
         },
-        [this](std::string_view url) {
-            WebView::ccWebViewCallback onJsCallback = _webView->getOnJSCallback();
-            if (onJsCallback != nullptr)
-            {
-                onJsCallback(_webView, url);
-            }
+        [webView](std::string_view url) {
+            const RefPtr<WebView> sender(webView);
+            const auto callback = sender->getOnJSCallback();
+            if (callback) callback(sender.get(), url);
         });
 }
 
-WebViewImpl::~WebViewImpl()
+WebViewImpl::~WebViewImpl() { delete _systemWebControl; }
+bool WebViewImpl::isInitialized() const { return _systemWebControl && _systemWebControl->isInitialized(); }
+
+void WebViewImpl::loadData(const Data& data, std::string_view MIMEType, std::string_view, std::string_view)
 {
-    if (_systemWebControl != nullptr)
+    if (isInitialized())
+        _systemWebControl->loadURL(getDataURI(std::string_view(reinterpret_cast<const char*>(data.getBytes()), data.getSize()), MIMEType), false);
+}
+void WebViewImpl::loadHTMLString(std::string_view text, std::string_view baseURL)
+{
+    if (!isInitialized()) return;
+    const auto html = htmlFromUri(text);
+    _systemWebControl->loadHTMLString(text.empty() ? std::string_view("<html></html>") :
+                                    html.empty() ? text : std::string_view(html), baseURL);
+}
+void WebViewImpl::loadURL(std::string_view url, bool cleanCachedData) { _systemWebControl->loadURL(url, cleanCachedData); }
+void WebViewImpl::loadFile(std::string_view file) { _systemWebControl->loadFile(file); }
+void WebViewImpl::stopLoading() { _systemWebControl->stopLoading(); }
+void WebViewImpl::reload() { _systemWebControl->reload(); }
+bool WebViewImpl::canGoBack() { return _systemWebControl->canGoBack(); }
+bool WebViewImpl::canGoForward() { return _systemWebControl->canGoForward(); }
+void WebViewImpl::goBack() { _systemWebControl->goBack(); }
+void WebViewImpl::goForward() { _systemWebControl->goForward(); }
+void WebViewImpl::setJavascriptInterfaceScheme(std::string_view scheme) { _systemWebControl->setJavascriptInterfaceScheme(scheme); }
+void WebViewImpl::evaluateJS(std::string_view js) { _systemWebControl->evaluateJS(js); }
+void WebViewImpl::setScalesPageToFit(bool scalesPageToFit) { _systemWebControl->setScalesPageToFit(scalesPageToFit); }
+void WebViewImpl::draw(Renderer*, Mat4 const&, uint32_t flags)
+{
+    if (isInitialized() && (flags & Node::FLAGS_TRANSFORM_DIRTY))
     {
-        _systemWebControl->removeWebView();
-        delete _systemWebControl;
-        _systemWebControl = nullptr;
+        const auto rect = Helper::convertBoundingBoxToScreen(_webView);
+        _systemWebControl->setWebViewRect(static_cast<int>(rect.origin.x), static_cast<int>(rect.origin.y),
+                                        static_cast<int>(rect.size.width), static_cast<int>(rect.size.height));
     }
 }
-
-void WebViewImpl::loadData(const Data& data,
-                           std::string_view MIMEType,
-                           std::string_view encoding,
-                           std::string_view baseURL)
-{
-    if (_createSucceeded)
-    {
-        const std::string dataString(reinterpret_cast<char*>(data.getBytes()),
-                                     static_cast<unsigned int>(data.getSize()));
-        const auto url = getDataURI(dataString, MIMEType);
-        _systemWebControl->loadURL(url, false);
-    }
-}
-
-void WebViewImpl::loadHTMLString(std::string_view string, std::string_view baseURL)
-{
-    if (_createSucceeded)
-    {
-        if (string.empty())
-        {
-            _systemWebControl->loadHTMLString("data:text/html," + utils::urlEncode("<html></html>"), baseURL);
-            return;
-        }
-
-        const auto html = htmlFromUri(string);
-        if (!html.empty())
-        {
-            _systemWebControl->loadHTMLString("data:text/html," + utils::urlEncode(html), baseURL);
-        }
-        else
-        {
-            _systemWebControl->loadHTMLString(string, baseURL);
-        }
-    }
-}
-
-void WebViewImpl::loadURL(std::string_view url, bool cleanCachedData)
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->loadURL(url, cleanCachedData);
-    }
-}
-
-void WebViewImpl::loadFile(std::string_view fileName)
-{
-    if (_createSucceeded)
-    {
-        const auto fullPath = FileUtils::getInstance()->fullPathForFilename(fileName);
-        _systemWebControl->loadFile(fullPath);
-    }
-}
-
-void WebViewImpl::stopLoading()
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->stopLoading();
-    }
-}
-
-void WebViewImpl::reload()
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->reload();
-    }
-}
-
-bool WebViewImpl::canGoBack()
-{
-    if (_createSucceeded)
-    {
-        return _systemWebControl->canGoBack();
-    }
-    return false;
-}
-
-bool WebViewImpl::canGoForward()
-{
-    if (_createSucceeded)
-    {
-        return _systemWebControl->canGoForward();
-    }
-    return false;
-}
-
-void WebViewImpl::goBack()
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->goBack();
-    }
-}
-
-void WebViewImpl::goForward()
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->goForward();
-    }
-}
-
-void WebViewImpl::setJavascriptInterfaceScheme(std::string_view scheme)
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->setJavascriptInterfaceScheme(scheme);
-    }
-}
-
-void WebViewImpl::evaluateJS(std::string_view js)
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->evaluateJS(js);
-    }
-}
-
-void WebViewImpl::setScalesPageToFit(const bool scalesPageToFit)
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->setScalesPageToFit(scalesPageToFit);
-    }
-}
-
-void WebViewImpl::draw(Renderer* renderer, Mat4 const& transform, uint32_t flags)
-{
-    if (_createSucceeded && (flags & Node::FLAGS_TRANSFORM_DIRTY))
-    {
-        const auto uiRect = cocos2d::ui::Helper::convertBoundingBoxToScreen(_webView);
-        _systemWebControl->setWebViewRect(static_cast<int>(uiRect.origin.x), static_cast<int>(uiRect.origin.y),
-                                          static_cast<int>(uiRect.size.width), static_cast<int>(uiRect.size.height));
-    }
-}
-
-void WebViewImpl::setVisible(bool visible)
-{
-    if (_createSucceeded)
-    {
-        _systemWebControl->setWebViewVisible(visible);
-    }
-}
-
-void WebViewImpl::setBounces(bool bounces)
-{
-    _systemWebControl->setBounces(bounces);
-}
-
-void WebViewImpl::setOpacityWebView(float opacity)
-{
-    _systemWebControl->setOpacityWebView(opacity);
-}
-
-float WebViewImpl::getOpacityWebView() const
-{
-    return _systemWebControl->getOpacityWebView();
-}
-
-void WebViewImpl::setBackgroundTransparent()
-{
-    _systemWebControl->setBackgroundTransparent();
-}
+void WebViewImpl::setVisible(bool visible) { _systemWebControl->setWebViewVisible(visible); }
+void WebViewImpl::setBounces(bool bounces) { _systemWebControl->setBounces(bounces); }
+void WebViewImpl::setOpacityWebView(float opacity) { _systemWebControl->setOpacityWebView(opacity); }
+float WebViewImpl::getOpacityWebView() const { return _systemWebControl->getOpacityWebView(); }
+void WebViewImpl::setBackgroundTransparent() { _systemWebControl->setBackgroundTransparent(); }
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END
 
-//
-// Implement Win32WebControl
-//
-bool Win32WebControl::s_isInitialized = false;
-
-void Win32WebControl::lazyInit()
-{
-    // reset the main windows style so that its drawing does not cover the webview sub window
-    auto hwnd        = cocos2d::Director::getInstance()->getOpenGLView()->getWin32Window();
-    const auto style = GetWindowLong(hwnd, GWL_STYLE);
-    SetWindowLong(hwnd, GWL_STYLE, style | WS_CLIPCHILDREN);
-
-    CoInitialize(NULL);
-}
-
-Win32WebControl::Win32WebControl() : _shouldStartLoading(nullptr), _didFinishLoading(nullptr), _didFailLoading(nullptr)
-{
-    if (!s_isInitialized)
-    {
-        lazyInit();
-    }
-}
-
-bool Win32WebControl::createWebView(const std::function<bool(std::string_view)>& shouldStartLoading,
-                                    const std::function<void(std::string_view)>& didFinishLoading,
-                                    const std::function<void(std::string_view)>& didFailLoading,
-                                    const std::function<void(std::string_view)>& onJsCallback)
-{
-    bool ret = false;
-    do
-    {
-        HWND hwnd           = cocos2d::Director::getInstance()->getOpenGLView()->getWin32Window();
-        HINSTANCE hInstance = GetModuleHandle(nullptr);
-        WNDCLASSEX wc;
-        ZeroMemory(&wc, sizeof(WNDCLASSEX));
-        wc.cbSize        = sizeof(WNDCLASSEX);
-        wc.hInstance     = hInstance;
-        wc.lpszClassName = L"webview";
-        wc.hIcon         = nullptr;
-        wc.hIconSm       = nullptr;
-        // wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-        wc.lpfnWndProc = (WNDPROC)(+[](HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) -> int {
-            auto w = (Win32WebControl*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-            if (!w)
-            {
-                return DefWindowProc(hwnd, msg, wp, lp);
-            }
-
-            switch (msg)
-            {
-            case WM_SIZE:
-                w->resize(hwnd);
-                break;
-
-            case WM_CLOSE:
-                DestroyWindow(hwnd);
-                break;
-
-            case WM_GETMINMAXINFO:
-            {
-                auto lpmmi = (LPMINMAXINFO)lp;
-                if (w == nullptr)
-                {
-                    return 0;
-                }
-                if (w->m_maxsz.x > 0 && w->m_maxsz.y > 0)
-                {
-                    lpmmi->ptMaxSize      = w->m_maxsz;
-                    lpmmi->ptMaxTrackSize = w->m_maxsz;
-                }
-                if (w->m_minsz.x > 0 && w->m_minsz.y > 0)
-                {
-                    lpmmi->ptMinTrackSize = w->m_minsz;
-                }
-            }
-            break;
-
-            default:
-                return DefWindowProc(hwnd, msg, wp, lp);
-            }
-            return 0;
-        });
-        RegisterClassEx(&wc);
-        m_window = CreateWindow(L"webview", L"", WS_VISIBLE | WS_CHILD, 0, 0, 0, 0, hwnd, nullptr, hInstance, nullptr);
-        SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
-
-        ShowWindow(m_window, SW_SHOW);
-        UpdateWindow(m_window);
-        SetFocus(m_window);
-
-        auto cb = [this](std::string_view msg) { on_message(msg); };
-
-        if (!embed(m_window, false, cb))
-        {
-            CCLOG("Cannot create edge chromium webview");
-            ret = false;
-            break;
-        }
-
-        resize(m_window);
-        ret = true;
-    } while (0);
-
-    if (!ret)
-    {
-        removeWebView();
-    }
-
-    _shouldStartLoading = shouldStartLoading;
-    _didFinishLoading   = didFinishLoading;
-    _didFailLoading     = didFailLoading;
-    _onJsCallback       = onJsCallback;
-    return ret;
-}
-
-void Win32WebControl::removeWebView()
-{
-    m_controller->Close();
-
-    m_controller = nullptr;
-    m_webview    = nullptr;
-}
-
-void Win32WebControl::setWebViewRect(const int left, const int top, const int width, const int height)
-{
-    if (m_controller == nullptr)
-    {
-        return;
-    }
-
-    RECT r;
-    r.left   = left;
-    r.top    = top;
-    r.right  = left + width;
-    r.bottom = top - height;
-    AdjustWindowRect(&r, WS_CHILD | WS_VISIBLE, 0);
-    SetWindowPos(m_window, nullptr, left, top, width, height, SWP_NOZORDER);
-
-    m_controller->put_ZoomFactor(_scalesPageToFit ? getDeviceScaleFactor() : 1.0);
-}
-
-void Win32WebControl::setJavascriptInterfaceScheme(std::string_view scheme)
-{
-    m_jsScheme = scheme;
-}
-
-void Win32WebControl::loadHTMLString(std::string_view html, std::string_view baseURL)
-{
-    if (!html.empty())
-    {
-        const auto whtml = to_lpwstr(html);
-        m_webview->NavigateToString(whtml);
-        delete[] whtml;
-    }
-}
-
-void Win32WebControl::loadURL(std::string_view url, bool cleanCachedData)
-{
-    if (cleanCachedData)
-    {
-        m_webview->CallDevToolsProtocolMethod(L"Network.clearBrowserCache", L"{}", nullptr);
-    }
-    navigate(url);
-}
-
-void Win32WebControl::loadFile(std::string_view filePath)
-{
-    auto fullPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(filePath);
-    if (fullPath.find("file:///") != 0)
-    {
-        if (fullPath[0] == '/')
-        {
-            fullPath = "file://" + fullPath;
-        }
-        else
-        {
-            fullPath = "file:///" + fullPath;
-        }
-    }
-    loadURL(fullPath, false);
-}
-
-void Win32WebControl::stopLoading()
-{
-    m_webview->Stop();
-}
-
-void Win32WebControl::reload() const
-{
-    m_webview->Reload();
-}
-
-bool Win32WebControl::canGoBack() const
-{
-    BOOL result;
-    return SUCCEEDED(m_webview->get_CanGoBack(&result)) && result;
-}
-
-bool Win32WebControl::canGoForward() const
-{
-    BOOL result;
-    return SUCCEEDED(m_webview->get_CanGoForward(&result)) && result;
-}
-
-void Win32WebControl::goBack() const
-{
-    m_webview->GoBack();
-}
-
-void Win32WebControl::goForward() const
-{
-    m_webview->GoForward();
-}
-
-void Win32WebControl::evaluateJS(std::string_view js)
-{
-    eval(js);
-}
-
-void Win32WebControl::setScalesPageToFit(const bool scalesPageToFit)
-{
-    _scalesPageToFit = scalesPageToFit;
-    m_controller->put_ZoomFactor(_scalesPageToFit ? getDeviceScaleFactor() : 1.0);
-}
-
-void Win32WebControl::setWebViewVisible(const bool visible) const
-{
-    ShowWindow(m_window, visible ? SW_SHOW : SW_HIDE);
-    if (!visible)
-    {
-        // When the frame window is minimized set the browser window size to 0x0 to
-        // reduce resource usage.
-        SetWindowPos(m_window, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-    }
-}
-
-void Win32WebControl::setBounces(bool bounces) {}
-
-void Win32WebControl::setOpacityWebView(float opacity) {}
-
-float Win32WebControl::getOpacityWebView() const
-{
-    return 1.0f;
-}
-
-void Win32WebControl::setBackgroundTransparent()
-{
-    ICoreWebView2Controller2* viewController2;
-    if (SUCCEEDED(m_controller->QueryInterface(__uuidof(ICoreWebView2Controller2),
-                                               reinterpret_cast<void**>(&viewController2))))
-    {
-        COREWEBVIEW2_COLOR color;
-        viewController2->get_DefaultBackgroundColor(&color);
-        color.A = 0;  // Only supports 0 or 255. Other values not supported
-        viewController2->put_DefaultBackgroundColor(color);
-    }
-}
-
-#endif  // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+#endif  // Win32 WebView2

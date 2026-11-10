@@ -30,9 +30,20 @@
 #include "ui/UIWebView/UIWebView.h"
 #include "renderer/CCRenderer.h"
 #include "base/CCDirector.h"
+#include "base/CCRefPtr.h"
 #include "platform/CCGLView.h"
 #include "platform/ios/CCEAGLView-ios.h"
 #include "platform/CCFileUtils.h"
+
+namespace
+{
+NSString* webViewString(std::string_view value)
+{
+    return [[[NSString alloc] initWithBytes:value.data()
+                                    length:value.size()
+                                  encoding:NSUTF8StringEncoding] autorelease];
+}
+}
 
 @interface UIWebViewWrapper : NSObject
 @property(nonatomic) std::function<bool(std::string url)> shouldStartLoading;
@@ -112,8 +123,13 @@
 
 - (void)dealloc
 {
+    self.shouldStartLoading = nullptr;
+    self.didFinishLoading = nullptr;
+    self.didFailLoading = nullptr;
+    self.onJsCallback = nullptr;
     self.wkWebView.UIDelegate         = nil;
     self.wkWebView.navigationDelegate = nil;
+    [self.wkWebView stopLoading];
     [self.wkWebView removeFromSuperview];
     [self.wkWebView release];
     self.wkWebView = nil;
@@ -148,6 +164,10 @@
 
 - (void)setBounces:(bool)bounces
 {
+    if (!self.wkWebView)
+    {
+        [self setupWebView];
+    }
     self.wkWebView.scrollView.bounces = bounces;
 }
 
@@ -191,7 +211,7 @@
 
 - (void)setJavascriptInterfaceScheme:(std::string_view)scheme
 {
-    self.jsScheme = @(scheme.data());
+    self.jsScheme = webViewString(scheme);
 }
 
 - (void)loadData:(std::string_view)data
@@ -200,12 +220,12 @@
              baseURL:(std::string_view)baseURL
 {
     auto path = [[NSBundle mainBundle] resourcePath];
-    path      = [path stringByAppendingPathComponent:@(baseURL.data())];
+    path      = [path stringByAppendingPathComponent:webViewString(baseURL)];
     auto url  = [NSURL fileURLWithPath:path];
 
     [self.wkWebView loadData:[NSData dataWithBytes:data.data() length:data.length()]
-                     MIMEType:@(MIMEType.data())
-        characterEncodingName:@(encodingName.data())
+                     MIMEType:webViewString(MIMEType)
+        characterEncodingName:webViewString(encodingName)
                       baseURL:url];
 }
 
@@ -216,9 +236,9 @@
         [self setupWebView];
     }
     auto path = [[NSBundle mainBundle] resourcePath];
-    path      = [path stringByAppendingPathComponent:@(baseURL.data())];
+    path      = [path stringByAppendingPathComponent:webViewString(baseURL)];
     auto url  = [NSURL fileURLWithPath:path];
-    [self.wkWebView loadHTMLString:@(string.data()) baseURL:url];
+    [self.wkWebView loadHTMLString:webViewString(string) baseURL:url];
 }
 
 - (void)loadUrl:(std::string_view)urlString cleanCachedData:(BOOL)needCleanCachedData
@@ -227,7 +247,9 @@
     {
         [self setupWebView];
     }
-    NSURL* url = [NSURL URLWithString:@(urlString.data())];
+    NSURL* url = [NSURL URLWithString:webViewString(urlString)];
+    if (!url)
+        return;
 
     NSURLRequest* request = nil;
     if (needCleanCachedData)
@@ -246,7 +268,7 @@
     {
         [self setupWebView];
     }
-    NSURL* url            = [NSURL fileURLWithPath:@(filePath.data())];
+    NSURL* url            = [NSURL fileURLWithPath:webViewString(filePath)];
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
     [self.wkWebView loadRequest:request];
 }
@@ -287,7 +309,7 @@
     {
         [self setupWebView];
     }
-    [self.wkWebView evaluateJavaScript:@(js.data()) completionHandler:nil];
+    [self.wkWebView evaluateJavaScript:webViewString(js) completionHandler:nil];
 }
 
 - (void)setScalesPageToFit:(const bool)scalesPageToFit
@@ -303,45 +325,61 @@
     decidePolicyForNavigationAction:(WKNavigationAction*)navigationAction
                     decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler
 {
+    // A notification can release the owning WebView and its wrapper. Keep the
+    // delegate alive until the synchronous policy completion has been called.
+    [self retain];
     NSString* url = [[[navigationAction request] URL] absoluteString];
-    if ([[webView.URL scheme] isEqualToString:self.jsScheme])
+    auto jsCallback = self.onJsCallback;
+    auto shouldStart = self.shouldStartLoading;
+    if ([[[[navigationAction request] URL] scheme] isEqualToString:self.jsScheme])
     {
-        self.onJsCallback([url UTF8String]);
+        if (jsCallback && url)
+            jsCallback(std::string([url UTF8String], [url lengthOfBytesUsingEncoding:NSUTF8StringEncoding]));
         decisionHandler(WKNavigationActionPolicyCancel);
+        [self release];
         return;
     }
-    if (self.shouldStartLoading && url)
+    if (shouldStart && url)
     {
-        if (self.shouldStartLoading([url UTF8String]))
+        if (shouldStart(std::string([url UTF8String], [url lengthOfBytesUsingEncoding:NSUTF8StringEncoding])))
             decisionHandler(WKNavigationActionPolicyAllow);
         else
             decisionHandler(WKNavigationActionPolicyCancel);
 
+        [self release];
         return;
     }
 
     decisionHandler(WKNavigationActionPolicyAllow);
+    [self release];
 }
 
 - (void)webView:(WKWebView*)webView didFinishNavigation:(WKNavigation*)navigation
 {
-    if (self.didFinishLoading)
+    [self retain];
+    auto callback = self.didFinishLoading;
+    if (callback)
     {
         NSString* url = [webView.URL absoluteString];
-        self.didFinishLoading([url UTF8String]);
+        if (url)
+            callback(std::string([url UTF8String], [url lengthOfBytesUsingEncoding:NSUTF8StringEncoding]));
     }
+    [self release];
 }
 
 - (void)webView:(WKWebView*)webView didFailProvisionalNavigation:(WKNavigation*)navigation withError:(NSError*)error
 {
-    if (self.didFailLoading)
+    [self retain];
+    auto callback = self.didFailLoading;
+    if (callback)
     {
         NSString* errorInfo = error.userInfo[NSURLErrorFailingURLStringErrorKey];
         if (errorInfo)
         {
-            self.didFailLoading([errorInfo UTF8String]);
+            callback(std::string([errorInfo UTF8String], [errorInfo lengthOfBytesUsingEncoding:NSUTF8StringEncoding]));
         }
     }
+    [self release];
 }
 
 #pragma WKUIDelegate
@@ -379,34 +417,40 @@ WebViewImpl::WebViewImpl(WebView* webView) : _uiWebViewWrapper([UIWebViewWrapper
 {
 
     _uiWebViewWrapper.shouldStartLoading = [this](std::string url) {
-        if (this->_webView->_onShouldStartLoading)
-        {
-            return this->_webView->_onShouldStartLoading(this->_webView, url);
-        }
-        return true;
+        cocos2d::RefPtr<WebView> sender(_webView);
+        auto callback = sender->getOnShouldStartLoading();
+        return callback ? callback(sender.get(), url) : true;
     };
     _uiWebViewWrapper.didFinishLoading = [this](std::string url) {
-        if (this->_webView->_onDidFinishLoading)
-        {
-            this->_webView->_onDidFinishLoading(this->_webView, url);
-        }
+        cocos2d::RefPtr<WebView> sender(_webView);
+        auto callback = sender->getOnDidFinishLoading();
+        if (callback)
+            callback(sender.get(), url);
     };
     _uiWebViewWrapper.didFailLoading = [this](std::string url) {
-        if (this->_webView->_onDidFailLoading)
-        {
-            this->_webView->_onDidFailLoading(this->_webView, url);
-        }
+        cocos2d::RefPtr<WebView> sender(_webView);
+        auto callback = sender->getOnDidFailLoading();
+        if (callback)
+            callback(sender.get(), url);
     };
     _uiWebViewWrapper.onJsCallback = [this](std::string url) {
-        if (this->_webView->_onJSCallback)
-        {
-            this->_webView->_onJSCallback(this->_webView, url);
-        }
+        cocos2d::RefPtr<WebView> sender(_webView);
+        auto callback = sender->getOnJSCallback();
+        if (callback)
+            callback(sender.get(), url);
     };
 }
 
 WebViewImpl::~WebViewImpl()
 {
+    _uiWebViewWrapper.shouldStartLoading = nullptr;
+    _uiWebViewWrapper.didFinishLoading = nullptr;
+    _uiWebViewWrapper.didFailLoading = nullptr;
+    _uiWebViewWrapper.onJsCallback = nullptr;
+    _uiWebViewWrapper.wkWebView.UIDelegate = nil;
+    _uiWebViewWrapper.wkWebView.navigationDelegate = nil;
+    [_uiWebViewWrapper.wkWebView stopLoading];
+    [_uiWebViewWrapper.wkWebView removeFromSuperview];
     [_uiWebViewWrapper release];
     _uiWebViewWrapper = nullptr;
 }

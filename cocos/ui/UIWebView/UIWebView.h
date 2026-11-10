@@ -29,7 +29,9 @@
 #include "ui/GUIExport.h"
 #include "base/CCData.h"
 
-#if defined(_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) || \
+    (CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)) || \
+    (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2)
 /**
  * @addtogroup ui
  * @{
@@ -55,6 +57,9 @@ public:
      * Allocates and initializes a WebView.
      */
     static WebView* create();
+
+    /** Initializes the widget and validates its native implementation. */
+    virtual bool init() override;
 
     /**
      * Set javascript interface scheme.
@@ -245,6 +250,16 @@ protected:
     ccWebViewCallback _onJSCallback                                                  = nullptr;
 
 private:
+    // Only explicitly set presentation options are cloned. Native views, loaded
+    // content, browser history and pending requests belong to each impl.
+    std::string _javascriptInterfaceScheme;
+    bool _scalesPageToFit = false;
+    bool _hasScalesPageToFit = false;
+    bool _bounces = false;
+    bool _hasBounces = false;
+    float _opacityWebView = 1.0f;
+    bool _hasOpacityWebView = false;
+    bool _backgroundTransparent = false;
     WebViewImpl* _impl = nullptr;
     friend class WebViewImpl;
 };

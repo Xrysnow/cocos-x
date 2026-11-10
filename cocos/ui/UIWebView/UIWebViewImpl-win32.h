@@ -28,7 +28,7 @@
 
 #include "platform/CCPlatformMacros.h"
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(_CC_HAVE_WEBVIEW2)
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2
 
     #include <string>
     #include "CCStdC.h"
@@ -58,6 +58,7 @@ class WebViewImpl
 public:
     WebViewImpl(cocos2d::ui::WebView* webView);
     virtual ~WebViewImpl();
+    bool isInitialized() const;
 
     void setJavascriptInterfaceScheme(std::string_view scheme);
     void loadData(const cocos2d::Data& data,
@@ -85,7 +86,6 @@ public:
     void setBackgroundTransparent();
 
 private:
-    bool _createSucceeded;
     Win32WebControl* _systemWebControl;
     WebView* _webView;
 };

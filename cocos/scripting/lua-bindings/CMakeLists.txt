@@ -162,42 +162,13 @@ if(APPLE)
         ${lua_bindings_manual_files}
         manual/platform/ios/CCLuaObjcBridge.mm
         )
-    if(IOS)
-        set(lua_bindings_manual_headers
-            ${lua_bindings_manual_headers}
-            manual/ui/cclua_webview_manual.hpp
-            auto/cclua_webview_auto.hpp
-            )
-        set(lua_bindings_manual_files
-            ${lua_bindings_manual_files}
-            manual/ui/cclua_webview_manual.cpp
-            auto/cclua_webview_auto.cpp
-            )
-    endif()
-elseif(ANDROID)
-    set(lua_bindings_manual_headers
-        ${lua_bindings_manual_headers}
-        manual/ui/cclua_webview_manual.hpp
-        auto/cclua_webview_auto.hpp
-        )
-    set(lua_bindings_manual_files
-        ${lua_bindings_manual_files}
-        manual/ui/cclua_webview_manual.cpp
-        auto/cclua_webview_auto.cpp
-        )
-elseif(WINDOWS)
-    if(CC_ENABLE_MSEDGE_WEBVIEW2)
-        set(lua_bindings_manual_headers
-            ${lua_bindings_manual_headers}
-            manual/ui/cclua_webview_manual.hpp
-            auto/cclua_webview_auto.hpp
-            )
-        set(lua_bindings_manual_files
-            ${lua_bindings_manual_files}
-            manual/ui/cclua_webview_manual.cpp
-            auto/cclua_webview_auto.cpp
-            )
-    endif()
+endif()
+
+# WebView has no macOS/tvOS backend. UI installs this single generated class
+# only when its native implementation is also selected.
+if(ANDROID OR (IOS AND NOT TVOS) OR (WINDOWS AND CC_ENABLE_MSEDGE_WEBVIEW2))
+    list(APPEND lua_bindings_auto_headers auto/cclua_webview_auto.hpp)
+    list(APPEND lua_bindings_auto_files auto/cclua_webview_auto.cpp)
 endif()
 
 if(CC_ENABLE_VIDEO_PLATFORM)
@@ -263,12 +234,6 @@ endif()
 if(WINDOWS AND CC_ENABLE_VIDEO_PLATFORM)
     target_compile_definitions(${COCOS_LUA_LIB}
         PUBLIC CC_ENABLE_MFMEDIA=1
-    )
-endif()
-
-if(CC_ENABLE_MSEDGE_WEBVIEW2)
-    target_compile_definitions(${COCOS_LUA_LIB}
-        PUBLIC CC_ENABLE_MSEDGE_WEBVIEW2=1
     )
 endif()
 

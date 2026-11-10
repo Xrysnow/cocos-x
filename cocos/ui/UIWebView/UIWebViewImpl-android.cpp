@@ -33,6 +33,7 @@
 #include "ui/UIWebView/UIWebView.h"
 #include "platform/CCGLView.h"
 #include "base/CCDirector.h"
+#include "base/CCRefPtr.h"
 #include "platform/CCFileUtils.h"
 #include "ui/UIHelper.h"
 #include <string_view>
@@ -193,13 +194,15 @@ static std::unordered_map<int, cocos2d::ui::WebViewImpl*> s_WebViewImpls;
 WebViewImpl::WebViewImpl(WebView* webView) : _viewTag(-1), _webView(webView)
 {
     _viewTag                 = createWebViewJNI();
-    s_WebViewImpls[_viewTag] = this;
+    if (_viewTag >= 0)
+        s_WebViewImpls[_viewTag] = this;
 }
 
 WebViewImpl::~WebViewImpl()
 {
-    JniHelper::callStaticVoidMethod(className, "removeWebView", _viewTag);
     s_WebViewImpls.erase(_viewTag);
+    if (_viewTag >= 0)
+        JniHelper::callStaticVoidMethod(className, "removeWebView", _viewTag);
 }
 
 void WebViewImpl::loadData(const Data& data,
@@ -280,17 +283,15 @@ void WebViewImpl::setScalesPageToFit(const bool scalesPageToFit)
 
 bool WebViewImpl::shouldStartLoading(const int viewTag, std::string_view url)
 {
-    bool allowLoad = true;
     auto it        = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        auto webView = it->second->_webView;
-        if (webView->_onShouldStartLoading)
-        {
-            allowLoad = webView->_onShouldStartLoading(webView, url);
-        }
+        RefPtr<WebView> webView(it->second->_webView);
+        auto callback = webView->getOnShouldStartLoading();
+        return callback ? callback(webView.get(), url) : true;
     }
-    return allowLoad;
+    // A late query for a removed native view must not authorize navigation.
+    return false;
 }
 
 void WebViewImpl::didFinishLoading(const int viewTag, std::string_view url)
@@ -298,11 +299,10 @@ void WebViewImpl::didFinishLoading(const int viewTag, std::string_view url)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        auto webView = it->second->_webView;
-        if (webView->_onDidFinishLoading)
-        {
-            webView->_onDidFinishLoading(webView, url);
-        }
+        RefPtr<WebView> webView(it->second->_webView);
+        auto callback = webView->getOnDidFinishLoading();
+        if (callback)
+            callback(webView.get(), url);
     }
 }
 
@@ -311,11 +311,10 @@ void WebViewImpl::didFailLoading(const int viewTag, std::string_view url)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        auto webView = it->second->_webView;
-        if (webView->_onDidFailLoading)
-        {
-            webView->_onDidFailLoading(webView, url);
-        }
+        RefPtr<WebView> webView(it->second->_webView);
+        auto callback = webView->getOnDidFailLoading();
+        if (callback)
+            callback(webView.get(), url);
     }
 }
 
@@ -324,11 +323,10 @@ void WebViewImpl::onJsCallback(const int viewTag, std::string_view message)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        auto webView = it->second->_webView;
-        if (webView->_onJSCallback)
-        {
-            webView->_onJSCallback(webView, message);
-        }
+        RefPtr<WebView> webView(it->second->_webView);
+        auto callback = webView->getOnJSCallback();
+        if (callback)
+            callback(webView.get(), message);
     }
 }
 

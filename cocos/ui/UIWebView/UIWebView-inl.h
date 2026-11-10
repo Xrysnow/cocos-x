@@ -41,6 +41,11 @@ WebView::~WebView()
     CC_SAFE_DELETE(_impl);
 }
 
+bool WebView::init()
+{
+    return Widget::init() && _impl && _impl->isInitialized();
+}
+
 WebView* WebView::create()
 {
     auto webView = new WebView();
@@ -55,7 +60,8 @@ WebView* WebView::create()
 
 void WebView::setJavascriptInterfaceScheme(std::string_view scheme)
 {
-    _impl->setJavascriptInterfaceScheme(scheme);
+    _javascriptInterfaceScheme = scheme;
+    _impl->setJavascriptInterfaceScheme(_javascriptInterfaceScheme);
 }
 
 void WebView::loadData(const cocos2d::Data& data,
@@ -123,6 +129,8 @@ void WebView::evaluateJS(std::string_view js)
 
 void WebView::setScalesPageToFit(bool const scalesPageToFit)
 {
+    _scalesPageToFit = scalesPageToFit;
+    _hasScalesPageToFit = true;
     _impl->setScalesPageToFit(scalesPageToFit);
 }
 
@@ -143,6 +151,8 @@ void WebView::setVisible(bool visible)
 
 void WebView::setOpacityWebView(float opacity)
 {
+    _opacityWebView = opacity;
+    _hasOpacityWebView = true;
     _impl->setOpacityWebView(opacity);
 }
 
@@ -153,6 +163,7 @@ float WebView::getOpacityWebView() const
 
 void WebView::setBackgroundTransparent()
 {
+    _backgroundTransparent = true;
     _impl->setBackgroundTransparent();
 };
 
@@ -173,6 +184,8 @@ void WebView::onExit()
 
 void WebView::setBounces(bool bounces)
 {
+    _bounces = bounces;
+    _hasBounces = true;
     _impl->setBounces(bounces);
 }
 
@@ -186,7 +199,16 @@ void WebView::copySpecialProperties(Widget* model)
     WebView* webView = dynamic_cast<WebView*>(model);
     if (webView)
     {
-        this->_impl                 = webView->_impl;
+        // createCloneInstance has already initialized our own native control.
+        setJavascriptInterfaceScheme(webView->_javascriptInterfaceScheme);
+        if (webView->_hasScalesPageToFit)
+            setScalesPageToFit(webView->_scalesPageToFit);
+        if (webView->_hasBounces)
+            setBounces(webView->_bounces);
+        if (webView->_hasOpacityWebView)
+            setOpacityWebView(webView->_opacityWebView);
+        if (webView->_backgroundTransparent)
+            setBackgroundTransparent();
         this->_onShouldStartLoading = webView->_onShouldStartLoading;
         this->_onDidFinishLoading   = webView->_onDidFinishLoading;
         this->_onDidFailLoading     = webView->_onDidFailLoading;

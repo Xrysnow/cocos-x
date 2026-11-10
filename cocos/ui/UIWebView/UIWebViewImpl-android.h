@@ -57,6 +57,8 @@ public:
 
     virtual ~WebViewImpl();
 
+    bool isInitialized() const { return _viewTag >= 0; }
+
     void setJavascriptInterfaceScheme(std::string_view scheme);
 
     void loadData(const cocos2d::Data& data,

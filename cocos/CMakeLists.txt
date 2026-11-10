@@ -243,8 +243,8 @@ if(WINDOWS)
         else()
             target_link_libraries(${COCOS_CORE_LIB} ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/Microsoft.Web.WebView2.targets)
         endif()
-        target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_HAVE_WEBVIEW2)
-        target_compile_definitions(${COCOS_CORE_LIB} PUBLIC AX_HAVE_WEBVIEW2)
+        target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
+            CC_ENABLE_MSEDGE_WEBVIEW2=1 CC_HAVE_WEBVIEW2 AX_HAVE_WEBVIEW2)
     endif()
 endif()
 

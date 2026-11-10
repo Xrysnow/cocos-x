@@ -31,9 +31,8 @@
 #if CC_ENABLE_VIDEO_PLATFORM
 #include "scripting/lua-bindings/auto/cclua_video_platform_auto.hpp"
 #endif
-#if ((CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)) || (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2))
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || (CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)) || (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2)
 #include "scripting/lua-bindings/auto/cclua_webview_auto.hpp"
-#include "scripting/lua-bindings/manual/ui/cclua_webview_manual.hpp"
 #endif
 
 namespace ui_binding
@@ -170,14 +169,8 @@ int register_ui_module(lua_State* L)
 #if CC_ENABLE_VIDEO_PLATFORM
         register_all_cc_video_platform(L);
 #endif
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && !defined(CC_TARGET_OS_TVOS)
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || (CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)) || (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2)
         register_all_cc_webview(L);
-        register_all_cc_webview_manual(L);
-#elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-    #if defined(CC_ENABLE_MSEDGE_WEBVIEW2)
-        register_all_cc_webview(L);
-        register_all_cc_webview_manual(L);
-    #endif
 #endif
     }
     lua_pop(L, 1);
