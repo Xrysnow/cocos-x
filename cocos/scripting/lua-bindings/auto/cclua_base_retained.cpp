@@ -5,85 +5,7 @@
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 
-// GLContextAttrs stubs, platform registration and merged aliases.
-
-
-
-
-// Retained: existing unsupported layout/value stub.
-int lua_cc_base_GLView_setGLContextAttrs(lua_State* tolua_S)
-{
-    int argc = 0;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S,1,"cc.GLView",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 1)
-    {
-        GLContextAttrs arg0;
-        #pragma warning NO CONVERSION TO NATIVE FOR GLContextAttrs
-		ok = false;
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_base_GLView_setGLContextAttrs'", nullptr);
-            return 0;
-        }
-        cocos2d::GLView::setGLContextAttrs(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.GLView:setGLContextAttrs",argc, 1);
-    return 0;
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_base_GLView_setGLContextAttrs'.",&tolua_err);
-#endif
-    return 0;
-}
-
-// Retained: existing unsupported layout/value stub.
-int lua_cc_base_GLView_getGLContextAttrs(lua_State* tolua_S)
-{
-    int argc = 0;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S,1,"cc.GLView",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 0)
-    {
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_base_GLView_getGLContextAttrs'", nullptr);
-            return 0;
-        }
-        auto&& ret = cocos2d::GLView::getGLContextAttrs();
-        #pragma warning NO CONVERSION FROM NATIVE FOR GLContextAttrs;
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.GLView:getGLContextAttrs",argc, 0);
-    return 0;
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_base_GLView_getGLContextAttrs'.",&tolua_err);
-#endif
-    return 0;
-}
+// Platform registration and merged aliases.
 
 int lua_cc_base_GLViewImpl_create(lua_State* lua_S)
 {
@@ -198,12 +120,6 @@ int register_all_cc_base_retained(lua_State* L)
 	lua_register_cc_base_EventListenerController(L);
 	lua_register_cc_base_EventController(L);
 #endif
-	luaL_getmetatable(L, "cc.GLView");
-	if (lua_istable(L, -1)) {
-		tolua_function(L, "setGLContextAttrs", lua_cc_base_GLView_setGLContextAttrs);
-		tolua_function(L, "getGLContextAttrs", lua_cc_base_GLView_getGLContextAttrs);
-	}
-	lua_pop(L, 1);
 	luaL_getmetatable(L, "cc.GLViewImpl");
 	if (lua_istable(L, -1)) {
 		tolua_function(L, "create", lua_cc_base_GLViewImpl_create);

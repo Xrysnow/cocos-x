@@ -361,58 +361,6 @@ int lua_cc_physics3d_Physics3DRigidBody_getRigidBody(lua_State* tolua_S)
     return 0;
 }
 
-int lua_cc_physics3d_Physics3DRigidBody_init(lua_State* tolua_S)
-{
-    int argc = 0;
-    cocos2d::Physics3DRigidBody* cobj = nullptr;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"cc.Physics3DRigidBody",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::Physics3DRigidBody*)tolua_tousertype(tolua_S,1,0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_cc_physics3d_Physics3DRigidBody_init'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1)
-    {
-        cocos2d::Physics3DRigidBodyDes* arg0;
-
-        #pragma warning NO CONVERSION TO NATIVE FOR Physics3DRigidBodyDes*
-		ok = false;
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DRigidBody_init'", nullptr);
-            return 0;
-        }
-        auto&& ret = cobj->init(arg0);
-        tolua_pushboolean(tolua_S,(bool)ret);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Physics3DRigidBody:init",argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_physics3d_Physics3DRigidBody_init'.",&tolua_err);
-#endif
-
-    return 0;
-}
-
 int lua_cc_physics3d_Physics3DComponent_constructor(lua_State* tolua_S)
 {
     int argc = 0;
@@ -877,7 +825,6 @@ int register_all_cc_physics3d_retained(lua_State* L)
     if (lua_istable(L, -1)) {
         tolua_function(L, "new", lua_cc_physics3d_Physics3DRigidBody_constructor);
         tolua_function(L, "getRigidBody", lua_cc_physics3d_Physics3DRigidBody_getRigidBody);
-        tolua_function(L, "init", lua_cc_physics3d_Physics3DRigidBody_init);
     }
     lua_pop(L, 1);
     lua_getfield(L, LUA_REGISTRYINDEX, "cc.Physics3DComponent");
