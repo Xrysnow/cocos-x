@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIWidget.h"
 #include "ui/UILayout.h"
 #include "ui/UIHelper.h"
@@ -733,6 +734,7 @@ bool Widget::isSwallowTouches() const
 
 bool Widget::onTouchBegan(Touch* touch, Event* /*unusedEvent*/)
 {
+    auto keepAlive = makeRef(this);
     _hitted = false;
     if (isVisible() && isEnabled() && isAncestorsEnabled() && isAncestorsVisible(this))
     {
@@ -769,7 +771,9 @@ void Widget::propagateTouchEvent(cocos2d::ui::Widget::TouchEventType event,
                                  cocos2d::ui::Widget* sender,
                                  cocos2d::Touch* touch)
 {
-    Widget* widgetParent = getWidgetParent();
+    auto keepAlive = makeRef(this);
+    auto senderAlive = makeRef(sender);
+    auto widgetParent = makeRef(getWidgetParent());
     if (widgetParent)
     {
         widgetParent->_hittedByCamera = _hittedByCamera;
@@ -780,6 +784,7 @@ void Widget::propagateTouchEvent(cocos2d::ui::Widget::TouchEventType event,
 
 void Widget::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 {
+    auto keepAlive = makeRef(this);
     _touchMovePosition = touch->getLocation();
 
     setHighlighted(hitTest(_touchMovePosition, _hittedByCamera, nullptr));
@@ -797,6 +802,7 @@ void Widget::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 
 void Widget::onTouchEnded(Touch* touch, Event* /*unusedEvent*/)
 {
+    auto keepAlive = makeRef(this);
     _touchEndPosition = touch->getLocation();
 
     /*
@@ -822,6 +828,7 @@ void Widget::onTouchEnded(Touch* touch, Event* /*unusedEvent*/)
 
 void Widget::onTouchCancelled(Touch* touch, Event* /*unusedEvent*/)
 {
+    auto keepAlive = makeRef(this);
     /*
      * Propagate touch events to its parents
      */
@@ -837,9 +844,9 @@ void Widget::onTouchCancelled(Touch* touch, Event* /*unusedEvent*/)
 void Widget::pushDownEvent()
 {
     this->retain();
-    if (_touchEventCallback)
+    if (auto callback = _touchEventCallback)
     {
-        _touchEventCallback(this, TouchEventType::BEGAN);
+        callback(this, TouchEventType::BEGAN);
     }
 
     this->release();
@@ -848,9 +855,9 @@ void Widget::pushDownEvent()
 void Widget::moveEvent()
 {
     this->retain();
-    if (_touchEventCallback)
+    if (auto callback = _touchEventCallback)
     {
-        _touchEventCallback(this, TouchEventType::MOVED);
+        callback(this, TouchEventType::MOVED);
     }
 
     this->release();
@@ -865,14 +872,14 @@ void Widget::releaseUpEvent()
         requestFocus();
     }
 
-    if (_touchEventCallback)
+    if (auto callback = _touchEventCallback)
     {
-        _touchEventCallback(this, TouchEventType::ENDED);
+        callback(this, TouchEventType::ENDED);
     }
 
-    if (_clickEventListener)
+    if (auto callback = _clickEventListener)
     {
-        _clickEventListener(this);
+        callback(this);
     }
     this->release();
 }
@@ -880,9 +887,9 @@ void Widget::releaseUpEvent()
 void Widget::cancelUpEvent()
 {
     this->retain();
-    if (_touchEventCallback)
+    if (auto callback = _touchEventCallback)
     {
-        _touchEventCallback(this, TouchEventType::CANCELED);
+        callback(this, TouchEventType::CANCELED);
     }
 
     this->release();
@@ -1341,23 +1348,30 @@ Widget* Widget::findNextFocusedWidget(FocusDirection direction, Widget* current)
 
 void Widget::dispatchFocusEvent(cocos2d::ui::Widget* widgetLoseFocus, cocos2d::ui::Widget* widgetGetFocus)
 {
+    auto keepAlive = makeRef(this);
     // if the widgetLoseFocus doesn't get focus, it will use the previous focused widget instead
     if (widgetLoseFocus && !widgetLoseFocus->isFocused())
     {
         widgetLoseFocus = _focusedWidget;
     }
 
+    auto loseFocusAlive = makeRef(widgetLoseFocus);
+    auto getFocusAlive = makeRef(widgetGetFocus);
     if (widgetGetFocus != widgetLoseFocus)
     {
 
         if (widgetGetFocus)
         {
-            widgetGetFocus->onFocusChanged(widgetLoseFocus, widgetGetFocus);
+            auto callback = widgetGetFocus->onFocusChanged;
+            if (callback)
+                callback(widgetLoseFocus, widgetGetFocus);
         }
 
         if (widgetLoseFocus)
         {
-            widgetLoseFocus->onFocusChanged(widgetLoseFocus, widgetGetFocus);
+            auto callback = widgetLoseFocus->onFocusChanged;
+            if (callback)
+                callback(widgetLoseFocus, widgetGetFocus);
         }
 
         EventFocus event(widgetLoseFocus, widgetGetFocus);

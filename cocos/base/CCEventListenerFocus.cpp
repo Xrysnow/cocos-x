@@ -24,8 +24,10 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "base/CCEventListenerFocus.h"
 #include "base/CCEventFocus.h"
+#include "ui/UIWidget.h"
 #include "base/ccMacros.h"
 
 NS_CC_BEGIN
@@ -71,7 +73,15 @@ bool EventListenerFocus::init()
 {
     auto listener = [this](Event* event) {
         auto focusEvent = static_cast<EventFocus*>(event);
-        onFocusChanged(focusEvent->_widgetLoseFocus, focusEvent->_widgetGetFocus);
+        // Clearing or replacing the slot from inside Lua must not destroy the
+        // callable or either focus widget while this dispatch is active.
+        auto keepAlive = makeRef(this);
+        auto loseFocus = makeRef(focusEvent->_widgetLoseFocus);
+        auto getFocus = makeRef(focusEvent->_widgetGetFocus);
+        if (auto callback = onFocusChanged)
+        {
+            callback(loseFocus.get(), getFocus.get());
+        }
     };
     if (EventListener::init(Type::FOCUS, LISTENER_ID, listener))
     {

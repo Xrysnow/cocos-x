@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIScrollView.h"
 #include "base/CCDirector.h"
 #include "base/ccUtils.h"
@@ -235,6 +236,7 @@ const Vec2& ScrollView::getInnerContainerSize() const
 
 void ScrollView::setInnerContainerPosition(const Vec2& position)
 {
+    auto keepAlive = makeRef(this);
     if (position == _innerContainer->getPosition())
     {
         return;
@@ -255,13 +257,13 @@ void ScrollView::setInnerContainerPosition(const Vec2& position)
     }
 
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::CONTAINER_MOVED);
+        callback(this, EventType::CONTAINER_MOVED);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::CONTAINER_MOVED));
+        callback(this, static_cast<int>(EventType::CONTAINER_MOVED));
     }
     this->release();
 }
@@ -557,6 +559,7 @@ void ScrollView::stopAutoScroll()
 
 void ScrollView::stopOverallScroll()
 {
+    auto keepAlive = makeRef(this);
     stopScroll();
     stopAutoScroll();
 }
@@ -598,6 +601,7 @@ bool ScrollView::fltEqualZero(const Vec2& point) const
 
 void ScrollView::processAutoScrolling(float deltaTime)
 {
+    auto keepAlive = makeRef(this);
     // Make auto scroll shorter if it needs to deaccelerate.
     float brakingFactor = (isNecessaryAutoScrollBrake() ? OUT_OF_BOUNDARY_BREAKING_FACTOR : 1);
 
@@ -1039,6 +1043,7 @@ void ScrollView::handleReleaseLogic(Touch* touch)
 
 bool ScrollView::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     bool pass = Layout::onTouchBegan(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1052,6 +1057,7 @@ bool ScrollView::onTouchBegan(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchMoved(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     Layout::onTouchMoved(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1061,6 +1067,7 @@ void ScrollView::onTouchMoved(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     Layout::onTouchEnded(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1071,6 +1078,7 @@ void ScrollView::onTouchEnded(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchCancelled(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     Layout::onTouchCancelled(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1081,6 +1089,7 @@ void ScrollView::onTouchCancelled(Touch* touch, Event* unusedEvent)
 
 void ScrollView::update(float dt)
 {
+    auto keepAlive = makeRef(this);
     if (_autoScrolling)
     {
         processAutoScrolling(dt);
@@ -1089,6 +1098,7 @@ void ScrollView::update(float dt)
 
 void ScrollView::interceptTouchEvent(Widget::TouchEventType event, Widget* sender, Touch* touch)
 {
+    auto keepAlive = makeRef(this);
     if (!_touchEnabled)
     {
         Layout::interceptTouchEvent(event, sender, touch);
@@ -1180,6 +1190,7 @@ void ScrollView::processScrollEvent(MoveDirection dir, bool bounce)
 
 void ScrollView::processScrollingEvent()
 {
+    auto keepAlive = makeRef(this);
     if (!_scrolling)
     {
         _scrolling = true;
@@ -1197,13 +1208,13 @@ void ScrollView::processScrollingEndedEvent()
 void ScrollView::dispatchEvent(EventType eventType)
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, eventType);
+        callback(this, eventType);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(eventType));
+        callback(this, static_cast<int>(eventType));
     }
     this->release();
 }

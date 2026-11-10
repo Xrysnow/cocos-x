@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UICheckBox.h"
 
 NS_CC_BEGIN
@@ -79,6 +80,7 @@ CheckBox* CheckBox::create(std::string_view backGround, std::string_view cross, 
 
 void CheckBox::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     bool highlight = _highlight;
 
     AbstractCheckButton::onTouchEnded(touch, unusedEvent);
@@ -103,13 +105,13 @@ void CheckBox::dispatchSelectChangedEvent(bool selected)
     EventType eventType = (selected ? EventType::SELECTED : EventType::UNSELECTED);
 
     this->retain();
-    if (_checkBoxEventCallback)
+    if (auto callback = _checkBoxEventCallback)
     {
-        _checkBoxEventCallback(this, eventType);
+        callback(this, eventType);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(eventType));
+        callback(this, static_cast<int>(eventType));
     }
 
     this->release();

@@ -281,13 +281,13 @@ float PageView::getAutoScrollStopEpsilon() const
 void PageView::pageTurningEvent()
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::TURNING);
+        callback(this, EventType::TURNING);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::TURNING));
+        callback(this, static_cast<int>(EventType::TURNING));
     }
     _isTouchBegin = false;
     this->release();

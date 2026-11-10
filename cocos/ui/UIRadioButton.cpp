@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIRadioButton.h"
 
 NS_CC_BEGIN
@@ -85,13 +86,13 @@ void RadioButton::dispatchSelectChangedEvent(bool selected)
 {
     EventType eventType = (selected ? EventType::SELECTED : EventType::UNSELECTED);
     this->retain();
-    if (_radioButtonEventCallback)
+    if (auto callback = _radioButtonEventCallback)
     {
-        _radioButtonEventCallback(this, eventType);
+        callback(this, eventType);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(eventType));
+        callback(this, static_cast<int>(eventType));
     }
 
     if (selected && _group != nullptr)
@@ -108,6 +109,7 @@ void RadioButton::addEventListener(const ccRadioButtonCallback& callback)
 
 void RadioButton::releaseUpEvent()
 {
+    auto keepAlive = makeRef(this);
     Widget::releaseUpEvent();
 
     if (!_isSelected)
@@ -135,7 +137,8 @@ void RadioButton::copySpecialProperties(Widget* widget)
         AbstractCheckButton::copySpecialProperties(widget);
         _radioButtonEventCallback = radioButton->_radioButtonEventCallback;
         _ccEventCallback          = radioButton->_ccEventCallback;
-        _group                    = radioButton->_group;
+        // A standalone clone is not a member of the source button's group.
+        _group                    = nullptr;
     }
 }
 
@@ -147,6 +150,11 @@ RadioButtonGroup::~RadioButtonGroup()
 {
     _radioButtonGroupEventCallback = nullptr;
     _selectedRadioButton           = nullptr;
+    for (auto* radioButton : _radioButtons)
+    {
+        if (radioButton->_group == this)
+            radioButton->_group = nullptr;
+    }
     _radioButtons.clear();
 }
 
@@ -184,6 +192,7 @@ void RadioButtonGroup::addRadioButton(RadioButton* radioButton)
 
 void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 {
+    auto keepAlive = makeRef(this);
     ssize_t index = _radioButtons.getIndex(radioButton);
     if (index == CC_INVALID_INDEX)
     {
@@ -193,12 +202,14 @@ void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 
     if (radioButton != nullptr)
     {
+        auto buttonAlive = makeRef(radioButton);
         radioButton->_group = nullptr;
+        // Erase before notifying: the callback may mutate the group again.
+        _radioButtons.erase(index);
         if (radioButton == _selectedRadioButton)
         {
             deselect();
         }
-        _radioButtons.erase(index);
 
         if (!_allowedNoSelection && _selectedRadioButton == nullptr && !_radioButtons.empty())
         {
@@ -209,6 +220,7 @@ void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 
 void RadioButtonGroup::removeAllRadioButtons()
 {
+    auto keepAlive = makeRef(this);
     while (!_radioButtons.empty())
     {
         removeRadioButton(_radioButtons.at(0));
@@ -232,12 +244,15 @@ RadioButton* RadioButtonGroup::getRadioButtonByIndex(int index) const
 
 void RadioButtonGroup::deselect()
 {
-    if (_selectedRadioButton != nullptr)
-    {
-        _selectedRadioButton->setSelected(false);
-        _selectedRadioButton->dispatchSelectChangedEvent(false);
-    }
+    auto keepAlive = makeRef(this);
+    auto selected = makeRef(_selectedRadioButton);
+    // Publish the empty selection before a callback can select/deselect again.
     _selectedRadioButton = nullptr;
+    if (selected)
+    {
+        selected->setSelected(false);
+        selected->dispatchSelectChangedEvent(false);
+    }
 }
 
 int RadioButtonGroup::getSelectedButtonIndex() const
@@ -253,6 +268,7 @@ void RadioButtonGroup::setSelectedButton(int index)
 
 void RadioButtonGroup::setSelectedButton(RadioButton* radioButton)
 {
+    auto keepAlive = makeRef(this);
     setSelectedButtonWithoutEvent(radioButton);
     onChangedRadioButtonSelect(_selectedRadioButton);
 }
@@ -264,6 +280,7 @@ void RadioButtonGroup::setSelectedButtonWithoutEvent(int index)
 
 void RadioButtonGroup::setSelectedButtonWithoutEvent(RadioButton* radioButton)
 {
+    auto keepAlive = makeRef(this);
     if (!_allowedNoSelection && radioButton == nullptr)
     {
         return;
@@ -278,7 +295,11 @@ void RadioButtonGroup::setSelectedButtonWithoutEvent(RadioButton* radioButton)
         return;
     }
 
+    auto buttonAlive = makeRef(radioButton);
     deselect();
+    // A deselection callback can select another button or remove the requested one.
+    if (_selectedRadioButton != nullptr || (radioButton && !_radioButtons.contains(radioButton)))
+        return;
     _selectedRadioButton = radioButton;
     if (_selectedRadioButton != nullptr)
     {
@@ -333,21 +354,28 @@ void RadioButtonGroup::copySpecialProperties(Widget* widget)
 
 void RadioButtonGroup::onChangedRadioButtonSelect(RadioButton* radioButton)
 {
+    auto keepAlive = makeRef(this);
+    auto buttonAlive = makeRef(radioButton);
+    if (radioButton && !_radioButtons.contains(radioButton))
+        return;
     if (_selectedRadioButton != radioButton)
     {
         deselect();
+        if (_selectedRadioButton != nullptr || (radioButton && !_radioButtons.contains(radioButton)))
+            return;
         _selectedRadioButton = radioButton;
     }
 
     this->retain();
-    if (_radioButtonGroupEventCallback)
+    if (auto callback = _radioButtonGroupEventCallback)
     {
         int index = (int)_radioButtons.getIndex(radioButton);
-        _radioButtonGroupEventCallback(_selectedRadioButton, index, EventType::SELECT_CHANGED);
+        auto selectedAlive = makeRef(_selectedRadioButton);
+        callback(selectedAlive.get(), index, EventType::SELECT_CHANGED);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::SELECT_CHANGED));
+        callback(this, static_cast<int>(EventType::SELECT_CHANGED));
     }
     this->release();
 }

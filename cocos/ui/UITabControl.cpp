@@ -23,6 +23,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "platform/CCFileUtils.h"
 #include "2d/CCSprite.h"
 #include "2d/CCLabel.h"
@@ -53,7 +54,14 @@ TabControl::~TabControl()
     for (auto&& item : _tabItems)
     {
         if (item)
+        {
+            if (item->header->_tabView == this)
+            {
+                item->header->_tabView = nullptr;
+                item->header->_tabSelectedEvent = nullptr;
+            }
             CC_SAFE_DELETE(item);
+        }
     }
     _tabItems.clear();
 }
@@ -80,16 +88,13 @@ void TabControl::insertTab(int index, TabHeader* header, Layout* container)
 
 void TabControl::initAfterInsert(int index)
 {
+    auto keepAlive = makeRef(this);
     auto cellSize   = _tabItems.size();
     auto tabItem    = _tabItems.at(index);
     auto headerCell = tabItem->header;
     auto container  = tabItem->container;
 
-    if (cellSize == 1)
-    {
-        setSelectTab(0);
-    }
-    else
+    if (cellSize != 1)
     {
         deactiveTabItem(tabItem);
     }
@@ -116,6 +121,10 @@ void TabControl::initAfterInsert(int index)
         container->setPosition(_containerPosition);
         container->setContentSize(_containerSize);
     }
+
+    // Notify only after initialization: the callback may remove this very tab.
+    if (cellSize == 1)
+        setSelectTab(0);
 }
 
 void TabControl::removeTab(int index)
@@ -305,6 +314,7 @@ Layout* TabControl::getTabContainer(int index) const
 
 void TabControl::dispatchSelectedTabChanged(int tabIndex, TabHeader::EventType eventType)
 {
+    auto keepAlive = makeRef(this);
     if (eventType == TabHeader::EventType::SELECTED)
     {
         if (tabIndex <= -1 || tabIndex >= (int)_tabItems.size())
@@ -333,10 +343,10 @@ void TabControl::dispatchSelectedTabChanged(int tabIndex, TabHeader::EventType e
         }
     }
 
-    if (_tabChangedCallback != nullptr)
+    if (auto callback = _tabChangedCallback)
     {
         int currentIndex = getSelectedTabIndex();
-        _tabChangedCallback(currentIndex, EventType::SELECT_CHANGED);
+        callback(currentIndex, EventType::SELECT_CHANGED);
     }
 }
 
@@ -672,6 +682,7 @@ void TabHeader::onSizeChanged()
 
 void TabHeader::releaseUpEvent()
 {
+    auto keepAlive = makeRef(this);
     Widget::releaseUpEvent();
 
     if (!_isSelected)
@@ -683,21 +694,23 @@ void TabHeader::releaseUpEvent()
 
 void TabHeader::dispatchSelectChangedEvent(bool select)
 {
+    auto keepAlive = makeRef(this);
     if (_tabView == nullptr)
         return;
+    auto tabViewAlive = makeRef(_tabView);
 
     EventType eventType = (select ? EventType::SELECTED : EventType::UNSELECTED);
 
-    if (_tabSelectedEvent != nullptr)
+    if (auto callback = _tabSelectedEvent)
     {
         int index = _tabView->indexOfTabHeader(this);
         if (index != -1)
-            _tabSelectedEvent(index, eventType);
+            callback(index, eventType);
     }
 
-    if (_ccEventCallback != nullptr)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(eventType));
+        callback(this, static_cast<int>(eventType));
     }
 }
 

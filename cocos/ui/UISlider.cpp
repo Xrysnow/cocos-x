@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UISlider.h"
 #include "ui/UIScale9Sprite.h"
 #include "ui/UIHelper.h"
@@ -502,6 +503,7 @@ bool Slider::hitTest(const cocos2d::Vec2& pt, const Camera* camera, Vec3* /*p*/)
 
 bool Slider::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     bool pass = Widget::onTouchBegan(touch, unusedEvent);
     if (_hitted)
     {
@@ -519,12 +521,14 @@ void Slider::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 
 void Slider::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     Widget::onTouchEnded(touch, unusedEvent);
     percentChangedEvent(EventType::ON_SLIDEBALL_UP);
 }
 
 void Slider::onTouchCancelled(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     Widget::onTouchCancelled(touch, unusedEvent);
     percentChangedEvent(EventType::ON_SLIDEBALL_CANCEL);
 }
@@ -544,13 +548,13 @@ void Slider::addEventListener(const ccSliderCallback& callback)
 void Slider::percentChangedEvent(EventType event)
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, event);
+        callback(this, event);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::ON_PERCENTAGE_CHANGED));
+        callback(this, static_cast<int>(EventType::ON_PERCENTAGE_CHANGED));
     }
     this->release();
 }

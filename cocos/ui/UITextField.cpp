@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UITextField.h"
 #include "platform/CCFileUtils.h"
 #include "ui/UIHelper.h"
@@ -505,6 +506,7 @@ int TextField::getStringLength() const
 
 bool TextField::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
+    auto keepAlive = makeRef(this);
     bool pass = Widget::onTouchBegan(touch, unusedEvent);
     if (_hitted)
     {
@@ -568,6 +570,7 @@ std::string_view TextField::getPasswordStyleText() const
 
 void TextField::update(float /*dt*/)
 {
+    auto keepAlive = makeRef(this);
     if (getDetachWithIME())
     {
         detachWithIMEEvent();
@@ -643,13 +646,13 @@ void TextField::setDeleteBackward(bool deleteBackward)
 void TextField::attachWithIMEEvent()
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::ATTACH_WITH_IME);
+        callback(this, EventType::ATTACH_WITH_IME);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::ATTACH_WITH_IME));
+        callback(this, static_cast<int>(EventType::ATTACH_WITH_IME));
     }
     this->release();
 }
@@ -657,13 +660,13 @@ void TextField::attachWithIMEEvent()
 void TextField::detachWithIMEEvent()
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::DETACH_WITH_IME);
+        callback(this, EventType::DETACH_WITH_IME);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::DETACH_WITH_IME));
+        callback(this, static_cast<int>(EventType::DETACH_WITH_IME));
     }
     this->release();
 }
@@ -671,13 +674,13 @@ void TextField::detachWithIMEEvent()
 void TextField::insertTextEvent()
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::INSERT_TEXT);
+        callback(this, EventType::INSERT_TEXT);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::INSERT_TEXT));
+        callback(this, static_cast<int>(EventType::INSERT_TEXT));
     }
     this->release();
 }
@@ -685,13 +688,13 @@ void TextField::insertTextEvent()
 void TextField::deleteBackwardEvent()
 {
     this->retain();
-    if (_eventCallback)
+    if (auto callback = _eventCallback)
     {
-        _eventCallback(this, EventType::DELETE_BACKWARD);
+        callback(this, EventType::DELETE_BACKWARD);
     }
-    if (_ccEventCallback)
+    if (auto callback = _ccEventCallback)
     {
-        _ccEventCallback(this, static_cast<int>(EventType::DELETE_BACKWARD));
+        callback(this, static_cast<int>(EventType::DELETE_BACKWARD));
     }
     this->release();
 }

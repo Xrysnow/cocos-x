@@ -24,6 +24,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIRichText.h"
 
 #include <sstream>
@@ -80,15 +81,26 @@ public:
 
     void onTouchesEnded(const std::vector<Touch*>& touches, Event* /*event*/)
     {
+        // Rebuilding RichText in a link handler removes this component and label.
+        auto keepAlive = makeRef(this);
+        auto parentAlive = makeRef(_parent);
+        RichText* richText = nullptr;
+        for (auto* node = _parent->getParent(); node && !richText; node = node->getParent())
+            richText = dynamic_cast<RichText*>(node);
+        // A detached renderer must not invoke its former RichText through the
+        // bound raw pointer; retain the live owner for the whole touch batch.
+        if (!richText)
+            return;
+        auto richTextAlive = makeRef(richText);
         for (const auto& touch : touches)
         {
             // FIXME: Node::getBoundBox() doesn't return it in local coordinates... so create one manually.
             Rect localRect = Rect(Vec2::ZERO, _parent->getContentSize());
             if (localRect.containsPoint(_parent->convertTouchToNodeSpace(touch)))
             {
-                if (_handleOpenUrl)
+                if (auto callback = _handleOpenUrl)
                 {
-                    _handleOpenUrl(_url);
+                    callback(_url);
                 }
             }
         }
@@ -1504,9 +1516,10 @@ void RichText::removeTagDescription(std::string_view tag)
 
 void RichText::openUrl(std::string_view url)
 {
-    if (_handleOpenUrl)
+    auto keepAlive = makeRef(this);
+    if (auto callback = _handleOpenUrl)
     {
-        _handleOpenUrl(url);
+        callback(url);
     }
     else if (!url.empty())
     {

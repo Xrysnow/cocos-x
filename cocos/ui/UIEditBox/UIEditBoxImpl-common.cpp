@@ -24,6 +24,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+#include "base/CCRefPtr.h"
 #include "ui/UIEditBox/UIEditBoxImpl-common.h"
 
 #define kLabelZOrder 9999
@@ -356,6 +357,7 @@ void EditBoxImplCommon::onEndEditing(std::string_view /*text*/)
 
 void EditBoxImplCommon::editBoxEditingDidBegin()
 {
+    auto keepAlive = makeRef(_editBox);
     // LOGD("textFieldShouldBeginEditing...");
     cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
 
@@ -363,6 +365,8 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
     {
         pDelegate->editBoxEditingDidBegin(_editBox);
     }
+
+    _editBox->dispatchScriptEditBoxEvent("began");
 
 #if CC_ENABLE_SCRIPT_BINDING
     if (NULL != _editBox && 0 != _editBox->getScriptEditBoxHandler())
@@ -376,6 +380,7 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
 
 void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDelegate::EditBoxEndAction action)
 {
+    auto keepAlive = makeRef(_editBox);
     // LOGD("textFieldShouldEndEditing...");
     _text = text;
 
@@ -385,6 +390,9 @@ void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDeleg
         pDelegate->editBoxEditingDidEndWithAction(_editBox, action);
         pDelegate->editBoxReturn(_editBox);
     }
+
+    _editBox->dispatchScriptEditBoxEvent("ended");
+    _editBox->dispatchScriptEditBoxEvent("return");
 
 #if CC_ENABLE_SCRIPT_BINDING
     if (_editBox != nullptr && 0 != _editBox->getScriptEditBoxHandler())
@@ -407,6 +415,7 @@ void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDeleg
 
 void EditBoxImplCommon::editBoxEditingChanged(std::string_view text)
 {
+    auto keepAlive = makeRef(_editBox);
     // LOGD("editBoxTextChanged...");
     cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
     _text                                   = text;
@@ -414,6 +423,8 @@ void EditBoxImplCommon::editBoxEditingChanged(std::string_view text)
     {
         pDelegate->editBoxTextChanged(_editBox, text);
     }
+
+    _editBox->dispatchScriptEditBoxEvent("changed");
 
 #if CC_ENABLE_SCRIPT_BINDING
     if (NULL != _editBox && 0 != _editBox->getScriptEditBoxHandler())

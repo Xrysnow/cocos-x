@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIListView.h"
 #include "ui/UIHelper.h"
 
@@ -95,6 +96,7 @@ void ListView::setItemModel(Widget* model)
 
 void ListView::handleReleaseLogic(Touch* touch)
 {
+    auto keepAlive = makeRef(this);
     ScrollView::handleReleaseLogic(touch);
 
     if (!_autoScrolling)
@@ -590,25 +592,25 @@ void ListView::selectedItemEvent(TouchEventType event)
     {
     case TouchEventType::BEGAN:
     {
-        if (_eventCallback)
+        if (auto callback = _eventCallback)
         {
-            _eventCallback(this, EventType::ON_SELECTED_ITEM_START);
+            callback(this, EventType::ON_SELECTED_ITEM_START);
         }
-        if (_ccEventCallback)
+        if (auto callback = _ccEventCallback)
         {
-            _ccEventCallback(this, static_cast<int>(EventType::ON_SELECTED_ITEM_START));
+            callback(this, static_cast<int>(EventType::ON_SELECTED_ITEM_START));
         }
     }
     break;
     default:
     {
-        if (_eventCallback)
+        if (auto callback = _eventCallback)
         {
-            _eventCallback(this, EventType::ON_SELECTED_ITEM_END);
+            callback(this, EventType::ON_SELECTED_ITEM_END);
         }
-        if (_ccEventCallback)
+        if (auto callback = _ccEventCallback)
         {
-            _ccEventCallback(this, static_cast<int>(EventType::ON_SELECTED_ITEM_END));
+            callback(this, static_cast<int>(EventType::ON_SELECTED_ITEM_END));
         }
     }
     break;
@@ -618,6 +620,7 @@ void ListView::selectedItemEvent(TouchEventType event)
 
 void ListView::interceptTouchEvent(TouchEventType event, Widget* sender, Touch* touch)
 {
+    auto keepAlive = makeRef(this);
     ScrollView::interceptTouchEvent(event, sender, touch);
     if (!_touchEnabled)
     {

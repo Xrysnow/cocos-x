@@ -381,6 +381,11 @@ public:
      */
     EditBoxDelegate* getDelegate();
 
+    /** Owned notification slot used by the Lua binding; not copied by Widget::clone(). */
+    using ScriptEditBoxCallback = std::function<void(std::string_view, EditBox*)>;
+    void setScriptEditBoxCallback(const ScriptEditBoxCallback& callback);
+    void dispatchScriptEditBoxEvent(std::string_view eventName);
+
 #if CC_ENABLE_SCRIPT_BINDING
     /**
      * Registers a script function that will be called for EditBox events.
@@ -705,6 +710,8 @@ protected:
 
     EditBoxImpl* _editBoxImpl  = nullptr;
     EditBoxDelegate* _delegate = nullptr;
+
+    ScriptEditBoxCallback _scriptEditBoxCallback;
 
     float _adjustHeight = 0.f;
 #if CC_ENABLE_SCRIPT_BINDING

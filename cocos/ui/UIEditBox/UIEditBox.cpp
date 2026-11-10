@@ -24,6 +24,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+#include "base/CCRefPtr.h"
 #include "ui/UIEditBox/UIEditBox.h"
 #include "ui/UIEditBox/UIEditBoxImpl.h"
 #include "ui/UIHelper.h"
@@ -45,10 +46,12 @@ EditBox::EditBox()
 
 EditBox::~EditBox()
 {
-    CC_SAFE_DELETE(_editBoxImpl);
+    // Drop script closures before the platform implementation is torn down.
+    _scriptEditBoxCallback = nullptr;
 #if CC_ENABLE_SCRIPT_BINDING
     unregisterScriptEditBoxHandler();
 #endif
+    CC_SAFE_DELETE(_editBoxImpl);
 }
 
 void EditBox::openKeyboard() const
@@ -414,6 +417,7 @@ void EditBox::onPressStateChangedToDisabled()
 
 void EditBox::releaseUpEvent()
 {
+    auto keepAlive = makeRef(this);
     Widget::releaseUpEvent();
     openKeyboard();
 }
@@ -878,6 +882,25 @@ void EditBox::setGlobalZOrder(float globalZOrder)
     }
 }
 
+void EditBox::setScriptEditBoxCallback(const ScriptEditBoxCallback& callback)
+{
+    // There is one script notification slot. Keep the legacy C++ handler API,
+    // but never deliver the same notification through both script mechanisms.
+#if CC_ENABLE_SCRIPT_BINDING
+    unregisterScriptEditBoxHandler();
+#endif
+    _scriptEditBoxCallback = callback;
+}
+
+void EditBox::dispatchScriptEditBoxEvent(std::string_view eventName)
+{
+    auto keepAlive = makeRef(this);
+    if (auto callback = _scriptEditBoxCallback)
+    {
+        callback(eventName, this);
+    }
+}
+
 #if CC_ENABLE_SCRIPT_BINDING
 void EditBox::registerScriptEditBoxHandler(int handler)
 {
@@ -887,6 +910,7 @@ void EditBox::registerScriptEditBoxHandler(int handler)
 
 void EditBox::unregisterScriptEditBoxHandler()
 {
+    _scriptEditBoxCallback = nullptr;
     if (0 != _scriptEditBoxHandler)
     {
         ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_scriptEditBoxHandler);
