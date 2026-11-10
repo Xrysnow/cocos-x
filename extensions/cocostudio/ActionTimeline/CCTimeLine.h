@@ -56,7 +56,7 @@ public:
     virtual void setNode(cocos2d::Node* node);
     virtual cocos2d::Node* getNode() const;
 
-    virtual void setActionTimeline(ActionTimeline* action) { _ActionTimeline = action; }
+    virtual void setActionTimeline(ActionTimeline* action);
     virtual ActionTimeline* getActionTimeline() const { return _ActionTimeline; }
 
     virtual Timeline* clone();
@@ -67,6 +67,11 @@ protected:
     virtual void binarySearchKeyFrame(unsigned int frameIndex);
     virtual void updateCurrentKeyFrame(unsigned int frameIndex);
 
+    void invalidateCurrentKeyFrame();
+
+    // Frame edits, detach and nested seeks invalidate cached indices and outer calls.
+    unsigned int _stateVersion = 0;
+    bool _needsKeyFrameSearch = false;
     cocos2d::Vector<Frame*> _frames;
     Frame* _currentKeyFrame;
     unsigned int _currentKeyFrameIndex;

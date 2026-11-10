@@ -45,6 +45,7 @@ ObjectFactory::TInfo::TInfo(const TInfo& t)
     _class = t._class;
     _fun   = t._fun;
     _func  = t._func;
+    _registrationOwner = t._registrationOwner;
 }
 
 ObjectFactory::TInfo::~TInfo()
@@ -59,6 +60,7 @@ ObjectFactory::TInfo& ObjectFactory::TInfo::operator=(const TInfo& t)
     _class = t._class;
     _fun   = t._fun;
     _func  = t._func;
+    _registrationOwner = t._registrationOwner;
     return *this;
 }
 
@@ -68,7 +70,9 @@ ObjectFactory::ObjectFactory() {}
 
 ObjectFactory::~ObjectFactory()
 {
-    _typeMap.clear();
+    // Reentrant cleanup can only reach a new singleton, never these buckets.
+    FactoryMap registrations;
+    registrations.swap(_typeMap);
 }
 
 ObjectFactory* ObjectFactory::getInstance()
@@ -82,7 +86,9 @@ ObjectFactory* ObjectFactory::getInstance()
 
 void ObjectFactory::destroyInstance()
 {
-    CC_SAFE_DELETE(_sharedFactory);
+    auto factory = _sharedFactory;
+    _sharedFactory = nullptr;
+    delete factory;
 }
 
 Ref* ObjectFactory::createObject(std::string_view name)
@@ -94,7 +100,8 @@ Ref* ObjectFactory::createObject(std::string_view name)
         auto it = _typeMap.find(name);
         if (it == _typeMap.end())
             break;
-        auto& t = it->second;
+        // A factory callback may replace its own entry or destroy the factory.
+        const auto t = it->second;
         if (t._fun != nullptr)
         {
             o = t._fun();
@@ -110,7 +117,51 @@ Ref* ObjectFactory::createObject(std::string_view name)
 
 void ObjectFactory::registerType(const TInfo& t)
 {
-    _typeMap.emplace(t._class, t);
+    auto it = _typeMap.find(t._class);
+    if (it != _typeMap.end() && !it->second._registrationOwner.expired())
+    {
+        const TInfo previous(it->second);
+        TInfo replacement(t);
+        replacement._registrationOwner.reset();
+        it.value() = replacement;
+    }
+    else
+    {
+        _typeMap.emplace(t._class, t);
+    }
+}
+
+ObjectFactory::TInfo ObjectFactory::registerOwnedType(const TInfo& t, const std::shared_ptr<void>& owner)
+{
+    TInfo registration(t);
+    registration._registrationOwner = owner;
+    TInfo previous;
+    auto it = _typeMap.find(registration._class);
+    if (it == _typeMap.end())
+    {
+        _typeMap.emplace(registration._class, registration);
+    }
+    else
+    {
+        previous = it->second;
+        it.value() = registration;
+    }
+    return previous;
+}
+
+void ObjectFactory::removeOwnedType(std::string_view name, const std::shared_ptr<void>& owner)
+{
+    // Cleanup must neither recreate a destroyed factory nor remove a newer entry.
+    if (_sharedFactory)
+    {
+        auto it = _sharedFactory->_typeMap.find(name);
+        if (it != _sharedFactory->_typeMap.end() && it->second._registrationOwner.lock() == owner)
+        {
+            // Last captures may destroy either singleton; release after erase.
+            const TInfo previous(it->second);
+            _sharedFactory->_typeMap.erase(it);
+        }
+    }
 }
 
 NS_CC_END

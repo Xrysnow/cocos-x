@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include "ActionTimeline/CCActionTimeline.h"
 #include "2d/CCSpriteFrameCache.h"
 #include "2d/CCSpriteFrame.h"
+#include "base/CCRefPtr.h"
 #include <exception>
 #include <iostream>
 
@@ -51,11 +52,20 @@ Frame::~Frame()
     _easingParam.clear();
 }
 
+void Frame::setTimeline(Timeline* timeline)
+{
+    _timeline = timeline;
+    if (!timeline)
+        setNode(nullptr);
+}
+
 void Frame::emitEvent()
 {
-    if (_timeline)
+    RefPtr<Frame> keepFrame(this);
+    RefPtr<Timeline> timeline(_timeline);
+    if (timeline && timeline->getActionTimeline())
     {
-        _timeline->getActionTimeline()->emitFrameEvent(this);
+        timeline->getActionTimeline()->emitFrameEvent(this);
     }
 }
 
@@ -686,18 +696,18 @@ void EventFrame::init()
     _enterWhenPassed = true;
 }
 
-EventFrame::EventFrame() : _event(""), _action(nullptr) {}
+EventFrame::EventFrame() : _event("") {}
 
 void EventFrame::setNode(cocos2d::Node* node)
 {
     Frame::setNode(node);
-    _action = _timeline->getActionTimeline();
 }
 
 void EventFrame::onEnter(Frame* /*nextFrame*/, int currentFrameIndex)
 {
-    if (static_cast<int>(_frameIndex) < _action->getStartFrame() ||
-        static_cast<int>(_frameIndex) > _action->getEndFrame())
+    auto action = _timeline ? _timeline->getActionTimeline() : nullptr;
+    if (!action || static_cast<int>(_frameIndex) < action->getStartFrame() ||
+        static_cast<int>(_frameIndex) > action->getEndFrame())
         return;
 
     if (currentFrameIndex >= static_cast<int>(_frameIndex))
@@ -784,6 +794,8 @@ PlayableFrame::PlayableFrame() : _playableAct("") {}
 
 void PlayableFrame::onEnter(Frame* /*nextFrame*/, int /*currentFrameINdex*/)
 {
+    if (!_node)
+        return;
     auto playableNode = dynamic_cast<PlayableProtocol*>(_node);
     if (nullptr == playableNode)  // may be a playable component
         playableNode = dynamic_cast<PlayableProtocol*>(_node->getComponent(PLAYABLE_EXTENTION));

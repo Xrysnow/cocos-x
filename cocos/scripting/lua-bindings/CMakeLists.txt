@@ -140,31 +140,21 @@ if(CC_ENABLE_EXT_SPINE)
 endif()
 if(CC_ENABLE_EXT_COCOSTUDIO)
     list(APPEND lua_bindings_manual_headers
-        manual/cocostudio/lua-cocostudio-conversions.h
         manual/cocostudio/CustomGUIReader.h
         manual/cocostudio/cclua_csloader_manual.hpp
     )
     list(APPEND lua_bindings_manual_files
         manual/cocostudio/CustomGUIReader.cpp
         manual/cocostudio/cclua_cocostudio_manual.cpp
-        manual/cocostudio/lua-cocostudio-conversions.cpp
         manual/cocostudio/cclua_csloader_manual.cpp
     )
     list(APPEND lua_bindings_auto_headers
         auto/cclua_studio_auto.hpp
-        auto/cclua_studio_compat.hpp
         auto/cclua_csloader_auto.hpp
     )
     list(APPEND lua_bindings_auto_files
         auto/cclua_studio_auto.cpp
         auto/cclua_studio_auto01.cpp
-        auto/cclua_studio_auto02.cpp
-        auto/cclua_studio_auto03.cpp
-        auto/cclua_studio_auto04.cpp
-        auto/cclua_studio_auto05.cpp
-        auto/cclua_studio_auto06.cpp
-        auto/cclua_studio_auto07.cpp
-        auto/cclua_studio_retained.cpp
         auto/cclua_csloader_auto.cpp
     )
 endif()

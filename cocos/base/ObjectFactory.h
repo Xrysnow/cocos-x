@@ -29,8 +29,15 @@ THE SOFTWARE.
 #include <string>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 #include "base/CCRef.h"
+#include "base/hlookup.h"
 #include "platform/CCPlatformMacros.h"
+
+namespace cocostudio
+{
+class GUIReader;
+}
 
 NS_CC_BEGIN
 
@@ -50,6 +57,10 @@ public:
         std::string _class;
         Instance _fun;
         InstanceFunc _func;
+
+    private:
+        friend class ObjectFactory;
+        std::weak_ptr<void> _registrationOwner;
     };
     typedef hlookup::string_map<TInfo> FactoryMap;
 
@@ -59,6 +70,12 @@ public:
 
     void registerType(const TInfo& t);
     void removeAll();
+
+private:
+    friend class cocostudio::GUIReader;
+    // The caller holds the retired entry until its own registration maps agree.
+    TInfo registerOwnedType(const TInfo& t, const std::shared_ptr<void>& owner);
+    static void removeOwnedType(std::string_view name, const std::shared_ptr<void>& owner);
 
 protected:
     ObjectFactory();

@@ -26,6 +26,7 @@
 #define COCOS_SCRIPTING_LUA_BINDINGS_LUA_COCOS2DX_CUSTOM_GUI_READER_H
 
 #include "CCSGUIReader.h"
+#include <memory>
 
 USING_NS_CC;
 
@@ -34,21 +35,27 @@ namespace cocostudio
 class CustomGUIReader : public Ref
 {
 public:
-    CustomGUIReader();
-    virtual ~CustomGUIReader();
+    using CreateFunction = std::function<Ref*()>;
+    using SetPropsFunction = std::function<void(std::string_view, Ref*, std::string_view)>;
 
-    static CustomGUIReader* create(std::string& className, int createFunc, int setPropsFunc);
+    CustomGUIReader() = default;
+    ~CustomGUIReader() override = default;
 
-    void init(std::string& className, int createFunc, int setPropsFunc);
+    static CustomGUIReader* create(std::string_view className, CreateFunction createFunc, SetPropsFunction setPropsFunc);
+
+    bool init(std::string_view className, CreateFunction createFunc, SetPropsFunction setPropsFunc);
 
     Ref* createInstance();
 
     void setCustomProps(std::string_view classType, cocos2d::Ref* widget, const rapidjson::Value& customOptions);
 
 private:
-    std::string _className;
-    int _createFunc;
-    int _setPropsFunc;
+    struct Callbacks
+    {
+        CreateFunction create;
+        SetPropsFunction setProps;
+    };
+    std::shared_ptr<const Callbacks> _callbacks;
 };
 }  // namespace cocostudio
 

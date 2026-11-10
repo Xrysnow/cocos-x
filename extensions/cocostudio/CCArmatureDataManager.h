@@ -29,6 +29,8 @@ THE SOFTWARE.
 #include "CCDatas.h"
 #include "CocosStudioExport.h"
 
+#include <functional>
+
 namespace cocostudio
 {
 
@@ -148,6 +150,12 @@ public:
                                   cocos2d::Ref* target,
                                   cocos2d::SEL_SCHEDULE selector);
 
+    /** Main-thread API. Cached files notify synchronously; percent is global queue progress.
+     * The callback is released on completion, failure, purge, or scheduler cancellation.
+     * A completion notification also retires failed loads; it is not a success result.
+     */
+    void addArmatureFileInfoAsync(std::string_view configFilePath, std::function<void(float)> callback);
+
     /**
      *    @brief    Add ArmatureFileInfo, it is managed by ArmatureDataManager.
      */
@@ -162,6 +170,11 @@ public:
                                   std::string_view configFilePath,
                                   cocos2d::Ref* target,
                                   cocos2d::SEL_SCHEDULE selector);
+
+    void addArmatureFileInfoAsync(std::string_view imagePath,
+                                  std::string_view plistPath,
+                                  std::string_view configFilePath,
+                                  std::function<void(float)> callback);
 
     /**
      *    @brief    Add sprite frame to CCSpriteFrameCache, it will save display name and it's relative image name

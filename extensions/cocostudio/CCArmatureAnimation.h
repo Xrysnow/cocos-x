@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "CCProcessBase.h"
 #include "CCTween.h"
 #include "CocosStudioExport.h"
+#include "base/CCRefPtr.h"
 #include <queue>
 
 namespace cocostudio
@@ -52,6 +53,8 @@ typedef void (cocos2d::Ref::*SEL_FrameEventCallFunc)(Bone*, std::string_view, in
 struct FrameEvent
 {
     Bone* bone;
+    // Earlier notifications may remove this bone before this queued event is delivered.
+    cocos2d::RefPtr<cocos2d::Ref> boneOwner;
     std::string frameEventName;
     int originFrameIndex;
     int currentFrameIndex;
@@ -264,6 +267,7 @@ protected:
     void movementEvent(Armature* armature, MovementEventType movementType, std::string_view movementID);
 
     void updateMovementList();
+    void removeDetachedTweens();
 
     bool isIgnoreFrameEvent() const { return _ignoreFrameEvent; }
 

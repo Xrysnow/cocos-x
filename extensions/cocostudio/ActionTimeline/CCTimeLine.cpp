@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "ActionTimeline/CCTimeLine.h"
 #include "ActionTimeline/CCActionTimeline.h"
+#include "base/CCRefPtr.h"
 
 USING_NS_CC;
 
@@ -47,15 +48,27 @@ Timeline::Timeline()
     , _node(nullptr)
 {}
 
-Timeline::~Timeline() {}
+Timeline::~Timeline()
+{
+    for (auto frame : _frames)
+    {
+        if (frame->getTimeline() == this)
+            frame->setTimeline(nullptr);
+    }
+}
 
 void Timeline::gotoFrame(int frameIndex)
 {
     if (_frames.size() == 0)
         return;
 
+    RefPtr<Timeline> keepTimeline(this);
+    RefPtr<ActionTimeline> keepAction(_ActionTimeline);
+    RefPtr<Node> keepNode(_node);
+    const auto version = ++_stateVersion;
     binarySearchKeyFrame(frameIndex);
-    apply(frameIndex);
+    if (version == _stateVersion)
+        apply(frameIndex);
 }
 
 void Timeline::stepToFrame(int frameIndex)
@@ -63,8 +76,16 @@ void Timeline::stepToFrame(int frameIndex)
     if (_frames.size() == 0)
         return;
 
-    updateCurrentKeyFrame(frameIndex);
-    apply(frameIndex);
+    RefPtr<Timeline> keepTimeline(this);
+    RefPtr<ActionTimeline> keepAction(_ActionTimeline);
+    RefPtr<Node> keepNode(_node);
+    const auto version = ++_stateVersion;
+    if (_needsKeyFrameSearch)
+        binarySearchKeyFrame(frameIndex);
+    else
+        updateCurrentKeyFrame(frameIndex);
+    if (version == _stateVersion)
+        apply(frameIndex);
 }
 
 Timeline* Timeline::clone()
@@ -85,22 +106,51 @@ void Timeline::addFrame(Frame* frame)
 {
     _frames.pushBack(frame);
     frame->setTimeline(this);
+    if (_node)
+        frame->setNode(_node);
+    invalidateCurrentKeyFrame();
 }
 
 void Timeline::insertFrame(Frame* frame, int index)
 {
     _frames.insert(index, frame);
     frame->setTimeline(this);
+    if (_node)
+        frame->setNode(_node);
+    invalidateCurrentKeyFrame();
 }
 
 void Timeline::removeFrame(Frame* frame)
 {
+    if (!_frames.contains(frame))
+        return;
+    // Clear back-pointers while the owning vector still retains the frame.
+    if (frame->getTimeline() == this)
+        frame->setTimeline(nullptr);
+    invalidateCurrentKeyFrame();
     _frames.eraseObject(frame);
-    frame->setTimeline(nullptr);
+}
+
+void Timeline::invalidateCurrentKeyFrame()
+{
+    ++_stateVersion;
+    _needsKeyFrameSearch = _needsKeyFrameSearch || _currentKeyFrame != nullptr;
+    _currentKeyFrame = nullptr;
+    _currentKeyFrameIndex = _fromIndex = _toIndex = _betweenDuration = 0;
+}
+
+void Timeline::setActionTimeline(ActionTimeline* action)
+{
+    ++_stateVersion;
+    _ActionTimeline = action;
+    if (!action)
+        setNode(nullptr);
 }
 
 void Timeline::setNode(Node* node)
 {
+    ++_stateVersion;
+    _node = node;
     for (auto&& frame : _frames)
     {
         frame->setNode(node);
@@ -114,16 +164,19 @@ Node* Timeline::getNode() const
 
 void Timeline::apply(unsigned int frameIndex)
 {
-    if (_currentKeyFrame)
+    RefPtr<Frame> frame(_currentKeyFrame);
+    RefPtr<Node> keepNode(frame ? frame->getNode() : nullptr);
+    if (frame)
     {
         float currentPercent =
             _betweenDuration == 0 ? 0 : (frameIndex - _currentKeyFrameIndex) / (float)_betweenDuration;
-        _currentKeyFrame->apply(currentPercent);
+        frame->apply(currentPercent);
     }
 }
 
 void Timeline::binarySearchKeyFrame(unsigned int frameIndex)
 {
+    _needsKeyFrameSearch = false;
     Frame* from = nullptr;
     Frame* to   = nullptr;
 
@@ -195,12 +248,15 @@ void Timeline::binarySearchKeyFrame(unsigned int frameIndex)
     if (needEnterFrame || _currentKeyFrame != from)
     {
         _currentKeyFrame = from;
+        RefPtr<Frame> keepFrom(from);
+        RefPtr<Frame> keepTo(to);
         _currentKeyFrame->onEnter(to, frameIndex);
     }
 }
 
 void Timeline::updateCurrentKeyFrame(unsigned int frameIndex)
 {
+    const auto version = _stateVersion;
     //! If play to current frame's front or back, then find current frame again
     if (frameIndex < _currentKeyFrameIndex || frameIndex >= _currentKeyFrameIndex + _betweenDuration)
     {
@@ -245,7 +301,13 @@ void Timeline::updateCurrentKeyFrame(unsigned int frameIndex)
                 if (frameIndex > from->getFrameIndex() && frameIndex < to->getFrameIndex())
                     break;
                 if (from->isEnterWhenPassed())
+                {
+                    RefPtr<Frame> keepFrom(from);
+                    RefPtr<Frame> keepTo(to);
                     from->onEnter(to, from->getFrameIndex());
+                    if (version != _stateVersion)
+                        return;
+                }
             } while (true);
 
             if (_fromIndex == length - 1)
@@ -256,6 +318,8 @@ void Timeline::updateCurrentKeyFrame(unsigned int frameIndex)
         } while (0);
 
         _currentKeyFrame = from;
+        RefPtr<Frame> keepFrom(from);
+        RefPtr<Frame> keepTo(to);
         _currentKeyFrame->onEnter(to, frameIndex);
     }
 }

@@ -25,10 +25,32 @@ THE SOFTWARE.
 #include "ActionTimeline/CCActionTimeline.h"
 
 #include "CCComExtensionData.h"
+#include "base/CCRefPtr.h"
 
 USING_NS_CC;
 
 NS_TIMELINE_BEGIN
+
+namespace
+{
+// A callback may remove any bound node, including a later timeline's node.
+Vector<Node*> retainTimelineNodes(const Vector<Timeline*>& timelines)
+{
+    Vector<Node*> nodes;
+    for (auto timeline : timelines)
+    {
+        for (auto frame : timeline->getFrames())
+        {
+            if (auto node = frame->getNode())
+            {
+                if (!nodes.contains(node))
+                    nodes.pushBack(node);
+            }
+        }
+    }
+    return nodes;
+}
+}  // namespace
 
 #if 0
 // ActionTimelineData
@@ -84,7 +106,14 @@ ActionTimeline::ActionTimeline()
     , _lastFrameListener(nullptr)
 {}
 
-ActionTimeline::~ActionTimeline() {}
+ActionTimeline::~ActionTimeline()
+{
+    for (auto timeline : _timelineList)
+    {
+        if (timeline->getActionTimeline() == this)
+            timeline->setActionTimeline(nullptr);
+    }
+}
 
 bool ActionTimeline::init()
 {
@@ -120,6 +149,7 @@ void ActionTimeline::gotoFrameAndPlay(int startIndex, int endIndex, bool loop)
 
 void ActionTimeline::gotoFrameAndPlay(int startIndex, int endIndex, int currentFrameIndex, bool loop)
 {
+    ++_playbackVersion;
     _startFrame   = startIndex;
     _endFrame     = endIndex;
     _currentFrame = currentFrameIndex;
@@ -132,6 +162,7 @@ void ActionTimeline::gotoFrameAndPlay(int startIndex, int endIndex, int currentF
 
 void ActionTimeline::gotoFrameAndPause(int startIndex)
 {
+    ++_playbackVersion;
     _startFrame = _currentFrame = startIndex;
     _time                       = _currentFrame * _frameInternal;
 
@@ -158,6 +189,7 @@ void ActionTimeline::setCurrentFrame(int frameIndex)
 {
     if (frameIndex >= _startFrame && frameIndex <= _endFrame)
     {
+        ++_playbackVersion;
         _currentFrame = frameIndex;
         _time         = _currentFrame * _frameInternal;
     }
@@ -200,14 +232,23 @@ void ActionTimeline::step(float delta)
     if (deltaCurrFrameTime < _frameInternal)
         return;
 
+    RefPtr<ActionTimeline> keepAction(this);
+    RefPtr<Node> keepTarget(_target);
+    auto keepNodes = retainTimelineNodes(_timelineList);
+    const auto version = ++_playbackVersion;
     const float endtoffset = _time - _endFrame * _frameInternal;
     if (endtoffset < _frameInternal)
     {
         _currentFrame = (int)(_time / _frameInternal);
         stepToFrame(_currentFrame);
+        if (version != _playbackVersion)
+            return;
         emitFrameEndCallFuncs(_currentFrame);
-        if (endtoffset >= 0 && _lastFrameListener != nullptr)  // last frame
-            _lastFrameListener();
+        if (version != _playbackVersion)
+            return;
+        auto listener = _lastFrameListener;
+        if (endtoffset >= 0 && listener != nullptr)  // last frame
+            listener();
     }
     else
     {
@@ -219,9 +260,14 @@ void ActionTimeline::step(float delta)
             {
                 _currentFrame = _endFrame;
                 stepToFrame(_currentFrame);
+                if (version != _playbackVersion)
+                    return;
                 emitFrameEndCallFuncs(_currentFrame);
-                if (_lastFrameListener != nullptr)  // last frame
-                    _lastFrameListener();
+                if (version != _playbackVersion)
+                    return;
+                auto listener = _lastFrameListener;
+                if (listener != nullptr)  // last frame
+                    listener();
             }
         }
         else
@@ -243,6 +289,7 @@ void foreachNodeDescendant(Node* parent, tCallBack callback)
 
 void ActionTimeline::startWithTarget(Node* target)
 {
+    ++_playbackVersion;
     Action::startWithTarget(target);
     this->setTag(target->getTag());
 
@@ -287,9 +334,10 @@ void ActionTimeline::removeTimeline(Timeline* timeline)
     {
         if (_timelineMap[tag].contains(timeline))
         {
+            // Detach before either owning container can release the last reference.
+            timeline->setActionTimeline(nullptr);
             _timelineMap[tag].eraseObject(timeline);
             _timelineList.eraseObject(timeline);
-            timeline->setActionTimeline(nullptr);
         }
     }
 }
@@ -338,7 +386,10 @@ void ActionTimeline::setAnimationEndCallFunc(const std::string animationName, st
         return;
     }
     clipIter->second.clipEndCallBack = func;
-    addFrameEndCallFunc(clipIter->second.endIndex, animationName, func);
+    if (func)
+        addFrameEndCallFunc(clipIter->second.endIndex, animationName, func);
+    else
+        removeFrameEndCallFunc(clipIter->second.endIndex, animationName);
 }
 
 void ActionTimeline::setFrameEventCallFunc(std::function<void(Frame*)> listener)
@@ -363,9 +414,13 @@ void ActionTimeline::clearLastFrameCallFunc()
 
 void ActionTimeline::emitFrameEvent(Frame* frame)
 {
-    if (_frameEventListener)
+    RefPtr<ActionTimeline> keepAction(this);
+    RefPtr<Frame> keepFrame(frame);
+    RefPtr<Node> keepNode(frame ? frame->getNode() : nullptr);
+    auto listener = _frameEventListener;
+    if (listener)
     {
-        _frameEventListener(frame);
+        listener(frame);
     }
 }
 
@@ -406,6 +461,7 @@ void ActionTimeline::clearFrameEndCallFuncs()
 
 void ActionTimeline::emitFrameEndCallFuncs(int frameIndex)
 {
+    RefPtr<ActionTimeline> keepAction(this);
     auto clipEndCallsIter = _frameEndCallFuncs.find(frameIndex);
     if (clipEndCallsIter != _frameEndCallFuncs.end())
     {
@@ -420,19 +476,32 @@ void ActionTimeline::gotoFrame(int frameIndex)
     if (_target == nullptr)
         return;
 
-    ssize_t size = _timelineList.size();
-    for (ssize_t i = 0; i < size; i++)
+    RefPtr<ActionTimeline> keepAction(this);
+    RefPtr<Node> keepTarget(_target);
+    auto timelines = _timelineList;
+    auto keepNodes = retainTimelineNodes(timelines);
+    const auto version = _playbackVersion;
+    for (auto timeline : timelines)
     {
-        _timelineList.at(i)->gotoFrame(frameIndex);
+        if (timeline->getActionTimeline() == this)
+            timeline->gotoFrame(frameIndex);
+        if (version != _playbackVersion)
+            return;
     }
 }
 
 void ActionTimeline::stepToFrame(int frameIndex)
 {
-    ssize_t size = _timelineList.size();
-    for (ssize_t i = 0; i < size; i++)
+    RefPtr<ActionTimeline> keepAction(this);
+    RefPtr<Node> keepTarget(_target);
+    auto timelines = _timelineList;
+    const auto version = _playbackVersion;
+    for (auto timeline : timelines)
     {
-        _timelineList.at(i)->stepToFrame(frameIndex);
+        if (timeline->getActionTimeline() == this)
+            timeline->stepToFrame(frameIndex);
+        if (version != _playbackVersion)
+            return;
     }
 }
 

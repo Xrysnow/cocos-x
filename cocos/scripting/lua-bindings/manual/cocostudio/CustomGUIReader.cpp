@@ -23,7 +23,6 @@
  ****************************************************************************/
 
 #include "scripting/lua-bindings/manual/cocostudio/CustomGUIReader.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -32,81 +31,53 @@ USING_NS_CC;
 namespace cocostudio
 {
 
-CustomGUIReader* CustomGUIReader::create(std::string& className, int createFunc, int setPropsFunc)
+CustomGUIReader* CustomGUIReader::create(std::string_view className,
+                                         CreateFunction createFunc,
+                                         SetPropsFunction setPropsFunc)
 {
     auto reader = new CustomGUIReader();
-    reader->init(className, createFunc, setPropsFunc);
+    if (!reader->init(className, std::move(createFunc), std::move(setPropsFunc)))
+    {
+        reader->release();
+        return nullptr;
+    }
+    reader->autorelease();
     return reader;
 }
 
 Ref* CustomGUIReader::createInstance()
 {
-    Ref* result     = nullptr;
-    LuaStack* stack = LuaEngine::getInstance()->getLuaStack();
-    const int handler = _createFunc;
-    const std::function<void(lua_State*, int)> convert = [&result](lua_State* L, int numReturn) {
-        result = static_cast<Ref*>(tolua_tousertype(L, -1, nullptr));
-        lua_pop(L, 1);
-    };
-    stack->executeCallback([stack, handler, convert]() -> int {
-        return stack->executeFunction(handler, 0, 1, convert);
-    });
-    return result;
+    const auto callbacks = _callbacks;
+    return callbacks ? callbacks->create() : nullptr;
 }
 
-CustomGUIReader::CustomGUIReader() : _className(), _createFunc(0), _setPropsFunc(0) {}
-
-CustomGUIReader::~CustomGUIReader()
+bool CustomGUIReader::init(std::string_view className, CreateFunction createFunc, SetPropsFunction setPropsFunc)
 {
-    if (_createFunc)
+    if (_callbacks || !createFunc || !setPropsFunc)
     {
-        LuaEngine::getInstance()->removeScriptHandler(_createFunc);
-        _createFunc = 0;
+        return false;
     }
-    if (_setPropsFunc)
-    {
-        LuaEngine::getInstance()->removeScriptHandler(_setPropsFunc);
-        _setPropsFunc = 0;
-    }
-}
-
-void CustomGUIReader::init(std::string& className, int createFunc, int setPropsFunc)
-{
-    _className    = className;
-    _createFunc   = createFunc;
-    _setPropsFunc = setPropsFunc;
-
-    ObjectFactory* factoryCreate = ObjectFactory::getInstance();
-    ObjectFactory::TInfo t;
-    t._class = className;
-    t._func  = CC_CALLBACK_0(CustomGUIReader::createInstance, this);
-    factoryCreate->registerType(t);
-
-    auto guiReader            = GUIReader::getInstance();
-    auto objMap               = guiReader->getParseObjectMap();
-    (*objMap)[className]      = this;
-    auto callbackMap          = guiReader->getParseCallBackMap();
-    (*callbackMap)[className] = parseselector(CustomGUIReader::setCustomProps);
+    auto callbacks = std::make_shared<Callbacks>(Callbacks{std::move(createFunc), std::move(setPropsFunc)});
+    _callbacks = callbacks;
+    // The factory owns the callback state, never a borrowed reader pointer.
+    GUIReader::getInstance()->registerTypeAndCallBack(
+        className, ObjectFactory::InstanceFunc([callbacks]() { return callbacks->create(); }), this,
+        parseselector(CustomGUIReader::setCustomProps));
+    return true;
 }
 
 void CustomGUIReader::setCustomProps(std::string_view classType,
                                      cocos2d::Ref* widget,
                                      const rapidjson::Value& customOptions)
 {
-    if (_setPropsFunc != 0)
+    const auto callbacks = _callbacks;
+    if (callbacks && widget)
     {
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         customOptions.Accept(writer);
 
-        auto stack = LuaEngine::getInstance()->getLuaStack();
-        const int handler = _setPropsFunc;
-        stack->executeCallback([&]() -> int {
-            stack->pushString(classType);
-            stack->pushObject(widget, "cc.Ref");
-            stack->pushString(buffer.GetString(), static_cast<int>(buffer.GetSize()));
-            return stack->executeFunctionByHandler(handler, 3);
-        });
+        callbacks->setProps(classType, widget, std::string_view(buffer.GetString(), buffer.GetSize()));
     }
 }
 }  // namespace cocostudio

@@ -41,6 +41,13 @@ THE SOFTWARE.
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <functional>
+#include <memory>
+
+namespace cocos2d
+{
+class Scheduler;
+}
 
 namespace cocostudio
 {
@@ -57,18 +64,18 @@ protected:
     {
         DragonBone_XML,
         CocoStudio_JSON,
-        CocoStudio_Binary
+        CocoStudio_Binary,
+        Unsupported
     };
 
     typedef struct _AsyncStruct
     {
         std::string filename;
         std::string fileContent;
-        ConfigType configType;
+        ConfigType configType = Unsupported;
         std::string baseFilePath;
-        cocos2d::Ref* target;
-        cocos2d::SEL_SCHEDULE selector;
-        bool autoLoadSpriteFile;
+        std::function<void(float)> callback;
+        bool autoLoadSpriteFile = false;
 
         std::string imagePath;
         std::string plistPath;
@@ -76,13 +83,23 @@ protected:
 
     typedef struct _DataInfo
     {
-        AsyncStruct* asyncStruct;
+        _DataInfo();
+        ~_DataInfo();
+
+        std::shared_ptr<AsyncStruct> asyncStruct;
         std::queue<std::string> configFileQueue;
-        float contentScale;
+        float contentScale = 1.0f;
         std::string filename;
         std::string baseFilePath;
-        float flashToolVersion;
-        float cocoStudioVersion;
+        float flashToolVersion = 0.0f;
+        float cocoStudioVersion = 0.0f;
+        bool failed = false;
+
+        // Only data-only parsers run on the worker. Ref construction and all
+        // publication stay on the main thread, including XML cross-file lookup.
+        std::unique_ptr<pugi::xml_document> xmlData;
+        std::unique_ptr<rapidjson::Document> jsonData;
+        std::unique_ptr<CocoLoader> binaryData;
     } DataInfo;
 
 public:
@@ -120,6 +137,10 @@ public:
                               std::string_view filePath,
                               cocos2d::Ref* target,
                               cocos2d::SEL_SCHEDULE selector);
+    void addDataFromFileAsync(std::string_view imagePath,
+                              std::string_view plistPath,
+                              std::string_view filePath,
+                              std::function<void(float)> callback);
 
     void addDataAsyncCallBack(float dt);
 
@@ -202,27 +223,34 @@ public:
 
 protected:
     void loadData();
+    void stopAsync(bool unschedule = true);
+    void unscheduleAsync();
+    void checkThread() const;
+
+    struct ScheduleGuard;
+    std::weak_ptr<ScheduleGuard> _scheduleGuard;
+    cocos2d::Scheduler* _scheduler = nullptr;
+    const std::thread::id _ownerThread;
+    bool _asyncScheduled = false;
+    bool _stopping = false;
+    bool _shutdown = false;
 
     std::condition_variable _sleepCondition;
 
     std::thread* _loadingThread;
 
-    std::mutex _sleepMutex;
-
     std::mutex _asyncStructQueueMutex;
     std::mutex _dataInfoMutex;
-
-    std::mutex _addDataMutex;
-
-    std::mutex _getFileMutex;
 
     unsigned long _asyncRefCount;
     unsigned long _asyncRefTotalCount;
 
     bool need_quit;
 
-    std::queue<AsyncStruct*>* _asyncStructQueue;
-    std::queue<DataInfo*>* _dataQueue;
+    std::queue<std::shared_ptr<DataInfo>> _asyncStructQueue;
+    std::queue<std::shared_ptr<DataInfo>> _dataQueue;
+    // Main-thread owners ensure callable/target final destruction never runs on the worker.
+    std::vector<std::shared_ptr<DataInfo>> _pendingTasks;
 
     static std::vector<std::string> _configFileList;
 

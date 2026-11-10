@@ -28,6 +28,7 @@
 #include "ActionTimeline/CSLoader.h"
 
 #include "base/ObjectFactory.h"
+#include "base/CCRefPtr.h"
 #include "base/CCDirector.h"
 #include "base/ccUTF8.h"
 #include "ui/CocosGUI.h"
@@ -1345,14 +1346,10 @@ bool CSLoader::isWidget(std::string_view type)
 
 bool CSLoader::isCustomWidget(std::string_view type)
 {
-    Widget* widget = dynamic_cast<Widget*>(ObjectFactory::getInstance()->createObject(type));
-    if (widget)
-    {
-        CC_SAFE_DELETE(widget);
-        return true;
-    }
-
-    return false;
+    // Factory results are borrowed from their creator/autorelease pool.
+    // Balance only the probe's temporary retain, including non-Widget results.
+    const RefPtr<Ref> object(ObjectFactory::getInstance()->createObject(type));
+    return dynamic_cast<Widget*>(object.get()) != nullptr;
 }
 
 std::string_view CSLoader::getGUIClassName(std::string_view name)

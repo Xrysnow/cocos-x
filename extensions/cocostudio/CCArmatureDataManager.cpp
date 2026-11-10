@@ -50,8 +50,8 @@ ArmatureDataManager* ArmatureDataManager::getInstance()
 
 void ArmatureDataManager::destroyInstance()
 {
-    SpriteFrameCacheHelper::purge();
     DataReaderHelper::purge();
+    SpriteFrameCacheHelper::purge();
     CC_SAFE_RELEASE_NULL(s_sharedArmatureDataManager);
 }
 
@@ -196,6 +196,15 @@ void ArmatureDataManager::addArmatureFileInfoAsync(std::string_view configFilePa
     DataReaderHelper::getInstance()->addDataFromFileAsync("", "", configFilePath, target, selector);
 }
 
+void ArmatureDataManager::addArmatureFileInfoAsync(std::string_view configFilePath,
+                                                  std::function<void(float)> callback)
+{
+    addRelativeData(configFilePath);
+
+    _autoLoadSpriteFile = true;
+    DataReaderHelper::getInstance()->addDataFromFileAsync("", "", configFilePath, std::move(callback));
+}
+
 void ArmatureDataManager::addArmatureFileInfo(std::string_view imagePath,
                                               std::string_view plistPath,
                                               std::string_view configFilePath)
@@ -217,7 +226,17 @@ void ArmatureDataManager::addArmatureFileInfoAsync(std::string_view imagePath,
 
     _autoLoadSpriteFile = false;
     DataReaderHelper::getInstance()->addDataFromFileAsync(imagePath, plistPath, configFilePath, target, selector);
-    addSpriteFrameFromFile(plistPath, imagePath, configFilePath);
+}
+
+void ArmatureDataManager::addArmatureFileInfoAsync(std::string_view imagePath,
+                                                  std::string_view plistPath,
+                                                  std::string_view configFilePath,
+                                                  std::function<void(float)> callback)
+{
+    addRelativeData(configFilePath);
+
+    _autoLoadSpriteFile = false;
+    DataReaderHelper::getInstance()->addDataFromFileAsync(imagePath, plistPath, configFilePath, std::move(callback));
 }
 
 void ArmatureDataManager::addSpriteFrameFromFile(std::string_view plistPath,

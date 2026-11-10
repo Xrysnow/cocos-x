@@ -27,6 +27,9 @@ THE SOFTWARE.
 #include "CCBone.h"
 #include "CCArmatureDefine.h"
 #include "CCDatas.h"
+#include <memory>
+#include <algorithm>
+#include <unordered_set>
 
 USING_NS_CC;
 
@@ -69,6 +72,16 @@ ArmatureAnimation::ArmatureAnimation()
 
 ArmatureAnimation::~ArmatureAnimation(void)
 {
+    while (!_frameEventQueue.empty())
+    {
+        delete _frameEventQueue.front();
+        _frameEventQueue.pop();
+    }
+    while (!_movementEventQueue.empty())
+    {
+        delete _movementEventQueue.front();
+        _movementEventQueue.pop();
+    }
     CC_SAFE_RELEASE_NULL(_animationData);
 
     CC_SAFE_RELEASE_NULL(_userObject);
@@ -91,6 +104,7 @@ bool ArmatureAnimation::init(Armature* armature)
 
 void ArmatureAnimation::pause()
 {
+    removeDetachedTweens();
     for (const auto& tween : _tweenList)
     {
         tween->pause();
@@ -100,6 +114,7 @@ void ArmatureAnimation::pause()
 
 void ArmatureAnimation::resume()
 {
+    removeDetachedTweens();
     for (const auto& tween : _tweenList)
     {
         tween->resume();
@@ -109,6 +124,7 @@ void ArmatureAnimation::resume()
 
 void ArmatureAnimation::stop()
 {
+    removeDetachedTweens();
     for (const auto& tween : _tweenList)
     {
         tween->stop();
@@ -333,8 +349,11 @@ ssize_t ArmatureAnimation::getMovementCount() const
 
 void ArmatureAnimation::update(float dt)
 {
+    // The armature directly deletes its animation; retaining this alone cannot protect it.
+    RefPtr<Armature> keepArmature(_armature);
     ProcessBase::update(dt);
 
+    removeDetachedTweens();
     for (const auto& tween : _tweenList)
     {
         tween->update(dt);
@@ -348,43 +367,50 @@ void ArmatureAnimation::update(float dt)
 
     while (_frameEventQueue.size() > 0)
     {
-        FrameEvent* event = _frameEventQueue.front();
+        std::unique_ptr<FrameEvent> event(_frameEventQueue.front());
         _frameEventQueue.pop();
 
-        _ignoreFrameEvent = true;
-
-        if (_frameEventTarget)
+        struct IgnoreFrameEvents
         {
-            (_frameEventTarget->*_frameEventCallFunc)(event->bone, event->frameEventName, event->originFrameIndex,
-                                                      event->currentFrameIndex);
+            bool& flag;
+            bool previous;
+            explicit IgnoreFrameEvents(bool& value) : flag(value), previous(value) { flag = true; }
+            ~IgnoreFrameEvents() { flag = previous; }
+        } ignoreFrameEvents(_ignoreFrameEvent);
+
+        RefPtr<Ref> target(_frameEventTarget);
+        auto callFunc = _frameEventCallFunc;
+        if (target && callFunc)
+        {
+            (target.get()->*callFunc)(event->bone, event->frameEventName, event->originFrameIndex,
+                                     event->currentFrameIndex);
         }
 
-        if (_frameEventListener)
+        // Copy after the selector, preserving its ability to replace this notification's listener.
+        auto listener = _frameEventListener;
+        if (listener)
         {
-            _frameEventListener(event->bone, event->frameEventName, event->originFrameIndex, event->currentFrameIndex);
+            listener(event->bone, event->frameEventName, event->originFrameIndex, event->currentFrameIndex);
         }
-
-        _ignoreFrameEvent = false;
-
-        CC_SAFE_DELETE(event);
     }
 
     while (_movementEventQueue.size() > 0)
     {
-        MovementEvent* event = _movementEventQueue.front();
+        std::unique_ptr<MovementEvent> event(_movementEventQueue.front());
         _movementEventQueue.pop();
 
-        if (_movementEventTarget)
+        RefPtr<Ref> target(_movementEventTarget);
+        auto callFunc = _movementEventCallFunc;
+        if (target && callFunc)
         {
-            (_movementEventTarget->*_movementEventCallFunc)(event->armature, event->movementType, event->movementID);
+            (target.get()->*callFunc)(event->armature, event->movementType, event->movementID);
         }
 
-        if (_movementEventListener)
+        auto listener = _movementEventListener;
+        if (listener)
         {
-            _movementEventListener(event->armature, event->movementType, event->movementID);
+            listener(event->armature, event->movementType, event->movementID);
         }
-
-        CC_SAFE_DELETE(event);
     }
 }
 
@@ -496,6 +522,7 @@ void ArmatureAnimation::frameEvent(Bone* bone,
     {
         FrameEvent* frameEvent        = new FrameEvent();
         frameEvent->bone              = bone;
+        frameEvent->boneOwner         = bone;
         frameEvent->frameEventName    = frameEventName;
         frameEvent->originFrameIndex  = originFrameIndex;
         frameEvent->currentFrameIndex = currentFrameIndex;
@@ -514,6 +541,20 @@ void ArmatureAnimation::movementEvent(Armature* armature, MovementEventType move
         movementEvent->movementID    = movementID;
         _movementEventQueue.push(movementEvent);
     }
+}
+
+void ArmatureAnimation::removeDetachedTweens()
+{
+    if (_tweenList.empty())
+        return;
+    // Bone directly deletes its Tween. Compare cached addresses without dereferencing
+    // them, since an earlier event callback may have removed the last Bone owner.
+    std::unordered_set<Tween*> attached;
+    for (const auto& entry : _armature->getBoneDic())
+        attached.insert(entry.second->getTween());
+    _tweenList.erase(std::remove_if(_tweenList.begin(), _tweenList.end(),
+                                    [&attached](Tween* tween) { return attached.find(tween) == attached.end(); }),
+                     _tweenList.end());
 }
 
 void ArmatureAnimation::updateMovementList()

@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "WidgetReader/WidgetReaderProtocol.h"
 #include "base/ObjectFactory.h"
 #include "base/CCValue.h"
+#include "base/CCRefPtr.h"
 #include "CocosStudioExport.h"
 
 namespace protocolbuffers
@@ -99,6 +100,17 @@ public:
 
 private:
     friend class cocos2d::CSLoader;
+    friend class WidgetPropertiesReader0300;
+    using ParseCallback = std::function<void(std::string_view, cocos2d::Ref*, const rapidjson::Value&)>;
+    struct TypeRegistration
+    {
+        cocos2d::RefPtr<cocos2d::Ref> object;
+    };
+    hlookup::string_map<std::shared_ptr<TypeRegistration>> _typeRegistrations;
+    void registerTypeAndCallBack(const cocos2d::ObjectFactory::TInfo& type, Ref* object, SEL_ParseEvent callback);
+    ParseCallback getParseCallback(std::string_view classType) const;
+    void clearTypeRegistrations();
+
     // CSLoader restores only its temporary automatic paths, never an explicit setter.
     size_t _filePathRevision = 0;
 
@@ -209,6 +221,19 @@ public:
 
 class CCS_DLL WidgetPropertiesReader0300 : public WidgetPropertiesReader
 {
+private:
+    // Nesting preserves the active registration through recursive/reentrant loads.
+    struct ParseCallbackScope
+    {
+        explicit ParseCallbackScope(WidgetPropertiesReader0300& reader);
+        ~ParseCallbackScope();
+        ParseCallbackScope(const ParseCallbackScope&) = delete;
+        ParseCallbackScope& operator=(const ParseCallbackScope&) = delete;
+        WidgetPropertiesReader0300& reader;
+        GUIReader::ParseCallback callback;
+        GUIReader::ParseCallback* previous;
+    };
+    GUIReader::ParseCallback* _parseCallback = nullptr;
 
 public:
     WidgetPropertiesReader0300(){};

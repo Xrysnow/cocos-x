@@ -45,7 +45,7 @@ public:
     virtual void setFrameIndex(unsigned int frameIndex) { _frameIndex = frameIndex; }
     virtual unsigned int getFrameIndex() const { return _frameIndex; }
 
-    virtual void setTimeline(Timeline* timeline) { _timeline = timeline; }
+    virtual void setTimeline(Timeline* timeline);
     virtual Timeline* getTimeline() const { return _timeline; }
 
     virtual void setNode(cocos2d::Node* node) { _node = node; }
@@ -371,7 +371,6 @@ public:
 
 protected:
     std::string _event;
-    ActionTimeline* _action;
 };
 
 class CCS_DLL ZOrderFrame : public Frame

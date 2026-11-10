@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include "base/ccUtils.h"
 
 #include "CCActionManagerEx.h"
+#include "WidgetReader/WidgetReader.h"
 #include "WidgetReader/ButtonReader/ButtonReader.h"
 #include "WidgetReader/CheckBoxReader/CheckBoxReader.h"
 #include "WidgetReader/SliderReader/SliderReader.h"
@@ -60,6 +61,7 @@ GUIReader::GUIReader() : m_strFilePath("")
 {
     ObjectFactory* factoryCreate = ObjectFactory::getInstance();
 
+    factoryCreate->registerType(CREATE_CLASS_WIDGET_READER_INFO(WidgetReader));
     factoryCreate->registerType(CREATE_CLASS_WIDGET_READER_INFO(ButtonReader));
     factoryCreate->registerType(CREATE_CLASS_WIDGET_READER_INFO(CheckBoxReader));
     factoryCreate->registerType(CREATE_CLASS_WIDGET_READER_INFO(SliderReader));
@@ -89,7 +91,10 @@ GUIReader::GUIReader() : m_strFilePath("")
     factoryCreate->registerType(CREATE_CLASS_GUI_INFO(ScrollView));
 }
 
-GUIReader::~GUIReader() {}
+GUIReader::~GUIReader()
+{
+    clearTypeRegistrations();
+}
 
 GUIReader* GUIReader::getInstance()
 {
@@ -102,7 +107,13 @@ GUIReader* GUIReader::getInstance()
 
 void GUIReader::destroyInstance()
 {
-    CC_SAFE_DELETE(sharedReader);
+    auto reader = sharedReader;
+    sharedReader = nullptr;
+    if (reader)
+    {
+        reader->clearTypeRegistrations();
+        reader->release();
+    }
 }
 
 int GUIReader::getVersionInteger(const char* str)
@@ -165,20 +176,10 @@ void GUIReader::registerTypeAndCallBack(std::string_view classType,
                                         Ref* object,
                                         SEL_ParseEvent callBack)
 {
-    ObjectFactory* factoryCreate = ObjectFactory::getInstance();
-
-    ObjectFactory::TInfo t(classType, ins);
-    factoryCreate->registerType(t);
-
-    if (object)
-    {
-        _mapObject.insert(ParseObjectMap::value_type(classType, object));
-    }
-
-    if (callBack)
-    {
-        _mapParseSelector.insert(ParseCallBackMap::value_type(classType, callBack));
-    }
+    ObjectFactory::TInfo type;
+    type._class = classType;
+    type._fun = ins;
+    registerTypeAndCallBack(type, object, callBack);
 }
 
 void GUIReader::registerTypeAndCallBack(std::string_view classType,
@@ -186,24 +187,59 @@ void GUIReader::registerTypeAndCallBack(std::string_view classType,
                                         Ref* object,
                                         SEL_ParseEvent callBack)
 {
-    ObjectFactory* factoryCreate = ObjectFactory::getInstance();
+    ObjectFactory::TInfo type;
+    type._class = classType;
+    type._func = std::move(ins);
+    registerTypeAndCallBack(type, object, callBack);
+}
 
-    ObjectFactory::TInfo t(classType, ins);
-    factoryCreate->registerType(t);
+void GUIReader::registerTypeAndCallBack(const ObjectFactory::TInfo& type, Ref* object, SEL_ParseEvent callback)
+{
+    const RefPtr<GUIReader> owner(this);
+    auto registration = std::make_shared<TypeRegistration>();
+    registration->object = object;
+    const auto found = _typeRegistrations.find(type._class);
+    const auto previousRegistration = found == _typeRegistrations.end() ? nullptr : found->second;
+    // Keep retired owners/callables until all maps have published the new entry.
+    const auto previousType = ObjectFactory::getInstance()->registerOwnedType(type, registration);
+    _mapObject[type._class] = object;
+    _mapParseSelector[type._class] = callback;
+    _typeRegistrations.insert_or_assign(type._class, std::move(registration));
+}
 
-    if (object)
+GUIReader::ParseCallback GUIReader::getParseCallback(std::string_view classType) const
+{
+    const auto object = _mapObject.find(classType);
+    const auto selector = _mapParseSelector.find(classType);
+    if (object == _mapObject.end() || !object->second || selector == _mapParseSelector.end() || !selector->second)
     {
-        _mapObject.insert(ParseObjectMap::value_type(classType, object));
+        return {};
     }
+    return [owner = RefPtr<Ref>(object->second), callback = selector->second](
+               std::string_view type, Ref* widget, const rapidjson::Value& options) {
+        if (widget)
+        {
+            (owner.get()->*callback)(type, widget, options);
+        }
+    };
+}
 
-    if (callBack)
+void GUIReader::clearTypeRegistrations()
+{
+    // Detach first so callbacks/objects released below cannot observe partial maps.
+    decltype(_typeRegistrations) registrations;
+    registrations.swap(_typeRegistrations);
+    _mapObject.clear();
+    _mapParseSelector.clear();
+    for (const auto& registration : registrations)
     {
-        _mapParseSelector.insert(ParseCallBackMap::value_type(classType, callBack));
+        ObjectFactory::removeOwnedType(registration.first, registration.second);
     }
 }
 
 Widget* GUIReader::widgetFromJsonFile(const char* fileName)
 {
+    const RefPtr<GUIReader> owner(this);
     std::string jsonpath;
     rapidjson::Document jsonDict;
     jsonpath = fileName;
@@ -215,6 +251,11 @@ Widget* GUIReader::widgetFromJsonFile(const char* fileName)
     if (jsonDict.HasParseError())
     {
         CCLOG("GetParseError %d\n", jsonDict.GetParseError());
+        return nullptr;
+    }
+    if (!jsonDict.IsObject())
+    {
+        return nullptr;
     }
     Widget* widget                  = nullptr;
     const char* fileVersion         = DICTOOL->getStringValue_json(jsonDict, "version");
@@ -360,6 +401,7 @@ WidgetReaderProtocol* WidgetPropertiesReader::createWidgetReaderProtocol(std::st
 
 Widget* GUIReader::widgetFromBinaryFile(const char* fileName)
 {
+    const RefPtr<GUIReader> owner(this);
     std::string jsonpath;
     rapidjson::Document jsonDict;
     jsonpath = fileName;
@@ -520,12 +562,19 @@ Widget* WidgetPropertiesReader0250::createWidget(const rapidjson::Value& data,
     }
     const rapidjson::Value& widgetTree = DICTOOL->getSubDictionary_json(data, "widgetTree");
     Widget* widget                     = widgetFromJsonDictionary(widgetTree);
+    if (!widget)
+    {
+        return nullptr;
+    }
 
     /* *********temp********* */
     if (widget->getContentSize().equals(Size::ZERO))
     {
         Layout* rootWidget = dynamic_cast<Layout*>(widget);
-        rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+        if (rootWidget)
+        {
+            rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+        }
     }
     /* ********************** */
 
@@ -616,6 +665,10 @@ Widget* WidgetPropertiesReader0250::widgetFromJsonDictionary(const rapidjson::Va
         setPropsForScrollViewFromJsonDictionary(widget, uiOptions);
     }
 
+    if (!widget)
+    {
+        return nullptr;
+    }
     int childrenCount = DICTOOL->getArrayCount_json(data, "children");
     for (int i = 0; i < childrenCount; i++)
     {
@@ -1268,6 +1321,17 @@ void WidgetPropertiesReader0250::setPropsForAllWidgetFromBinary(WidgetReaderProt
 {}
 
 /*0.3.0.0~1.0.0.0*/
+WidgetPropertiesReader0300::ParseCallbackScope::ParseCallbackScope(WidgetPropertiesReader0300& reader)
+    : reader(reader), previous(reader._parseCallback)
+{
+    reader._parseCallback = &callback;
+}
+
+WidgetPropertiesReader0300::ParseCallbackScope::~ParseCallbackScope()
+{
+    reader._parseCallback = previous;
+}
+
 Widget* WidgetPropertiesReader0300::createWidget(const rapidjson::Value& data,
                                                  const char* fullPath,
                                                  const char* fileName)
@@ -1297,12 +1361,19 @@ Widget* WidgetPropertiesReader0300::createWidget(const rapidjson::Value& data,
     }
     const rapidjson::Value& widgetTree = DICTOOL->getSubDictionary_json(data, "widgetTree");
     Widget* widget                     = widgetFromJsonDictionary(widgetTree);
+    if (!widget)
+    {
+        return nullptr;
+    }
 
     /* *********temp********* */
     if (widget->getContentSize().equals(Size::ZERO))
     {
         Layout* rootWidget = dynamic_cast<Layout*>(widget);
-        rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+        if (rootWidget)
+        {
+            rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+        }
     }
     /* ********************** */
 
@@ -1373,16 +1444,27 @@ cocos2d::ui::Widget* WidgetPropertiesReader0300::createWidgetFromBinary(CocoLoad
                 widget = widgetFromBinary(cocoLoader, widgetTreeNode);
             }
 
+            if (!widget)
+            {
+                return nullptr;
+            }
             if (widget->getContentSize().equals(Size::ZERO))
             {
                 Layout* rootWidget = dynamic_cast<Layout*>(widget);
-                rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+                if (rootWidget)
+                {
+                    rootWidget->setContentSize(Size(fileDesignWidth, fileDesignHeight));
+                }
             }
         }
     }
 
     /* ********************** */
     /* ********************** */
+    if (!widget)
+    {
+        return nullptr;
+    }
     stExpCocoNode* optionChildNode = cocoNode->GetChildArray(cocoLoader);
     for (int k = 0; k < cocoNode->GetChildNum(); ++k)
     {
@@ -1406,6 +1488,7 @@ Widget* WidgetPropertiesReader0300::widgetFromBinary(CocoLoader* cocoLoader, stE
     stExpCocoNode* childrenNode = nullptr;
     int elementCount            = cocoNode->GetChildNum();
     std::string classname;
+    ParseCallbackScope parseCallback(*this);
 
     for (int i = 0; i < elementCount; ++i)
     {
@@ -1417,6 +1500,7 @@ Widget* WidgetPropertiesReader0300::widgetFromBinary(CocoLoader* cocoLoader, stE
             if (!value.empty())
             {
                 classname = value;
+                parseCallback.callback = GUIReader::getInstance()->getParseCallback(classname);
                 widget    = this->createGUI(classname);
             }
             else
@@ -1434,6 +1518,11 @@ Widget* WidgetPropertiesReader0300::widgetFromBinary(CocoLoader* cocoLoader, stE
         }
     }
 
+    if (!widget || !optionsNode)
+    {
+        return nullptr;
+    }
+    const RefPtr<Widget> widgetOwner(widget);
     std::string readerName = this->getWidgetReaderClassName(classname);
 
     WidgetReaderProtocol* reader = this->createWidgetReaderProtocol(readerName);
@@ -1467,10 +1556,11 @@ Widget* WidgetPropertiesReader0300::widgetFromBinary(CocoLoader* cocoLoader, stE
             }
 
             rapidjson::Document customJsonDict;
-            customJsonDict.Parse<0>(customProperty);
+            customJsonDict.Parse<0>(customProperty ? customProperty : "{}");
             if (customJsonDict.HasParseError())
             {
                 CCLOG("GetParseError %d\n", customJsonDict.GetParseError());
+                return nullptr;
             }
             setPropsForAllCustomWidgetFromJsonDictionary(classname, widget, customJsonDict);
         }
@@ -1557,8 +1647,19 @@ void WidgetPropertiesReader0300::setPropsForAllCustomWidgetFromBinary(std::strin
 Widget* WidgetPropertiesReader0300::widgetFromJsonDictionary(const rapidjson::Value& data)
 {
     const char* classname             = DICTOOL->getStringValue_json(data, "classname");
+    if (!classname)
+    {
+        return nullptr;
+    }
+    ParseCallbackScope parseCallback(*this);
+    parseCallback.callback = GUIReader::getInstance()->getParseCallback(classname);
     const rapidjson::Value& uiOptions = DICTOOL->getSubDictionary_json(data, "options");
     Widget* widget                    = this->createGUI(classname);
+    if (!widget)
+    {
+        return nullptr;
+    }
+    const RefPtr<Widget> widgetOwner(widget);
     //    CCLOG("classname = %s", classname);
     std::string readerName = this->getWidgetReaderClassName(classname);
 
@@ -1582,10 +1683,11 @@ Widget* WidgetPropertiesReader0300::widgetFromJsonDictionary(const rapidjson::Va
             // 2nd., custom widget parse with custom reader
             const char* customProperty = DICTOOL->getStringValue_json(uiOptions, "customProperty");
             rapidjson::Document customJsonDict;
-            customJsonDict.Parse<0>(customProperty);
+            customJsonDict.Parse<0>(customProperty ? customProperty : "{}");
             if (customJsonDict.HasParseError())
             {
                 CCLOG("GetParseError %d\n", customJsonDict.GetParseError());
+                return nullptr;
             }
             setPropsForAllCustomWidgetFromJsonDictionary(classname, widget, customJsonDict);
         }
@@ -1645,17 +1747,11 @@ void WidgetPropertiesReader0300::setPropsForAllCustomWidgetFromJsonDictionary(st
                                                                               cocos2d::ui::Widget* widget,
                                                                               const rapidjson::Value& customOptions)
 {
-    GUIReader* guiReader = GUIReader::getInstance();
-
-    hlookup::string_map<Ref*>* object_map = guiReader->getParseObjectMap();
-    Ref* object                           = (*object_map)[classType];
-
-    hlookup::string_map<SEL_ParseEvent>* selector_map = guiReader->getParseCallBackMap();
-    SEL_ParseEvent selector                           = (*selector_map)[classType];
-
-    if (object && selector)
+    const auto callback = _parseCallback ? *_parseCallback : GUIReader::getInstance()->getParseCallback(classType);
+    if (callback)
     {
-        (object->*selector)(classType, widget, customOptions);
+        const RefPtr<Widget> widgetOwner(widget);
+        callback(classType, widget, customOptions);
     }
 }
 

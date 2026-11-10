@@ -37,6 +37,10 @@ THE SOFTWARE.
 
 #include "CocoLoader.h"
 
+#include <algorithm>
+#include <cstring>
+#include <stdexcept>
+
 USING_NS_CC;
 
 static const char* VERSION     = "version";
@@ -153,77 +157,141 @@ std::vector<std::string> DataReaderHelper::_configFileList;
 
 DataReaderHelper* DataReaderHelper::_dataReaderHelper = nullptr;
 
-//! Async load
+namespace
+{
+constexpr const char* ASYNC_SCHEDULE_KEY = "cocostudio.armature.async";
+
+void notifyAsync(std::function<void(float)> callback, float percent)
+{
+    // Lua callbacks already protect their own errors. Native callbacks must not
+    // unwind the scheduler either; task accounting has finished before entry.
+    try
+    {
+        if (callback)
+            callback(percent);
+    }
+    catch (const std::exception& error)
+    {
+        CCLOG("Armature async callback failed: %s", error.what());
+    }
+    catch (...)
+    {
+        CCLOG("Armature async callback failed");
+    }
+}
+}  // namespace
+
+struct DataReaderHelper::ScheduleGuard
+{
+    DataReaderHelper* helper = nullptr;
+
+    ~ScheduleGuard()
+    {
+        // Scheduler cancellation/unscheduleAll also retires undelivered tasks.
+        // Normal completion and helper destruction disarm this guard first.
+        if (helper)
+        {
+            auto owner = helper;
+            owner->retain();
+            owner->stopAsync(false);
+            owner->release();
+        }
+    }
+};
+
+void DataReaderHelper::checkThread() const
+{
+    if (std::this_thread::get_id() != _ownerThread)
+        throw std::logic_error("Armature data loading must be used on its creating thread");
+}
+
+DataReaderHelper::_DataInfo::_DataInfo() = default;
+DataReaderHelper::_DataInfo::~_DataInfo() = default;
+
+//! Parse only task-local buffers. Ref construction and publication run on main.
 void DataReaderHelper::loadData()
 {
-    AsyncStruct* pAsyncStruct = nullptr;
-
     while (true)
     {
-        std::queue<AsyncStruct*>* pQueue = _asyncStructQueue;
-        _asyncStructQueueMutex.lock();  // get async struct from queue
-        if (pQueue->empty())
+        std::shared_ptr<DataInfo> info;
         {
-            _asyncStructQueueMutex.unlock();
+            std::unique_lock<std::mutex> lock(_asyncStructQueueMutex);
+            _sleepCondition.wait(lock, [this] { return need_quit || !_asyncStructQueue.empty(); });
             if (need_quit)
+                return;
+            info = std::move(_asyncStructQueue.front());
+            _asyncStructQueue.pop();
+        }
+
+        try
+        {
+            const auto& task = info->asyncStruct;
+            if (task->fileContent.empty() || task->configType == Unsupported)
+                info->failed = true;
+            else if (task->configType == DragonBone_XML)
             {
-                break;
+                info->xmlData = std::make_unique<pugi::xml_document>();
+                if (!info->xmlData->load_buffer(task->fileContent.data(), task->fileContent.size()))
+                    info->failed = true;
             }
-            else
+            else if (task->configType == CocoStudio_JSON)
             {
-                std::unique_lock<std::mutex> lk(_sleepMutex);
-                _sleepCondition.wait(lk);
-                continue;
+                info->jsonData = std::make_unique<rapidjson::Document>();
+                const char* content = task->fileContent.data();
+                size_t length = task->fileContent.size();
+                if (length >= 3 && (unsigned char)content[0] == 0xEF &&
+                    (unsigned char)content[1] == 0xBB && (unsigned char)content[2] == 0xBF)
+                {
+                    content += 3;
+                    length -= 3;
+                }
+                info->jsonData->Parse(content, length);
+                if (info->jsonData->HasParseError() || !info->jsonData->IsObject())
+                    info->failed = true;
+            }
+            else if (task->configType == CocoStudio_Binary)
+            {
+                // The legacy binary decoder takes no length. Reject truncated
+                // headers/payloads before allowing it to inspect the buffer.
+                if (task->fileContent.size() < sizeof(stCocoFileHeader))
+                    info->failed = true;
+                else
+                {
+                    stCocoFileHeader header;
+                    memcpy(&header, task->fileContent.data(), sizeof(header));
+                    const auto payloadSize = header.m_nCompressSize ? header.m_nCompressSize : header.m_nDataSize;
+                    if (payloadSize > task->fileContent.size() - sizeof(header))
+                        info->failed = true;
+                    else
+                    {
+                        info->binaryData = std::make_unique<CocoLoader>();
+                        if (!info->binaryData->ReadCocoBinBuff(task->fileContent.data()) ||
+                            info->binaryData->GetRootCocoNode()->GetType(info->binaryData.get()) != rapidjson::kObjectType)
+                            info->failed = true;
+                    }
+                }
             }
         }
-        else
+        catch (const std::exception& error)
         {
-            pAsyncStruct = pQueue->front();
-            pQueue->pop();
-            _asyncStructQueueMutex.unlock();
+            CCLOG("Armature async decode failed: %s", error.what());
+            info->failed = true;
+        }
+        catch (...)
+        {
+            CCLOG("Armature async decode failed");
+            info->failed = true;
         }
 
-        // generate data info
-        DataInfo* pDataInfo     = new DataInfo();
-        pDataInfo->asyncStruct  = pAsyncStruct;
-        pDataInfo->filename     = pAsyncStruct->filename;
-        pDataInfo->baseFilePath = pAsyncStruct->baseFilePath;
-
-        if (pAsyncStruct->configType == DragonBone_XML)
-        {
-            DataReaderHelper::addDataFromCache(pAsyncStruct->fileContent, pDataInfo);
-        }
-        else if (pAsyncStruct->configType == CocoStudio_JSON)
-        {
-            DataReaderHelper::addDataFromJsonCache(pAsyncStruct->fileContent, pDataInfo);
-        }
-        else if (pAsyncStruct->configType == CocoStudio_Binary)
-        {
-            DataReaderHelper::addDataFromBinaryCache(pAsyncStruct->fileContent.c_str(), pDataInfo);
-        }
-
-        // put the image info into the queue
-        _dataInfoMutex.lock();
-        _dataQueue->push(pDataInfo);
-        _dataInfoMutex.unlock();
-    }
-
-    if (_asyncStructQueue != nullptr)
-    {
-        delete _asyncStructQueue;
-        _asyncStructQueue = nullptr;
-        delete _dataQueue;
-        _dataQueue = nullptr;
+        std::lock_guard<std::mutex> lock(_dataInfoMutex);
+        _dataQueue.push(std::move(info));
     }
 }
 
 DataReaderHelper* DataReaderHelper::getInstance()
 {
     if (!_dataReaderHelper)
-    {
         _dataReaderHelper = new DataReaderHelper();
-    }
-
     return _dataReaderHelper;
 }
 
@@ -239,33 +307,96 @@ float DataReaderHelper::getPositionReadScale()
 
 void DataReaderHelper::purge()
 {
+    auto helper = _dataReaderHelper;
+    if (!helper)
+        return;
+    helper->checkThread();
+    if (helper->_shutdown)
+        return;
+    // Keep the retiring singleton discoverable until its worker has joined and
+    // callback owners have gone. Recursive purge observes the shutdown flag.
+    helper->_shutdown = true;
+    helper->stopAsync();
     _configFileList.clear();
-    CC_SAFE_RELEASE_NULL(_dataReaderHelper);
+    if (_dataReaderHelper == helper)
+        _dataReaderHelper = nullptr;
+    helper->release();
 }
 
 DataReaderHelper::DataReaderHelper()
-    : _loadingThread(nullptr)
+    : _ownerThread(std::this_thread::get_id())
+    , _loadingThread(nullptr)
     , _asyncRefCount(0)
     , _asyncRefTotalCount(0)
     , need_quit(false)
-    , _asyncStructQueue(nullptr)
-    , _dataQueue(nullptr)
 {}
 
-DataReaderHelper::~DataReaderHelper()
+void DataReaderHelper::unscheduleAsync()
 {
-    need_quit = true;
+    const bool scheduled = _asyncScheduled;
+    _asyncScheduled = false;
+    if (auto guard = _scheduleGuard.lock())
+        guard->helper = nullptr;
+    _scheduleGuard.reset();
+    if (scheduled && _scheduler)
+        _scheduler->unschedule(ASYNC_SCHEDULE_KEY, this);
+}
 
+void DataReaderHelper::stopAsync(bool unschedule)
+{
+    // The guard is running inside this timer's destruction. Mark it cancelled
+    // before releasing any task owners: their destructors can purge the helper,
+    // and its later destruction must not look up this partially destroyed timer.
+    if (!unschedule)
+        _asyncScheduled = false;
+    if (_stopping)
+        return;
+    _stopping = true;
+    if (auto guard = _scheduleGuard.lock())
+        guard->helper = nullptr;
+    _scheduleGuard.reset();
+    if (unschedule)
+        unscheduleAsync();
+    {
+        std::lock_guard<std::mutex> lock(_asyncStructQueueMutex);
+        need_quit = true;
+    }
     _sleepCondition.notify_one();
     if (_loadingThread)
         _loadingThread->join();
-
     CC_SAFE_DELETE(_loadingThread);
-    _dataReaderHelper = nullptr;
+
+    // Both queues are now main-thread-owned. Keep all tasks alive until every
+    // worker reference has gone, then release targets/callables on this thread.
+    decltype(_asyncStructQueue) requests;
+    decltype(_dataQueue) results;
+    requests.swap(_asyncStructQueue);
+    results.swap(_dataQueue);
+    auto pending = std::move(_pendingTasks);
+    _pendingTasks.clear();
+    _asyncRefCount = _asyncRefTotalCount = 0;
+    for (const auto& info : pending)
+        removeConfigFile(info->filename);
+    requests = {};
+    results = {};
+    pending.clear();
+    _stopping = false;
+}
+
+DataReaderHelper::~DataReaderHelper()
+{
+    _shutdown = true;
+    stopAsync();
+    CC_SAFE_RELEASE_NULL(_scheduler);
+    if (_dataReaderHelper == this)
+        _dataReaderHelper = nullptr;
 }
 
 void DataReaderHelper::addDataFromFile(std::string_view filePath)
 {
+    checkThread();
+    if (_shutdown || _stopping)
+        return;
     /*
      * Check if file is already added to ArmatureDataManager, if then return.
      */
@@ -293,9 +424,7 @@ void DataReaderHelper::addDataFromFile(std::string_view filePath)
     std::string fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
     bool isbinaryfilesrc = fileExtension == ".csb";
 
-    _dataReaderHelper->_getFileMutex.lock();
     std::string contentStr(readFileContent(fullPath, isbinaryfilesrc));
-    _dataReaderHelper->_getFileMutex.unlock();
 
     DataInfo dataInfo;
     dataInfo.filename     = filePath;
@@ -321,169 +450,185 @@ void DataReaderHelper::addDataFromFileAsync(std::string_view imagePath,
                                             Ref* target,
                                             SEL_SCHEDULE selector)
 {
-    /*
-     * Check if file is already added to ArmatureDataManager, if then return.
-     */
-    for (unsigned int i = 0; i < _configFileList.size(); i++)
-    {
-        if (_configFileList[i] == filePath)
-        {
-            if (target && selector)
-            {
-                if (_asyncRefTotalCount == 0 && _asyncRefCount == 0)
-                {
-                    (target->*selector)(1);
-                }
-                else
-                {
-                    (target->*selector)((_asyncRefTotalCount - _asyncRefCount) / (float)_asyncRefTotalCount);
-                }
-            }
-            return;
-        }
-    }
-    _configFileList.emplace_back(std::string{filePath});
-
-    //! find the base file path
-    std::string basefilePath;
-    size_t pos = filePath.find_last_of('/');
-
-    if (pos != std::string::npos)
-    {
-        basefilePath = filePath.substr(0, pos + 1);
-    }
-
-    // lazy init
-    if (_asyncStructQueue == nullptr)
-    {
-        _asyncStructQueue = new std::queue<AsyncStruct*>();
-        _dataQueue        = new std::queue<DataInfo*>();
-
-        // create a new thread to load images
-        _loadingThread = new std::thread(&DataReaderHelper::loadData, this);
-
-        need_quit = false;
-    }
-
-    if (0 == _asyncRefCount)
-    {
-        Director::getInstance()->getScheduler()->schedule(CC_SCHEDULE_SELECTOR(DataReaderHelper::addDataAsyncCallBack),
-                                                          this, 0, false);
-    }
-
-    ++_asyncRefCount;
-    ++_asyncRefTotalCount;
-
+    checkThread();
+    // A single shared owner balances retain on every path, including a null
+    // selector, synchronous cache hit, failure and undelivered cancellation.
+    std::shared_ptr<Ref> owner;
     if (target)
     {
         target->retain();
+        owner = std::shared_ptr<Ref>(target, [](Ref* object) { object->release(); });
     }
+    addDataFromFileAsync(imagePath, plistPath, filePath,
+                         [owner = std::move(owner), selector](float percent) {
+                             if (owner && selector)
+                                 (owner.get()->*selector)(percent);
+                         });
+}
 
-    // generate async struct
-    AsyncStruct* data        = new AsyncStruct();
-    data->filename           = filePath;
-    data->baseFilePath       = basefilePath;
-    data->target             = target;
-    data->selector           = selector;
-    data->autoLoadSpriteFile = ArmatureDataManager::getInstance()->isAutoLoadSpriteFile();
+void DataReaderHelper::addDataFromFileAsync(std::string_view imagePath,
+                                            std::string_view plistPath,
+                                            std::string_view filePath,
+                                            std::function<void(float)> callback)
+{
+    checkThread();
+    if (_shutdown || _stopping)
+        return;
+    if (!callback)
+        throw std::invalid_argument("Armature async callback must not be empty");
 
-    data->imagePath = imagePath;
-    data->plistPath = plistPath;
-
-    std::string fileExtension = cocos2d::FileUtils::getInstance()->getFileExtension(filePath);
-    std::string fullPath      = FileUtils::getInstance()->fullPathForFilename(filePath);
-
-    bool isbinaryfilesrc = fileExtension == ".csb";
-
-    // This only read exportJson file, it takes only a little time.
-    // Large image files are loaded in DataReaderHelper::addDataFromJsonCache(dataInfo) asynchronously.
-    _dataReaderHelper->_getFileMutex.lock();
-    data->fileContent.assign(readFileContent(fullPath, isbinaryfilesrc));
-    _dataReaderHelper->_getFileMutex.unlock();
-
-    if (fileExtension == ".xml")
+    if (std::find(_configFileList.begin(), _configFileList.end(), filePath) != _configFileList.end())
     {
-        data->configType = DragonBone_XML;
-    }
-    else if (fileExtension == ".json" || fileExtension == ".exportjson")
-    {
-        data->configType = CocoStudio_JSON;
-    }
-    else if (isbinaryfilesrc)
-    {
-        data->configType = CocoStudio_Binary;
+        if (!imagePath.empty() && !plistPath.empty())
+            ArmatureDataManager::getInstance()->addSpriteFrameFromFile(plistPath, imagePath, filePath);
+        const float percent = _asyncRefTotalCount == 0
+                                  ? 1.0f
+                                  : (_asyncRefTotalCount - _asyncRefCount) / (float)_asyncRefTotalCount;
+        // There must be no member access after notification: it may purge us.
+        notifyAsync(std::move(callback), percent);
+        return;
     }
 
-    // add async struct into queue
-    _asyncStructQueueMutex.lock();
-    _asyncStructQueue->push(data);
-    _asyncStructQueueMutex.unlock();
+    auto info = std::make_shared<DataInfo>();
+    auto task = std::make_shared<AsyncStruct>();
+    info->asyncStruct = task;
+    info->filename = task->filename = filePath;
+    task->callback = std::move(callback);
+    task->imagePath = imagePath;
+    task->plistPath = plistPath;
+    task->autoLoadSpriteFile = ArmatureDataManager::getInstance()->isAutoLoadSpriteFile();
+    const auto pos = filePath.find_last_of('/');
+    if (pos != std::string::npos)
+        info->baseFilePath = task->baseFilePath = filePath.substr(0, pos + 1);
 
+    const auto extension = FileUtils::getInstance()->getFileExtension(filePath);
+    if (extension == ".xml")
+        task->configType = DragonBone_XML;
+    else if (extension == ".json" || extension == ".exportjson")
+        task->configType = CocoStudio_JSON;
+    else if (extension == ".csb")
+        task->configType = CocoStudio_Binary;
+    try
+    {
+        // FileUtils caches belong to this thread. Only decoding runs on worker.
+        const auto fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
+        task->fileContent = readFileContent(fullPath, task->configType == CocoStudio_Binary);
+    }
+    catch (...)
+    {
+        info->failed = true;
+    }
+
+    if (!_scheduler)
+    {
+        _scheduler = Director::getInstance()->getScheduler();
+        _scheduler->retain();
+    }
+    if (!_loadingThread)
+    {
+        {
+            std::lock_guard<std::mutex> lock(_asyncStructQueueMutex);
+            need_quit = false;
+        }
+        _loadingThread = new std::thread(&DataReaderHelper::loadData, this);
+    }
+
+    _pendingTasks.push_back(info);
+    try
+    {
+        _configFileList.emplace_back(filePath);
+        if (_asyncRefCount == 0)
+        {
+            auto guard = std::make_shared<ScheduleGuard>();
+            _scheduleGuard = guard;
+            _scheduler->schedule([guard](float dt) {
+                if (guard->helper)
+                    guard->helper->addDataAsyncCallBack(dt);
+            }, this, 0, false, ASYNC_SCHEDULE_KEY);
+            _asyncScheduled = true;
+            guard->helper = this;
+        }
+        {
+            std::lock_guard<std::mutex> lock(_asyncStructQueueMutex);
+            _asyncStructQueue.push(info);
+        }
+        ++_asyncRefCount;
+        ++_asyncRefTotalCount;
+    }
+    catch (...)
+    {
+        _pendingTasks.pop_back();
+        removeConfigFile(filePath);
+        if (_asyncRefCount == 0)
+            unscheduleAsync();
+        throw;
+    }
     _sleepCondition.notify_one();
 }
 
 void DataReaderHelper::addDataAsyncCallBack(float /*dt*/)
 {
-    // the data is generated in loading thread
-    std::queue<DataInfo*>* dataQueue = _dataQueue;
-
-    _dataInfoMutex.lock();
-    if (dataQueue->empty())
+    checkThread();
+    std::shared_ptr<DataInfo> info;
     {
-        _dataInfoMutex.unlock();
+        std::lock_guard<std::mutex> lock(_dataInfoMutex);
+        if (_dataQueue.empty())
+            return;
+        info = std::move(_dataQueue.front());
+        _dataQueue.pop();
     }
-    else
+    const auto task = info->asyncStruct;
+    try
     {
-        DataInfo* pDataInfo = dataQueue->front();
-        dataQueue->pop();
-        _dataInfoMutex.unlock();
-
-        AsyncStruct* pAsyncStruct = pDataInfo->asyncStruct;
-
-        if (pAsyncStruct->imagePath != "" && pAsyncStruct->plistPath != "")
+        if (!info->failed)
         {
-            _getFileMutex.lock();
-            ArmatureDataManager::getInstance()->addSpriteFrameFromFile(pAsyncStruct->plistPath, pAsyncStruct->imagePath,
-                                                                       pDataInfo->filename);
-            _getFileMutex.unlock();
-        }
-
-        while (!pDataInfo->configFileQueue.empty())
-        {
-            std::string configPath = pDataInfo->configFileQueue.front();
-            _getFileMutex.lock();
-            ArmatureDataManager::getInstance()->addSpriteFrameFromFile(
-                (pAsyncStruct->baseFilePath + configPath + ".plist"),
-                (pAsyncStruct->baseFilePath + configPath + ".png"), pDataInfo->filename);
-            _getFileMutex.unlock();
-            pDataInfo->configFileQueue.pop();
-        }
-
-        Ref* target           = pAsyncStruct->target;
-        SEL_SCHEDULE selector = pAsyncStruct->selector;
-
-        --_asyncRefCount;
-
-        if (target && selector)
-        {
-            (target->*selector)((_asyncRefTotalCount - _asyncRefCount) / (float)_asyncRefTotalCount);
-            target->release();
-        }
-
-        delete pAsyncStruct;
-        delete pDataInfo;
-
-        if (0 == _asyncRefCount)
-        {
-            _asyncRefTotalCount = 0;
-            Director::getInstance()->getScheduler()->unschedule(
-                CC_SCHEDULE_SELECTOR(DataReaderHelper::addDataAsyncCallBack), this);
+            if (task->configType == DragonBone_XML)
+                addDataFromCache(task->fileContent, info.get());
+            else if (task->configType == CocoStudio_JSON)
+                addDataFromJsonCache(task->fileContent, info.get());
+            else if (task->configType == CocoStudio_Binary)
+                addDataFromBinaryCache(task->fileContent.c_str(), info.get());
+            auto manager = ArmatureDataManager::getInstance();
+            if (!task->imagePath.empty() && !task->plistPath.empty())
+                manager->addSpriteFrameFromFile(task->plistPath, task->imagePath, info->filename);
+            while (!info->configFileQueue.empty())
+            {
+                const auto& path = info->configFileQueue.front();
+                manager->addSpriteFrameFromFile(task->baseFilePath + path + ".plist",
+                                                task->baseFilePath + path + ".png", info->filename);
+                info->configFileQueue.pop();
+            }
         }
     }
+    catch (...)
+    {
+        info->failed = true;
+    }
+    if (info->failed)
+    {
+        CCLOG("Armature async load failed: %s", info->filename.c_str());
+        removeConfigFile(info->filename);
+    }
+
+    _pendingTasks.erase(std::remove(_pendingTasks.begin(), _pendingTasks.end(), info), _pendingTasks.end());
+    --_asyncRefCount;
+    const float percent = (_asyncRefTotalCount - _asyncRefCount) / (float)_asyncRefTotalCount;
+    if (_asyncRefCount == 0)
+    {
+        _asyncRefTotalCount = 0;
+        unscheduleAsync();
+    }
+    auto callback = std::move(task->callback);
+    // Drop parser buffers before entry, while the helper/manager still exist.
+    info.reset();
+    // Counts and scheduling are final before reentry. The callback may purge
+    // helper/manager or enqueue a fresh batch; no helper member is used afterward.
+    notifyAsync(std::move(callback), percent);
 }
 
 void DataReaderHelper::removeConfigFile(std::string_view configFile)
 {
+    checkThread();
     auto it_end = _configFileList.end();
     for (auto it = _configFileList.begin(); it != it_end; ++it)
     {
@@ -498,11 +643,14 @@ void DataReaderHelper::removeConfigFile(std::string_view configFile)
 void DataReaderHelper::addDataFromCache(std::string_view pFileContent, DataInfo* dataInfo)
 {
     pugi::xml_document document;
-    pugi::xml_parse_result ret = document.load_buffer(pFileContent.data(), pFileContent.length());
-    if (!ret)
+    auto& parsed = dataInfo->xmlData ? *dataInfo->xmlData : document;
+    if (!dataInfo->xmlData && !parsed.load_buffer(pFileContent.data(), pFileContent.length()))
+    {
+        dataInfo->failed = true;
         return;
+    }
 
-    auto root                  = document.document_element();
+    auto root                  = parsed.document_element();
     dataInfo->flashToolVersion = root.attribute(VERSION).as_float();
 
     /*
@@ -514,16 +662,8 @@ void DataReaderHelper::addDataFromCache(std::string_view pFileContent, DataInfo*
     {
         ArmatureData* armatureData = DataReaderHelper::decodeArmature(armatureXML, dataInfo);
 
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addArmatureData(armatureData->name, armatureData, dataInfo->filename);
         armatureData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
 
         armatureXML = armatureXML.next_sibling(ARMATURE);
     }
@@ -536,16 +676,8 @@ void DataReaderHelper::addDataFromCache(std::string_view pFileContent, DataInfo*
     while (animationXML)
     {
         AnimationData* animationData = DataReaderHelper::decodeAnimation(animationXML, dataInfo);
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addAnimationData(animationData->name, animationData, dataInfo->filename);
         animationData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
         animationXML = animationXML.next_sibling(ANIMATION);
     }
 
@@ -558,16 +690,8 @@ void DataReaderHelper::addDataFromCache(std::string_view pFileContent, DataInfo*
     {
         TextureData* textureData = DataReaderHelper::decodeTexture(textureXML, dataInfo);
 
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addTextureData(textureData->name, textureData, dataInfo->filename);
         textureData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
         textureXML = textureXML.next_sibling(SUB_TEXTURE);
     }
 }
@@ -685,12 +809,22 @@ DisplayData* DataReaderHelper::decodeBoneDisplay(pugi::xml_node& displayXML, Dat
 
 AnimationData* DataReaderHelper::decodeAnimation(pugi::xml_node& animationXML, DataInfo* dataInfo)
 {
-    AnimationData* aniData = new AnimationData();
-
     auto name = animationXML.attribute(A_NAME).as_string();
 
     ArmatureData* armatureData = ArmatureDataManager::getInstance()->getArmatureData(name);
+    if (!armatureData)
+    {
+        // Empty animations/movements never dereference an armature and remain
+        // valid legacy inputs. Reject only a movement that needs bone data,
+        // before allocating any Ref objects for the animation.
+        for (auto movement = animationXML.child(MOVEMENT); movement; movement = movement.next_sibling(MOVEMENT))
+        {
+            if (movement.child(BONE))
+                throw std::runtime_error("Armature XML animation has no armature data");
+        }
+    }
 
+    AnimationData* aniData = new AnimationData();
     aniData->name = name;
 
     pugi::xml_node movementXML = animationXML.child(MOVEMENT);
@@ -1111,27 +1245,33 @@ ContourData* DataReaderHelper::decodeContour(pugi::xml_node& contourXML, DataInf
 
 void DataReaderHelper::addDataFromJsonCache(std::string_view fileContent, DataInfo* dataInfo)
 {
-    rapidjson::Document json;
-    rapidjson::StringStream stream(fileContent.data());
-
-    if (fileContent.size() >= 3)
+    rapidjson::Document document;
+    auto& json = dataInfo->jsonData ? *dataInfo->jsonData : document;
+    if (!dataInfo->jsonData)
     {
-        // Skip BOM if exists
-        const unsigned char* c = (const unsigned char*)fileContent.data();
-        unsigned bom           = c[0] | (c[1] << 8) | (c[2] << 16);
+        rapidjson::StringStream stream(fileContent.data());
 
-        if (bom == 0xBFBBEF)  // UTF8 BOM
+        if (fileContent.size() >= 3)
         {
-            stream.Take();
-            stream.Take();
-            stream.Take();
-        }
-    }
+            // Skip BOM if exists
+            const unsigned char* c = (const unsigned char*)fileContent.data();
+            unsigned bom           = c[0] | (c[1] << 8) | (c[2] << 16);
 
-    json.ParseStream<0>(stream);
-    if (json.HasParseError())
+            if (bom == 0xBFBBEF)  // UTF8 BOM
+            {
+                stream.Take();
+                stream.Take();
+                stream.Take();
+            }
+        }
+
+        json.ParseStream<0>(stream);
+    }
+    if (json.HasParseError() || !json.IsObject())
     {
         CCLOG("GetParseError %d\n", json.GetParseError());
+        dataInfo->failed = true;
+        return;
     }
 
     dataInfo->contentScale = DICTOOL->getFloatValue_json(json, CONTENT_SCALE, 1.0f);
@@ -1143,16 +1283,8 @@ void DataReaderHelper::addDataFromJsonCache(std::string_view fileContent, DataIn
         const rapidjson::Value& armatureDic = DICTOOL->getSubDictionary_json(json, ARMATURE_DATA, i);
         ArmatureData* armatureData          = decodeArmature(armatureDic, dataInfo);
 
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addArmatureData(armatureData->name, armatureData, dataInfo->filename);
         armatureData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
     }
 
     // Decode animations
@@ -1163,16 +1295,8 @@ void DataReaderHelper::addDataFromJsonCache(std::string_view fileContent, DataIn
         const rapidjson::Value& animationDic = DICTOOL->getSubDictionary_json(json, ANIMATION_DATA, i);
         AnimationData* animationData         = decodeAnimation(animationDic, dataInfo);
 
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addAnimationData(animationData->name, animationData, dataInfo->filename);
         animationData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
     }
 
     // Decode textures
@@ -1182,16 +1306,8 @@ void DataReaderHelper::addDataFromJsonCache(std::string_view fileContent, DataIn
         const rapidjson::Value& textureDic = DICTOOL->getSubDictionary_json(json, TEXTURE_DATA, i);
         TextureData* textureData           = decodeTexture(textureDic);
 
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.lock();
-        }
         ArmatureDataManager::getInstance()->addTextureData(textureData->name, textureData, dataInfo->filename);
         textureData->release();
-        if (dataInfo->asyncStruct)
-        {
-            _dataReaderHelper->_addDataMutex.unlock();
-        }
     }
 
     // Auto load sprite file
@@ -1648,13 +1764,16 @@ void DataReaderHelper::decodeNode(BaseData* node, const rapidjson::Value& json, 
 
 void DataReaderHelper::addDataFromBinaryCache(const char* fileContent, DataInfo* dataInfo)
 {
-    CocoLoader tCocoLoader;
-    if (tCocoLoader.ReadCocoBinBuff((char*)fileContent))
+    CocoLoader loader;
+    auto& tCocoLoader = dataInfo->binaryData ? *dataInfo->binaryData : loader;
+    dataInfo->failed = true;
+    if (dataInfo->binaryData || tCocoLoader.ReadCocoBinBuff((char*)fileContent))
     {
         stExpCocoNode* tpRootCocoNode = tCocoLoader.GetRootCocoNode();
         rapidjson::Type tType         = tpRootCocoNode->GetType(&tCocoLoader);
         if (rapidjson::kObjectType == tType)
         {
+            dataInfo->failed = false;
             stExpCocoNode* tpChildArray = tpRootCocoNode->GetChildArray(&tCocoLoader);
             int nCount                  = tpRootCocoNode->GetChildNum();
 
@@ -1678,17 +1797,8 @@ void DataReaderHelper::addDataFromBinaryCache(const char* fileContent, DataInfo*
                     for (int ii = 0; ii < length; ++ii)
                     {
                         armatureData = decodeArmature(&tCocoLoader, &pDataArray[ii], dataInfo);
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.lock();
-                        }
-                        ArmatureDataManager::getInstance()->addArmatureData(armatureData->name, armatureData,
-                                                                            dataInfo->filename);
+                        ArmatureDataManager::getInstance()->addArmatureData(armatureData->name, armatureData, dataInfo->filename);
                         armatureData->release();
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.unlock();
-                        }
                     }
                 }
                 else if (0 == key.compare(ANIMATION_DATA))
@@ -1699,17 +1809,8 @@ void DataReaderHelper::addDataFromBinaryCache(const char* fileContent, DataInfo*
                     for (int ii = 0; ii < length; ++ii)
                     {
                         animationData = decodeAnimation(&tCocoLoader, &pDataArray[ii], dataInfo);
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.lock();
-                        }
-                        ArmatureDataManager::getInstance()->addAnimationData(animationData->name, animationData,
-                                                                             dataInfo->filename);
+                        ArmatureDataManager::getInstance()->addAnimationData(animationData->name, animationData, dataInfo->filename);
                         animationData->release();
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.unlock();
-                        }
                     }
                 }
                 else if (key.compare(TEXTURE_DATA) == 0)
@@ -1719,17 +1820,8 @@ void DataReaderHelper::addDataFromBinaryCache(const char* fileContent, DataInfo*
                     for (int ii = 0; ii < length; ++ii)
                     {
                         TextureData* textureData = decodeTexture(&tCocoLoader, &pDataArray[ii]);
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.lock();
-                        }
-                        ArmatureDataManager::getInstance()->addTextureData(textureData->name, textureData,
-                                                                           dataInfo->filename);
+                        ArmatureDataManager::getInstance()->addTextureData(textureData->name, textureData, dataInfo->filename);
                         textureData->release();
-                        if (dataInfo->asyncStruct)
-                        {
-                            _dataReaderHelper->_addDataMutex.unlock();
-                        }
                     }
                 }
             }

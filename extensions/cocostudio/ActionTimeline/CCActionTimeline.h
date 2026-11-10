@@ -154,7 +154,7 @@ public:
     virtual const AnimationInfo& getAnimationInfo(std::string_view animationName);
     /**add a frame end call back to animation's end frame
      * @param animationName  @addFrameEndCallFunc, make the animationName as funcKey
-     * @param func the callback function
+     * @param func the callback function; nullptr clears both the clip and its frame/key entry.
      */
     virtual void setAnimationEndCallFunc(const std::string animationName, std::function<void()> func);
 
@@ -176,7 +176,7 @@ public:
     virtual void removeFrameEndCallFunc(int frameIndex, std::string_view funcKey);
     // clear callback functions after frameIndex
     virtual void removeFrameEndCallFuncs(int frameIndex);
-    // clear all the callback functions after frameIndexs in this actiontimeline
+    // Clear the dispatch map only; AnimationInfo keeps its clip-end callable for clone().
     virtual void clearFrameEndCallFuncs();
 
     /** Inherit from Action. */
@@ -221,6 +221,8 @@ protected:
     int _startFrame;
     int _endFrame;
     bool _loop;
+    // Invalidates an outer traversal when a callback seeks or reenters step().
+    unsigned int _playbackVersion = 0;
 
     std::function<void(Frame*)> _frameEventListener;
     std::function<void()> _lastFrameListener;

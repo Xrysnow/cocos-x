@@ -305,6 +305,7 @@ bool ComRender::serialize(void* r)
                 if (fileExtension == ".json" || fileExtension == ".exportjson")
                 {
                     cocos2d::ui::Widget* widget = GUIReader::getInstance()->widgetFromJsonFile(filePath.c_str());
+                    CC_BREAK_IF(widget == nullptr);
                     _render                     = widget;
                     _render->retain();
 
@@ -313,6 +314,7 @@ bool ComRender::serialize(void* r)
                 else if (fileExtension == ".csb")
                 {
                     cocos2d::ui::Widget* widget = GUIReader::getInstance()->widgetFromBinaryFile(filePath.c_str());
+                    CC_BREAK_IF(widget == nullptr);
                     _render                     = widget;
                     _render->retain();
 
