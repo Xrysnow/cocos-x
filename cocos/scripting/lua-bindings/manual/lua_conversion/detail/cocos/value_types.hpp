@@ -101,6 +101,33 @@ namespace lua
 
 	LUA_TO_LUA_STRUCT4(cocos2d::Color4F, r, g, b, a);
 
+	LUA_TO_NATIVE_STRUCT4(cocos2d::HSV, h, s, v, a);
+
+	LUA_TO_LUA_STRUCT4(cocos2d::HSV, h, s, v, a);
+
+	template<>
+	struct to_native<cocos2d::ccBezierConfig> {
+		static bool F(lua_State* L, int lo, cocos2d::ccBezierConfig* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!is_indexable(L, lo)) return false;
+			cocos2d::ccBezierConfig value{};
+			bool ok;
+			// Match BezierBy/BezierTo::create's {control1, control2, end} convention.
+			if (lua_istable(L, lo) && lua_objlen(L, lo) == 3)
+				ok = luaval_field_to_native(L, lo, 1, &value.controlPoint_1, fName) &&
+					luaval_field_to_native(L, lo, 2, &value.controlPoint_2, fName) &&
+					luaval_field_to_native(L, lo, 3, &value.endPosition, fName);
+			else
+				ok = luaval_field_to_native(L, lo, "controlPoint_1", &value.controlPoint_1, fName) &&
+					luaval_field_to_native(L, lo, "controlPoint_2", &value.controlPoint_2, fName) &&
+					luaval_field_to_native(L, lo, "endPosition", &value.endPosition, fName);
+			if (ok) *outValue = value;
+			return ok;
+		}
+	};
+
+	LUA_TO_LUA_STRUCT3(cocos2d::ccBezierConfig, controlPoint_1, controlPoint_2, endPosition);
+
 	LUA_TO_NATIVE_STRUCT4(cocos2d::Quaternion, x, y, z, w);
 
 	LUA_TO_LUA_STRUCT4(cocos2d::Quaternion, x, y, z, w);
@@ -120,6 +147,10 @@ namespace lua
 	LUA_TO_NATIVE_STRUCT4(cocos2d::Viewport, x, y, w, h);
 
 	LUA_TO_LUA_STRUCT4(cocos2d::Viewport, x, y, w, h);
+
+	LUA_TO_NATIVE_STRUCT4(cocos2d::ScissorRect, x, y, width, height);
+
+	LUA_TO_LUA_STRUCT4(cocos2d::ScissorRect, x, y, width, height);
 
 	LUA_TO_NATIVE_STRUCT4(cocos2d::backend::AttributeBindInfo, attributeName, location, size, type);
 

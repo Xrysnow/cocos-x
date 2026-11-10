@@ -27,6 +27,8 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/cocos/object.hpp
     manual/lua_conversion/detail/cocos/containers.hpp
     manual/lua_conversion/detail/cocos/value_types.hpp
+    manual/lua_conversion/detail/cocos/render_types.hpp
+    manual/lua_conversion/detail/cocos/particle_types.hpp
     manual/lua_conversion/detail/cocos/geometry.hpp
     manual/lua_conversion/detail/cocos/physics.hpp
     manual/lua_conversion/detail/cocos/app_directories.hpp

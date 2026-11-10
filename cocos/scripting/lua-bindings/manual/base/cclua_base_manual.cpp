@@ -1733,42 +1733,6 @@ static int tolua_cocos2d_CatmullRomTo_create(lua_State* lua_S)
     LUA_SINVOKE_FOOTER("2");
 }
 
-static int tolua_cocos2d_BezierBy_create(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("cc.BezierBy", "cc.BezierBy:create");
-    if (argc == 2 && lua_istable(lua_S, 3) && lua_objlen(lua_S, 3) < 3)
-        arg_cur = 2;
-    else
-    {
-        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cocos2d::Vec2>& values) {
-            cocos2d::ccBezierConfig config;
-            config.controlPoint_1 = values[0];
-            config.controlPoint_2 = values[1];
-            config.endPosition = values[2];
-            return cocos2d::BezierBy::create(duration, config);
-        });
-    }
-    LUA_SINVOKE_FOOTER("2");
-}
-
-static int tolua_cocos2d_BezierTo_create(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("cc.BezierTo", "cc.BezierTo:create");
-    if (argc == 2 && lua_istable(lua_S, 3) && lua_objlen(lua_S, 3) < 3)
-        arg_cur = 2;
-    else
-    {
-        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cocos2d::Vec2>& values) {
-            cocos2d::ccBezierConfig config;
-            config.controlPoint_1 = values[0];
-            config.controlPoint_2 = values[1];
-            config.endPosition = values[2];
-            return cocos2d::BezierTo::create(duration, config);
-        });
-    }
-    LUA_SINVOKE_FOOTER("2");
-}
-
 static int tocclua_DrawNode_drawPolygon(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.DrawNode", "cc.DrawNode:drawPolygon");
@@ -2217,32 +2181,6 @@ static void extendCatmullRomTo(lua_State* tolua_S)
     {
         lua_pushstring(tolua_S, "create");
         lua_pushcfunction(tolua_S, tolua_cocos2d_CatmullRomTo_create);
-        lua_rawset(tolua_S, -3);
-    }
-    lua_pop(tolua_S, 1);
-}
-
-static void extendBezierBy(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.BezierBy");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        lua_pushstring(tolua_S, "create");
-        lua_pushcfunction(tolua_S, tolua_cocos2d_BezierBy_create);
-        lua_rawset(tolua_S, -3);
-    }
-    lua_pop(tolua_S, 1);
-}
-
-static void extendBezierTo(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.BezierTo");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        lua_pushstring(tolua_S, "create");
-        lua_pushcfunction(tolua_S, tolua_cocos2d_BezierTo_create);
         lua_rawset(tolua_S, -3);
     }
     lua_pop(tolua_S, 1);
@@ -3951,8 +3889,6 @@ int register_all_cc_manual(lua_State* tolua_S)
     extendCardinalSplineBy(tolua_S);
     extendCatmullRomBy(tolua_S);
     extendCatmullRomTo(tolua_S);
-    extendBezierBy(tolua_S);
-    extendBezierTo(tolua_S);
     extendDrawNode(tolua_S);
     extendLayerMultiplex(tolua_S);
     extendFileUtils(tolua_S);

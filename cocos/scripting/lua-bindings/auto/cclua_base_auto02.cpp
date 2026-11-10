@@ -1039,24 +1039,50 @@ int luaReg_Core_ccJumpTo(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
-
+int lua_cocos2d_BezierBy_initWithDuration(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.BezierBy", "cc.BezierBy:initWithDuration");
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::BezierBy::*)(float, const cocos2d::ccBezierConfig&)>(&cocos2d::BezierBy::initWithDuration)));
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cocos2d_BezierBy_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.BezierBy", "cc.BezierBy:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::BezierBy*(*)(float, const cocos2d::ccBezierConfig&)>(&cocos2d::BezierBy::create)));
+	LUA_SINVOKE_FOOTER("2");
+}
 int luaReg_Core_ccBezierBy(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::BezierBy, "BezierBy", "cc.BezierBy",
 		cocos2d::BezierBy, "cc.ActionInterval",
 		nullptr, nullptr);
+	LUA_METHOD("initWithDuration", lua_cocos2d_BezierBy_initWithDuration);
+	LUA_METHOD("create", lua_cocos2d_BezierBy_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
 }
-
+int lua_cocos2d_BezierTo_initWithDuration(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.BezierTo", "cc.BezierTo:initWithDuration");
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::BezierTo::*)(float, const cocos2d::ccBezierConfig&)>(&cocos2d::BezierTo::initWithDuration)));
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cocos2d_BezierTo_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.BezierTo", "cc.BezierTo:create");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::BezierTo*(*)(float, const cocos2d::ccBezierConfig&)>(&cocos2d::BezierTo::create)));
+	LUA_SINVOKE_FOOTER("2");
+}
 int luaReg_Core_ccBezierTo(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_CLS_DEF_BASE(cocos2d::BezierTo, "BezierTo", "cc.BezierTo",
 		cocos2d::BezierTo, "cc.BezierBy",
 		nullptr, nullptr);
+	LUA_METHOD("initWithDuration", lua_cocos2d_BezierTo_initWithDuration);
+	LUA_METHOD("create", lua_cocos2d_BezierTo_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -2059,23 +2085,6 @@ int luaReg_Core_ccEventListenerFocus(lua_State* lua_S)
 		cocos2d::EventListenerFocus, "cc.EventListener",
 		nullptr, nullptr);
 	LUA_METHOD("init", lua_cocos2d_EventListenerFocus_init);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_EventListenerKeyboard_init(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.EventListenerKeyboard", "cc.EventListenerKeyboard:init");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerKeyboard::*)()>(&cocos2d::EventListenerKeyboard::init));
-	LUA_INVOKE_FOOTER("0");
-}
-int luaReg_Core_ccEventListenerKeyboard(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::EventListenerKeyboard, "EventListenerKeyboard", "cc.EventListenerKeyboard",
-		cocos2d::EventListenerKeyboard, "cc.EventListener",
-		nullptr, nullptr);
-	LUA_METHOD("init", lua_cocos2d_EventListenerKeyboard_init);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

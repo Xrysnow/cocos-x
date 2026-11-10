@@ -10,6 +10,352 @@
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 
+int lua_cocos2d_TMXMapInfo_getCurrentString(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getCurrentString");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getCurrentString));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getExternalTilesetFileName(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getExternalTilesetFileName");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getExternalTilesetFileName));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getHexSideLength(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getHexSideLength");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getHexSideLength));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getLayerAttribs(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getLayerAttribs");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getLayerAttribs));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getLayers(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getLayers");
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<cocos2d::Vector<cocos2d::TMXLayerInfo *>&(cocos2d::TMXMapInfo::*)()>(&cocos2d::TMXMapInfo::getLayers));
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<const cocos2d::Vector<cocos2d::TMXLayerInfo *>&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getLayers));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getMapSize(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getMapSize");
+	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Vec2&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getMapSize));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getObjectGroups(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getObjectGroups");
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<cocos2d::Vector<cocos2d::TMXObjectGroup *>&(cocos2d::TMXMapInfo::*)()>(&cocos2d::TMXMapInfo::getObjectGroups));
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<const cocos2d::Vector<cocos2d::TMXObjectGroup *>&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getObjectGroups));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getOrientation(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getOrientation");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getOrientation));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getParentElement(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getParentElement");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getParentElement));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getParentGID(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getParentGID");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getParentGID));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getProperties(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getProperties");
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<cocos2d::ValueMap&(cocos2d::TMXMapInfo::*)()>(&cocos2d::TMXMapInfo::getProperties));
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<const cocos2d::ValueMap&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getProperties));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getStaggerAxis(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getStaggerAxis");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getStaggerAxis));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getStaggerIndex(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getStaggerIndex");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getStaggerIndex));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getTMXFileName(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getTMXFileName");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getTMXFileName));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getTileProperties(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getTileProperties");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ValueMapIntKey&(cocos2d::TMXMapInfo::*)()>(&cocos2d::TMXMapInfo::getTileProperties));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getTileSize(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getTileSize");
+	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Vec2&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getTileSize));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_getTilesets(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:getTilesets");
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<cocos2d::Vector<cocos2d::TMXTilesetInfo *>&(cocos2d::TMXMapInfo::*)()>(&cocos2d::TMXMapInfo::getTilesets));
+	LUA_TRY_INVOKE_R_OVERLOAD(0, static_cast<const cocos2d::Vector<cocos2d::TMXTilesetInfo *>&(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::getTilesets));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_initWithTMXFile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:initWithTMXFile");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::TMXMapInfo::*)(std::string_view)>(&cocos2d::TMXMapInfo::initWithTMXFile));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_initWithXML(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:initWithXML");
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::TMXMapInfo::*)(std::string_view, std::string_view)>(&cocos2d::TMXMapInfo::initWithXML)));
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cocos2d_TMXMapInfo_isStoringCharacters(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:isStoringCharacters");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::TMXMapInfo::*)()const>(&cocos2d::TMXMapInfo::isStoringCharacters));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TMXMapInfo_parseXMLFile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:parseXMLFile");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::TMXMapInfo::*)(std::string_view)>(&cocos2d::TMXMapInfo::parseXMLFile));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_parseXMLString(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:parseXMLString");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::TMXMapInfo::*)(std::string_view)>(&cocos2d::TMXMapInfo::parseXMLString));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setCurrentString(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setCurrentString");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(std::string_view)>(&cocos2d::TMXMapInfo::setCurrentString));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setHexSideLength(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setHexSideLength");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setHexSideLength));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setLayerAttribs(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setLayerAttribs");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setLayerAttribs));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setLayers(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setLayers");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::Vector<cocos2d::TMXLayerInfo *>&)>(&cocos2d::TMXMapInfo::setLayers));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setMapSize(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setMapSize");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::Vec2&)>(&cocos2d::TMXMapInfo::setMapSize));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setObjectGroups(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setObjectGroups");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::Vector<cocos2d::TMXObjectGroup *>&)>(&cocos2d::TMXMapInfo::setObjectGroups));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setOrientation(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setOrientation");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setOrientation));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setParentElement(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setParentElement");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setParentElement));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setParentGID(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setParentGID");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setParentGID));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setProperties(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setProperties");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::ValueMap&)>(&cocos2d::TMXMapInfo::setProperties));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setStaggerAxis(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setStaggerAxis");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setStaggerAxis));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setStaggerIndex(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setStaggerIndex");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(int)>(&cocos2d::TMXMapInfo::setStaggerIndex));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setStoringCharacters(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setStoringCharacters");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(bool)>(&cocos2d::TMXMapInfo::setStoringCharacters));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setTMXFileName(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setTMXFileName");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(std::string_view)>(&cocos2d::TMXMapInfo::setTMXFileName));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setTileProperties(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setTileProperties");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::ValueMapIntKey&)>(&cocos2d::TMXMapInfo::setTileProperties));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setTileSize(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setTileSize");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::Vec2&)>(&cocos2d::TMXMapInfo::setTileSize));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_setTilesets(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:setTilesets");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::TMXMapInfo::*)(const cocos2d::Vector<cocos2d::TMXTilesetInfo *>&)>(&cocos2d::TMXMapInfo::setTilesets));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:create");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::TMXMapInfo*(*)(std::string_view)>(&cocos2d::TMXMapInfo::create));
+	LUA_SINVOKE_FOOTER("1");
+}
+int lua_cocos2d_TMXMapInfo_createWithXML(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TMXMapInfo", "cc.TMXMapInfo:createWithXML");
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TMXMapInfo*(*)(std::string_view, std::string_view)>(&cocos2d::TMXMapInfo::createWithXML)));
+	LUA_SINVOKE_FOOTER("2");
+}
+int luaReg_Core_ccTMXMapInfo(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::TMXMapInfo, "TMXMapInfo", "cc.TMXMapInfo",
+		cocos2d::TMXMapInfo, "",
+		nullptr, nullptr);
+	LUA_METHOD("getCurrentString", lua_cocos2d_TMXMapInfo_getCurrentString);
+	LUA_METHOD("getExternalTilesetFileName", lua_cocos2d_TMXMapInfo_getExternalTilesetFileName);
+	LUA_METHOD("getHexSideLength", lua_cocos2d_TMXMapInfo_getHexSideLength);
+	LUA_METHOD("getLayerAttribs", lua_cocos2d_TMXMapInfo_getLayerAttribs);
+	LUA_METHOD("getLayers", lua_cocos2d_TMXMapInfo_getLayers);
+	LUA_METHOD("getMapSize", lua_cocos2d_TMXMapInfo_getMapSize);
+	LUA_METHOD("getObjectGroups", lua_cocos2d_TMXMapInfo_getObjectGroups);
+	LUA_METHOD("getOrientation", lua_cocos2d_TMXMapInfo_getOrientation);
+	LUA_METHOD("getParentElement", lua_cocos2d_TMXMapInfo_getParentElement);
+	LUA_METHOD("getParentGID", lua_cocos2d_TMXMapInfo_getParentGID);
+	LUA_METHOD("getProperties", lua_cocos2d_TMXMapInfo_getProperties);
+	LUA_METHOD("getStaggerAxis", lua_cocos2d_TMXMapInfo_getStaggerAxis);
+	LUA_METHOD("getStaggerIndex", lua_cocos2d_TMXMapInfo_getStaggerIndex);
+	LUA_METHOD("getTMXFileName", lua_cocos2d_TMXMapInfo_getTMXFileName);
+	LUA_METHOD("getTileProperties", lua_cocos2d_TMXMapInfo_getTileProperties);
+	LUA_METHOD("getTileSize", lua_cocos2d_TMXMapInfo_getTileSize);
+	LUA_METHOD("getTilesets", lua_cocos2d_TMXMapInfo_getTilesets);
+	LUA_METHOD("initWithTMXFile", lua_cocos2d_TMXMapInfo_initWithTMXFile);
+	LUA_METHOD("initWithXML", lua_cocos2d_TMXMapInfo_initWithXML);
+	LUA_METHOD("isStoringCharacters", lua_cocos2d_TMXMapInfo_isStoringCharacters);
+	LUA_METHOD("parseXMLFile", lua_cocos2d_TMXMapInfo_parseXMLFile);
+	LUA_METHOD("parseXMLString", lua_cocos2d_TMXMapInfo_parseXMLString);
+	LUA_METHOD("setCurrentString", lua_cocos2d_TMXMapInfo_setCurrentString);
+	LUA_METHOD("setHexSideLength", lua_cocos2d_TMXMapInfo_setHexSideLength);
+	LUA_METHOD("setLayerAttribs", lua_cocos2d_TMXMapInfo_setLayerAttribs);
+	LUA_METHOD("setLayers", lua_cocos2d_TMXMapInfo_setLayers);
+	LUA_METHOD("setMapSize", lua_cocos2d_TMXMapInfo_setMapSize);
+	LUA_METHOD("setObjectGroups", lua_cocos2d_TMXMapInfo_setObjectGroups);
+	LUA_METHOD("setOrientation", lua_cocos2d_TMXMapInfo_setOrientation);
+	LUA_METHOD("setParentElement", lua_cocos2d_TMXMapInfo_setParentElement);
+	LUA_METHOD("setParentGID", lua_cocos2d_TMXMapInfo_setParentGID);
+	LUA_METHOD("setProperties", lua_cocos2d_TMXMapInfo_setProperties);
+	LUA_METHOD("setStaggerAxis", lua_cocos2d_TMXMapInfo_setStaggerAxis);
+	LUA_METHOD("setStaggerIndex", lua_cocos2d_TMXMapInfo_setStaggerIndex);
+	LUA_METHOD("setStoringCharacters", lua_cocos2d_TMXMapInfo_setStoringCharacters);
+	LUA_METHOD("setTMXFileName", lua_cocos2d_TMXMapInfo_setTMXFileName);
+	LUA_METHOD("setTileProperties", lua_cocos2d_TMXMapInfo_setTileProperties);
+	LUA_METHOD("setTileSize", lua_cocos2d_TMXMapInfo_setTileSize);
+	LUA_METHOD("setTilesets", lua_cocos2d_TMXMapInfo_setTilesets);
+	LUA_METHOD("create", lua_cocos2d_TMXMapInfo_create);
+	LUA_METHOD("createWithXML", lua_cocos2d_TMXMapInfo_createWithXML);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_TileMapAtlas_getTileAt(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TileMapAtlas", "cc.TileMapAtlas:getTileAt");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::Color3B(cocos2d::TileMapAtlas::*)(const cocos2d::Vec2&)const>(&cocos2d::TileMapAtlas::getTileAt));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_TileMapAtlas_initWithTileFile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TileMapAtlas", "cc.TileMapAtlas:initWithTileFile");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::TileMapAtlas::*)(std::string_view, std::string_view, int, int)>(&cocos2d::TileMapAtlas::initWithTileFile)));
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cocos2d_TileMapAtlas_releaseMap(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TileMapAtlas", "cc.TileMapAtlas:releaseMap");
+	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::TileMapAtlas::*)()>(&cocos2d::TileMapAtlas::releaseMap));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_TileMapAtlas_setTile(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.TileMapAtlas", "cc.TileMapAtlas:setTile");
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::TileMapAtlas::*)(const cocos2d::Color3B&, const cocos2d::Vec2&)>(&cocos2d::TileMapAtlas::setTile)));
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cocos2d_TileMapAtlas_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.TileMapAtlas", "cc.TileMapAtlas:create");
+	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::TileMapAtlas*(*)(std::string_view, std::string_view, int, int)>(&cocos2d::TileMapAtlas::create)));
+	LUA_SINVOKE_FOOTER("4");
+}
+int luaReg_Core_ccTileMapAtlas(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::TileMapAtlas, "TileMapAtlas", "cc.TileMapAtlas",
+		cocos2d::TileMapAtlas, "cc.AtlasNode",
+		nullptr, nullptr);
+	LUA_METHOD("getTileAt", lua_cocos2d_TileMapAtlas_getTileAt);
+	LUA_METHOD("initWithTileFile", lua_cocos2d_TileMapAtlas_initWithTileFile);
+	LUA_METHOD("releaseMap", lua_cocos2d_TileMapAtlas_releaseMap);
+	LUA_METHOD("setTile", lua_cocos2d_TileMapAtlas_setTile);
+	LUA_METHOD("create", lua_cocos2d_TileMapAtlas_create);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_FastTMXLayer_getLayerName(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.FastTMXLayer", "cc.FastTMXLayer:getLayerName");

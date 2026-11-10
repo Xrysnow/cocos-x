@@ -10,6 +10,158 @@
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 
+int lua_cocos2d_ParticleFireworks_init_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleFireworks", "cc.ParticleFireworks:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::ParticleFireworks::*)()>(&cocos2d::ParticleFireworks::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleFireworks_initWithTotalParticles_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleFireworks", "cc.ParticleFireworks:initWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::ParticleFireworks::*)(int)>(&cocos2d::ParticleFireworks::initWithTotalParticles));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_ParticleFireworks_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleFireworks", "cc.ParticleFireworks:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ParticleFireworks*(*)()>(&cocos2d::ParticleFireworks::create));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleFireworks_createWithTotalParticles(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleFireworks", "cc.ParticleFireworks:createWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ParticleFireworks*(*)(int)>(&cocos2d::ParticleFireworks::createWithTotalParticles));
+	LUA_SINVOKE_FOOTER("1");
+}
+int luaReg_Core_ccParticleFireworks(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::ParticleFireworks, "ParticleFireworks", "cc.ParticleFireworks",
+		cocos2d::ParticleFireworks, "cc.ParticleSystemQuad",
+		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_ParticleFireworks_init_1);
+	LUA_METHOD("initWithTotalParticles", lua_cocos2d_ParticleFireworks_initWithTotalParticles_1);
+	LUA_METHOD("create", lua_cocos2d_ParticleFireworks_create);
+	LUA_METHOD("createWithTotalParticles", lua_cocos2d_ParticleFireworks_createWithTotalParticles);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_ParticleSun_init_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleSun", "cc.ParticleSun:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::ParticleSun::*)()>(&cocos2d::ParticleSun::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleSun_initWithTotalParticles_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleSun", "cc.ParticleSun:initWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::ParticleSun::*)(int)>(&cocos2d::ParticleSun::initWithTotalParticles));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_ParticleSun_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleSun", "cc.ParticleSun:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ParticleSun*(*)()>(&cocos2d::ParticleSun::create));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleSun_createWithTotalParticles(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleSun", "cc.ParticleSun:createWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ParticleSun*(*)(int)>(&cocos2d::ParticleSun::createWithTotalParticles));
+	LUA_SINVOKE_FOOTER("1");
+}
+int luaReg_Core_ccParticleSun(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::ParticleSun, "ParticleSun", "cc.ParticleSun",
+		cocos2d::ParticleSun, "cc.ParticleSystemQuad",
+		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_ParticleSun_init_1);
+	LUA_METHOD("initWithTotalParticles", lua_cocos2d_ParticleSun_initWithTotalParticles_1);
+	LUA_METHOD("create", lua_cocos2d_ParticleSun_create);
+	LUA_METHOD("createWithTotalParticles", lua_cocos2d_ParticleSun_createWithTotalParticles);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_ParticleGalaxy_init_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleGalaxy", "cc.ParticleGalaxy:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::ParticleGalaxy::*)()>(&cocos2d::ParticleGalaxy::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleGalaxy_initWithTotalParticles_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleGalaxy", "cc.ParticleGalaxy:initWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::ParticleGalaxy::*)(int)>(&cocos2d::ParticleGalaxy::initWithTotalParticles));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_ParticleGalaxy_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleGalaxy", "cc.ParticleGalaxy:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ParticleGalaxy*(*)()>(&cocos2d::ParticleGalaxy::create));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleGalaxy_createWithTotalParticles(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleGalaxy", "cc.ParticleGalaxy:createWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ParticleGalaxy*(*)(int)>(&cocos2d::ParticleGalaxy::createWithTotalParticles));
+	LUA_SINVOKE_FOOTER("1");
+}
+int luaReg_Core_ccParticleGalaxy(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::ParticleGalaxy, "ParticleGalaxy", "cc.ParticleGalaxy",
+		cocos2d::ParticleGalaxy, "cc.ParticleSystemQuad",
+		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_ParticleGalaxy_init_1);
+	LUA_METHOD("initWithTotalParticles", lua_cocos2d_ParticleGalaxy_initWithTotalParticles_1);
+	LUA_METHOD("create", lua_cocos2d_ParticleGalaxy_create);
+	LUA_METHOD("createWithTotalParticles", lua_cocos2d_ParticleGalaxy_createWithTotalParticles);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_ParticleFlower_init_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleFlower", "cc.ParticleFlower:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::ParticleFlower::*)()>(&cocos2d::ParticleFlower::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleFlower_initWithTotalParticles_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.ParticleFlower", "cc.ParticleFlower:initWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::ParticleFlower::*)(int)>(&cocos2d::ParticleFlower::initWithTotalParticles));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_ParticleFlower_create(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleFlower", "cc.ParticleFlower:create");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ParticleFlower*(*)()>(&cocos2d::ParticleFlower::create));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_ParticleFlower_createWithTotalParticles(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.ParticleFlower", "cc.ParticleFlower:createWithTotalParticles");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::ParticleFlower*(*)(int)>(&cocos2d::ParticleFlower::createWithTotalParticles));
+	LUA_SINVOKE_FOOTER("1");
+}
+int luaReg_Core_ccParticleFlower(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::ParticleFlower, "ParticleFlower", "cc.ParticleFlower",
+		cocos2d::ParticleFlower, "cc.ParticleSystemQuad",
+		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_ParticleFlower_init_1);
+	LUA_METHOD("initWithTotalParticles", lua_cocos2d_ParticleFlower_initWithTotalParticles_1);
+	LUA_METHOD("create", lua_cocos2d_ParticleFlower_create);
+	LUA_METHOD("createWithTotalParticles", lua_cocos2d_ParticleFlower_createWithTotalParticles);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_ParticleMeteor_init_1(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ParticleMeteor", "cc.ParticleMeteor:init");
@@ -1862,220 +2014,6 @@ int luaReg_Core_ccCameraBackgroundSkyBoxBrush(lua_State* lua_S)
 	LUA_METHOD("setTexture", lua_cocos2d_CameraBackgroundSkyBoxBrush_setTexture);
 	LUA_METHOD("setTextureValid", lua_cocos2d_CameraBackgroundSkyBoxBrush_setTextureValid);
 	LUA_METHOD("create", lua_cocos2d_CameraBackgroundSkyBoxBrush_create);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_GridBase_afterBlit(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:afterBlit");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::afterBlit));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_afterDraw(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:afterDraw");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(cocos2d::Node*)>(&cocos2d::GridBase::afterDraw));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_beforeBlit(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:beforeBlit");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::beforeBlit));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_beforeDraw(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:beforeDraw");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::beforeDraw));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_blit(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:blit");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::blit));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_calculateVertexPoints(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:calculateVertexPoints");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::calculateVertexPoints));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_getGridRect(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:getGridRect");
-	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Rect&(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::getGridRect));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_getGridSize(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:getGridSize");
-	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Vec2&(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::getGridSize));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_getReuseGrid(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:getReuseGrid");
-	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::getReuseGrid));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_getStep(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:getStep");
-	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Vec2&(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::getStep));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_initWithSize(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:initWithSize");
-	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::GridBase::*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool, const cocos2d::Rect&)>(&cocos2d::GridBase::initWithSize)));
-	LUA_TRY_INVOKE_R(3, (static_cast<bool(cocos2d::GridBase::*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool)>(&cocos2d::GridBase::initWithSize)));
-	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::GridBase::*)(const cocos2d::Vec2&, const cocos2d::Rect&)>(&cocos2d::GridBase::initWithSize)));
-	LUA_TRY_INVOKE_R(1, static_cast<bool(cocos2d::GridBase::*)(const cocos2d::Vec2&)>(&cocos2d::GridBase::initWithSize));
-	LUA_INVOKE_FOOTER("1,2,3,4");
-}
-int lua_cocos2d_GridBase_isActive(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:isActive");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::isActive));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_isTextureFlipped(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:isTextureFlipped");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::GridBase::*)()const>(&cocos2d::GridBase::isTextureFlipped));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_reuse(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:reuse");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::reuse));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_set2DProjection(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:set2DProjection");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::GridBase::*)()>(&cocos2d::GridBase::set2DProjection));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_GridBase_setActive(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setActive");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(bool)>(&cocos2d::GridBase::setActive));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_setGridRect(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setGridRect");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(const cocos2d::Rect&)>(&cocos2d::GridBase::setGridRect));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_setGridSize(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setGridSize");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(const cocos2d::Vec2&)>(&cocos2d::GridBase::setGridSize));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_setReuseGrid(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setReuseGrid");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(int)>(&cocos2d::GridBase::setReuseGrid));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_setStep(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setStep");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(const cocos2d::Vec2&)>(&cocos2d::GridBase::setStep));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_GridBase_setTextureFlipped(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GridBase", "cc.GridBase:setTextureFlipped");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::GridBase::*)(bool)>(&cocos2d::GridBase::setTextureFlipped));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_Core_ccGridBase(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::GridBase, "GridBase", "cc.GridBase",
-		cocos2d::GridBase, "cc.Ref",
-		nullptr, nullptr);
-	LUA_METHOD("afterBlit", lua_cocos2d_GridBase_afterBlit);
-	LUA_METHOD("afterDraw", lua_cocos2d_GridBase_afterDraw);
-	LUA_METHOD("beforeBlit", lua_cocos2d_GridBase_beforeBlit);
-	LUA_METHOD("beforeDraw", lua_cocos2d_GridBase_beforeDraw);
-	LUA_METHOD("blit", lua_cocos2d_GridBase_blit);
-	LUA_METHOD("calculateVertexPoints", lua_cocos2d_GridBase_calculateVertexPoints);
-	LUA_METHOD("getGridRect", lua_cocos2d_GridBase_getGridRect);
-	LUA_METHOD("getGridSize", lua_cocos2d_GridBase_getGridSize);
-	LUA_METHOD("getReuseGrid", lua_cocos2d_GridBase_getReuseGrid);
-	LUA_METHOD("getStep", lua_cocos2d_GridBase_getStep);
-	LUA_METHOD("initWithSize", lua_cocos2d_GridBase_initWithSize);
-	LUA_METHOD("isActive", lua_cocos2d_GridBase_isActive);
-	LUA_METHOD("isTextureFlipped", lua_cocos2d_GridBase_isTextureFlipped);
-	LUA_METHOD("reuse", lua_cocos2d_GridBase_reuse);
-	LUA_METHOD("set2DProjection", lua_cocos2d_GridBase_set2DProjection);
-	LUA_METHOD("setActive", lua_cocos2d_GridBase_setActive);
-	LUA_METHOD("setGridRect", lua_cocos2d_GridBase_setGridRect);
-	LUA_METHOD("setGridSize", lua_cocos2d_GridBase_setGridSize);
-	LUA_METHOD("setReuseGrid", lua_cocos2d_GridBase_setReuseGrid);
-	LUA_METHOD("setStep", lua_cocos2d_GridBase_setStep);
-	LUA_METHOD("setTextureFlipped", lua_cocos2d_GridBase_setTextureFlipped);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_Grid3D_getNeedDepthTestForBlit(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Grid3D", "cc.Grid3D:getNeedDepthTestForBlit");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Grid3D::*)()const>(&cocos2d::Grid3D::getNeedDepthTestForBlit));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Grid3D_setNeedDepthTestForBlit(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Grid3D", "cc.Grid3D:setNeedDepthTestForBlit");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Grid3D::*)(bool)>(&cocos2d::Grid3D::setNeedDepthTestForBlit));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Grid3D_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.Grid3D", "cc.Grid3D:create");
-	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::Grid3D*(*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool, const cocos2d::Rect&)>(&cocos2d::Grid3D::create)));
-	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::Grid3D*(*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool)>(&cocos2d::Grid3D::create)));
-	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::Grid3D*(*)(const cocos2d::Vec2&, const cocos2d::Rect&)>(&cocos2d::Grid3D::create)));
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::Grid3D*(*)(const cocos2d::Vec2&)>(&cocos2d::Grid3D::create));
-	LUA_SINVOKE_FOOTER("1,2,3,4");
-}
-int luaReg_Core_ccGrid3D(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::Grid3D, "Grid3D", "cc.Grid3D",
-		cocos2d::Grid3D, "cc.GridBase",
-		nullptr, nullptr);
-	LUA_METHOD("getNeedDepthTestForBlit", lua_cocos2d_Grid3D_getNeedDepthTestForBlit);
-	LUA_METHOD("setNeedDepthTestForBlit", lua_cocos2d_Grid3D_setNeedDepthTestForBlit);
-	LUA_METHOD("create", lua_cocos2d_Grid3D_create);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_TiledGrid3D_create(lua_State* lua_S)
-{
-	LUA_SINVOKE_HEADER("cc.TiledGrid3D", "cc.TiledGrid3D:create");
-	LUA_TRY_INVOKE_R(4, (static_cast<cocos2d::TiledGrid3D*(*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool, const cocos2d::Rect&)>(&cocos2d::TiledGrid3D::create)));
-	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::TiledGrid3D*(*)(const cocos2d::Vec2&, cocos2d::Texture2D*, bool)>(&cocos2d::TiledGrid3D::create)));
-	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::TiledGrid3D*(*)(const cocos2d::Vec2&, const cocos2d::Rect&)>(&cocos2d::TiledGrid3D::create)));
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::TiledGrid3D*(*)(const cocos2d::Vec2&)>(&cocos2d::TiledGrid3D::create));
-	LUA_SINVOKE_FOOTER("1,2,3,4");
-}
-int luaReg_Core_ccTiledGrid3D(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::TiledGrid3D, "TiledGrid3D", "cc.TiledGrid3D",
-		cocos2d::TiledGrid3D, "cc.GridBase",
-		nullptr, nullptr);
-	LUA_METHOD("create", lua_cocos2d_TiledGrid3D_create);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

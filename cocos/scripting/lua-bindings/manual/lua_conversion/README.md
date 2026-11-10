@@ -52,6 +52,44 @@ returns, including setters that return self.
 Implementation: [invoke.hpp](detail/invoke.hpp) and
 [object.hpp](detail/cocos/object.hpp).
 
+## Base data tables
+
+Base value conversions use native field names and the existing scalar rules
+(including numeric enum values). Failed input conversion leaves the destination
+unchanged.
+
+- `HSV`: `h`, `s`, `v`, `a`.
+- `ccBezierConfig`: `controlPoint_1`, `controlPoint_2`, `endPosition`, each a Vec2.
+  Input also accepts the three-element `{control1, control2, end}` array used by
+  `BezierBy:create` and `BezierTo:create`; output uses the named fields.
+- `EmissionShape`: `type`, `x`, `y`, `innerWidth`, `innerHeight`, `outerWidth`,
+  `outerHeight`, `innerRadius`, `outerRadius`, `coneOffset`, `coneAngle`, `edgeBias`,
+  `fourccId`. All fields are required on input. The `ParticleSystem:create*Shape`
+  helpers return complete tables that can be edited and passed directly to
+  `setEmissionShape` or `addEmissionShape`.
+- `ParticleEmissionMaskDescriptor`: `size` (Vec2), `points` (an array of Vec2).
+  Output copies the cache data before allocating Lua tables, so the returned
+  snapshot stays independent of cache changes.
+- `Viewport`: `x`, `y`, `w`, `h`; `ScissorRect`: `x`, `y`, `width`, `height`.
+
+Rendering descriptors accept partial tables: omitted or nil fields retain their
+native defaults; supplied fields must convert successfully. Output includes all
+fields, including nested descriptor tables.
+
+- `TextureDescriptor`: `textureType`, `textureFormat`, `textureUsage`, `width`,
+  `height`, `depth`, `samplerDescriptor`. The nested sampler uses the existing
+  `minFilter`, `magFilter`, `sAddressMode`, `tAddressMode` conversion, including
+  its legacy `wrapS`/`wrapT` input aliases.
+- `StencilDescriptor`: `stencilFailureOperation`, `depthFailureOperation`,
+  `depthStencilPassOperation`, `stencilCompareFunction`, `readMask`, `writeMask`.
+- `DepthStencilDescriptor`: `depthCompareFunction`, `backFaceStencil`,
+  `frontFaceStencil`, `flags`.
+
+Implementation: [value_types.hpp](detail/cocos/value_types.hpp),
+[particle_types.hpp](detail/cocos/particle_types.hpp), and
+[render_types.hpp](detail/cocos/render_types.hpp). `GLContextAttrs` remains
+outside these conversions.
+
 ## Value userdata ownership
 
 Only an explicit `value_type<T>` specialization opts a native class into userdata

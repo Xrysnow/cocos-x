@@ -10,6 +10,23 @@
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 
+int lua_cocos2d_EventListenerKeyboard_init(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.EventListenerKeyboard", "cc.EventListenerKeyboard:init");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::EventListenerKeyboard::*)()>(&cocos2d::EventListenerKeyboard::init));
+	LUA_INVOKE_FOOTER("0");
+}
+int luaReg_Core_ccEventListenerKeyboard(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::EventListenerKeyboard, "EventListenerKeyboard", "cc.EventListenerKeyboard",
+		cocos2d::EventListenerKeyboard, "cc.EventListener",
+		nullptr, nullptr);
+	LUA_METHOD("init", lua_cocos2d_EventListenerKeyboard_init);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_EventMouse_getCursorX(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.EventMouse", "cc.EventMouse:getCursorX");
