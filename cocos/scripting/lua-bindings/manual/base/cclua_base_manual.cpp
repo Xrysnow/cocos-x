@@ -1630,27 +1630,6 @@ tolua_lerror:
 #endif
 }
 
-#if CC_USE_NAVMESH
-#include "navmesh/CCNavMesh.h"
-static int cclua_Scene_setNavMeshDebugCamera(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setNavMeshDebugCamera");
-    LUA_TRY_INVOKE(1, &cocos2d::Scene::setNavMeshDebugCamera);
-    LUA_INVOKE_FOOTER("1");
-}
-static int cclua_Scene_setNavMesh(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setNavMesh");
-    LUA_TRY_INVOKE(1, &cocos2d::Scene::setNavMesh);
-    LUA_INVOKE_FOOTER("1");
-}
-static int cclua_Scene_getNavMesh(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getNavMesh");
-    LUA_TRY_INVOKE_R(0, &cocos2d::Scene::getNavMesh);
-    LUA_INVOKE_FOOTER("0");
-}
-#endif
 
 static int tolua_cocos2d_Spawn_create(lua_State* lua_S)
 {
@@ -1906,40 +1885,7 @@ static int tocclua_Texture2D_setTexParameters(lua_State* lua_S)
     LUA_INVOKE_FOOTER("4");
 }
 
-#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-#include "physics3d/CCPhysics3DWorld.h"
-static int cclua_Scene_getPhysics3DWorld(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getPhysics3DWorld");
-    LUA_TRY_INVOKE_R(0, &cocos2d::Scene::getPhysics3DWorld);
-    LUA_INVOKE_FOOTER("0");
-}
-static int cclua_Scene_setPhysics3DDebugCamera(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setPhysics3DDebugCamera");
-    LUA_TRY_INVOKE(1, &cocos2d::Scene::setPhysics3DDebugCamera);
-    LUA_INVOKE_FOOTER("1");
-}
-#endif
 
-static void extendScene(lua_State* L)
-{
-    lua_pushstring(L, "cc.Scene");
-    lua_rawget(L, LUA_REGISTRYINDEX);
-    if (lua_istable(L, -1))
-    {
-#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-        tolua_function(L, "getPhysics3DWorld", cclua_Scene_getPhysics3DWorld);
-        tolua_function(L, "setPhysics3DDebugCamera", cclua_Scene_setPhysics3DDebugCamera);
-#endif
-#if CC_USE_NAVMESH
-        tolua_function(L, "setNavMeshDebugCamera", cclua_Scene_setNavMeshDebugCamera);
-        tolua_function(L, "setNavMesh", cclua_Scene_setNavMesh);
-        tolua_function(L, "getNavMesh", cclua_Scene_getNavMesh);
-#endif
-    }
-    lua_pop(L, 1);
-}
 
 static void extendTexture2D(lua_State* tolua_S)
 {
@@ -3657,7 +3603,6 @@ int register_all_cc_manual(lua_State* tolua_S)
         return 0;
 
     extendNode(tolua_S);
-    extendScene(tolua_S);
     extendLayer(tolua_S);
     extendMenuItem(tolua_S);
     extendMenuItemToggle(tolua_S);

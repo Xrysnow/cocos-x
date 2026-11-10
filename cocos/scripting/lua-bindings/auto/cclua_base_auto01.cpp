@@ -9,6 +9,12 @@
 #include "renderer/backend/RenderTarget.h"
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+#include "physics3d/CCPhysics3DWorld.h"
+#endif
+#if CC_USE_NAVMESH
+#include "navmesh/CCNavMesh.h"
+#endif
 
 int lua_cocos2d_Node__setLocalZOrder(lua_State* lua_S)
 {
@@ -297,6 +303,14 @@ int lua_cocos2d_Node_getParentToNodeTransform(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<const cocos2d::Mat4&(cocos2d::Node::*)()const>(&cocos2d::Node::getParentToNodeTransform));
 	LUA_INVOKE_FOOTER("0");
 }
+#if CC_USE_PHYSICS
+int lua_cocos2d_Node_getPhysicsBody_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Node", "cc.Node:getPhysicsBody");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::PhysicsBody*(cocos2d::Node::*)()const>(&cocos2d::Node::getPhysicsBody));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
 int lua_cocos2d_Node_getPosition_1(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Node", "cc.Node:getPosition");
@@ -694,6 +708,14 @@ int lua_cocos2d_Node_setParent(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Node::*)(cocos2d::Node*)>(&cocos2d::Node::setParent));
 	LUA_INVOKE_FOOTER("1");
 }
+#if CC_USE_PHYSICS
+int lua_cocos2d_Node_setPhysicsBody_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Node", "cc.Node:setPhysicsBody");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Node::*)(cocos2d::PhysicsBody*)>(&cocos2d::Node::setPhysicsBody));
+	LUA_INVOKE_FOOTER("1");
+}
+#endif
 int lua_cocos2d_Node_setPosition(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Node", "cc.Node:setPosition");
@@ -979,6 +1001,9 @@ int luaReg_Core_ccNode(lua_State* lua_S)
 	LUA_METHOD("getParent", lua_cocos2d_Node_getParent);
 	LUA_METHOD("getParentToNodeAffineTransform", lua_cocos2d_Node_getParentToNodeAffineTransform);
 	LUA_METHOD("getParentToNodeTransform", lua_cocos2d_Node_getParentToNodeTransform);
+	#if CC_USE_PHYSICS
+LUA_METHOD("getPhysicsBody", lua_cocos2d_Node_getPhysicsBody_1);
+#endif
 	LUA_METHOD("getPosition", lua_cocos2d_Node_getPosition_1);
 	LUA_METHOD("getPosition3D", lua_cocos2d_Node_getPosition3D);
 	LUA_METHOD("getPositionNormalized", lua_cocos2d_Node_getPositionNormalized);
@@ -1044,6 +1069,9 @@ int luaReg_Core_ccNode(lua_State* lua_S)
 	LUA_METHOD("setOpacity", lua_cocos2d_Node_setOpacity);
 	LUA_METHOD("setOpacityModifyRGB", lua_cocos2d_Node_setOpacityModifyRGB);
 	LUA_METHOD("setParent", lua_cocos2d_Node_setParent);
+	#if CC_USE_PHYSICS
+LUA_METHOD("setPhysicsBody", lua_cocos2d_Node_setPhysicsBody_1);
+#endif
 	LUA_METHOD("setPosition", lua_cocos2d_Node_setPosition);
 	LUA_METHOD("setPosition3D", lua_cocos2d_Node_setPosition3D);
 	LUA_METHOD("setPositionNormalized", lua_cocos2d_Node_setPositionNormalized);
@@ -1092,6 +1120,46 @@ int lua_cocos2d_Scene_getDefaultCamera(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Camera*(cocos2d::Scene::*)()const>(&cocos2d::Scene::getDefaultCamera));
 	LUA_INVOKE_FOOTER("0");
 }
+#if CC_USE_NAVMESH
+int lua_cocos2d_Scene_getNavMesh_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getNavMesh");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::NavMesh*(cocos2d::Scene::*)()const>(&cocos2d::Scene::getNavMesh));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+int lua_cocos2d_Scene_getPhysics3DWorld_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getPhysics3DWorld");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Physics3DWorld*(cocos2d::Scene::*)()>(&cocos2d::Scene::getPhysics3DWorld));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
+#if CC_USE_PHYSICS
+int lua_cocos2d_Scene_getPhysicsWorld_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getPhysicsWorld");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::PhysicsWorld*(cocos2d::Scene::*)()const>(&cocos2d::Scene::getPhysicsWorld));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
+#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+int lua_cocos2d_Scene_initPhysicsWorld_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:initPhysicsWorld");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Scene::*)()>(&cocos2d::Scene::initPhysicsWorld));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
+#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+int lua_cocos2d_Scene_initWithPhysics_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:initWithPhysics");
+	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Scene::*)()>(&cocos2d::Scene::initWithPhysics));
+	LUA_INVOKE_FOOTER("0");
+}
+#endif
 int lua_cocos2d_Scene_initWithSize(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:initWithSize");
@@ -1110,12 +1178,52 @@ int lua_cocos2d_Scene_setCameraOrderDirty(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::Scene::*)()>(&cocos2d::Scene::setCameraOrderDirty));
 	LUA_INVOKE_FOOTER("0");
 }
+#if CC_USE_NAVMESH
+int lua_cocos2d_Scene_setNavMesh_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setNavMesh");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Scene::*)(cocos2d::NavMesh*)>(&cocos2d::Scene::setNavMesh));
+	LUA_INVOKE_FOOTER("1");
+}
+#endif
+#if CC_USE_NAVMESH
+int lua_cocos2d_Scene_setNavMeshDebugCamera_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setNavMeshDebugCamera");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Scene::*)(cocos2d::Camera*)>(&cocos2d::Scene::setNavMeshDebugCamera));
+	LUA_INVOKE_FOOTER("1");
+}
+#endif
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+int lua_cocos2d_Scene_setPhysics3DDebugCamera_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:setPhysics3DDebugCamera");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Scene::*)(cocos2d::Camera*)>(&cocos2d::Scene::setPhysics3DDebugCamera));
+	LUA_INVOKE_FOOTER("1");
+}
+#endif
+#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH
+int lua_cocos2d_Scene_stepPhysicsAndNavigation_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:stepPhysicsAndNavigation");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Scene::*)(float)>(&cocos2d::Scene::stepPhysicsAndNavigation));
+	LUA_INVOKE_FOOTER("1");
+}
+#endif
 int lua_cocos2d_Scene_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Scene", "cc.Scene:create");
 	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Scene*(*)()>(&cocos2d::Scene::create));
 	LUA_SINVOKE_FOOTER("0");
 }
+#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+int lua_cocos2d_Scene_createWithPhysics_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Scene", "cc.Scene:createWithPhysics");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Scene*(*)()>(&cocos2d::Scene::createWithPhysics));
+	LUA_SINVOKE_FOOTER("0");
+}
+#endif
 int lua_cocos2d_Scene_createWithSize(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.Scene", "cc.Scene:createWithSize");
@@ -1129,10 +1237,40 @@ int luaReg_Core_ccScene(lua_State* lua_S)
 		cocos2d::Scene, "cc.Node",
 		nullptr, nullptr);
 	LUA_METHOD("getDefaultCamera", lua_cocos2d_Scene_getDefaultCamera);
+	#if CC_USE_NAVMESH
+LUA_METHOD("getNavMesh", lua_cocos2d_Scene_getNavMesh_1);
+#endif
+	#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+LUA_METHOD("getPhysics3DWorld", lua_cocos2d_Scene_getPhysics3DWorld_1);
+#endif
+	#if CC_USE_PHYSICS
+LUA_METHOD("getPhysicsWorld", lua_cocos2d_Scene_getPhysicsWorld_1);
+#endif
+	#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+LUA_METHOD("initPhysicsWorld", lua_cocos2d_Scene_initPhysicsWorld_1);
+#endif
+	#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+LUA_METHOD("initWithPhysics", lua_cocos2d_Scene_initWithPhysics_1);
+#endif
 	LUA_METHOD("initWithSize", lua_cocos2d_Scene_initWithSize);
 	LUA_METHOD("onProjectionChanged", lua_cocos2d_Scene_onProjectionChanged);
 	LUA_METHOD("setCameraOrderDirty", lua_cocos2d_Scene_setCameraOrderDirty);
+	#if CC_USE_NAVMESH
+LUA_METHOD("setNavMesh", lua_cocos2d_Scene_setNavMesh_1);
+#endif
+	#if CC_USE_NAVMESH
+LUA_METHOD("setNavMeshDebugCamera", lua_cocos2d_Scene_setNavMeshDebugCamera_1);
+#endif
+	#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+LUA_METHOD("setPhysics3DDebugCamera", lua_cocos2d_Scene_setPhysics3DDebugCamera_1);
+#endif
+	#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH
+LUA_METHOD("stepPhysicsAndNavigation", lua_cocos2d_Scene_stepPhysicsAndNavigation_1);
+#endif
 	LUA_METHOD("create", lua_cocos2d_Scene_create);
+	#if CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION)
+LUA_METHOD("createWithPhysics", lua_cocos2d_Scene_createWithPhysics_1);
+#endif
 	LUA_METHOD("createWithSize", lua_cocos2d_Scene_createWithSize);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
@@ -2015,145 +2153,6 @@ int luaReg_Core_ccAsyncTaskPool(lua_State* lua_S)
 		nullptr, nullptr);
 	LUA_METHOD("stopTasks", lua_cocos2d_AsyncTaskPool_stopTasks);
 	LUA_METHOD("getInstance", lua_cocos2d_AsyncTaskPool_getInstance);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_Action_clone(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:clone");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Action*(cocos2d::Action::*)()const>(&cocos2d::Action::clone));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_getFlags(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:getFlags");
-	LUA_TRY_INVOKE_R(0, static_cast<unsigned int(cocos2d::Action::*)()const>(&cocos2d::Action::getFlags));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_getOriginalTarget(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:getOriginalTarget");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Node*(cocos2d::Action::*)()const>(&cocos2d::Action::getOriginalTarget));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_getTag(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:getTag");
-	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::Action::*)()const>(&cocos2d::Action::getTag));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_getTarget(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:getTarget");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Node*(cocos2d::Action::*)()const>(&cocos2d::Action::getTarget));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_isDone(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:isDone");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Action::*)()const>(&cocos2d::Action::isDone));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_reverse(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:reverse");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Action*(cocos2d::Action::*)()const>(&cocos2d::Action::reverse));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_setFlags(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:setFlags");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(unsigned int)>(&cocos2d::Action::setFlags));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_setOriginalTarget(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:setOriginalTarget");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(cocos2d::Node*)>(&cocos2d::Action::setOriginalTarget));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_setTag(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:setTag");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(int)>(&cocos2d::Action::setTag));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_setTarget(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:setTarget");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(cocos2d::Node*)>(&cocos2d::Action::setTarget));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_startWithTarget(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:startWithTarget");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(cocos2d::Node*)>(&cocos2d::Action::startWithTarget));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_step(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:step");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(float)>(&cocos2d::Action::step));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_Action_stop(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:stop");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::Action::*)()>(&cocos2d::Action::stop));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_Action_update(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Action", "cc.Action:update");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Action::*)(float)>(&cocos2d::Action::update));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_Core_ccAction(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::Action, "Action", "cc.Action",
-		cocos2d::Action, "cc.Ref",
-		nullptr, nullptr);
-	LUA_METHOD("clone", lua_cocos2d_Action_clone);
-	LUA_METHOD("getFlags", lua_cocos2d_Action_getFlags);
-	LUA_METHOD("getOriginalTarget", lua_cocos2d_Action_getOriginalTarget);
-	LUA_METHOD("getTag", lua_cocos2d_Action_getTag);
-	LUA_METHOD("getTarget", lua_cocos2d_Action_getTarget);
-	LUA_METHOD("isDone", lua_cocos2d_Action_isDone);
-	LUA_METHOD("reverse", lua_cocos2d_Action_reverse);
-	LUA_METHOD("setFlags", lua_cocos2d_Action_setFlags);
-	LUA_METHOD("setOriginalTarget", lua_cocos2d_Action_setOriginalTarget);
-	LUA_METHOD("setTag", lua_cocos2d_Action_setTag);
-	LUA_METHOD("setTarget", lua_cocos2d_Action_setTarget);
-	LUA_METHOD("startWithTarget", lua_cocos2d_Action_startWithTarget);
-	LUA_METHOD("step", lua_cocos2d_Action_step);
-	LUA_METHOD("stop", lua_cocos2d_Action_stop);
-	LUA_METHOD("update", lua_cocos2d_Action_update);
-	LUA_CLS_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int lua_cocos2d_FiniteTimeAction_getDuration(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.FiniteTimeAction", "cc.FiniteTimeAction:getDuration");
-	LUA_TRY_INVOKE_R(0, static_cast<float(cocos2d::FiniteTimeAction::*)()const>(&cocos2d::FiniteTimeAction::getDuration));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_FiniteTimeAction_setDuration(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.FiniteTimeAction", "cc.FiniteTimeAction:setDuration");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::FiniteTimeAction::*)(float)>(&cocos2d::FiniteTimeAction::setDuration));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_Core_ccFiniteTimeAction(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_CLS_DEF_BASE(cocos2d::FiniteTimeAction, "FiniteTimeAction", "cc.FiniteTimeAction",
-		cocos2d::FiniteTimeAction, "cc.Action",
-		nullptr, nullptr);
-	LUA_METHOD("getDuration", lua_cocos2d_FiniteTimeAction_getDuration);
-	LUA_METHOD("setDuration", lua_cocos2d_FiniteTimeAction_setDuration);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

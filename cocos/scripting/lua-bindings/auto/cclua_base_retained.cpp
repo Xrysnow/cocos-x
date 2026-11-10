@@ -5,37 +5,10 @@
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 
-// GLContextAttrs stubs and feature/platform bridges.
+// GLContextAttrs stubs, platform registration and merged aliases.
 
-// Retained: feature condition.
-#if CC_USE_PHYSICS
-int lua_cc_base_Node_setPhysicsBody(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Node", "cc.Node:setPhysicsBody");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Node::*)(cocos2d::PhysicsBody*)>(&cocos2d::Node::setPhysicsBody));
-	LUA_INVOKE_FOOTER("1");
-}
-#endif
 
-// Retained: feature condition.
-#if CC_USE_PHYSICS
-int lua_cc_base_Node_getPhysicsBody(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Node", "cc.Node:getPhysicsBody");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::PhysicsBody*(cocos2d::Node::*)()const>(&cocos2d::Node::getPhysicsBody));
-	LUA_INVOKE_FOOTER("0");
-}
-#endif
 
-// Retained: feature condition.
-#if CC_USE_PHYSICS
-int lua_cc_base_Scene_getPhysicsWorld(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:getPhysicsWorld");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::PhysicsWorld*(cocos2d::Scene::*)()const>(&cocos2d::Scene::getPhysicsWorld));
-	LUA_INVOKE_FOOTER("0");
-}
-#endif
 
 // Retained: existing unsupported layout/value stub.
 int lua_cc_base_GLView_setGLContextAttrs(lua_State* tolua_S)
@@ -212,38 +185,6 @@ int lua_cc_base_Node_removeAllChildrenWithCleanup(lua_State* lua_S)
     LUA_INVOKE_FOOTER("0,1");
 }
 
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-int lua_cc_base_Scene_initPhysicsWorld(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:initPhysicsWorld");
-    LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Scene::*)()>(&cocos2d::Scene::initPhysicsWorld));
-    LUA_INVOKE_FOOTER("0");
-}
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-int lua_cc_base_Scene_initWithPhysics(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:initWithPhysics");
-    LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::Scene::*)()>(&cocos2d::Scene::initWithPhysics));
-    LUA_INVOKE_FOOTER("0");
-}
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-int lua_cc_base_Scene_createWithPhysics(lua_State* lua_S)
-{
-    LUA_SINVOKE_HEADER("cc.Scene", "cc.Scene:createWithPhysics");
-    LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Scene*(*)()>(&cocos2d::Scene::createWithPhysics));
-    LUA_SINVOKE_FOOTER("0");
-}
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH)
-int lua_cc_base_Scene_stepPhysicsAndNavigation(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Scene", "cc.Scene:stepPhysicsAndNavigation");
-    LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Scene::*)(float)>(&cocos2d::Scene::stepPhysicsAndNavigation));
-    LUA_INVOKE_FOOTER("1");
-}
-#endif
 
 int register_all_cc_base_retained(lua_State* L)
 {
@@ -257,36 +198,6 @@ int register_all_cc_base_retained(lua_State* L)
 	lua_register_cc_base_EventListenerController(L);
 	lua_register_cc_base_EventController(L);
 #endif
-	luaL_getmetatable(L, "cc.Node");
-	if (lua_istable(L, -1)) {
-#if CC_USE_PHYSICS
-		tolua_function(L, "setPhysicsBody", lua_cc_base_Node_setPhysicsBody);
-#endif
-#if CC_USE_PHYSICS
-		tolua_function(L, "getPhysicsBody", lua_cc_base_Node_getPhysicsBody);
-#endif
-	}
-	lua_pop(L, 1);
-	luaL_getmetatable(L, "cc.Scene");
-	if (lua_istable(L, -1)) {
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-        tolua_function(L, "initPhysicsWorld", lua_cc_base_Scene_initPhysicsWorld);
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-        tolua_function(L, "initWithPhysics", lua_cc_base_Scene_initWithPhysics);
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
-        tolua_function(L, "createWithPhysics", lua_cc_base_Scene_createWithPhysics);
-#endif
-#if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION) || CC_USE_NAVMESH)
-        tolua_function(L, "stepPhysicsAndNavigation", lua_cc_base_Scene_stepPhysicsAndNavigation);
-#endif
-
-#if CC_USE_PHYSICS
-		tolua_function(L, "getPhysicsWorld", lua_cc_base_Scene_getPhysicsWorld);
-#endif
-	}
-	lua_pop(L, 1);
 	luaL_getmetatable(L, "cc.GLView");
 	if (lua_istable(L, -1)) {
 		tolua_function(L, "setGLContextAttrs", lua_cc_base_GLView_setGLContextAttrs);

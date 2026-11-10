@@ -9,6 +9,12 @@
 #include "renderer/backend/RenderTarget.h"
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+#include "physics3d/CCPhysics3DWorld.h"
+#endif
+#if CC_USE_NAVMESH
+#include "navmesh/CCNavMesh.h"
+#endif
 
 int lua_cocos2d_ParticleSystem_addAnimationIndex(lua_State* lua_S)
 {

@@ -9,7 +9,160 @@
 #include "renderer/backend/RenderTarget.h"
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
+#if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
+#include "physics3d/CCPhysics3DWorld.h"
+#endif
+#if CC_USE_NAVMESH
+#include "navmesh/CCNavMesh.h"
+#endif
 
+int lua_cocos2d_MenuItemFont_getFontNameObj(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:getFontNameObj");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::MenuItemFont::*)()const>(&cocos2d::MenuItemFont::getFontNameObj));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemFont_getFontSizeObj(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:getFontSizeObj");
+	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::MenuItemFont::*)()const>(&cocos2d::MenuItemFont::getFontSizeObj));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemFont_initWithString(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:initWithString");
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::MenuItemFont::*)(std::string_view, const cocos2d::ccMenuCallback&)>(&cocos2d::MenuItemFont::initWithString)));
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cocos2d_MenuItemFont_setFontNameObj(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:setFontNameObj");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemFont::*)(std::string_view)>(&cocos2d::MenuItemFont::setFontNameObj));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemFont_setFontSizeObj(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:setFontSizeObj");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemFont::*)(int)>(&cocos2d::MenuItemFont::setFontSizeObj));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemFont_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:create");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::MenuItemFont*(*)(std::string_view)>(&cocos2d::MenuItemFont::create));
+	LUA_SINVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemFont_getFontName(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:getFontName");
+	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(*)()>(&cocos2d::MenuItemFont::getFontName));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemFont_getFontSize(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:getFontSize");
+	LUA_TRY_INVOKE_R(0, static_cast<int(*)()>(&cocos2d::MenuItemFont::getFontSize));
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemFont_setFontName(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:setFontName");
+	LUA_TRY_INVOKE(1, static_cast<void(*)(std::string_view)>(&cocos2d::MenuItemFont::setFontName));
+	LUA_SINVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemFont_setFontSize(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemFont", "cc.MenuItemFont:setFontSize");
+	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&cocos2d::MenuItemFont::setFontSize));
+	LUA_SINVOKE_FOOTER("1");
+}
+int luaReg_Core_ccMenuItemFont(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::MenuItemFont, "MenuItemFont", "cc.MenuItemFont",
+		cocos2d::MenuItemFont, "cc.MenuItemLabel",
+		nullptr, nullptr);
+	LUA_METHOD("getFontNameObj", lua_cocos2d_MenuItemFont_getFontNameObj);
+	LUA_METHOD("getFontSizeObj", lua_cocos2d_MenuItemFont_getFontSizeObj);
+	LUA_METHOD("initWithString", lua_cocos2d_MenuItemFont_initWithString);
+	LUA_METHOD("setFontNameObj", lua_cocos2d_MenuItemFont_setFontNameObj);
+	LUA_METHOD("setFontSizeObj", lua_cocos2d_MenuItemFont_setFontSizeObj);
+	LUA_METHOD("create", lua_cocos2d_MenuItemFont_create_1);
+	LUA_METHOD("getFontName", lua_cocos2d_MenuItemFont_getFontName);
+	LUA_METHOD("getFontSize", lua_cocos2d_MenuItemFont_getFontSize);
+	LUA_METHOD("setFontName", lua_cocos2d_MenuItemFont_setFontName);
+	LUA_METHOD("setFontSize", lua_cocos2d_MenuItemFont_setFontSize);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cocos2d_MenuItemSprite_getDisabledImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:getDisabledImage");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Node*(cocos2d::MenuItemSprite::*)()const>(&cocos2d::MenuItemSprite::getDisabledImage));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemSprite_getNormalImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:getNormalImage");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Node*(cocos2d::MenuItemSprite::*)()const>(&cocos2d::MenuItemSprite::getNormalImage));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemSprite_getSelectedImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:getSelectedImage");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::Node*(cocos2d::MenuItemSprite::*)()const>(&cocos2d::MenuItemSprite::getSelectedImage));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_MenuItemSprite_initWithNormalSprite(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:initWithNormalSprite");
+	LUA_TRY_INVOKE_R(4, (static_cast<bool(cocos2d::MenuItemSprite::*)(cocos2d::Node*, cocos2d::Node*, cocos2d::Node*, const cocos2d::ccMenuCallback&)>(&cocos2d::MenuItemSprite::initWithNormalSprite)));
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cocos2d_MenuItemSprite_setDisabledImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:setDisabledImage");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemSprite::*)(cocos2d::Node*)>(&cocos2d::MenuItemSprite::setDisabledImage));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemSprite_setNormalImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:setNormalImage");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemSprite::*)(cocos2d::Node*)>(&cocos2d::MenuItemSprite::setNormalImage));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemSprite_setSelectedImage(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:setSelectedImage");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::MenuItemSprite::*)(cocos2d::Node*)>(&cocos2d::MenuItemSprite::setSelectedImage));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cocos2d_MenuItemSprite_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.MenuItemSprite", "cc.MenuItemSprite:create");
+	LUA_TRY_INVOKE_R(3, (static_cast<cocos2d::MenuItemSprite*(*)(cocos2d::Node*, cocos2d::Node*, cocos2d::Node*)>(&cocos2d::MenuItemSprite::create)));
+	LUA_TRY_INVOKE_R(2, ([](cocos2d::Node* arg0,cocos2d::Node* arg1){{return cocos2d::MenuItemSprite::create(arg0,arg1);}}));
+	LUA_SINVOKE_FOOTER("2,3");
+}
+int luaReg_Core_ccMenuItemSprite(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cocos2d::MenuItemSprite, "MenuItemSprite", "cc.MenuItemSprite",
+		cocos2d::MenuItemSprite, "cc.MenuItem",
+		nullptr, nullptr);
+	LUA_METHOD("getDisabledImage", lua_cocos2d_MenuItemSprite_getDisabledImage);
+	LUA_METHOD("getNormalImage", lua_cocos2d_MenuItemSprite_getNormalImage);
+	LUA_METHOD("getSelectedImage", lua_cocos2d_MenuItemSprite_getSelectedImage);
+	LUA_METHOD("initWithNormalSprite", lua_cocos2d_MenuItemSprite_initWithNormalSprite);
+	LUA_METHOD("setDisabledImage", lua_cocos2d_MenuItemSprite_setDisabledImage);
+	LUA_METHOD("setNormalImage", lua_cocos2d_MenuItemSprite_setNormalImage);
+	LUA_METHOD("setSelectedImage", lua_cocos2d_MenuItemSprite_setSelectedImage);
+	LUA_METHOD("create", lua_cocos2d_MenuItemSprite_create_1);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_cocos2d_MenuItemImage_init_1(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.MenuItemImage", "cc.MenuItemImage:init");
