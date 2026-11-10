@@ -110,8 +110,6 @@ set(lua_bindings_auto_files
     auto/cclua_ui_auto02.cpp
     auto/cclua_ui_auto03.cpp
     auto/cclua_physics3d_auto.cpp
-    auto/cclua_physics3d_auto01.cpp
-    auto/cclua_physics3d_auto02.cpp
     auto/cclua_navmesh_auto.cpp
     auto/cclua_backend_auto.cpp
     manual/backend/cclua_backend_manual.cpp
