@@ -86,14 +86,6 @@ if(CC_ENABLE_EXT_FAIRYGUI)
   endif()
 endif()
 
-if(CC_ENABLE_EXT_IMGUI)
-  add_subdirectory(ImGui)
-endif()
-
-if(CC_ENABLE_EXT_LIVE2D)
-  add_subdirectory(Live2D)
-endif()
-
 if (CC_ENABLE_EXT_EFFEKSEER)
   add_subdirectory(Effekseer)
 endif()

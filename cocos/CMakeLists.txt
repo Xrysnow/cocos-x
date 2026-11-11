@@ -66,9 +66,7 @@ option(CC_ENABLE_EXT_PHYSICS_NODE "Build extension physics-nodes" ON)
 option(CC_ENABLE_EXT_SPINE "Build extension spine" ON)
 option(CC_ENABLE_EXT_DRAGONBONES "Build extension DragonBones" ON)
 option(CC_ENABLE_EXT_FAIRYGUI "Build extension FairyGUI" ON)
-option(CC_ENABLE_EXT_LIVE2D "Build extension Live2D" OFF)
 option(CC_ENABLE_EXT_EFFEKSEER "Build extension Effekseer" OFF)
-option(CC_ENABLE_EXT_IMGUI "Build extension ImGui" OFF)
 
 set(CC_ENABLE_EXT_LUA ${BUILD_LUA_LIBS})
 

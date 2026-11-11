@@ -20,17 +20,6 @@
 - Version: axmol-1.0
 - License: MIT
 
-## ImGui
-- [![Upstream](https://img.shields.io/github/v/release/ocornut/imgui?label=Upstream)](https://github.com/ocornut/imgui)
-- Version: 1.88 on branch docking
-- License: MIT
-
-## Live2D (OFF default)
-
-- Upstream: https://www.live2d.com/en/download/cubism-sdk/download-native/
-- Version: [4-r.4] - 2021-12-09
-- License: Live2D Proprietary Software License
-
 ## Particle3D
 
 - Upstream: https://github.com/axmolengine/axmol
