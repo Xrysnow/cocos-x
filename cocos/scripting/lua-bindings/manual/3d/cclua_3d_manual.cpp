@@ -162,7 +162,6 @@ int cclua_3d_AABB_updateMinMax(lua_State* lua_S)
     LUA_INVOKE_HEADER("cc.AABB", "cc.AABB:updateMinMax");
     const auto update = [](cocos2d::AABB* self, const std::vector<cocos2d::Vec3>& points) {
         self->updateMinMax(points.data(), static_cast<ssize_t>(points.size()));
-        return std::vector<cocos2d::Vec3>{self->getMin(), self->getMax()};
     };
     LUA_TRY_INVOKE_R(1, update);
     LUA_INVOKE_FOOTER("1");

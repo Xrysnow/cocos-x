@@ -130,9 +130,9 @@ local descriptor/output converters have been removed.
 exactly eight independent Vec3 tables, in native corner order.
 
 `cc.AABB:updateMinMax(points)` takes a `std::vector<Vec3>` (one Lua array),
-updates the existing box and returns `std::vector<Vec3>{min, max}` as a fresh
-Lua array. There is no separate count argument. An empty input preserves the
-box's bounds and returns those bounds. Input points are not modified.
+updates the existing box and returns no Lua values. There is no separate count
+argument. An empty input preserves the box's bounds. Input points are not
+modified.
 
 These adapters use shared invocation and `LUA_INVOKE_FOOTER`; Geometry's
 generated methods also use the shared default footer. `cc.Ray:intersects` is
