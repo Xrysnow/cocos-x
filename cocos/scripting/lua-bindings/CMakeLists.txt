@@ -220,3 +220,26 @@ set_target_properties(${COCOS_LUA_LIB}
 if(XCODE OR VS)
     cocos_mark_code_files("${COCOS_LUA_LIB}")
 endif()
+
+if(ANDROID)
+    # Keep JNI entry points in a separate archive for whole-archive linking.
+    add_library(lua_android_spec STATIC
+        manual/platform/android/CCLuaJavaBridge.cpp
+        manual/platform/android/jni/LuaBridge.cpp
+    )
+
+    get_target_property(lua_header ${COCOS_LUA_LIB} INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(tolua_header tolua INTERFACE_INCLUDE_DIRECTORIES)
+    target_include_directories(lua_android_spec
+        PRIVATE ../..
+        PRIVATE manual
+        PRIVATE manual/platform/android
+        PRIVATE ${lua_header}
+        PRIVATE ${tolua_header}
+        PRIVATE ../../../core
+        PRIVATE ../../../thirdparty
+        PRIVATE ../../../thirdparty/robin-map/include
+        PRIVATE ../../../thirdparty/jni.hpp/include
+    )
+    target_link_libraries(lua_android_spec ${COCOS_LUA_LIB})
+endif()
