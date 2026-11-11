@@ -59,14 +59,12 @@ if(CC_ENABLE_VIDEO_PLATFORM AND NOT (WINDOWS OR ANDROID OR (IOS AND NOT TVOS)))
 endif()
 
 # extensions to build
-# extensions dependicies: COCOSTUDIO may depend on spine & dragonBones if they are present in buildset
 option(CC_ENABLE_EXT_GUI "Build extension GUI" ON)
 option(CC_ENABLE_EXT_ASSETMANAGER "Build extension asset-manager" ON)
 option(CC_ENABLE_EXT_PARTICLE3D "Build extension Particle3D" ON)
 option(CC_ENABLE_EXT_PHYSICS_NODE "Build extension physics-nodes" ON)
 option(CC_ENABLE_EXT_SPINE "Build extension spine" ON)
 option(CC_ENABLE_EXT_DRAGONBONES "Build extension DragonBones" ON)
-option(CC_ENABLE_EXT_COCOSTUDIO "Build extension cocostudio" ON)
 option(CC_ENABLE_EXT_FAIRYGUI "Build extension FairyGUI" ON)
 option(CC_ENABLE_EXT_LIVE2D "Build extension Live2D" OFF)
 option(CC_ENABLE_EXT_EFFEKSEER "Build extension Effekseer" OFF)

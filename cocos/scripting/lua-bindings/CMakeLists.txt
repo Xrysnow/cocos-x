@@ -132,27 +132,6 @@ if(CC_ENABLE_EXT_SPINE)
         auto/cclua_spine_auto.cpp
     )
 endif()
-if(CC_ENABLE_EXT_COCOSTUDIO)
-    list(APPEND lua_bindings_manual_headers
-        manual/cocostudio/CustomGUIReader.h
-        manual/cocostudio/cclua_csloader_manual.hpp
-    )
-    list(APPEND lua_bindings_manual_files
-        manual/cocostudio/CustomGUIReader.cpp
-        manual/cocostudio/cclua_cocostudio_manual.cpp
-        manual/cocostudio/cclua_csloader_manual.cpp
-    )
-    list(APPEND lua_bindings_auto_headers
-        auto/cclua_studio_auto.hpp
-        auto/cclua_csloader_auto.hpp
-    )
-    list(APPEND lua_bindings_auto_files
-        auto/cclua_studio_auto.cpp
-        auto/cclua_studio_auto01.cpp
-        auto/cclua_studio_auto02.cpp
-        auto/cclua_csloader_auto.cpp
-    )
-endif()
 
 if(APPLE)
     # CCLuaObjcBridge.mm needed by ios and mac
@@ -225,7 +204,6 @@ target_include_directories(${COCOS_LUA_LIB}
     PRIVATE manual/platform/android
     PRIVATE manual/platform/android/jni
     PRIVATE ${cocos_root}/extensions/spine/runtime/include
-    PRIVATE ${cocos_root}/extensions/cocostudio
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/manual
 )
 

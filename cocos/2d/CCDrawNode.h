@@ -351,7 +351,7 @@ public:
 
     void setLineWidth(float lineWidth);
 
-    // Get CocosStudio guide lines width.
+    // Get the line width.
     float getLineWidth();
 
     /**

@@ -552,10 +552,6 @@ void Slider::percentChangedEvent(EventType event)
     {
         callback(this, event);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(EventType::ON_PERCENTAGE_CHANGED));
-    }
     this->release();
 }
 
@@ -766,7 +762,6 @@ void Slider::copySpecialProperties(Widget* widget)
         _isSliderBallDisabledTexturedLoaded = slider->_isSliderBallDisabledTexturedLoaded;
         _sliderEventListener                = slider->_sliderEventListener;
         _eventCallback                      = slider->_eventCallback;
-        _ccEventCallback                    = slider->_ccEventCallback;
     }
 }
 

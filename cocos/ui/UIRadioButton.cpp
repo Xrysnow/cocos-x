@@ -90,10 +90,6 @@ void RadioButton::dispatchSelectChangedEvent(bool selected)
     {
         callback(this, eventType);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(eventType));
-    }
 
     if (selected && _group != nullptr)
     {
@@ -136,7 +132,6 @@ void RadioButton::copySpecialProperties(Widget* widget)
     {
         AbstractCheckButton::copySpecialProperties(widget);
         _radioButtonEventCallback = radioButton->_radioButtonEventCallback;
-        _ccEventCallback          = radioButton->_ccEventCallback;
         // A standalone clone is not a member of the source button's group.
         _group                    = nullptr;
     }
@@ -340,7 +335,6 @@ void RadioButtonGroup::copySpecialProperties(Widget* widget)
     if (radioButtonGroup)
     {
         _radioButtonGroupEventCallback = radioButtonGroup->_radioButtonGroupEventCallback;
-        _ccEventCallback               = radioButtonGroup->_ccEventCallback;
         _selectedRadioButton           = radioButtonGroup->_selectedRadioButton;
         _allowedNoSelection            = radioButtonGroup->_allowedNoSelection;
 
@@ -372,10 +366,6 @@ void RadioButtonGroup::onChangedRadioButtonSelect(RadioButton* radioButton)
         int index = (int)_radioButtons.getIndex(radioButton);
         auto selectedAlive = makeRef(_selectedRadioButton);
         callback(selectedAlive.get(), index, EventType::SELECT_CHANGED);
-    }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(EventType::SELECT_CHANGED));
     }
     this->release();
 }

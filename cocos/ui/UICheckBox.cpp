@@ -109,10 +109,6 @@ void CheckBox::dispatchSelectChangedEvent(bool selected)
     {
         callback(this, eventType);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(eventType));
-    }
 
     this->release();
 }
@@ -140,7 +136,6 @@ void CheckBox::copySpecialProperties(Widget* widget)
         AbstractCheckButton::copySpecialProperties(widget);
         _checkBoxEventListener = checkBox->_checkBoxEventListener;
         _checkBoxEventCallback = checkBox->_checkBoxEventCallback;
-        _ccEventCallback       = checkBox->_ccEventCallback;
     }
 }
 

@@ -125,11 +125,6 @@ public:
      */
     typedef std::function<void(Ref*)> ccWidgetClickCallback;
     /**
-     * Widget custom event callback.
-     * It is mainly used together with Cocos Studio.
-     */
-    typedef std::function<void(Ref*, int)> ccWidgetEventCallback;
-    /**
      * Default constructor
      * @js ctor
      * @lua new
@@ -255,8 +250,8 @@ public:
     virtual void visit(cocos2d::Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
 
     /**
-     * Set a callback to touch vent listener.
-     *@param callback  The callback in `ccWidgetEventCallback.`
+     * Set a callback to touch event listener.
+     *@param callback  The callback in `ccWidgetTouchCallback`.
      */
     void addTouchEventListener(const ccWidgetTouchCallback& callback);
 
@@ -265,13 +260,6 @@ public:
      * @param callback The callback in `ccWidgetClickCallback`.
      */
     void addClickEventListener(const ccWidgetClickCallback& callback);
-    /**
-     * Set a event handler to the widget in order to use cocostudio editor and framework
-     * @param callback The callback in `ccWidgetEventCallback`.
-     * @lua NA
-     */
-    virtual void addCCSEventListener(const ccWidgetEventCallback& callback);
-    /**/
 
     /**
      * Changes the position (x,y) of the widget in OpenGL coordinates
@@ -674,30 +662,6 @@ public:
     bool isUnifySizeEnabled() const;
 
     /**
-     * Set callback name.
-     *@param callbackName A string representation of callback name.
-     */
-    void setCallbackName(std::string_view callbackName) { _callbackName = callbackName; }
-
-    /**
-     * Query callback name.
-     *@return The callback name.
-     */
-    std::string_view getCallbackName() const { return _callbackName; }
-
-    /**
-     * Set callback type.
-     * @param callbackType A string representation of callback type.
-     */
-    void setCallbackType(std::string_view callbackType) { _callbackType = callbackType; }
-
-    /**
-     * Query callback type.
-     *@return Callback type string.
-     */
-    std::string_view getCallbackType() const { return _callbackType; }
-
-    /**
      * Toggle layout component enable.
      *@param enable Layout Component of a widget
      */
@@ -829,10 +793,6 @@ protected:
     Ref* _touchEventListener;
     ccWidgetTouchCallback _touchEventCallback;
     ccWidgetClickCallback _clickEventListener;
-    ccWidgetEventCallback _ccEventCallback;
-
-    std::string _callbackType;
-    std::string _callbackName;
 
 private:
     class FocusNavigationController;

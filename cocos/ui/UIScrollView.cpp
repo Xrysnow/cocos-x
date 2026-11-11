@@ -261,10 +261,6 @@ void ScrollView::setInnerContainerPosition(const Vec2& position)
     {
         callback(this, EventType::CONTAINER_MOVED);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(EventType::CONTAINER_MOVED));
-    }
     this->release();
 }
 
@@ -1212,10 +1208,6 @@ void ScrollView::dispatchEvent(EventType eventType)
     {
         callback(this, eventType);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(eventType));
-    }
     this->release();
 }
 
@@ -1538,7 +1530,6 @@ void ScrollView::copySpecialProperties(Widget* widget)
         setBounceEnabled(scrollView->_bounceEnabled);
         _scrollViewEventListener = scrollView->_scrollViewEventListener;
         _eventCallback           = scrollView->_eventCallback;
-        _ccEventCallback         = scrollView->_ccEventCallback;
 
         setScrollBarEnabled(scrollView->isScrollBarEnabled());
         if (isScrollBarEnabled())

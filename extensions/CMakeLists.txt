@@ -80,28 +80,6 @@ if(CC_ENABLE_EXT_IMGUI)
   add_subdirectory(ImGui)
 endif()
 
-if(CC_ENABLE_EXT_COCOSTUDIO)
-  add_subdirectory(cocostudio)
-  if(CC_ENABLE_EXT_SPINE)
-    target_compile_definitions(cocostudio
-      PUBLIC CC_BUILD_WITH_SPINE=1
-    )
-    if(BUILD_SHARED_LIBS)
-      target_link_libraries(cocostudio spine particle3d)
-    else()
-      target_include_directories(cocostudio PUBLIC ${CMAKE_CURRENT_LIST_DIR}/spine/runtime/include)
-    endif()
-  endif()
-  if(CC_ENABLE_EXT_DRAGONBONES)
-    target_compile_definitions(cocostudio
-      PRIVATE CC_BUILD_WITH_DRANGBONES=1
-    )
-    if(BUILD_SHARED_LIBS)
-      target_link_libraries(cocostudio DragonBones)
-    endif()
-  endif()
-endif()
-
 if(CC_ENABLE_EXT_LIVE2D)
   add_subdirectory(Live2D)
 endif()

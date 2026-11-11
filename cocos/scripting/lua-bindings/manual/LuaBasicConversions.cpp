@@ -2865,16 +2865,6 @@ bool luaval_to_std_map_string_string(lua_State* L, int lo, hlookup::string_map<s
     return ok;
 }
 
-bool luaval_to_node(lua_State* L, int lo, const char* type, cocos2d::Node** node)
-{
-    return luaval_to_object<cocos2d::Node>(L, lo, type, node);
-}
-
-void node_to_luaval(lua_State* L, const char* type, cocos2d::Node* node)
-{
-    object_to_luaval<cocos2d::Node>(L, type, node);
-}
-
 void resourceData_to_luaval(lua_State* L, const cocos2d::ResourceData& data)
 {
     if (L == nullptr)

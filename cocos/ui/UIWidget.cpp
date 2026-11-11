@@ -173,9 +173,6 @@ Widget::Widget()
     , _focused(false)
     , _focusEnabled(true)
     , _touchEventListener(nullptr)
-    , _ccEventCallback(nullptr)
-    , _callbackType("")
-    , _callbackName("")
 {}
 
 Widget::~Widget()
@@ -903,11 +900,6 @@ void Widget::addTouchEventListener(const ccWidgetTouchCallback& callback)
 void Widget::addClickEventListener(const ccWidgetClickCallback& callback)
 {
     this->_clickEventListener = callback;
-}
-
-void Widget::addCCSEventListener(const ccWidgetEventCallback& callback)
-{
-    this->_ccEventCallback = callback;
 }
 
 bool Widget::hitTest(const Vec2& pt, const Camera* camera, Vec3* p) const

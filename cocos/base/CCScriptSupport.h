@@ -741,23 +741,6 @@ public:
      */
     virtual bool isCalledFromScript() { return false; };
 
-    /** ConfigType enum. */
-    enum class ConfigType
-    {
-        NONE,
-        COCOSTUDIO
-    };
-    /**
-     * Parse configuration file.
-     *
-     * @param type the specific type value.
-     * @param str the information data.
-     *
-     * @lua NA
-     * @js NA
-     */
-    virtual bool parseConfig(ConfigType type, std::string_view str) = 0;
-
     /** Root a Reference.
      It tells the Garbage Collector that the associated Scripting object should not be collected
      */

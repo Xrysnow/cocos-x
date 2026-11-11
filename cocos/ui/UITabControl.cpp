@@ -708,10 +708,6 @@ void TabHeader::dispatchSelectChangedEvent(bool select)
             callback(index, eventType);
     }
 
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(eventType));
-    }
 }
 
 int TabHeader::getIndexInTabControl() const

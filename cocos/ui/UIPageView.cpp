@@ -285,10 +285,6 @@ void PageView::pageTurningEvent()
     {
         callback(this, EventType::TURNING);
     }
-    if (auto callback = _ccEventCallback)
-    {
-        callback(this, static_cast<int>(EventType::TURNING));
-    }
     _isTouchBegin = false;
     this->release();
 }
@@ -331,7 +327,6 @@ void PageView::copySpecialProperties(Widget* widget)
         ListView::copySpecialProperties(widget);
         _eventCallback                  = pageView->_eventCallback;
         _pageEventListenerRegistered     = pageView->_pageEventListenerRegistered;
-        _ccEventCallback                = pageView->_ccEventCallback;
         _currentPageIndex               = pageView->_currentPageIndex;
         _previousPageIndex              = pageView->_previousPageIndex;
         _childFocusCancelOffset         = pageView->_childFocusCancelOffset;

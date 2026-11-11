@@ -32,7 +32,6 @@
 #endif
 
 #include "scripting/lua-bindings/manual/network/cclua_network_manual.h"
-#include "scripting/lua-bindings/manual/cocostudio/cclua_cocostudio_manual.hpp"
 #include "scripting/lua-bindings/manual/extension/cclua_extension_manual.h"
 #include "scripting/lua-bindings/manual/ui/cclua_ui_manual.hpp"
 #include "scripting/lua-bindings/manual/spine/cclua_spine_manual.hpp"
@@ -62,9 +61,6 @@ int lua_module_register(lua_State* L)
 {
     // Don't change the module register order unless you know what your are doing
     register_network_module(L);
-#ifdef CC_USE_COCOSTUDIO
-    register_cocostudio_module(L);
-#endif
     register_ui_module(L);
     register_extension_module(L);
     // TODO arnold

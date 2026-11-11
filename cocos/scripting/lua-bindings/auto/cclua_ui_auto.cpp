@@ -194,18 +194,6 @@ int lua_cocos2d_ui_Widget_getBottomBoundary(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, static_cast<float(cocos2d::ui::Widget::*)()const>(&cocos2d::ui::Widget::getBottomBoundary));
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cocos2d_ui_Widget_getCallbackName(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:getCallbackName");
-	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::ui::Widget::*)()const>(&cocos2d::ui::Widget::getCallbackName));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cocos2d_ui_Widget_getCallbackType(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:getCallbackType");
-	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::ui::Widget::*)()const>(&cocos2d::ui::Widget::getCallbackType));
-	LUA_INVOKE_FOOTER("0");
-}
 int lua_cocos2d_ui_Widget_getCustomSize(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:getCustomSize");
@@ -428,18 +416,6 @@ int lua_cocos2d_ui_Widget_setBrightStyle(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ui::Widget::*)(cocos2d::ui::Widget::BrightStyle)>(&cocos2d::ui::Widget::setBrightStyle));
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cocos2d_ui_Widget_setCallbackName(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:setCallbackName");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ui::Widget::*)(std::string_view)>(&cocos2d::ui::Widget::setCallbackName));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cocos2d_ui_Widget_setCallbackType(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:setCallbackType");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::ui::Widget::*)(std::string_view)>(&cocos2d::ui::Widget::setCallbackType));
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cocos2d_ui_Widget_setEnabled(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:setEnabled");
@@ -574,8 +550,6 @@ int luaReg_UI_ccuiWidget(lua_State* lua_S)
 	LUA_METHOD("findNextFocusedWidget", lua_cocos2d_ui_Widget_findNextFocusedWidget);
 	LUA_METHOD("getActionTag", lua_cocos2d_ui_Widget_getActionTag);
 	LUA_METHOD("getBottomBoundary", lua_cocos2d_ui_Widget_getBottomBoundary);
-	LUA_METHOD("getCallbackName", lua_cocos2d_ui_Widget_getCallbackName);
-	LUA_METHOD("getCallbackType", lua_cocos2d_ui_Widget_getCallbackType);
 	LUA_METHOD("getCustomSize", lua_cocos2d_ui_Widget_getCustomSize);
 	LUA_METHOD("getLayoutParameter", lua_cocos2d_ui_Widget_getLayoutParameter);
 	LUA_METHOD("getLayoutSize", lua_cocos2d_ui_Widget_getLayoutSize);
@@ -613,8 +587,6 @@ int luaReg_UI_ccuiWidget(lua_State* lua_S)
 	LUA_METHOD("setActionTag", lua_cocos2d_ui_Widget_setActionTag);
 	LUA_METHOD("setBright", lua_cocos2d_ui_Widget_setBright);
 	LUA_METHOD("setBrightStyle", lua_cocos2d_ui_Widget_setBrightStyle);
-	LUA_METHOD("setCallbackName", lua_cocos2d_ui_Widget_setCallbackName);
-	LUA_METHOD("setCallbackType", lua_cocos2d_ui_Widget_setCallbackType);
 	LUA_METHOD("setEnabled", lua_cocos2d_ui_Widget_setEnabled);
 	LUA_METHOD("setFlippedX", lua_cocos2d_ui_Widget_setFlippedX);
 	LUA_METHOD("setFlippedY", lua_cocos2d_ui_Widget_setFlippedY);

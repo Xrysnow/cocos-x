@@ -49,10 +49,6 @@ __G__TRACKBACK__ = function(msg)
     return msg
 end
 
--- cocosstudio
-if nil ~= ccs then
-    require "cc.cocostudio.CocoStudio"
-end
 -- ui
 if nil ~= ccui then
     require "cc.ui.GuiConstants"

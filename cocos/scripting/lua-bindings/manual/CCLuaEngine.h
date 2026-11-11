@@ -181,16 +181,6 @@ public:
     virtual bool handleAssert(const char* msg) override;
 
     /**
-     * Parse the config information data.
-     *
-     * @param type in current mechanism,it always ConfigType::COCOSTUDIO.
-     * @param str  the information data.
-     * @return if __onParseConfig function exist in the Lua, it return the value that _stack->executeFunction returns
-     * otherwise return false.
-     */
-    virtual bool parseConfig(ConfigType type, std::string_view str) override;
-
-    /**
      * When some events triggered in the c++ also needs to pass on to lua to handle, we could call this function to send
      * events.
      *
@@ -247,7 +237,6 @@ private:
                              void* data,
                              int numResults,
                              const std::function<void(lua_State*, int)>& func);
-    int handleArmatureWrapper(ScriptHandlerMgr::HandlerType type, void* data);
     int handleEventAcc(void* data);
     int handleEventKeyboard(ScriptHandlerMgr::HandlerType type, void* data);
     int handleEventTouch(ScriptHandlerMgr::HandlerType type, void* data);

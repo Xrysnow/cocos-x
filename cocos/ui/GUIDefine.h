@@ -45,21 +45,6 @@ public:                                          \
 
 #define CREATE_CLASS_GUI_INFO(className) cocos2d::ObjectFactory::TInfo(#className, &className::createInstance)
 
-//
-//// Reader macro
-//
-
-#define DECLARE_CLASS_WIDGET_READER_INFO         \
-public:                                          \
-    static cocos2d::ObjectFactory::TInfo __Type; \
-    static cocos2d::Ref* createInstance();
-
-#define IMPLEMENT_CLASS_WIDGET_READER_INFO(className)                              \
-    cocos2d::Ref* className::createInstance() { return className::getInstance(); } \
-    cocos2d::ObjectFactory::TInfo className::__Type(#className, &className::createInstance);
-
-#define CREATE_CLASS_WIDGET_READER_INFO(className) cocos2d::ObjectFactory::TInfo(#className, &className::createInstance)
-
 #define CC_VIDEOPLAYER_DEBUG_DRAW 0
 
 #define __LAYOUT_COMPONENT_NAME "__ui_layout"
