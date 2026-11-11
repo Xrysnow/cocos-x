@@ -145,6 +145,20 @@ These adapters use shared invocation and `LUA_INVOKE_FOOTER`; Geometry's
 generated methods also use the shared default footer. `cc.Ray:intersects` is
 not registered. Native C++ geometry APIs and value ownership are unchanged.
 
+## Physics3D generated invocation
+
+Physics3D generated wrappers include the shared conversion header directly.
+Receiver handling, scalar/enum/Vec3/Mat4 conversion, overload isolation, void
+self returns and invocation errors use the common binding implementation and
+CC_LUA_BINDING_CHECKS policy. There are no module-local macro overrides or
+argument-rewriting prepasses.
+
+Collision callbacks use shared owned-callback conversion: function installs or
+replaces the callable, nil clears it, and other values are rejected in both
+check modes. Clearing releases the Lua capture when the last native copy is
+released. Native signatures, feature guards and retained registration order
+continue to define the module's public surface.
+
 ## Value userdata ownership
 
 Only an explicit `value_type<T>` specialization opts a native class into userdata

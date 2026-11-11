@@ -1,7 +1,7 @@
 #include "cclua_physics3d_auto.hpp"
 #include "base/ccConfig.h"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-#include "scripting/lua-bindings/manual/physics3d/cclua_physics3d_compat.hpp"
+#include "lua_conversion/lua_conversion.hpp"
 #include "physics3d/CCPhysics3D.h"
 
 int lua_cocos2d_Physics3DShape_getShapeType(lua_State* lua_S)

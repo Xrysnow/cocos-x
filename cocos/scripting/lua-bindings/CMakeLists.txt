@@ -43,7 +43,6 @@ set(lua_bindings_manual_headers
     manual/CcluaLoader.h
     manual/CCLuaValue.h
     manual/physics3d/cclua_physics3d_manual.h
-    manual/physics3d/cclua_physics3d_compat.hpp
     manual/ui/cclua_ui_manual.hpp
     manual/ui/cclua_ui_values.hpp
     manual/controller/cclua_controller_manual.hpp
