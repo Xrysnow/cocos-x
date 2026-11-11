@@ -26,6 +26,8 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/binding_macros_base.hpp
     manual/lua_conversion/detail/cocos/object.hpp
     manual/lua_conversion/detail/cocos/containers.hpp
+    manual/lua_conversion/detail/record.hpp
+    manual/lua_conversion/detail/cocos/navmesh.hpp
     manual/lua_conversion/detail/cocos/value_types.hpp
     manual/lua_conversion/detail/cocos/render_types.hpp
     manual/lua_conversion/detail/cocos/particle_types.hpp
@@ -39,8 +41,6 @@ set(lua_bindings_manual_headers
     manual/Lua-BindingsExport.h
     manual/tolua_fix.h
     manual/navmesh/cclua_navmesh_manual.h
-    manual/navmesh/cclua_navmesh_conversions.h
-    manual/navmesh/cclua_navmesh_compat.hpp
     manual/base/LuaScriptHandlerMgr.h
     manual/base/cclua_base_manual.hpp
     manual/CcluaLoader.h
@@ -74,7 +74,6 @@ set(lua_bindings_manual_files
     manual/ui/cclua_ui_manual.cpp
     manual/physics3d/cclua_physics3d_manual.cpp
     manual/physics3d/cclua_physics3d_retained.cpp
-    manual/navmesh/cclua_navmesh_conversions.cpp
     manual/navmesh/cclua_navmesh_manual.cpp
     )
 

@@ -26,7 +26,6 @@
 #if CC_USE_NAVMESH
 #include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_manual.h"
 #include "scripting/lua-bindings/auto/cclua_navmesh_auto.hpp"
-#include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_conversions.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include "navmesh/CCNavMesh.h"
@@ -116,54 +115,6 @@ int lua_cc_navmesh_NavMeshAgent_getUserData(lua_State* tolua_S)
     return 0;
 }
 
-int lua_cc_navmesh_NavMeshAgent_getCurrentOffMeshLinkData(lua_State* tolua_S)
-{
-    int argc = 0;
-    cocos2d::NavMeshAgent* cobj = nullptr;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"cc.NavMeshAgent",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (cocos2d::NavMeshAgent*)tolua_tousertype(tolua_S,1,0);
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_cc_navmesh_NavMeshAgent_getCurrentOffMeshLinkData'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 0)
-    {
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_navmesh_NavMeshAgent_getCurrentOffMeshLinkData'", nullptr);
-            return 0;
-        }
-        auto&& ret = cobj->getCurrentOffMeshLinkData();
-        offmeshlinkdata_to_luaval(tolua_S, ret);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.NavMeshAgent:getCurrentOffMeshLinkData",argc, 0);
-    return 0;
-
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_navmesh_NavMeshAgent_getCurrentOffMeshLinkData'.",&tolua_err);
-#endif
-
-    return 0;
-}
-
 int lua_cc_navmesh_NavMeshAgent_setUserData(lua_State* tolua_S)
 {
     int argc = 0;
@@ -213,43 +164,6 @@ int lua_cc_navmesh_NavMeshAgent_setUserData(lua_State* tolua_S)
     tolua_error(tolua_S,"#ferror in function 'lua_cc_navmesh_NavMeshAgent_setUserData'.",&tolua_err);
 #endif
 
-    return 0;
-}
-
-int lua_cc_navmesh_NavMeshAgent_create(lua_State* tolua_S)
-{
-    int argc = 0;
-    bool ok  = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertable(tolua_S,1,"cc.NavMeshAgent",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    argc = lua_gettop(tolua_S) - 1;
-
-    if (argc == 1)
-    {
-        cocos2d::NavMeshAgentParam arg0;
-        ok &= luaval_to_navmeshagentparam(tolua_S, 2, &arg0, "cc.NavMeshAgent:create");
-        if(!ok)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_cc_navmesh_NavMeshAgent_create'", nullptr);
-            return 0;
-        }
-        auto&& ret = cocos2d::NavMeshAgent::create(arg0);
-        object_to_luaval<cocos2d::NavMeshAgent>(tolua_S, "cc.NavMeshAgent",(cocos2d::NavMeshAgent*)ret);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.NavMeshAgent:create",argc, 1);
-    return 0;
-#if CC_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_cc_navmesh_NavMeshAgent_create'.",&tolua_err);
-#endif
     return 0;
 }
 
@@ -333,9 +247,7 @@ int register_all_cc_navmesh_manual(lua_State* L)
     if (lua_istable(L, -1)) {
         tolua_function(L, "new", lua_cc_navmesh_NavMeshAgent_constructor);
         tolua_function(L, "getUserData", lua_cc_navmesh_NavMeshAgent_getUserData);
-        tolua_function(L, "getCurrentOffMeshLinkData", lua_cc_navmesh_NavMeshAgent_getCurrentOffMeshLinkData);
         tolua_function(L, "setUserData", lua_cc_navmesh_NavMeshAgent_setUserData);
-        tolua_function(L, "create", lua_cc_navmesh_NavMeshAgent_create);
     }
     lua_pop(L, 1);
     lua_getfield(L, LUA_REGISTRYINDEX, "cc.NavMeshObstacle");

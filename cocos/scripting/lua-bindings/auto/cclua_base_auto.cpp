@@ -372,6 +372,12 @@ int lua_cocos2d_Texture2D_setRenderTarget(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Texture2D::*)(bool)>(&cocos2d::Texture2D::setRenderTarget));
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cocos2d_Texture2D_setTexParameters_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Texture2D", "cc.Texture2D:setTexParameters");
+	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::Texture2D::*)(const cocos2d::Texture2D::TexParams&)>(&cocos2d::Texture2D::setTexParameters));
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cocos2d_Texture2D_updateTextureDescriptor(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Texture2D", "cc.Texture2D:updateTextureDescriptor");
@@ -430,6 +436,7 @@ int luaReg_Core_ccTexture2D(lua_State* lua_S)
 	LUA_METHOD("setMaxT", lua_cocos2d_Texture2D_setMaxT);
 	LUA_METHOD("setPremultipliedAlpha", lua_cocos2d_Texture2D_setPremultipliedAlpha);
 	LUA_METHOD("setRenderTarget", lua_cocos2d_Texture2D_setRenderTarget);
+	LUA_METHOD("setTexParameters", lua_cocos2d_Texture2D_setTexParameters_1);
 	LUA_METHOD("updateTextureDescriptor", lua_cocos2d_Texture2D_updateTextureDescriptor);
 	LUA_METHOD("updateWithImage", lua_cocos2d_Texture2D_updateWithImage);
 	LUA_METHOD("getDefaultAlphaPixelFormat", lua_cocos2d_Texture2D_getDefaultAlphaPixelFormat);

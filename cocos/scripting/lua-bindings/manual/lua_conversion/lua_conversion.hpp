@@ -9,5 +9,6 @@
 #include "detail/cocos/particle_types.hpp"
 #include "detail/cocos/terrain.hpp"
 #include "detail/cocos/physics.hpp"
+#include "detail/cocos/navmesh.hpp"
 #include "detail/cocos/app_directories.hpp"
 #include "detail/binding_macros.hpp"

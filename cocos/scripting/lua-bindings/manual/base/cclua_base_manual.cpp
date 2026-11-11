@@ -1874,31 +1874,7 @@ tolua_lerror:
 #endif
 }
 
-static int tocclua_Texture2D_setTexParameters(lua_State* lua_S)
-{
-    LUA_INVOKE_HEADER("cc.Texture2D", "cc.Texture2D:setTexParameters");
-    LUA_TRY_INVOKE(4, [](cocos2d::Texture2D* texture, cocos2d::backend::SamplerFilter min,
-        cocos2d::backend::SamplerFilter mag, cocos2d::backend::SamplerAddressMode s,
-        cocos2d::backend::SamplerAddressMode t) {
-        texture->setTexParameters(cocos2d::Texture2D::TexParams(min, mag, s, t));
-    });
-    LUA_INVOKE_FOOTER("4");
-}
 
-
-
-static void extendTexture2D(lua_State* tolua_S)
-{
-    lua_pushstring(tolua_S, "cc.Texture2D");
-    lua_rawget(tolua_S, LUA_REGISTRYINDEX);
-    if (lua_istable(tolua_S, -1))
-    {
-        lua_pushstring(tolua_S, "setTexParameters");
-        lua_pushcfunction(tolua_S, tocclua_Texture2D_setTexParameters);
-        lua_rawset(tolua_S, -3);
-    }
-    lua_pop(tolua_S, 1);
-}
 
 static void extendMenuItem(lua_State* tolua_S)
 {
@@ -3617,7 +3593,6 @@ int register_all_cc_manual(lua_State* tolua_S)
     extendDrawNode(tolua_S);
     extendLayerMultiplex(tolua_S);
     extendFileUtils(tolua_S);
-    extendTexture2D(tolua_S);
     extendEventListenerKeyboard(tolua_S);
     extendEventListenerTouchOneByOne(tolua_S);
     extendEventListenerTouchAllAtOnce(tolua_S);

@@ -1,13 +1,19 @@
 #include "cclua_navmesh_auto.hpp"
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
-#include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_compat.hpp"
+#include "lua_conversion/lua_conversion.hpp"
 #include "navmesh/CCNavMesh.h"
 
 int lua_cocos2d_NavMeshAgent_completeOffMeshLink(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.NavMeshAgent", "cc.NavMeshAgent:completeOffMeshLink");
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::NavMeshAgent::*)()>(&cocos2d::NavMeshAgent::completeOffMeshLink));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cocos2d_NavMeshAgent_getCurrentOffMeshLinkData_1(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.NavMeshAgent", "cc.NavMeshAgent:getCurrentOffMeshLinkData");
+	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::OffMeshLinkData(cocos2d::NavMeshAgent::*)()>(&cocos2d::NavMeshAgent::getCurrentOffMeshLinkData));
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_NavMeshAgent_getCurrentVelocity(lua_State* lua_S)
@@ -73,8 +79,8 @@ int lua_cocos2d_NavMeshAgent_isOnOffMeshLink(lua_State* lua_S)
 int lua_cocos2d_NavMeshAgent_move(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.NavMeshAgent", "cc.NavMeshAgent:move");
-	LUA_TRY_INVOKE(2, static_cast<void(cocos2d::NavMeshAgent::*)(const cocos2d::Vec3&, const cocos2d::NavMeshAgent::MoveCallback&)>(&cocos2d::NavMeshAgent::move));
-	LUA_TRY_INVOKE(1, [](cocos2d::NavMeshAgent* obj,const cocos2d::Vec3& arg0){{return obj->move(arg0);}});
+	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::NavMeshAgent::*)(const cocos2d::Vec3&, const cocos2d::NavMeshAgent::MoveCallback&)>(&cocos2d::NavMeshAgent::move)));
+	LUA_TRY_INVOKE(1, ([](cocos2d::NavMeshAgent* obj,const cocos2d::Vec3& arg0){{return obj->move(arg0);}}));
 	LUA_INVOKE_FOOTER("1,2");
 }
 int lua_cocos2d_NavMeshAgent_pause(lua_State* lua_S)
@@ -167,6 +173,12 @@ int lua_cocos2d_NavMeshAgent_syncToNode(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::NavMeshAgent::*)()>(&cocos2d::NavMeshAgent::syncToNode));
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cocos2d_NavMeshAgent_create_1(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.NavMeshAgent", "cc.NavMeshAgent:create");
+	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::NavMeshAgent*(*)(const cocos2d::NavMeshAgentParam&)>(&cocos2d::NavMeshAgent::create));
+	LUA_SINVOKE_FOOTER("1");
+}
 int lua_cocos2d_NavMeshAgent_getNavMeshAgentComponentName(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.NavMeshAgent", "cc.NavMeshAgent:getNavMeshAgentComponentName");
@@ -180,6 +192,7 @@ int luaReg_NavMesh_ccNavMeshAgent(lua_State* lua_S)
 		cocos2d::Component, "cc.Component",
 		nullptr, nullptr);
 	LUA_METHOD("completeOffMeshLink", lua_cocos2d_NavMeshAgent_completeOffMeshLink);
+	LUA_METHOD("getCurrentOffMeshLinkData", lua_cocos2d_NavMeshAgent_getCurrentOffMeshLinkData_1);
 	LUA_METHOD("getCurrentVelocity", lua_cocos2d_NavMeshAgent_getCurrentVelocity);
 	LUA_METHOD("getHeight", lua_cocos2d_NavMeshAgent_getHeight);
 	LUA_METHOD("getMaxAcceleration", lua_cocos2d_NavMeshAgent_getMaxAcceleration);
@@ -206,6 +219,7 @@ int luaReg_NavMesh_ccNavMeshAgent(lua_State* lua_S)
 	LUA_METHOD("stop", lua_cocos2d_NavMeshAgent_stop);
 	LUA_METHOD("syncToAgent", lua_cocos2d_NavMeshAgent_syncToAgent);
 	LUA_METHOD("syncToNode", lua_cocos2d_NavMeshAgent_syncToNode);
+	LUA_METHOD("create", lua_cocos2d_NavMeshAgent_create_1);
 	LUA_METHOD("getNavMeshAgentComponentName", lua_cocos2d_NavMeshAgent_getNavMeshAgentComponentName);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
@@ -232,7 +246,7 @@ int lua_cocos2d_NavMeshObstacle_getSyncFlag(lua_State* lua_S)
 int lua_cocos2d_NavMeshObstacle_initWith(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.NavMeshObstacle", "cc.NavMeshObstacle:initWith");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(cocos2d::NavMeshObstacle::*)(float, float)>(&cocos2d::NavMeshObstacle::initWith));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(cocos2d::NavMeshObstacle::*)(float, float)>(&cocos2d::NavMeshObstacle::initWith)));
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_NavMeshObstacle_setSyncFlag(lua_State* lua_S)
@@ -256,7 +270,7 @@ int lua_cocos2d_NavMeshObstacle_syncToObstacle(lua_State* lua_S)
 int lua_cocos2d_NavMeshObstacle_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.NavMeshObstacle", "cc.NavMeshObstacle:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::NavMeshObstacle*(*)(float, float)>(&cocos2d::NavMeshObstacle::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::NavMeshObstacle*(*)(float, float)>(&cocos2d::NavMeshObstacle::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int lua_cocos2d_NavMeshObstacle_getNavMeshObstacleComponentName(lua_State* lua_S)
@@ -335,7 +349,7 @@ int lua_cocos2d_NavMesh_update(lua_State* lua_S)
 int lua_cocos2d_NavMesh_create(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("cc.NavMesh", "cc.NavMesh:create");
-	LUA_TRY_INVOKE_R(2, static_cast<cocos2d::NavMesh*(*)(std::string_view, std::string_view)>(&cocos2d::NavMesh::create));
+	LUA_TRY_INVOKE_R(2, (static_cast<cocos2d::NavMesh*(*)(std::string_view, std::string_view)>(&cocos2d::NavMesh::create)));
 	LUA_SINVOKE_FOOTER("2");
 }
 int luaReg_NavMesh_ccNavMesh(lua_State* lua_S)
@@ -358,6 +372,8 @@ int luaReg_NavMesh_ccNavMesh(lua_State* lua_S)
 	return 0;
 }
 #endif
+
+int register_all_cc_navmesh_manual(lua_State* lua_S);
 
 int register_all_cc_navmesh(lua_State* lua_S)
 {

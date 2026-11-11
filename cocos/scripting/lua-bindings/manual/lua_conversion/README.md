@@ -77,9 +77,8 @@ native defaults; supplied fields must convert successfully. Output includes all
 fields, including nested descriptor tables.
 
 - `TextureDescriptor`: `textureType`, `textureFormat`, `textureUsage`, `width`,
-  `height`, `depth`, `samplerDescriptor`. The nested sampler uses the existing
-  `minFilter`, `magFilter`, `sAddressMode`, `tAddressMode` conversion, including
-  its legacy `wrapS`/`wrapT` input aliases.
+  `height`, `depth`, `samplerDescriptor`. The nested sampler uses the canonical
+  `minFilter`, `magFilter`, `sAddressMode`, `tAddressMode` record below.
 - `StencilDescriptor`: `stencilFailureOperation`, `depthFailureOperation`,
   `depthStencilPassOperation`, `stencilCompareFunction`, `readMask`, `writeMask`.
 - `DepthStencilDescriptor`: `depthCompareFunction`, `backFaceStencil`,
@@ -89,6 +88,40 @@ Implementation: [value_types.hpp](detail/cocos/value_types.hpp),
 [particle_types.hpp](detail/cocos/particle_types.hpp), and
 [render_types.hpp](detail/cocos/render_types.hpp). `GLContextAttrs` remains
 outside these conversions.
+
+## Canonical sampler and navigation records
+
+`SamplerDescriptor` and its native alias `Texture2D::TexParams` use one shared
+plain-table conversion. Only `minFilter`, `magFilter`, `sAddressMode` and
+`tAddressMode` are accepted. Missing/nil fields keep the native LINEAR filters
+and CLAMP_TO_EDGE address modes. Supplied values must match declared native enum
+values, including DONT_CARE. Unknown keys (including wrapS/wrapT), fractional or
+unknown enum values fail. Texture2D's generated setter takes one such table;
+TextureCube and TextureBackend use the same conversion.
+
+`NavMeshAgentParam` is a partial table with exactly the ten native field names.
+Missing/nil fields preserve the native constructor defaults: radius=0.6,
+height=2, maxAcceleration=8, maxSpeed=3.5, collisionQueryRange=7.2,
+pathOptimizationRange=18, separationWeight=2, updateFlags=27,
+obstacleAvoidanceType=3, queryFilterType=0. An overridden radius does not alter
+other omitted fields. Floats must be finite and fit float; radius, acceleration,
+speed and separation are nonnegative; height and the two ranges are positive.
+The three byte fields require integral values; updateFlags may contain only
+Detour's five defined bits, avoidance index is 0..7 and query filter is 0..15.
+
+Both inputs read raw own fields without metamethods, reject unknown/non-string
+keys and publish the converted value only on complete success. Numeric fields
+use shared scalar input conversion (so numeric strings remain accepted), then
+apply these schema constraints. Input tables and conversion destinations remain
+unchanged on failure. The reusable implementation is in
+[record.hpp](detail/record.hpp), [value_types.hpp](detail/cocos/value_types.hpp)
+and [navmesh.hpp](detail/cocos/navmesh.hpp).
+
+`OffMeshLinkData` has an output-only shared conversion to a fresh table with
+independent `startPosition` and `endPosition` Vec3 tables. No userdata identity or
+borrowed lifetime is attached to the snapshot. Navigation conversions and native
+headers are guarded by CC_USE_NAVMESH. The old module compatibility macros and
+local descriptor/output converters have been removed.
 
 ## Value userdata ownership
 

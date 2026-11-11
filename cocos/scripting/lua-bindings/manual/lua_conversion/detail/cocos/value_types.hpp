@@ -1,5 +1,6 @@
 #pragma once
 #include "../conversion.hpp"
+#include "../record.hpp"
 #include "object.hpp"
 #include "../value_userdata.hpp"
 #include "renderer/backend/VertexLayout.h"
@@ -301,26 +302,25 @@ namespace lua
 	struct to_native<cocos2d::backend::SamplerDescriptor> {
 		static bool F(lua_State* L, int lo, cocos2d::backend::SamplerDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
-			if (!is_indexable(L, lo)) return false;
+			if (!record_detail::fields(L, lo, {"minFilter", "magFilter", "sAddressMode", "tAddressMode"})) return false;
+			using Filter = cocos2d::backend::SamplerFilter;
+			using Address = cocos2d::backend::SamplerAddressMode;
+			const std::initializer_list<Filter> filters = {Filter::NEAREST, Filter::NEAREST_MIPMAP_NEAREST,
+				Filter::NEAREST_MIPMAP_LINEAR, Filter::LINEAR, Filter::LINEAR_MIPMAP_LINEAR,
+				Filter::LINEAR_MIPMAP_NEAREST, Filter::DONT_CARE};
+			const std::initializer_list<Address> addresses = {Address::REPEAT, Address::MIRROR_REPEAT,
+				Address::CLAMP_TO_EDGE, Address::DONT_CARE};
 			cocos2d::backend::SamplerDescriptor value;
-			const auto field = [&](const char* key, auto* out, const char* alias = nullptr) {
-				lua_getfield(L, lo, key);
-				if (lua_isnil(L, -1) && alias) {
-					lua_pop(L, 1);
-					lua_getfield(L, lo, alias);
-				}
-				const bool ok = lua_isnil(L, -1) || luaval_to_native(L, -1, out, fName);
-				lua_pop(L, 1);
-				return ok;
-			};
-			if (!field("magFilter", &value.magFilter) || !field("minFilter", &value.minFilter) ||
-				!field("sAddressMode", &value.sAddressMode, "wrapS") || !field("tAddressMode", &value.tAddressMode, "wrapT")) return false;
+			if (!record_detail::enumeration(L, lo, "minFilter", &value.minFilter, filters, fName) ||
+				!record_detail::enumeration(L, lo, "magFilter", &value.magFilter, filters, fName) ||
+				!record_detail::enumeration(L, lo, "sAddressMode", &value.sAddressMode, addresses, fName) ||
+				!record_detail::enumeration(L, lo, "tAddressMode", &value.tAddressMode, addresses, fName)) return false;
 			*outValue = value;
 			return true;
 		}
 	};
 
-	// Texture2D::TexParams aliases this exact native type, including its legacy wrapS/wrapT keys.
+	// Texture2D::TexParams is the same native type and uses the same canonical record.
 	LUA_TO_LUA_STRUCT4(cocos2d::backend::SamplerDescriptor, minFilter, magFilter, sAddressMode, tAddressMode);
 
 	template<>
