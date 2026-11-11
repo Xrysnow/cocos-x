@@ -3,7 +3,6 @@ set(cocos_root ${COCOS2DX_ROOT_PATH})
 set(lua_bindings_manual_headers
     manual/CCComponentLua.h
     manual/3d/cclua_3d_manual.h
-    manual/3d/cclua_geometry_compat.hpp
     manual/CCLuaStack.h
     manual/CCLuaEngine.h
     manual/lua_module_register.h

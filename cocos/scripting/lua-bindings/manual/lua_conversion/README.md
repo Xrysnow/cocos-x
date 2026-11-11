@@ -123,6 +123,21 @@ borrowed lifetime is attached to the snapshot. Navigation conversions and native
 headers are guarded by CC_USE_NAVMESH. The old module compatibility macros and
 local descriptor/output converters have been removed.
 
+## Geometry bridges
+
+`cc.AABB:getCorners()` and `cc.OBB:getCorners()` take no arguments and return
+`std::array<Vec3, 8>` through the shared conversion: one Lua array containing
+exactly eight independent Vec3 tables, in native corner order.
+
+`cc.AABB:updateMinMax(points)` takes a `std::vector<Vec3>` (one Lua array),
+updates the existing box and returns `std::vector<Vec3>{min, max}` as a fresh
+Lua array. There is no separate count argument. An empty input preserves the
+box's bounds and returns those bounds. Input points are not modified.
+
+These adapters use shared invocation and `LUA_INVOKE_FOOTER`; Geometry's
+generated methods also use the shared default footer. `cc.Ray:intersects` is
+not registered. Native C++ geometry APIs and value ownership are unchanged.
+
 ## Value userdata ownership
 
 Only an explicit `value_type<T>` specialization opts a native class into userdata

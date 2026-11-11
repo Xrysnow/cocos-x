@@ -1,5 +1,5 @@
 #include "cclua_geometry_auto.hpp"
-#include "scripting/lua-bindings/manual/3d/cclua_geometry_compat.hpp"
+#include "lua_conversion/lua_conversion.hpp"
 #include "3d/CCAABB.h"
 #include "3d/CCOBB.h"
 #include "3d/CCRay.h"

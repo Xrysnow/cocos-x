@@ -30,6 +30,8 @@
 #include "3d/CCBundle3D.h"
 #include "3d/CCMeshRenderer.h"
 #include "3d/CCTerrain.h"
+#include <array>
+#include <vector>
 
 // ThreeD bridges only: shared conversion/invocation owns checks, diagnostics and callbacks.
 namespace three_d_binding {
@@ -143,233 +145,39 @@ static int register_all_cc_3d_manual(lua_State* L)
     return 0;
 }
 
-int cclua_3d_AABB_getCorners(lua_State* L)
+int cclua_3d_AABB_getCorners(lua_State* lua_S)
 {
-    const int inputTop = lua_gettop(L);
-    int argc            = 0;
-    const cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
-        return luaL_error(L, "invalid class object in 'cc.AABB:getCorners'");
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_getCorners'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = inputTop - 1;
-    if (argc == 1)
-    {
-        cocos2d::Vec3* arg0;
-
-        ok &= luaval_to_object<cocos2d::Vec3>(L, 2, "cc.Vec3", &arg0, "cc.AABB:getCorners");
-        if (!ok)
-            return 0;
-        cobj->getCorners(arg0);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:getCorners", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_getCorners'.", &tolua_err);
-#endif
-
-    return 0;
+    LUA_INVOKE_HEADER("cc.AABB", "cc.AABB:getCorners");
+    const auto corners = [](const cocos2d::AABB* self) {
+        std::array<cocos2d::Vec3, 8> result{};
+        self->getCorners(result.data());
+        return result;
+    };
+    LUA_TRY_INVOKE_R(0, corners);
+    LUA_INVOKE_FOOTER("0");
 }
 
-int cclua_3d_AABB_updateMinMax(lua_State* L)
+int cclua_3d_AABB_updateMinMax(lua_State* lua_S)
 {
-    const int inputTop = lua_gettop(L);
-    int argc            = 0;
-    cocos2d::AABB* cobj = nullptr;
-    bool ok             = true;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.AABB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
-        return luaL_error(L, "invalid class object in 'cc.AABB:updateMinMax'");
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_AABB_updateMinMax'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = inputTop - 1;
-    if (argc == 2)
-    {
-        const cocos2d::Vec3* arg0;
-        ssize_t arg1;
-
-        ok &= luaval_to_object<const cocos2d::Vec3>(L, 2, "cc.Vec3", &arg0, "cc.AABB:updateMinMax");
-
-        ok &= luaval_to_ssize_t(L, 3, &arg1, "cc.AABB:updateMinMax");
-        if (!ok)
-            return 0;
-        cobj->updateMinMax(arg0, arg1);
-        return 0;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.AABB:updateMinMax", argc, 2);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_AABB_updateMinMax'.", &tolua_err);
-#endif
-
-    return 0;
+    LUA_INVOKE_HEADER("cc.AABB", "cc.AABB:updateMinMax");
+    const auto update = [](cocos2d::AABB* self, const std::vector<cocos2d::Vec3>& points) {
+        self->updateMinMax(points.data(), static_cast<ssize_t>(points.size()));
+        return std::vector<cocos2d::Vec3>{self->getMin(), self->getMax()};
+    };
+    LUA_TRY_INVOKE_R(1, update);
+    LUA_INVOKE_FOOTER("1");
 }
 
-int cclua_3d_OBB_getCorners(lua_State* L)
+int cclua_3d_OBB_getCorners(lua_State* lua_S)
 {
-    const int inputTop = lua_gettop(L);
-    int argc           = 0;
-    const cocos2d::OBB* cobj = nullptr;
-
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-#if CC_DEBUG >= 1
-    if (!tolua_isusertype(L, 1, "cc.OBB", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    if (!lua::luaval_to_native(L, 1, &cobj) || !cobj)
-        return luaL_error(L, "invalid class object in 'cc.OBB:getCorners'");
-
-#if CC_DEBUG >= 1
-    if (!cobj)
-    {
-        tolua_error(L, "invalid 'cobj' in function 'cclua_3d_OBB_getCorners'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = inputTop - 1;
-    if (argc == 1)
-    {
-        cocos2d::Vec3* arg0;
-#if CC_DEBUG >= 1
-        if (!tolua_istable(L, 2, 0, &tolua_err))
-            goto tolua_lerror;
-#endif
-
-        size_t len = lua_objlen(L, 2);
-        if (len == 0)
-        {
-            luaL_error(L, "Table's len equal 0");
-            return 0;
-        }
-
-        arg0 = new cocos2d::Vec3[len];
-        for (int i = 1; i <= len; i++)
-        {
-            lua_pushnumber(L, i);
-            lua_gettable(L, 2);
-            if (lua_isnil(L, -1))
-            {
-                arg0[i - 1] = cocos2d::Vec3(0, 0, 0);
-            }
-            else
-            {
-                luaval_to_vec3(L, -1, &arg0[i - 1], "cc.OBB:getCorners");
-            }
-            lua_pop(L, 1);
-        }
-
-        cobj->getCorners(arg0);
-
-        lua_newtable(L);
-
-        for (int i = 1; i <= len; i++)
-        {
-            lua_pushnumber(L, i);
-            vec3_to_luaval(L, arg0[i - 1]);
-            lua_rawset(L, -3);
-        }
-        CC_SAFE_DELETE_ARRAY(arg0);
-
-        return 1;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.OBB:getCorners", argc, 1);
-    return 0;
-
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_OBB_getCorners'.", &tolua_err);
-#endif
-
-    return 0;
-}
-
-int cclua_3d_Ray_intersects(lua_State* L)
-{
-    const int inputTop = lua_gettop(L);
-    int argc           = 0;
-    const cocos2d::Ray* self = nullptr;
-    bool ok            = true;
-#if CC_DEBUG >= 1
-    tolua_Error tolua_err;
-    if (!tolua_isusertype(L, 1, "cc.Ray", 0, &tolua_err))
-        goto tolua_lerror;
-#endif
-
-    if (!lua::luaval_to_native(L, 1, &self) || !self)
-        return luaL_error(L, "invalid class object in 'cc.Ray:intersects'");
-#if CC_DEBUG >= 1
-    if (nullptr == self)
-    {
-        tolua_error(L, "invalid 'self' in function 'cclua_3d_Ray_intersects'\n", nullptr);
-        return 0;
-    }
-#endif
-    argc = inputTop - 1;
-    if (1 == argc)
-    {
-        const cocos2d::OBB* arg0 = nullptr;
-        ok &= lua::luaval_to_native(L, 2, &arg0, "cc.Ray:intersects") && arg0;
-
-        if (!ok)
-            return 0;
-
-        float distance;
-        bool ret = self->intersects(*arg0, &distance);
-        tolua_pushboolean(L, ret);
-        tolua_pushnumber(L, (lua_Number)distance);
-        return 2;
-    }
-    luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "cc.Ray:intersects", argc, 1);
-    return 0;
-#if CC_DEBUG >= 1
-tolua_lerror:
-    tolua_error(L, "#ferror in function 'cclua_3d_Ray_intersects'.", &tolua_err);
-    return 0;
-#endif
+    LUA_INVOKE_HEADER("cc.OBB", "cc.OBB:getCorners");
+    const auto corners = [](const cocos2d::OBB* self) {
+        std::array<cocos2d::Vec3, 8> result{};
+        self->getCorners(result.data());
+        return result;
+    };
+    LUA_TRY_INVOKE_R(0, corners);
+    LUA_INVOKE_FOOTER("0");
 }
 
 // Retain the old native Vec3-buffer constructor; ordinary constructors are generated.
@@ -402,9 +210,6 @@ int register_all_cocos3d_manual_class(lua_State* L)
     lua_setfield(L, -2, "new");
     lua_pop(L, 1);
 
-    lua_getfield(L, LUA_REGISTRYINDEX, "cc.Ray");
-    tolua_function(L, "intersects", cclua_3d_Ray_intersects);
-    lua_pop(L, 1);
     return 0;
 }
 
