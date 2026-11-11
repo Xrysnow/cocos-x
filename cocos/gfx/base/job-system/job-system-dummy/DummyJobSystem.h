@@ -33,7 +33,7 @@ using DummyJobToken = size_t;
 
 class DummyJobGraph;
 
-class DummyJobSystem final {
+class CC_DLL DummyJobSystem final {
 private:
     static DummyJobSystem *instance;
 

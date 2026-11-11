@@ -200,7 +200,7 @@ private:
     ccstd::vector<Swapchain *> _swapchains; // weak reference
 };
 
-class DefaultResource {
+class CC_DLL DefaultResource {
 public:
     explicit DefaultResource(Device *device);
 

@@ -36,7 +36,7 @@ class PassNode;
 class FrameGraph;
 class DevicePass;
 
-class DevicePassResourceTable final {
+class CC_DLL DevicePassResourceTable final {
 public:
     DevicePassResourceTable() = default;
     ~DevicePassResourceTable() = default;

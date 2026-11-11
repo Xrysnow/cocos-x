@@ -70,9 +70,7 @@ option(CC_ENABLE_EXT_LIVE2D "Build extension Live2D" OFF)
 option(CC_ENABLE_EXT_EFFEKSEER "Build extension Effekseer" OFF)
 option(CC_ENABLE_EXT_IMGUI "Build extension ImGui" OFF)
 
-if(BUILD_LUA_LIBS)
-    set(CC_ENABLE_EXT_LUA ON)
-endif()
+set(CC_ENABLE_EXT_LUA ${BUILD_LUA_LIBS})
 
 if (CC_ENABLE_EXT_EFFEKSEER AND ANDROID) # effekseer-axmol require use glad
    set(CC_USE_GLAD TRUE CACHE INTERNAL "Forcing use glad for platforms which use GL backend" )
@@ -142,7 +140,13 @@ set(COCOS_SRC cocos2d.cpp
 
 list(APPEND COCOS_SRC ${COCOS_HEADER})
 
-add_library(${COCOS_CORE_LIB} ${COCOS_SRC})
+if(CC_BUILD_SHARED_LIBS)
+    add_library(${COCOS_CORE_LIB} SHARED ${COCOS_SRC})
+    set(_cc_core_link_scope PRIVATE)
+else()
+    add_library(${COCOS_CORE_LIB} STATIC ${COCOS_SRC})
+    set(_cc_core_link_scope PUBLIC)
+endif()
 target_compile_features(${COCOS_CORE_LIB} PUBLIC cxx_std_20)
 target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
     CC_ENABLE_VIDEO_PLATFORM=$<BOOL:${CC_ENABLE_VIDEO_PLATFORM}>)
@@ -158,7 +162,7 @@ endif()
 target_compile_definitions(${COCOS_CORE_LIB} PRIVATE
     "CC_APP_DIRECTORY_DEFAULT_ID=\"${CC_APP_DIRECTORY_DEFAULT_ID}\"")
 if(WINDOWS)
-    target_link_libraries(${COCOS_CORE_LIB} shell32 ole32)
+    target_link_libraries(${COCOS_CORE_LIB} PRIVATE shell32 ole32)
 endif()
 
 if(AUDIO_USE_LIBVORBIS)
@@ -167,16 +171,30 @@ endif()
 
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
-# gfx is an engine-owned static library; its dependencies are created above.
+# gfx remains static in the original mode and supplies objects to the core DLL.
 add_subdirectory(gfx)
-target_link_libraries(${COCOS_CORE_LIB} external OpenAL ogg cocos_gfx)
+target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} external OpenAL ogg cocos_gfx)
+if(CC_BUILD_SHARED_LIBS)
+    # Preserve the public header requirements without propagating the internal
+    # gfx objects or implementation libraries into consumers' link commands.
+    foreach(_cc_headers_target external cocos_gfx)
+        target_include_directories(${COCOS_CORE_LIB} PUBLIC
+            $<TARGET_PROPERTY:${_cc_headers_target},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
+            $<TARGET_PROPERTY:${_cc_headers_target},INTERFACE_COMPILE_DEFINITIONS>)
+    endforeach()
+endif()
 
 if(CC_ENABLE_VIDEO_TEXTURE)
     include(video/CMakeLists.txt)
     add_subdirectory("${COCOS2DX_ROOT_PATH}/external/ffmpeg-prebuilt"
         "${ENGINE_BINARY_PATH}/external/ffmpeg-prebuilt")
     target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_ENABLE_VIDEO_TEXTURE=1)
-    target_link_libraries(${COCOS_CORE_LIB} ext_ffmpeg)
+    target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} ext_ffmpeg)
+    if(CC_BUILD_SHARED_LIBS)
+        target_include_directories(${COCOS_CORE_LIB} PUBLIC
+            $<TARGET_PROPERTY:ext_ffmpeg,INTERFACE_INCLUDE_DIRECTORIES>)
+    endif()
 endif()
 
 # add base macro define and compile options
@@ -236,10 +254,10 @@ if(WINDOWS)
         endif()
 
         if(CMAKE_GENERATOR STREQUAL "Ninja")
-            target_link_libraries(${COCOS_CORE_LIB} ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/${ARCH_ALIAS}/WebView2Loader.dll.lib)
+            target_link_libraries(${COCOS_CORE_LIB} PRIVATE ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/${ARCH_ALIAS}/WebView2Loader.dll.lib)
             target_include_directories(${COCOS_CORE_LIB} PUBLIC ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/include)
         else()
-            target_link_libraries(${COCOS_CORE_LIB} ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/Microsoft.Web.WebView2.targets)
+            target_link_libraries(${COCOS_CORE_LIB} PRIVATE ${CMAKE_BINARY_DIR}/packages/Microsoft.Web.WebView2/build/native/Microsoft.Web.WebView2.targets)
         endif()
         target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
             CC_ENABLE_MSEDGE_WEBVIEW2=1 CC_HAVE_WEBVIEW2 AX_HAVE_WEBVIEW2)

@@ -40,7 +40,7 @@ class RenderTarget;
 /**
  * Render pipeline
  */
-class RenderPipeline : public cocos2d::Ref
+class CC_DLL RenderPipeline : public cocos2d::Ref
 {
 public:
     virtual void update(const RenderTarget*, const PipelineDescriptor& pipelineDescirptor) = 0;

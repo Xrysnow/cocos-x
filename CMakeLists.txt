@@ -42,8 +42,18 @@ set(CMAKE_MODULE_PATH ${COCOS2DX_ROOT_PATH}/cmake/Modules/)
 include(PreventInSourceBuilds)
 
 # Load shared settings before creating engine targets.
+option(BUILD_LUA_LIBS "Build lua libraries" ON)
 include(CocosBuildSet)
 
-set(BUILD_LUA_LIBS ON) 
+# Reconfigure from the selected extensions rather than a previous cache list.
+set(CC_EXTENSION_LIBS "" CACHE INTERNAL "extensions for auto link to target application" FORCE)
 
 add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
+list(REMOVE_ITEM CC_EXTENSION_LIBS "")
+list(REMOVE_DUPLICATES CC_EXTENSION_LIBS)
+set(CC_EXTENSION_LIBS "${CC_EXTENSION_LIBS}" CACHE INTERNAL "extensions for auto link to target application" FORCE)
+
+if(CC_BUILD_SHARED_LIBS)
+  include(CocosSharedPackage)
+  cocos_generate_shared_package()
+endif()

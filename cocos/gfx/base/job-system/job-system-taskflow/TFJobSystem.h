@@ -31,7 +31,7 @@
 
 namespace cc {
 
-class TFJobSystem final {
+class CC_DLL TFJobSystem final {
 public:
     static TFJobSystem *getInstance() {
         if (!_instance) {

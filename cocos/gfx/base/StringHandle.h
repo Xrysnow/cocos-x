@@ -25,10 +25,11 @@
 #pragma once
 
 #include "IndexHandle.h"
+#include "Macros.h"
 
 namespace cc {
 
-class StringHandle final : public IndexHandle<uint32_t> {
+class CC_DLL StringHandle final : public IndexHandle<uint32_t> {
 public:
     StringHandle() noexcept = default;
     explicit StringHandle(IndexType handle, const char *str) noexcept;

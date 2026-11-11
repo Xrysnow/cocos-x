@@ -42,14 +42,38 @@ struct Hasher final {
     ccstd::hash_t operator()(const T &info) const;
 };
 
+// Supported specializations live in GFXDef.cpp; the generic template has no implementation.
+#define DECLARE_HASHER(type) \
+    template <> struct CC_DLL Hasher<type> final { \
+        ccstd::hash_t operator()(const type &info) const; \
+    };
+
+DECLARE_HASHER(ColorAttachment)
+DECLARE_HASHER(DepthStencilAttachment)
+DECLARE_HASHER(SubpassDependency)
+DECLARE_HASHER(SubpassInfo)
+DECLARE_HASHER(RenderPassInfo)
+DECLARE_HASHER(FramebufferInfo)
+DECLARE_HASHER(TextureInfo)
+DECLARE_HASHER(TextureViewInfo)
+DECLARE_HASHER(BufferInfo)
+DECLARE_HASHER(SamplerInfo)
+DECLARE_HASHER(GeneralBarrierInfo)
+DECLARE_HASHER(TextureBarrierInfo)
+DECLARE_HASHER(BufferBarrierInfo)
+DECLARE_HASHER(Color)
+
+#undef DECLARE_HASHER
+
 // make this ccstd::hash compatible
 template <typename T, typename Enable = std::enable_if_t<std::is_class<T>::value>>
 ccstd::hash_t hash_value(const T &info) { return Hasher<T>()(info); } // NOLINT(readability-identifier-naming)
 
 #define DEFINE_CMP_OP(type)                            \
-    bool operator==(const type &lhs, const type &rhs); \
+    CC_DLL bool operator==(const type &lhs, const type &rhs); \
     inline bool operator!=(const type &lhs, const type &rhs) { return !(lhs == rhs); }
 
+DEFINE_CMP_OP(ColorAttachment)
 DEFINE_CMP_OP(DepthStencilAttachment)
 DEFINE_CMP_OP(SubpassInfo)
 DEFINE_CMP_OP(SubpassDependency)
@@ -127,24 +151,24 @@ constexpr DescriptorType DESCRIPTOR_DYNAMIC_TYPE = static_cast<DescriptorType>(
     static_cast<uint32_t>(DescriptorType::DYNAMIC_STORAGE_BUFFER) |
     static_cast<uint32_t>(DescriptorType::DYNAMIC_UNIFORM_BUFFER));
 
-extern const FormatInfo GFX_FORMAT_INFOS[];
+extern CC_DLL const FormatInfo GFX_FORMAT_INFOS[];
 
-std::pair<uint32_t, uint32_t> formatAlignment(Format format);
+CC_DLL std::pair<uint32_t, uint32_t> formatAlignment(Format format);
 
-uint32_t formatSize(Format format, uint32_t width, uint32_t height, uint32_t depth);
+CC_DLL uint32_t formatSize(Format format, uint32_t width, uint32_t height, uint32_t depth);
 
-uint32_t formatSurfaceSize(Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mips);
+CC_DLL uint32_t formatSurfaceSize(Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mips);
 
 /**
  * @en Get the memory size of the specified type.
  * @zh 得到 GFX 数据类型的大小。
  * @param type The target type.
  */
-uint32_t getTypeSize(gfx::Type type);
+CC_DLL uint32_t getTypeSize(gfx::Type type);
 
-uint32_t gcd(uint32_t a, uint32_t b);
+CC_DLL uint32_t gcd(uint32_t a, uint32_t b);
 
-uint32_t lcm(uint32_t a, uint32_t b);
+CC_DLL uint32_t lcm(uint32_t a, uint32_t b);
 
 } // namespace gfx
 } // namespace cc

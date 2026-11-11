@@ -5,7 +5,7 @@ CC_BACKEND_BEGIN
 
 class CommandBufferGFX;
 
-class DeviceGFX : public Device
+class CC_DLL DeviceGFX : public Device
 {
     void* windowHandle = nullptr;
     void* nativeRenderSurface = nullptr;

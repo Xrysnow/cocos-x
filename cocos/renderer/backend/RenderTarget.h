@@ -6,7 +6,7 @@
 
 CC_BACKEND_BEGIN
 
-class RenderTarget : public cocos2d::Ref
+class CC_DLL RenderTarget : public cocos2d::Ref
 {
 public:
     struct RenderBuffer

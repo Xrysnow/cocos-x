@@ -34,7 +34,7 @@
 namespace cc {
 namespace framegraph {
 
-class DevicePass final {
+class CC_DLL DevicePass final {
 public:
     DevicePass() = delete;
     DevicePass(const FrameGraph &graph, ccstd::vector<PassNode *> const &subpassNodes);

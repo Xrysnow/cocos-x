@@ -29,7 +29,7 @@
 namespace cc {
 namespace framegraph {
 
-class PassNodeBuilder final {
+class CC_DLL PassNodeBuilder final {
 public:
     PassNodeBuilder(FrameGraph &graph, PassNode &passNode) noexcept;
     PassNodeBuilder() = delete;

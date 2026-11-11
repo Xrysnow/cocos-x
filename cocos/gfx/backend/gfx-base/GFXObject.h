@@ -28,7 +28,7 @@
 namespace cc {
 namespace gfx {
 
-class GFXObject {
+class CC_DLL GFXObject {
 public:
     explicit GFXObject(ObjectType type);
     virtual ~GFXObject() = default;

@@ -25,6 +25,7 @@ message(STATUS "ENGINE_BINARY_PATH:" ${ENGINE_BINARY_PATH})
 message(STATUS "PYTHON_COMMAND: ${PYTHON_COMMAND}")
 message(STATUS "HOST_SYSTEM:" ${CMAKE_HOST_SYSTEM_NAME})
 option(BUILD_LUA_LIBS "Build lua libraries" OFF)
+option(CC_BUILD_SHARED_LIBS "Build the cocos core as a shared library with embedded gfx" OFF)
 
 # AUTO follows cocos' CC_DEBUG > 0 in the binding header. Only explicit
 # overrides are supplied to every target instantiating the templates.
@@ -45,6 +46,15 @@ include(CocosBuildHelpers)
 
 # Detect the platform and set common compiler options.
 include(CocosConfigDefine)
+
+if(CC_BUILD_SHARED_LIBS)
+    string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" _cc_shared_arch)
+    if(NOT (WINDOWS AND MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND _cc_shared_arch STREQUAL "x64"))
+        message(FATAL_ERROR
+            "CC_BUILD_SHARED_LIBS requires Windows x64 with MSVC; detected system '${CMAKE_SYSTEM_NAME}', compiler '${CMAKE_CXX_COMPILER_ID}', architecture '${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}'")
+    endif()
+    unset(_cc_shared_arch)
+endif()
 
 # Apply Xcode defaults after IOS/MACOSX detection and before creating targets.
 # Preserve deployment versions supplied through CMake or Xcode attributes.

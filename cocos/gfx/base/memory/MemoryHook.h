@@ -89,7 +89,7 @@ private:
     size_t _totalSize{0U};
 };
 
-extern MemoryHook GMemoryHook;
+extern CC_DLL MemoryHook GMemoryHook;
 
 } // namespace cc
 

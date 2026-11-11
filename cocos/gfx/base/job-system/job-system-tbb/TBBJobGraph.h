@@ -34,7 +34,7 @@ using TBBJobToken = tbb::flow::continue_msg;
 
 class TBBJobSystem;
 
-class TBBJobGraph final {
+class CC_DLL TBBJobGraph final {
 public:
     explicit TBBJobGraph(TBBJobSystem *system) noexcept {
         _nodes.emplace_back(_graph, [](TBBJobToken t) {});

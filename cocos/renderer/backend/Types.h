@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Macros.h"
+#include "platform/CCPlatformMacros.h"
 
 #include <assert.h>
 #include <cstdint>
@@ -79,7 +80,7 @@ struct UniformInfo
     bool needConvert = false;
 };
 
-struct UniformLocation
+struct CC_DLL UniformLocation
 {
     /**
      * in metal, those two locations represent to vertex and fragment location.

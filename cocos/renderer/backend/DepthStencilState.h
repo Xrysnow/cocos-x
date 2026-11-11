@@ -69,7 +69,7 @@ struct DepthStencilDescriptor
 /**
  * Store Depth and stencil status.
  */
-class DepthStencilState : public cocos2d::Ref
+class CC_DLL DepthStencilState : public cocos2d::Ref
 {
 public:
     virtual void update(const DepthStencilDescriptor& desc);

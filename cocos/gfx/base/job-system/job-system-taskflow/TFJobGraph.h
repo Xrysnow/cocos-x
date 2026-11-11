@@ -32,7 +32,7 @@ namespace cc {
 
 using TFJobToken = void;
 
-class TFJobGraph final {
+class CC_DLL TFJobGraph final {
 public:
     explicit TFJobGraph(TFJobSystem *system) noexcept : _executor(&system->_executor) {}
 

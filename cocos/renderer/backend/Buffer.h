@@ -44,7 +44,7 @@ CC_BACKEND_BEGIN
 /**
  * @brief Used to store vertex and index data data.
  */
-class Buffer : public cocos2d::Ref
+class CC_DLL Buffer : public cocos2d::Ref
 {
 public:
     /**

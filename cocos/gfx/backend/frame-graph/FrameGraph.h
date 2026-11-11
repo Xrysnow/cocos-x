@@ -37,7 +37,7 @@
 namespace cc {
 namespace framegraph {
 
-class FrameGraph final {
+class CC_DLL FrameGraph final {
 public:
     using ResourceHandleBlackboard = Blackboard<StringHandle, Handle::IndexType, Handle::UNINITIALIZED>;
 

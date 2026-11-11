@@ -32,7 +32,7 @@ namespace framegraph {
 
 using PassInsertPoint = uint16_t;
 
-class PassInsertPointManager final {
+class CC_DLL PassInsertPointManager final {
 public:
     PassInsertPointManager(const PassInsertPointManager &) = delete;
     PassInsertPointManager(PassInsertPointManager &&) noexcept = delete;

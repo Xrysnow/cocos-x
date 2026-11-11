@@ -179,6 +179,10 @@ set(COCOS_CORE_LIB cocos2d)
 
 add_library(${COCOS_LUA_LIB} STATIC ${lua_bindings_files})
 target_link_libraries(${COCOS_LUA_LIB} ${COCOS_CORE_LIB})
+if(CC_EXTENSION_LIBS)
+    # The archive's dependency contract must also work outside a host app.
+    target_link_libraries(${COCOS_LUA_LIB} ${CC_EXTENSION_LIBS})
+endif()
 add_dependencies(${COCOS_LUA_LIB} ${COCOS_CORE_LIB})
 
 if(MSVC)
@@ -187,6 +191,11 @@ endif()
 
 get_target_property(lua_ext_depend external CC_LUA_DEPEND)
 target_link_libraries(${COCOS_LUA_LIB} ${lua_ext_depend})
+if(CC_BUILD_SHARED_LIBS)
+    # These bindings own native yasio calls; the core's private implementation
+    # libraries are intentionally not part of its public link interface.
+    target_link_libraries(${COCOS_LUA_LIB} yasio)
+endif()
 
 target_include_directories(${COCOS_LUA_LIB}
     PUBLIC ${cocos_root}/cocos

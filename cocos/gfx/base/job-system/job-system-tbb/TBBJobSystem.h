@@ -33,7 +33,7 @@ namespace cc {
 
 class TBBJobGraph;
 
-class TBBJobSystem final {
+class CC_DLL TBBJobSystem final {
 public:
     static TBBJobSystem *getInstance() {
         if (!_instance) {

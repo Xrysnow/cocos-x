@@ -34,7 +34,7 @@ class PassNode;
 
 using ID = uint16_t;
 
-class VirtualResource {
+class CC_DLL VirtualResource {
 public:
     VirtualResource(StringHandle name, ID id, bool imported) noexcept;
     VirtualResource() noexcept = delete;

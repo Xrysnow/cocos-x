@@ -38,7 +38,7 @@ namespace framegraph {
 
 class FrameGraph;
 
-class PassNode final {
+class CC_DLL PassNode final {
 public:
     PassNode(PassInsertPoint insertPoint, StringHandle name, const ID &id, Executable *pass);
     ~PassNode() = default;

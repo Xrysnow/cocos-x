@@ -24,13 +24,14 @@
 
 #pragma once
 
+#include "base/Macros.h"
 #include "base/std/container/string.h"
 #include <functional>
 
 namespace cc::gfx {
 
 // FileUtils `enum class Status conflicts` with `#define Status int` in Xlib.h
-ccstd::string getPipelineCacheFolder();
-void setPipelineCacheFolderHandler(const std::function<ccstd::string()>& handler);
+CC_DLL ccstd::string getPipelineCacheFolder();
+CC_DLL void setPipelineCacheFolderHandler(const std::function<ccstd::string()>& handler);
 
 } // namespace cc::gfx

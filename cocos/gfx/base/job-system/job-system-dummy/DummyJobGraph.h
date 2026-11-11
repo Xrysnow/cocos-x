@@ -34,7 +34,7 @@ namespace cc {
 class DummyJobSystem;
 
 class DummyGraphNode;
-class DummyGraph final {
+class CC_DLL DummyGraph final {
 public:
     DummyGraph() = default;
     DummyGraph(const DummyGraph &) = delete;
@@ -79,7 +79,7 @@ private:
     Fn _task;
 };
 
-class DummyGraphNode final {
+class CC_DLL DummyGraphNode final {
 public:
     DummyGraphNode() = default;
     DummyGraphNode(const DummyGraphNode &) = delete;
@@ -120,7 +120,7 @@ size_t DummyGraph::addNode(Fn &&fn) {
 
 // exported declarations
 
-class DummyJobGraph final {
+class CC_DLL DummyJobGraph final {
 public:
     explicit DummyJobGraph(DummyJobSystem * /*system*/) noexcept {}
     DummyJobGraph(const DummyJobGraph &) = delete;

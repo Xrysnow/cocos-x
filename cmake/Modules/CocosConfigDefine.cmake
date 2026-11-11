@@ -90,14 +90,12 @@ function(use_cocos2dx_compile_define target)
             PUBLIC _CRT_SECURE_NO_WARNINGS
             PUBLIC _SCL_SECURE_NO_WARNINGS
         )
-        if(BUILD_SHARED_LIBS)
+        if(CC_BUILD_SHARED_LIBS)
+            # Both the core and its gfx object library produce the same DLL.
+            # Consumers must see dllimport, never the producer definitions.
             target_compile_definitions(${target} 
-                PUBLIC _USRDLL
-                PUBLIC _EXPORT_DLL_
-                PUBLIC _USEGUIDLL
-                PUBLIC _USREXDLL
-                PUBLIC _USRSTUDIODLL
-                PUBLIC _USE3DDLL
+                PRIVATE _USRDLL
+                PRIVATE _USEGUIDLL
             )
         else()
             target_compile_definitions(${target} PUBLIC CC_STATIC)

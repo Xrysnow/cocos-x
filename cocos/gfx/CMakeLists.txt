@@ -62,6 +62,8 @@ set(gfx_src
   base/StringUtil.h
   base/ThreadPool.cpp
   base/ThreadPool.h
+  base/Timer.cpp
+  base/Timer.h
   base/TypeDef.h
   base/Utils.cpp
   base/Utils.h
@@ -144,9 +146,16 @@ else()
     extend_src("${CMAKE_CURRENT_SOURCE_DIR}/base/job-system/job-system-dummy")
 endif()
 
-add_library(${target_name} STATIC
+if(CC_BUILD_SHARED_LIBS)
+    # Object files are owned by cocos2d.dll; consumers must not link another gfx.
+    set(_cc_gfx_library_type OBJECT)
+else()
+    set(_cc_gfx_library_type STATIC)
+endif()
+add_library(${target_name} ${_cc_gfx_library_type}
     ${gfx_src}
 )
+unset(_cc_gfx_library_type)
 target_compile_features(${target_name} PUBLIC cxx_std_20)
 set_target_properties(${target_name} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

@@ -54,7 +54,7 @@ struct TextureDescriptor
 /**
  * A base texture
  */
-class TextureBackend : public Ref
+class CC_DLL TextureBackend : public Ref
 {
 public:
     /**
@@ -125,7 +125,7 @@ protected:
 /**
  * A 2D texture.
  */
-class Texture2DBackend : public TextureBackend
+class CC_DLL Texture2DBackend : public TextureBackend
 {
 public:
     /**
@@ -196,7 +196,7 @@ public:
 /**
  * A cubemap texture.
  */
-class TextureCubemapBackend : public TextureBackend
+class CC_DLL TextureCubemapBackend : public TextureBackend
 {
 public:
     /**

@@ -49,8 +49,8 @@ struct PixelFormatDescriptor
     const char* name;
 };
 
-const PixelFormatDescriptor& getFormatDescriptor(PixelFormat format);
-uint32_t computeRowPitch(PixelFormat format, uint32_t width);
+CC_DLL const PixelFormatDescriptor& getFormatDescriptor(PixelFormat format);
+CC_DLL uint32_t computeRowPitch(PixelFormat format, uint32_t width);
 inline uint8_t getBitsPerPixel(PixelFormat format)
 {
     return getFormatDescriptor(format).bpp;

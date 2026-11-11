@@ -29,19 +29,19 @@ namespace cc {
 
 namespace gfx {
 
-AccessFlags getAccessFlags(
+CC_DLL AccessFlags getAccessFlags(
     BufferUsage usage, MemoryUsage memUsage,
     MemoryAccess access,
     ShaderStageFlags visibility) noexcept;
 
-AccessFlags getAccessFlags(
+CC_DLL AccessFlags getAccessFlags(
     TextureUsage usage,
     MemoryAccess access,
     ShaderStageFlags visibility) noexcept;
 
 constexpr AccessFlags INVALID_ACCESS_FLAGS = static_cast<AccessFlags>(0xFFFFFFFF);
 
-AccessFlags getDeviceAccessFlags(
+CC_DLL AccessFlags getDeviceAccessFlags(
     TextureUsage usage,
     MemoryAccess access,
     ShaderStageFlags visibility);

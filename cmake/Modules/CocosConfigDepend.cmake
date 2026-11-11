@@ -96,7 +96,7 @@ endmacro()
 macro(use_cocos2dx_libs_depend target)
     cocos2dx_depend()
     foreach(platform_lib ${PLATFORM_SPECIFIC_LIBS})
-        target_link_libraries(${target} ${platform_lib})
+        target_link_libraries(${target} PRIVATE ${platform_lib})
     endforeach()
 
     if(LINUX)

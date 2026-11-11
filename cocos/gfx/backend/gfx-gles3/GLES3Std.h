@@ -26,19 +26,8 @@
 
 #include "base/Log.h"
 
-#if (CC_PLATFORM == CC_PLATFORM_WINDOWS)
-    #if defined(CC_STATIC)
-        #define CC_GLES3_API
-    #else
-        #ifdef CC_GLES3_EXPORTS
-            #define CC_GLES3_API __declspec(dllexport)
-        #else
-            #define CC_GLES3_API __declspec(dllimport)
-        #endif
-    #endif
-#else
-    #define CC_GLES3_API
-#endif
+// Backends are part of the cocos core library.
+#define CC_GLES3_API CC_DLL
 
 #if CC_DEBUG > 0
 #if !defined(GL_CHECK)

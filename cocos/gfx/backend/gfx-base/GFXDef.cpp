@@ -44,7 +44,6 @@ ccstd::hash_t quickHashTrivialStruct(const T *info, size_t count = 1) {
     return XXH64(info, sizeof(T) * count, 0);
 }
 
-template <>
 ccstd::hash_t Hasher<ColorAttachment>::operator()(const ColorAttachment &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -53,7 +52,6 @@ bool operator==(const ColorAttachment &lhs, const ColorAttachment &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(ColorAttachment));
 }
 
-template <>
 ccstd::hash_t Hasher<DepthStencilAttachment>::operator()(const DepthStencilAttachment &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -62,7 +60,6 @@ bool operator==(const DepthStencilAttachment &lhs, const DepthStencilAttachment 
     return !memcmp(&lhs, &rhs, sizeof(DepthStencilAttachment));
 }
 
-template <>
 ccstd::hash_t Hasher<SubpassDependency>::operator()(const SubpassDependency &info) const {
     ccstd::hash_t seed = 8;
     ccstd::hash_combine(seed, info.dstSubpass);
@@ -81,7 +78,6 @@ bool operator==(const SubpassDependency &lhs, const SubpassDependency &rhs) {
            lhs.nextAccesses == rhs.nextAccesses;
 }
 
-template <>
 ccstd::hash_t Hasher<SubpassInfo>::operator()(const SubpassInfo &info) const {
     ccstd::hash_t seed = 8;
     ccstd::hash_combine(seed, info.inputs);
@@ -106,7 +102,6 @@ bool operator==(const SubpassInfo &lhs, const SubpassInfo &rhs) {
            lhs.stencilResolveMode == rhs.stencilResolveMode;
 }
 
-template <>
 ccstd::hash_t Hasher<RenderPassInfo>::operator()(const RenderPassInfo &info) const {
     ccstd::hash_t seed = 4;
     ccstd::hash_combine(seed, info.colorAttachments);
@@ -125,7 +120,6 @@ bool operator==(const RenderPassInfo &lhs, const RenderPassInfo &rhs) {
            lhs.dependencies == rhs.dependencies;
 }
 
-template <>
 ccstd::hash_t Hasher<FramebufferInfo>::operator()(const FramebufferInfo &info) const {
     // render pass is mostly irrelevant
     ccstd::hash_t seed = static_cast<ccstd::hash_t>(info.colorTextures.size()) +
@@ -177,7 +171,6 @@ bool operator==(const FramebufferInfo &lhs, const FramebufferInfo &rhs) {
     return res;
 }
 
-template <>
 ccstd::hash_t Hasher<TextureInfo>::operator()(const TextureInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -186,7 +179,6 @@ bool operator==(const TextureInfo &lhs, const TextureInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(TextureInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<TextureViewInfo>::operator()(const TextureViewInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -195,7 +187,6 @@ bool operator==(const TextureViewInfo &lhs, const TextureViewInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(TextureViewInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<BufferInfo>::operator()(const BufferInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -204,7 +195,6 @@ bool operator==(const BufferInfo &lhs, const BufferInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(BufferInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<SamplerInfo>::operator()(const SamplerInfo &info) const {
     return static_cast<ccstd::hash_t>(packSamplerInfo(info));
 }
@@ -213,7 +203,6 @@ bool operator==(const SamplerInfo &lhs, const SamplerInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(SamplerInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<GeneralBarrierInfo>::operator()(const GeneralBarrierInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -222,7 +211,6 @@ bool operator==(const GeneralBarrierInfo &lhs, const GeneralBarrierInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(GeneralBarrierInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<TextureBarrierInfo>::operator()(const TextureBarrierInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -231,7 +219,6 @@ bool operator==(const TextureBarrierInfo &lhs, const TextureBarrierInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(TextureBarrierInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<BufferBarrierInfo>::operator()(const BufferBarrierInfo &info) const {
     return quickHashTrivialStruct(&info);
 }
@@ -240,7 +227,6 @@ bool operator==(const BufferBarrierInfo &lhs, const BufferBarrierInfo &rhs) {
     return !memcmp(&lhs, &rhs, sizeof(BufferBarrierInfo));
 }
 
-template <>
 ccstd::hash_t Hasher<Color>::operator()(const Color &info) const {
     ccstd::hash_t seed = 0;
     ccstd::hash_combine(seed, info.x);

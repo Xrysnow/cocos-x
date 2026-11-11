@@ -30,7 +30,7 @@
         #include <string.h>
     #endif
 
-    #if defined(CC_STATIC)
+    #if defined(CC_STATIC) || defined(CC_EX_STATIC)
         #define CC_EX_DLL
     #else
         #if defined(_USREXDLL)

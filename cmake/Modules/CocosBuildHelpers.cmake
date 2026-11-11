@@ -95,14 +95,14 @@ function(search_depend_libs_recursive cocos_target all_depends_out)
     set(${all_depends_out} ${all_depends_inner} PARENT_SCOPE)
 endfunction()
 
-# Return config-aware imported DLL paths, leaving target mapping to CMake.
+# Return config-aware DLL paths for both source-built and imported targets.
 function(get_target_depends_ext_dlls cocos_target all_depend_dlls_out)
     set(all_depend_ext_dlls)
     search_depend_libs_recursive(${cocos_target} depend_libs)
     foreach(depend_lib IN LISTS depend_libs)
-        get_target_property(is_imported "${depend_lib}" IMPORTED)
         get_target_property(target_type "${depend_lib}" TYPE)
-        if(is_imported AND (target_type STREQUAL "SHARED_LIBRARY" OR target_type STREQUAL "MODULE_LIBRARY"))
+        if(NOT depend_lib STREQUAL cocos_target AND
+                (target_type STREQUAL "SHARED_LIBRARY" OR target_type STREQUAL "MODULE_LIBRARY"))
             list(APPEND all_depend_ext_dlls "$<TARGET_FILE:${depend_lib}>")
         endif()
     endforeach()
@@ -340,7 +340,7 @@ function(cocos_use_pkg target pkg)
         set(_libs ${${prefix}_LIBRARY})
     endif()
     if(_libs)
-        target_link_libraries(${target} ${_libs})
+        target_link_libraries(${target} PUBLIC ${_libs})
         # message(STATUS "${pkg} libs added to '${target}': ${_libs}")
     endif()
 

@@ -78,7 +78,7 @@ struct PassBarriers {
     BarriersList subpassBarriers;
 };
 
-std::pair<gfx::GFXObject* /*barrier*/, gfx::GFXObject* /*resource*/> getBarrier(const ResourceBarrier& barrierInfo, const DevicePassResourceTable* dict) noexcept;
+CC_DLL std::pair<gfx::GFXObject* /*barrier*/, gfx::GFXObject* /*resource*/> getBarrier(const ResourceBarrier& barrierInfo, const DevicePassResourceTable* dict) noexcept;
 
 } // namespace framegraph
 } // namespace cc
