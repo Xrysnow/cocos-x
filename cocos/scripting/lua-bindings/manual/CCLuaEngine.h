@@ -37,6 +37,22 @@ extern "C" {
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
 #include "scripting/lua-bindings/manual/Lua-BindingsExport.h"
 
+// Legacy event payloads consumed by LuaEngine dispatch.
+struct LuaAssetsManagerEventData
+{
+    int value;
+
+    LuaAssetsManagerEventData(int _value = 0) : value(_value) {}
+};
+
+struct LuaTableViewEventData
+{
+    void* value;
+
+    // Constructor
+    LuaTableViewEventData(void* _value = nullptr) : value(_value) {}
+};
+
 /**
  * @addtogroup lua
  * @{

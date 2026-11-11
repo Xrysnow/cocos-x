@@ -1,5 +1,5 @@
 #include "cclua_extension_auto.hpp"
-#include "scripting/lua-bindings/manual/extension/cclua_extension_conversions.h"
+#include "lua_conversion/lua_conversion.hpp"
 #include "assets-manager/AssetsManager.h"
 #include "assets-manager/AssetsManagerEx.h"
 #include "assets-manager/Manifest.h"

@@ -70,6 +70,10 @@ unchanged.
 - `ParticleEmissionMaskDescriptor`: `size` (Vec2), `points` (an array of Vec2).
   Output copies the cache data before allocating Lua tables, so the returned
   snapshot stays independent of cache changes.
+- `ManifestAsset`: output-only snapshot of `md5`, `path`, `compressed`, `size`,
+  `downloadState`; the native asset is copied before Lua table allocation.
+  This conversion lives in [assets_manager.hpp](detail/cocos/assets_manager.hpp)
+  and is available through the shared conversion header.
 - `Viewport`: `x`, `y`, `w`, `h`; `ScissorRect`: `x`, `y`, `width`, `height`.
 
 Rendering descriptors accept partial tables: omitted or nil fields retain their

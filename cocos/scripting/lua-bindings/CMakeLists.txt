@@ -7,8 +7,6 @@ set(lua_bindings_manual_headers
     manual/CCLuaEngine.h
     manual/lua_module_register.h
     manual/CCLuaBridge.h
-    manual/extension/cclua_extension_manual.h
-    manual/extension/cclua_extension_conversions.h
     manual/LuaBasicConversions.h
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
@@ -32,6 +30,7 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/cocos/particle_types.hpp
     manual/lua_conversion/detail/cocos/geometry.hpp
     manual/lua_conversion/detail/cocos/physics.hpp
+    manual/lua_conversion/detail/cocos/assets_manager.hpp
     manual/lua_conversion/detail/cocos/app_directories.hpp
     manual/platform/ios/CCLuaObjcBridge.h
     manual/network/cclua_network_manual.h
@@ -66,7 +65,6 @@ set(lua_bindings_manual_files
     manual/physics/cclua_physics_manual.cpp
     manual/3d/cclua_3d_manual.cpp
     manual/controller/cclua_controller_manual.cpp
-    manual/extension/cclua_extension_manual.cpp
     manual/network/cclua_network_manual.cpp
     manual/network/lua_xml_http_request.cpp
     manual/network/lua_downloader.cpp

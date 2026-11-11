@@ -29,7 +29,6 @@
 
 #include "extensions/GUI/CCControlExtension/CCControl.h"
 #include "scripting/lua-bindings/manual/base/cclua_base_manual.hpp"
-#include "scripting/lua-bindings/manual/extension/cclua_extension_manual.h"
 #include "scripting/lua-bindings/manual/ui/cclua_ui_manual.hpp"
 #include "2d/CCMenuItem.h"
 #include "base/CCDirector.h"
