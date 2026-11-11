@@ -37,7 +37,7 @@
 #include "scripting/lua-bindings/manual/spine/cclua_spine_manual.hpp"
 #include "scripting/lua-bindings/manual/3d/cclua_3d_manual.h"
 #include "scripting/lua-bindings/manual/physics3d/cclua_physics3d_manual.h"
-#include "scripting/lua-bindings/manual/navmesh/cclua_navmesh_manual.h"
+#include "scripting/lua-bindings/auto/cclua_navmesh_auto.hpp"
 #include "lua_cjson.h"
 #include "yasio_cclua.hpp"
 
@@ -77,7 +77,9 @@ int lua_module_register(lua_State* L)
     register_physics3d_module(L);
 #endif
 #if CC_USE_NAVMESH
-    register_navmesh_module(L);
+    lua_getglobal(L, "_G");
+    if (lua_istable(L, -1)) register_all_cc_navmesh(L);
+    lua_pop(L, 1);
 #endif
 #ifdef CC_ENABLE_VIDEO_TEXTURE
     lua_pushvalue(L, LUA_GLOBALSINDEX);

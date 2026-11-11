@@ -125,7 +125,10 @@ and [navmesh.hpp](detail/cocos/navmesh.hpp).
 independent `startPosition` and `endPosition` Vec3 tables. No userdata identity or
 borrowed lifetime is attached to the snapshot. Navigation conversions and native
 headers are guarded by CC_USE_NAVMESH. The old module compatibility macros and
-local descriptor/output converters have been removed.
+local descriptor/output converters have been removed. NavMesh now installs only
+generated bindings: there are no manual new factories or NavMeshAgent
+getUserData/setUserData adapters. The module aggregator registers the generated
+module directly under the existing feature gate.
 
 ## Geometry bridges
 

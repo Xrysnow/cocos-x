@@ -38,7 +38,6 @@ set(lua_bindings_manual_headers
     manual/network/lua_downloader.h
     manual/Lua-BindingsExport.h
     manual/tolua_fix.h
-    manual/navmesh/cclua_navmesh_manual.h
     manual/base/LuaScriptHandlerMgr.h
     manual/base/cclua_base_manual.hpp
     manual/CcluaLoader.h
@@ -71,7 +70,6 @@ set(lua_bindings_manual_files
     manual/ui/cclua_ui_manual.cpp
     manual/physics3d/cclua_physics3d_manual.cpp
     manual/physics3d/cclua_physics3d_retained.cpp
-    manual/navmesh/cclua_navmesh_manual.cpp
     )
 
 set(lua_bindings_auto_headers

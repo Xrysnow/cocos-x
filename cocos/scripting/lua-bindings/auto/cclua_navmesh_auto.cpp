@@ -373,8 +373,6 @@ int luaReg_NavMesh_ccNavMesh(lua_State* lua_S)
 }
 #endif
 
-int register_all_cc_navmesh_manual(lua_State* lua_S);
-
 int register_all_cc_navmesh(lua_State* lua_S)
 {
 #include "base/ccConfig.h"
@@ -382,7 +380,7 @@ int register_all_cc_navmesh(lua_State* lua_S)
 	luaReg_NavMesh_ccNavMeshAgent(lua_S);
 	luaReg_NavMesh_ccNavMeshObstacle(lua_S);
 	luaReg_NavMesh_ccNavMesh(lua_S);
-	return register_all_cc_navmesh_manual(lua_S);
+	return 0;
 #else
 	return 0;
 #endif
