@@ -43,6 +43,10 @@ include(PreventInSourceBuilds)
 
 # Load shared settings before creating engine targets.
 option(BUILD_LUA_LIBS "Build lua libraries" ON)
+option(CC_BUILD_DEMO "Build the cross-platform Lua demo" OFF)
+if(CC_BUILD_DEMO AND NOT BUILD_LUA_LIBS)
+  message(FATAL_ERROR "CC_BUILD_DEMO requires BUILD_LUA_LIBS=ON")
+endif()
 include(CocosBuildSet)
 
 # Reconfigure from the selected extensions rather than a previous cache list.
@@ -56,4 +60,8 @@ set(CC_EXTENSION_LIBS "${CC_EXTENSION_LIBS}" CACHE INTERNAL "extensions for auto
 if(CC_BUILD_SHARED_LIBS)
   include(CocosSharedPackage)
   cocos_generate_shared_package()
+endif()
+
+if(CC_BUILD_DEMO)
+  add_subdirectory(templates)
 endif()

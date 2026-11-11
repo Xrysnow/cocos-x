@@ -1,5 +1,11 @@
 # Standalone Windows x64 libraries
 
+To include the cross-platform Lua application, configure the cocos-x root with
+`-DCC_BUILD_DEMO=ON -DBUILD_LUA_LIBS=ON` and build the `cocos_demo` target.
+The option defaults to `OFF` and works with both static and supported shared-core
+builds. Platform entry points, icons and build commands are documented in
+[`templates/README.md`](../templates/README.md).
+
 The default `CC_BUILD_SHARED_LIBS=OFF` keeps the core and gfx static. Set
 `CC_BUILD_SHARED_LIBS=ON` to build `cocos2d.dll` with gfx embedded in that DLL;
 Lua bindings and extensions remain static libraries. The shared mode currently

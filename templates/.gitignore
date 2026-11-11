@@ -1,0 +1,4 @@
+# Android Studio/Gradle output; source assets and wrapper stay versioned.
+proj.android/.gradle/
+proj.android/build/
+proj.android/app/build/

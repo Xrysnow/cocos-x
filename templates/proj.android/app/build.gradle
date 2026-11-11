@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'org.cocos.demo'
+    compileSdk PROP_COMPILE_SDK_VERSION.toInteger()
+    ndkVersion '30.0.16248370'
+
+    defaultConfig {
+        applicationId 'org.cocos.demo'
+        minSdkVersion PROP_MIN_SDK_VERSION.toInteger()
+        targetSdkVersion PROP_TARGET_SDK_VERSION.toInteger()
+        versionCode 1
+        versionName '1.0'
+        ndk {
+            abiFilters.addAll(PROP_APP_ABI.split(':'))
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DCC_BUILD_DEMO=ON', '-DBUILD_LUA_LIBS=ON',
+                        '-DANDROID_STL=c++_shared', '-DCMAKE_FIND_ROOT_PATH='
+                cppFlags '-frtti -fexceptions -fsigned-char'
+                targets 'cocos_demo'
+                // Forward engine tool overrides without changing its features.
+                project.properties.findAll { key, value ->
+                    key.startsWith('CC_OPENSSL_') || key.startsWith('CC_LUAJIT_') ||
+                            key == 'CC_ENABLE_VIDEO_TEXTURE'
+                }.each { key, value -> arguments "-D${key}=${value}" }
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    sourceSets.main {
+        manifest.srcFile 'AndroidManifest.xml'
+        java.srcDirs = ['src']
+        res.srcDirs = ['res']
+        // Package the same script used by the desktop and Apple targets.
+        assets.srcDirs = ['../../Resources']
+    }
+    externalNativeBuild {
+        cmake {
+            path '../../../CMakeLists.txt'
+            version '4.1.2'
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+    implementation project(':libcocos2dx')
+}

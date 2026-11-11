@@ -1,0 +1,3 @@
+#include <winres.h>
+
+1 ICON "res/game.ico"
