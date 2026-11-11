@@ -25,12 +25,7 @@
 #pragma once
 
 #include <string>
-// #include "boost/container/pmr/polymorphic_allocator.hpp"
 
 namespace ccstd {
 using std::string;
-
-namespace pmr {
-// using string = std::basic_string<char, std::char_traits<char>, boost::container::pmr::polymorphic_allocator<char>>;
-}
 } // namespace ccstd

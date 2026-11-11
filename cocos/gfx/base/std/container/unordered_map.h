@@ -26,18 +26,8 @@
 
 #include <unordered_map>
 #include <utility>
-// #include "boost/container/pmr/polymorphic_allocator.hpp"
 
 namespace ccstd {
 using std::unordered_map;
 using std::unordered_multimap;
-
-namespace pmr {
-// template <
-//     class Key,
-//     class T,
-//     class Hash = std::hash<Key>,
-//     class Pred = std::equal_to<Key>>
-// using unordered_map = std::unordered_map<Key, T, Hash, Pred, boost::container::pmr::polymorphic_allocator<std::pair<const Key, T>>>;
-} // namespace pmr
 } // namespace ccstd

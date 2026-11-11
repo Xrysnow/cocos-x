@@ -25,13 +25,7 @@
 #pragma once
 
 #include <list>
-// #include "boost/container/pmr/polymorphic_allocator.hpp"
 
 namespace ccstd {
 using std::list;
-
-namespace pmr {
-// template <class T>
-// using list = std::list<T, boost::container::pmr::polymorphic_allocator<T>>;
-}
 } // namespace ccstd

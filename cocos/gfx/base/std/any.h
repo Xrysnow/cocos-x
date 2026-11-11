@@ -24,9 +24,7 @@
 
 #pragma once
 
-#if 1
-
-    #include <any>
+#include <any>
 
 namespace ccstd {
 
@@ -34,46 +32,3 @@ using std::any;
 using std::any_cast;
 
 } // namespace ccstd
-
-#else
-
-    #include "boost/any.hpp"
-
-namespace ccstd {
-
-class any : public boost::any { // NOLINT // use std style
-public:
-    using boost::any::any;
-
-    inline bool has_value() const noexcept { // NOLINT // use std style
-        return !this->empty();
-    }
-};
-
-template <typename ValueType>
-inline ValueType *any_cast(any *operand) noexcept { // NOLINT // use std style
-    return boost::any_cast<ValueType>(operand);
-}
-
-template <typename ValueType>
-inline const ValueType *any_cast(const any *operand) noexcept { // NOLINT // use std style
-    return boost::any_cast<ValueType>(operand);
-}
-
-template <typename ValueType>
-inline ValueType any_cast(any &operand) { // NOLINT // use std style
-    return boost::any_cast<ValueType>(operand);
-}
-
-template <typename ValueType>
-inline ValueType any_cast(const any &operand) { // NOLINT // use std style
-    return boost::any_cast<ValueType>(operand);
-}
-
-template <typename ValueType>
-inline ValueType any_cast(any &&operand) { // NOLINT // use std style
-    return boost::any_cast<ValueType>(operand);
-}
-
-} // namespace ccstd
-#endif

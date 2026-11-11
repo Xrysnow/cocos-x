@@ -25,13 +25,7 @@
 #pragma once
 
 #include <deque>
-// #include "boost/container/pmr/polymorphic_allocator.hpp"
 
 namespace ccstd {
 using std::deque;
-
-namespace pmr {
-// template <class T>
-// using deque = std::deque<T, boost::container::pmr::polymorphic_allocator<T>>;
-}
 } // namespace ccstd

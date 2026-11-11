@@ -25,13 +25,7 @@
 #pragma once
 
 #include <queue>
-// #include "boost/container/pmr/polymorphic_allocator.hpp"
 
 namespace ccstd {
 using std::queue;
-
-namespace pmr {
-// template <class T>
-// using queue = std::queue<T, boost::container::pmr::polymorphic_allocator<T>>;
-}
 } // namespace ccstd
