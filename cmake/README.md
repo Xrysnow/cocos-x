@@ -52,5 +52,7 @@ from the package; consumers should not define core producer macros or `CC_STATIC
 
 Deploy every path in `CocosX_RUNTIME_DLLS` next to the executable. The
 `CocosX_RUNTIME_MODULES` list contains source/destination pairs for additional
-runtime files, with destinations relative to the executable (including OpenSSL
-provider modules). These runtime dependencies remain separate from `cocos2d.dll`.
+runtime files, with destinations relative to the executable. OpenSSL uses
+`no-module`, so its default and legacy providers are built into `libcrypto`
+and require no separate provider files. Runtime DLL dependencies remain separate
+from `cocos2d.dll`.

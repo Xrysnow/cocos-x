@@ -32,7 +32,6 @@ THE SOFTWARE.
 #include <shellapi.h>
 #include <WinVer.h>
 #include <timeapi.h>
-#include <openssl/provider.h>
 
 #include <string_view>
 #include "ntcvt/ntcvt.hpp"
@@ -41,49 +40,6 @@ THE SOFTWARE.
 @param  bEnable If true show the PVRFrame window, otherwise hide.
 */
 static void PVRFrameEnableControlWindow(bool bEnable);
-
-// Provider modules travel with libcrypto, independently of the build prefix,
-// working directory and the process-wide OPENSSL_MODULES environment variable.
-static bool ConfigureOpenSSLModulePath()
-{
-#ifdef _WIN64
-    HMODULE cryptoModule = GetModuleHandleW(L"libcrypto-3-x64.dll");
-#else
-    HMODULE cryptoModule = GetModuleHandleW(L"libcrypto-3.dll");
-#endif
-    if (!cryptoModule)
-    {
-        cocos2d::print("Cannot locate the loaded OpenSSL crypto module (Windows error %lu)", GetLastError());
-        return false;
-    }
-    std::wstring path(32768, L'\0');
-    const DWORD length = GetModuleFileNameW(cryptoModule, path.data(), static_cast<DWORD>(path.size()));
-    if (length == 0 || length >= path.size())
-    {
-        cocos2d::print("Cannot read the loaded OpenSSL crypto module path (Windows error %lu)", GetLastError());
-        return false;
-    }
-    path.resize(length);
-    const auto separator = path.find_last_of(L"\\/");
-    if (separator == std::wstring::npos)
-    {
-        cocos2d::print("The loaded OpenSSL crypto module has no absolute directory");
-        return false;
-    }
-    path.resize(separator + 1);
-    path += L"ossl-modules";
-    const int utf8Size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()),
-                                           nullptr, 0, nullptr, nullptr);
-    std::string modules(utf8Size > 0 ? utf8Size : 0, '\0');
-    if (utf8Size <= 0 || WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()),
-                                           modules.data(), utf8Size, nullptr, nullptr) != utf8Size ||
-        OSSL_PROVIDER_set_default_search_path(nullptr, modules.c_str()) != 1)
-    {
-        cocos2d::print("Cannot configure the OpenSSL provider directory beside the loaded crypto module");
-        return false;
-    }
-    return true;
-}
 
 NS_CC_BEGIN
 
@@ -96,7 +52,6 @@ Application::Application() : _instance(nullptr), _accelTable(nullptr)
     _animationInterval.QuadPart = 0;
     CC_ASSERT(!sm_pSharedApplication);
     sm_pSharedApplication = this;
-    _opensslModulePathReady = ConfigureOpenSSLModulePath();
 }
 
 Application::~Application()
@@ -107,10 +62,6 @@ Application::~Application()
 
 int Application::run()
 {
-    if (!_opensslModulePathReady)
-    {
-        return 1;
-    }
     PVRFrameEnableControlWindow(false);
 
     ///////////////////////////////////////////////////////////////////////////

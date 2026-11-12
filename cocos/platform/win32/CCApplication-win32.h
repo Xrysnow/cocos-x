@@ -97,8 +97,6 @@ public:
     std::string_view getStartupScriptFilename() { return _startupScriptFilename; }
 
 protected:
-    // Custom run loops must also stop if runtime provider setup failed.
-    bool _opensslModulePathReady = false;
     HINSTANCE _instance;
     HACCEL _accelTable;
     LARGE_INTEGER _animationInterval;
