@@ -94,10 +94,6 @@ The Debug APK is at `app/build/outputs/apk/debug/app-debug.apk`.
 ## Icons
 
 The icon originates from [cocos/cocos4](https://github.com/cocos/cocos4).
-All platform icons are size/format conversions of the supplied
-`misc/cocos4_1024.png`, preserved as `icons/cocos4_1024.png`. To regenerate them
-with Python and Pillow, run `python templates/tools/make_icons.py` from the
-cocos-x root. This does not require the outer workspace or modify the original.
 Windows contains 16–256 pixel ICO entries, macOS contains 16–1024 pixel ICNS
 entries, iOS includes iPhone/iPad/App Store sizes, and Android includes all five
 launcher densities. iOS icons are flattened onto white because App Store icons
