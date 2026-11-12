@@ -188,6 +188,7 @@ protected:
 
     GLFWwindow* _mainWindow;
     GLFWmonitor* _monitor;
+    bool _borderlessFullscreen = false;
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     void refreshRenderSurfaceState(bool polled = false);

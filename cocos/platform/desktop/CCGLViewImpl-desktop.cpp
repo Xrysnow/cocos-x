@@ -717,6 +717,8 @@ bool GLViewImpl::initWithFullScreen(std::string_view viewName)
         return false;
 
     const GLFWvidmode* videoMode = glfwGetVideoMode(_monitor);
+    if (!videoMode)
+        return false;
     return initWithRect(viewName, Rect(0, 0, (float)videoMode->width, (float)videoMode->height), 1.0f, false);
 }
 
@@ -933,7 +935,7 @@ float GLViewImpl::getFrameZoomFactor() const
 
 bool GLViewImpl::isFullscreen() const
 {
-    return _monitor != nullptr;
+    return _monitor != nullptr || _borderlessFullscreen;
 }
 
 void GLViewImpl::setFullscreen(bool exclusive)
@@ -974,13 +976,20 @@ void GLViewImpl::setFullscreen(int monitorIndex, int w, int h, int refreshRate, 
 
 void GLViewImpl::setFullscreen(GLFWmonitor* monitor, int w, int h, int refreshRate, bool exclusive)
 {
+    if (!monitor)
+        return;
     const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+    // A locked or disconnected desktop can retain a monitor without a mode.
+    if (!videoMode)
+        return;
     if (w == -1)
         w = videoMode->width;
     if (h == -1)
         h = videoMode->height;
     if (refreshRate == -1)
         refreshRate = videoMode->refreshRate;
+    if (w <= 0 || h <= 0)
+        return;
 
     int xpos = 0, ypos = 0;
     if (!exclusive)
@@ -1011,6 +1020,7 @@ void GLViewImpl::setFullscreen(GLFWmonitor* monitor, int w, int h, int refreshRa
         _monitor = monitor;
     }
 
+    _borderlessFullscreen = !exclusive;
     glfwSetWindowMonitor(
         _mainWindow,
         _monitor,
@@ -1033,12 +1043,17 @@ void GLViewImpl::setWindowed(int width, int height)
         if (_monitor)
             SetDeviceFullScreenExclusiveMode(false);
         GLFWmonitor* monitor = getCurrentMonitor(_mainWindow);
-        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+        const GLFWvidmode* videoMode = monitor ? glfwGetVideoMode(monitor) : nullptr;
         int xpos = 0, ypos = 0;
-        glfwGetMonitorPos(monitor, &xpos, &ypos);
-        xpos += (int)((videoMode->width - width) * 0.5f);
-        ypos += (int)((videoMode->height - height) * 0.5f);
+        glfwGetWindowPos(_mainWindow, &xpos, &ypos);
+        if (videoMode)
+        {
+            glfwGetMonitorPos(monitor, &xpos, &ypos);
+            xpos += (int)((videoMode->width - width) * 0.5f);
+            ypos += (int)((videoMode->height - height) * 0.5f);
+        }
         _monitor = nullptr;
+        _borderlessFullscreen = false;
         glfwSetWindowMonitor(_mainWindow, nullptr, xpos, ypos, width, height, GLFW_DONT_CARE);
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
         // on mac window will sometimes lose title when windowed
@@ -1073,7 +1088,8 @@ Vec2 GLViewImpl::getMonitorSize() const
     if (monitor)
     {
         const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
-        return { (float)videoMode->width, (float)videoMode->height };
+        if (videoMode)
+            return { (float)videoMode->width, (float)videoMode->height };
     }
     return Vec2::ZERO;
 }
@@ -1388,7 +1404,7 @@ void GLViewImpl::onGLFWCharCallback(GLFWwindow* /*window*/, unsigned int charact
 void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* /*window*/, int x, int y)
 {
     Director::getInstance()->setViewport();
-    if (isFullscreen())
+    if (_monitor)
     {
         _monitor = getCurrentMonitor(_mainWindow);
     }
