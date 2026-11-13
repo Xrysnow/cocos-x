@@ -21,8 +21,12 @@ int lua_cc_base_GLViewImpl_createWithRect(lua_State* lua_S)
     LUA_SINVOKE_HEADER("cc.GLViewImpl", "cc.GLViewImpl:createWithRect");
     LUA_TRY_INVOKE_R(2, ([](std::string_view name, cocos2d::Rect rect) { return cocos2d::GLViewImpl::createWithRect(name, rect); }));
     LUA_TRY_INVOKE_R(3, ([](std::string_view name, cocos2d::Rect rect, float zoom) { return cocos2d::GLViewImpl::createWithRect(name, rect, zoom); }));
+#if CC_TARGET_PLATFORM != CC_PLATFORM_IOS
     LUA_TRY_INVOKE_R(4, ([](std::string_view name, cocos2d::Rect rect, float zoom, bool resizable) { return cocos2d::GLViewImpl::createWithRect(name, rect, zoom, resizable); }));
     LUA_SINVOKE_FOOTER("2,3,4");
+#else
+    LUA_SINVOKE_FOOTER("2,3");
+#endif
 }
 
 #if CC_TARGET_PLATFORM != CC_PLATFORM_WIN32
