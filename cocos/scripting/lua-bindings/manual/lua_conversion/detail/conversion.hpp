@@ -1,6 +1,7 @@
 #pragma once
 #include "containers.hpp"
 #include <cstddef>
+#include <limits>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -141,11 +142,26 @@ namespace lua
 
 	template<typename T>
 	void native_array_to_luaval(lua_State* L, const T* inValue, size_t size) {
-		lua_createtable(L, (int)size, 0);
-		for (size_t i = 0; i < size; ++i) {
-			lua_pushinteger(L, i + 1);
-			to_lua<T>::F(L, inValue[i]);
-			lua_settable(L, -3);
+		if (!L) return;
+		if (!inValue && size != 0) {
+			luaL_error(L, "native_array_to_luaval: null data for non-empty array");
+			return;
+		}
+		if (size > static_cast<size_t>((std::numeric_limits<int>::max)())) {
+			luaL_error(L, "native_array_to_luaval: array size exceeds Lua API limit");
+			return;
+		}
+		const int top = lua_gettop(L);
+		lua_createtable(L, static_cast<int>(size), 0);
+		try {
+			for (size_t i = 0; i < size; ++i) {
+				lua_pushinteger(L, i + 1);
+				to_lua<T>::F(L, inValue[i]);
+				lua_settable(L, -3);
+			}
+		} catch (...) {
+			lua_settop(L, top);
+			throw;
 		}
 	}
 }
