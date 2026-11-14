@@ -166,112 +166,72 @@ namespace lua
 	}
 }
 
+// Rescan forwarded variadic arguments for the traditional MSVC preprocessor.
+#define LUA_PP_EXPAND(...) __VA_ARGS__
+#define LUA_PP_CAT(a, b) LUA_PP_CAT_I(a, b)
+#define LUA_PP_CAT_I(a, b) a##b
+
+// Struct converters require 1-9 field names.
+#define LUA_PP_NARG(...) LUA_PP_EXPAND(LUA_PP_NARG_I(__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
+#define LUA_PP_NARG_I(_1, _2, _3, _4, _5, _6, _7, _8, _9, N, ...) N
+
+#define LUA_FOR_EACH(m, ...) LUA_PP_EXPAND(LUA_PP_CAT(LUA_FOR_EACH_, LUA_PP_NARG(__VA_ARGS__))(m, __VA_ARGS__))
+
+#define LUA_FOR_EACH_1(m, a) m(a)
+#define LUA_FOR_EACH_2(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_1(m, __VA_ARGS__))
+#define LUA_FOR_EACH_3(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_2(m, __VA_ARGS__))
+#define LUA_FOR_EACH_4(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_3(m, __VA_ARGS__))
+#define LUA_FOR_EACH_5(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_4(m, __VA_ARGS__))
+#define LUA_FOR_EACH_6(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_5(m, __VA_ARGS__))
+#define LUA_FOR_EACH_7(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_6(m, __VA_ARGS__))
+#define LUA_FOR_EACH_8(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_7(m, __VA_ARGS__))
+#define LUA_FOR_EACH_9(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_8(m, __VA_ARGS__))
+
+#define LUA_FIELD_CHECK(field) \
+	ok = ok && luaval_field_to_native(L, lo, #field, &v.field, fName);
+
+#define LUA_TO_NATIVE_STRUCT(T, ...) \
+	template<>\
+	struct to_native<T> {\
+		static bool F(lua_State* L, int lo, T* outValue, const char* fName = "") {\
+			LUA_CHECK_TO_NATIVE;\
+			if (!is_indexable(L, lo)) return false;\
+			T v;\
+			bool ok = true;\
+			LUA_FOR_EACH(LUA_FIELD_CHECK, __VA_ARGS__)\
+			if (ok) *outValue = v;\
+			return ok;\
+		}\
+	};
+
+#define LUA_FIELD_TO_LUA(field) \
+	native_to_luaval_field(L, -1, #field, inValue.field);
+
+#define LUA_TO_LUA_STRUCT(T, ...) \
+	template<>\
+	struct to_lua<T> {\
+		static void F(lua_State* L, const T& inValue) {\
+			if (!L) return;\
+			lua_createtable(L, 0, LUA_PP_NARG(__VA_ARGS__));\
+			LUA_FOR_EACH(LUA_FIELD_TO_LUA, __VA_ARGS__)\
+		}\
+	};
+
+// Keep the fixed-arity names for existing bindings.
 #define LUA_TO_NATIVE_STRUCT2(T, Field1, Field2) \
-	template<>\
-	struct to_native<T> {\
-		static bool F(lua_State* L, int lo, T* outValue, const char* fName = "") {\
-			LUA_CHECK_TO_NATIVE;\
-			if (!is_indexable(L, lo)) return false;\
-			T v;\
-			bool ok = luaval_field_to_native(L, lo, #Field1, &v.Field1, fName) &&\
-				luaval_field_to_native(L, lo, #Field2, &v.Field2, fName);\
-			if (ok) *outValue = v;\
-			return ok;\
-		}\
-	};
-
+	LUA_TO_NATIVE_STRUCT(T, Field1, Field2)
 #define LUA_TO_NATIVE_STRUCT3(T, Field1, Field2, Field3) \
-	template<>\
-	struct to_native<T> {\
-		static bool F(lua_State* L, int lo, T* outValue, const char* fName = "") {\
-			LUA_CHECK_TO_NATIVE;\
-			if (!is_indexable(L, lo)) return false;\
-			T v;\
-			bool ok = luaval_field_to_native(L, lo, #Field1, &v.Field1, fName) &&\
-				luaval_field_to_native(L, lo, #Field2, &v.Field2, fName) &&\
-				luaval_field_to_native(L, lo, #Field3, &v.Field3, fName);\
-			if (ok) *outValue = v;\
-			return ok;\
-		}\
-	};
-
+	LUA_TO_NATIVE_STRUCT(T, Field1, Field2, Field3)
 #define LUA_TO_NATIVE_STRUCT4(T, Field1, Field2, Field3, Field4) \
-	template<>\
-	struct to_native<T> {\
-		static bool F(lua_State* L, int lo, T* outValue, const char* fName = "") {\
-			LUA_CHECK_TO_NATIVE;\
-			if (!is_indexable(L, lo)) return false;\
-			T v;\
-			bool ok = luaval_field_to_native(L, lo, #Field1, &v.Field1, fName) &&\
-				luaval_field_to_native(L, lo, #Field2, &v.Field2, fName) &&\
-				luaval_field_to_native(L, lo, #Field3, &v.Field3, fName) &&\
-				luaval_field_to_native(L, lo, #Field4, &v.Field4, fName);\
-			if (ok) *outValue = v;\
-			return ok;\
-		}\
-	};
+	LUA_TO_NATIVE_STRUCT(T, Field1, Field2, Field3, Field4)
 
 #define LUA_TO_LUA_STRUCT2(T, Field1, Field2) \
-	template<>\
-	struct to_lua<T> {\
-		static void F(lua_State* L, const T& inValue) {\
-			if (!L) return;\
-			lua_createtable(L, 0, 2);\
-			native_to_luaval_field(L, -1, #Field1, inValue.Field1);\
-			native_to_luaval_field(L, -1, #Field2, inValue.Field2);\
-		}\
-	};
-
+	LUA_TO_LUA_STRUCT(T, Field1, Field2)
 #define LUA_TO_LUA_STRUCT3(T, Field1, Field2, Field3) \
-	template<>\
-	struct to_lua<T> {\
-		static void F(lua_State* L, const T& inValue) {\
-			if (!L) return;\
-			lua_createtable(L, 0, 3);\
-			native_to_luaval_field(L, -1, #Field1, inValue.Field1);\
-			native_to_luaval_field(L, -1, #Field2, inValue.Field2);\
-			native_to_luaval_field(L, -1, #Field3, inValue.Field3);\
-		}\
-	};
-
+	LUA_TO_LUA_STRUCT(T, Field1, Field2, Field3)
 #define LUA_TO_LUA_STRUCT4(T, Field1, Field2, Field3, Field4) \
-	template<>\
-	struct to_lua<T> {\
-		static void F(lua_State* L, const T& inValue) {\
-			if (!L) return;\
-			lua_createtable(L, 0, 4);\
-			native_to_luaval_field(L, -1, #Field1, inValue.Field1);\
-			native_to_luaval_field(L, -1, #Field2, inValue.Field2);\
-			native_to_luaval_field(L, -1, #Field3, inValue.Field3);\
-			native_to_luaval_field(L, -1, #Field4, inValue.Field4);\
-		}\
-	};
-
+	LUA_TO_LUA_STRUCT(T, Field1, Field2, Field3, Field4)
 #define LUA_TO_LUA_STRUCT5(T, Field1, Field2, Field3, Field4, Field5) \
-	template<>\
-	struct to_lua<T> {\
-		static void F(lua_State* L, const T& inValue) {\
-			if (!L) return;\
-			lua_createtable(L, 0, 5);\
-			native_to_luaval_field(L, -1, #Field1, inValue.Field1);\
-			native_to_luaval_field(L, -1, #Field2, inValue.Field2);\
-			native_to_luaval_field(L, -1, #Field3, inValue.Field3);\
-			native_to_luaval_field(L, -1, #Field4, inValue.Field4);\
-			native_to_luaval_field(L, -1, #Field5, inValue.Field5);\
-		}\
-	};
-
+	LUA_TO_LUA_STRUCT(T, Field1, Field2, Field3, Field4, Field5)
 #define LUA_TO_LUA_STRUCT6(T, Field1, Field2, Field3, Field4, Field5, Field6) \
-	template<>\
-	struct to_lua<T> {\
-		static void F(lua_State* L, const T& inValue) {\
-			if (!L) return;\
-			lua_createtable(L, 0, 6);\
-			native_to_luaval_field(L, -1, #Field1, inValue.Field1);\
-			native_to_luaval_field(L, -1, #Field2, inValue.Field2);\
-			native_to_luaval_field(L, -1, #Field3, inValue.Field3);\
-			native_to_luaval_field(L, -1, #Field4, inValue.Field4);\
-			native_to_luaval_field(L, -1, #Field5, inValue.Field5);\
-			native_to_luaval_field(L, -1, #Field6, inValue.Field6);\
-		}\
-	};
+	LUA_TO_LUA_STRUCT(T, Field1, Field2, Field3, Field4, Field5, Field6)
