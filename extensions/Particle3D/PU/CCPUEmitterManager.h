@@ -49,7 +49,7 @@ public:
     /**
      */
     PUScriptTranslator* getTranslator(std::string_view type);
-    PUEmitter* createEmitter(std::string_view type);
+    cc::IntrusivePtr<PUEmitter> createEmitter(std::string_view type);
 
     PUEmitterManager();
     ~PUEmitterManager();

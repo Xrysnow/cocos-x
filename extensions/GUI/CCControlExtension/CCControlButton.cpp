@@ -63,8 +63,8 @@ ControlButton::~ControlButton()
 
 bool ControlButton::init()
 {
-    return this->initWithLabelAndBackgroundSprite(Label::createWithSystemFont("", "Helvetica", 12),
-                                                  cocos2d::ui::Scale9Sprite::create(), true);
+    return this->initWithLabelAndBackgroundSprite(Label::createWithSystemFont("", "Helvetica", 12).get(),
+                                                  cocos2d::ui::Scale9Sprite::create().get(), true);
 }
 
 bool ControlButton::initWithLabelAndBackgroundSprite(Node* node,
@@ -123,21 +123,19 @@ bool ControlButton::initWithLabelAndBackgroundSprite(Node* node,
     }
 }
 
-ControlButton* ControlButton::create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite)
+cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite)
 {
-    ControlButton* pRet = new ControlButton();
+    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
     pRet->initWithLabelAndBackgroundSprite(label, backgroundSprite, true);
-    pRet->autorelease();
     return pRet;
 }
 
-ControlButton* ControlButton::create(Node* label,
+cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label,
                                      cocos2d::ui::Scale9Sprite* backgroundSprite,
                                      bool adjustBackGroundSize)
 {
-    ControlButton* pRet = new ControlButton();
+    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
     pRet->initWithLabelAndBackgroundSprite(label, backgroundSprite, adjustBackGroundSize);
-    pRet->autorelease();
     return pRet;
 }
 
@@ -145,29 +143,27 @@ bool ControlButton::initWithTitleAndFontNameAndFontSize(std::string_view title,
                                                         std::string_view fontName,
                                                         float fontSize)
 {
-    return initWithLabelAndBackgroundSprite(Label::createWithSystemFont(title, fontName, fontSize),
-                                            cocos2d::ui::Scale9Sprite::create(), true);
+    return initWithLabelAndBackgroundSprite(Label::createWithSystemFont(title, fontName, fontSize).get(),
+                                            cocos2d::ui::Scale9Sprite::create().get(), true);
 }
 
-ControlButton* ControlButton::create(std::string_view title, std::string_view fontName, float fontSize)
+cc::IntrusivePtr<ControlButton> ControlButton::create(std::string_view title, std::string_view fontName, float fontSize)
 {
-    ControlButton* pRet = new ControlButton();
+    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
     pRet->initWithTitleAndFontNameAndFontSize(title, fontName, fontSize);
-    pRet->autorelease();
     return pRet;
 }
 
 bool ControlButton::initWithBackgroundSprite(cocos2d::ui::Scale9Sprite* sprite)
 {
-    Label* label = Label::createWithSystemFont("", "Arial", 30);  //
+    cc::IntrusivePtr<Label> label = Label::createWithSystemFont("", "Arial", 30);  //
     return initWithLabelAndBackgroundSprite(label, sprite, false);
 }
 
-ControlButton* ControlButton::create(cocos2d::ui::Scale9Sprite* sprite)
+cc::IntrusivePtr<ControlButton> ControlButton::create(cocos2d::ui::Scale9Sprite* sprite)
 {
-    ControlButton* pRet = new ControlButton();
+    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
     pRet->initWithBackgroundSprite(sprite);
-    pRet->autorelease();
     return pRet;
 }
 
@@ -212,7 +208,7 @@ void ControlButton::setHighlighted(bool enabled)
     if (_zoomOnTouchDown)
     {
         float scaleValue   = (isHighlighted() && isEnabled() && !isSelected()) ? _scaleRatio : 1.0f;
-        Action* zoomAction = ScaleTo::create(0.05f, scaleValue);
+        cc::IntrusivePtr<Action> zoomAction = ScaleTo::create(0.05f, scaleValue);
         zoomAction->setTag(kZoomActionTag);
         runAction(zoomAction);
     }
@@ -373,7 +369,7 @@ void ControlButton::setTitleLabelForState(Node* titleLabel, State state)
 
 void ControlButton::setTitleTTFForState(std::string_view fontName, State state)
 {
-    this->setTitleLabelForState(Label::createWithSystemFont(getTitleForState(state), fontName, 12), state);
+    this->setTitleLabelForState(Label::createWithSystemFont(getTitleForState(state), fontName, 12).get(), state);
 }
 
 std::string_view ControlButton::getTitleTTFForState(State state)
@@ -419,7 +415,7 @@ float ControlButton::getTitleTTFSizeForState(State state)
 void ControlButton::setTitleBMFontForState(std::string_view fntFile, State state)
 {
     std::string title = this->getTitleForState(state);
-    this->setTitleLabelForState(Label::createWithBMFont(fntFile, title), state);
+    this->setTitleLabelForState(Label::createWithBMFont(fntFile, title).get(), state);
 }
 
 std::string_view ControlButton::getTitleBMFontForState(State state)
@@ -481,7 +477,7 @@ void ControlButton::setBackgroundSpriteForState(ui::Scale9Sprite* sprite, State 
 
 void ControlButton::setBackgroundSpriteFrameForState(SpriteFrame* spriteFrame, State state)
 {
-    ui::Scale9Sprite* sprite = ui::Scale9Sprite::createWithSpriteFrame(spriteFrame);
+    cc::IntrusivePtr<ui::Scale9Sprite> sprite = ui::Scale9Sprite::createWithSpriteFrame(spriteFrame);
     this->setBackgroundSpriteForState(sprite, state);
 }
 
@@ -732,15 +728,13 @@ void ControlButton::onTouchCancelled(Touch* /*pTouch*/, Event* /*pEvent*/)
     sendActionsForControlEvents(Control::EventType::TOUCH_CANCEL);
 }
 
-ControlButton* ControlButton::create()
+cc::IntrusivePtr<ControlButton> ControlButton::create()
 {
-    ControlButton* pControlButton = new ControlButton();
+    cc::IntrusivePtr<ControlButton> pControlButton{new ControlButton()};
     if (pControlButton->init())
     {
-        pControlButton->autorelease();
         return pControlButton;
     }
-    CC_SAFE_DELETE(pControlButton);
     return nullptr;
 }
 

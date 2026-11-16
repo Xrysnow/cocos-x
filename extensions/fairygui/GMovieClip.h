@@ -56,15 +56,15 @@ private:
 class ActionMovieClip : public cocos2d::Action
 {
 public:
-    static ActionMovieClip* create(cocos2d::Animation *animation, float repeatDelay = 0, bool swing =false);
+    static cc::IntrusivePtr<ActionMovieClip> create(cocos2d::Animation *animation, float repeatDelay = 0, bool swing =false);
     ActionMovieClip();
     ~ActionMovieClip();
 
     virtual bool isDone() const override;
     virtual void step(float dt) override;
     virtual void startWithTarget(cocos2d::Node *target) override;
-    virtual ActionMovieClip* reverse() const override;
-    virtual ActionMovieClip* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     int getFrame() { return _frame; }
     void setFrame(int value);

@@ -51,18 +51,18 @@ namespace spine {
 	class SP_API SkeletonAnimation : public SkeletonRenderer {
 	public:
 		CREATE_FUNC(SkeletonAnimation);
-		static SkeletonAnimation *createWithData(SkeletonData *skeletonData, bool ownsSkeletonData = false);
-		static SkeletonAnimation *createWithJsonFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale = 1);
-		static SkeletonAnimation *createWithJsonFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale = 1);
-		static SkeletonAnimation *createWithBinaryFile(const std::string &skeletonBinaryFile, Atlas *atlas, float scale = 1);
-		static SkeletonAnimation *createWithBinaryFile(const std::string &skeletonBinaryFile, const std::string &atlasFile, float scale = 1);
+		static cc::IntrusivePtr<SkeletonAnimation> createWithData(SkeletonData *skeletonData, bool ownsSkeletonData = false);
+		static cc::IntrusivePtr<SkeletonAnimation> createWithJsonFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale = 1);
+		static cc::IntrusivePtr<SkeletonAnimation> createWithJsonFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale = 1);
+		static cc::IntrusivePtr<SkeletonAnimation> createWithBinaryFile(const std::string &skeletonBinaryFile, Atlas *atlas, float scale = 1);
+		static cc::IntrusivePtr<SkeletonAnimation> createWithBinaryFile(const std::string &skeletonBinaryFile, const std::string &atlasFile, float scale = 1);
 
 		// Use createWithJsonFile instead
-		CC_DEPRECATED_ATTRIBUTE static SkeletonAnimation *createWithFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale = 1) {
+		CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<SkeletonAnimation> createWithFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale = 1) {
 			return SkeletonAnimation::createWithJsonFile(skeletonJsonFile, atlas, scale);
 		}
 		// Use createWithJsonFile instead
-		CC_DEPRECATED_ATTRIBUTE static SkeletonAnimation *createWithFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale = 1) {
+		CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<SkeletonAnimation> createWithFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale = 1) {
 			return SkeletonAnimation::createWithJsonFile(skeletonJsonFile, atlasFile, scale);
 		}
 

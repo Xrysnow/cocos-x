@@ -161,10 +161,9 @@ void PUDoEnableComponentEventHandler::handle(PUParticleSystem3D* particleSystem,
     }
 }
 
-PUDoEnableComponentEventHandler* PUDoEnableComponentEventHandler::create()
+cc::IntrusivePtr<PUDoEnableComponentEventHandler> PUDoEnableComponentEventHandler::create()
 {
-    auto peh = new PUDoEnableComponentEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoEnableComponentEventHandler> peh{new PUDoEnableComponentEventHandler()};
     return peh;
 }
 

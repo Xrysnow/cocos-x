@@ -72,10 +72,10 @@ void AnimationCurve<componentSize>::setEvaluateFun(std::function<void(float time
 
 //create animation curve
 template <int componentSize>
-AnimationCurve<componentSize>* AnimationCurve<componentSize>::create(float* keytime, float* value, int count)
+cc::IntrusivePtr<AnimationCurve<componentSize>> AnimationCurve<componentSize>::create(float* keytime, float* value, int count)
 {
     int floatSize = sizeof(float);
-    AnimationCurve* curve = new AnimationCurve();
+    cc::IntrusivePtr<AnimationCurve> curve{new AnimationCurve()};
     curve->_keytime = new float[count];
     memcpy(curve->_keytime, keytime, count * floatSize);
     
@@ -87,7 +87,6 @@ AnimationCurve<componentSize>* AnimationCurve<componentSize>::create(float* keyt
     curve->_count = count;
     curve->_componentSizeByte = compoentSizeByte;
     
-    curve->autorelease();
     return curve;
 }
 

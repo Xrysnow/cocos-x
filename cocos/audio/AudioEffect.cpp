@@ -24,9 +24,9 @@ AudioEffect::~AudioEffect()
 	deleteEffect();
 }
 
-AudioEffect *AudioEffect::clone()
+cc::IntrusivePtr<AudioEffect> AudioEffect::clone()
 {
-	return new AudioEffect(*this);
+	return cc::IntrusivePtr<AudioEffect>{new AudioEffect(*this)};
 }
 
 bool AudioEffect::generateEffect()

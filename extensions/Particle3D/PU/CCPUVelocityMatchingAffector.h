@@ -38,7 +38,7 @@ public:
     // Constants
     static const float DEFAULT_RADIUS;
 
-    static PUVelocityMatchingAffector* create();
+    static cc::IntrusivePtr<PUVelocityMatchingAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
     /** Todo

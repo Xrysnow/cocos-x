@@ -319,7 +319,7 @@ JNIEXPORT jint JNICALL Java_org_cocos_lib_CocosRenderHost_nativeAttach(
         if (applicationStarted || hostClosing)
             return -1;
         hostDirector = Director::getInstance();
-        auto* view = GLViewImpl::create("cocos-gfx");
+        auto view = GLViewImpl::create("cocos-gfx");
         if (!view)
         {
             hostFailed = true;

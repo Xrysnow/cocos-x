@@ -65,7 +65,7 @@ Scene::Scene()
 Scene::~Scene()
 {
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-    CC_SAFE_RELEASE(_physics3DWorld);
+    _physics3DWorld.reset();
     CC_SAFE_RELEASE(_physics3dDebugCamera);
 #endif
 #if CC_USE_NAVMESH
@@ -116,37 +116,34 @@ void Scene::initDefaultCamera()
 {
     if (!_defaultCamera)
     {
-        _defaultCamera = Camera::create();
+        auto camera = Camera::create();
+        _defaultCamera = camera.get();
         addChild(_defaultCamera);
     }
 }
 
-Scene* Scene::create()
+cc::IntrusivePtr<Scene> Scene::create()
 {
-    Scene* ret = new Scene();
+    cc::IntrusivePtr<Scene> ret{new Scene()};
     if (ret->init())
     {
-        ret->autorelease();
         return ret;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
         return nullptr;
     }
 }
 
-Scene* Scene::createWithSize(const Vec2& size)
+cc::IntrusivePtr<Scene> Scene::createWithSize(const Vec2& size)
 {
-    Scene* ret = new Scene();
+    cc::IntrusivePtr<Scene> ret{new Scene()};
     if (ret->initWithSize(size))
     {
-        ret->autorelease();
         return ret;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
         return nullptr;
     }
 }
@@ -293,17 +290,15 @@ void Scene::setNavMeshDebugCamera(Camera* camera)
 
 #if (CC_USE_PHYSICS || (CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION))
 
-Scene* Scene::createWithPhysics()
+cc::IntrusivePtr<Scene> Scene::createWithPhysics()
 {
-    Scene* ret = new Scene();
+    cc::IntrusivePtr<Scene> ret{new Scene()};
     if (ret->initWithPhysics())
     {
-        ret->autorelease();
         return ret;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
         return nullptr;
     }
 }
@@ -328,7 +323,6 @@ bool Scene::initPhysicsWorld()
     #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
         Physics3DWorldDes info;
         CC_BREAK_IF(!(_physics3DWorld = Physics3DWorld::create(&info)));
-        _physics3DWorld->retain();
     #endif
 
         // success

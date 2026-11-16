@@ -97,11 +97,9 @@ bool AudioSource::initWithSoundData(AudioSoundData* soundData)
 		return false;
 	}
 
-	staticBuffer = new (std::nothrow) AudioStaticDataBuffer(fmt, soundData->getData(), (ALsizei)soundData->getSize(), sampleRate);
+	staticBuffer = cc::IntrusivePtr<AudioStaticDataBuffer>{new (std::nothrow) AudioStaticDataBuffer(fmt, soundData->getData(), (ALsizei)soundData->getSize(), sampleRate)}.detach();
 	if (!staticBuffer)
 		return false;
-	staticBuffer->autorelease();
-	staticBuffer->retain();
 
 	position.setZero();
 	velocity.setZero();
@@ -244,9 +242,7 @@ bool AudioSource::initWithOther(const AudioSource &s)
 	if (sourceType == Type::STREAM)
 	{
 		if (s.decoder)
-			decoder = s.decoder->clone();
-		if (decoder)
-			decoder->retain();
+			decoder = s.decoder->clone().detach();
 	}
 	if (sourceType != Type::STATIC)
 	{
@@ -330,48 +326,36 @@ AudioSource::~AudioSource()
 		decoder->release();
 }
 
-AudioSource* AudioSource::createFromSoundData(AudioSoundData* soundData)
+cc::IntrusivePtr<AudioSource> AudioSource::createFromSoundData(AudioSoundData* soundData)
 {
 	if (!AudioEngine::isValid() || !soundData)
 		return nullptr;
-	auto ret = new (std::nothrow) AudioSource();
+	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithSoundData(soundData))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
-AudioSource* AudioSource::createFromDecoder(AudioDecoder* decoder)
+cc::IntrusivePtr<AudioSource> AudioSource::createFromDecoder(AudioDecoder* decoder)
 {
 	if (!AudioEngine::isValid() || !decoder)
 		return nullptr;
-	auto ret = new (std::nothrow) AudioSource();
+	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithDecoder(decoder))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
-AudioSource* AudioSource::create(int sampleRate, int bitDepth, int channels, int buffers)
-{
-	auto ret = createOwnedQueue(sampleRate, bitDepth, channels, buffers);
-	if (ret)
-		ret->autorelease();
-	return ret;
-}
-
-AudioSource* AudioSource::createOwnedQueue(int sampleRate, int bitDepth, int channels, int buffers)
+cc::IntrusivePtr<AudioSource> AudioSource::create(int sampleRate, int bitDepth, int channels, int buffers)
 {
 	if (!AudioEngine::isValid())
 		return nullptr;
 	auto ownerPool = AudioPool::getInstance();
-	auto ret = new (std::nothrow) AudioSource();
+	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
 	bool initialized = false;
 	{
 		auto lock = ownerPool->lock();
@@ -380,21 +364,18 @@ AudioSource* AudioSource::createOwnedQueue(int sampleRate, int bitDepth, int cha
 	}
 	if (initialized)
 		return ret;
-	delete ret;
 	return nullptr;
 }
 
-AudioSource *AudioSource::clone()
+cc::IntrusivePtr<AudioSource> AudioSource::clone()
 {
 	if (!AudioEngine::isValid())
 		return nullptr;
-	auto ret = new (std::nothrow) AudioSource();
+	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithOther(*this))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 

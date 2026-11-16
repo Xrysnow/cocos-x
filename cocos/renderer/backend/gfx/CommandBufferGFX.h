@@ -93,7 +93,7 @@ private:
     std::vector<cc::gfx::Swapchain*> swapchains;
 
     cc::gfx::CommandBuffer* _cb = nullptr;
-    RenderTargetGFX* _defaultRT = nullptr;
+    cc::IntrusivePtr<RenderTargetGFX> _defaultRT;
     uint32_t _defaultRTGeneration = 0;
     cc::IntrusivePtr<cc::gfx::Framebuffer> _currentFBO;
     cc::gfx::Extent _currentFBOSize;
@@ -110,9 +110,9 @@ private:
     std::unordered_map<uint32_t, cc::RefVector<cc::gfx::Buffer*>> _inputAssemblerBuffers;
     std::array<const void*, 3> _inputAssemblerHash = {};
 
-    cocos2d::RefPtr<BufferGFX> _vertexBuffer;
-    cocos2d::RefPtr<BufferGFX> _indexBuffer;
-    cocos2d::RefPtr<ProgramState> _programState;
+    cc::IntrusivePtr<BufferGFX> _vertexBuffer;
+    cc::IntrusivePtr<BufferGFX> _indexBuffer;
+    cc::IntrusivePtr<ProgramState> _programState;
     RenderPipelineGFX* _renderPipeline          = nullptr;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;

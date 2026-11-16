@@ -3,16 +3,12 @@
 
 DRAGONBONES_NAMESPACE_BEGIN
 
-CCArmatureDisplay* CCArmatureDisplay::create()
+cc::IntrusivePtr<CCArmatureDisplay> CCArmatureDisplay::create()
 {
-    CCArmatureDisplay* displayContainer = new CCArmatureDisplay();
-    if (displayContainer->init())
+    cc::IntrusivePtr<CCArmatureDisplay> displayContainer{new CCArmatureDisplay()};
+    if (!(displayContainer->init()))
     {
-        displayContainer->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(displayContainer);
+        return nullptr;
     }
 
     return displayContainer;
@@ -114,17 +110,13 @@ cocos2d::Rect CCArmatureDisplay::getBoundingBox() const
     return cocos2d::RectApplyTransform(rect, getNodeToParentTransform());
 }
 
-DBCCSprite* DBCCSprite::create()
+cc::IntrusivePtr<DBCCSprite> DBCCSprite::create()
 {
-    DBCCSprite* sprite = new DBCCSprite();
+    cc::IntrusivePtr<DBCCSprite> sprite{new DBCCSprite()};
 
-    if (sprite->init())
+    if (!(sprite->init()))
     {
-        sprite->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(sprite);
+        return nullptr;
     }
 
     return sprite;

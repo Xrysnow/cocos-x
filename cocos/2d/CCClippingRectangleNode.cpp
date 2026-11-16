@@ -29,29 +29,23 @@
 
 NS_CC_BEGIN
 
-ClippingRectangleNode* ClippingRectangleNode::create(const Rect& clippingRegion)
+cc::IntrusivePtr<ClippingRectangleNode> ClippingRectangleNode::create(const Rect& clippingRegion)
 {
-    ClippingRectangleNode* node = new ClippingRectangleNode();
+    cc::IntrusivePtr<ClippingRectangleNode> node{new ClippingRectangleNode()};
     if (node->init())
     {
         node->setClippingRegion(clippingRegion);
-        node->autorelease();
+
     }
     else
-        CC_SAFE_DELETE(node);
-
-    return node;
+        return nullptr;
 }
 
-ClippingRectangleNode* ClippingRectangleNode::create()
+cc::IntrusivePtr<ClippingRectangleNode> ClippingRectangleNode::create()
 {
-    ClippingRectangleNode* node = new ClippingRectangleNode();
-    if (node->init())
-        node->autorelease();
-    else
-        CC_SAFE_DELETE(node);
-
-    return node;
+    cc::IntrusivePtr<ClippingRectangleNode> node{new ClippingRectangleNode()};
+    if (!node->init())
+        return nullptr;
 }
 
 void ClippingRectangleNode::setClippingRegion(const Rect& clippingRegion)

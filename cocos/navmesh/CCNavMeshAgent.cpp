@@ -48,15 +48,13 @@ NavMeshAgentParam::NavMeshAgentParam()
     , queryFilterType(0)
 {}
 
-NavMeshAgent* NavMeshAgent::create(const NavMeshAgentParam& param)
+cc::IntrusivePtr<NavMeshAgent> NavMeshAgent::create(const NavMeshAgentParam& param)
 {
-    auto ref = new NavMeshAgent();
+    cc::IntrusivePtr<NavMeshAgent> ref{new NavMeshAgent()};
     if (ref->initWith(param))
     {
-        ref->autorelease();
         return ref;
     }
-    CC_SAFE_DELETE(ref);
     return nullptr;
 }
 

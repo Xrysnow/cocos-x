@@ -31,23 +31,17 @@
 
 NS_CC_BEGIN
 
-Animation3D* Animation3D::create(std::string_view fileName, std::string_view animationName)
+cc::IntrusivePtr<Animation3D> Animation3D::create(std::string_view fileName, std::string_view animationName)
 {
     std::string fullPath = FileUtils::getInstance()->fullPathForFilename(fileName);
     fullPath.append("#").append(animationName);
-    auto animation = Animation3DCache::getInstance()->getAnimation(fullPath);
+    cc::IntrusivePtr<Animation3D> animation = Animation3DCache::getInstance()->getAnimation(fullPath);
     if (animation != nullptr)
         return animation;
 
-    animation = new Animation3D();
-    if (animation->initWithFile(fileName, animationName))
-    {
-        animation->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(animation);
-    }
+    animation = cc::IntrusivePtr<Animation3D>{new Animation3D()};
+    if (!animation->initWithFile(fileName, animationName))
+        return {};
 
     return animation;
 }
@@ -125,9 +119,7 @@ bool Animation3D::init(const Animation3DData& data)
             axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
-            curve->translateCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size());
-            if (curve->translateCurve)
-                curve->translateCurve->retain();
+            curve->translateCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size()).detach();
         }
     }
 
@@ -151,9 +143,7 @@ bool Animation3D::init(const Animation3DData& data)
             axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
-            curve->rotCurve = Curve::AnimationCurveQuat::create(&keys[0], &values[0].x, (int)keys.size());
-            if (curve->rotCurve)
-                curve->rotCurve->retain();
+            curve->rotCurve = Curve::AnimationCurveQuat::create(&keys[0], &values[0].x, (int)keys.size()).detach();
         }
     }
 
@@ -177,9 +167,7 @@ bool Animation3D::init(const Animation3DData& data)
             axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
-            curve->scaleCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size());
-            if (curve->scaleCurve)
-                curve->scaleCurve->retain();
+            curve->scaleCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size()).detach();
         }
     }
 

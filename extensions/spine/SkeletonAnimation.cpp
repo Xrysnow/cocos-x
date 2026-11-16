@@ -80,38 +80,33 @@ namespace spine {
 
 	//
 
-	SkeletonAnimation *SkeletonAnimation::createWithData(SkeletonData *skeletonData, bool ownsSkeletonData) {
-		SkeletonAnimation *node = new SkeletonAnimation();
+	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithData(SkeletonData *skeletonData, bool ownsSkeletonData) {
+		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
 		node->initWithData(skeletonData, ownsSkeletonData);
-		node->autorelease();
 		return node;
 	}
 
-	SkeletonAnimation *SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale) {
-		SkeletonAnimation *node = new SkeletonAnimation();
+	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale) {
+		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
 		node->initWithJsonFile(skeletonJsonFile, atlas, scale);
-		node->autorelease();
 		return node;
 	}
 
-	SkeletonAnimation *SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale) {
-		SkeletonAnimation *node = new SkeletonAnimation();
+	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale) {
+		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
 		node->initWithJsonFile(skeletonJsonFile, atlasFile, scale);
-		node->autorelease();
 		return node;
 	}
 
-	SkeletonAnimation *SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, Atlas *atlas, float scale) {
-		SkeletonAnimation *node = new SkeletonAnimation();
+	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, Atlas *atlas, float scale) {
+		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
 		node->initWithBinaryFile(skeletonBinaryFile, atlas, scale);
-		node->autorelease();
 		return node;
 	}
 
-	SkeletonAnimation *SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, const std::string &atlasFile, float scale) {
-		SkeletonAnimation *node = new SkeletonAnimation();
+	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, const std::string &atlasFile, float scale) {
+		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
 		node->initWithBinaryFile(skeletonBinaryFile, atlasFile, scale);
-		node->autorelease();
 		return node;
 	}
 
@@ -153,7 +148,7 @@ namespace spine {
 		if (_updateOnlyIfVisible && !isVisible()) return;
 
 		// Callbacks may remove the last external owner; retain through all native work.
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		super::update(deltaTime);
 
 		deltaTime *= _timeScale;
@@ -166,12 +161,12 @@ namespace spine {
 
 	void SkeletonAnimation::visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) {
 		// Node::visit continues using this node after draw's initial update(0) callbacks.
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		super::visit(renderer, parentTransform, parentFlags);
 	}
 
 	void SkeletonAnimation::draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		if (_firstDraw) {
 			_firstDraw = false;
 			update(0);
@@ -196,7 +191,7 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::setAnimation(int trackIndex, const std::string &name, bool loop) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		Animation *animation = _skeleton->getData()->findAnimation(name.c_str());
 		if (!animation) {
 			log("Spine: Animation not found: %s", name.c_str());
@@ -206,7 +201,7 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::addAnimation(int trackIndex, const std::string &name, bool loop, float delay) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		Animation *animation = _skeleton->getData()->findAnimation(name.c_str());
 		if (!animation) {
 			log("Spine: Animation not found: %s", name.c_str());
@@ -216,17 +211,17 @@ namespace spine {
 	}
 
 	TrackEntry *SkeletonAnimation::setEmptyAnimation(int trackIndex, float mixDuration) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		return _state->setEmptyAnimation(trackIndex, mixDuration);
 	}
 
 	void SkeletonAnimation::setEmptyAnimations(float mixDuration) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		_state->setEmptyAnimations(mixDuration);
 	}
 
 	TrackEntry *SkeletonAnimation::addEmptyAnimation(int trackIndex, float mixDuration, float delay) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		return _state->addEmptyAnimation(trackIndex, mixDuration, delay);
 	}
 
@@ -239,12 +234,12 @@ namespace spine {
 	}
 
 	void SkeletonAnimation::clearTracks() {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		_state->clearTracks();
 	}
 
 	void SkeletonAnimation::clearTrack(int trackIndex) {
-		const RefPtr<SkeletonAnimation> keepAlive(this);
+		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		_state->clearTrack(trackIndex);
 	}
 

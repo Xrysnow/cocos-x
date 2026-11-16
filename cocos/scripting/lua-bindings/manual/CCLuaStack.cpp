@@ -116,19 +116,17 @@ LuaStack::~LuaStack()
     }
 }
 
-LuaStack* LuaStack::create()
+cc::IntrusivePtr<LuaStack> LuaStack::create()
 {
-    LuaStack* stack = new LuaStack();
-    if (!stack->init()) { delete stack; return nullptr; }
-    stack->autorelease();
+    cc::IntrusivePtr<LuaStack> stack{new LuaStack()};
+    if (!stack->init()) { return nullptr; }
     return stack;
 }
 
-LuaStack* LuaStack::attach(lua_State* L)
+cc::IntrusivePtr<LuaStack> LuaStack::attach(lua_State* L)
 {
-    LuaStack* stack = new LuaStack();
-    if (!stack->initWithLuaState(L)) { delete stack; return nullptr; }
-    stack->autorelease();
+    cc::IntrusivePtr<LuaStack> stack{new LuaStack()};
+    if (!stack->initWithLuaState(L)) { return nullptr; }
     return stack;
 }
 

@@ -10,7 +10,7 @@ class DeviceGFX;
 class RenderTargetGFX : public RenderTarget
 {
 public:
-    static RenderTargetGFX* createDefault(const cc::gfx::Swapchain* swapchain = nullptr);
+    static cc::IntrusivePtr<RenderTargetGFX> createDefault(const cc::gfx::Swapchain* swapchain = nullptr);
     static void destroyRenderPassCache();
 
     RenderTargetGFX(bool defaultRenderTarget);

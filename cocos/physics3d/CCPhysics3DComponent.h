@@ -73,7 +73,7 @@ public:
      * @param rotInPhsyics offset rotation that the owner node in the physics object's space
      * @return created Physics3DComponent
      */
-    static Physics3DComponent* create(Physics3DObject* physicsObj,
+    static cc::IntrusivePtr<Physics3DComponent> create(Physics3DObject* physicsObj,
                                       const cocos2d::Vec3& translateInPhysics = cocos2d::Vec3::ZERO,
                                       const cocos2d::Quaternion& rotInPhsyics = cocos2d::Quaternion::ZERO);
 

@@ -408,9 +408,8 @@ std::vector<AudioRecordingDevice*> AudioEngine::getRecordingDevices()
 		}
 		if (needCreate)
 		{
-			auto dev = new AudioRecordingDevice(devname.c_str());
-			dev->autorelease();
-			devices.pushBack(dev);
+			cc::IntrusivePtr<AudioRecordingDevice> dev{new AudioRecordingDevice(devname.c_str())};
+			devices.pushBack(dev.get());
 		}
 	}
 
@@ -435,7 +434,7 @@ bool AudioEngine::setEffect(const std::string& name, const AudioEffect::ParamMap
 		if (effectmap.size() >= (unsigned int)MAX_SCENE_EFFECTS)
 			return false;
 
-		effect = new AudioEffect();
+		effect = cc::IntrusivePtr<AudioEffect>{new AudioEffect()}.detach();
 		slot = slotlist.top();
 		slotlist.pop();
 

@@ -50,7 +50,7 @@ public:
      * Creates a ProtectedNode with no argument.
      *@return A instance of ProtectedNode.
      */
-    static ProtectedNode* create();
+    static cc::IntrusivePtr<ProtectedNode> create();
 
     /// @{
     /// @name Children and Parent

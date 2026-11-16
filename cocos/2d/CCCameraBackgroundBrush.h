@@ -79,14 +79,14 @@ public:
      * Creates a none brush, it does nothing when clear the background
      * @return Created brush.
      */
-    static CameraBackgroundBrush* createNoneBrush();
+    static cc::IntrusivePtr<CameraBackgroundBrush> createNoneBrush();
 
     /**
      * Creates a depth brush, which clears depth buffer with a given depth.
      * @param depth Depth used to clear depth buffer
      * @return Created brush
      */
-    static CameraBackgroundDepthBrush* createDepthBrush(float depth = 1.f);
+    static cc::IntrusivePtr<CameraBackgroundDepthBrush> createDepthBrush(float depth = 1.f);
 
     /**
      * Creates a color brush
@@ -94,7 +94,7 @@ public:
      * @param depth Depth used to clear depth buffer
      * @return Created brush
      */
-    static CameraBackgroundColorBrush* createColorBrush(const Color4F& color, float depth);
+    static cc::IntrusivePtr<CameraBackgroundColorBrush> createColorBrush(const Color4F& color, float depth);
 
     /** Creates a Skybox brush with 6 textures.
      @param positive_x texture for the right side of the texture cube face.
@@ -105,7 +105,7 @@ public:
      @param negative_z texture for the rear side of the texture cube face.
      @return  A new brush inited with given parameters.
      */
-    static CameraBackgroundSkyBoxBrush* createSkyboxBrush(std::string_view positive_x,
+    static cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> createSkyboxBrush(std::string_view positive_x,
                                                           std::string_view negative_x,
                                                           std::string_view positive_y,
                                                           std::string_view negative_y,
@@ -138,7 +138,7 @@ public:
      * @param depth Depth used to clear the depth buffer
      * @return Created brush
      */
-    static CameraBackgroundDepthBrush* create(float depth);
+    static cc::IntrusivePtr<CameraBackgroundDepthBrush> create(float depth);
 
     /**
      * Get brush type. Should be BrushType::DEPTH
@@ -205,7 +205,7 @@ public:
      * @param depth Depth used to clear the depth buffer
      * @return Created brush
      */
-    static CameraBackgroundColorBrush* create(const Color4F& color, float depth);
+    static cc::IntrusivePtr<CameraBackgroundColorBrush> create(const Color4F& color, float depth);
 
     /**
      * Draw background
@@ -252,7 +252,7 @@ public:
      @param negative_z texture for the rear side of the texture cube face.
      @return  A new brush inited with given parameters.
      */
-    static CameraBackgroundSkyBoxBrush* create(std::string_view positive_x,
+    static cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> create(std::string_view positive_x,
                                                std::string_view negative_x,
                                                std::string_view positive_y,
                                                std::string_view negative_y,
@@ -261,7 +261,7 @@ public:
 
     /** Creates a Skybox brush with 6 textures.
      */
-    static CameraBackgroundSkyBoxBrush* create();
+    static cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> create();
     /**
      * Set skybox texture
      * @param texture Skybox texture

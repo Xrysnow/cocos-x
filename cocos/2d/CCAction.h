@@ -50,7 +50,7 @@ enum
 /**
  * @brief Base class for Action objects.
  */
-class CC_DLL Action : public Ref, public Clonable
+class CC_DLL Action : public Ref, public Clonable<Action>
 {
 public:
     /** Default tag used for all the actions. */
@@ -65,7 +65,7 @@ public:
      *
      * @return A clone action.
      */
-    virtual Action* clone() const
+    virtual cc::IntrusivePtr<Action> clone() const
     {
         CC_ASSERT(0);
         return nullptr;
@@ -76,7 +76,7 @@ public:
      * @return A new action that performs the exact reverse of the action.
      * @js NA
      */
-    virtual Action* reverse() const
+    virtual cc::IntrusivePtr<Action> reverse() const
     {
         CC_ASSERT(0);
         return nullptr;
@@ -208,12 +208,12 @@ public:
     //
     // Overrides
     //
-    virtual FiniteTimeAction* reverse() const override
+    virtual cc::IntrusivePtr<Action> reverse() const override
     {
         CC_ASSERT(0);
         return nullptr;
     }
-    virtual FiniteTimeAction* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
@@ -247,7 +247,7 @@ public:
      * @param action An action.
      * @param speed The action speed.
      */
-    static Speed* create(ActionInterval* action, float speed);
+    static cc::IntrusivePtr<Speed> create(ActionInterval* action, float speed);
     /** Return the speed.
      *
      * @return The action speed.
@@ -273,8 +273,8 @@ public:
     //
     // Override
     //
-    virtual Speed* clone() const override;
-    virtual Speed* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -320,7 +320,7 @@ public:
      *              with no boundary.
      */
 
-    static Follow* create(Node* followedNode, const Rect& rect = Rect::ZERO);
+    static cc::IntrusivePtr<Follow> create(Node* followedNode, const Rect& rect = Rect::ZERO);
 
     /**
      * Creates the action with a set boundary or with no boundary with offsets.
@@ -338,7 +338,7 @@ public:
      * followed.
      */
 
-    static Follow* createWithOffset(Node* followedNode, float xOffset, float yOffset, const Rect& rect = Rect::ZERO);
+    static cc::IntrusivePtr<Follow> createWithOffset(Node* followedNode, float xOffset, float yOffset, const Rect& rect = Rect::ZERO);
 
     /** Return boundarySet.
      *
@@ -354,8 +354,8 @@ public:
     //
     // Override
     //
-    virtual Follow* clone() const override;
-    virtual Follow* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     /**
      * @param dt in seconds.
      * @js NA

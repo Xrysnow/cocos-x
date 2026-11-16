@@ -119,7 +119,7 @@ static int tocclua_EventListenerController_clone(lua_State* tolua_S)
 
     if (argc == 0)
     {
-        cocos2d::EventListenerController* tolua_ret = cocos2d::EventListenerController::create();
+        cc::IntrusivePtr<cocos2d::EventListenerController> tolua_ret = cocos2d::EventListenerController::create();
         if (nullptr == tolua_ret)
             return 0;
 
@@ -133,7 +133,7 @@ static int tocclua_EventListenerController_clone(lua_State* tolua_S)
 
         int ID     = (int)tolua_ret->_ID;
         int* luaID = &tolua_ret->_luaID;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)tolua_ret, "cc.EventListenerController");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerController");
 
         return 1;
     }

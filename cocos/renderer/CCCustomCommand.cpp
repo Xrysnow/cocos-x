@@ -148,7 +148,7 @@ void CustomCommand::createVertexBuffer(std::size_t vertexSize, std::size_t capac
     info.memUsage = backend::UtilsGFX::toMemoryUsage(usage);
     info.size = vertexSize * capacity;
     info.stride = vertexSize;
-    _vertexBuffer = new backend::BufferGFX(info);
+    _vertexBuffer = cc::IntrusivePtr<backend::BufferGFX>{new backend::BufferGFX(info)}.detach();
 }
 
 void CustomCommand::createIndexBuffer(IndexFormat format, std::size_t capacity, BufferUsage usage)
@@ -164,7 +164,7 @@ void CustomCommand::createIndexBuffer(IndexFormat format, std::size_t capacity, 
     info.memUsage = backend::UtilsGFX::toMemoryUsage(usage);
     info.size = _indexSize * capacity;
     info.stride = _indexSize;
-    _indexBuffer = new backend::BufferGFX(info);
+    _indexBuffer = cc::IntrusivePtr<backend::BufferGFX>{new backend::BufferGFX(info)}.detach();
 }
 
 void CustomCommand::updateVertexBuffer(void* data, std::size_t offset, std::size_t length)

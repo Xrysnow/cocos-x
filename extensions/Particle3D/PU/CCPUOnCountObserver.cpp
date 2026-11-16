@@ -95,10 +95,9 @@ bool PUOnCountObserver::observe(PUParticle3D* particle, float /*timeElapsed*/)
     return false;
 }
 
-PUOnCountObserver* PUOnCountObserver::create()
+cc::IntrusivePtr<PUOnCountObserver> PUOnCountObserver::create()
 {
-    auto pco = new PUOnCountObserver();
-    pco->autorelease();
+    cc::IntrusivePtr<PUOnCountObserver> pco{new PUOnCountObserver()};
     return pco;
 }
 

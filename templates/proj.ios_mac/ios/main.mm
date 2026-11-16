@@ -33,7 +33,7 @@
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     self.window.rootViewController = [[DemoViewController alloc] init];
     [self.window makeKeyAndVisible];
-    auto* view = cocos2d::GLViewImpl::createWithEAGLView((__bridge void*)self.window.rootViewController.view);
+    auto view = cocos2d::GLViewImpl::createWithEAGLView((__bridge void*)self.window.rootViewController.view);
     if (!view)
         return NO;
     cocos2d::Director::getInstance()->setOpenGLView(view);

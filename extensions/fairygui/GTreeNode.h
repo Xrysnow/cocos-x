@@ -12,7 +12,7 @@ class GComponent;
 class GTreeNode : public cocos2d::Ref
 {
 public:
-    static GTreeNode* create(bool isFolder = false, const std::string& resURL = cocos2d::STD_STRING_EMPTY);
+    static cc::IntrusivePtr<GTreeNode> create(bool isFolder = false, const std::string& resURL = cocos2d::STD_STRING_EMPTY);
 
     GTreeNode();
     virtual ~GTreeNode();

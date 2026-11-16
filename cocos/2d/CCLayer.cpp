@@ -52,52 +52,43 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
-Layer* Layer::create()
+cc::IntrusivePtr<Layer> Layer::create()
 {
-    auto ret = new Layer();
+    cc::IntrusivePtr<Layer> ret{new Layer()};
     ret->initLayer();
-    ret->autorelease();
     return ret;
 }
 
 /// LayerColor
 LayerColor::LayerColor() {}
 
-LayerColor* LayerColor::create()
+cc::IntrusivePtr<LayerColor> LayerColor::create()
 {
-    LayerColor* ret = new LayerColor();
-    if (ret->init())
+    cc::IntrusivePtr<LayerColor> ret{new LayerColor()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-LayerColor* LayerColor::create(const Color4B& color, float width, float height)
+cc::IntrusivePtr<LayerColor> LayerColor::create(const Color4B& color, float width, float height)
 {
-    LayerColor* layer = new LayerColor();
+    cc::IntrusivePtr<LayerColor> layer{new LayerColor()};
     if (layer->initWithColor(color, width, height))
     {
-        layer->autorelease();
         return layer;
     }
-    CC_SAFE_DELETE(layer);
     return nullptr;
 }
 
-LayerColor* LayerColor::create(const Color4B& color)
+cc::IntrusivePtr<LayerColor> LayerColor::create(const Color4B& color)
 {
-    LayerColor* layer = new LayerColor();
+    cc::IntrusivePtr<LayerColor> layer{new LayerColor()};
     if (layer->initWithColor(color))
     {
-        layer->autorelease();
         return layer;
     }
-    CC_SAFE_DELETE(layer);
     return nullptr;
 }
 
@@ -154,40 +145,32 @@ LayerGradient::LayerGradient() {}
 
 LayerGradient::~LayerGradient() {}
 
-LayerGradient* LayerGradient::create(const Color4B& start, const Color4B& end)
+cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, const Color4B& end)
 {
-    LayerGradient* layer = new LayerGradient();
+    cc::IntrusivePtr<LayerGradient> layer{new LayerGradient()};
     if (layer->initWithColor(start, end))
     {
-        layer->autorelease();
         return layer;
     }
-    CC_SAFE_DELETE(layer);
     return nullptr;
 }
 
-LayerGradient* LayerGradient::create(const Color4B& start, const Color4B& end, const Vec2& v)
+cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, const Color4B& end, const Vec2& v)
 {
-    LayerGradient* layer = new LayerGradient();
+    cc::IntrusivePtr<LayerGradient> layer{new LayerGradient()};
     if (layer->initWithColor(start, end, v))
     {
-        layer->autorelease();
         return layer;
     }
-    CC_SAFE_DELETE(layer);
     return nullptr;
 }
 
-LayerGradient* LayerGradient::create()
+cc::IntrusivePtr<LayerGradient> LayerGradient::create()
 {
-    LayerGradient* ret = new LayerGradient();
-    if (ret->init())
+    cc::IntrusivePtr<LayerGradient> ret{new LayerGradient()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -346,33 +329,29 @@ std::string LayerGradient::getDescription() const
 /**
  * LayerRadialGradient
  */
-LayerRadialGradient* LayerRadialGradient::create(const Color4B& startColor,
+cc::IntrusivePtr<LayerRadialGradient> LayerRadialGradient::create(const Color4B& startColor,
                                                  const Color4B& endColor,
                                                  float radius,
                                                  const Vec2& center,
                                                  float expand)
 {
-    auto layerGradient = new LayerRadialGradient();
+    cc::IntrusivePtr<LayerRadialGradient> layerGradient{new LayerRadialGradient()};
     if (layerGradient && layerGradient->initWithColor(startColor, endColor, radius, center, expand))
     {
-        layerGradient->autorelease();
         return layerGradient;
     }
 
-    delete layerGradient;
     return nullptr;
 }
 
-LayerRadialGradient* LayerRadialGradient::create()
+cc::IntrusivePtr<LayerRadialGradient> LayerRadialGradient::create()
 {
-    auto layerGradient = new LayerRadialGradient();
+    cc::IntrusivePtr<LayerRadialGradient> layerGradient{new LayerRadialGradient()};
     if (layerGradient && layerGradient->initWithColor(Color4B::BLACK, Color4B::BLACK, 0, Vec2(0, 0), 0))
     {
-        layerGradient->autorelease();
         return layerGradient;
     }
 
-    delete layerGradient;
     return nullptr;
 }
 
@@ -381,7 +360,7 @@ LayerRadialGradient::LayerRadialGradient()
     auto& pipelinePS = _customCommand.getPipelineDescriptor().programState;
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::LAYER_RADIA_GRADIENT);
     //!!! LayerRadialGradient private programState don't want affect by Node::_programState, so store at _customCommand
-    pipelinePS          = new backend::ProgramState(program);
+    pipelinePS          = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     _mvpMatrixLocation  = pipelinePS->getUniformLocation("u_MVPMatrix");
     _startColorLocation = pipelinePS->getUniformLocation("u_startColor");
     _endColorLocation   = pipelinePS->getUniformLocation("u_endColor");
@@ -581,52 +560,29 @@ LayerMultiplex::~LayerMultiplex()
     }
 }
 
-LayerMultiplex* LayerMultiplex::create(Node* layer, ...)
-{
-    va_list args;
-    va_start(args, layer);
 
-    LayerMultiplex* ret = new LayerMultiplex();
-    if (ret->initWithLayers(layer, args))
-    {
-        ret->autorelease();
-        va_end(args);
-        return ret;
-    }
-    va_end(args);
-    CC_SAFE_DELETE(ret);
-    return nullptr;
-}
 
-LayerMultiplex* LayerMultiplex::createWithLayer(Node* layer)
+cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::createWithLayer(Node* layer)
 {
     return LayerMultiplex::create(layer, nullptr);
 }
 
-LayerMultiplex* LayerMultiplex::create()
+cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::create()
 {
-    LayerMultiplex* ret = new LayerMultiplex();
-    if (ret->init())
+    cc::IntrusivePtr<LayerMultiplex> ret{new LayerMultiplex()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-LayerMultiplex* LayerMultiplex::createWithArray(const Vector<Node*>& arrayOfLayers)
+cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::createWithArray(const Vector<Node*>& arrayOfLayers)
 {
-    LayerMultiplex* ret = new LayerMultiplex();
-    if (ret->initWithArray(arrayOfLayers))
+    cc::IntrusivePtr<LayerMultiplex> ret{new LayerMultiplex()};
+    if (!(ret->initWithArray(arrayOfLayers)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

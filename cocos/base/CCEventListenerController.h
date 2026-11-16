@@ -51,13 +51,13 @@ public:
 
     /** Create a controller event listener.
      *
-     * @return An autoreleased EventListenerController object.
+     * @return An owned EventListenerController object.
      */
-    static EventListenerController* create();
+    static cc::IntrusivePtr<EventListenerController> create();
 
     /// Overrides
     virtual bool checkAvailable() override;
-    virtual EventListenerController* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
     std::function<void(Controller*, Event*)> onConnected;
     std::function<void(Controller*, Event*)> onDisconnected;

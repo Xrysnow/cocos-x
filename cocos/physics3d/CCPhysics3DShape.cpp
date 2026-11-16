@@ -57,55 +57,49 @@ Physics3DShape::~Physics3DShape()
         #endif
 }
 
-Physics3DShape* Physics3DShape::createBox(const cocos2d::Vec3& extent)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createBox(const cocos2d::Vec3& extent)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initBox(extent);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createSphere(float radius)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createSphere(float radius)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initSphere(radius);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createCylinder(float radius, float height)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCylinder(float radius, float height)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initCylinder(radius, height);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createCapsule(float radius, float height)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCapsule(float radius, float height)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initCapsule(radius, height);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createConvexHull(const cocos2d::Vec3* points, int numPoints)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createConvexHull(const cocos2d::Vec3* points, int numPoints)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initConvexHull(points, numPoints);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createMesh(const cocos2d::Vec3* triangles, int numTriangles)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createMesh(const cocos2d::Vec3* triangles, int numTriangles)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initMesh(triangles, numTriangles);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createHeightfield(int heightStickWidth,
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createHeightfield(int heightStickWidth,
                                                   int heightStickLength,
                                                   const void* heightfieldData,
                                                   float heightScale,
@@ -115,18 +109,16 @@ Physics3DShape* Physics3DShape::createHeightfield(int heightStickWidth,
                                                   bool flipQuadEdges,
                                                   bool useDiamondSubdivision)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initHeightfield(heightStickWidth, heightStickLength, heightfieldData, heightScale, minHeight, maxHeight,
                            useFloatDatam, flipQuadEdges, useDiamondSubdivision);
-    shape->autorelease();
     return shape;
 }
 
-Physics3DShape* Physics3DShape::createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes)
 {
-    auto shape = new Physics3DShape();
+    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
     shape->initCompoundShape(shapes);
-    shape->autorelease();
     return shape;
 }
 

@@ -34,9 +34,9 @@ NS_CC_BEGIN
 class CC_EX_DLL PUPointEmitter : public PUEmitter
 {
 public:
-    static PUPointEmitter* create();
+    static cc::IntrusivePtr<PUPointEmitter> create();
 
-    virtual PUPointEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUPointEmitter();

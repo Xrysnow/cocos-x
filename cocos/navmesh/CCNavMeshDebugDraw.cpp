@@ -39,7 +39,7 @@ NS_CC_BEGIN
 NavMeshDebugDraw::NavMeshDebugDraw()
 {
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_COLOR);
-    _programState = new backend::ProgramState(program);
+    _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     _locMVP       = _programState->getUniformLocation("u_MVPMatrix");
 }
 

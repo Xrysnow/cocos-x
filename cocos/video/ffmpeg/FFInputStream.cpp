@@ -231,16 +231,15 @@ VideoInputStream::~VideoInputStream()
 	VideoInputStream::clean();
 }
 
-VideoInputStream* VideoInputStream::create(
+cc::IntrusivePtr<VideoInputStream> VideoInputStream::create(
 	VideoDecoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware)
 {
-	auto ret = new (std::nothrow) VideoInputStream();
+	cc::IntrusivePtr<VideoInputStream> ret{new (std::nothrow) VideoInputStream()};
 	if (ret && ret->init(decoder, format, stream, useHardware))
 	{
 		if (!decoder->isHardware() || (ret->frameSW = av_frame_alloc()))
 			return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
@@ -306,13 +305,12 @@ void VideoInputStream::clean()
 	}
 }
 
-AudioInputStream* AudioInputStream::create(
+cc::IntrusivePtr<AudioInputStream> AudioInputStream::create(
 	AudioDecoder* decoder, AVFormatContext* format, AVStream* stream)
 {
-	auto ret = new (std::nothrow) AudioInputStream();
+	cc::IntrusivePtr<AudioInputStream> ret{new (std::nothrow) AudioInputStream()};
 	if (ret && ret->init(decoder, format, stream))
 		return ret;
-	delete ret;
 	return nullptr;
 }
 

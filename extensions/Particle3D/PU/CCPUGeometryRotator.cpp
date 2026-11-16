@@ -44,7 +44,7 @@ PUGeometryRotator::PUGeometryRotator()
     _rotationAxis(DEFAULT_ROTATION_AXIS)
     , _rotationAxisSet(false)
 {
-    _dynRotationSpeed = new PUDynamicAttributeFixed();
+    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 };
 //-----------------------------------------------------------------------
@@ -67,7 +67,7 @@ void PUGeometryRotator::setRotationAxis(const Vec3& rotationAxis)
 //-----------------------------------------------------------------------
 void PUGeometryRotator::resetRotationAxis()
 {
-    _dynRotationSpeed = new PUDynamicAttributeFixed();
+    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
     _rotationAxisSet = false;
 }
@@ -165,10 +165,9 @@ void PUGeometryRotator::updatePUAffector(PUParticle3D* particle, float deltaTime
     }
 }
 
-PUGeometryRotator* PUGeometryRotator::create()
+cc::IntrusivePtr<PUGeometryRotator> PUGeometryRotator::create()
 {
-    auto pgr = new PUGeometryRotator();
-    pgr->autorelease();
+    cc::IntrusivePtr<PUGeometryRotator> pgr{new PUGeometryRotator()};
     return pgr;
 }
 
@@ -177,7 +176,7 @@ void PUGeometryRotator::copyAttributesTo(PUAffector* affector)
     PUAffector::copyAttributesTo(affector);
 
     PUGeometryRotator* geometryRotator = static_cast<PUGeometryRotator*>(affector);
-    geometryRotator->setRotationSpeed(getRotationSpeed()->clone());
+    geometryRotator->setRotationSpeed(getRotationSpeed()->clone().get());
     geometryRotator->_useOwnRotationSpeed = _useOwnRotationSpeed;
     geometryRotator->_rotationAxis        = _rotationAxis;
     geometryRotator->_rotationAxisSet     = _rotationAxisSet;

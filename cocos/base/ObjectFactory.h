@@ -38,8 +38,8 @@ NS_CC_BEGIN
 class CC_DLL ObjectFactory
 {
 public:
-    typedef cocos2d::Ref* (*Instance)(void);
-    typedef std::function<cocos2d::Ref*(void)> InstanceFunc;
+    typedef cc::IntrusivePtr<cocos2d::Ref> (*Instance)(void);
+    typedef std::function<cc::IntrusivePtr<cocos2d::Ref>(void)> InstanceFunc;
     struct CC_DLL TInfo
     {
         TInfo();
@@ -56,7 +56,7 @@ public:
 
     static ObjectFactory* getInstance();
     static void destroyInstance();
-    cocos2d::Ref* createObject(std::string_view name);
+    cc::IntrusivePtr<cocos2d::Ref> createObject(std::string_view name);
 
     void registerType(const TInfo& t);
     void removeAll();

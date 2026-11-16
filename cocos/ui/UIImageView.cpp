@@ -50,27 +50,23 @@ ImageView::ImageView()
 
 ImageView::~ImageView() {}
 
-ImageView* ImageView::create(std::string_view imageFileName, TextureResType texType)
+cc::IntrusivePtr<ImageView> ImageView::create(std::string_view imageFileName, TextureResType texType)
 {
-    ImageView* widget = new ImageView();
+    cc::IntrusivePtr<ImageView> widget{new ImageView()};
     if (widget->init(imageFileName, texType))
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-ImageView* ImageView::create()
+cc::IntrusivePtr<ImageView> ImageView::create()
 {
-    ImageView* widget = new ImageView();
+    cc::IntrusivePtr<ImageView> widget{new ImageView()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -107,7 +103,8 @@ bool ImageView::init(std::string_view imageFileName, TextureResType texType)
 
 void ImageView::initRenderer()
 {
-    _imageRenderer = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> imageRenderer;
+    _imageRenderer = (imageRenderer = Scale9Sprite::create()).get();
     _imageRenderer->setRenderingType(Scale9Sprite::RenderingType::SIMPLE);
 
     addProtectedChild(_imageRenderer, IMAGE_RENDERER_Z, -1);
@@ -272,7 +269,7 @@ std::string ImageView::getDescription() const
     return "ImageView";
 }
 
-Widget* ImageView::createCloneInstance()
+cc::IntrusivePtr<Widget> ImageView::createCloneInstance()
 {
     return ImageView::create();
 }
@@ -287,7 +284,7 @@ void ImageView::copySpecialProperties(Widget* widget)
         auto imageSprite = imageView->_imageRenderer->getSprite();
         if (nullptr != imageSprite)
         {
-            loadTexture(imageSprite->getSpriteFrame());
+            loadTexture(imageSprite->getSpriteFrame().get());
         }
         setCapInsets(imageView->_capInsets);
     }

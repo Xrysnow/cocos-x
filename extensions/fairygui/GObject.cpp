@@ -718,7 +718,8 @@ GObject* GObject::hitTest(const Vec2& worldPoint, const Camera* camera)
 
 void GObject::handleInit()
 {
-    _displayObject = Node::create();
+    cc::IntrusivePtr<cocos2d::Node> displayObject;
+    _displayObject = (displayObject = Node::create()).get();
     _displayObject->retain();
 }
 

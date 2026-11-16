@@ -140,7 +140,7 @@ public:
     /**
      * Create and return a empty Widget instance pointer.
      */
-    static Widget* create();
+    static cc::IntrusivePtr<Widget> create();
 
     /**
      * Sets whether the widget is enabled
@@ -524,7 +524,7 @@ public:
      * Create a new widget copy of the original one.
      * @return A cloned widget copy of original.
      */
-    Widget* clone();
+    cc::IntrusivePtr<Widget> clone();
     /**
      * @lua NA
      */
@@ -730,7 +730,7 @@ protected:
     void updateChildrenDisplayedRGBA();
 
     void copyProperties(Widget* model);
-    virtual Widget* createCloneInstance();
+    virtual cc::IntrusivePtr<Widget> createCloneInstance();
     virtual void copySpecialProperties(Widget* model);
     virtual void copyClonedWidgetChildren(Widget* model);
 

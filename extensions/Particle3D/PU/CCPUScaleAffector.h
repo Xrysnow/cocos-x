@@ -42,7 +42,7 @@ public:
     static const float DEFAULT_Z_SCALE;
     static const float DEFAULT_XYZ_SCALE;
 
-    static PUScaleAffector* create();
+    static cc::IntrusivePtr<PUScaleAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

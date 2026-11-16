@@ -86,7 +86,7 @@ PUScriptTranslator* PUEmitterManager::getTranslator(std::string_view type)
     return nullptr;
 }
 
-PUEmitter* PUEmitterManager::createEmitter(std::string_view type)
+cc::IntrusivePtr<PUEmitter> PUEmitterManager::createEmitter(std::string_view type)
 {
     if (type == "Box")
     {

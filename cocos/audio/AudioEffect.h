@@ -240,7 +240,7 @@ NS_CC_BEGIN
 		AudioEffect();
 		AudioEffect(const AudioEffect &s);
 		virtual ~AudioEffect();
-		virtual AudioEffect *clone();
+		virtual cc::IntrusivePtr<AudioEffect> clone();
 		ALuint getEffect() const;
 		virtual bool setParams(const ParamMap& params);
 		virtual const ParamMap& getParams() const;

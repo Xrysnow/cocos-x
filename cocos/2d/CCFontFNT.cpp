@@ -60,7 +60,7 @@ static StringMap<BMFontConfiguration*>* s_configurations = nullptr;
 
 BMFontConfiguration* FNTConfigLoadFile(std::string_view fntFile)
 {
-    BMFontConfiguration* ret = nullptr;
+    cc::IntrusivePtr<BMFontConfiguration> ret = nullptr;
 
     if (s_configurations == nullptr)
     {
@@ -77,22 +77,20 @@ BMFontConfiguration* FNTConfigLoadFile(std::string_view fntFile)
         }
     }
 
-    return ret;
+    return ret.get();
 }
 
 //
 // BitmapFontConfiguration
 //
 
-BMFontConfiguration* BMFontConfiguration::create(std::string_view FNTfile)
+cc::IntrusivePtr<BMFontConfiguration> BMFontConfiguration::create(std::string_view FNTfile)
 {
-    BMFontConfiguration* ret = new BMFontConfiguration();
+    cc::IntrusivePtr<BMFontConfiguration> ret{new BMFontConfiguration()};
     if (ret->initWithFNTfile(FNTfile))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -528,24 +526,23 @@ void BMFontConfiguration::parseKerningEntry(const char* line)
     _kerningDictionary[key] = amount;
 }
 
-FontFNT* FontFNT::create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated)
+cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated)
 {
     const auto newConf = FNTConfigLoadFile(fntFilePath);
     if (!newConf)
         return nullptr;
 
-    const auto tempFont = new FontFNT(newConf, imageRect, imageRotated);
+    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf, imageRect, imageRotated)};
 
     if (!tempFont)
     {
         return nullptr;
     }
     tempFont->setFontSize((float)newConf->_fontSize);
-    tempFont->autorelease();
     return tempFont;
 }
 
-FontFNT* FontFNT::create(std::string_view fntFilePath, std::string_view subTextureKey)
+cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, std::string_view subTextureKey)
 {
     const auto newConf = FNTConfigLoadFile(fntFilePath);
     if (!newConf)
@@ -556,18 +553,17 @@ FontFNT* FontFNT::create(std::string_view fntFilePath, std::string_view subTextu
     {
         return nullptr;
     }
-    auto tempFont = new FontFNT(newConf, frame->getRectInPixels(), frame->isRotated());
+    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf, frame->getRectInPixels(), frame->isRotated())};
 
     if (!tempFont)
     {
         return nullptr;
     }
     tempFont->setFontSize((float)newConf->_fontSize);
-    tempFont->autorelease();
     return tempFont;
 }
 
-FontFNT* FontFNT::create(std::string_view fntFilePath)
+cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath)
 {
     const auto newConf = FNTConfigLoadFile(fntFilePath);
     if (!newConf)
@@ -579,18 +575,17 @@ FontFNT* FontFNT::create(std::string_view fntFilePath)
     {
         return nullptr;
     }
-    FontFNT* tempFont = new FontFNT(newConf);
+    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf)};
 
     tempFont->setFontSize((float)newConf->_fontSize);
     if (!tempFont)
     {
         return nullptr;
     }
-    tempFont->autorelease();
     return tempFont;
 }
 
-FontFNT* FontFNT::create(std::string_view fntFilePath, const Vec2& imageOffset)
+cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Vec2& imageOffset)
 {
     return create(fntFilePath, Rect(imageOffset.x, imageOffset.y, 0, 0), false);
 }
@@ -676,7 +671,7 @@ FontAtlas* FontFNT::newFontAtlas()
     if (_configuration->_commonHeight == 0)
         return nullptr;
 
-    FontAtlas* tempAtlas = new FontAtlas(this);
+    cc::IntrusivePtr<FontAtlas> tempAtlas{new FontAtlas(this)};
 
     // common height
     int originalFontSize     = _configuration->_fontSize;
@@ -751,7 +746,6 @@ FontAtlas* FontFNT::newFontAtlas()
     Texture2D* tempTexture = Director::getInstance()->getTextureCache()->addImage(_configuration->getAtlasName());
     if (!tempTexture)
     {
-        CC_SAFE_RELEASE(tempAtlas);
         return nullptr;
     }
 
@@ -759,7 +753,7 @@ FontAtlas* FontFNT::newFontAtlas()
     tempAtlas->setTexture(0, tempTexture);
 
     // done
-    return tempAtlas;
+    return tempAtlas.detach();
 }
 
 void FontFNT::reloadBMFontResource(std::string_view fntFilePath)
@@ -769,7 +763,7 @@ void FontFNT::reloadBMFontResource(std::string_view fntFilePath)
         s_configurations = new StringMap<BMFontConfiguration*>();
     }
 
-    BMFontConfiguration* ret = s_configurations->at(fntFilePath);
+    cc::IntrusivePtr<BMFontConfiguration> ret = s_configurations->at(fntFilePath);
     if (ret != nullptr)
     {
         s_configurations->erase(fntFilePath);

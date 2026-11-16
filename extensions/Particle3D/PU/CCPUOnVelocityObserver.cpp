@@ -66,10 +66,9 @@ bool PUOnVelocityObserver::observe(PUParticle3D* particle, float /*timeElapsed*/
     return false;
 }
 
-PUOnVelocityObserver* PUOnVelocityObserver::create()
+cc::IntrusivePtr<PUOnVelocityObserver> PUOnVelocityObserver::create()
 {
-    auto pvo = new PUOnVelocityObserver();
-    pvo->autorelease();
+    cc::IntrusivePtr<PUOnVelocityObserver> pvo{new PUOnVelocityObserver()};
     return pvo;
 }
 

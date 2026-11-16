@@ -34,7 +34,7 @@ NS_CC_BEGIN
 class CC_EX_DLL PUFlockCenteringAffector : public PUAffector
 {
 public:
-    static PUFlockCenteringAffector* create();
+    static cc::IntrusivePtr<PUFlockCenteringAffector> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

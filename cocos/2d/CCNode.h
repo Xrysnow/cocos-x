@@ -133,9 +133,9 @@ public:
 
     /**
      * Allocates and initializes a node.
-     * @return A initialized node which is marked as "autorelease".
+     * @return An owned, initialized node. The C++ factory does not use a pool.
      */
-    static Node* create();
+    static cc::IntrusivePtr<Node> create();
 
     /**
      * Gets count of nodes those are attached to scene graph.

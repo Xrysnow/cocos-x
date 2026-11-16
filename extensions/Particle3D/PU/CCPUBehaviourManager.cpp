@@ -47,7 +47,7 @@ PUScriptTranslator* PUBehaviourManager::getTranslator(std::string_view type)
     return nullptr;
 }
 
-PUBehaviour* PUBehaviourManager::createBehaviour(std::string_view type)
+cc::IntrusivePtr<PUBehaviour> PUBehaviourManager::createBehaviour(std::string_view type)
 {
     if (type == "Slave")
     {

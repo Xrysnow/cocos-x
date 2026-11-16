@@ -26,6 +26,7 @@
 
 #include "base/RefCounted.h"
 #include "Log.h"
+#include <new>
 
 #if CC_REF_LEAK_DETECTION
     #include <algorithm> // std::find
@@ -40,7 +41,11 @@ static void trackRef(RefCounted *ref);
 static void untrackRef(RefCounted *ref);
 #endif
 
-RefCounted::RefCounted() { // NOLINT(modernize-use-equals-default)
+RefCounted::RefCounted(RefThreading threading)
+: _threading(threading), _counter(0) {
+    if (_threading == RefThreading::Atomic) {
+        new (&_counter.atomic) std::atomic<unsigned int>(0);
+    }
 #if CC_REF_LEAK_DETECTION
     trackRef(this);
 #endif
@@ -53,25 +58,36 @@ RefCounted::~RefCounted() { // NOLINT(modernize-use-equals-default)
 }
 
 void RefCounted::addRef() {
-    ++_referenceCount;
+    if (_threading == RefThreading::Atomic) {
+        _counter.atomic.fetch_add(1, std::memory_order_relaxed);
+    } else {
+        ++_counter.local;
+    }
 }
 
 void RefCounted::release() {
-    if (_referenceCount <= 0)
-    {
-        CC_LOG_ERROR("RefCounted::release: invalid reference count in %s, got %d", typeid(*this).name(), _referenceCount);
+    // A caller must own a live share. Never reload after decrement: another
+    // Atomic owner may already have performed the final release and deletion.
+    const auto previous = _threading == RefThreading::Atomic
+                              ? _counter.atomic.fetch_sub(1, std::memory_order_acq_rel)
+                              : _counter.local--;
+    if (previous == 0) {
+        CC_LOG_ERROR("RefCounted::release: invalid reference count in %s", typeid(*this).name());
+        CC_ASSERT_GT(previous, 0);
+        // Keep an invalid release from turning zero into a seemingly live count.
+        if (_threading == RefThreading::Atomic) _counter.atomic.fetch_add(1, std::memory_order_relaxed);
+        else ++_counter.local;
         return;
     }
-    CC_ASSERT_GT(_referenceCount, 0);
-    --_referenceCount;
 
-    if (_referenceCount == 0) {
+    if (previous == 1) {
+        onFinalRelease();
         delete this;
     }
 }
 
 unsigned int RefCounted::getRefCount() const {
-    return _referenceCount;
+    return _threading == RefThreading::Atomic ? _counter.atomic.load(std::memory_order_relaxed) : _counter.local;
 }
 
 #if CC_REF_LEAK_DETECTION

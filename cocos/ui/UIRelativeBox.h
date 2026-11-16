@@ -65,7 +65,7 @@ public:
      * Create an empty RelativeBox instance.
      * @return A RelativeBox instance.
      */
-    static RelativeBox* create();
+    static cc::IntrusivePtr<RelativeBox> create();
 
     /**
      * @brief Create a RelativeBox with a fixed size.
@@ -73,7 +73,7 @@ public:
      * @param size The size in `Vec2`.
      * @return A RelativeBox instance.
      */
-    static RelativeBox* create(const Vec2& size);
+    static cc::IntrusivePtr<RelativeBox> create(const Vec2& size);
 
     // initializes state of widget.
     virtual bool init() override;

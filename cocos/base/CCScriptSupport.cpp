@@ -33,7 +33,8 @@
 
 bool CC_DLL cc_assert_script_compatible(const char* msg)
 {
-    cocos2d::ScriptEngineProtocol* engine = cocos2d::ScriptEngineManager::getInstance()->getScriptEngine();
+    auto* manager = cocos2d::ScriptEngineManager::getInstanceIfExists();
+    cocos2d::ScriptEngineProtocol* engine = manager ? manager->getScriptEngine() : nullptr;
     if (engine && engine->handleAssert(msg))
     {
         return true;
@@ -46,10 +47,9 @@ NS_CC_BEGIN
 //
 // // ScriptHandlerEntry
 
-ScriptHandlerEntry* ScriptHandlerEntry::create(int handler)
+cc::IntrusivePtr<ScriptHandlerEntry> ScriptHandlerEntry::create(int handler)
 {
-    ScriptHandlerEntry* entry = new ScriptHandlerEntry(handler);
-    entry->autorelease();
+    cc::IntrusivePtr<ScriptHandlerEntry> entry{new ScriptHandlerEntry(handler)};
     return entry;
 }
 
@@ -57,7 +57,10 @@ ScriptHandlerEntry::~ScriptHandlerEntry()
 {
     if (_handler != 0)
     {
-        ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_handler);
+        auto* manager = ScriptEngineManager::getInstanceIfExists();
+        auto* engine = manager ? manager->getScriptEngine() : nullptr;
+        if (engine)
+            engine->removeScriptHandler(_handler);
         LUALOG("[LUA] Remove event handler: %d", _handler);
         _handler = 0;
     }
@@ -66,17 +69,16 @@ ScriptHandlerEntry::~ScriptHandlerEntry()
 //
 // // SchedulerScriptHandlerEntry
 
-SchedulerScriptHandlerEntry* SchedulerScriptHandlerEntry::create(int handler, float interval, bool paused)
+cc::IntrusivePtr<SchedulerScriptHandlerEntry> SchedulerScriptHandlerEntry::create(int handler, float interval, bool paused)
 {
-    SchedulerScriptHandlerEntry* entry = new SchedulerScriptHandlerEntry(handler);
+    cc::IntrusivePtr<SchedulerScriptHandlerEntry> entry{new SchedulerScriptHandlerEntry(handler)};
     entry->init(interval, paused);
-    entry->autorelease();
     return entry;
 }
 
 bool SchedulerScriptHandlerEntry::init(float interval, bool paused)
 {
-    _timer = new TimerScriptHandler();
+    _timer = cc::IntrusivePtr<TimerScriptHandler>{new TimerScriptHandler()}.detach();
     _timer->initWithScriptHandler(_handler, interval);
     _paused = paused;
     LUALOG("[LUA] ADD script schedule: %d, entryID: %d", _handler, _entryId);
@@ -92,14 +94,13 @@ SchedulerScriptHandlerEntry::~SchedulerScriptHandlerEntry()
 //
 // // TouchScriptHandlerEntry
 
-TouchScriptHandlerEntry* TouchScriptHandlerEntry::create(int handler,
+cc::IntrusivePtr<TouchScriptHandlerEntry> TouchScriptHandlerEntry::create(int handler,
                                                          bool isMultiTouches,
                                                          int priority,
                                                          bool swallowsTouches)
 {
-    TouchScriptHandlerEntry* entry = new TouchScriptHandlerEntry(handler);
+    cc::IntrusivePtr<TouchScriptHandlerEntry> entry{new TouchScriptHandlerEntry(handler)};
     entry->init(isMultiTouches, priority, swallowsTouches);
-    entry->autorelease();
     return entry;
 }
 
@@ -158,6 +159,11 @@ void ScriptEngineManager::destroyInstance()
         delete s_pSharedScriptEngineManager;
         s_pSharedScriptEngineManager = nullptr;
     }
+}
+
+ScriptEngineManager* ScriptEngineManager::getInstanceIfExists() noexcept
+{
+    return s_pSharedScriptEngineManager;
 }
 
 void ScriptEngineManager::sendNodeEventToLua(Node* node, int action)

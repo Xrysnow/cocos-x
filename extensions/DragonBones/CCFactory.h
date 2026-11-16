@@ -186,7 +186,7 @@ public:
      * @version DragonBones 3.0
      * @language zh_CN
      */
-    virtual cocos2d::Sprite* getTextureDisplay(std::string_view textureName,
+    virtual cc::IntrusivePtr<cocos2d::Sprite> getTextureDisplay(std::string_view textureName,
                                                std::string_view dragonBonesName = "") const;
     /**
      * - A global sound event manager.

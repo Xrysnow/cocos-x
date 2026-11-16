@@ -56,7 +56,7 @@ public:
      * @js NA
      * @lua NA
      */
-    static Invocation* create(Ref* target, Control::Handler action, Control::EventType controlEvent);
+    static cc::IntrusivePtr<Invocation> create(Ref* target, Control::Handler action, Control::EventType controlEvent);
     /**
      * @js NA
      * @lua NA

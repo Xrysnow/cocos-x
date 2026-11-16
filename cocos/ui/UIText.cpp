@@ -50,15 +50,13 @@ Text::Text()
 
 Text::~Text() {}
 
-Text* Text::create()
+cc::IntrusivePtr<Text> Text::create()
 {
-    Text* widget = new Text();
+    cc::IntrusivePtr<Text> widget{new Text()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -71,15 +69,13 @@ bool Text::init()
     return false;
 }
 
-Text* Text::create(std::string_view textContent, std::string_view fontName, float fontSize)
+cc::IntrusivePtr<Text> Text::create(std::string_view textContent, std::string_view fontName, float fontSize)
 {
-    Text* text = new Text();
+    cc::IntrusivePtr<Text> text{new Text()};
     if (text->init(textContent, fontName, fontSize))
     {
-        text->autorelease();
         return text;
     }
-    CC_SAFE_DELETE(text);
     return nullptr;
 }
 
@@ -102,7 +98,8 @@ bool Text::init(std::string_view textContent, std::string_view fontName, float f
 
 void Text::initRenderer()
 {
-    _labelRenderer = Label::create();
+    cc::IntrusivePtr<Label> labelRenderer;
+    _labelRenderer = (labelRenderer = Label::create()).get();
     addProtectedChild(_labelRenderer, LABEL_RENDERER_Z, -1);
 }
 
@@ -413,7 +410,7 @@ const BlendFunc& Text::getBlendFunc() const
     return _labelRenderer->getBlendFunc();
 }
 
-Widget* Text::createCloneInstance()
+cc::IntrusivePtr<Widget> Text::createCloneInstance()
 {
     return Text::create();
 }

@@ -51,7 +51,7 @@ namespace ffmpeg
 		virtual ~VideoInputStream();
 	public:
 		// Returns an owned reference.
-		static VideoInputStream* create(
+		static cc::IntrusivePtr<VideoInputStream> create(
 			VideoDecoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware = true);
 		void addToContainerInfo(ContainerInfo* info) override;
 	protected:
@@ -65,7 +65,7 @@ namespace ffmpeg
 		virtual ~AudioInputStream() = default;
 	public:
 		// Returns an owned reference.
-		static AudioInputStream* create(
+		static cc::IntrusivePtr<AudioInputStream> create(
 			AudioDecoder* decoder, AVFormatContext* format, AVStream* stream);
 		void addToContainerInfo(ContainerInfo* info) override;
 	protected:

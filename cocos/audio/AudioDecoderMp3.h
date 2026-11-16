@@ -10,7 +10,7 @@ NS_CC_BEGIN
 		virtual ~AudioDecoderMp3();
 		bool init(AudioStream* src);
 	public:
-		static AudioDecoderMp3* create(AudioStream* src, size_t bufferSize);
+		static cc::IntrusivePtr<AudioDecoderMp3> create(AudioStream* src, size_t bufferSize);
 
 		int64_t decode(char* dst, uint64_t bytesToRead) override;
 		bool seek(int64_t frameOffset) override;

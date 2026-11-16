@@ -99,27 +99,23 @@ void TextureAtlas::setQuads(V3F_C4B_T2F_Quad* quads)
 
 // TextureAtlas - alloc & init
 
-TextureAtlas* TextureAtlas::create(std::string_view file, ssize_t capacity)
+cc::IntrusivePtr<TextureAtlas> TextureAtlas::create(std::string_view file, ssize_t capacity)
 {
-    TextureAtlas* textureAtlas = new TextureAtlas();
+    cc::IntrusivePtr<TextureAtlas> textureAtlas{new TextureAtlas()};
     if (textureAtlas->initWithFile(file, capacity))
     {
-        textureAtlas->autorelease();
         return textureAtlas;
     }
-    CC_SAFE_DELETE(textureAtlas);
     return nullptr;
 }
 
-TextureAtlas* TextureAtlas::createWithTexture(Texture2D* texture, ssize_t capacity)
+cc::IntrusivePtr<TextureAtlas> TextureAtlas::createWithTexture(Texture2D* texture, ssize_t capacity)
 {
-    TextureAtlas* textureAtlas = new TextureAtlas();
+    cc::IntrusivePtr<TextureAtlas> textureAtlas{new TextureAtlas()};
     if (textureAtlas->initWithTexture(texture, capacity))
     {
-        textureAtlas->autorelease();
         return textureAtlas;
     }
-    CC_SAFE_DELETE(textureAtlas);
     return nullptr;
 }
 

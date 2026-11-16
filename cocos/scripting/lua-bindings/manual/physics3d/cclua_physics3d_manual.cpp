@@ -24,6 +24,7 @@
  ****************************************************************************/
 #include "platform/CCPlatformConfig.h"
 #include "base/ccConfig.h"
+#include "lua_conversion/lua_conversion.hpp"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     #include "scripting/lua-bindings/manual/physics3d/cclua_physics3d_manual.h"
     #include "scripting/lua-bindings/auto/cclua_physics3d_auto.hpp"
@@ -213,8 +214,8 @@ int cclua_physics3d_Physics3DShape_createMesh(lua_State* L)
             tolua_error(L, "invalid arguments in function 'cclua_physics3d_Physics3DShape_createMesh'", nullptr);
             return 0;
         }
-        cocos2d::Physics3DShape* ret = cocos2d::Physics3DShape::createMesh(&arg0[0], arg1);
-        object_to_luaval<cocos2d::Physics3DShape>(L, "cc.Physics3DShape", (cocos2d::Physics3DShape*)ret);
+        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createMesh(&arg0[0], arg1);
+        lua::native_to_luaval(L, std::move(ret));
         return 1;
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createMesh", argc, 2);
@@ -266,9 +267,9 @@ int cclua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
                         nullptr);
             return 0;
         }
-        cocos2d::Physics3DShape* ret = cocos2d::Physics3DShape::createHeightfield(arg0, arg1, &arg2[0], (float)arg3,
+        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createHeightfield(arg0, arg1, &arg2[0], (float)arg3,
                                                                                   (float)arg4, (float)arg5, arg6, arg7);
-        object_to_luaval<cocos2d::Physics3DShape>(L, "cc.Physics3DShape", (cocos2d::Physics3DShape*)ret);
+        lua::native_to_luaval(L, std::move(ret));
         return 1;
     }
     if (argc == 9)
@@ -297,9 +298,9 @@ int cclua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
                         nullptr);
             return 0;
         }
-        cocos2d::Physics3DShape* ret = cocos2d::Physics3DShape::createHeightfield(
+        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createHeightfield(
             arg0, arg1, &arg2[0], (float)arg3, (float)arg4, (float)arg5, arg6, arg7, arg8);
-        object_to_luaval<cocos2d::Physics3DShape>(L, "cc.Physics3DShape", (cocos2d::Physics3DShape*)ret);
+        lua::native_to_luaval(L, std::move(ret));
         return 1;
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createHeightfield",
@@ -365,8 +366,8 @@ int cclua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
             }
         }
 
-        cocos2d::Physics3DShape* ret = cocos2d::Physics3DShape::createCompoundShape(shapes);
-        object_to_luaval<cocos2d::Physics3DShape>(L, "cc.Physics3DShape", (cocos2d::Physics3DShape*)ret);
+        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createCompoundShape(shapes);
+        lua::native_to_luaval(L, std::move(ret));
         return 1;
     }
     luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d\n ", "cc.Physics3DShape:createCompoundShape",

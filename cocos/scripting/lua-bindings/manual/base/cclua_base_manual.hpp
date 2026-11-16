@@ -37,7 +37,7 @@ NS_CC_BEGIN
 class LuaEventListenerAcceleration
 {
 public:
-    static EventListenerAcceleration* create();
+    static cc::IntrusivePtr<EventListenerAcceleration> create();
 };
 NS_CC_END
 

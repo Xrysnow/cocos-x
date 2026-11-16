@@ -101,7 +101,7 @@ public:
 
     /* @brief To access within scripting environment
      */
-    static AssetsManager* create(const char* packageUrl,
+    static cc::IntrusivePtr<AssetsManager> create(const char* packageUrl,
                                  const char* versionFileUrl,
                                  const char* storagePath,
                                  ErrorCallback errorCallback,

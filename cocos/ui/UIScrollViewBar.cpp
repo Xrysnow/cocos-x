@@ -70,36 +70,37 @@ ScrollViewBar::ScrollViewBar(ScrollView* parent, ScrollView::Direction direction
 
 ScrollViewBar::~ScrollViewBar() {}
 
-ScrollViewBar* ScrollViewBar::create(ScrollView* parent, ScrollView::Direction direction)
+cc::IntrusivePtr<ScrollViewBar> ScrollViewBar::create(ScrollView* parent, ScrollView::Direction direction)
 {
-    ScrollViewBar* node = new ScrollViewBar(parent, direction);
+    cc::IntrusivePtr<ScrollViewBar> node{new ScrollViewBar(parent, direction)};
     if (node->init())
     {
-        node->autorelease();
         return node;
     }
-    CC_SAFE_DELETE(node);
     return nullptr;
 }
 
 bool ScrollViewBar::init()
 {
+    cc::IntrusivePtr<Sprite> lowerHalfCircle;
     if (!ProtectedNode::init())
     {
         return false;
     }
 
-    _upperHalfCircle = utils::createSpriteFromBase64Cached(HALF_CIRCLE_IMAGE, HALF_CIRCLE_IMAGE_KEY);
+    auto upperHalfCircle = utils::createSpriteFromBase64Cached(HALF_CIRCLE_IMAGE, HALF_CIRCLE_IMAGE_KEY);
+    _upperHalfCircle = upperHalfCircle.get();
     _upperHalfCircle->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
     addProtectedChild(_upperHalfCircle);
 
-    _lowerHalfCircle = Sprite::createWithTexture(_upperHalfCircle->getTexture(), _upperHalfCircle->getTextureRect(),
-                                                 _upperHalfCircle->isTextureRectRotated());
+    _lowerHalfCircle = (lowerHalfCircle = Sprite::createWithTexture(_upperHalfCircle->getTexture(), _upperHalfCircle->getTextureRect(),
+                                                 _upperHalfCircle->isTextureRectRotated())).get();
     _lowerHalfCircle->setScaleY(-1);
     _lowerHalfCircle->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
     addProtectedChild(_lowerHalfCircle);
 
-    _body = utils::createSpriteFromBase64Cached(BODY_IMAGE_1_PIXEL_HEIGHT, BODY_IMAGE_1_PIXEL_HEIGHT_KEY);
+    auto body = utils::createSpriteFromBase64Cached(BODY_IMAGE_1_PIXEL_HEIGHT, BODY_IMAGE_1_PIXEL_HEIGHT_KEY);
+    _body = body.get();
     _body->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
     addProtectedChild(_body);
 

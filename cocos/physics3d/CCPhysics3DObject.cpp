@@ -53,17 +53,15 @@ Physics3DRigidBody::~Physics3DRigidBody()
     CC_SAFE_RELEASE(_physics3DShape);
 }
 
-Physics3DRigidBody* Physics3DRigidBody::create(Physics3DRigidBodyDes* info)
+cc::IntrusivePtr<Physics3DRigidBody> Physics3DRigidBody::create(Physics3DRigidBodyDes* info)
 {
-    auto ret = new Physics3DRigidBody();
+    cc::IntrusivePtr<Physics3DRigidBody> ret{new Physics3DRigidBody()};
     if (ret->init(info))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
 bool Physics3DRigidBody::init(Physics3DRigidBodyDes* info)
@@ -440,17 +438,15 @@ Physics3DCollider::~Physics3DCollider()
     CC_SAFE_RELEASE(_physics3DShape);
 }
 
-Physics3DCollider* Physics3DCollider::create(Physics3DColliderDes* info)
+cc::IntrusivePtr<Physics3DCollider> Physics3DCollider::create(Physics3DColliderDes* info)
 {
-    auto ret = new Physics3DCollider();
+    cc::IntrusivePtr<Physics3DCollider> ret{new Physics3DCollider()};
     if (ret->init(info))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
 float Physics3DCollider::getCcdSweptSphereRadius() const

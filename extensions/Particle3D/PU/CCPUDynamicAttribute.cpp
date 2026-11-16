@@ -77,10 +77,10 @@ void PUDynamicAttributeFixed::copyAttributesTo(PUDynamicAttribute* dynamicAttrib
     dynAttr->_value                  = _value;
 }
 
-PUDynamicAttributeFixed* PUDynamicAttributeFixed::clone()
+cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeFixed::clone()
 {
-    auto af = new PUDynamicAttributeFixed();
-    this->copyAttributesTo(af);
+    cc::IntrusivePtr<PUDynamicAttributeFixed> af{new PUDynamicAttributeFixed()};
+    this->copyAttributesTo(af.get());
     return af;
 }
 
@@ -140,10 +140,10 @@ void PUDynamicAttributeRandom::copyAttributesTo(PUDynamicAttribute* dynamicAttri
     dynAttr->_max                     = _max;
 }
 
-PUDynamicAttributeRandom* PUDynamicAttributeRandom::clone()
+cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeRandom::clone()
 {
-    auto ar = new PUDynamicAttributeRandom();
-    this->copyAttributesTo(ar);
+    cc::IntrusivePtr<PUDynamicAttributeRandom> ar{new PUDynamicAttributeRandom()};
+    this->copyAttributesTo(ar.get());
     return ar;
 }
 
@@ -319,10 +319,10 @@ void PUDynamicAttributeCurved::copyAttributesTo(PUDynamicAttribute* dynamicAttri
     dynAttr->processControlPoints();
 }
 
-PUDynamicAttributeCurved* PUDynamicAttributeCurved::clone()
+cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeCurved::clone()
 {
-    auto ac = new PUDynamicAttributeCurved();
-    this->copyAttributesTo(ac);
+    cc::IntrusivePtr<PUDynamicAttributeCurved> ac{new PUDynamicAttributeCurved()};
+    this->copyAttributesTo(ac.get());
     return ac;
 }
 
@@ -430,10 +430,10 @@ void PUDynamicAttributeOscillate::copyAttributesTo(PUDynamicAttribute* dynamicAt
     dynAttr->_amplitude                  = _amplitude;
 }
 
-PUDynamicAttributeOscillate* PUDynamicAttributeOscillate::clone()
+cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeOscillate::clone()
 {
-    auto ao = new PUDynamicAttributeOscillate();
-    this->copyAttributesTo(ao);
+    cc::IntrusivePtr<PUDynamicAttributeOscillate> ao{new PUDynamicAttributeOscillate()};
+    this->copyAttributesTo(ao.get());
     return ao;
 }
 

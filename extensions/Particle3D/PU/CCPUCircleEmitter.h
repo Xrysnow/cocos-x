@@ -41,7 +41,7 @@ public:
     static const bool DEFAULT_RANDOM;
     static const Vec3 DEFAULT_NORMAL;
 
-    static PUCircleEmitter* create();
+    static cc::IntrusivePtr<PUCircleEmitter> create();
 
     /**
      */
@@ -73,7 +73,7 @@ public:
      */
     virtual void notifyStart() override;
 
-    virtual PUCircleEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUCircleEmitter();

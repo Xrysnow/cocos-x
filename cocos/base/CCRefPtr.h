@@ -37,237 +37,20 @@
 
 NS_CC_BEGIN
 
-/**
- * Utility/support macros. Defined to enable RefPtr<T> to contain types like 'const T' because we do not
- * regard retain()/release() as affecting mutability of state.
- */
-#define CC_REF_PTR_SAFE_RETAIN(ptr)                                   \
-                                                                      \
-    do                                                                \
-    {                                                                 \
-        if (ptr)                                                      \
-        {                                                             \
-            const_cast<Ref*>(static_cast<const Ref*>(ptr))->retain(); \
-        }                                                             \
-                                                                      \
-    } while (0);
-
-#define CC_REF_PTR_SAFE_RELEASE(ptr)                                   \
-                                                                       \
-    do                                                                 \
-    {                                                                  \
-        if (ptr)                                                       \
-        {                                                              \
-            const_cast<Ref*>(static_cast<const Ref*>(ptr))->release(); \
-        }                                                              \
-                                                                       \
-    } while (0);
-
-#define CC_REF_PTR_SAFE_RELEASE_NULL(ptr)                              \
-                                                                       \
-    do                                                                 \
-    {                                                                  \
-        if (ptr)                                                       \
-        {                                                              \
-            const_cast<Ref*>(static_cast<const Ref*>(ptr))->release(); \
-            ptr = nullptr;                                             \
-        }                                                              \
-                                                                       \
-    } while (0);
-
-// Tell RefPtr, the object already referenced, no need to retain again
-template <typename T>
-struct ReferencedObject
-{
-    T* _ptr;
-};
-
-/**
- * Wrapper class which maintains a strong reference to a cocos2dx cocos2d::Ref* type object.
- * Similar in concept to a boost smart pointer.
- *
- * Enables the use of the RAII idiom with Cocos2dx objects and helps automate some of the more
- * mundane tasks of pointer initialization and cleanup.
- *
- * The class itself is modelled on C++ 11 std::shared_ptr, and trys to keep some of the methods
- * and functionality consistent with std::shared_ptr.
- * Reference-count thread safety is determined by the object at construction.
- * Distinct RefPtr instances may manage an Atomic object concurrently; accessing
- * the same RefPtr instance concurrently still requires external synchronization.
- */
-template <typename T>
-class RefPtr
-{
-public:
-    RefPtr() : _ptr(nullptr) {}
-
-    RefPtr(RefPtr<T>&& other)
-    {
-        _ptr       = other._ptr;
-        other._ptr = nullptr;
-    }
-
-    RefPtr(T* ptr) : _ptr(ptr) { CC_REF_PTR_SAFE_RETAIN(_ptr); }
-
-    template <typename _Other>
-    RefPtr(ReferencedObject<_Other>&& ptr) : _ptr(ptr._ptr)
-    {}
-
-    RefPtr(std::nullptr_t ptr) : _ptr(nullptr) {}
-
-    RefPtr(const RefPtr<T>& other) : _ptr(other._ptr) { CC_REF_PTR_SAFE_RETAIN(_ptr); }
-
-    ~RefPtr() { CC_REF_PTR_SAFE_RELEASE_NULL(_ptr); }
-
-    RefPtr<T>& operator=(const RefPtr<T>& other)
-    {
-        if (other._ptr != _ptr)
-        {
-            CC_REF_PTR_SAFE_RETAIN(other._ptr);
-            CC_REF_PTR_SAFE_RELEASE(_ptr);
-            _ptr = other._ptr;
-        }
-
-        return *this;
-    }
-
-    RefPtr<T>& operator=(RefPtr<T>&& other)
-    {
-        if (&other != this)
-        {
-            CC_REF_PTR_SAFE_RELEASE(_ptr);
-            _ptr       = other._ptr;
-            other._ptr = nullptr;
-        }
-
-        return *this;
-    }
-
-    RefPtr<T>& operator=(T* other)
-    {
-        if (other != _ptr)
-        {
-            CC_REF_PTR_SAFE_RETAIN(other);
-            CC_REF_PTR_SAFE_RELEASE(_ptr);
-            _ptr = other;
-        }
-
-        return *this;
-    }
-
-    RefPtr<T>& operator=(std::nullptr_t other)
-    {
-        CC_REF_PTR_SAFE_RELEASE_NULL(_ptr);
-        return *this;
-    }
-
-    operator T*() const { return _ptr; }
-
-    T& operator*() const
-    {
-        CCASSERT(_ptr, "Attempt to dereference a null pointer!");
-        return *_ptr;
-    }
-
-    T* operator->() const
-    {
-        CCASSERT(_ptr, "Attempt to dereference a null pointer!");
-        return _ptr;
-    }
-
-    T* get() const { return _ptr; }
-
-    bool operator==(const RefPtr<T>& other) const { return _ptr == other._ptr; }
-
-    bool operator==(const T* other) const { return _ptr == other; }
-
-    bool operator==(typename std::remove_const<T>::type* other) const { return _ptr == other; }
-
-    bool operator==(const std::nullptr_t other) const { return _ptr == other; }
-
-    bool operator!=(const RefPtr<T>& other) const { return _ptr != other._ptr; }
-
-    bool operator!=(const T* other) const { return _ptr != other; }
-
-    bool operator!=(typename std::remove_const<T>::type* other) const { return _ptr != other; }
-
-    bool operator!=(const std::nullptr_t other) const { return _ptr != other; }
-
-    bool operator>(const RefPtr<T>& other) const { return _ptr > other._ptr; }
-
-    bool operator>(const T* other) const { return _ptr > other; }
-
-    bool operator>(typename std::remove_const<T>::type* other) const { return _ptr > other; }
-
-    bool operator<(const RefPtr<T>& other) const { return _ptr < other._ptr; }
-
-    bool operator<(const T* other) const { return _ptr < other; }
-
-    bool operator<(typename std::remove_const<T>::type* other) const { return _ptr < other; }
-
-    bool operator>=(const RefPtr<T>& other) const { return _ptr >= other._ptr; }
-
-    bool operator>=(const T* other) const { return _ptr >= other; }
-
-    bool operator>=(typename std::remove_const<T>::type* other) const { return _ptr >= other; }
-
-    bool operator<=(const RefPtr<T>& other) const { return _ptr <= other._ptr; }
-
-    bool operator<=(const T* other) const { return _ptr <= other; }
-
-    bool operator<=(typename std::remove_const<T>::type* other) const { return _ptr <= other; }
-
-    explicit operator bool() const { return _ptr != nullptr; }
-
-    void reset() { CC_REF_PTR_SAFE_RELEASE_NULL(_ptr); }
-
-    void swap(RefPtr<T>& other)
-    {
-        if (&other != this)
-        {
-            T* tmp     = _ptr;
-            _ptr       = other._ptr;
-            other._ptr = tmp;
-        }
-    }
-
-    /**
-     * This function assigns to this RefPtr<T> but does not increase the reference count of the object pointed to.
-     * Useful for assigning an object created through the 'new' operator to a RefPtr<T>. Basically used in scenarios
-     * where the RefPtr<T> has the initial ownership of the object.
-     *
-     * E.G:
-     *      RefPtr<cocos2d::Image> image;
-     *      image.weakAssign(new cocos2d::Image());
-     *
-     * Instead of:
-     *      RefPtr<cocos2d::Image> image;
-     *      image = new cocos2d::Image();
-     *      image->release();               // Required because new'd object already has a reference count of '1'.
-     */
-    void weakAssign(const RefPtr<T>& other)
-    {
-        CC_REF_PTR_SAFE_RELEASE(_ptr);
-        _ptr = other._ptr;
-    }
-
-private:
-    T* _ptr;
-
-    // NOTE: We can ensure T is derived from cocos2d::Ref at compile time here.
-    static_assert(std::is_base_of<Ref, typename std::remove_const<T>::type>::value, "T must be derived from Ref");
-};
+// RefPtr is the pure alias declared in CCRef.h. Ownership lives in gfx/base/Ptr.h.
+using cc::static_pointer_cast;
+using cc::dynamic_pointer_cast;
 
 template <class T>
-inline RefPtr<T> makeRef(T* ptr)
+inline cc::IntrusivePtr<T> makeRef(T* ptr)
 {
-    return RefPtr<T>(ptr);
+    return cc::IntrusivePtr<T>(ptr);
 }
 
 /** Construct an object with an explicit, immutable reference-count policy.
- * Unlike makeRef(T*), this overload adopts the initial reference (count == 1).
+ * Construction starts at zero; the returned IntrusivePtr establishes the first reference.
  * It calls neither init() nor autorelease(); callers perform any initialization
- * while retaining the returned RefPtr. Allocation/constructor exceptions propagate.
+ * while retaining the returned IntrusivePtr. Allocation/constructor exceptions propagate.
  *
  * T must accept RefConstructionToken as its first constructor argument and forward
  * it through its base constructors, for example:
@@ -286,13 +69,13 @@ inline RefPtr<T> makeRef(T* ptr)
  * thread-affine destructors safe to use on arbitrary threads.
  */
 template <class T, RefThreading Threading, class... Args>
-RefPtr<T> makeRef(Args&&... args)
+cc::IntrusivePtr<T> makeRef(Args&&... args)
 {
     static_assert(Threading == RefThreading::Local || Threading == RefThreading::Atomic,
                   "Invalid reference-count threading policy");
     static_assert(std::is_convertible<T*, Ref*>::value, "T must publicly and unambiguously derive from Ref");
 
-    RefPtr<T> result(ReferencedObject<T>{new T(RefConstructionToken(Threading), std::forward<Args>(args)...)});
+    cc::IntrusivePtr<T> result{new T(RefConstructionToken(Threading), std::forward<Args>(args)...)};
     // A constructor can accidentally accept the token but omit forwarding it.
     // Reject that mistake in release builds too, before publishing the object.
     if (static_cast<const Ref*>(result.get())->getReferenceThreading() != Threading)
@@ -300,79 +83,13 @@ RefPtr<T> makeRef(Args&&... args)
     return result;
 }
 
-template <class T>
-inline bool operator<(const RefPtr<T>& r, std::nullptr_t)
-{
-    return std::less<T*>()(r.get(), nullptr);
-}
-
-template <class T>
-inline bool operator<(std::nullptr_t, const RefPtr<T>& r)
-{
-    return std::less<T*>()(nullptr, r.get());
-}
-
-template <class T>
-inline bool operator>(const RefPtr<T>& r, std::nullptr_t)
-{
-    return nullptr < r;
-}
-
-template <class T>
-inline bool operator>(std::nullptr_t, const RefPtr<T>& r)
-{
-    return r < nullptr;
-}
-
-template <class T>
-inline bool operator<=(const RefPtr<T>& r, std::nullptr_t)
-{
-    return !(nullptr < r);
-}
-
-template <class T>
-inline bool operator<=(std::nullptr_t, const RefPtr<T>& r)
-{
-    return !(r < nullptr);
-}
-
-template <class T>
-inline bool operator>=(const RefPtr<T>& r, std::nullptr_t)
-{
-    return !(r < nullptr);
-}
-
-template <class T>
-inline bool operator>=(std::nullptr_t, const RefPtr<T>& r)
-{
-    return !(nullptr < r);
-}
-
-/**
- * Cast between RefPtr types statically.
- */
-template <class T, class U>
-RefPtr<T> static_pointer_cast(const RefPtr<U>& r)
-{
-    return RefPtr<T>(static_cast<T*>(r.get()));
-}
-
-/**
- * Cast between RefPtr types dynamically.
- */
-template <class T, class U>
-RefPtr<T> dynamic_pointer_cast(const RefPtr<U>& r)
-{
-    return RefPtr<T>(dynamic_cast<T*>(r.get()));
-}
-
 /** A strong reference whose non-null target always uses RefThreading::Atomic.
- * The private RefPtr stores the same intrusive ownership as an ordinary RefPtr;
+ * The private IntrusivePtr stores the same intrusive ownership as an ordinary IntrusivePtr;
  * this wrapper adds no counter and never changes an object's policy.
  *
  * Use makeThreadSafeRef<T>(args...) to create an object, or requireThreadSafe(ref)
- * to check an existing RefPtr explicitly. There is no public raw-pointer/adoption
- * constructor, implicit raw-pointer conversion, or mutable access to the RefPtr.
+ * to check an existing IntrusivePtr explicitly. There is no public raw-pointer/adoption
+ * constructor, implicit raw-pointer conversion, or mutable access to the IntrusivePtr.
  *
  * Distinct instances can manage references concurrently. Concurrent mutation of
  * the same instance still needs synchronization. Object state, autorelease pools,
@@ -396,12 +113,8 @@ public:
     {}
 
     template <class U, std::enable_if_t<std::is_convertible<U*, T*>::value, int> = 0>
-    ThreadSafeRefPtr(ThreadSafeRefPtr<U>&& other) : _ptr(other.get())
-    {
-        // RefPtr has no converting move constructor. Acquire the adjusted pointer
-        // before releasing the source, so the object remains alive throughout.
-        other.reset();
-    }
+    ThreadSafeRefPtr(ThreadSafeRefPtr<U>&& other) noexcept : _ptr(std::move(other._ptr))
+    {}
 
     ThreadSafeRefPtr& operator=(ThreadSafeRefPtr other) noexcept
     {
@@ -448,10 +161,12 @@ public:
     /** Explicitly erase the type-level guarantee; the object's policy stays Atomic.
      * Lvalues copy a reference, while rvalues transfer it and become empty.
      */
-    RefPtr<T> asRef() const & { return _ptr; }
-    RefPtr<T> asRef() && noexcept { return std::move(_ptr); }
+    cc::IntrusivePtr<T> asRef() const & { return _ptr; }
+    cc::IntrusivePtr<T> asRef() && noexcept { return std::move(_ptr); }
 
 private:
+    template <class U> friend class ThreadSafeRefPtr;
+
     static T* checkedPointer(T* ptr)
     {
         // Check before retain(): a Local counter must not be touched by a failed
@@ -463,22 +178,22 @@ private:
 
     explicit ThreadSafeRefPtr(T* ptr) : _ptr(checkedPointer(ptr)) {}
 
-    explicit ThreadSafeRefPtr(RefPtr<T>&& ptr)
+    explicit ThreadSafeRefPtr(cc::IntrusivePtr<T>&& ptr)
     {
         checkedPointer(ptr.get());
         // Validate before consuming the source; failure leaves it unchanged.
         _ptr.swap(ptr);
     }
 
-    RefPtr<T> _ptr;
+    cc::IntrusivePtr<T> _ptr;
 
     static_assert(std::is_convertible<T*, const Ref*>::value,
                   "T must publicly and unambiguously derive from Ref (optionally const)");
 
     template <class U>
-    friend ThreadSafeRefPtr<U> requireThreadSafe(const RefPtr<U>& ptr);
+    friend ThreadSafeRefPtr<U> requireThreadSafe(const cc::IntrusivePtr<U>& ptr);
     template <class U>
-    friend ThreadSafeRefPtr<U> requireThreadSafe(RefPtr<U>&& ptr);
+    friend ThreadSafeRefPtr<U> requireThreadSafe(cc::IntrusivePtr<U>&& ptr);
     template <class U, class V>
     friend ThreadSafeRefPtr<U> static_pointer_cast(const ThreadSafeRefPtr<V>& ptr);
     template <class U, class V>
@@ -491,19 +206,19 @@ private:
  * alive and must not be concurrently modified during the call.
  */
 template <class T>
-ThreadSafeRefPtr<T> requireThreadSafe(const RefPtr<T>& ptr)
+ThreadSafeRefPtr<T> requireThreadSafe(const cc::IntrusivePtr<T>& ptr)
 {
     return ThreadSafeRefPtr<T>(ptr.get());
 }
 
 /** Transfer an existing reference after validation. On failure ptr is unchanged. */
 template <class T>
-ThreadSafeRefPtr<T> requireThreadSafe(RefPtr<T>&& ptr)
+ThreadSafeRefPtr<T> requireThreadSafe(cc::IntrusivePtr<T>&& ptr)
 {
     return ThreadSafeRefPtr<T>(std::move(ptr));
 }
 
-/** Create an Atomic object and adopt its initial reference without an extra retain.
+/** Create an Atomic object and establish its first reference.
  * T must accept and forward RefConstructionToken, just as for makeRef<T, Atomic>.
  * This factory calls neither init() nor autorelease().
  *
@@ -521,7 +236,7 @@ ThreadSafeRefPtr<T> makeThreadSafeRef(Args&&... args)
 
 /** Cast while preserving the Atomic guarantee. Validate the target Ref subobject
  * before retaining it, including cross-casts in multiple-inheritance hierarchies.
- * static_pointer_cast requires a valid static cast, just as for ordinary RefPtr.
+ * static_pointer_cast requires a valid static cast, just as for ordinary IntrusivePtr.
  */
 template <class T, class U>
 ThreadSafeRefPtr<T> static_pointer_cast(const ThreadSafeRefPtr<U>& ptr)
@@ -577,13 +292,6 @@ void swap(ThreadSafeRefPtr<T>& lhs, ThreadSafeRefPtr<T>& rhs) noexcept
 {
     lhs.swap(rhs);
 }
-
-/**
- * Done with these macros.
- */
-#undef CC_REF_PTR_SAFE_RETAIN
-#undef CC_REF_PTR_SAFE_RELEASE
-#undef CC_REF_PTR_SAFE_RELEASE_NULL
 
 NS_CC_END
 

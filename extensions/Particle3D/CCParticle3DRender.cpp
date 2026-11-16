@@ -51,17 +51,17 @@ Particle3DQuadRender::~Particle3DQuadRender()
     CC_SAFE_RELEASE(_indexBuffer);
 }
 
-Particle3DQuadRender* Particle3DQuadRender::create(std::string_view texFile)
+cc::IntrusivePtr<Particle3DQuadRender> Particle3DQuadRender::create(std::string_view texFile)
 {
-    auto ret = new Particle3DQuadRender();
+    cc::IntrusivePtr<Particle3DQuadRender> ret{new Particle3DQuadRender()};
     if (ret->initQuadRender(texFile))
     {
         ret->_texFile = texFile;
-        ret->autorelease();
+
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -202,14 +202,14 @@ bool Particle3DQuadRender::initQuadRender(std::string_view texFile)
         {
             _texture      = tex;
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_TEXTURE_3D);
-            _programState = new backend::ProgramState(program);
+            _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
         }
     }
 
     if (!_programState)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_COLOR_3D);
-        _programState = new backend::ProgramState(program);
+        _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     }
 
     auto& pipelineDescriptor        = _meshCommand.getPipelineDescriptor();
@@ -268,9 +268,9 @@ Particle3DModelRender::~Particle3DModelRender()
     }
 }
 
-Particle3DModelRender* Particle3DModelRender::create(std::string_view modelFile, std::string_view texFile)
+cc::IntrusivePtr<Particle3DModelRender> Particle3DModelRender::create(std::string_view modelFile, std::string_view texFile)
 {
-    auto ret        = new Particle3DModelRender();
+    cc::IntrusivePtr<Particle3DModelRender> ret{new Particle3DModelRender()};
     ret->_modelFile = modelFile;
     ret->_texFile   = texFile;
     return ret;
@@ -285,7 +285,7 @@ void Particle3DModelRender::render(Renderer* renderer, const Mat4& transform, Pa
     {
         for (unsigned int i = 0; i < particleSystem->getParticleQuota(); ++i)
         {
-            MeshRenderer* mesh = MeshRenderer::create(_modelFile);
+            cc::IntrusivePtr<MeshRenderer> mesh = MeshRenderer::create(_modelFile);
             if (mesh == nullptr)
             {
                 CCLOG("failed to load file %s", _modelFile.c_str());

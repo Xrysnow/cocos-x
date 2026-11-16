@@ -66,7 +66,7 @@ public:
     /**
      * Create a empty ImageView.
      */
-    static ImageView* create();
+    static cc::IntrusivePtr<ImageView> create();
 
     /**
      * Create a  imageview  with a image name.
@@ -75,7 +75,7 @@ public:
      * @param texType    @see `Widget::TextureResType`
      * @return A ImageView instance.
      */
-    static ImageView* create(std::string_view imageFileName, TextureResType texType = TextureResType::LOCAL);
+    static cc::IntrusivePtr<ImageView> create(std::string_view imageFileName, TextureResType texType = TextureResType::LOCAL);
 
     /**
      * Load texture for imageview.
@@ -159,7 +159,7 @@ protected:
     void setupTexture();
 
     void imageTextureScaleChangedWithSize();
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
 protected:

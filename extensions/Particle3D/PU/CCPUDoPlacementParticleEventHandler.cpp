@@ -263,10 +263,9 @@ void PUDoPlacementParticleEventHandler::removeAsListener()
     _system  = 0;
 }
 
-PUDoPlacementParticleEventHandler* PUDoPlacementParticleEventHandler::create()
+cc::IntrusivePtr<PUDoPlacementParticleEventHandler> PUDoPlacementParticleEventHandler::create()
 {
-    auto peh = new PUDoPlacementParticleEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoPlacementParticleEventHandler> peh{new PUDoPlacementParticleEventHandler()};
     return peh;
 }
 

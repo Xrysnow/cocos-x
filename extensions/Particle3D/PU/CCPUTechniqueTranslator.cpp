@@ -35,11 +35,12 @@ PUTechniqueTranslator::~PUTechniqueTranslator() {}
 
 void PUTechniqueTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* node)
 {
+    cc::IntrusivePtr<PUParticleSystem3D> particleSystem;
     PUObjectAbstractNode* obj    = reinterpret_cast<PUObjectAbstractNode*>(node);
     PUObjectAbstractNode* parent = obj->parent ? reinterpret_cast<PUObjectAbstractNode*>(obj->parent) : 0;
 
     // Create the technique
-    _system = PUParticleSystem3D::create();
+    _system = (particleSystem = PUParticleSystem3D::create()).get();
     // mTechnique = ParticleSystemManager::getSingletonPtr()->createTechnique();
     // if (!mTechnique)
     //{

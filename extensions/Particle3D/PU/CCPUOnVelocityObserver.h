@@ -43,7 +43,7 @@ public:
     // Constants
     static const float DEFAULT_VELOCITY_THRESHOLD;
 
-    static PUOnVelocityObserver* create();
+    static cc::IntrusivePtr<PUOnVelocityObserver> create();
 
     /**
      */

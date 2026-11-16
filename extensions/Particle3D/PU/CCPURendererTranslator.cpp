@@ -35,6 +35,7 @@ PURendererTranslator::~PURendererTranslator() {}
 
 void PURendererTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* node)
 {
+    cc::IntrusivePtr<Particle3DRender> renderer;
     PUObjectAbstractNode* obj    = reinterpret_cast<PUObjectAbstractNode*>(node);
     PUObjectAbstractNode* parent = obj->parent ? reinterpret_cast<PUObjectAbstractNode*>(obj->parent) : 0;
 
@@ -86,9 +87,9 @@ void PURendererTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
         if (type == "Billboard")
         {
             if (material)
-                _renderer = PUParticle3DQuadRender::create(texFolder + material->textureFile);
+                _renderer = (renderer = PUParticle3DQuadRender::create(texFolder + material->textureFile)).get();
             else
-                _renderer = PUParticle3DQuadRender::create();
+                _renderer = (renderer = PUParticle3DQuadRender::create()).get();
             for (PUAbstractNodeList::iterator i = obj->children.begin(); i != obj->children.end(); ++i)
             {
                 if ((*i)->type == ANT_PROPERTY)
@@ -281,9 +282,9 @@ void PURendererTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
                                 std::string::size_type pos = val.find_last_of('.');
                                 val                        = val.substr(0, pos + 1) + std::string("c3b");
                                 if (material)
-                                    _renderer = PUParticle3DModelRender::create(val, texFolder + material->textureFile);
+                                    _renderer = (renderer = PUParticle3DModelRender::create(val, texFolder + material->textureFile)).get();
                                 else
-                                    _renderer = PUParticle3DModelRender::create(val);
+                                    _renderer = (renderer = PUParticle3DModelRender::create(val)).get();
                             }
                         }
                     }
@@ -293,23 +294,23 @@ void PURendererTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
         else if (type == "Box")
         {
             if (material)
-                _renderer = PUParticle3DBoxRender::create(texFolder + material->textureFile);
+                _renderer = (renderer = PUParticle3DBoxRender::create(texFolder + material->textureFile)).get();
             else
-                _renderer = PUParticle3DBoxRender::create();
+                _renderer = (renderer = PUParticle3DBoxRender::create()).get();
         }
         else if (type == "Sphere")
         {
             if (material)
-                _renderer = PUSphereRender::create(texFolder + material->textureFile);
+                _renderer = (renderer = PUSphereRender::create(texFolder + material->textureFile)).get();
             else
-                _renderer = PUSphereRender::create();
+                _renderer = (renderer = PUSphereRender::create()).get();
         }
         else if (type == "Beam")
         {
             if (material)
-                _renderer = PUBeamRender::create(texFolder + material->textureFile);
+                _renderer = (renderer = PUBeamRender::create(texFolder + material->textureFile)).get();
             else
-                _renderer = PUBeamRender::create();
+                _renderer = (renderer = PUBeamRender::create()).get();
 
             for (PUAbstractNodeList::iterator i = obj->children.begin(); i != obj->children.end(); ++i)
             {
@@ -466,9 +467,9 @@ void PURendererTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
         else if (type == "RibbonTrail")
         {
             if (material)
-                _renderer = PURibbonTrailRender::create(texFolder + material->textureFile);
+                _renderer = (renderer = PURibbonTrailRender::create(texFolder + material->textureFile)).get();
             else
-                _renderer = PURibbonTrailRender::create();
+                _renderer = (renderer = PURibbonTrailRender::create()).get();
 
             for (PUAbstractNodeList::iterator i = obj->children.begin(); i != obj->children.end(); ++i)
             {

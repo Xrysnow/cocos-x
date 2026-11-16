@@ -68,7 +68,7 @@ public:
      @param file The file path.
      @param capacity Capacity for Quads.
     */
-    static TextureAtlas* create(std::string_view file, ssize_t capacity);
+    static cc::IntrusivePtr<TextureAtlas> create(std::string_view file, ssize_t capacity);
 
     /** Creates a TextureAtlas with a previously initialized Texture2D object, and
      * with an initial capacity for n Quads.
@@ -77,7 +77,7 @@ public:
      @param texture A texture2D object pointer.
      @param capacity Capacity for Quads.
      */
-    static TextureAtlas* createWithTexture(Texture2D* texture, ssize_t capacity);
+    static cc::IntrusivePtr<TextureAtlas> createWithTexture(Texture2D* texture, ssize_t capacity);
     /**
      * @js ctor
      */

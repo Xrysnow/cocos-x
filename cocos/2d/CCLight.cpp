@@ -70,12 +70,11 @@ BaseLight::BaseLight() : _intensity(1.0f), _lightFlag(LightFlag::LIGHT0), _enabl
 BaseLight::~BaseLight() {}
 
 ////////////////////////////////////////////////////////////////////
-DirectionLight* DirectionLight::create(const Vec3& direction, const Color3B& color)
+cc::IntrusivePtr<DirectionLight> DirectionLight::create(const Vec3& direction, const Color3B& color)
 {
-    auto light = new DirectionLight();
+    cc::IntrusivePtr<DirectionLight> light{new DirectionLight()};
     light->setRotationFromDirection(direction);
     light->setColor(color);
-    light->autorelease();
     return light;
 }
 
@@ -97,13 +96,12 @@ DirectionLight::DirectionLight() {}
 DirectionLight::~DirectionLight() {}
 
 //////////////////////////////////////////////////////////////////
-PointLight* PointLight::create(const Vec3& position, const Color3B& color, float range)
+cc::IntrusivePtr<PointLight> PointLight::create(const Vec3& position, const Color3B& color, float range)
 {
-    auto light = new PointLight();
+    cc::IntrusivePtr<PointLight> light{new PointLight()};
     light->setPosition3D(position);
     light->setColor(color);
     light->_range = range;
-    light->autorelease();
     return light;
 }
 
@@ -111,21 +109,20 @@ PointLight::PointLight() {}
 PointLight::~PointLight() {}
 
 //////////////////////////////////////////////////////////////
-SpotLight* SpotLight::create(const Vec3& direction,
+cc::IntrusivePtr<SpotLight> SpotLight::create(const Vec3& direction,
                              const Vec3& position,
                              const Color3B& color,
                              float innerAngle,
                              float outerAngle,
                              float range)
 {
-    auto light = new SpotLight();
+    cc::IntrusivePtr<SpotLight> light{new SpotLight()};
     light->setRotationFromDirection(direction);
     light->setPosition3D(position);
     light->setColor(color);
     light->setInnerAngle(innerAngle);
     light->setOuterAngle(outerAngle);
     light->_range = range;
-    light->autorelease();
     return light;
 }
 
@@ -164,11 +161,10 @@ SpotLight::~SpotLight() {}
 
 /////////////////////////////////////////////////////////////
 
-AmbientLight* AmbientLight::create(const Color3B& color)
+cc::IntrusivePtr<AmbientLight> AmbientLight::create(const Color3B& color)
 {
-    auto light = new AmbientLight();
+    cc::IntrusivePtr<AmbientLight> light{new AmbientLight()};
     light->setColor(color);
-    light->autorelease();
     return light;
 }
 

@@ -79,7 +79,7 @@ public:
     /**
      * Create and return a empty CheckBox instance pointer.
      */
-    static CheckBox* create();
+    static cc::IntrusivePtr<CheckBox> create();
 
     /**
      * Create an checkbox with various images.
@@ -93,7 +93,7 @@ public:
      *
      * @return A CheckBox instance pointer.
      */
-    static CheckBox* create(std::string_view backGround,
+    static cc::IntrusivePtr<CheckBox> create(std::string_view backGround,
                             std::string_view backGroundSelected,
                             std::string_view cross,
                             std::string_view backGroundDisabled,
@@ -108,7 +108,7 @@ public:
      * @param texType  The texture's resource type in `Widget::TextureResType`.
      * @return A CheckBox instance pointer
      */
-    static CheckBox* create(std::string_view backGround,
+    static cc::IntrusivePtr<CheckBox> create(std::string_view backGround,
                             std::string_view cross,
                             TextureResType texType = TextureResType::LOCAL);
 
@@ -126,7 +126,7 @@ public:
 protected:
     virtual void dispatchSelectChangedEvent(bool selected) override;
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
 protected:

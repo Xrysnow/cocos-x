@@ -61,15 +61,15 @@ public:
      * Creates an empty MeshRenderer without a mesh or a texture.
      * Can be used to create procedural meshes on runtime.
      *
-     * @return An autoreleased MeshRenderer object.
+     * @return An owned MeshRenderer object.
      */
-    static MeshRenderer* create();
+    static cc::IntrusivePtr<MeshRenderer> create();
 
     /** creates a MeshRenderer with a specified path */
-    static MeshRenderer* create(std::string_view modelPath);
+    static cc::IntrusivePtr<MeshRenderer> create(std::string_view modelPath);
 
     /** creates a MeshRenderer. A mesh can only have one texture, the default texture can be overridden with 'texturePath' */
-    static MeshRenderer* create(std::string_view modelPath, std::string_view texturePath);
+    static cc::IntrusivePtr<MeshRenderer> create(std::string_view modelPath, std::string_view texturePath);
 
     /** create 3d mesh asynchronously
      * If the 3d model was previously loaded, it will create a new 3d mesh and the callback will be called once.
@@ -81,12 +81,12 @@ public:
      * @param callbackparam user-defined parameter for the callback
      */
     static void createAsync(std::string_view modelPath,
-                            const std::function<void(MeshRenderer*, void*)>& callback,
+                            const std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)>& callback,
                             void* callbackparam);
 
     static void createAsync(std::string_view modelPath,
                             std::string_view texturePath,
-                            const std::function<void(MeshRenderer*, void*)>& callback,
+                            const std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)>& callback,
                             void* callbackparam);
 
     /** set diffuse texture, set the first mesh's texture if multiple textures exist */
@@ -237,7 +237,7 @@ public:
 
     void createNode(NodeData* nodedata, Node* root, const MaterialDatas& materialdatas, bool singleMesh);
     void createAttachMeshRendererNode(NodeData* nodedata, const MaterialDatas& materialdatas);
-    MeshRenderer* createMeshRendererNode(NodeData* nodedata, ModelData* modeldata, const MaterialDatas& materialdatas);
+    cc::IntrusivePtr<MeshRenderer> createMeshRendererNode(NodeData* nodedata, ModelData* modeldata, const MaterialDatas& materialdatas);
 
     /** get MeshIndexData by Id */
     MeshIndexData* getMeshIndexData(std::string_view indexId) const;
@@ -284,7 +284,7 @@ protected:
 
     struct AsyncLoadParam
     {
-        std::function<void(MeshRenderer*, void*)> afterLoadCallback;  // callback after loading is finished
+        std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)> afterLoadCallback;  // callback after loading is finished
         void* callbackParam;
         bool result;  // mesh renderer loading result
         std::string modelPath;

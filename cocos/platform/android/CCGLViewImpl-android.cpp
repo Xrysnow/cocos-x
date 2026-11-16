@@ -45,39 +45,33 @@ cocos2d::Size cocos_android_render_host_size();
 
 NS_CC_BEGIN
 
-GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret && ret->initWithRect(viewName, rect, frameZoomFactor, resizable))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::create(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret && ret->initWithFullScreen(viewName))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    auto ret = new GLViewImpl();
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
     if (ret && ret->initWithFullScreen(viewName))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

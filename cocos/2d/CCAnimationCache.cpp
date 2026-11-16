@@ -39,7 +39,7 @@ AnimationCache* AnimationCache::getInstance()
 {
     if (!s_sharedAnimationCache)
     {
-        s_sharedAnimationCache = new AnimationCache();
+        s_sharedAnimationCache = cc::IntrusivePtr<AnimationCache>{new AnimationCache()}.detach();
         s_sharedAnimationCache->init();
     }
 
@@ -90,7 +90,7 @@ void AnimationCache::parseVersion1(const ValueMap& animations)
         const ValueMap& animationDict = anim.second.asValueMap();
         const ValueVector& frameNames = animationDict.at("frames").asValueVector();
         float delay                   = animationDict.at("delay").asFloat();
-        Animation* animation          = nullptr;
+        cc::IntrusivePtr<Animation> animation          = nullptr;
 
         if (frameNames.empty())
         {
@@ -118,7 +118,7 @@ void AnimationCache::parseVersion1(const ValueMap& animations)
                 continue;
             }
 
-            AnimationFrame* animFrame = AnimationFrame::create(spriteFrame, 1, ValueMap());
+            cc::IntrusivePtr<AnimationFrame> animFrame = AnimationFrame::create(spriteFrame, 1, ValueMap());
             frames.pushBack(animFrame);
         }
 
@@ -189,14 +189,14 @@ void AnimationCache::parseVersion2(const ValueMap& animations)
             float delayUnits = entry["delayUnits"].asFloat();
             Value& userInfo  = entry["notification"];
 
-            AnimationFrame* animFrame = AnimationFrame::create(
+            cc::IntrusivePtr<AnimationFrame> animFrame = AnimationFrame::create(
                 spriteFrame, delayUnits, userInfo.getType() == Value::Type::MAP ? userInfo.asValueMap() : ValueMapNull);
 
             array.pushBack(animFrame);
         }
 
         float delayPerUnit = animationDict["delayPerUnit"].asFloat();
-        Animation* animation =
+        cc::IntrusivePtr<Animation> animation =
             Animation::create(array, delayPerUnit, loops.getType() != Value::Type::NONE ? loops.asInt() : 1);
 
         animation->setRestoreOriginalFrame(restoreOriginalFrame);

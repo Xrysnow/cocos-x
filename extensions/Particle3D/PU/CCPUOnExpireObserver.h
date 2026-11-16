@@ -41,7 +41,7 @@ class CC_EX_DLL PUOnExpireObserver : public PUObserver
 {
 protected:
 public:
-    static PUOnExpireObserver* create();
+    static cc::IntrusivePtr<PUOnExpireObserver> create();
 
     /**
      */

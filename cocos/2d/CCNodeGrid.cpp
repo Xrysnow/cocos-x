@@ -28,23 +28,19 @@
 
 NS_CC_BEGIN
 
-NodeGrid* NodeGrid::create()
+cc::IntrusivePtr<NodeGrid> NodeGrid::create()
 {
-    NodeGrid* ret = new NodeGrid();
-    if (ret->init())
+    cc::IntrusivePtr<NodeGrid> ret{new NodeGrid()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-NodeGrid* NodeGrid::create(const cocos2d::Rect& rect)
+cc::IntrusivePtr<NodeGrid> NodeGrid::create(const cocos2d::Rect& rect)
 {
-    NodeGrid* ret = NodeGrid::create();
+    cc::IntrusivePtr<NodeGrid> ret = NodeGrid::create();
     if (ret)
     {
         ret->setGridRect(rect);

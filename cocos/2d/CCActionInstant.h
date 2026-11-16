@@ -48,13 +48,13 @@ public:
     //
     // Overrides
     //
-    virtual ActionInstant* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
     }
 
-    virtual ActionInstant* reverse() const override
+    virtual cc::IntrusivePtr<Action> reverse() const override
     {
         CC_ASSERT(0);
         return nullptr;
@@ -84,9 +84,9 @@ class CC_DLL Show : public ActionInstant
 public:
     /** Allocates and initializes the action.
      *
-     * @return  An autoreleased Show object.
+     * @return  An owned Show object.
      */
-    static Show* create();
+    static cc::IntrusivePtr<Show> create();
 
     //
     // Overrides
@@ -95,8 +95,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual ActionInstant* reverse() const override;
-    virtual Show* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     Show() {}
     virtual ~Show() {}
@@ -113,9 +113,9 @@ class CC_DLL Hide : public ActionInstant
 public:
     /** Allocates and initializes the action.
      *
-     * @return An autoreleased Hide object.
+     * @return An owned Hide object.
      */
-    static Hide* create();
+    static cc::IntrusivePtr<Hide> create();
 
     //
     // Overrides
@@ -124,8 +124,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual ActionInstant* reverse() const override;
-    virtual Hide* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     Hide() {}
     virtual ~Hide() {}
@@ -142,9 +142,9 @@ class CC_DLL ToggleVisibility : public ActionInstant
 public:
     /** Allocates and initializes the action.
      *
-     * @return An autoreleased ToggleVisibility object.
+     * @return An owned ToggleVisibility object.
      */
-    static ToggleVisibility* create();
+    static cc::IntrusivePtr<ToggleVisibility> create();
 
     //
     // Overrides
@@ -153,8 +153,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual ToggleVisibility* reverse() const override;
-    virtual ToggleVisibility* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     ToggleVisibility() {}
     virtual ~ToggleVisibility() {}
@@ -172,9 +172,9 @@ public:
     /** Create the action.
      *
      * @param isNeedCleanUp Is need to clean up, the default value is true.
-     * @return An autoreleased RemoveSelf object.
+     * @return An owned RemoveSelf object.
      */
-    static RemoveSelf* create(bool isNeedCleanUp = true);
+    static cc::IntrusivePtr<RemoveSelf> create(bool isNeedCleanUp = true);
 
     //
     // Override
@@ -183,8 +183,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual RemoveSelf* clone() const override;
-    virtual RemoveSelf* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     RemoveSelf() : _isNeedCleanUp(true) {}
     virtual ~RemoveSelf() {}
@@ -209,9 +209,9 @@ public:
     /** Create the action.
      *
      * @param x Flips the sprite horizontally if true.
-     * @return  An autoreleased FlipX object.
+     * @return  An owned FlipX object.
      */
-    static FlipX* create(bool x);
+    static cc::IntrusivePtr<FlipX> create(bool x);
 
     //
     // Overrides
@@ -220,8 +220,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual FlipX* reverse() const override;
-    virtual FlipX* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     FlipX() : _flipX(false) {}
     virtual ~FlipX() {}
@@ -246,9 +246,9 @@ public:
     /** Create the action.
      *
      * @param y Flips the sprite vertically if true.
-     * @return An autoreleased FlipY object.
+     * @return An owned FlipY object.
      */
-    static FlipY* create(bool y);
+    static cc::IntrusivePtr<FlipY> create(bool y);
 
     //
     // Overrides
@@ -257,8 +257,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual FlipY* reverse() const override;
-    virtual FlipY* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     FlipY() : _flipY(false) {}
     virtual ~FlipY() {}
@@ -282,9 +282,9 @@ public:
     /** Creates a Place action with a position.
      *
      * @param pos  A certain position.
-     * @return  An autoreleased Place object.
+     * @return  An owned Place object.
      */
-    static Place* create(const Vec2& pos);
+    static cc::IntrusivePtr<Place> create(const Vec2& pos);
 
     //
     // Overrides
@@ -293,8 +293,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual Place* reverse() const override;
-    virtual Place* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     Place() {}
     virtual ~Place() {}
@@ -322,9 +322,9 @@ public:
      * In lua:local create(local funcID).
      *
      * @param func  A callback function need to be executed.
-     * @return  An autoreleased CallFunc object.
+     * @return  An owned CallFunc object.
      */
-    static CallFunc* create(const std::function<void()>& func);
+    static cc::IntrusivePtr<CallFunc> create(const std::function<void()>& func);
 
 public:
     /** Executes the callback.
@@ -338,8 +338,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual CallFunc* reverse() const override;
-    virtual CallFunc* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     CallFunc() = default;
     virtual ~CallFunc()                = default;
@@ -368,14 +368,14 @@ public:
      This is the preferred way to create the callback.
      *
      * @param func  A callback function need to be executed.
-     * @return  An autoreleased CallFuncN object.
+     * @return  An owned CallFuncN object.
      */
-    static CallFuncN* create(const std::function<void(Node*)>& func);
+    static cc::IntrusivePtr<CallFuncN> create(const std::function<void(Node*)>& func);
 
     //
     // Overrides
     //
-    virtual CallFuncN* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void execute() override;
 
     CallFuncN() : _functionN(nullptr) {}

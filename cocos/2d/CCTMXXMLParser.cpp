@@ -91,27 +91,23 @@ Rect TMXTilesetInfo::getRectForGID(uint32_t gid)
 
 // implementation TMXMapInfo
 
-TMXMapInfo* TMXMapInfo::create(std::string_view tmxFile)
+cc::IntrusivePtr<TMXMapInfo> TMXMapInfo::create(std::string_view tmxFile)
 {
-    TMXMapInfo* ret = new TMXMapInfo();
+    cc::IntrusivePtr<TMXMapInfo> ret{new TMXMapInfo()};
     if (ret->initWithTMXFile(tmxFile))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-TMXMapInfo* TMXMapInfo::createWithXML(std::string_view tmxString, std::string_view resourcePath)
+cc::IntrusivePtr<TMXMapInfo> TMXMapInfo::createWithXML(std::string_view tmxString, std::string_view resourcePath)
 {
-    TMXMapInfo* ret = new TMXMapInfo();
+    cc::IntrusivePtr<TMXMapInfo> ret{new TMXMapInfo()};
     if (ret->initWithXML(tmxString, resourcePath))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -310,7 +306,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         }
         else
         {
-            TMXTilesetInfo* tileset = new TMXTilesetInfo();
+            cc::IntrusivePtr<TMXTilesetInfo> tileset{new TMXTilesetInfo()};
             tileset->_name          = attributeDict["name"].asString();
 
             if (_recordFirstGID)
@@ -336,8 +332,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
             s.height           = attributeDict["tileheight"].asFloat();
             tileset->_tileSize = s;
 
-            tmxMapInfo->getTilesets().pushBack(tileset);
-            tileset->release();
+            tmxMapInfo->getTilesets().pushBack(tileset.get());
         }
     }
     else if (elementName == "tile")
@@ -364,7 +359,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
     }
     else if (elementName == "layer")
     {
-        TMXLayerInfo* layer = new TMXLayerInfo();
+        cc::IntrusivePtr<TMXLayerInfo> layer{new TMXLayerInfo()};
         layer->_name        = attributeDict["name"].asString();
 
         Vec2 s;
@@ -382,23 +377,21 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         float y = attributeDict["y"].asFloat();
         layer->_offset.set(x, y);
 
-        tmxMapInfo->getLayers().pushBack(layer);
-        layer->release();
+        tmxMapInfo->getLayers().pushBack(layer.get());
 
         // The parent element is now "layer"
         tmxMapInfo->setParentElement(TMXPropertyLayer);
     }
     else if (elementName == "objectgroup")
     {
-        TMXObjectGroup* objectGroup = new TMXObjectGroup();
+        cc::IntrusivePtr<TMXObjectGroup> objectGroup{new TMXObjectGroup()};
         objectGroup->setGroupName(attributeDict["name"].asString());
         Vec2 positionOffset;
         positionOffset.x = attributeDict["x"].asFloat() * tmxMapInfo->getTileSize().width;
         positionOffset.y = attributeDict["y"].asFloat() * tmxMapInfo->getTileSize().height;
         objectGroup->setPositionOffset(positionOffset);
 
-        tmxMapInfo->getObjectGroups().pushBack(objectGroup);
-        objectGroup->release();
+        tmxMapInfo->getObjectGroups().pushBack(objectGroup.get());
 
         // The parent element is now "objectgroup"
         tmxMapInfo->setParentElement(TMXPropertyObjectGroup);
@@ -661,7 +654,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
     else if (elementName == "animation")
     {
         TMXTilesetInfo* info = tmxMapInfo->getTilesets().back();
-        info->_animationInfo.insert(tmxMapInfo->getParentGID(), TMXTileAnimInfo::create(tmxMapInfo->getParentGID()));
+        info->_animationInfo.insert(tmxMapInfo->getParentGID(), TMXTileAnimInfo::create(tmxMapInfo->getParentGID()).get());
         tmxMapInfo->setParentElement(TMXPropertyAnimation);
     }
     else if (elementName == "frame")
@@ -820,10 +813,9 @@ TMXTileAnimFrame::TMXTileAnimFrame(uint32_t tileID, float duration) : _tileID(ti
 
 TMXTileAnimInfo::TMXTileAnimInfo(uint32_t tileID) : _tileID(tileID) {}
 
-TMXTileAnimInfo* TMXTileAnimInfo::create(uint32_t tileID)
+cc::IntrusivePtr<TMXTileAnimInfo> TMXTileAnimInfo::create(uint32_t tileID)
 {
-    TMXTileAnimInfo* ret = new TMXTileAnimInfo(tileID);
-    ret->autorelease();
+    cc::IntrusivePtr<TMXTileAnimInfo> ret{new TMXTileAnimInfo(tileID)};
     return ret;
 }
 

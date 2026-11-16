@@ -128,40 +128,36 @@ PhysicsBody::~PhysicsBody()
     }
 }
 
-PhysicsBody* PhysicsBody::create()
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::create()
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->autorelease();
         return body;
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::create(float mass)
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body)
     {
         body->_mass        = mass;
         body->_massDefault = false;
         if (body->init())
         {
-            body->autorelease();
             return body;
         }
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::create(float mass, float moment)
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass, float moment)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body)
     {
         body->_mass          = mass;
@@ -170,131 +166,115 @@ PhysicsBody* PhysicsBody::create(float mass, float moment)
         body->_momentDefault = false;
         if (body->init())
         {
-            body->autorelease();
             return body;
         }
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createCircle(float radius, const PhysicsMaterial& material, const Vec2& offset)
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createCircle(float radius, const PhysicsMaterial& material, const Vec2& offset)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeCircle::create(radius, material, offset));
-        body->autorelease();
+        body->addShape(PhysicsShapeCircle::create(radius, material, offset).get());
         return body;
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createBox(const Vec2& size, const PhysicsMaterial& material, const Vec2& offset)
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createBox(const Vec2& size, const PhysicsMaterial& material, const Vec2& offset)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeBox::create(size, material, offset));
-        body->autorelease();
+        body->addShape(PhysicsShapeBox::create(size, material, offset).get());
         return body;
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createPolygon(const Vec2* points,
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createPolygon(const Vec2* points,
                                         int count,
                                         const PhysicsMaterial& material,
                                         const Vec2& offset)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapePolygon::create(points, count, material, offset));
-        body->autorelease();
+        body->addShape(PhysicsShapePolygon::create(points, count, material, offset).get());
         return body;
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createEdgeSegment(const Vec2& a,
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeSegment(const Vec2& a,
                                             const Vec2& b,
                                             const PhysicsMaterial& material,
                                             float border /* = 1*/)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeEdgeSegment::create(a, b, material, border));
+        body->addShape(PhysicsShapeEdgeSegment::create(a, b, material, border).get());
         body->setDynamic(false);
-        body->autorelease();
         return body;
     }
 
-    CC_SAFE_DELETE(body);
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createEdgeBox(const Vec2& size,
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeBox(const Vec2& size,
                                         const PhysicsMaterial& material,
                                         float border /* = 1*/,
                                         const Vec2& offset)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeEdgeBox::create(size, material, border, offset));
+        body->addShape(PhysicsShapeEdgeBox::create(size, material, border, offset).get());
         body->setDynamic(false);
-        body->autorelease();
         return body;
     }
 
-    CC_SAFE_DELETE(body);
 
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createEdgePolygon(const Vec2* points,
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgePolygon(const Vec2* points,
                                             int count,
                                             const PhysicsMaterial& material,
                                             float border /* = 1*/)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeEdgePolygon::create(points, count, material, border));
+        body->addShape(PhysicsShapeEdgePolygon::create(points, count, material, border).get());
         body->setDynamic(false);
-        body->autorelease();
         return body;
     }
 
-    CC_SAFE_DELETE(body);
 
     return nullptr;
 }
 
-PhysicsBody* PhysicsBody::createEdgeChain(const Vec2* points,
+cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeChain(const Vec2* points,
                                           int count,
                                           const PhysicsMaterial& material,
                                           float border /* = 1*/)
 {
-    PhysicsBody* body = new PhysicsBody();
+    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
     if (body->init())
     {
-        body->addShape(PhysicsShapeEdgeChain::create(points, count, material, border));
+        body->addShape(PhysicsShapeEdgeChain::create(points, count, material, border).get());
         body->setDynamic(false);
-        body->autorelease();
         return body;
     }
 
-    CC_SAFE_DELETE(body);
 
     return nullptr;
 }

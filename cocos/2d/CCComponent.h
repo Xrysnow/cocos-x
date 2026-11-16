@@ -47,7 +47,7 @@ enum
 class CC_DLL Component : public Ref
 {
 public:
-    static Component* create();
+    static cc::IntrusivePtr<Component> create();
 
     /**
      * @js NA

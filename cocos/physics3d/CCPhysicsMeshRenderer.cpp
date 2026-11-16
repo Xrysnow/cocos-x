@@ -32,44 +32,42 @@
 
 NS_CC_BEGIN
 
-PhysicsMeshRenderer* PhysicsMeshRenderer::create(std::string_view modelPath,
+cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::create(std::string_view modelPath,
                                          Physics3DRigidBodyDes* rigidDes,
                                          const cocos2d::Vec3& translateInPhysics,
                                          const cocos2d::Quaternion& rotInPhsyics)
 {
-    auto ret = new PhysicsMeshRenderer();
+    cc::IntrusivePtr<PhysicsMeshRenderer> ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))
     {
         ret->setModelTexture(modelPath, hlookup::empty_sv);
         auto obj               = Physics3DRigidBody::create(rigidDes);
-        ret->_physicsComponent = Physics3DComponent::create(obj, translateInPhysics, rotInPhsyics);
+    auto component = Physics3DComponent::create(obj, translateInPhysics, rotInPhsyics);
+    ret->_physicsComponent = component.get();
         ret->addComponent(ret->_physicsComponent);
         ret->_contentSize = ret->getBoundingBox().size;
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
-PhysicsMeshRenderer* PhysicsMeshRenderer::createWithCollider(std::string_view modelPath,
+cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::createWithCollider(std::string_view modelPath,
                                                      Physics3DColliderDes* colliderDes,
                                                      const cocos2d::Vec3& translateInPhysics,
                                                      const cocos2d::Quaternion& rotInPhsyics)
 {
-    auto ret = new PhysicsMeshRenderer();
+    cc::IntrusivePtr<PhysicsMeshRenderer> ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))
     {
         ret->setModelTexture(modelPath, hlookup::empty_sv);
         auto obj               = Physics3DCollider::create(colliderDes);
-        ret->_physicsComponent = Physics3DComponent::create(obj, translateInPhysics, rotInPhsyics);
+    auto component = Physics3DComponent::create(obj, translateInPhysics, rotInPhsyics);
+    ret->_physicsComponent = component.get();
         ret->addComponent(ret->_physicsComponent);
         ret->_contentSize = ret->getBoundingBox().size;
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
 Physics3DObject* PhysicsMeshRenderer::getPhysicsObj() const

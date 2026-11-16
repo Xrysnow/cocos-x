@@ -397,7 +397,11 @@ int WebSocket::on_frame_end(websocket_parser* parser)
         {
         case WS_OP_TEXT:
         case WS_OP_BINARY:
-            ws->_eventQueue.emplace_back(new MessageEvent{std::move(ws->_receivedData), ws->_opcode == WS_OP_BINARY});
+            {
+                cc::IntrusivePtr<MessageEvent> pending{new MessageEvent{std::move(ws->_receivedData), ws->_opcode == WS_OP_BINARY}};
+                ws->_eventQueue.emplace_back(pending.get());
+                pending.detach();
+            }
             break;
         case WS_OP_CLOSE:
             CCLOG("WS: control frame: CLOSE");
@@ -578,7 +582,11 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
                     auto& timerForRead = channel->get_user_timer();
                     timerForRead.cancel();
                     _transport = event->transport();
-                    _eventQueue.emplace_back(new WsOpenEvent());
+                    {
+                        cc::IntrusivePtr<WsOpenEvent> pending{new WsOpenEvent()};
+                        _eventQueue.emplace_back(pending.get());
+                        pending.detach();
+                    }
 
                     // The first WebSocket frame can share the HTTP upgrade packet.
                     const char* begin = reinterpret_cast<const char*>(pkt.data());
@@ -602,7 +610,11 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
 
                     //_state = State::CLOSING;
                     _service->close(channelIndex);
-                    _eventQueue.emplace_back(new ErrorEvent(error));
+                    {
+                        cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(error)};
+                        _eventQueue.emplace_back(pending.get());
+                        pending.detach();
+                    }
                 }
             }
         }
@@ -673,7 +685,11 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
             timerForRead.cancel();
             timerForRead.expires_from_now(std::chrono::seconds(30));
             timerForRead.async_wait_once([this, channelIndex](io_service& s) {
-                _eventQueue.emplace_back(new ErrorEvent(ErrorCode::TIME_OUT));
+                {
+                    cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(ErrorCode::TIME_OUT)};
+                    _eventQueue.emplace_back(pending.get());
+                    pending.detach();
+                }
 
                 //_state = State::CLOSING;
                 s.close(channelIndex);  // timeout
@@ -682,7 +698,11 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
         else
         {
             _state = State::CLOSED;
-            _eventQueue.emplace_back(new ErrorEvent(ErrorCode::CONNECTION_FAILURE));
+            {
+                cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(ErrorCode::CONNECTION_FAILURE)};
+                _eventQueue.emplace_back(pending.get());
+                pending.detach();
+            }
         }
         break;
     case YEK_ON_CLOSE:
@@ -696,7 +716,11 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
         if (_state == State::OPEN || _state == State::CLOSING)
         {
             _state = State::CLOSED;
-            _eventQueue.emplace_back(new CloseEvent());
+            {
+                cc::IntrusivePtr<CloseEvent> pending{new CloseEvent()};
+                _eventQueue.emplace_back(pending.get());
+                pending.detach();
+            }
         }
         else
             _state = State::CLOSED;

@@ -44,7 +44,7 @@ public:
     static const float DEFAULT_THRESHOLD;
     static const bool DEFAULT_SINCE_START_SYSTEM;
 
-    static PUOnTimeObserver* create();
+    static cc::IntrusivePtr<PUOnTimeObserver> create();
 
     /** In case there are no particles, but the observation returns true, the event handlers must still be
         called.

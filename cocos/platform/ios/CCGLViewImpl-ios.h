@@ -37,16 +37,16 @@ class CC_DLL GLViewImpl : public GLView
 {
 public:
     /** creates a GLViewImpl with a objective-c CCEAGLViewImpl instance */
-    static GLViewImpl* createWithEAGLView(void* eaGLView);
+    static cc::IntrusivePtr<GLViewImpl> createWithEAGLView(void* eaGLView);
 
     /** creates a GLViewImpl with a title name in fullscreen mode */
-    static GLViewImpl* create(std::string_view viewName);
+    static cc::IntrusivePtr<GLViewImpl> create(std::string_view viewName);
 
     /** creates a GLViewImpl with a title name, a rect and the zoom factor */
-    static GLViewImpl* createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor = 1.0f);
+    static cc::IntrusivePtr<GLViewImpl> createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor = 1.0f);
 
     /** creates a GLViewImpl with a name in fullscreen mode */
-    static GLViewImpl* createWithFullScreen(std::string_view viewName);
+    static cc::IntrusivePtr<GLViewImpl> createWithFullScreen(std::string_view viewName);
 
     static void convertAttrs();
     static void* _pixelFormat;

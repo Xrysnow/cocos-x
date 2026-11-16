@@ -37,10 +37,9 @@ bool PUOnEmissionObserver::observe(PUParticle3D* particle, float /*timeElapsed*/
     return particle->hasEventFlags(PUParticle3D::PEF_EMITTED);
 }
 
-PUOnEmissionObserver* PUOnEmissionObserver::create()
+cc::IntrusivePtr<PUOnEmissionObserver> PUOnEmissionObserver::create()
 {
-    auto peo = new PUOnEmissionObserver();
-    peo->autorelease();
+    cc::IntrusivePtr<PUOnEmissionObserver> peo{new PUOnEmissionObserver()};
     return peo;
 }
 

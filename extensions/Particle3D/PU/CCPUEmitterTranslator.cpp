@@ -66,7 +66,8 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
     //	compiler->addError(ScriptCompiler::CE_INVALIDPARAMETERS, obj->file, obj->line);
     //	return;
     // }
-    _emitter = PUEmitterManager::Instance()->createEmitter(type);
+    auto owner = PUEmitterManager::Instance()->createEmitter(type);
+    _emitter = owner.get();
     if (!_emitter)
         return;
     _emitter->setEmitterType(type);
@@ -201,9 +202,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynEmissionRate(dynamicAttributeFixed);
+                        _emitter->setDynEmissionRate(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -216,9 +217,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynTotalTimeToLive(dynamicAttributeFixed);
+                        _emitter->setDynTotalTimeToLive(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -231,9 +232,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynParticleMass(dynamicAttributeFixed);
+                        _emitter->setDynParticleMass(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -342,9 +343,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynVelocity(dynamicAttributeFixed);
+                        _emitter->setDynVelocity(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -357,9 +358,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynDuration(dynamicAttributeFixed);
+                        _emitter->setDynDuration(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -372,9 +373,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynRepeatDelay(dynamicAttributeFixed);
+                        _emitter->setDynRepeatDelay(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -424,9 +425,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynAngle(dynamicAttributeFixed);
+                        _emitter->setDynAngle(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -439,9 +440,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynParticleAllDimensions(dynamicAttributeFixed);
+                        _emitter->setDynParticleAllDimensions(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -454,9 +455,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynParticleWidth(dynamicAttributeFixed);
+                        _emitter->setDynParticleWidth(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -469,9 +470,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynParticleHeight(dynamicAttributeFixed);
+                        _emitter->setDynParticleHeight(dynamicAttributeFixed.detach());
                     }
                 }
             }
@@ -484,9 +485,9 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
-                        _emitter->setDynParticleDepth(dynamicAttributeFixed);
+                        _emitter->setDynParticleDepth(dynamicAttributeFixed.detach());
                     }
                 }
             }

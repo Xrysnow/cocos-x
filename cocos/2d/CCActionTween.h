@@ -93,13 +93,13 @@ public:
      * @param to The value of the specified property when the action end.
      * @return If the creation success, return a pointer of ActionTween; otherwise, return nil.
      */
-    static ActionTween* create(float duration, std::string_view key, float from, float to);
+    static cc::IntrusivePtr<ActionTween> create(float duration, std::string_view key, float from, float to);
 
     // Overrides
     void startWithTarget(Node* target) override;
     void update(float dt) override;
-    ActionTween* reverse() const override;
-    ActionTween* clone() const override;
+    cc::IntrusivePtr<Action> reverse() const override;
+    cc::IntrusivePtr<Action> clone() const override;
 
     /**
      * @brief Initializes the action with the property name (key), and the from and to parameters.

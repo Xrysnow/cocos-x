@@ -27,19 +27,19 @@ public:
 	virtual void unlock() = 0;
 	virtual ~AudioStream() = default;
 
-	using FileOpener = std::function<AudioStream*(const std::string&)>;
+	using FileOpener = std::function<cc::IntrusivePtr<AudioStream>(const std::string&)>;
 
 	// Configure only during host initialization/final shutdown, with no concurrent
 	// stream creation. The callback runs synchronously on the creating thread and
-	// returns an autoreleased stream. A null result does not fall back to files.
+	// returns an owning IntrusivePtr. A null result does not fall back to files.
 	// For explicit fallback call createFromLocalFile(), never createFromFile().
 	// AudioEngine::end() does not reset this host configuration.
 	static void setFileOpener(FileOpener opener);
-	static AudioStream* createFromFile(const std::string& path);
+	static cc::IntrusivePtr<AudioStream> createFromFile(const std::string& path);
 
 	// Bypasses the audio callback, while retaining FileUtils path/delegate behavior.
-	// Uses a new file handle/cursor and requires the usual cocos autorelease pool.
-	static AudioStream* createFromLocalFile(const std::string& path);
+	// Uses a new file handle/cursor; the returned pointer owns the stream.
+	static cc::IntrusivePtr<AudioStream> createFromLocalFile(const std::string& path);
 protected:
 	AudioStream() = default;
 	explicit AudioStream(RefConstructionToken token) : Ref(token) {}

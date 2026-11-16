@@ -39,11 +39,11 @@ void PUBehaviour::initParticleForEmission(PUParticle3D* /*particle*/) {}
 
 void PUBehaviour::initParticleForExpiration(PUParticle3D* /*particle*/, float /*timeElapsed*/) {}
 
-PUBehaviour* PUBehaviour::clone()
+cc::IntrusivePtr<PUBehaviour> PUBehaviour::clone()
 {
-    auto pb = new PUBehaviour;
-    pb->autorelease();
-    copyAttributesTo(pb);
+    cc::IntrusivePtr<PUBehaviour> pb{new PUBehaviour};
+
+    copyAttributesTo(pb.get());
     return pb;
 }
 

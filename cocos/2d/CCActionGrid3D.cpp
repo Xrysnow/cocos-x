@@ -30,17 +30,15 @@ THE SOFTWARE.
 NS_CC_BEGIN
 // implementation of Waves3D
 
-Waves3D* Waves3D::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
+cc::IntrusivePtr<Waves3D> Waves3D::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
 {
-    Waves3D* action = new Waves3D();
+    cc::IntrusivePtr<Waves3D> action{new Waves3D()};
 
     if (action->initWithDuration(duration, gridSize, waves, amplitude))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -58,7 +56,7 @@ bool Waves3D::initWithDuration(float duration, const Vec2& gridSize, unsigned in
     return false;
 }
 
-Waves3D* Waves3D::clone() const
+cc::IntrusivePtr<Action> Waves3D::clone() const
 {
     // no copy constructor
     return Waves3D::create(_duration, _gridSize, _waves, _amplitude);
@@ -83,17 +81,15 @@ void Waves3D::update(float time)
 
 // implementation of FlipX3D
 
-FlipX3D* FlipX3D::create(float duration)
+cc::IntrusivePtr<FlipX3D> FlipX3D::create(float duration)
 {
-    FlipX3D* action = new FlipX3D();
+    cc::IntrusivePtr<FlipX3D> action{new FlipX3D()};
 
     if (action->initWithDuration(duration))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -115,12 +111,11 @@ bool FlipX3D::initWithSize(const Vec2& gridSize, float duration)
     return Grid3DAction::initWithDuration(duration, gridSize);
 }
 
-FlipX3D* FlipX3D::clone() const
+cc::IntrusivePtr<Action> FlipX3D::clone() const
 {
     // no copy constructor
-    auto a = new FlipX3D();
+    cc::IntrusivePtr<FlipX3D> a{new FlipX3D()};
     a->initWithSize(_gridSize, _duration);
-    a->autorelease();
     return a;
 }
 
@@ -190,26 +185,21 @@ void FlipX3D::update(float time)
 
 // implementation of FlipY3D
 
-FlipY3D* FlipY3D::clone() const
+cc::IntrusivePtr<Action> FlipY3D::clone() const
 {
     // no copy constructor
-    auto a = new FlipY3D();
+    cc::IntrusivePtr<FlipY3D> a{new FlipY3D()};
     a->initWithSize(_gridSize, _duration);
-    a->autorelease();
     return a;
 }
 
-FlipY3D* FlipY3D::create(float duration)
+cc::IntrusivePtr<FlipY3D> FlipY3D::create(float duration)
 {
-    FlipY3D* action = new FlipY3D();
+    cc::IntrusivePtr<FlipY3D> action{new FlipY3D()};
 
-    if (action->initWithDuration(duration))
+    if (!(action->initWithDuration(duration)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -281,17 +271,13 @@ void FlipY3D::update(float time)
 
 // implementation of Lens3D
 
-Lens3D* Lens3D::create(float duration, const Vec2& gridSize, const Vec2& position, float radius)
+cc::IntrusivePtr<Lens3D> Lens3D::create(float duration, const Vec2& gridSize, const Vec2& position, float radius)
 {
-    Lens3D* action = new Lens3D();
+    cc::IntrusivePtr<Lens3D> action{new Lens3D()};
 
-    if (action->initWithDuration(duration, gridSize, position, radius))
+    if (!(action->initWithDuration(duration, gridSize, position, radius)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -314,12 +300,11 @@ bool Lens3D::initWithDuration(float duration, const Vec2& gridSize, const Vec2& 
     return false;
 }
 
-Lens3D* Lens3D::clone() const
+cc::IntrusivePtr<Action> Lens3D::clone() const
 {
     // no copy constructor
-    auto a = new Lens3D();
+    cc::IntrusivePtr<Lens3D> a{new Lens3D()};
     a->initWithDuration(_duration, _gridSize, _position, _radius);
-    a->autorelease();
     return a;
 }
 
@@ -377,22 +362,18 @@ void Lens3D::update(float /*time*/)
 
 // implementation of Ripple3D
 
-Ripple3D* Ripple3D::create(float duration,
+cc::IntrusivePtr<Ripple3D> Ripple3D::create(float duration,
                            const Vec2& gridSize,
                            const Vec2& position,
                            float radius,
                            unsigned int waves,
                            float amplitude)
 {
-    Ripple3D* action = new Ripple3D();
+    cc::IntrusivePtr<Ripple3D> action{new Ripple3D()};
 
-    if (action->initWithDuration(duration, gridSize, position, radius, waves, amplitude))
+    if (!(action->initWithDuration(duration, gridSize, position, radius, waves, amplitude)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -424,12 +405,11 @@ void Ripple3D::setPosition(const Vec2& position)
     _position = position;
 }
 
-Ripple3D* Ripple3D::clone() const
+cc::IntrusivePtr<Action> Ripple3D::clone() const
 {
     // no copy constructor
-    auto a = new Ripple3D();
+    cc::IntrusivePtr<Ripple3D> a{new Ripple3D()};
     a->initWithDuration(_duration, _gridSize, _position, _radius, _waves, _amplitude);
-    a->autorelease();
     return a;
 }
 
@@ -460,17 +440,13 @@ void Ripple3D::update(float time)
 
 // implementation of Shaky3D
 
-Shaky3D* Shaky3D::create(float duration, const Vec2& gridSize, int range, bool shakeZ)
+cc::IntrusivePtr<Shaky3D> Shaky3D::create(float duration, const Vec2& gridSize, int range, bool shakeZ)
 {
-    Shaky3D* action = new Shaky3D();
+    cc::IntrusivePtr<Shaky3D> action{new Shaky3D()};
 
-    if (action->initWithDuration(duration, gridSize, range, shakeZ))
+    if (!(action->initWithDuration(duration, gridSize, range, shakeZ)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
     return action;
 }
@@ -488,12 +464,11 @@ bool Shaky3D::initWithDuration(float duration, const Vec2& gridSize, int range, 
     return false;
 }
 
-Shaky3D* Shaky3D::clone() const
+cc::IntrusivePtr<Action> Shaky3D::clone() const
 {
     // no copy constructor
-    auto a = new Shaky3D();
+    cc::IntrusivePtr<Shaky3D> a{new Shaky3D()};
     a->initWithDuration(_duration, _gridSize, _randrange, _shakeZ);
-    a->autorelease();
     return a;
 }
 
@@ -521,17 +496,13 @@ void Shaky3D::update(float /*time*/)
 
 // implementation of Liquid
 
-Liquid* Liquid::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
+cc::IntrusivePtr<Liquid> Liquid::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
 {
-    Liquid* action = new Liquid();
+    cc::IntrusivePtr<Liquid> action{new Liquid()};
 
-    if (action->initWithDuration(duration, gridSize, waves, amplitude))
+    if (!(action->initWithDuration(duration, gridSize, waves, amplitude)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -551,12 +522,11 @@ bool Liquid::initWithDuration(float duration, const Vec2& gridSize, unsigned int
     return false;
 }
 
-Liquid* Liquid::clone() const
+cc::IntrusivePtr<Action> Liquid::clone() const
 {
     // no copy constructor
-    auto a = new Liquid();
+    cc::IntrusivePtr<Liquid> a{new Liquid()};
     a->initWithDuration(_duration, _gridSize, _waves, _amplitude);
-    a->autorelease();
     return a;
 }
 
@@ -579,22 +549,18 @@ void Liquid::update(float time)
 
 // implementation of Waves
 
-Waves* Waves::create(float duration,
+cc::IntrusivePtr<Waves> Waves::create(float duration,
                      const Vec2& gridSize,
                      unsigned int waves,
                      float amplitude,
                      bool horizontal,
                      bool vertical)
 {
-    Waves* action = new Waves();
+    cc::IntrusivePtr<Waves> action{new Waves()};
 
-    if (action->initWithDuration(duration, gridSize, waves, amplitude, horizontal, vertical))
+    if (!(action->initWithDuration(duration, gridSize, waves, amplitude, horizontal, vertical)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -621,12 +587,11 @@ bool Waves::initWithDuration(float duration,
     return false;
 }
 
-Waves* Waves::clone() const
+cc::IntrusivePtr<Action> Waves::clone() const
 {
     // no copy constructor
-    auto a = new Waves();
+    cc::IntrusivePtr<Waves> a{new Waves()};
     a->initWithDuration(_duration, _gridSize, _waves, _amplitude, _horizontal, _vertical);
-    a->autorelease();
     return a;
 }
 
@@ -658,17 +623,13 @@ void Waves::update(float time)
 
 // implementation of Twirl
 
-Twirl* Twirl::create(float duration, const Vec2& gridSize, const Vec2& position, unsigned int twirls, float amplitude)
+cc::IntrusivePtr<Twirl> Twirl::create(float duration, const Vec2& gridSize, const Vec2& position, unsigned int twirls, float amplitude)
 {
-    Twirl* action = new Twirl();
+    cc::IntrusivePtr<Twirl> action{new Twirl()};
 
-    if (action->initWithDuration(duration, gridSize, position, twirls, amplitude))
+    if (!(action->initWithDuration(duration, gridSize, position, twirls, amplitude)))
     {
-        action->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(action);
+        return nullptr;
     }
 
     return action;
@@ -698,12 +659,11 @@ void Twirl::setPosition(const Vec2& position)
     _position = position;
 }
 
-Twirl* Twirl::clone() const
+cc::IntrusivePtr<Action> Twirl::clone() const
 {
     // no copy constructor
-    auto a = new Twirl();
+    cc::IntrusivePtr<Twirl> a{new Twirl()};
     a->initWithDuration(_duration, _gridSize, _position, _twirls, _amplitude);
-    a->autorelease();
     return a;
 }
 

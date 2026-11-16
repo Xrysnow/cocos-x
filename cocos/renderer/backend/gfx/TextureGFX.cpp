@@ -370,16 +370,12 @@ TextureGFX::~TextureGFX()
 {
 }
 
-TextureGFX* TextureGFX::create(const cc::gfx::TextureInfo& info)
+cc::IntrusivePtr<TextureGFX> TextureGFX::create(const cc::gfx::TextureInfo& info)
 {
-    auto p = new (std::nothrow) TextureGFX(info);
-    if (p && p->getHandler())
+    cc::IntrusivePtr<TextureGFX> p{new (std::nothrow) TextureGFX(info)};
+    if (!(p && p->getHandler()))
     {
-        p->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(p);
+        return nullptr;
     }
     return p;
 }

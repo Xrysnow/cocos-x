@@ -64,7 +64,7 @@ public:
      * Create a scroll bar with its parent scroll view and direction.
      * @return A scroll bar instance.
      */
-    static ScrollViewBar* create(ScrollView* parent, ScrollView::Direction direction);
+    static cc::IntrusivePtr<ScrollViewBar> create(ScrollView* parent, ScrollView::Direction direction);
 
     /**
      * @brief Set the scroll bar position from the left-bottom corner (horizontal) or right-top corner (vertical).

@@ -151,7 +151,7 @@ This information is obtained from the TMX file.
 */
 struct CC_DLL TMXTileAnimInfo : public Ref
 {
-    static TMXTileAnimInfo* create(uint32_t tileID);
+    static cc::IntrusivePtr<TMXTileAnimInfo> create(uint32_t tileID);
     explicit TMXTileAnimInfo(uint32_t tileID);
     uint32_t _tileID = 0;
     std::vector<TMXTileAnimFrame> _frames;
@@ -250,9 +250,9 @@ class CC_DLL TMXMapInfo : public Ref, public SAXDelegator
 {
 public:
     /** creates a TMX Format with a tmx file */
-    static TMXMapInfo* create(std::string_view tmxFile);
+    static cc::IntrusivePtr<TMXMapInfo> create(std::string_view tmxFile);
     /** creates a TMX Format with an XML string and a TMX resource path */
-    static TMXMapInfo* createWithXML(std::string_view tmxString, std::string_view resourcePath);
+    static cc::IntrusivePtr<TMXMapInfo> createWithXML(std::string_view tmxString, std::string_view resourcePath);
 
     /**
      * @js ctor

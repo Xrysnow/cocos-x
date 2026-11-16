@@ -42,32 +42,28 @@ bool EventListenerKeyboard::checkAvailable()
     return true;
 }
 
-EventListenerKeyboard* EventListenerKeyboard::create()
+cc::IntrusivePtr<EventListenerKeyboard> EventListenerKeyboard::create()
 {
-    auto ret = new EventListenerKeyboard();
-    if (ret->init())
+    cc::IntrusivePtr<EventListenerKeyboard> ret{new EventListenerKeyboard()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-EventListenerKeyboard* EventListenerKeyboard::clone()
+cc::IntrusivePtr<EventListener> EventListenerKeyboard::clone()
 {
-    auto ret = new EventListenerKeyboard();
+    cc::IntrusivePtr<EventListenerKeyboard> ret{new EventListenerKeyboard()};
     if (ret->init())
     {
-        ret->autorelease();
+
         ret->onKeyPressed  = onKeyPressed;
         ret->onKeyReleased = onKeyReleased;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

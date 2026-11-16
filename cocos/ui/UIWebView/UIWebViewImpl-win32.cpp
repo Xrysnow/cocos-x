@@ -581,22 +581,22 @@ WebViewImpl::WebViewImpl(WebView* webView) : _systemWebControl(new Win32WebContr
 {
     _systemWebControl->createWebView(
         [webView](std::string_view url) -> bool {
-            const RefPtr<WebView> sender(webView);
+            const cc::IntrusivePtr<WebView> sender(webView);
             const auto callback = sender->getOnShouldStartLoading();
             return callback ? callback(sender.get(), url) : true;
         },
         [webView](std::string_view url) {
-            const RefPtr<WebView> sender(webView);
+            const cc::IntrusivePtr<WebView> sender(webView);
             const auto callback = sender->getOnDidFinishLoading();
             if (callback) callback(sender.get(), url);
         },
         [webView](std::string_view url) {
-            const RefPtr<WebView> sender(webView);
+            const cc::IntrusivePtr<WebView> sender(webView);
             const auto callback = sender->getOnDidFailLoading();
             if (callback) callback(sender.get(), url);
         },
         [webView](std::string_view url) {
-            const RefPtr<WebView> sender(webView);
+            const cc::IntrusivePtr<WebView> sender(webView);
             const auto callback = sender->getOnJSCallback();
             if (callback) callback(sender.get(), url);
         });

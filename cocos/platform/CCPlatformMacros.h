@@ -45,21 +45,13 @@ Copyright (c) 2021 Bytedance Inc.
  *
  * @param __TYPE__  class type to add create(), such as Layer.
  */
-#define CREATE_FUNC(__TYPE__)            \
-    static __TYPE__* create()            \
-    {                                    \
-        __TYPE__* pRet = new __TYPE__(); \
-        if (pRet->init())                \
-        {                                \
-            pRet->autorelease();         \
-            return pRet;                 \
-        }                                \
-        else                             \
-        {                                \
-            delete pRet;                 \
-            pRet = nullptr;              \
-            return nullptr;              \
-        }                                \
+#define CREATE_FUNC(__TYPE__)                                      \
+    static cc::IntrusivePtr<__TYPE__> create()                                      \
+    {                                                              \
+        cc::IntrusivePtr<__TYPE__> owner{new __TYPE__()};            \
+        if (!owner->init())                                       \
+            return nullptr;                                        \
+        return owner; \
     }
 
 /** @def NODE_FUNC(__TYPE__)
@@ -68,21 +60,13 @@ Copyright (c) 2021 Bytedance Inc.
  * @param __TYPE__  class type to add node(), such as Layer.
  * @deprecated  This interface will be deprecated sooner or later.
  */
-#define NODE_FUNC(__TYPE__)                         \
-    CC_DEPRECATED_ATTRIBUTE static __TYPE__* node() \
-    {                                               \
-        __TYPE__* pRet = new __TYPE__();            \
-        if (pRet->init())                           \
-        {                                           \
-            pRet->autorelease();                    \
-            return pRet;                            \
-        }                                           \
-        else                                        \
-        {                                           \
-            delete pRet;                            \
-            pRet = NULL;                            \
-            return NULL;                            \
-        }                                           \
+#define NODE_FUNC(__TYPE__)                                         \
+    CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<__TYPE__> node()                 \
+    {                                                               \
+        cc::IntrusivePtr<__TYPE__> owner{new __TYPE__()};             \
+        if (!owner->init())                                        \
+            return nullptr;                                         \
+        return owner;  \
     }
 
 /** @def CC_ENABLE_CACHE_TEXTURE_DATA

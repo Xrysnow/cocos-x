@@ -44,11 +44,10 @@ ControlHuePicker::~ControlHuePicker()
     CC_SAFE_RELEASE(_slider);
 }
 
-ControlHuePicker* ControlHuePicker::create(Node* target, Vec2 pos)
+cc::IntrusivePtr<ControlHuePicker> ControlHuePicker::create(Node* target, Vec2 pos)
 {
-    ControlHuePicker* pRet = new ControlHuePicker();
+    cc::IntrusivePtr<ControlHuePicker> pRet{new ControlHuePicker()};
     pRet->initWithTargetAndPos(target, pos);
-    pRet->autorelease();
     return pRet;
 }
 

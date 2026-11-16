@@ -72,8 +72,8 @@ NS_CC_BEGIN
 	 * You can do interesting things with Sources, like set the volume, pitch, and its position relative to the listener.
 	 * Please note that positional audio only works for mono (i.e. non-stereo) sources.
 	 * Initialize AudioEngine before creating or playing Sources. Factories return
-	 * nullptr while the engine is stopped; retain autoreleased Sources for the
-	 * entire playback lifetime (AudioPool does not retain them).
+	 * an empty owner while the engine is stopped. Keep the returned owner for
+	 * the entire playback lifetime (AudioPool does not retain sources).
 	 */
 	class CC_DLL AudioSource : public cocos2d::Ref
 	{
@@ -128,17 +128,15 @@ NS_CC_BEGIN
 		/**
 		 * Creates AudioSource from a AudioSoundData, which holds the whole audio data.
 		 */
-		static AudioSource* createFromSoundData(AudioSoundData* soundData);
+		static cc::IntrusivePtr<AudioSource> createFromSoundData(AudioSoundData* soundData);
 		/**
 		 * Creates AudioSource from a AudioDecoder. The audio is decoded in chunks when needed.
 		 */
-		static AudioSource* createFromDecoder(AudioDecoder* decoder);
+		static cc::IntrusivePtr<AudioSource> createFromDecoder(AudioDecoder* decoder);
 		/**
 		 * Creates AudioSource from without data source. The audio data must be manually queued by the user.
 		 */
-		static AudioSource* create(int sampleRate, int bitDepth, int channels, int buffers);
-		/** Internal owned factory: initial reference belongs to the caller; no autorelease. */
-		static AudioSource* createOwnedQueue(int sampleRate, int bitDepth, int channels, int buffers);
+		static cc::IntrusivePtr<AudioSource> create(int sampleRate, int bitDepth, int channels, int buffers);
 		QueueSubmitResult submitQueueData(const void* data, size_t length,
 			uint64_t expectedGeneration, int expectedDeviceGeneration);
 		QueuePlaybackSnapshot getQueuePlaybackSnapshot();
@@ -152,7 +150,7 @@ NS_CC_BEGIN
 		 * @note Cloned Sources inherit all the set-able state of the original AudioSource, but they are initialized stopped.
 		 * @return The new identical copy of this AudioSource.
 		 */
-		virtual AudioSource* clone();
+		virtual cc::IntrusivePtr<AudioSource> clone();
 		/**
 		 * Starts playing the AudioSource.
 		 * @return Whether the AudioSource was able to successfully start playing.

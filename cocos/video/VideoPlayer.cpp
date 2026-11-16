@@ -12,53 +12,50 @@ namespace
 	constexpr auto removalKey = "video.remove";
 }
 
-Player* Player::create(const std::string& path)
+cc::IntrusivePtr<Player> Player::create(const std::string& path)
 {
-	return createWithDecoder(Decoder::create(path));
+	return createWithDecoder(Decoder::create(path).get());
 }
 
-Player* Player::createFromStream(cocos2d::io::StreamPtr source)
+cc::IntrusivePtr<Player> Player::createFromStream(cocos2d::io::StreamPtr source)
 {
 	using namespace cocos2d::io;
 	if (!source || !hasCapability(source->capabilities(), Capability::Seek))
 		return nullptr;
-	return createWithDecoder(Decoder::createFromStream(std::move(source)));
+	return createWithDecoder(Decoder::createFromStream(std::move(source)).get());
 }
 
-Player* Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel)
+cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel)
 {
 	return createAsync(std::move(source), std::move(cancel), PlaybackOptions{});
 }
 
-Player* Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
 	const PlaybackOptions& options)
 {
-	auto player = new (std::nothrow) Player();
+	cc::IntrusivePtr<Player> player{new (std::nothrow) Player()};
 	if (!player)
 		return nullptr;
 	player->playback = VideoPlayback::createAsync(std::move(source), std::move(cancel), options);
 	if (!player->playback || !player->init())
 	{
-		delete player;
 		return nullptr;
 	}
-	player->autorelease();
+
 	player->playback->setSceneActive(player->isRunning());
 	player->syncPlaybackSchedule();
 	return player;
 }
 
-Player* Player::createWithDecoder(Decoder* source)
+cc::IntrusivePtr<Player> Player::createWithDecoder(Decoder* source)
 {
 	if (!source)
 		return nullptr;
-	auto ret = new (std::nothrow) Player();
+	cc::IntrusivePtr<Player> ret{new (std::nothrow) Player()};
 	if (ret && ret->initPlayback(source))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
@@ -99,10 +96,9 @@ bool Player::initPlayback(Decoder* source)
 
 bool Player::initVideoTexture(const cocos2d::Size& size, bool replace)
 {
-	auto texture = new (std::nothrow) cocos2d::Texture2D();
+	cc::IntrusivePtr<cocos2d::Texture2D> texture{new (std::nothrow) cocos2d::Texture2D()};
 	if (!texture)
 		return false;
-	texture->autorelease();
 	cocos2d::backend::TextureDescriptor desc;
 	desc.width = size.width;
 	desc.height = size.height;
@@ -111,16 +107,15 @@ bool Player::initVideoTexture(const cocos2d::Size& size, bool replace)
 #ifdef CC_VERSION
 	texture->updateTextureDescriptor(desc);
 #else
-	auto tex = cocos2d::backend::Device::getInstance()->newTexture(desc);
-	tex->autorelease();
+	cc::IntrusivePtr<cocos2d::backend::TextureBackend> tex{cocos2d::backend::Device::getInstance()->newTexture(desc), cc::adopt_ref};
 	texture->initWithBackendTexture(tex);
 #endif // CC_VERSION
 	if (replace)
 	{
-		setTexture(texture);
+		setTexture(texture.get());
 		setTextureRect(cocos2d::Rect(cocos2d::Vec2::ZERO, texture->getContentSize()));
 	}
-	else if (!initWithTexture(texture))
+	else if (!initWithTexture(texture.get()))
 		return false;
 	setContentSize(size);
 	return true;
@@ -256,7 +251,7 @@ void Player::syncPlaybackSchedule()
 
 void Player::applyPlaybackUpdate(PlaybackUpdate update)
 {
-	cocos2d::RefPtr<Player> keepAlive(this);
+	cc::IntrusivePtr<Player> keepAlive(this);
 	if (update == PlaybackUpdate::FrameReady)
 	{
 		unschedule(removalKey);

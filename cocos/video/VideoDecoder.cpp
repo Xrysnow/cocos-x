@@ -13,9 +13,9 @@ using namespace video;
 
 struct Decoder::FFmpegState
 {
-	ffmpeg::Demuxer* demuxer = nullptr;
-	ffmpeg::AudioFrameQueue* audioQueue = nullptr;
-	ffmpeg::VideoFrameQueue* videoQueue = nullptr;
+	cc::IntrusivePtr<ffmpeg::Demuxer> demuxer;
+	cc::IntrusivePtr<ffmpeg::AudioFrameQueue> audioQueue;
+	cc::IntrusivePtr<ffmpeg::VideoFrameQueue> videoQueue;
 	const AVCodec* pCodecV = nullptr;
 	SwsContext* img_convert_ctx = nullptr;
 	uint8_t* sws_pointers[4] = { nullptr };
@@ -24,15 +24,13 @@ struct Decoder::FFmpegState
 	int64_t startTimestamp = AV_NOPTS_VALUE;
 };
 
-Decoder* Decoder::create(const std::string& path)
+cc::IntrusivePtr<Decoder> Decoder::create(const std::string& path)
 {
-	auto ret = new (std::nothrow) Decoder();
+	cc::IntrusivePtr<Decoder> ret{new (std::nothrow) Decoder()};
 	if (ret&&ret->open(path))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
@@ -51,15 +49,13 @@ bool Decoder::open(const std::string& path)
 	return openInput(std::move(source.value), path.c_str());
 }
 
-Decoder* Decoder::createFromStream(io::StreamPtr source)
+cc::IntrusivePtr<Decoder> Decoder::createFromStream(io::StreamPtr source)
 {
-	auto ret = new (std::nothrow) Decoder();
+	cc::IntrusivePtr<Decoder> ret{new (std::nothrow) Decoder()};
 	if (ret && ret->openStream(std::move(source)))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
@@ -76,7 +72,7 @@ bool Decoder::openInput(io::StreamPtr source, const char* name, bool decodeAudio
 
 	idxVideo = ffmpegState->demuxer->getBestVideoStream();
 	if (idxVideo >= 0)
-		ffmpegState->videoQueue = ffmpeg::VideoFrameQueue::create(false);
+		ffmpegState->videoQueue = ffmpeg::VideoFrameQueue::create();
 	if (!ffmpegState->videoQueue || !ffmpegState->demuxer->setVideoReceiver(ffmpegState->videoQueue, idxVideo))
 	{
 		close();
@@ -86,7 +82,7 @@ bool Decoder::openInput(io::StreamPtr source, const char* name, bool decodeAudio
 	idxAudio = decodeAudio ? ffmpegState->demuxer->getBestAudioStream() : -1;
 	if (idxAudio >= 0)
 	{
-		ffmpegState->audioQueue = ffmpeg::AudioFrameQueue::create(false);
+		ffmpegState->audioQueue = ffmpeg::AudioFrameQueue::create();
 		if (!ffmpegState->audioQueue)
 		{
 			close();
@@ -96,7 +92,7 @@ bool Decoder::openInput(io::StreamPtr source, const char* name, bool decodeAudio
 		// Audio is optional for this silent player. Retain only an opened receiver.
 		if (!ffmpegState->demuxer->setAudioReceiver(ffmpegState->audioQueue, idxAudio))
 		{
-			CC_SAFE_RELEASE_NULL(ffmpegState->audioQueue);
+			ffmpegState->audioQueue.reset();
 			idxAudio = -1;
 		}
 	}
@@ -186,9 +182,9 @@ void Decoder::close()
 	resetFrameState();
 	initialPosition = true;
 	ffmpegState->pCodecV = nullptr;
-	CC_SAFE_RELEASE_NULL(ffmpegState->demuxer);
-	CC_SAFE_RELEASE_NULL(ffmpegState->videoQueue);
-	CC_SAFE_RELEASE_NULL(ffmpegState->audioQueue);
+	ffmpegState->demuxer.reset();
+	ffmpegState->videoQueue.reset();
+	ffmpegState->audioQueue.reset();
 	sws_freeContext(ffmpegState->img_convert_ctx);
 	ffmpegState->img_convert_ctx = nullptr;
 	av_freep(&ffmpegState->sws_pointers[0]);

@@ -82,21 +82,21 @@ public:
      * @param skinned Has hardware skinning?
      * @return An autorelease material object
      */
-    static MeshMaterial* createBuiltInMaterial(MaterialType type, bool skinned);
+    static cc::IntrusivePtr<MeshMaterial> createBuiltInMaterial(MaterialType type, bool skinned);
 
     /**
      * Create material with file name, it creates material from cache if it is previously loaded
      * @param path Path of material file
      * @return An autorelease material object
      */
-    static MeshMaterial* createWithFilename(std::string_view path);
+    static cc::IntrusivePtr<MeshMaterial> createWithFilename(std::string_view path);
 
     /**
      * Create material with a ProgramState
      * @param programState GLProgramState instance
      * @return An autorelease material object
      */
-    static MeshMaterial* createWithProgramState(backend::ProgramState* programState);
+    static cc::IntrusivePtr<MeshMaterial> createWithProgramState(backend::ProgramState* programState);
 
     void setTexture(Texture2D* tex, NTextureData::Usage usage);
 
@@ -118,7 +118,7 @@ public:
     /**
      * Clone this material.
      */
-    virtual Material* clone() const override;
+    virtual cc::IntrusivePtr<Material> clone() const override;
 
 protected:
     MaterialType _type;

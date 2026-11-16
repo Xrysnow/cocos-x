@@ -18,7 +18,8 @@ GRichTextField::~GRichTextField()
 
 void GRichTextField::handleInit()
 {
-    _richText = FUIRichText::create();
+    cc::IntrusivePtr<FUIRichText> richText;
+    _richText = (richText = FUIRichText::create()).get();
     _richText->retain();
     _richText->setCascadeOpacityEnabled(true);
 

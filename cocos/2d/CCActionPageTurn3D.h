@@ -51,7 +51,7 @@ public:
     /**
      * @js NA
      */
-    virtual GridBase* getGrid() override;
+    virtual cc::IntrusivePtr<GridBase> getGrid() override;
 
     /**
     @brief Create an action with duration, grid size.
@@ -59,10 +59,10 @@ public:
     @param gridSize Specify the size of the grid.
     @return If the creation success, return a pointer of PageTurn3D action; otherwise, return nil.
     */
-    static PageTurn3D* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<PageTurn3D> create(float duration, const Vec2& gridSize);
 
     // Overrides
-    virtual PageTurn3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 };
 

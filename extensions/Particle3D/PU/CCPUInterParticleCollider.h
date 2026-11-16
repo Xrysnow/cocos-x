@@ -41,7 +41,7 @@ public:
         IPCR_ANGLE_BASED_VELOCITY
     };
 
-    static PUParticle3DInterParticleCollider* create();
+    static cc::IntrusivePtr<PUParticle3DInterParticleCollider> create();
 
     // Constants
     static const float DEFAULT_ADJUSTMENT;

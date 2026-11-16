@@ -39,11 +39,11 @@ MeshSkin::~MeshSkin()
     CC_SAFE_RELEASE(_skeleton);
 }
 
-MeshSkin* MeshSkin::create(Skeleton3D* skeleton,
+cc::IntrusivePtr<MeshSkin> MeshSkin::create(Skeleton3D* skeleton,
                            const std::vector<std::string>& boneNames,
                            const std::vector<Mat4>& invBindPose)
 {
-    auto skin       = new MeshSkin();
+    cc::IntrusivePtr<MeshSkin> skin{new MeshSkin()};
     skin->_skeleton = skeleton;
     skeleton->retain();
 
@@ -57,8 +57,6 @@ MeshSkin* MeshSkin::create(Skeleton3D* skeleton,
         }
     }
     skin->_invBindPoses = invBindPose;
-    skin->autorelease();
-
     return skin;
 }
 

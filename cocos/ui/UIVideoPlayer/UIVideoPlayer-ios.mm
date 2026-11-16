@@ -200,7 +200,7 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
     _state = PlayerbackStateCompleted;
     if (_videoPlayer)
     {
-        cocos2d::RefPtr<VideoPlayer> keepAlive(_videoPlayer);
+        cc::IntrusivePtr<VideoPlayer> keepAlive(_videoPlayer);
         _videoPlayer->onPlayEvent((int)VideoPlayer::EventType::COMPLETED);
         if (_videoPlayer && _repeatEnabled)
         {
@@ -295,10 +295,11 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
 
 VideoPlayer::VideoPlayer()
 {
+    cc::IntrusivePtr<DrawNode> debugDrawNode;
     _videoContext = [[UIVideoViewWrapperIos alloc] init:this];
 
     #if CC_VIDEOPLAYER_DEBUG_DRAW
-    _debugDrawNode = DrawNode::create();
+    _debugDrawNode = (debugDrawNode = DrawNode::create()).get();
     addChild(_debugDrawNode);
     #endif
 }
@@ -320,7 +321,7 @@ VideoPlayer::~VideoPlayer()
 
 void VideoPlayer::setFileName(std::string_view fileName)
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     _videoURL    = FileUtils::getInstance()->fullPathForFilename(fileName);
     _videoSource = VideoPlayer::Source::FILENAME;
     [((UIVideoViewWrapperIos*)_videoContext) setURL:(int) _videoSource:_videoURL];
@@ -328,7 +329,7 @@ void VideoPlayer::setFileName(std::string_view fileName)
 
 void VideoPlayer::setURL(std::string_view videoUrl)
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     _videoURL    = videoUrl;
     _videoSource = VideoPlayer::Source::URL;
     [((UIVideoViewWrapperIos*)_videoContext) setURL:(int) _videoSource:_videoURL];
@@ -418,7 +419,7 @@ void VideoPlayer::setKeepAspectRatioEnabled(bool enable)
 
 void VideoPlayer::play()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) play];
@@ -427,7 +428,7 @@ void VideoPlayer::play()
 
 void VideoPlayer::pause()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) pause];
@@ -436,7 +437,7 @@ void VideoPlayer::pause()
 
 void VideoPlayer::resume()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) resume];
@@ -445,7 +446,7 @@ void VideoPlayer::resume()
 
 void VideoPlayer::stop()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     if (!_videoURL.empty())
     {
         [((UIVideoViewWrapperIos*)_videoContext) stop];
@@ -493,7 +494,7 @@ void VideoPlayer::setVisible(bool visible)
 
 void VideoPlayer::onEnter()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     Widget::onEnter();
     if (isVisible())
     {
@@ -503,7 +504,7 @@ void VideoPlayer::onEnter()
 
 void VideoPlayer::onExit()
 {
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     Widget::onExit();
     [((UIVideoViewWrapperIos*)_videoContext) setVisible:NO];
 }
@@ -516,13 +517,13 @@ void VideoPlayer::addEventListener(const VideoPlayer::ccVideoPlayerCallback& cal
 void VideoPlayer::onPlayEvent(int event)
 {
     if (event < static_cast<int>(EventType::PLAYING) || event > static_cast<int>(EventType::ERROR)) return;
-    cocos2d::RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     _isPlaying = event == static_cast<int>(EventType::PLAYING);
     const auto callback = _eventCallback;
     if (callback) callback(this, static_cast<EventType>(event));
 }
 
-cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
+cc::IntrusivePtr<cocos2d::ui::Widget> VideoPlayer::createCloneInstance()
 {
     return VideoPlayer::create();
 }

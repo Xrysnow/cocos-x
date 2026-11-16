@@ -400,58 +400,50 @@ GLViewImpl::~GLViewImpl()
     glfwTerminate();
 }
 
-GLViewImpl* GLViewImpl::create(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 {
     return GLViewImpl::create(viewName, false);
 }
 
-GLViewImpl* GLViewImpl::create(std::string_view viewName, bool resizable)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName, bool resizable)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret->initWithRect(viewName, Rect(0, 0, 960, 640), 1.0f, resizable))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, Rect rect, float frameZoomFactor, bool resizable)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, Rect rect, float frameZoomFactor, bool resizable)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret->initWithRect(viewName, rect, frameZoomFactor, resizable))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    auto ret = new GLViewImpl();
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
     if (ret->initWithFullScreen(viewName))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName,
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName,
                                              const GLFWvidmode& videoMode,
                                              GLFWmonitor* monitor)
 {
-    auto ret = new GLViewImpl();
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
     if (ret->initWithFullscreen(viewName, videoMode, monitor))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -860,24 +852,20 @@ void GLViewImpl::setIcon(const std::vector<std::string_view>& filelist) const
 {
     if (filelist.empty())
         return;
-    std::vector<Image*> icons;
+    std::vector<cc::IntrusivePtr<Image>> icons;
     for (auto const& filename : filelist)
     {
-        Image* icon = new Image();
+        cc::IntrusivePtr<Image> icon{new Image()};
         if (icon->initWithImageFile(filename))
         {
-            icons.emplace_back(icon);
-        }
-        else
-        {
-            CC_SAFE_DELETE(icon);
+            icons.emplace_back(std::move(icon));
         }
     }
 
     if (icons.empty())
         return;  // No valid images
     size_t iconsCount = icons.size();
-    auto images       = new GLFWimage[iconsCount];
+    std::vector<GLFWimage> images(iconsCount);
     for (size_t i = 0; i < iconsCount; i++)
     {
         auto& image  = images[i];
@@ -888,13 +876,8 @@ void GLViewImpl::setIcon(const std::vector<std::string_view>& filelist) const
     };
 
     GLFWwindow* window = this->getWindow();
-    glfwSetWindowIcon(window, iconsCount, images);
+    glfwSetWindowIcon(window, iconsCount, images.data());
 
-    CC_SAFE_DELETE_ARRAY(images);
-    for (auto&& icon : icons)
-    {
-        CC_SAFE_DELETE(icon);
-    }
 }
 
 void GLViewImpl::setDefaultIcon() const

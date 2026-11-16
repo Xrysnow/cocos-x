@@ -96,7 +96,7 @@ public:
      * @param mapInfo A map info.
      * @return Return an autorelease object.
      */
-    static FastTMXLayer* create(TMXTilesetInfo* tilesetInfo, TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo);
+    static cc::IntrusivePtr<FastTMXLayer> create(TMXTilesetInfo* tilesetInfo, TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo);
     /**
      * @js ctor
      */
@@ -390,7 +390,7 @@ class CC_DLL TMXTileAnimTask : public Ref
 {
 public:
     TMXTileAnimTask(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos);
-    static TMXTileAnimTask* create(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos);
+    static cc::IntrusivePtr<TMXTileAnimTask> create(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos);
     /** start the animation task */
     void start();
     /** stop the animation task */
@@ -421,7 +421,7 @@ protected:
 class CC_DLL TMXTileAnimManager : public Ref
 {
 public:
-    static TMXTileAnimManager* create(FastTMXLayer* layer);
+    static cc::IntrusivePtr<TMXTileAnimManager> create(FastTMXLayer* layer);
     explicit TMXTileAnimManager(FastTMXLayer* layer);
 
     /** start all tile animations */

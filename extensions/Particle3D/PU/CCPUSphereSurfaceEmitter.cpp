@@ -95,10 +95,9 @@ void PUSphereSurfaceEmitter::initParticleDirection(PUParticle3D* particle)
     }
 }
 
-PUSphereSurfaceEmitter* PUSphereSurfaceEmitter::create()
+cc::IntrusivePtr<PUSphereSurfaceEmitter> PUSphereSurfaceEmitter::create()
 {
-    auto pe = new PUSphereSurfaceEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUSphereSurfaceEmitter> pe{new PUSphereSurfaceEmitter()};
     return pe;
 }
 
@@ -110,7 +109,7 @@ void PUSphereSurfaceEmitter::copyAttributesTo(PUEmitter* emitter)
     sphereSurfaceEmitter->_radius                = _radius;
 }
 
-PUSphereSurfaceEmitter* PUSphereSurfaceEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUSphereSurfaceEmitter::clone()
 {
     auto be = PUSphereSurfaceEmitter::create();
     copyAttributesTo(be);

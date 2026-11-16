@@ -55,14 +55,14 @@ class Node;
  * @ingroup Actions
  * @js NA
  */
-class CC_DLL PointArray : public Ref, public Clonable
+class CC_DLL PointArray : public Ref, public Clonable<PointArray>
 {
 public:
     /** Creates and initializes a Points array with capacity.
      * @js NA
      * @param capacity The size of the array.
      */
-    static PointArray* create(ssize_t capacity);
+    static cc::IntrusivePtr<PointArray> create(ssize_t capacity);
 
     /**
      * @js NA
@@ -133,7 +133,7 @@ public:
      * @js NA
      * @return A new copy of the array reversed.
      */
-    PointArray* reverse() const;
+    cc::IntrusivePtr<PointArray> reverse() const;
 
     /** Reverse the current control point array inline, without generating a new one.
      * @js NA
@@ -143,7 +143,7 @@ public:
      * @js NA
      * @lua NA
      */
-    virtual PointArray* clone() const;
+    virtual cc::IntrusivePtr<PointArray> clone() const;
     /**
      * @js NA
      */
@@ -176,7 +176,7 @@ public:
      * In lua: local create(local t, local table)
      * @endcode
      */
-    static CardinalSplineTo* create(float duration, PointArray* points, float tension);
+    static cc::IntrusivePtr<CardinalSplineTo> create(float duration, PointArray* points, float tension);
     /**
      * @js NA
      * @lua NA
@@ -218,8 +218,8 @@ public:
     }
 
     // Overrides
-    virtual CardinalSplineTo* clone() const override;
-    virtual CardinalSplineTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
 
     /**
@@ -254,15 +254,15 @@ public:
      * @param tension Goodness of fit.
      * @endcode
      */
-    static CardinalSplineBy* create(float duration, PointArray* points, float tension);
+    static cc::IntrusivePtr<CardinalSplineBy> create(float duration, PointArray* points, float tension);
 
     CardinalSplineBy();
 
     // Overrides
     virtual void startWithTarget(Node* target) override;
     virtual void updatePosition(const Vec2& newPos) override;
-    virtual CardinalSplineBy* clone() const override;
-    virtual CardinalSplineBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
 protected:
     Vec2 _startPosition;
@@ -286,7 +286,7 @@ public:
      * In lua: local create(local dt, local table).
      * @endcode
      */
-    static CatmullRomTo* create(float dt, PointArray* points);
+    static cc::IntrusivePtr<CatmullRomTo> create(float dt, PointArray* points);
 
     /**
      * Initializes the action with a duration and an array of points.
@@ -297,8 +297,8 @@ public:
     bool initWithDuration(float dt, PointArray* points);
 
     // Override
-    virtual CatmullRomTo* clone() const override;
-    virtual CatmullRomTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 };
 
 /** @class CatmullRomBy
@@ -319,7 +319,7 @@ public:
      * In lua: local create(local dt, local table).
      * @endcode
      */
-    static CatmullRomBy* create(float dt, PointArray* points);
+    static cc::IntrusivePtr<CatmullRomBy> create(float dt, PointArray* points);
 
     /** Initializes the action with a duration and an array of points.
      *
@@ -329,8 +329,8 @@ public:
     bool initWithDuration(float dt, PointArray* points);
 
     // Override
-    virtual CatmullRomBy* clone() const override;
-    virtual CatmullRomBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 };
 
 /** Returns the Cardinal Spline position for a given set of control points, tension and time */

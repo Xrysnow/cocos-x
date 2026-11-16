@@ -417,17 +417,17 @@ public:
      @since v2.0
      *
      * @param plistFile Particle plist file name.
-     * @return An autoreleased ParticleSystem object.
+     * @return An owned ParticleSystem object.
      */
-    static ParticleSystem* create(std::string_view plistFile);
+    static cc::IntrusivePtr<ParticleSystem> create(std::string_view plistFile);
 
     /** Create a system with a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSystemQuad object.
+     * @return An owned ParticleSystemQuad object.
      * @js NA
      */
-    static ParticleSystem* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSystem> createWithTotalParticles(int numberOfParticles);
 
     /** Gets all ParticleSystem references
      */

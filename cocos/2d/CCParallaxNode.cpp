@@ -33,11 +33,10 @@ NS_CC_BEGIN
 class PointObject : public Ref
 {
 public:
-    static PointObject* create(Vec2 ratio, Vec2 offset)
+    static cc::IntrusivePtr<PointObject> create(Vec2 ratio, Vec2 offset)
     {
-        PointObject* ret = new PointObject();
+        cc::IntrusivePtr<PointObject> ret{new PointObject()};
         ret->initWithPoint(ratio, offset);
-        ret->autorelease();
         return ret;
     }
 
@@ -79,10 +78,9 @@ ParallaxNode::~ParallaxNode()
     }
 }
 
-ParallaxNode* ParallaxNode::create()
+cc::IntrusivePtr<ParallaxNode> ParallaxNode::create()
 {
-    ParallaxNode* ret = new ParallaxNode();
-    ret->autorelease();
+    cc::IntrusivePtr<ParallaxNode> ret{new ParallaxNode()};
     return ret;
 }
 
@@ -99,7 +97,7 @@ void ParallaxNode::addChild(Node* /*child*/, int /*zOrder*/, std::string_view /*
 void ParallaxNode::addChild(Node* child, int z, const Vec2& ratio, const Vec2& offset)
 {
     CCASSERT(child != nullptr, "Argument must be non-nil");
-    PointObject* obj = PointObject::create(ratio, offset);
+    cc::IntrusivePtr<PointObject> obj = PointObject::create(ratio, offset);
     obj->setChild(child);
     ccArrayAppendObjectWithResize(_parallaxArray, (Ref*)obj);
 

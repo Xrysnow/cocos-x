@@ -35,7 +35,7 @@ NS_CC_BEGIN
 class CC_EX_DLL PUSlaveEmitter : public PUEmitter, public PUListener
 {
 public:
-    static PUSlaveEmitter* create();
+    static cc::IntrusivePtr<PUSlaveEmitter> create();
 
     /**
      */
@@ -81,7 +81,7 @@ public:
      */
     void setMasterEmitterName(std::string_view masterEmitterName);
 
-    virtual PUSlaveEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUSlaveEmitter();

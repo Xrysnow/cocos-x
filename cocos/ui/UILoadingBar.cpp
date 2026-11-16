@@ -59,40 +59,38 @@ LoadingBar::LoadingBar()
 
 LoadingBar::~LoadingBar() {}
 
-LoadingBar* LoadingBar::create()
+cc::IntrusivePtr<LoadingBar> LoadingBar::create()
 {
-    LoadingBar* widget = new LoadingBar();
+    cc::IntrusivePtr<LoadingBar> widget{new LoadingBar()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-LoadingBar* LoadingBar::create(std::string_view textureName, float percentage)
+cc::IntrusivePtr<LoadingBar> LoadingBar::create(std::string_view textureName, float percentage)
 {
     return LoadingBar::create(textureName, TextureResType::LOCAL, percentage);
 }
 
-LoadingBar* LoadingBar::create(std::string_view textureName, TextureResType texType, float percentage)
+cc::IntrusivePtr<LoadingBar> LoadingBar::create(std::string_view textureName, TextureResType texType, float percentage)
 {
-    LoadingBar* widget = new LoadingBar;
+    cc::IntrusivePtr<LoadingBar> widget{new LoadingBar};
     if (widget->init())
     {
-        widget->autorelease();
+
         widget->loadTexture(textureName, texType);
         widget->setPercent(percentage);
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
 void LoadingBar::initRenderer()
 {
-    _barRenderer = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> barRenderer;
+    _barRenderer = (barRenderer = Scale9Sprite::create()).get();
     _barRenderer->setScale9Enabled(false);
     addProtectedChild(_barRenderer, BAR_RENDERER_Z, -1);
     _barRenderer->setAnchorPoint(Vec2(0.0f, 0.5f));
@@ -397,7 +395,7 @@ std::string LoadingBar::getDescription() const
     return "LoadingBar";
 }
 
-Widget* LoadingBar::createCloneInstance()
+cc::IntrusivePtr<Widget> LoadingBar::createCloneInstance()
 {
     return LoadingBar::create();
 }

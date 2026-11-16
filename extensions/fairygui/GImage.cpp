@@ -18,7 +18,8 @@ GImage::~GImage()
 
 void GImage::handleInit()
 {
-    _content = FUISprite::create();
+    cc::IntrusivePtr<FUISprite> content;
+    _content = (content = FUISprite::create()).get();
     _content->retain();
 
     _displayObject = _content;

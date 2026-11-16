@@ -40,7 +40,7 @@ public:
     static const float DEFAULT_ROTATION_SPEED;
     static const Vec3 DEFAULT_ROTATION_AXIS;
 
-    static PUGeometryRotator* create();
+    static cc::IntrusivePtr<PUGeometryRotator> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
     /** @copydoc ParticleAffector::_initParticleForEmission */

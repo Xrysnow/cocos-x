@@ -53,7 +53,7 @@ public:
      *
      * @return A UICCTextField instance.
      */
-    static UICCTextField* create();
+    static cc::IntrusivePtr<UICCTextField> create();
 
     /**
      * Default constructor
@@ -74,7 +74,7 @@ public:
      *@param fontSize Font size in float.
      *@return A UICCTextField instance.
      */
-    static UICCTextField* create(std::string_view placeholder, std::string_view fontName, float fontSize);
+    static cc::IntrusivePtr<UICCTextField> create(std::string_view placeholder, std::string_view fontName, float fontSize);
 
     // override functions
     virtual bool onTextFieldAttachWithIME(TextFieldTTF* pSender) override;
@@ -260,7 +260,7 @@ public:
      *
      * @return A TextField instance.
      */
-    static TextField* create();
+    static cc::IntrusivePtr<TextField> create();
 
     /**
      * @brief Create a TextField with a placeholder, a font name and a font size.
@@ -270,7 +270,7 @@ public:
      * @param fontSize The font size.
      * @return A TextField instance.
      */
-    static TextField* create(std::string_view placeholder, std::string_view fontName, int fontSize);
+    static cc::IntrusivePtr<TextField> create(std::string_view placeholder, std::string_view fontName, int fontSize);
 
     /**
      * @brief Set the touch size
@@ -616,7 +616,7 @@ protected:
 
     void textfieldRendererScaleChangedWithSize();
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void adaptRenderers() override;
 

@@ -321,7 +321,7 @@ public:
      */
     bool makeParticleLocal(PUParticle3D* particle);
 
-    virtual PUEmitter* clone() = 0;
+    virtual cc::IntrusivePtr<PUEmitter> clone() = 0;
     virtual void copyAttributesTo(PUEmitter* emitter);
 
 protected:

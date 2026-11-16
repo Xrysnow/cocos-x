@@ -10,7 +10,7 @@ NS_CC_BEGIN
 		bool init(AudioStream* src);
 	public:
 
-		static AudioDecoderWav* create(AudioStream* src, size_t bufSize);
+		static cc::IntrusivePtr<AudioDecoderWav> create(AudioStream* src, size_t bufSize);
 
 		int64_t decode(char* dst, uint64_t bytesToRead) override;
 		bool seek(int64_t frameOffset) override;

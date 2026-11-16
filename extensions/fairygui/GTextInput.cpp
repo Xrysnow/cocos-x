@@ -19,7 +19,8 @@ GTextInput::~GTextInput()
 
 void GTextInput::handleInit()
 {
-    _input = FUIInput::create();
+    cc::IntrusivePtr<FUIInput> input;
+    _input = (input = FUIInput::create()).get();
     _input->retain();
     _input->setDelegate(this);
 

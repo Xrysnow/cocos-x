@@ -129,7 +129,8 @@ void Widget::FocusNavigationController::addKeyboardEventListener()
 {
     if (nullptr == _keyboardListener)
     {
-        _keyboardListener                = EventListenerKeyboard::create();
+        auto keyboardListener = EventListenerKeyboard::create();
+        _keyboardListener = keyboardListener.get();
         _keyboardListener->onKeyReleased = CC_CALLBACK_2(Widget::FocusNavigationController::onKeypadKeyPressed, this);
         EventDispatcher* dispatcher      = Director::getInstance()->getEventDispatcher();
         dispatcher->addEventListenerWithFixedPriority(_keyboardListener, _keyboardEventPriority);
@@ -195,15 +196,13 @@ void Widget::cleanupWidget()
     }
 }
 
-Widget* Widget::create()
+cc::IntrusivePtr<Widget> Widget::create()
 {
-    Widget* widget = new Widget();
+    cc::IntrusivePtr<Widget> widget{new Widget()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -264,7 +263,7 @@ LayoutComponent* Widget::getOrCreateLayoutComponent()
     auto layoutComponent = this->getComponent(__LAYOUT_COMPONENT_NAME);
     if (nullptr == layoutComponent)
     {
-        LayoutComponent* component = LayoutComponent::create();
+        cc::IntrusivePtr<LayoutComponent> component = LayoutComponent::create();
         this->addComponent(component);
         layoutComponent = component;
     }
@@ -545,6 +544,7 @@ void Widget::updateContentSizeWithTextureSize(const Vec2& size)
 
 void Widget::setTouchEnabled(bool enable)
 {
+    cc::IntrusivePtr<EventListenerTouchOneByOne> touchListener;
     if (enable == _touchEnabled)
     {
         return;
@@ -552,7 +552,7 @@ void Widget::setTouchEnabled(bool enable)
     _touchEnabled = enable;
     if (_touchEnabled)
     {
-        _touchListener = EventListenerTouchOneByOne::create();
+        _touchListener = (touchListener = EventListenerTouchOneByOne::create()).get();
         CC_SAFE_RETAIN(_touchListener);
         _touchListener->setSwallowTouches(true);
         _touchListener->onTouchBegan     = CC_CALLBACK_2(Widget::onTouchBegan, this);
@@ -1113,9 +1113,9 @@ std::string Widget::getDescription() const
     return "Widget";
 }
 
-Widget* Widget::clone()
+cc::IntrusivePtr<Widget> Widget::clone()
 {
-    Widget* clonedWidget = createCloneInstance();
+    cc::IntrusivePtr<Widget> clonedWidget = createCloneInstance();
     if (!clonedWidget)
         return nullptr;
     clonedWidget->copyProperties(this);
@@ -1123,7 +1123,7 @@ Widget* Widget::clone()
     return clonedWidget;
 }
 
-Widget* Widget::createCloneInstance()
+cc::IntrusivePtr<Widget> Widget::createCloneInstance()
 {
     return Widget::create();
 }
@@ -1187,7 +1187,7 @@ void Widget::copyProperties(Widget* widget)
     Map<int, LayoutParameter*>& layoutParameterDic = widget->_layoutParameterDictionary;
     for (auto&& iter : layoutParameterDic)
     {
-        setLayoutParameter(iter.second->clone());
+        setLayoutParameter(iter.second->clone().get());
     }
 }
 

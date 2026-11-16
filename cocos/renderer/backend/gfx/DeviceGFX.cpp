@@ -22,7 +22,7 @@ CC_BACKEND_BEGIN
 Device* Device::getInstance()
 {
     if (!DeviceGFXInstance)
-        DeviceGFXInstance = new DeviceGFX();
+        DeviceGFXInstance = cc::IntrusivePtr<DeviceGFX>{new DeviceGFX()}.detach();
     return DeviceGFXInstance;
 }
 
@@ -185,12 +185,12 @@ DeviceGFX::~DeviceGFX()
 
 CommandBuffer* DeviceGFX::newCommandBuffer()
 {
-    return new CommandBufferGFX();
+    return cc::IntrusivePtr<CommandBufferGFX>{new CommandBufferGFX()}.detach();
 }
 
 Buffer* DeviceGFX::newBuffer(std::size_t size, BufferType type, BufferUsage usage)
 {
-    return new BufferGFX(size, type, usage);
+    return cc::IntrusivePtr<BufferGFX>{new BufferGFX(size, type, usage)}.detach();
 }
 
 Buffer* DeviceGFX::newBuffer(size_t size, size_t stride, BufferType type, BufferUsage usage)
@@ -210,7 +210,7 @@ Buffer* DeviceGFX::newBuffer(size_t size, size_t stride, BufferType type, Buffer
     info.size     = (uint32_t)size;
     info.stride   = (uint32_t)stride;
     //info.flags    = cc::gfx::BufferFlags::ENABLE_STAGING_WRITE;
-    return new BufferGFX(info);
+    return cc::IntrusivePtr<BufferGFX>{new BufferGFX(info)}.detach();
 }
 
 TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
@@ -218,9 +218,9 @@ TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
     switch (descriptor.textureType)
     {
     case TextureType::TEXTURE_2D:
-        return new Texture2DGFX(descriptor);
+        return cc::IntrusivePtr<Texture2DGFX>{new Texture2DGFX(descriptor)}.detach();
     case TextureType::TEXTURE_CUBE:
-        return new TextureCubeGFX(descriptor);
+        return cc::IntrusivePtr<TextureCubeGFX>{new TextureCubeGFX(descriptor)}.detach();
     default:
         return nullptr;
     }
@@ -228,9 +228,9 @@ TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
 
 RenderTarget* DeviceGFX::newDefaultRenderTarget(TargetBufferFlags rtf)
 {
-    auto rt = new RenderTargetGFX(true);
+    cc::IntrusivePtr<RenderTargetGFX> rt{new RenderTargetGFX(true)};
     rt->setTargetFlags(rtf);
-    return rt;
+    return rt.detach();
 }
 
 RenderTarget* DeviceGFX::newRenderTarget(
@@ -239,28 +239,28 @@ RenderTarget* DeviceGFX::newRenderTarget(
     TextureBackend* depthAttachment,
     TextureBackend* stencilAttachhment)
 {
-    auto rt = new RenderTargetGFX(false);
+    cc::IntrusivePtr<RenderTargetGFX> rt{new RenderTargetGFX(false)};
     rt->setTargetFlags(rtf);
     RenderTarget::ColorAttachment colors{{colorAttachment, 0}};
     rt->setColorAttachment(colors);
     rt->setDepthAttachment(depthAttachment);
     rt->setStencilAttachment(stencilAttachhment);
-    return rt;
+    return rt.detach();
 }
 
 ShaderModule* DeviceGFX::newShaderModule(backend::ShaderStage stage, std::string_view source)
 {
-    return new ShaderModuleGFX(stage, source);
+    return cc::IntrusivePtr<ShaderModuleGFX>{new ShaderModuleGFX(stage, source)}.detach();
 }
 
 DepthStencilState* DeviceGFX::newDepthStencilState()
 {
-    return new DepthStencilStateGFX();
+    return cc::IntrusivePtr<DepthStencilStateGFX>{new DepthStencilStateGFX()}.detach();
 }
 
 RenderPipeline* DeviceGFX::newRenderPipeline()
 {
-    return new RenderPipelineGFX();
+    return cc::IntrusivePtr<RenderPipelineGFX>{new RenderPipelineGFX()}.detach();
 }
 
 Program* DeviceGFX::newProgram(const ShaderInfo& info)
@@ -322,12 +322,12 @@ Program* DeviceGFX::newProgram(const ShaderInfo& info)
         st.count   = s.count;
         inf.samplerTextures.push_back(st);
     }
-    auto p = new ProgramGFX(inf);
+    cc::IntrusivePtr<ProgramGFX> p{new ProgramGFX(inf)};
     if (p && !p->isValid())
     {
-        CC_SAFE_DELETE(p);
+        return nullptr;
     }
-    return p;
+    return p.detach();
 }
 
 static std::unordered_map<std::size_t, cc::gfx::AttributeList> BuiltinShaderAttributes;
@@ -395,12 +395,12 @@ Program* DeviceGFX::newProgram(std::string_view vertexShader, std::string_view f
         if (BuiltinShaderNames.count(fragKey))
             info.name += " " + BuiltinShaderNames.at(fragKey);
     }
-    auto ret = new ProgramGFX(info);
+    cc::IntrusivePtr<ProgramGFX> ret{new ProgramGFX(info)};
     if (!ret->isValid())
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
-    return ret;
+    return ret.detach();
 }
 
 struct BuiltinShaderHelper

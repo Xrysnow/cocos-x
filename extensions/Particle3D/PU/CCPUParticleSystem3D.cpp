@@ -252,39 +252,34 @@ PUParticleSystem3D::~PUParticleSystem3D()
     _observers.clear();
 }
 
-PUParticleSystem3D* PUParticleSystem3D::create()
+cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create()
 {
-    auto pups = new PUParticleSystem3D();
-    pups->autorelease();
+    cc::IntrusivePtr<PUParticleSystem3D> pups{new PUParticleSystem3D()};
     return pups;
 }
 
-PUParticleSystem3D* PUParticleSystem3D::create(std::string_view filePath, std::string_view materialPath)
+cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create(std::string_view filePath, std::string_view materialPath)
 {
-    PUParticleSystem3D* ret = new PUParticleSystem3D();
+    cc::IntrusivePtr<PUParticleSystem3D> ret{new PUParticleSystem3D()};
     if (ret->initWithFilePathAndMaterialPath(filePath, materialPath))
     {
-        ret->autorelease();
         return ret;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
         return nullptr;
     }
 }
 
-PUParticleSystem3D* PUParticleSystem3D::create(std::string_view filePath)
+cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create(std::string_view filePath)
 {
-    PUParticleSystem3D* ret = new PUParticleSystem3D();
+    cc::IntrusivePtr<PUParticleSystem3D> ret{new PUParticleSystem3D()};
     if (ret->initWithFilePath(filePath))
     {
-        ret->autorelease();
         return ret;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
         return nullptr;
     }
 }
@@ -551,8 +546,7 @@ void PUParticleSystem3D::prepared()
                     {
                         auto p               = new PUParticle3D();
                         p->particleType      = PUParticle3D::PT_EMITTER;
-                        p->particleEntityPtr = emitted->clone();
-                        p->particleEntityPtr->retain();
+                        p->particleEntityPtr = emitted->clone().detach();
                         p->copyBehaviours(_behaviourTemplates);
                         _emittedEmitterParticlePool[emitted->getName()].addData(p);
                     }
@@ -562,7 +556,7 @@ void PUParticleSystem3D::prepared()
                     PUParticleSystem3D* emitted = static_cast<PUParticleSystem3D*>(emitter->getEmitsEntityPtr());
                     for (unsigned int i = 0; i < _emittedSystemQuota; ++i)
                     {
-                        PUParticleSystem3D* clonePS = emitted->clone();
+                        cc::IntrusivePtr<PUParticleSystem3D> clonePS = emitted->clone();
                         auto p                      = new PUParticle3D();
                         p->particleType             = PUParticle3D::PT_TECHNIQUE;
                         p->particleEntityPtr        = clonePS;
@@ -1194,7 +1188,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     system->setName(_name);
     system->_state = _state;
     if (_render)
-        system->setRender(static_cast<PURender*>(_render)->clone());
+        system->setRender(static_cast<PURender*>(_render)->clone().get());
     system->_particleQuota = _particleQuota;
     system->_blend         = _blend;
     system->_keepLocal     = _keepLocal;
@@ -1203,7 +1197,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     for (auto&& iter : _affectors)
     {
         PUAffector* affector = static_cast<PUAffector*>(iter);
-        PUAffector* copy     = PUAffectorManager::Instance()->createAffector(affector->getAffectorType());
+        auto copy = PUAffectorManager::Instance()->createAffector(affector->getAffectorType());
         affector->copyAttributesTo(copy);
         system->addAffector(copy);
     }
@@ -1211,7 +1205,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     for (auto&& iter : _emitters)
     {
         PUEmitter* emitter = static_cast<PUEmitter*>(iter);
-        PUEmitter* copy    = PUEmitterManager::Instance()->createEmitter(emitter->getEmitterType());
+        auto copy = PUEmitterManager::Instance()->createEmitter(emitter->getEmitterType());
         emitter->copyAttributesTo(copy);
         system->addEmitter(copy);
     }
@@ -1219,7 +1213,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     for (auto&& iter : _observers)
     {
         PUObserver* observer = static_cast<PUObserver*>(iter);
-        PUObserver* copy     = PUObserverManager::Instance()->createObserver(observer->getObserverType());
+        auto copy = PUObserverManager::Instance()->createObserver(observer->getObserverType());
         observer->copyAttributesTo(copy);
         system->addObserver(copy);
     }
@@ -1227,7 +1221,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     for (auto&& iter : _behaviourTemplates)
     {
         PUBehaviour* behaviour = static_cast<PUBehaviour*>(iter);
-        PUBehaviour* copy      = behaviour->clone();
+        cc::IntrusivePtr<PUBehaviour> copy      = behaviour->clone();
         system->addBehaviourTemplate(copy);
     }
 
@@ -1245,7 +1239,7 @@ void PUParticleSystem3D::copyAttributesTo(PUParticleSystem3D* system)
     system->_parentParticleSystem        = _parentParticleSystem;
 }
 
-PUParticleSystem3D* PUParticleSystem3D::clone()
+cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::clone()
 {
     auto ps = PUParticleSystem3D::create();
     copyAttributesTo(ps);
@@ -1253,7 +1247,7 @@ PUParticleSystem3D* PUParticleSystem3D::clone()
     {
         PUParticleSystem3D* child = dynamic_cast<PUParticleSystem3D*>(iter);
         if (child)
-            ps->addChild(child->clone());
+            ps->addChild(child->clone().get());
     }
     return ps;
 }

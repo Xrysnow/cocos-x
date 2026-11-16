@@ -47,39 +47,37 @@ TextAtlas::TextAtlas()
 
 TextAtlas::~TextAtlas() {}
 
-TextAtlas* TextAtlas::create()
+cc::IntrusivePtr<TextAtlas> TextAtlas::create()
 {
-    TextAtlas* widget = new TextAtlas();
+    cc::IntrusivePtr<TextAtlas> widget{new TextAtlas()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
 void TextAtlas::initRenderer()
 {
-    _labelAtlasRenderer = Label::create();
+    cc::IntrusivePtr<Label> labelAtlasRenderer;
+    _labelAtlasRenderer = (labelAtlasRenderer = Label::create()).get();
     _labelAtlasRenderer->setAnchorPoint(Point::ANCHOR_MIDDLE);
     addProtectedChild(_labelAtlasRenderer, LABELATLAS_RENDERER_Z, -1);
 }
 
-TextAtlas* TextAtlas::create(std::string_view stringValue,
+cc::IntrusivePtr<TextAtlas> TextAtlas::create(std::string_view stringValue,
                              std::string_view charMapFile,
                              int itemWidth,
                              int itemHeight,
                              std::string_view startCharMap)
 {
-    TextAtlas* widget = new TextAtlas();
+    cc::IntrusivePtr<TextAtlas> widget{new TextAtlas()};
     if (widget->init())
     {
-        widget->autorelease();
+
         widget->setProperty(stringValue, charMapFile, itemWidth, itemHeight, startCharMap);
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -178,7 +176,7 @@ std::string TextAtlas::getDescription() const
     return "TextAtlas";
 }
 
-Widget* TextAtlas::createCloneInstance()
+cc::IntrusivePtr<Widget> TextAtlas::createCloneInstance()
 {
     return TextAtlas::create();
 }

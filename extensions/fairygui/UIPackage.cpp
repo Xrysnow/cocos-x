@@ -97,11 +97,10 @@ UIPackage* UIPackage::addPackage(const string& assetPath)
 
     if (_emptyTexture == nullptr)
     {
-        Image* emptyImage = new Image();
+        cc::IntrusivePtr<Image> emptyImage{new Image()};
         emptyImage->initWithRawData(emptyTextureData, 16, 2, 2, 4, false);
-        _emptyTexture = new Texture2D();
-        _emptyTexture->initWithImage(emptyImage);
-        delete emptyImage;
+        _emptyTexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+        _emptyTexture->initWithImage(emptyImage.get());
     }
 
     Data data;
@@ -116,20 +115,19 @@ UIPackage* UIPackage::addPackage(const string& assetPath)
     char* p = (char*)data.takeBuffer(&size);
     ByteBuffer buffer(p, 0, (int)size, true);
 
-    UIPackage* pkg = new UIPackage();
+    cc::IntrusivePtr<UIPackage> pkg{new UIPackage()};
     pkg->_assetPath = assetPath;
     if (!pkg->loadPackage(&buffer))
     {
-        delete pkg;
         return nullptr;
     }
 
-    _packageInstById[pkg->getId()] = pkg;
-    _packageInstByName[pkg->getName()] = pkg;
-    _packageInstById[assetPath] = pkg;
-    _packageList.push_back(pkg);
+    _packageInstById[pkg->getId()] = pkg.get();
+    _packageInstByName[pkg->getName()] = pkg.get();
+    _packageInstById[assetPath] = pkg.get();
+    _packageList.push_back(pkg.get());
 
-    return pkg;
+    return pkg.detach();
 }
 
 void UIPackage::removePackage(const string& packageIdOrName)
@@ -165,7 +163,7 @@ void UIPackage::removeAllPackages()
     CC_SAFE_RELEASE_NULL(_emptyTexture);
 }
 
-GObject* UIPackage::createObject(const string& pkgName, const string& resName)
+cc::IntrusivePtr<GObject> UIPackage::createObject(const string& pkgName, const string& resName)
 {
     UIPackage* pkg = UIPackage::getByName(pkgName);
     if (pkg)
@@ -177,7 +175,7 @@ GObject* UIPackage::createObject(const string& pkgName, const string& resName)
     }
 }
 
-GObject* UIPackage::createObjectFromURL(const string& url)
+cc::IntrusivePtr<GObject> UIPackage::createObjectFromURL(const string& url)
 {
     PackageItem* pi = UIPackage::getItemByURL(url);
     if (pi)
@@ -307,7 +305,7 @@ PackageItem* UIPackage::getItemByName(const string& itemName)
         return nullptr;
 }
 
-GObject* UIPackage::createObject(const string& resName)
+cc::IntrusivePtr<GObject> UIPackage::createObject(const string& resName)
 {
     PackageItem* pi = getItemByName(resName);
     CCASSERT(pi, StringUtils::format("FairyGUI: resource not found - %s in  %s",
@@ -317,9 +315,9 @@ GObject* UIPackage::createObject(const string& resName)
     return createObject(pi);
 }
 
-GObject* UIPackage::createObject(PackageItem* item)
+cc::IntrusivePtr<GObject> UIPackage::createObject(PackageItem* item)
 {
-    GObject* g = UIObjectFactory::newObject(item);
+    auto g = UIObjectFactory::newObject(item);
     if (g == nullptr)
         return nullptr;
 
@@ -393,7 +391,7 @@ bool UIPackage::loadPackage(ByteBuffer* buffer)
         int nextPos = buffer->readInt();
         nextPos += buffer->getPos();
 
-        pi = new PackageItem();
+        pi = cc::IntrusivePtr<PackageItem>{new PackageItem()}.detach();
         pi->owner = this;
         pi->type = (PackageItemType)buffer->readByte();
         pi->id = buffer->readS();
@@ -602,7 +600,7 @@ void* UIPackage::getItemAsset(PackageItem* item)
 
 void UIPackage::loadAtlas(PackageItem* item)
 {
-    Image* image = new Image();
+    Image* image = cc::IntrusivePtr<Image>{new Image()}.detach();
     if (!image->initWithImageFile(item->file))
     {
         item->texture = _emptyTexture;
@@ -612,7 +610,7 @@ void UIPackage::loadAtlas(PackageItem* item)
         return;
     }
 
-    Texture2D* tex = new Texture2D();
+    Texture2D* tex = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
     tex->initWithImage(image);
     item->texture = tex;
     delete image;
@@ -628,7 +626,7 @@ void UIPackage::loadAtlas(PackageItem* item)
     bool hasAlphaTexture = ToolSet::isFileExist(alphaFilePath);
     if (hasAlphaTexture)
     {
-        image = new Image();
+        image = cc::IntrusivePtr<Image>{new Image()}.detach();
         if (!image->initWithImageFile(alphaFilePath))
         {
             delete image;
@@ -639,7 +637,7 @@ void UIPackage::loadAtlas(PackageItem* item)
         if(image->getFileType() == Image::Format::ETC1)
             tex->updateWithImage(image, Texture2D::getDefaultAlphaPixelFormat(), 1);
 #else
-        tex = new Texture2D();
+        tex = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
         tex->initWithImage(image);
         item->texture->setAlphaTexture(tex);
         tex->release();
@@ -658,12 +656,11 @@ AtlasSprite* UIPackage::getSprite(const std::string& spriteId)
 }
 
 //note: SpriteFrame.ref=1 not autorelease.
-SpriteFrame* UIPackage::createSpriteTexture(AtlasSprite* sprite)
+cc::IntrusivePtr<SpriteFrame> UIPackage::createSpriteTexture(AtlasSprite* sprite)
 {
     getItemAsset(sprite->atlas);
 
-    //not using createWithTexture for saving a autorelease call.
-    SpriteFrame* spriteFrame = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
     spriteFrame->initWithTexture(sprite->atlas->texture, sprite->rect, sprite->rotated,
         Vec2(sprite->offset.x - (sprite->originalSize.width - sprite->rect.size.width) / 2, -(sprite->offset.y - (sprite->originalSize.height - sprite->rect.size.height) / 2)),
         sprite->originalSize);
@@ -675,10 +672,10 @@ void UIPackage::loadImage(PackageItem* item)
 {
     AtlasSprite* sprite = getSprite(item->id);
     if (sprite != nullptr)
-        item->spriteFrame = createSpriteTexture(sprite);
+        item->spriteFrame = createSpriteTexture(sprite).detach();
     else
     {
-        item->spriteFrame = new SpriteFrame();
+        item->spriteFrame = cc::IntrusivePtr<SpriteFrame>{new SpriteFrame()}.detach();
         item->spriteFrame->initWithTexture(_emptyTexture, Rect());
     }
     if (item->scaleByTile)
@@ -691,8 +688,7 @@ void UIPackage::loadImage(PackageItem* item)
 
 void UIPackage::loadMovieClip(PackageItem* item)
 {
-    item->animation = Animation::create();
-    item->animation->retain();
+    item->animation = Animation::create().detach();
 
     ByteBuffer* buffer = item->rawData;
 
@@ -711,7 +707,7 @@ void UIPackage::loadMovieClip(PackageItem* item)
     Size mcSize = CC_SIZE_PIXELS_TO_POINTS(mcSizeInPixels);
 
     AtlasSprite* sprite;
-    SpriteFrame* spriteFrame;
+    cc::IntrusivePtr<SpriteFrame> spriteFrame;
 
     for (int i = 0; i < frameCount; i++)
     {
@@ -735,15 +731,13 @@ void UIPackage::loadMovieClip(PackageItem* item)
         else
         {
             //dont use createWithTexture
-            spriteFrame = new SpriteFrame();
+            spriteFrame = cc::IntrusivePtr<SpriteFrame>{new SpriteFrame()};
             spriteFrame->initWithTexture(_emptyTexture, Rect());
         }
 
         spriteFrame->setOffset(Vec2(rect.origin.x - (mcSize.width - rect.size.width) / 2, -(rect.origin.y - (mcSize.height - rect.size.height) / 2)));
-        AnimationFrame* frame = AnimationFrame::create(spriteFrame, addDelay / interval + 1, ValueMapNull);
+        cc::IntrusivePtr<AnimationFrame> frame = AnimationFrame::create(spriteFrame, addDelay / interval + 1, ValueMapNull);
         frames.pushBack(frame);
-        //tranfer to AnimationFrame
-        spriteFrame->release();
 
         buffer->setPos(nextPos);
     }
@@ -755,7 +749,7 @@ void UIPackage::loadMovieClip(PackageItem* item)
 
 void UIPackage::loadFont(PackageItem* item)
 {
-    item->bitmapFont = BitmapFont::create();
+    item->bitmapFont = BitmapFont::create().detach();
     auto bitmapFont  = item->bitmapFont;
 #if defined(CC_VERSION)
     auto fontAtlas = bitmapFont->resetFontAtlas(bitmapFont->newFontAtlas());

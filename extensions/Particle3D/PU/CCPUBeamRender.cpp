@@ -49,10 +49,10 @@ const float PUBeamRender::DEFAULT_DEVIATION                                     
 const size_t PUBeamRender::DEFAULT_NUMBER_OF_SEGMENTS                             = 2;
 const PUBillboardChain::TexCoordDirection PUBeamRender::DEFAULT_TEXTURE_DIRECTION = PUBillboardChain::TCD_V;
 
-PUBeamRender* PUBeamRender::create(std::string_view texFile)
+cc::IntrusivePtr<PUBeamRender> PUBeamRender::create(std::string_view texFile)
 {
-    auto br = new PUBeamRender();
-    br->autorelease();
+    cc::IntrusivePtr<PUBeamRender> br{new PUBeamRender()};
+
     br->_texFile = texFile;
     return br;
 }
@@ -272,15 +272,16 @@ void PUBeamRender::prepare()
             _billboardChain->addChainElement(i, element);
         }
 
-        PUParticle3DBeamVisualData* visualData = new PUParticle3DBeamVisualData(i, _billboardChain);
+        cc::IntrusivePtr<PUParticle3DBeamVisualData> visualData{new PUParticle3DBeamVisualData(i, _billboardChain)};
         for (size_t numDev = 0; numDev < _numberOfSegments; ++numDev)
         {
             // Initialise the positions
             visualData->half[numDev].setZero();
             visualData->destinationHalf[numDev].setZero();
         }
-        _allVisualData.emplace_back(visualData);  // Managed by this renderer
-        _visualData.emplace_back(visualData);     // Used to assign to a particle
+        _allVisualData.emplace_back(visualData.get());  // Managed by this renderer
+        _visualData.emplace_back(visualData.get());     // Used to assign to a particle
+        visualData.detach();
     }
 }
 
@@ -354,7 +355,7 @@ void PUBeamRender::destroyAll()
     _visualData.clear();
 }
 
-PUBeamRender* PUBeamRender::clone()
+cc::IntrusivePtr<PURender> PUBeamRender::clone()
 {
     auto br = PUBeamRender::create(_texFile);
     copyAttributesTo(br);

@@ -11,11 +11,12 @@ no separate `cc_audio` library or LuaSTG implementation objects are required.
 `FileUtils` by default, using an independent file handle and cursor per stream.
 `AudioDecoder::createFromFile(path, bufferSize, type)` uses this stream without
 requiring an audio device. Explicit custom streams use `createFromStream()`.
-Normal cocos platform initialization and an autorelease pool are required.
+Normal cocos platform initialization is required. Factories return owning
+`cc::IntrusivePtr` handles and do not register their results with an autorelease pool.
 
 A host may install `AudioStream::setFileOpener()` during initialization. It receives
-the original path synchronously on the caller's thread and returns an autoreleased
-stream; a null result is a failure, with no automatic fallback. For explicit
+the original path synchronously on the caller's thread and returns an owning
+`cc::IntrusivePtr<AudioStream>`; a null result is a failure, with no automatic fallback. For explicit
 fallback, call `createFromLocalFile()`, which bypasses the audio callback while
 retaining FileUtils path and delegate behavior. Empty paths fail. Configure or
 clear the callback only when there are no concurrent stream creation requests.
@@ -23,8 +24,8 @@ clear the callback only when there are no concurrent stream creation requests.
 with `setFileOpener({})`. Already created streams remain usable after clearing.
 
 `AudioSource::createFromDecoder()` creates a streaming source. Initialize
-`AudioEngine` before creating playback sources, check factory results, and retain
-sources for their intended playback lifetime: playback does not retain a source.
+`AudioEngine` before creating playback sources, check factory results, and keep the returned
+handles for their intended playback lifetime: playback does not retain a source.
 Release game/UI sources before ending the engine. Repeated `init()`/`end()` calls
 are supported, with worker shutdown preceding OpenAL context destruction.
 Independent consumers exercise these contracts in the workspace's

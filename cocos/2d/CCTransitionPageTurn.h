@@ -63,9 +63,9 @@ public:
      * @param scene A given scene.
      * @param backwards If back is true then the effect is reversed to appear as if the incoming scene is being turned
      * from left over the outgoing scene.
-     * @return An autoreleased TransitionPageTurn object.
+     * @return An owned TransitionPageTurn object.
      */
-    static TransitionPageTurn* create(float t, Scene* scene, bool backwards);
+    static cc::IntrusivePtr<TransitionPageTurn> create(float t, Scene* scene, bool backwards);
 
     //
     // Overrides
@@ -91,7 +91,7 @@ public:
      * @param vector A given size.
      * @return The action that will be performed.
      */
-    ActionInterval* actionWithSize(const Vec2& vector);
+    cc::IntrusivePtr<ActionInterval> actionWithSize(const Vec2& vector);
 
     //
     // Overrides
@@ -113,8 +113,8 @@ protected:
     virtual void sceneOrder() override;
 
 protected:
-    NodeGrid* _inSceneProxy;
-    NodeGrid* _outSceneProxy;
+    cc::IntrusivePtr<NodeGrid> _inSceneProxy;
+    cc::IntrusivePtr<NodeGrid> _outSceneProxy;
     bool _back;
 };
 

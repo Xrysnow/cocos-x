@@ -214,15 +214,13 @@ bool AudioDecoderMp3::init(AudioStream* src)
 	return reset && seek(0);
 }
 
-AudioDecoderMp3* AudioDecoderMp3::create(AudioStream* src, size_t bufferSize)
+cc::IntrusivePtr<AudioDecoderMp3> AudioDecoderMp3::create(AudioStream* src, size_t bufferSize)
 {
-	auto ret = new (std::nothrow) AudioDecoderMp3(bufferSize);
+	cc::IntrusivePtr<AudioDecoderMp3> ret{new (std::nothrow) AudioDecoderMp3(bufferSize)};
 	if (ret&&ret->init(src))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 

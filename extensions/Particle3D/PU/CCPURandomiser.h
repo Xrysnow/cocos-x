@@ -40,7 +40,7 @@ public:
     static const float DEFAULT_TIME_STEP;
     static const bool DEFAULT_RANDOM_DIRECTION;
 
-    static PURandomiser* create();
+    static cc::IntrusivePtr<PURandomiser> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

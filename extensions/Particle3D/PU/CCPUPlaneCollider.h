@@ -39,7 +39,7 @@ public:
     // Constants
     static const Vec3 DEFAULT_NORMAL;
 
-    static PUPlaneCollider* create();
+    static cc::IntrusivePtr<PUPlaneCollider> create();
 
     virtual void notifyRescaled(const Vec3& scale) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

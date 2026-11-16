@@ -90,15 +90,13 @@ static const int TILECACHESET_MAGIC   = 'T' << 24 | 'S' << 16 | 'E' << 8 | 'T'; 
 static const int TILECACHESET_VERSION = 2;                                       // 1: fastlz, 2: lz4
 static const int MAX_AGENTS           = 128;
 
-NavMesh* NavMesh::create(std::string_view navFilePath, std::string_view geomFilePath)
+cc::IntrusivePtr<NavMesh> NavMesh::create(std::string_view navFilePath, std::string_view geomFilePath)
 {
-    auto ref = new NavMesh();
+    cc::IntrusivePtr<NavMesh> ref{new NavMesh()};
     if (ref->initWithFilePath(navFilePath, geomFilePath))
     {
-        ref->autorelease();
         return ref;
     }
-    CC_SAFE_DELETE(ref);
     return nullptr;
 }
 

@@ -353,7 +353,7 @@ public:
     /**initialize alphaMap ,detailMaps textures*/
     bool initTextures();
     /**create entry*/
-    static Terrain* create(TerrainData& parameter, CrackFixedType fixedType = CrackFixedType::INCREASE_LOWER);
+    static cc::IntrusivePtr<Terrain> create(TerrainData& parameter, CrackFixedType fixedType = CrackFixedType::INCREASE_LOWER);
     /**get specified position's height mapping to the terrain,use bi-linear interpolation method
      * @param x the X position
      * @param z the Z position

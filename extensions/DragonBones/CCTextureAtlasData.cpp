@@ -42,8 +42,7 @@ void CCTextureAtlasData::setRenderTexture(cocos2d::Texture2D* value)
                 cocos2d::Vec2 offset(0.0f, 0.0f);
                 cocos2d::Size originSize(rect.size.width, rect.size.height);
                 textureData->spriteFrame = cocos2d::SpriteFrame::createWithTexture(
-                    _renderTexture, rect, textureData->rotated, offset, originSize);  // TODO multiply textureAtlas
-                textureData->spriteFrame->retain();
+                    _renderTexture, rect, textureData->rotated, offset, originSize).detach();  // TODO multiply textureAtlas
             }
         }
     }

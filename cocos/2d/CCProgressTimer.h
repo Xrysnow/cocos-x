@@ -65,7 +65,7 @@ public:
      * @param sp The sprite as the shape the timer goes through.
      * @return A ProgressTimer.
      */
-    static ProgressTimer* create(Sprite* sp);
+    static cc::IntrusivePtr<ProgressTimer> create(Sprite* sp);
 
     /** Change the percentage to change progress.
      *

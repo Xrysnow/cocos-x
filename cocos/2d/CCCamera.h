@@ -79,7 +79,7 @@ public:
      * @param nearPlane The near plane distance.
      * @param farPlane The far plane distance.
      */
-    static Camera* createPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
+    static cc::IntrusivePtr<Camera> createPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
     /**
      * Creates an orthographic camera.
      *
@@ -89,11 +89,11 @@ public:
      * @param nearPlane The near plane distance.
      * @param farPlane The far plane distance.
      */
-    static Camera* createOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane);
+    static cc::IntrusivePtr<Camera> createOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane);
 
     /** create default camera, the camera type depends on Director::getProjection, the depth of the default camera is 0
      */
-    static Camera* create();
+    static cc::IntrusivePtr<Camera> create();
 
     /**
      * Get the visiting camera , the visiting camera shall be set on Scene::render

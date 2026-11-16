@@ -84,13 +84,12 @@ void GridAction::cacheTargetAsGridNode()
     CCASSERT(_gridNodeTarget, "GridActions can only used on NodeGrid");
 }
 
-GridAction* GridAction::reverse() const
+cc::IntrusivePtr<Action> GridAction::reverse() const
 {
-    // FIXME: This conversion isn't safe.
-    return (GridAction*)ReverseTime::create(this->clone());
+    return ReverseTime::create(cc::static_pointer_cast<FiniteTimeAction>(this->clone()).get());
 }
 
-GridBase* GridAction::getGrid()
+cc::IntrusivePtr<GridBase> GridAction::getGrid()
 {
     // Abstract class needs implementation
     CCASSERT(0, "Subclass should implement this method!");
@@ -100,7 +99,7 @@ GridBase* GridAction::getGrid()
 
 // implementation of Grid3DAction
 
-GridBase* Grid3DAction::getGrid()
+cc::IntrusivePtr<GridBase> Grid3DAction::getGrid()
 {
     return Grid3D::create(_gridSize, _gridNodeTarget->getGridRect());
 }
@@ -130,20 +129,18 @@ Rect Grid3DAction::getGridRect() const
 }
 
 // implementation of TiledGrid3DAction
-TiledGrid3DAction* TiledGrid3DAction::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<TiledGrid3DAction> TiledGrid3DAction::create(float duration, const Vec2& gridSize)
 {
-    TiledGrid3DAction* ret = new TiledGrid3DAction();
+    cc::IntrusivePtr<TiledGrid3DAction> ret{new TiledGrid3DAction()};
     if (ret->initWithDuration(duration, gridSize))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-GridBase* TiledGrid3DAction::getGrid()
+cc::IntrusivePtr<GridBase> TiledGrid3DAction::getGrid()
 {
     return TiledGrid3D::create(_gridSize, _gridNodeTarget->getGridRect());
 }
@@ -168,16 +165,14 @@ void TiledGrid3DAction::setTile(const Vec2& pos, const Quad3& coords)
 
 // implementation AccelDeccelAmplitude
 
-AccelDeccelAmplitude* AccelDeccelAmplitude::create(Action* action, float duration)
+cc::IntrusivePtr<AccelDeccelAmplitude> AccelDeccelAmplitude::create(Action* action, float duration)
 {
-    AccelDeccelAmplitude* ret = new AccelDeccelAmplitude();
+    cc::IntrusivePtr<AccelDeccelAmplitude> ret{new AccelDeccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -195,11 +190,11 @@ bool AccelDeccelAmplitude::initWithAction(Action* action, float duration)
     return false;
 }
 
-AccelDeccelAmplitude* AccelDeccelAmplitude::clone() const
+cc::IntrusivePtr<Action> AccelDeccelAmplitude::clone() const
 {
     // no copy constructor
     if (_other)
-        return AccelDeccelAmplitude::create(_other->clone(), _rate);
+        return AccelDeccelAmplitude::create(_other->clone().get(), _rate);
 
     return nullptr;
 }
@@ -228,26 +223,24 @@ void AccelDeccelAmplitude::update(float time)
     ((AccelDeccelAmplitude*)(_other))->setAmplitudeRate(powf(f, _rate));
 }
 
-AccelDeccelAmplitude* AccelDeccelAmplitude::reverse() const
+cc::IntrusivePtr<Action> AccelDeccelAmplitude::reverse() const
 {
     if (_other)
-        return AccelDeccelAmplitude::create(_other->reverse(), _duration);
+        return AccelDeccelAmplitude::create(_other->reverse().get(), _duration);
 
     return nullptr;
 }
 
 // implementation of AccelAmplitude
 
-AccelAmplitude* AccelAmplitude::create(Action* action, float duration)
+cc::IntrusivePtr<AccelAmplitude> AccelAmplitude::create(Action* action, float duration)
 {
-    AccelAmplitude* ret = new AccelAmplitude();
+    cc::IntrusivePtr<AccelAmplitude> ret{new AccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -265,11 +258,11 @@ bool AccelAmplitude::initWithAction(Action* action, float duration)
     return false;
 }
 
-AccelAmplitude* AccelAmplitude::clone() const
+cc::IntrusivePtr<Action> AccelAmplitude::clone() const
 {
     // no copy constructor
     if (_other)
-        return AccelAmplitude::create(_other->clone(), _duration);
+        return AccelAmplitude::create(_other->clone().get(), _duration);
 
     return nullptr;
 }
@@ -291,26 +284,24 @@ void AccelAmplitude::update(float time)
     _other->update(time);
 }
 
-AccelAmplitude* AccelAmplitude::reverse() const
+cc::IntrusivePtr<Action> AccelAmplitude::reverse() const
 {
     if (_other)
-        return AccelAmplitude::create(_other->reverse(), _duration);
+        return AccelAmplitude::create(_other->reverse().get(), _duration);
 
     return nullptr;
 }
 
 // DeccelAmplitude
 
-DeccelAmplitude* DeccelAmplitude::create(Action* action, float duration)
+cc::IntrusivePtr<DeccelAmplitude> DeccelAmplitude::create(Action* action, float duration)
 {
-    DeccelAmplitude* ret = new DeccelAmplitude();
+    cc::IntrusivePtr<DeccelAmplitude> ret{new DeccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -345,18 +336,18 @@ void DeccelAmplitude::update(float time)
     _other->update(time);
 }
 
-DeccelAmplitude* DeccelAmplitude::clone() const
+cc::IntrusivePtr<Action> DeccelAmplitude::clone() const
 {
     // no copy constructor
     if (_other)
-        return DeccelAmplitude::create(_other->clone(), _duration);
+        return DeccelAmplitude::create(_other->clone().get(), _duration);
 
     return nullptr;
 }
 
-DeccelAmplitude* DeccelAmplitude::reverse() const
+cc::IntrusivePtr<Action> DeccelAmplitude::reverse() const
 {
-    return DeccelAmplitude::create(_other->reverse(), _duration);
+    return DeccelAmplitude::create(_other->reverse().get(), _duration);
 }
 
 // implementation of StopGrid
@@ -378,19 +369,18 @@ void StopGrid::cacheTargetAsGridNode()
     CCASSERT(_gridNodeTarget, "GridActions can only used on NodeGrid");
 }
 
-StopGrid* StopGrid::create()
+cc::IntrusivePtr<StopGrid> StopGrid::create()
 {
-    StopGrid* action = new StopGrid();
-    action->autorelease();
+    cc::IntrusivePtr<StopGrid> action{new StopGrid()};
     return action;
 }
 
-StopGrid* StopGrid::clone() const
+cc::IntrusivePtr<Action> StopGrid::clone() const
 {
     return StopGrid::create();
 }
 
-StopGrid* StopGrid::reverse() const
+cc::IntrusivePtr<Action> StopGrid::reverse() const
 {
     // no reverse, just clone it
     return this->clone();
@@ -398,16 +388,14 @@ StopGrid* StopGrid::reverse() const
 
 // implementation of ReuseGrid
 
-ReuseGrid* ReuseGrid::create(int times)
+cc::IntrusivePtr<ReuseGrid> ReuseGrid::create(int times)
 {
-    ReuseGrid* action = new ReuseGrid();
+    cc::IntrusivePtr<ReuseGrid> action{new ReuseGrid()};
     if (action->initWithTimes(times))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -435,12 +423,12 @@ void ReuseGrid::cacheTargetAsGridNode()
     CCASSERT(_gridNodeTarget, "GridActions can only used on NodeGrid");
 }
 
-ReuseGrid* ReuseGrid::clone() const
+cc::IntrusivePtr<Action> ReuseGrid::clone() const
 {
     return ReuseGrid::create(_times);
 }
 
-ReuseGrid* ReuseGrid::reverse() const
+cc::IntrusivePtr<Action> ReuseGrid::reverse() const
 {
     // no reverse, just clone it
     return this->clone();

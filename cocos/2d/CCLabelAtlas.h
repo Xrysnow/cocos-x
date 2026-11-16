@@ -58,7 +58,7 @@ class CC_DLL LabelAtlas : public AtlasNode, public LabelProtocol
 public:
     /** Creates the LabelAtlas with a string, a char map file(the atlas), the width and height of each element and the
      * starting char of the atlas. */
-    static LabelAtlas* create(std::string_view string,
+    static cc::IntrusivePtr<LabelAtlas> create(std::string_view string,
                               std::string_view charMapFile,
                               int itemWidth,
                               int itemHeight,
@@ -68,13 +68,13 @@ public:
      * Creates the LabelAtlas with a string and a configuration file.
      * @since v2.0
      */
-    static LabelAtlas* create(std::string_view string, std::string_view fntFile);
+    static cc::IntrusivePtr<LabelAtlas> create(std::string_view string, std::string_view fntFile);
 
     /**
      * Creates the LabelAtlas with a string, a texture, the width and height of each element and the starting char of
      * the atlas.
      */
-    static LabelAtlas* create(std::string_view string,
+    static cc::IntrusivePtr<LabelAtlas> create(std::string_view string,
                               Texture2D* texture,
                               int itemWidth,
                               int itemHeight,

@@ -177,13 +177,13 @@ class CC_DLL Grid3D : public GridBase
 {
 public:
     /** create one Grid. */
-    static Grid3D* create(const Vec2& gridSize);
+    static cc::IntrusivePtr<Grid3D> create(const Vec2& gridSize);
     /** create one Grid. */
-    static Grid3D* create(const Vec2& gridSize, const Rect& rect);
+    static cc::IntrusivePtr<Grid3D> create(const Vec2& gridSize, const Rect& rect);
     /** create one Grid. */
-    static Grid3D* create(const Vec2& gridSize, Texture2D* texture, bool flipped);
+    static cc::IntrusivePtr<Grid3D> create(const Vec2& gridSize, Texture2D* texture, bool flipped);
     /** create one Grid. */
-    static Grid3D* create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect);
+    static cc::IntrusivePtr<Grid3D> create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect);
     /**
      Constructor.
      * @js ctor
@@ -251,13 +251,13 @@ class CC_DLL TiledGrid3D : public GridBase
 {
 public:
     /** Create one Grid. */
-    static TiledGrid3D* create(const Vec2& gridSize);
+    static cc::IntrusivePtr<TiledGrid3D> create(const Vec2& gridSize);
     /** Create one Grid. */
-    static TiledGrid3D* create(const Vec2& gridSize, const Rect& rect);
+    static cc::IntrusivePtr<TiledGrid3D> create(const Vec2& gridSize, const Rect& rect);
     /** Create one Grid. */
-    static TiledGrid3D* create(const Vec2& gridSize, Texture2D* texture, bool flipped);
+    static cc::IntrusivePtr<TiledGrid3D> create(const Vec2& gridSize, Texture2D* texture, bool flipped);
     /** Create one Grid. */
-    static TiledGrid3D* create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect);
+    static cc::IntrusivePtr<TiledGrid3D> create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect);
 
     /**@{
      Implementations for interfaces in base class.

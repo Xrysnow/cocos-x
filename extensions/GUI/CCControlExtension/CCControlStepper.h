@@ -53,7 +53,7 @@ public:
         NONE
     };
 
-    static ControlStepper* create(Sprite* minusSprite, Sprite* plusSprite);
+    static cc::IntrusivePtr<ControlStepper> create(Sprite* minusSprite, Sprite* plusSprite);
     /**
      * @js ctor
      * @lua new

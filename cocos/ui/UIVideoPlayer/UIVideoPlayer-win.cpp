@@ -304,13 +304,14 @@ VideoPlayer::VideoPlayer()
     , _isUserInputEnabled(true)
     , _styleType(StyleType::DEFAULT)
 {
+    cc::IntrusivePtr<DrawNode> debugDrawNode;
     auto pvd      = new PrivateVideoDescriptor{};
     _videoContext = pvd;
     pvd->_scheduler = _director->getScheduler();
     pvd->_scheduler->retain();
     pvd->_events = PlayerEventQueue::create(this, [](VideoPlayer* owner,
         const PlayerEventQueue::Callback& callback, EventType event) {
-        RefPtr<VideoPlayer> keepAlive(owner);
+        cc::IntrusivePtr<VideoPlayer> keepAlive(owner);
         if (event == EventType::PLAYING && owner->_isPlaying) return;
         owner->_isPlaying = event == EventType::PLAYING;
         if (callback) callback(owner, event);
@@ -318,7 +319,7 @@ VideoPlayer::VideoPlayer()
     const std::weak_ptr<PlayerEventQueue> events = pvd->_events;
     pvd->_resetListener = _eventDispatcher->addCustomEventListener(Director::EVENT_RESET,
         [this](EventCustom*) {
-            RefPtr<VideoPlayer> keepAlive(this);
+            cc::IntrusivePtr<VideoPlayer> keepAlive(this);
             const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
             state->_events->shutdown();
             _isPlaying = false;
@@ -326,7 +327,7 @@ VideoPlayer::VideoPlayer()
             state->_samples = std::make_shared<VideoSampleBuffer>();
         });
     #if CC_VIDEOPLAYER_DEBUG_DRAW
-    _debugDrawNode = DrawNode::create();
+    _debugDrawNode = (debugDrawNode = DrawNode::create()).get();
     addChild(_debugDrawNode);
     #endif
 
@@ -339,7 +340,7 @@ VideoPlayer::VideoPlayer()
         cocos2d::log("Create VideoPlayer backend failed, hr=%d", (int)hr);
         return;
     }
-    pvd->_vrender = new Sprite();
+    pvd->_vrender = cc::IntrusivePtr<Sprite>{new Sprite()}.detach();
     addProtectedChild(pvd->_vrender);
     pvd->resetSamples();
     auto scheduler = pvd->_scheduler;
@@ -464,7 +465,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
             bool needsInit = !pvd->_vtexture;
             if (!pvd->_vtexture)
             {
-                pvd->_vtexture = new Texture2D();
+                pvd->_vtexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
 
                 auto programManager = ProgramManager::getInstance();
 
@@ -487,7 +488,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
                         std::string{pvd->_sampleFormat == VideoSampleFormat::NV12 ? NV12_FRAG : YUY2_FRAG},
                         VertexLayoutHelper::setupSprite);
                     auto program = programManager->getCustomProgram(VIDEO_PROGRAM_ID);
-                    pvd->_vrender->setProgramState(new backend::ProgramState(program), false);
+                    pvd->_vrender->setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
                     break;
                 }
                 default:;
@@ -700,14 +701,14 @@ void VideoPlayer::setVisible(bool visible)
 
 void VideoPlayer::onEnter()
 {
-    RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     static_cast<PrivateVideoDescriptor*>(_videoContext)->_events->activate(this);
     Widget::onEnter();
 }
 
 void VideoPlayer::onExit()
 {
-    RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     const auto state = static_cast<PrivateVideoDescriptor*>(_videoContext);
     state->_events->deactivate();
     state->closePlayer();
@@ -729,7 +730,7 @@ void VideoPlayer::onPlayEvent(int event)
     });
 }
 
-cocos2d::ui::Widget* VideoPlayer::createCloneInstance()
+cc::IntrusivePtr<cocos2d::ui::Widget> VideoPlayer::createCloneInstance()
 {
     return VideoPlayer::create();
 }

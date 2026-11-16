@@ -66,7 +66,7 @@ void adjustScriptFileName(std::string_view& scriptFileName, std::string& holder)
 
 int ComponentLua::_index = 0;
 
-ComponentLua* ComponentLua::create(std::string_view scriptFileName)
+cc::IntrusivePtr<ComponentLua> ComponentLua::create(std::string_view scriptFileName)
 {
     CC_ASSERT(!scriptFileName.empty());
 
@@ -74,10 +74,10 @@ ComponentLua* ComponentLua::create(std::string_view scriptFileName)
 
     std::string holder;
     adjustScriptFileName(scriptFileName, holder);
-    auto componentLua = new ComponentLua(scriptFileName);
+    cc::IntrusivePtr<ComponentLua> componentLua{new ComponentLua(scriptFileName)};
     if (componentLua)
     {
-        componentLua->autorelease();
+
     }
 
     return componentLua;

@@ -200,7 +200,7 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
     {
         auto& frameDict      = iter.second.asValueMap();
         auto spriteFrameName = iter.first;
-        auto* spriteFrame    = cache.findFrame(spriteFrameName);
+        cc::IntrusivePtr<SpriteFrame> spriteFrame = cache.findFrame(spriteFrameName);
         if (spriteFrame)
         {
             continue;
@@ -299,7 +299,7 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
         {
             if (image == nullptr)
             {
-                image = new Image();
+                image = cc::IntrusivePtr<Image>{new Image()}.detach();
                 image->initWithImageFile(textureFileName);
             }
             parser.setSpriteFrameInfo(image, spriteFrame->getRectInPixels(), spriteFrame->isRotated());
@@ -401,7 +401,7 @@ void PlistSpriteSheetLoader::reloadSpriteFramesWithDictionary(ValueMap& dict,
 
         cache.eraseFrame(spriteFrameName);
 
-        SpriteFrame* spriteFrame = nullptr;
+        cc::IntrusivePtr<SpriteFrame> spriteFrame = nullptr;
         std::vector<std::string> frameAliases;
 
         if (format == 0)

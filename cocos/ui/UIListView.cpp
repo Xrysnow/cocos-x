@@ -60,15 +60,13 @@ ListView::~ListView()
     CC_SAFE_RELEASE(_model);
 }
 
-ListView* ListView::create()
+cc::IntrusivePtr<ListView> ListView::create()
 {
-    ListView* widget = new ListView();
+    cc::IntrusivePtr<ListView> widget{new ListView()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -214,7 +212,7 @@ void ListView::remedyLayoutParameter(Widget* item)
 {
     CCASSERT(nullptr != item, "ListView Item can't be nullptr!");
 
-    LinearLayoutParameter* linearLayoutParameter = (LinearLayoutParameter*)(item->getLayoutParameter());
+    cc::IntrusivePtr<LinearLayoutParameter> linearLayoutParameter = (LinearLayoutParameter*)(item->getLayoutParameter());
     bool isLayoutParameterExists                 = true;
     if (!linearLayoutParameter)
     {
@@ -250,7 +248,7 @@ void ListView::pushBackDefaultItem()
     {
         return;
     }
-    Widget* newItem = _model->clone();
+    cc::IntrusivePtr<Widget> newItem = _model->clone();
     remedyLayoutParameter(newItem);
     addChild(newItem);
     requestDoLayout();
@@ -262,7 +260,7 @@ void ListView::insertDefaultItem(ssize_t index)
     {
         return;
     }
-    insertCustomItem(_model->clone(), index);
+    insertCustomItem(_model->clone().get(), index);
 }
 
 void ListView::pushBackCustomItem(Widget* item)
@@ -901,7 +899,7 @@ std::string ListView::getDescription() const
     return "ListView";
 }
 
-Widget* ListView::createCloneInstance()
+cc::IntrusivePtr<Widget> ListView::createCloneInstance()
 {
     return ListView::create();
 }
@@ -911,7 +909,7 @@ void ListView::copyClonedWidgetChildren(Widget* model)
     auto& arrayItems = static_cast<ListView*>(model)->getItems();
     for (auto&& item : arrayItems)
     {
-        pushBackCustomItem(item->clone());
+        pushBackCustomItem(item->clone().get());
     }
 }
 

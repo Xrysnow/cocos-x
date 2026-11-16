@@ -59,9 +59,9 @@ class CC_DLL MenuItem : public Node
 {
 public:
     /** Creates a MenuItem with no target/selector. */
-    static MenuItem* create();
+    static cc::IntrusivePtr<MenuItem> create();
     /** Creates a MenuItem with a target/selector. */
-    static MenuItem* create(const ccMenuCallback& callback);
+    static cc::IntrusivePtr<MenuItem> create(const ccMenuCallback& callback);
 
     /** Returns the outside box. */
     Rect rect() const;
@@ -128,10 +128,10 @@ class CC_DLL MenuItemLabel : public MenuItem
 {
 public:
     /** Creates a MenuItemLabel with a Label and a callback. */
-    static MenuItemLabel* create(Node* label, const ccMenuCallback& callback);
+    static cc::IntrusivePtr<MenuItemLabel> create(Node* label, const ccMenuCallback& callback);
 
     /** Creates a MenuItemLabel with a Label. Target and selector will be nil. */
-    static MenuItemLabel* create(Node* label);
+    static cc::IntrusivePtr<MenuItemLabel> create(Node* label);
 
     /** Sets a new string to the inner label. */
     void setString(std::string_view label);
@@ -190,13 +190,13 @@ class CC_DLL MenuItemAtlasFont : public MenuItemLabel
 {
 public:
     /** Creates a menu item from a string and atlas with a target/selector. */
-    static MenuItemAtlasFont* create(std::string_view value,
+    static cc::IntrusivePtr<MenuItemAtlasFont> create(std::string_view value,
                                      std::string_view charMapFile,
                                      int itemWidth,
                                      int itemHeight,
                                      char startCharMap);
     /** Creates a menu item from a string and atlas. Use it with MenuItemToggle. */
-    static MenuItemAtlasFont* create(std::string_view value,
+    static cc::IntrusivePtr<MenuItemAtlasFont> create(std::string_view value,
                                      std::string_view charMapFile,
                                      int itemWidth,
                                      int itemHeight,
@@ -232,9 +232,9 @@ class CC_DLL MenuItemFont : public MenuItemLabel
 {
 public:
     /** Creates a menu item from a string without target/selector. To be used with MenuItemToggle. */
-    static MenuItemFont* create(std::string_view value = "");
+    static cc::IntrusivePtr<MenuItemFont> create(std::string_view value = "");
     /** Creates a menu item from a string with a target/selector. */
-    static MenuItemFont* create(std::string_view value, const ccMenuCallback& callback);
+    static cc::IntrusivePtr<MenuItemFont> create(std::string_view value, const ccMenuCallback& callback);
 
     /** Set default font size. */
     static void setFontSize(int size);
@@ -307,11 +307,11 @@ class CC_DLL MenuItemSprite : public MenuItem
 {
 public:
     /** Creates a menu item with a normal, selected and disabled image.*/
-    static MenuItemSprite* create(Node* normalSprite, Node* selectedSprite, Node* disabledSprite = nullptr);
+    static cc::IntrusivePtr<MenuItemSprite> create(Node* normalSprite, Node* selectedSprite, Node* disabledSprite = nullptr);
     /** Creates a menu item with a normal and selected image with a callable object. */
-    static MenuItemSprite* create(Node* normalSprite, Node* selectedSprite, const ccMenuCallback& callback);
+    static cc::IntrusivePtr<MenuItemSprite> create(Node* normalSprite, Node* selectedSprite, const ccMenuCallback& callback);
     /** Creates a menu item with a normal,selected  and disabled image with target/selector. */
-    static MenuItemSprite* create(Node* normalSprite,
+    static cc::IntrusivePtr<MenuItemSprite> create(Node* normalSprite,
                                   Node* selectedSprite,
                                   Node* disabledSprite,
                                   const ccMenuCallback& callback);
@@ -380,19 +380,19 @@ class CC_DLL MenuItemImage : public MenuItemSprite
 {
 public:
     /** Creates an MenuItemImage. */
-    static MenuItemImage* create();
+    static cc::IntrusivePtr<MenuItemImage> create();
     /** Creates a menu item with a normal and selected image.*/
-    static MenuItemImage* create(std::string_view normalImage, std::string_view selectedImage);
+    static cc::IntrusivePtr<MenuItemImage> create(std::string_view normalImage, std::string_view selectedImage);
     /** Creates a menu item with a normal,selected  and disabled image.*/
-    static MenuItemImage* create(std::string_view normalImage,
+    static cc::IntrusivePtr<MenuItemImage> create(std::string_view normalImage,
                                  std::string_view selectedImage,
                                  std::string_view disabledImage);
     /** Creates a menu item with a normal and selected image with a callable object. */
-    static MenuItemImage* create(std::string_view normalImage,
+    static cc::IntrusivePtr<MenuItemImage> create(std::string_view normalImage,
                                  std::string_view selectedImage,
                                  const ccMenuCallback& callback);
     /** Creates a menu item with a normal,selected and disabled image with a callable object. */
-    static MenuItemImage* create(std::string_view normalImage,
+    static cc::IntrusivePtr<MenuItemImage> create(std::string_view normalImage,
                                  std::string_view selectedImage,
                                  std::string_view disabledImage,
                                  const ccMenuCallback& callback);
@@ -436,16 +436,25 @@ public:
     /**
      *@brief Creates a menu item from a Array with a callable object.
      */
-    static MenuItemToggle* createWithCallback(const ccMenuCallback& callback, const Vector<MenuItem*>& menuItems);
+    static cc::IntrusivePtr<MenuItemToggle> createWithCallback(const ccMenuCallback& callback, const Vector<MenuItem*>& menuItems);
     /** Creates a menu item from a list of items with a callable object. */
-    static MenuItemToggle* createWithCallback(const ccMenuCallback& callback,
-                                              MenuItem* item,
-                                              ...) CC_REQUIRES_NULL_TERMINATION;
+    template <class... Items>
+    static cc::IntrusivePtr<MenuItemToggle> createWithCallback(const ccMenuCallback& callback, const Items&... values)
+    {
+        Vector<MenuItem*> items;
+        bool ended = false;
+        auto append = [&](MenuItem* item) {
+            if (!item) ended = true;
+            if (!ended) items.pushBack(item);
+        };
+        (append(values), ...);
+        return createWithCallback(callback, items);
+    }
     /** Creates a menu item with no target/selector and no items. */
-    static MenuItemToggle* create();
+    static cc::IntrusivePtr<MenuItemToggle> create();
 
     /** Creates a menu item with a item. */
-    static MenuItemToggle* create(MenuItem* item);
+    static cc::IntrusivePtr<MenuItemToggle> create(MenuItem* item);
 
     /** Add more menu item. */
     void addSubItem(MenuItem* item);

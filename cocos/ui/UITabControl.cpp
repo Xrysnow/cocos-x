@@ -368,15 +368,13 @@ int TabControl::indexOfTabHeader(const TabHeader* tabCell) const
     return -1;
 }
 
-TabControl* TabControl::create()
+cc::IntrusivePtr<TabControl> TabControl::create()
 {
-    TabControl* tabview = new TabControl();
+    cc::IntrusivePtr<TabControl> tabview{new TabControl()};
     if (tabview->init())
     {
-        tabview->autorelease();
         return tabview;
     }
-    CC_SAFE_DELETE(tabview);
     return nullptr;
 }
 
@@ -483,39 +481,35 @@ TabHeader::~TabHeader()
     _tabSelectedEvent = nullptr;
 }
 
-TabHeader* TabHeader::create()
+cc::IntrusivePtr<TabHeader> TabHeader::create()
 {
-    TabHeader* tabcell = new TabHeader();
+    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader()};
     if (tabcell->init())
     {
         tabcell->_frontCrossRenderer->setVisible(false);  // _isSelected == false
         tabcell->_anchorPoint = Vec2(.5f, 0.0f);
-        tabcell->autorelease();
         return tabcell;
     }
-    CC_SAFE_DELETE(tabcell);
     return nullptr;
 }
 
-TabHeader* TabHeader::create(std::string_view titleStr,
+cc::IntrusivePtr<TabHeader> TabHeader::create(std::string_view titleStr,
                              std::string_view backGround,
                              std::string_view cross,
                              TextureResType texType)
 {
-    TabHeader* tabcell = new TabHeader;
+    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader};
     if (tabcell->init(backGround, "", cross, "", "", texType))
     {
         tabcell->_frontCrossRenderer->setVisible(false);
         tabcell->_tabLabelRender->setString(titleStr);
         tabcell->_anchorPoint = Vec2(.5f, 0.0f);
-        tabcell->autorelease();
         return tabcell;
     }
-    CC_SAFE_DELETE(tabcell);
     return nullptr;
 }
 
-TabHeader* TabHeader::create(std::string_view titleStr,
+cc::IntrusivePtr<TabHeader> TabHeader::create(std::string_view titleStr,
                              std::string_view backGround,
                              std::string_view backGroundSelected,
                              std::string_view cross,
@@ -523,27 +517,31 @@ TabHeader* TabHeader::create(std::string_view titleStr,
                              std::string_view frontCrossDisabled,
                              TextureResType texType /*= TextureResType::LOCAL*/)
 {
-    TabHeader* tabcell = new TabHeader;
+    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader};
     if (tabcell->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
         tabcell->_frontCrossRenderer->setVisible(false);
         tabcell->_tabLabelRender->setString(titleStr);
         tabcell->_anchorPoint = Vec2(.5f, 0.0f);
-        tabcell->autorelease();
         return tabcell;
     }
-    CC_SAFE_DELETE(tabcell);
     return nullptr;
 }
 
 void TabHeader::initRenderer()
 {
-    _backGroundBoxRenderer         = Sprite::create();
-    _backGroundSelectedBoxRenderer = Sprite::create();
-    _frontCrossRenderer            = Sprite::create();
-    _backGroundBoxDisabledRenderer = Sprite::create();
-    _frontCrossDisabledRenderer    = Sprite::create();
-    _tabLabelRender                = Label::create();
+    cc::IntrusivePtr<Sprite> backGroundBoxRenderer;
+    cc::IntrusivePtr<Sprite> backGroundSelectedBoxRenderer;
+    cc::IntrusivePtr<Sprite> frontCrossRenderer;
+    cc::IntrusivePtr<Sprite> backGroundBoxDisabledRenderer;
+    cc::IntrusivePtr<Sprite> frontCrossDisabledRenderer;
+    cc::IntrusivePtr<Label> tabLabelRender;
+    _backGroundBoxRenderer         = (backGroundBoxRenderer = Sprite::create()).get();
+    _backGroundSelectedBoxRenderer = (backGroundSelectedBoxRenderer = Sprite::create()).get();
+    _frontCrossRenderer            = (frontCrossRenderer = Sprite::create()).get();
+    _backGroundBoxDisabledRenderer = (backGroundBoxDisabledRenderer = Sprite::create()).get();
+    _frontCrossDisabledRenderer    = (frontCrossDisabledRenderer = Sprite::create()).get();
+    _tabLabelRender                = (tabLabelRender = Label::create()).get();
 
     addProtectedChild(_backGroundBoxRenderer, -2, -1);
     addProtectedChild(_backGroundSelectedBoxRenderer, -2, -1);

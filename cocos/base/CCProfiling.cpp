@@ -42,21 +42,19 @@ Profiler* Profiler::getInstance()
 {
     if (!g_sSharedProfiler)
     {
-        g_sSharedProfiler = new Profiler();
+        g_sSharedProfiler = cc::IntrusivePtr<Profiler>{new Profiler()}.detach();
         g_sSharedProfiler->init();
     }
 
     return g_sSharedProfiler;
 }
 
-ProfilingTimer* Profiler::createAndAddTimerWithName(const char* timerName)
+cc::IntrusivePtr<ProfilingTimer> Profiler::createAndAddTimerWithName(const char* timerName)
 {
-    ProfilingTimer* t = new ProfilingTimer();
+    cc::IntrusivePtr<ProfilingTimer> t{new ProfilingTimer()};
     t->initWithName(timerName);
-    _activeTimers.insert(timerName, t);
-    t->release();
-
-    return t;
+    _activeTimers.insert(timerName, t.get());
+    return t; // The timer map retains its own share.
 }
 
 void Profiler::releaseTimer(const char* timerName)
@@ -125,7 +123,8 @@ void ProfilingBeginTimingBlock(const char* timerName)
     ProfilingTimer* timer = p->_activeTimers.at(timerName);
     if (!timer)
     {
-        timer = p->createAndAddTimerWithName(timerName);
+        auto owner = p->createAndAddTimerWithName(timerName);
+        timer = owner.get();
     }
 
     timer->numberOfCalls++;

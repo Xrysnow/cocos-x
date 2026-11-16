@@ -38,10 +38,9 @@ bool PUOnExpireObserver::observe(PUParticle3D* particle, float /*timeElapsed*/)
     return (particle->hasEventFlags(PUParticle3D::PEF_EXPIRED));
 }
 
-PUOnExpireObserver* PUOnExpireObserver::create()
+cc::IntrusivePtr<PUOnExpireObserver> PUOnExpireObserver::create()
 {
-    auto peo = new PUOnExpireObserver();
-    peo->autorelease();
+    cc::IntrusivePtr<PUOnExpireObserver> peo{new PUOnExpireObserver()};
     return peo;
 }
 

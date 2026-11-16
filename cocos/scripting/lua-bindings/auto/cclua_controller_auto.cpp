@@ -776,8 +776,8 @@ int lua_cc_controller_EventController_constructor(lua_State* tolua_S)
             ok &= luaval_to_boolean(tolua_S, 4,&arg2, "cc.EventController:EventController");
 
             if (!ok) { break; }
-            cobj = new cocos2d::EventController(arg0, arg1, arg2);
-            cobj->autorelease();
+            cc::IntrusivePtr<cocos2d::EventController> owner{new cocos2d::EventController(arg0, arg1, arg2)};
+            cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
             int ID =  (int)cobj->_ID ;
             int* luaID =  &cobj->_luaID ;
             toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.EventController");
@@ -799,8 +799,8 @@ int lua_cc_controller_EventController_constructor(lua_State* tolua_S)
             ok &= luaval_to_int32(tolua_S, 4,(int *)&arg2, "cc.EventController:EventController");
 
             if (!ok) { break; }
-            cobj = new cocos2d::EventController(arg0, arg1, arg2);
-            cobj->autorelease();
+            cc::IntrusivePtr<cocos2d::EventController> owner{new cocos2d::EventController(arg0, arg1, arg2)};
+            cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
             int ID =  (int)cobj->_ID ;
             int* luaID =  &cobj->_luaID ;
             toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.EventController");

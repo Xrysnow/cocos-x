@@ -35,54 +35,46 @@ NS_CC_BEGIN
 
 // implementation of SpriteFrame
 
-SpriteFrame* SpriteFrame::create(std::string_view filename, const Rect& rect)
+cc::IntrusivePtr<SpriteFrame> SpriteFrame::create(std::string_view filename, const Rect& rect)
 {
-    SpriteFrame* spriteFrame = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
     spriteFrame->initWithTextureFilename(filename, rect);
-    spriteFrame->autorelease();
-
     return spriteFrame;
 }
 
-SpriteFrame* SpriteFrame::createWithTexture(Texture2D* texture, const Rect& rect)
+cc::IntrusivePtr<SpriteFrame> SpriteFrame::createWithTexture(Texture2D* texture, const Rect& rect)
 {
-    SpriteFrame* spriteFrame = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
     spriteFrame->initWithTexture(texture, rect);
-    spriteFrame->autorelease();
-
     return spriteFrame;
 }
 
-SpriteFrame* SpriteFrame::createWithTexture(Texture2D* texture,
+cc::IntrusivePtr<SpriteFrame> SpriteFrame::createWithTexture(Texture2D* texture,
                                             const Rect& rect,
                                             bool rotated,
                                             const Vec2& offset,
                                             const Vec2& originalSize)
 {
-    SpriteFrame* spriteFrame = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
     if (spriteFrame->initWithTexture(texture, rect, rotated, offset, originalSize))
     {
-        spriteFrame->autorelease();
         return spriteFrame;
     }
 
-    delete spriteFrame;
     return nullptr;
 }
 
-SpriteFrame* SpriteFrame::create(std::string_view filename,
+cc::IntrusivePtr<SpriteFrame> SpriteFrame::create(std::string_view filename,
                                  const Rect& rect,
                                  bool rotated,
                                  const Vec2& offset,
                                  const Vec2& originalSize)
 {
-    SpriteFrame* spriteFrame = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
     if (spriteFrame->initWithTextureFilename(filename, rect, rotated, offset, originalSize))
     {
-        spriteFrame->autorelease();
         return spriteFrame;
     }
-    delete spriteFrame;
     return nullptr;
 }
 
@@ -156,13 +148,12 @@ SpriteFrame::~SpriteFrame()
     CC_SAFE_RELEASE(_texture);
 }
 
-SpriteFrame* SpriteFrame::clone() const
+cc::IntrusivePtr<SpriteFrame> SpriteFrame::clone() const
 {
     // no copy constructor
-    SpriteFrame* copy = new SpriteFrame();
+    cc::IntrusivePtr<SpriteFrame> copy{new SpriteFrame()};
     copy->initWithTexture(_texture, _rectInPixels, _rotated, _offsetInPixels, _originalSizeInPixels);
     copy->setPolygonInfo(_polygonInfo);
-    copy->autorelease();
     return copy;
 }
 

@@ -304,10 +304,9 @@ void PUForceFieldAffector::prepare()
     }
 }
 
-PUForceFieldAffector* PUForceFieldAffector::create()
+cc::IntrusivePtr<PUForceFieldAffector> PUForceFieldAffector::create()
 {
-    auto pffa = new PUForceFieldAffector();
-    pffa->autorelease();
+    cc::IntrusivePtr<PUForceFieldAffector> pffa{new PUForceFieldAffector()};
     return pffa;
 }
 

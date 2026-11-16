@@ -48,17 +48,15 @@ Control::Control()
     , _state(State::NORMAL)
 {}
 
-Control* Control::create()
+cc::IntrusivePtr<Control> Control::create()
 {
-    Control* pRet = new Control();
+    cc::IntrusivePtr<Control> pRet{new Control()};
     if (pRet->init())
     {
-        pRet->autorelease();
         return pRet;
     }
     else
     {
-        CC_SAFE_DELETE(pRet);
         return nullptr;
     }
 }
@@ -157,7 +155,7 @@ void Control::addTargetWithActionForControlEvents(Ref* target, Handler action, E
 void Control::addTargetWithActionForControlEvent(Ref* target, Handler action, EventType controlEvent)
 {
     // Create the invocation object
-    Invocation* invocation = Invocation::create(target, action, controlEvent);
+    cc::IntrusivePtr<Invocation> invocation = Invocation::create(target, action, controlEvent);
 
     // Add the invocation into the dispatch list for the given control event
     auto& eventInvocationList = this->dispatchListforControlEvent(controlEvent);

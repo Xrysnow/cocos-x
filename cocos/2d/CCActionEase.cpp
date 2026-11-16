@@ -104,18 +104,16 @@ ActionInterval* ActionEase::getInnerAction()
 // EaseRateAction
 //
 
-EaseRateAction* EaseRateAction::create(ActionInterval* action, float rate)
+cc::IntrusivePtr<EaseRateAction> EaseRateAction::create(ActionInterval* action, float rate)
 {
     CCASSERT(action != nullptr, "action cannot be nullptr!");
 
-    EaseRateAction* easeRateAction = new EaseRateAction();
+    cc::IntrusivePtr<EaseRateAction> easeRateAction{new EaseRateAction()};
     if (easeRateAction->initWithAction(action, rate))
     {
-        easeRateAction->autorelease();
         return easeRateAction;
     }
 
-    CC_SAFE_DELETE(easeRateAction);
     return nullptr;
 }
 
@@ -135,23 +133,21 @@ bool EaseRateAction::initWithAction(ActionInterval* action, float rate)
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)         \
-    CLASSNAME* CLASSNAME::create(cocos2d::ActionInterval* action)            \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action)            \
     {                                                                        \
-        CLASSNAME* ease = new CLASSNAME();                                   \
+        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                   \
         if (ease->initWithAction(action))                                    \
-            ease->autorelease();                                             \
-        else                                                                 \
-            CC_SAFE_DELETE(ease);                                            \
-        return ease;                                                         \
+            return ease;                                             \
+        return nullptr;                                                         \
     }                                                                        \
-    CLASSNAME* CLASSNAME::clone() const                                      \
+    cc::IntrusivePtr<Action> CLASSNAME::clone() const                                      \
     {                                                                        \
         if (_inner)                                                          \
-            return CLASSNAME::create(_inner->clone());                       \
+            return CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->clone()).get());                       \
         return nullptr;                                                      \
     }                                                                        \
     void CLASSNAME::update(float time) { _inner->update(TWEEN_FUNC(time)); } \
-    ActionEase* CLASSNAME::reverse() const { return REVERSE_CLASSNAME::create(_inner->reverse()); }
+    cc::IntrusivePtr<Action> CLASSNAME::reverse() const { return REVERSE_CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->reverse()).get()); }
 
 EASE_TEMPLATE_IMPL(EaseExponentialIn, tweenfunc::expoEaseIn, EaseExponentialOut);
 EASE_TEMPLATE_IMPL(EaseExponentialOut, tweenfunc::expoEaseOut, EaseExponentialIn);
@@ -186,23 +182,21 @@ EASE_TEMPLATE_IMPL(EaseCubicActionInOut, tweenfunc::cubicEaseInOut, EaseCubicAct
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASERATE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC)                               \
-    CLASSNAME* CLASSNAME::create(cocos2d::ActionInterval* action, float rate)       \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float rate)       \
     {                                                                               \
-        CLASSNAME* ease = new CLASSNAME();                                          \
+        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                          \
         if (ease->initWithAction(action, rate))                                     \
-            ease->autorelease();                                                    \
-        else                                                                        \
-            CC_SAFE_DELETE(ease);                                                   \
-        return ease;                                                                \
+            return ease;                                                    \
+        return nullptr;                                                                \
     }                                                                               \
-    CLASSNAME* CLASSNAME::clone() const                                             \
+    cc::IntrusivePtr<Action> CLASSNAME::clone() const                                             \
     {                                                                               \
         if (_inner)                                                                 \
-            return CLASSNAME::create(_inner->clone(), _rate);                       \
+            return CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->clone()).get(), _rate);                       \
         return nullptr;                                                             \
     }                                                                               \
     void CLASSNAME::update(float time) { _inner->update(TWEEN_FUNC(time, _rate)); } \
-    EaseRateAction* CLASSNAME::reverse() const { return CLASSNAME::create(_inner->reverse(), 1.f / _rate); }
+    cc::IntrusivePtr<Action> CLASSNAME::reverse() const { return CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->reverse()).get(), 1.f / _rate); }
 
 // NOTE: the original code used the same class for the `reverse()` method
 EASERATE_TEMPLATE_IMPL(EaseIn, tweenfunc::easeIn);
@@ -229,23 +223,21 @@ bool EaseElastic::initWithAction(ActionInterval* action, float period /* = 0.3f*
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASEELASTIC_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)                 \
-    CLASSNAME* CLASSNAME::create(cocos2d::ActionInterval* action, float period /* = 0.3f*/) \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float period /* = 0.3f*/) \
     {                                                                                       \
-        CLASSNAME* ease = new CLASSNAME();                                                  \
+        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                                  \
         if (ease->initWithAction(action, period))                                           \
-            ease->autorelease();                                                            \
-        else                                                                                \
-            CC_SAFE_DELETE(ease);                                                           \
-        return ease;                                                                        \
+            return ease;                                                            \
+        return nullptr;                                                                        \
     }                                                                                       \
-    CLASSNAME* CLASSNAME::clone() const                                                     \
+    cc::IntrusivePtr<Action> CLASSNAME::clone() const                                                     \
     {                                                                                       \
         if (_inner)                                                                         \
-            return CLASSNAME::create(_inner->clone(), _period);                             \
+            return CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->clone()).get(), _period);                             \
         return nullptr;                                                                     \
     }                                                                                       \
     void CLASSNAME::update(float time) { _inner->update(TWEEN_FUNC(time, _period)); }       \
-    EaseElastic* CLASSNAME::reverse() const { return REVERSE_CLASSNAME::create(_inner->reverse(), _period); }
+    cc::IntrusivePtr<Action> CLASSNAME::reverse() const { return REVERSE_CLASSNAME::create(cc::static_pointer_cast<ActionInterval>(_inner->reverse()).get(), _period); }
 
 EASEELASTIC_TEMPLATE_IMPL(EaseElasticIn, tweenfunc::elasticEaseIn, EaseElasticOut);
 EASEELASTIC_TEMPLATE_IMPL(EaseElasticOut, tweenfunc::elasticEaseOut, EaseElasticIn);
@@ -255,16 +247,14 @@ EASEELASTIC_TEMPLATE_IMPL(EaseElasticInOut, tweenfunc::elasticEaseInOut, EaseEla
 // EaseBezierAction
 //
 
-EaseBezierAction* EaseBezierAction::create(cocos2d::ActionInterval* action)
+cc::IntrusivePtr<EaseBezierAction> EaseBezierAction::create(cocos2d::ActionInterval* action)
 {
-    EaseBezierAction* ret = new EaseBezierAction();
+    cc::IntrusivePtr<EaseBezierAction> ret{new EaseBezierAction()};
     if (ret->initWithAction(action))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -276,12 +266,12 @@ void EaseBezierAction::setBezierParamer(float p0, float p1, float p2, float p3)
     _p3 = p3;
 }
 
-EaseBezierAction* EaseBezierAction::clone() const
+cc::IntrusivePtr<Action> EaseBezierAction::clone() const
 {
     // no copy constructor
     if (_inner)
     {
-        auto ret = EaseBezierAction::create(_inner->clone());
+        auto ret = EaseBezierAction::create(cc::static_pointer_cast<ActionInterval>(_inner->clone()).get());
         if (ret)
         {
             ret->setBezierParamer(_p0, _p1, _p2, _p3);
@@ -297,9 +287,9 @@ void EaseBezierAction::update(float time)
     _inner->update(tweenfunc::bezieratFunction(_p0, _p1, _p2, _p3, time));
 }
 
-EaseBezierAction* EaseBezierAction::reverse() const
+cc::IntrusivePtr<Action> EaseBezierAction::reverse() const
 {
-    EaseBezierAction* reverseAction = EaseBezierAction::create(_inner->reverse());
+    cc::IntrusivePtr<EaseBezierAction> reverseAction = EaseBezierAction::create(cc::static_pointer_cast<ActionInterval>(_inner->reverse()).get());
     reverseAction->setBezierParamer(_p3, _p2, _p1, _p0);
     return reverseAction;
 }

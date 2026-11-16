@@ -77,28 +77,12 @@ ffmpeg::frame_ptr ffmpeg::FrameQueue::pop()
 	return f;
 }
 
-ffmpeg::AudioFrameQueue* ffmpeg::AudioFrameQueue::create(bool autorelease)
+cc::IntrusivePtr<ffmpeg::AudioFrameQueue> ffmpeg::AudioFrameQueue::create()
 {
-	auto ret = new (std::nothrow) AudioFrameQueue();
-	if (ret)
-	{
-		if (autorelease)
-			ret->autorelease();
-		return ret;
-	}
-	delete ret;
-	return nullptr;
+	return cc::IntrusivePtr<AudioFrameQueue>{new (std::nothrow) AudioFrameQueue()};
 }
 
-ffmpeg::VideoFrameQueue* ffmpeg::VideoFrameQueue::create(bool autorelease)
+cc::IntrusivePtr<ffmpeg::VideoFrameQueue> ffmpeg::VideoFrameQueue::create()
 {
-	auto ret = new (std::nothrow) VideoFrameQueue();
-	if (ret)
-	{
-		if (autorelease)
-			ret->autorelease();
-		return ret;
-	}
-	delete ret;
-	return nullptr;
+	return cc::IntrusivePtr<VideoFrameQueue>{new (std::nothrow) VideoFrameQueue()};
 }

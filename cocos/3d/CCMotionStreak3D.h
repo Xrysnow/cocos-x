@@ -55,9 +55,9 @@ public:
      * @param stroke The width of stroke.
      * @param color The color of stroke.
      * @param path The texture file name of stoke.
-     * @return An autoreleased MotionStreak3D object.
+     * @return An owned MotionStreak3D object.
      */
-    static MotionStreak3D* create(float fade, float minSeg, float stroke, const Color3B& color, std::string_view path);
+    static cc::IntrusivePtr<MotionStreak3D> create(float fade, float minSeg, float stroke, const Color3B& color, std::string_view path);
     /** Creates and initializes a motion streak with fade in seconds, minimum segments, stroke's width, color, texture.
      *
      * @param fade The fade time, in seconds.
@@ -65,9 +65,9 @@ public:
      * @param stroke The width of stroke.
      * @param color The color of stroke.
      * @param texture The texture name of stoke.
-     * @return An autoreleased MotionStreak3D object.
+     * @return An owned MotionStreak3D object.
      */
-    static MotionStreak3D* create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture);
+    static cc::IntrusivePtr<MotionStreak3D> create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture);
 
     /** Color used for the tint.
      *

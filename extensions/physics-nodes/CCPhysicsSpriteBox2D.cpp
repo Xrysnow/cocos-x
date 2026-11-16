@@ -34,106 +34,78 @@ PhysicsSpriteBox2D::PhysicsSpriteBox2D()
     : _ignoreBodyRotation(false), _pB2Body(nullptr), _PTMRatio(0.0f), _syncTransform(nullptr)
 {}
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::create()
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create()
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->init())
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->init()))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithTexture(pTexture))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithTexture(pTexture)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture, const Rect& rect)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture, const Rect& rect)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithTexture(pTexture, rect))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithTexture(pTexture, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithSpriteFrame(pSpriteFrame))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithSpriteFrame(pSpriteFrame)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::createWithSpriteFrameName(const char* pszSpriteFrameName)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrameName(const char* pszSpriteFrameName)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithSpriteFrameName(pszSpriteFrameName))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithSpriteFrameName(pszSpriteFrameName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::create(const char* pszFileName)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create(const char* pszFileName)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithFile(pszFileName))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithFile(pszFileName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteBox2D* PhysicsSpriteBox2D::create(const char* pszFileName, const Rect& rect)
+cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create(const char* pszFileName, const Rect& rect)
 {
-    PhysicsSpriteBox2D* pRet = new PhysicsSpriteBox2D();
-    if (pRet->initWithFile(pszFileName, rect))
+    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    if (!(pRet->initWithFile(pszFileName, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;

@@ -28,12 +28,10 @@
 
 NS_CC_BEGIN
 
-AttachNode* AttachNode::create(Bone3D* attachBone)
+cc::IntrusivePtr<AttachNode> AttachNode::create(Bone3D* attachBone)
 {
-    auto attachnode         = new AttachNode();
+    cc::IntrusivePtr<AttachNode> attachnode{new AttachNode()};
     attachnode->_attachBone = attachBone;
-    attachnode->autorelease();
-
     return attachnode;
 }
 

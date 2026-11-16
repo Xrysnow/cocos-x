@@ -70,10 +70,9 @@ void PUOnClearObserver::postUpdateObserver(float timeElapsed)
     }
 }
 
-PUOnClearObserver* PUOnClearObserver::create()
+cc::IntrusivePtr<PUOnClearObserver> PUOnClearObserver::create()
 {
-    auto pco = new PUOnClearObserver();
-    pco->autorelease();
+    cc::IntrusivePtr<PUOnClearObserver> pco{new PUOnClearObserver()};
     return pco;
 }
 

@@ -55,62 +55,60 @@ ControlSlider::~ControlSlider()
     CC_SAFE_RELEASE(_backgroundSprite);
 }
 
-ControlSlider* ControlSlider::create(const char* bgFile, const char* progressFile, const char* thumbFile)
+cc::IntrusivePtr<ControlSlider> ControlSlider::create(const char* bgFile, const char* progressFile, const char* thumbFile)
 {
     // Prepare background for slider
-    Sprite* backgroundSprite = Sprite::create(bgFile);
+    cc::IntrusivePtr<Sprite> backgroundSprite = Sprite::create(bgFile);
 
     // Prepare progress for slider
-    Sprite* progressSprite = Sprite::create(progressFile);
+    cc::IntrusivePtr<Sprite> progressSprite = Sprite::create(progressFile);
 
     // Prepare thumb (menuItem) for slider
-    Sprite* thumbSprite = Sprite::create(thumbFile);
+    cc::IntrusivePtr<Sprite> thumbSprite = Sprite::create(thumbFile);
 
     return ControlSlider::create(backgroundSprite, progressSprite, thumbSprite);
 }
 
-ControlSlider* ControlSlider::create(const char* bgFile,
+cc::IntrusivePtr<ControlSlider> ControlSlider::create(const char* bgFile,
                                      const char* progressFile,
                                      const char* thumbFile,
                                      const char* selectedThumbSpriteFile)
 {
     // Prepare background for slider
-    Sprite* backgroundSprite = Sprite::create(bgFile);
+    cc::IntrusivePtr<Sprite> backgroundSprite = Sprite::create(bgFile);
 
     // Prepare progress for slider
-    Sprite* progressSprite = Sprite::create(progressFile);
+    cc::IntrusivePtr<Sprite> progressSprite = Sprite::create(progressFile);
 
     // Prepare thumb (menuItem) for slider
-    Sprite* thumbSprite = Sprite::create(thumbFile);
+    cc::IntrusivePtr<Sprite> thumbSprite = Sprite::create(thumbFile);
 
     // Prepare selected thumb (menuItem) for slider
-    Sprite* selectedThumbSprite = Sprite::create(selectedThumbSpriteFile);
+    cc::IntrusivePtr<Sprite> selectedThumbSprite = Sprite::create(selectedThumbSpriteFile);
 
     return ControlSlider::create(backgroundSprite, progressSprite, thumbSprite, selectedThumbSprite);
 }
 
-ControlSlider* ControlSlider::create(Sprite* backgroundSprite, Sprite* pogressSprite, Sprite* thumbSprite)
+cc::IntrusivePtr<ControlSlider> ControlSlider::create(Sprite* backgroundSprite, Sprite* pogressSprite, Sprite* thumbSprite)
 {
-    ControlSlider* pRet = new ControlSlider();
+    cc::IntrusivePtr<ControlSlider> pRet{new ControlSlider()};
     pRet->initWithSprites(backgroundSprite, pogressSprite, thumbSprite);
-    pRet->autorelease();
     return pRet;
 }
 
-ControlSlider* ControlSlider::create(Sprite* backgroundSprite,
+cc::IntrusivePtr<ControlSlider> ControlSlider::create(Sprite* backgroundSprite,
                                      Sprite* pogressSprite,
                                      Sprite* thumbSprite,
                                      Sprite* selectedThumbSprite)
 {
-    ControlSlider* pRet = new ControlSlider();
+    cc::IntrusivePtr<ControlSlider> pRet{new ControlSlider()};
     pRet->initWithSprites(backgroundSprite, pogressSprite, thumbSprite, selectedThumbSprite);
-    pRet->autorelease();
     return pRet;
 }
 
 bool ControlSlider::initWithSprites(Sprite* backgroundSprite, Sprite* progressSprite, Sprite* thumbSprite)
 {
-    Sprite* selectedThumbSprite = Sprite::createWithTexture(thumbSprite->getTexture(), thumbSprite->getTextureRect());
+    cc::IntrusivePtr<Sprite> selectedThumbSprite = Sprite::createWithTexture(thumbSprite->getTexture(), thumbSprite->getTextureRect());
     selectedThumbSprite->setColor(Color3B::GRAY);
     return this->initWithSprites(backgroundSprite, progressSprite, thumbSprite, selectedThumbSprite);
 }

@@ -30,27 +30,25 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
-PageTurn3D* PageTurn3D::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<PageTurn3D> PageTurn3D::create(float duration, const Vec2& gridSize)
 {
-    PageTurn3D* action = new PageTurn3D();
+    cc::IntrusivePtr<PageTurn3D> action{new PageTurn3D()};
 
     if (action->initWithDuration(duration, gridSize))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-PageTurn3D* PageTurn3D::clone() const
+cc::IntrusivePtr<Action> PageTurn3D::clone() const
 {
     // no copy constructor
     return PageTurn3D::create(_duration, _gridSize);
 }
 
-GridBase* PageTurn3D::getGrid()
+cc::IntrusivePtr<GridBase> PageTurn3D::getGrid()
 {
     auto result = Grid3D::create(_gridSize, _gridNodeTarget->getGridRect());
     if (result)

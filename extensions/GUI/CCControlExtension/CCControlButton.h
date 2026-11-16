@@ -54,11 +54,11 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL ControlButton : public Control
 {
 public:
-    static ControlButton* create();
-    static ControlButton* create(cocos2d::ui::Scale9Sprite* sprite);
-    static ControlButton* create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite);
-    static ControlButton* create(std::string_view title, std::string_view fontName, float fontSize);
-    static ControlButton* create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite, bool adjustBackGroundSize);
+    static cc::IntrusivePtr<ControlButton> create();
+    static cc::IntrusivePtr<ControlButton> create(cocos2d::ui::Scale9Sprite* sprite);
+    static cc::IntrusivePtr<ControlButton> create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite);
+    static cc::IntrusivePtr<ControlButton> create(std::string_view title, std::string_view fontName, float fontSize);
+    static cc::IntrusivePtr<ControlButton> create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite, bool adjustBackGroundSize);
 
     virtual void needsLayout() override;
 

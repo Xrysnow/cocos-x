@@ -33,16 +33,14 @@ NS_CC_BEGIN
 
 // implementation of ProgressTo
 
-ProgressTo* ProgressTo::create(float duration, float percent)
+cc::IntrusivePtr<ProgressTo> ProgressTo::create(float duration, float percent)
 {
-    ProgressTo* progressTo = new ProgressTo();
+    cc::IntrusivePtr<ProgressTo> progressTo{new ProgressTo()};
     if (progressTo->initWithDuration(duration, percent))
     {
-        progressTo->autorelease();
         return progressTo;
     }
 
-    delete progressTo;
     return nullptr;
 }
 
@@ -58,13 +56,13 @@ bool ProgressTo::initWithDuration(float duration, float percent)
     return false;
 }
 
-ProgressTo* ProgressTo::clone() const
+cc::IntrusivePtr<Action> ProgressTo::clone() const
 {
     // no copy constructor
     return ProgressTo::create(_duration, _to);
 }
 
-ProgressTo* ProgressTo::reverse() const
+cc::IntrusivePtr<Action> ProgressTo::reverse() const
 {
     CCASSERT(false, "reverse() not supported in ProgressTo");
     return nullptr;
@@ -83,16 +81,14 @@ void ProgressTo::update(float time)
 
 // implementation of ProgressFromTo
 
-ProgressFromTo* ProgressFromTo::create(float duration, float fromPercentage, float toPercentage)
+cc::IntrusivePtr<ProgressFromTo> ProgressFromTo::create(float duration, float fromPercentage, float toPercentage)
 {
-    ProgressFromTo* progressFromTo = new ProgressFromTo();
+    cc::IntrusivePtr<ProgressFromTo> progressFromTo{new ProgressFromTo()};
     if (progressFromTo->initWithDuration(duration, fromPercentage, toPercentage))
     {
-        progressFromTo->autorelease();
         return progressFromTo;
     }
 
-    delete progressFromTo;
     return nullptr;
 }
 
@@ -109,13 +105,13 @@ bool ProgressFromTo::initWithDuration(float duration, float fromPercentage, floa
     return false;
 }
 
-ProgressFromTo* ProgressFromTo::clone() const
+cc::IntrusivePtr<Action> ProgressFromTo::clone() const
 {
     // no copy constructor
     return ProgressFromTo::create(_duration, _from, _to);
 }
 
-ProgressFromTo* ProgressFromTo::reverse() const
+cc::IntrusivePtr<Action> ProgressFromTo::reverse() const
 {
     return ProgressFromTo::create(_duration, _to, _from);
 }

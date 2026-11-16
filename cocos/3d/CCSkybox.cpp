@@ -38,20 +38,19 @@ Skybox::Skybox() : _texture(nullptr) {}
 
 Skybox::~Skybox()
 {
-    _texture->release();
+    CC_SAFE_RELEASE(_texture);
 }
 
-Skybox* Skybox::create(std::string_view positive_x,
+cc::IntrusivePtr<Skybox> Skybox::create(std::string_view positive_x,
                        std::string_view negative_x,
                        std::string_view positive_y,
                        std::string_view negative_y,
                        std::string_view positive_z,
                        std::string_view negative_z)
 {
-    auto ret = new Skybox();
+    cc::IntrusivePtr<Skybox> ret{new Skybox()};
     ret->init(positive_x, negative_x, positive_y, negative_y, positive_z, negative_z);
 
-    ret->autorelease();
     return ret;
 }
 
@@ -65,7 +64,7 @@ bool Skybox::init()
 
     // create and set our custom shader
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::SKYBOX_3D);
-    setProgramState(new backend::ProgramState(program), false);
+    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
 
     auto& pipelineDescriptor = _customCommand.getPipelineDescriptor();
 
@@ -94,7 +93,6 @@ bool Skybox::init(std::string_view positive_x,
 
     init();
     setTexture(texture);
-    texture->release();
     return true;
 }
 

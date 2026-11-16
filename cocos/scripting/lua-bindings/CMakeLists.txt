@@ -95,8 +95,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto05.cpp
     auto/cclua_base_auto06.cpp
     auto/cclua_base_auto07.cpp
-    auto/cclua_base_auto08.cpp
-    auto/cclua_base_auto09.cpp
     auto/cclua_base_retained.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
@@ -104,7 +102,6 @@ set(lua_bindings_auto_files
     auto/cclua_ui_auto.cpp
     auto/cclua_ui_auto01.cpp
     auto/cclua_ui_auto02.cpp
-    auto/cclua_ui_auto03.cpp
     auto/cclua_physics3d_auto.cpp
     auto/cclua_navmesh_auto.cpp
     auto/cclua_backend_auto.cpp

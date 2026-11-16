@@ -40,17 +40,15 @@ void ActionCamera::startWithTarget(Node* target)
     ActionInterval::startWithTarget(target);
 }
 
-ActionCamera* ActionCamera::clone() const
+cc::IntrusivePtr<Action> ActionCamera::clone() const
 {
-    auto action = new ActionCamera();
-    action->autorelease();
+    cc::IntrusivePtr<ActionCamera> action{new ActionCamera()};
     return action;
 }
 
-ActionCamera* ActionCamera::reverse() const
+cc::IntrusivePtr<Action> ActionCamera::reverse() const
 {
-    // FIXME: This conversion isn't safe.
-    return (ActionCamera*)ReverseTime::create(const_cast<ActionCamera*>(this));
+    return ReverseTime::create(const_cast<ActionCamera*>(this));
 }
 
 void ActionCamera::restore()
@@ -138,7 +136,7 @@ OrbitCamera::OrbitCamera()
 {}
 OrbitCamera::~OrbitCamera() {}
 
-OrbitCamera* OrbitCamera::create(float t,
+cc::IntrusivePtr<OrbitCamera> OrbitCamera::create(float t,
                                  float radius,
                                  float deltaRadius,
                                  float angleZ,
@@ -146,18 +144,16 @@ OrbitCamera* OrbitCamera::create(float t,
                                  float angleX,
                                  float deltaAngleX)
 {
-    OrbitCamera* obitCamera = new OrbitCamera();
+    cc::IntrusivePtr<OrbitCamera> obitCamera{new OrbitCamera()};
     if (obitCamera->initWithDuration(t, radius, deltaRadius, angleZ, deltaAngleZ, angleX, deltaAngleX))
     {
-        obitCamera->autorelease();
         return obitCamera;
     }
 
-    delete obitCamera;
     return nullptr;
 }
 
-OrbitCamera* OrbitCamera::clone() const
+cc::IntrusivePtr<Action> OrbitCamera::clone() const
 {
     // no copy constructor
     return OrbitCamera::create(_duration, _radius, _deltaRadius, _angleZ, _deltaAngleZ, _angleX, _deltaAngleX);

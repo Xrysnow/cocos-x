@@ -20,7 +20,6 @@ static int backend_ProgramState_clone(lua_State* lua_S)
     LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:clone");
     const auto clone = [](const cocos2d::backend::ProgramState* self) {
         auto result = self->clone();
-        if (result) result->autorelease(); // Consume exactly the returned initial +1.
         return result;
     };
     LUA_TRY_INVOKE_R(0, clone);

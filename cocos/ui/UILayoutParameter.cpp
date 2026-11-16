@@ -58,10 +58,9 @@ bool Margin::equals(const Margin& target) const
     return (left == target.left && top == target.top && right == target.right && bottom == target.bottom);
 }
 
-LayoutParameter* LayoutParameter::create()
+cc::IntrusivePtr<LayoutParameter> LayoutParameter::create()
 {
-    LayoutParameter* parameter = new LayoutParameter();
-    parameter->autorelease();
+    cc::IntrusivePtr<LayoutParameter> parameter{new LayoutParameter()};
     return parameter;
 }
 
@@ -80,14 +79,14 @@ LayoutParameter::Type LayoutParameter::getLayoutType() const
     return _layoutParameterType;
 }
 
-LayoutParameter* LayoutParameter::clone()
+cc::IntrusivePtr<LayoutParameter> LayoutParameter::clone()
 {
-    LayoutParameter* clonedParameter = createCloneInstance();
+    cc::IntrusivePtr<LayoutParameter> clonedParameter = createCloneInstance();
     clonedParameter->copyProperties(this);
     return clonedParameter;
 }
 
-LayoutParameter* LayoutParameter::createCloneInstance()
+cc::IntrusivePtr<LayoutParameter> LayoutParameter::createCloneInstance()
 {
     return LayoutParameter::create();
 }
@@ -97,10 +96,9 @@ void LayoutParameter::copyProperties(LayoutParameter* model)
     _margin = model->_margin;
 }
 
-LinearLayoutParameter* LinearLayoutParameter::create()
+cc::IntrusivePtr<LinearLayoutParameter> LinearLayoutParameter::create()
 {
-    LinearLayoutParameter* parameter = new LinearLayoutParameter();
-    parameter->autorelease();
+    cc::IntrusivePtr<LinearLayoutParameter> parameter{new LinearLayoutParameter()};
     return parameter;
 }
 
@@ -114,7 +112,7 @@ LinearLayoutParameter::LinearGravity LinearLayoutParameter::getGravity() const
     return _linearGravity;
 }
 
-LayoutParameter* LinearLayoutParameter::createCloneInstance()
+cc::IntrusivePtr<LayoutParameter> LinearLayoutParameter::createCloneInstance()
 {
     return LinearLayoutParameter::create();
 }
@@ -129,10 +127,9 @@ void LinearLayoutParameter::copyProperties(LayoutParameter* model)
     }
 }
 
-RelativeLayoutParameter* RelativeLayoutParameter::create()
+cc::IntrusivePtr<RelativeLayoutParameter> RelativeLayoutParameter::create()
 {
-    RelativeLayoutParameter* parameter = new RelativeLayoutParameter();
-    parameter->autorelease();
+    cc::IntrusivePtr<RelativeLayoutParameter> parameter{new RelativeLayoutParameter()};
     return parameter;
 }
 
@@ -166,7 +163,7 @@ std::string_view RelativeLayoutParameter::getRelativeName() const
     return _relativeLayoutName;
 }
 
-LayoutParameter* RelativeLayoutParameter::createCloneInstance()
+cc::IntrusivePtr<LayoutParameter> RelativeLayoutParameter::createCloneInstance()
 {
     return RelativeLayoutParameter::create();
 }

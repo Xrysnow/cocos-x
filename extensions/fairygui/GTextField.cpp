@@ -275,7 +275,8 @@ GBasicTextField::~GBasicTextField()
 
 void GBasicTextField::handleInit()
 {
-    _label = FUILabel::create();
+    cc::IntrusivePtr<FUILabel> label;
+    _label = (label = FUILabel::create()).get();
     _label->retain();
 
     _displayObject = _label;

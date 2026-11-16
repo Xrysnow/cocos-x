@@ -54,7 +54,7 @@ bool ControlColourPicker::init()
         SpriteFrameCache::getInstance()->addSpriteFramesWithFile("extensions/CCControlColourPickerSpriteSheet.plist");
 
         // Create the sprite batch node
-        SpriteBatchNode* spriteSheet = SpriteBatchNode::create("extensions/CCControlColourPickerSpriteSheet.png");
+        cc::IntrusivePtr<SpriteBatchNode> spriteSheet = SpriteBatchNode::create("extensions/CCControlColourPickerSpriteSheet.png");
         addChild(spriteSheet);
 
         // MIPMAP
@@ -86,10 +86,10 @@ bool ControlColourPicker::init()
         float hueShift    = 8;
         float colourShift = 28;
 
-        _huePicker = new ControlHuePicker();
+        _huePicker = cc::IntrusivePtr<ControlHuePicker>{new ControlHuePicker()}.detach();
         _huePicker->initWithTargetAndPos(spriteSheet,
                                          Vec2(backgroundPointZero.x + hueShift, backgroundPointZero.y + hueShift));
-        _colourPicker = new ControlSaturationBrightnessPicker();
+        _colourPicker = cc::IntrusivePtr<ControlSaturationBrightnessPicker>{new ControlSaturationBrightnessPicker()}.detach();
         _colourPicker->initWithTargetAndPos(
             spriteSheet, Vec2(backgroundPointZero.x + colourShift, backgroundPointZero.y + colourShift));
 
@@ -112,11 +112,10 @@ bool ControlColourPicker::init()
         return false;
 }
 
-ControlColourPicker* ControlColourPicker::create()
+cc::IntrusivePtr<ControlColourPicker> ControlColourPicker::create()
 {
-    ControlColourPicker* pRet = new ControlColourPicker();
+    cc::IntrusivePtr<ControlColourPicker> pRet{new ControlColourPicker()};
     pRet->init();
-    pRet->autorelease();
     return pRet;
 }
 

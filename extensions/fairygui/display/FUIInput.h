@@ -11,7 +11,7 @@ NS_FGUI_BEGIN
 class FUIInput : public cocos2d::ui::EditBox
 {
 public:
-    static FUIInput* create();
+    static cc::IntrusivePtr<FUIInput> create();
 
     FUIInput();
     virtual ~FUIInput();

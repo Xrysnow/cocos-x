@@ -51,7 +51,7 @@ public:
      * Creates slider with a background filename, a progress filename and a
      * thumb image filename.
      */
-    static ControlSlider* create(const char* bgFile, const char* progressFile, const char* thumbFile);
+    static cc::IntrusivePtr<ControlSlider> create(const char* bgFile, const char* progressFile, const char* thumbFile);
 
     /**
      * Creates a slider with a given background sprite and a progress bar and a
@@ -59,13 +59,13 @@ public:
      *
      * @see initWithSprites
      */
-    static ControlSlider* create(Sprite* backgroundSprite, Sprite* pogressSprite, Sprite* thumbSprite);
+    static cc::IntrusivePtr<ControlSlider> create(Sprite* backgroundSprite, Sprite* pogressSprite, Sprite* thumbSprite);
 
     /**
      * Creates slider with a background filename, a progress filename, a thumb
      * and a selected thumb image filename.
      */
-    static ControlSlider* create(const char* bgFile,
+    static cc::IntrusivePtr<ControlSlider> create(const char* bgFile,
                                  const char* progressFile,
                                  const char* thumbFile,
                                  const char* selectedThumbSpriteFile);
@@ -76,7 +76,7 @@ public:
      *
      * @see initWithSprites
      */
-    static ControlSlider* create(Sprite* backgroundSprite,
+    static cc::IntrusivePtr<ControlSlider> create(Sprite* backgroundSprite,
                                  Sprite* pogressSprite,
                                  Sprite* thumbSprite,
                                  Sprite* selectedThumbSprite);

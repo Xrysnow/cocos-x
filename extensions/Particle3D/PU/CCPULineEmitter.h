@@ -41,7 +41,7 @@ public:
     static const float DEFAULT_MAX_INCREMENT;
     static const float DEFAULT_MAX_DEVIATION;
 
-    static PULineEmitter* create();
+    static cc::IntrusivePtr<PULineEmitter> create();
     /**
      */
     virtual void notifyStart() override;
@@ -87,7 +87,7 @@ public:
      */
     virtual void initParticleDirection(PUParticle3D* particle) override;
 
-    virtual PULineEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PULineEmitter();

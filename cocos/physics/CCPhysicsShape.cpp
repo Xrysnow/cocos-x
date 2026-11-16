@@ -278,18 +278,16 @@ void PhysicsShape::setBody(PhysicsBody* body)
 }
 
 // PhysicsShapeCircle
-PhysicsShapeCircle* PhysicsShapeCircle::create(float radius,
+cc::IntrusivePtr<PhysicsShapeCircle> PhysicsShapeCircle::create(float radius,
                                                const PhysicsMaterial& material /* = MaterialDefault*/,
                                                const Vec2& offset /* = Vec2(0, 0)*/)
 {
-    PhysicsShapeCircle* shape = new PhysicsShapeCircle();
+    cc::IntrusivePtr<PhysicsShapeCircle> shape{new PhysicsShapeCircle()};
     if (shape->init(radius, material, offset))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -369,19 +367,17 @@ void PhysicsShapeCircle::updateScale()
 }
 
 // PhysicsShapeEdgeSegment
-PhysicsShapeEdgeSegment* PhysicsShapeEdgeSegment::create(const Vec2& a,
+cc::IntrusivePtr<PhysicsShapeEdgeSegment> PhysicsShapeEdgeSegment::create(const Vec2& a,
                                                          const Vec2& b,
                                                          const PhysicsMaterial& material /* = MaterialDefault*/,
                                                          float border /* = 1*/)
 {
-    PhysicsShapeEdgeSegment* shape = new PhysicsShapeEdgeSegment();
+    cc::IntrusivePtr<PhysicsShapeEdgeSegment> shape{new PhysicsShapeEdgeSegment()};
     if (shape->init(a, b, material, border))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -446,19 +442,17 @@ void PhysicsShapeEdgeSegment::updateScale()
 }
 
 // PhysicsShapeBox
-PhysicsShapeBox* PhysicsShapeBox::create(const Vec2& size,
+cc::IntrusivePtr<PhysicsShapeBox> PhysicsShapeBox::create(const Vec2& size,
                                          const PhysicsMaterial& material /* = MaterialDefault*/,
                                          const Vec2& offset /* = Vec2(0, 0)*/,
                                          float radius /* = 0.0f*/)
 {
-    PhysicsShapeBox* shape = new PhysicsShapeBox();
+    cc::IntrusivePtr<PhysicsShapeBox> shape{new PhysicsShapeBox()};
     if (shape->init(size, material, offset, radius))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -505,20 +499,18 @@ Vec2 PhysicsShapeBox::getSize() const
 }
 
 // PhysicsShapePolygon
-PhysicsShapePolygon* PhysicsShapePolygon::create(const Vec2* points,
+cc::IntrusivePtr<PhysicsShapePolygon> PhysicsShapePolygon::create(const Vec2* points,
                                                  int count,
                                                  const PhysicsMaterial& material /* = MaterialDefault*/,
                                                  const Vec2& offset /* = Vec2(0, 0)*/,
                                                  float radius /* = 0.0f*/)
 {
-    PhysicsShapePolygon* shape = new PhysicsShapePolygon();
+    cc::IntrusivePtr<PhysicsShapePolygon> shape{new PhysicsShapePolygon()};
     if (shape->init(points, count, material, offset, radius))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -681,19 +673,17 @@ void PhysicsShapePolygon::updateScale()
 }
 
 // PhysicsShapeEdgeBox
-PhysicsShapeEdgeBox* PhysicsShapeEdgeBox::create(const Vec2& size,
+cc::IntrusivePtr<PhysicsShapeEdgeBox> PhysicsShapeEdgeBox::create(const Vec2& size,
                                                  const PhysicsMaterial& material /* = MaterialDefault*/,
                                                  float border /* = 1*/,
                                                  const Vec2& offset /* = Vec2(0, 0)*/)
 {
-    PhysicsShapeEdgeBox* shape = new PhysicsShapeEdgeBox();
+    cc::IntrusivePtr<PhysicsShapeEdgeBox> shape{new PhysicsShapeEdgeBox()};
     if (shape->init(size, material, border, offset))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -734,19 +724,17 @@ bool PhysicsShapeEdgeBox::init(const Vec2& size,
 }
 
 // PhysicsShapeEdgeBox
-PhysicsShapeEdgePolygon* PhysicsShapeEdgePolygon::create(const Vec2* points,
+cc::IntrusivePtr<PhysicsShapeEdgePolygon> PhysicsShapeEdgePolygon::create(const Vec2* points,
                                                          int count,
                                                          const PhysicsMaterial& material /* = MaterialDefault*/,
                                                          float border /* = 1*/)
 {
-    PhysicsShapeEdgePolygon* shape = new PhysicsShapeEdgePolygon();
+    cc::IntrusivePtr<PhysicsShapeEdgePolygon> shape{new PhysicsShapeEdgePolygon()};
     if (shape->init(points, count, material, border))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 
@@ -821,19 +809,17 @@ int PhysicsShapeEdgePolygon::getPointsCount() const
 }
 
 // PhysicsShapeEdgeChain
-PhysicsShapeEdgeChain* PhysicsShapeEdgeChain::create(const Vec2* points,
+cc::IntrusivePtr<PhysicsShapeEdgeChain> PhysicsShapeEdgeChain::create(const Vec2* points,
                                                      int count,
                                                      const PhysicsMaterial& material /* = MaterialDefault*/,
                                                      float border /* = 1*/)
 {
-    PhysicsShapeEdgeChain* shape = new PhysicsShapeEdgeChain();
+    cc::IntrusivePtr<PhysicsShapeEdgeChain> shape{new PhysicsShapeEdgeChain()};
     if (shape->init(points, count, material, border))
     {
-        shape->autorelease();
         return shape;
     }
 
-    CC_SAFE_DELETE(shape);
     return nullptr;
 }
 

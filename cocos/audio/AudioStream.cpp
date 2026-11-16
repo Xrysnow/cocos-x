@@ -124,14 +124,14 @@ void AudioStream::setFileOpener(FileOpener opener)
 	fileOpener = std::move(opener);
 }
 
-AudioStream* AudioStream::createFromFile(const std::string& path)
+cc::IntrusivePtr<AudioStream> AudioStream::createFromFile(const std::string& path)
 {
 	if (path.empty())
 		return nullptr;
 	return fileOpener ? fileOpener(path) : createFromLocalFile(path);
 }
 
-AudioStream* AudioStream::createFromLocalFile(const std::string& path)
+cc::IntrusivePtr<AudioStream> AudioStream::createFromLocalFile(const std::string& path)
 {
 	if (path.empty())
 		return nullptr;
@@ -150,10 +150,9 @@ AudioStream* AudioStream::createFromLocalFile(const std::string& path)
 		return nullptr;
 	if (position != 0 && (file->seek(0, SEEK_SET) != 0 || file->tell() != 0))
 		return nullptr;
-	auto result = new (std::nothrow) AudioFileStream(std::move(file));
+	cc::IntrusivePtr<AudioFileStream> result{new (std::nothrow) AudioFileStream(std::move(file))};
 	if (!result)
 		return nullptr;
-	result->autorelease();
 	return result;
 }
 

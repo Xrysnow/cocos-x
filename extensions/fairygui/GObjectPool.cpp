@@ -13,20 +13,18 @@ GObjectPool::~GObjectPool()
 {
 }
 
-GObject* GObjectPool::getObject(const std::string & url)
+cc::IntrusivePtr<GObject> GObjectPool::getObject(const std::string & url)
 {
     std::string url2 = UIPackage::normalizeURL(url);
     if (url2.length() == 0)
         return nullptr;
 
-    GObject* ret;
+    cc::IntrusivePtr<GObject> ret;
     Vector<GObject*>& arr = _pool[url2];
     if (!arr.empty())
     {
         ret = arr.back();
-        ret->retain();
         arr.popBack();
-        ret->autorelease();
     }
     else
         ret = UIPackage::createObjectFromURL(url2);

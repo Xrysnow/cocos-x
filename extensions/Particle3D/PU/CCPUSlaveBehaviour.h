@@ -42,7 +42,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUSlaveBehaviour : public PUBehaviour
 {
 public:
-    static PUSlaveBehaviour* create();
+    static cc::IntrusivePtr<PUSlaveBehaviour> create();
 
     PUParticle3D* masterParticle;
 
@@ -50,7 +50,7 @@ public:
      */
     virtual void updateBehaviour(PUParticle3D* particle, float deltaTime) override;
 
-    virtual PUSlaveBehaviour* clone() override;
+    virtual cc::IntrusivePtr<PUBehaviour> clone() override;
     virtual void copyAttributesTo(PUBehaviour* behaviour) override;
 
     PUSlaveBehaviour();

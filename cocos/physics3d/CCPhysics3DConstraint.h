@@ -144,7 +144,7 @@ public:
      * @param pivotPointInA local pivot point in A's local space
      * @return created constraint
      */
-    static Physics3DPointToPointConstraint* create(Physics3DRigidBody* rbA, const cocos2d::Vec3& pivotPointInA);
+    static cc::IntrusivePtr<Physics3DPointToPointConstraint> create(Physics3DRigidBody* rbA, const cocos2d::Vec3& pivotPointInA);
 
     /**
      * create point to point constraint, make the local pivot points of 2 rigid bodies match in worldspace.
@@ -154,7 +154,7 @@ public:
      * @param pivotPointInB local pivot point in B's local space
      * @return created constraint
      */
-    static Physics3DPointToPointConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DPointToPointConstraint> create(Physics3DRigidBody* rbA,
                                                    Physics3DRigidBody* rbB,
                                                    const cocos2d::Vec3& pivotPointInA,
                                                    const cocos2d::Vec3& pivotPointInB);
@@ -202,7 +202,7 @@ public:
      * @param rbAFrame rigid body A's frame
      * @param useReferenceFrameA use frame A as reference
      */
-    static Physics3DHingeConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DHingeConstraint> create(Physics3DRigidBody* rbA,
                                             const cocos2d::Mat4& rbAFrame,
                                             bool useReferenceFrameA = false);
 
@@ -213,7 +213,7 @@ public:
      * @param axisInA axis in rigid body A's local space
      * @param useReferenceFrameA use frame A as reference
      */
-    static Physics3DHingeConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DHingeConstraint> create(Physics3DRigidBody* rbA,
                                             const cocos2d::Vec3& pivotInA,
                                             const cocos2d::Vec3& axisInA,
                                             bool useReferenceFrameA = false);
@@ -228,7 +228,7 @@ public:
      * @param axisInB axis in B's local space
      * @param useReferenceFrameA use frame A as reference
      */
-    static Physics3DHingeConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DHingeConstraint> create(Physics3DRigidBody* rbA,
                                             Physics3DRigidBody* rbB,
                                             const cocos2d::Vec3& pivotInA,
                                             const cocos2d::Vec3& pivotInB,
@@ -244,7 +244,7 @@ public:
      * @param rbBFrame rigid body B's frame
      * @param useReferenceFrameA use frame A as reference
      */
-    static Physics3DHingeConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DHingeConstraint> create(Physics3DRigidBody* rbA,
                                             Physics3DRigidBody* rbB,
                                             const cocos2d::Mat4& rbAFrame,
                                             const cocos2d::Mat4& rbBFrame,
@@ -345,7 +345,7 @@ public:
      * @param frameInB frame in B's local space
      * @param useLinearReferenceFrameA use fixed frame A for linear limits
      */
-    static Physics3DSliderConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DSliderConstraint> create(Physics3DRigidBody* rbA,
                                              Physics3DRigidBody* rbB,
                                              const cocos2d::Mat4& frameInA,
                                              const cocos2d::Mat4& frameInB,
@@ -449,7 +449,7 @@ public:
      * rbA rigid body A
      * frameA A's local frame
      */
-    static Physics3DConeTwistConstraint* create(Physics3DRigidBody* rbA, const cocos2d::Mat4& frameA);
+    static cc::IntrusivePtr<Physics3DConeTwistConstraint> create(Physics3DRigidBody* rbA, const cocos2d::Mat4& frameA);
     /**
      * create cone twist constraint
      * rbA rigid body A
@@ -457,7 +457,7 @@ public:
      * frameA rigid body A's local frame
      * frameB rigid body B's local frame
      */
-    static Physics3DConeTwistConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3DConeTwistConstraint> create(Physics3DRigidBody* rbA,
                                                 Physics3DRigidBody* rbB,
                                                 const cocos2d::Mat4& frameA,
                                                 const cocos2d::Mat4& frameB);
@@ -555,7 +555,7 @@ public:
      * @param frameInB frame in B's local space
      * @param useLinearReferenceFrameA use fixed frame A for linear limits
      */
-    static Physics3D6DofConstraint* create(Physics3DRigidBody* rbA,
+    static cc::IntrusivePtr<Physics3D6DofConstraint> create(Physics3DRigidBody* rbA,
                                            Physics3DRigidBody* rbB,
                                            const cocos2d::Mat4& frameInA,
                                            const cocos2d::Mat4& frameInB,
@@ -567,7 +567,7 @@ public:
      * @param frameInB frame in B's local space
      * @param useLinearReferenceFrameB use fixed frame B for linear limits
      */
-    static Physics3D6DofConstraint* create(Physics3DRigidBody* rbB,
+    static cc::IntrusivePtr<Physics3D6DofConstraint> create(Physics3DRigidBody* rbB,
                                            const cocos2d::Mat4& frameInB,
                                            bool useLinearReferenceFrameB);
 

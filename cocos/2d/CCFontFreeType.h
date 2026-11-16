@@ -47,7 +47,7 @@ class CC_DLL FontFreeType : public Font
 public:
     static const int DistanceMapSpread;
 
-    static FontFreeType* create(std::string_view fontPath,
+    static cc::IntrusivePtr<FontFreeType> create(std::string_view fontPath,
                                 float fontSize,
                                 GlyphCollection glyphs,
                                 std::string_view customGlyphs,

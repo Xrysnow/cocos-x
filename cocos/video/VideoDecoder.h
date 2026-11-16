@@ -16,8 +16,8 @@ namespace video
 	class CC_DLL Decoder : public cocos2d::Ref
 	{
 	public:
-		static Decoder* create(const std::string& path);
-		static Decoder* createFromStream(cocos2d::io::StreamPtr source);
+		static cc::IntrusivePtr<Decoder> create(const std::string& path);
+		static cc::IntrusivePtr<Decoder> createFromStream(cocos2d::io::StreamPtr source);
 
 		bool open(const std::string& path);
 		// Supply a synchronous readable stream at offset zero. The decoder must

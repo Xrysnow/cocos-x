@@ -50,12 +50,12 @@ public:
 
     /** Create a keyboard event listener.
      *
-     * @return An autoreleased EventListenerKeyboard object.
+     * @return An owned EventListenerKeyboard object.
      */
-    static EventListenerKeyboard* create();
+    static cc::IntrusivePtr<EventListenerKeyboard> create();
 
     /// Overrides
-    virtual EventListenerKeyboard* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
 
     std::function<void(EventKeyboard::KeyCode, Event*)> onKeyPressed;

@@ -42,11 +42,14 @@ InputProcessor::InputProcessor(GComponent* owner) :
     _touchListener(nullptr),
     _keyboardListener(nullptr)
 {
+    cc::IntrusivePtr<cocos2d::EventListenerMouse> mouseListener;
+    cc::IntrusivePtr<cocos2d::EventListenerTouchOneByOne> touchListener;
+    cc::IntrusivePtr<cocos2d::EventListenerKeyboard> keyboardListener;
     _owner = owner;
     _recentInput._inputProcessor = this;
 
 #ifdef CC_PLATFORM_PC
-    _mouseListener = EventListenerMouse::create();
+    _mouseListener = (mouseListener = EventListenerMouse::create()).get();
     CC_SAFE_RETAIN(_mouseListener);
     _mouseListener->onMouseDown = CC_CALLBACK_1(InputProcessor::onMouseDown, this);
     _mouseListener->onMouseUp = CC_CALLBACK_1(InputProcessor::onMouseUp, this);
@@ -55,7 +58,7 @@ InputProcessor::InputProcessor(GComponent* owner) :
     _owner->displayObject()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(_mouseListener, _owner->displayObject());
 #endif
 
-    _touchListener = EventListenerTouchOneByOne::create();
+    _touchListener = (touchListener = EventListenerTouchOneByOne::create()).get();
     CC_SAFE_RETAIN(_touchListener);
     _touchListener->setSwallowTouches(false);
     _touchListener->onTouchBegan = CC_CALLBACK_2(InputProcessor::onTouchBegan, this);
@@ -64,7 +67,7 @@ InputProcessor::InputProcessor(GComponent* owner) :
     _touchListener->onTouchCancelled = CC_CALLBACK_2(InputProcessor::onTouchCancelled, this);
     _owner->displayObject()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(_touchListener, _owner->displayObject());
 
-    _keyboardListener = EventListenerKeyboard::create();
+    _keyboardListener = (keyboardListener = EventListenerKeyboard::create()).get();
     CC_SAFE_RETAIN(_keyboardListener);
     _keyboardListener->onKeyPressed = CC_CALLBACK_2(InputProcessor::onKeyDown, this);
     _keyboardListener->onKeyReleased = CC_CALLBACK_2(InputProcessor::onKeyUp, this);

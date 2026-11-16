@@ -155,10 +155,9 @@ void PUPlaneCollider::updatePUAffector(PUParticle3D* particle, float deltaTime)
     }
 }
 
-PUPlaneCollider* PUPlaneCollider::create()
+cc::IntrusivePtr<PUPlaneCollider> PUPlaneCollider::create()
 {
-    auto ppc = new PUPlaneCollider();
-    ppc->autorelease();
+    cc::IntrusivePtr<PUPlaneCollider> ppc{new PUPlaneCollider()};
     return ppc;
 }
 

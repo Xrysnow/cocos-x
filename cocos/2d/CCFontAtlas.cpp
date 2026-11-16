@@ -43,6 +43,7 @@ const char* FontAtlas::CMD_RESET_FONTATLAS = "__cc_RESET_FONTATLAS";
 
 FontAtlas::FontAtlas(Font* theFont) : _font(theFont)
 {
+    cc::IntrusivePtr<EventListenerCustom> rendererRecreatedListener;
     _font->retain();
 
     _fontFreeType = dynamic_cast<FontFreeType*>(_font);
@@ -76,8 +77,8 @@ FontAtlas::FontAtlas(Font* theFont) : _font(theFont)
 #if CC_ENABLE_CACHE_TEXTURE_DATA
         auto eventDispatcher = Director::getInstance()->getEventDispatcher();
 
-        _rendererRecreatedListener = EventListenerCustom::create(
-            EVENT_RENDERER_RECREATED, CC_CALLBACK_1(FontAtlas::listenRendererRecreated, this));
+        _rendererRecreatedListener = (rendererRecreatedListener = EventListenerCustom::create(
+            EVENT_RENDERER_RECREATED, CC_CALLBACK_1(FontAtlas::listenRendererRecreated, this))).get();
         eventDispatcher->addEventListenerWithFixedPriority(_rendererRecreatedListener, 1);
 #endif
     }
@@ -300,7 +301,7 @@ void FontAtlas::updateTextureContent(backend::PixelFormat format, int startY)
 
 void FontAtlas::addNewPage()
 {
-    auto texture = new Texture2D();
+    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
 
     memset(_currentPageData, 0, _currentPageDataSize);
 
@@ -311,8 +312,7 @@ void FontAtlas::addNewPage()
     else
         texture->setAliasTexParameters();
 
-    setTexture(++_currentPage, texture);
-    texture->release();
+    setTexture(++_currentPage, texture.get());
 
     _currentPageOrigY = 0;
 }

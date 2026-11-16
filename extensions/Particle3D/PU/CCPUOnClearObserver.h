@@ -40,7 +40,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUOnClearObserver : public PUObserver
 {
 public:
-    static PUOnClearObserver* create();
+    static cc::IntrusivePtr<PUOnClearObserver> create();
 
     /**
      */

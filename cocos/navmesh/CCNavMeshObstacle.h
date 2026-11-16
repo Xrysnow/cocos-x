@@ -63,7 +63,7 @@ public:
     @param radius The radius of obstacle.
     @param height The height of obstacle.
     */
-    static NavMeshObstacle* create(float radius, float height);
+    static cc::IntrusivePtr<NavMeshObstacle> create(float radius, float height);
     static std::string_view getNavMeshObstacleComponentName();
 
     virtual void onEnter() override;

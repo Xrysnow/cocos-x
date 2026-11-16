@@ -100,10 +100,9 @@ static Texture2D* getDummyTexture()
 #else
         unsigned char data[] = {255, 0, 0, 255};  // 1*1 red picture
 #endif
-        Image* image = new Image();
+        cc::IntrusivePtr<Image> image{new Image()};
         image->initWithRawData(data, sizeof(data), 1, 1, sizeof(unsigned char));
-        texture = Director::getInstance()->getTextureCache()->addImage(image, "/dummyTexture");
-        image->release();
+        texture = Director::getInstance()->getTextureCache()->addImage(image.get(), "/dummyTexture");
     }
     return texture;
 }
@@ -154,7 +153,7 @@ int Mesh::getVertexSizeInBytes() const
     return static_cast<int>(_meshIndexData->getMeshVertexData()->getSizePerVertex());
 }
 
-Mesh* Mesh::create(const std::vector<float>& positions,
+cc::IntrusivePtr<Mesh> Mesh::create(const std::vector<float>& positions,
                    const std::vector<float>& normals,
                    const std::vector<float>& texs,
                    const IndexArray& indices)
@@ -217,7 +216,7 @@ Mesh* Mesh::create(const std::vector<float>& positions,
     return create(vertices, perVertexSizeInFloat, indices, attribs);
 }
 
-Mesh* Mesh::create(const std::vector<float>& vertices,
+cc::IntrusivePtr<Mesh> Mesh::create(const std::vector<float>& vertices,
                    int /*perVertexSizeInFloat*/,
                    const IndexArray& indices,
                    const std::vector<MeshVertexAttrib>& attribs)
@@ -236,10 +235,10 @@ Mesh* Mesh::create(const std::vector<float>& vertices,
     return mesh;
 }
 
-Mesh* Mesh::create(std::string_view name, MeshIndexData* indexData, MeshSkin* skin)
+cc::IntrusivePtr<Mesh> Mesh::create(std::string_view name, MeshIndexData* indexData, MeshSkin* skin)
 {
-    auto state = new Mesh();
-    state->autorelease();
+    cc::IntrusivePtr<Mesh> state{new Mesh()};
+
     state->bindMeshCommand();
     state->_name = name;
     state->setMeshIndexData(indexData);

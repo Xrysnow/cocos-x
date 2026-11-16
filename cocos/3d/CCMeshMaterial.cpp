@@ -72,64 +72,64 @@ backend::ProgramState* MeshMaterial::_quadColorMaterialProgState            = nu
 void MeshMaterial::createBuiltInMaterial()
 {
     auto* program               = backend::Program::getBuiltinProgram(backend::ProgramType::SKINPOSITION_TEXTURE_3D);
-    _unLitMaterialSkinProgState = new backend::ProgramState(program);
-    _unLitMaterialSkin          = new MeshMaterial();
+    _unLitMaterialSkinProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _unLitMaterialSkin          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_unLitMaterialSkin && _unLitMaterialSkin->initWithProgramState(_unLitMaterialSkinProgState))
     {
         _unLitMaterialSkin->_type = MeshMaterial::MaterialType::UNLIT;
     }
 
     program = backend::Program::getBuiltinProgram(backend::ProgramType::SKINPOSITION_NORMAL_TEXTURE_3D);
-    _diffuseMaterialSkinProgState = new backend::ProgramState(program);
-    _diffuseMaterialSkin          = new MeshMaterial();
+    _diffuseMaterialSkinProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _diffuseMaterialSkin          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_diffuseMaterialSkin && _diffuseMaterialSkin->initWithProgramState(_diffuseMaterialSkinProgState))
     {
         _diffuseMaterialSkin->_type = MeshMaterial::MaterialType::DIFFUSE;
     }
 
     program                   = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_NORMAL_TEXTURE_3D);
-    _diffuseMaterialProgState = new backend::ProgramState(program);
-    _diffuseMaterial          = new MeshMaterial();
+    _diffuseMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _diffuseMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_diffuseMaterial && _diffuseMaterial->initWithProgramState(_diffuseMaterialProgState))
     {
         _diffuseMaterial->_type = MeshMaterial::MaterialType::DIFFUSE;
     }
 
     program                 = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_3D);
-    _unLitMaterialProgState = new backend::ProgramState(program);
-    _unLitMaterial          = new MeshMaterial();
+    _unLitMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _unLitMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_unLitMaterial && _unLitMaterial->initWithProgramState(_unLitMaterialProgState))
     {
         _unLitMaterial->_type = MeshMaterial::MaterialType::UNLIT;
     }
 
     program                      = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_3D);
-    _unLitNoTexMaterialProgState = new backend::ProgramState(program);
-    _unLitNoTexMaterial          = new MeshMaterial();
+    _unLitNoTexMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _unLitNoTexMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_unLitNoTexMaterial && _unLitNoTexMaterial->initWithProgramState(_unLitNoTexMaterialProgState))
     {
         _unLitNoTexMaterial->_type = MeshMaterial::MaterialType::UNLIT_NOTEX;
     }
 
     program                        = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_NORMAL_3D);
-    _diffuseNoTexMaterialProgState = new backend::ProgramState(program);
-    _diffuseNoTexMaterial          = new MeshMaterial();
+    _diffuseNoTexMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _diffuseNoTexMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_diffuseNoTexMaterial && _diffuseNoTexMaterial->initWithProgramState(_diffuseNoTexMaterialProgState))
     {
         _diffuseNoTexMaterial->_type = MeshMaterial::MaterialType::DIFFUSE_NOTEX;
     }
 
     program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_BUMPEDNORMAL_TEXTURE_3D);
-    _bumpedDiffuseMaterialProgState = new backend::ProgramState(program);
-    _bumpedDiffuseMaterial          = new MeshMaterial();
+    _bumpedDiffuseMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _bumpedDiffuseMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_bumpedDiffuseMaterial && _bumpedDiffuseMaterial->initWithProgramState(_bumpedDiffuseMaterialProgState))
     {
         _bumpedDiffuseMaterial->_type = MeshMaterial::MaterialType::BUMPED_DIFFUSE;
     }
 
     program = backend::Program::getBuiltinProgram(backend::ProgramType::SKINPOSITION_BUMPEDNORMAL_TEXTURE_3D);
-    _bumpedDiffuseMaterialSkinProgState = new backend::ProgramState(program);
-    _bumpedDiffuseMaterialSkin          = new MeshMaterial();
+    _bumpedDiffuseMaterialSkinProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _bumpedDiffuseMaterialSkin          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_bumpedDiffuseMaterialSkin &&
         _bumpedDiffuseMaterialSkin->initWithProgramState(_bumpedDiffuseMaterialSkinProgState))
     {
@@ -137,16 +137,16 @@ void MeshMaterial::createBuiltInMaterial()
     }
 
     program = backend::Program::getBuiltinProgram(backend::ProgramType::QUAD_TEXTURE_2D);
-    _quadTextureMaterialProgState = new backend::ProgramState(program);
-    _quadTextureMaterial          = new MeshMaterial();
+    _quadTextureMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _quadTextureMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_quadTextureMaterial && _quadTextureMaterial->initWithProgramState(_quadTextureMaterialProgState))
     {
         _quadTextureMaterial->_type = MeshMaterial::MaterialType::QUAD_TEXTURE;
     }
 
     program = backend::Program::getBuiltinProgram(backend::ProgramType::QUAD_COLOR_2D);
-    _quadColorMaterialProgState = new backend::ProgramState(program);
-    _quadColorMaterial          = new MeshMaterial();
+    _quadColorMaterialProgState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _quadColorMaterial          = cc::IntrusivePtr<MeshMaterial>{new MeshMaterial()}.detach();
     if (_quadColorMaterial && _quadColorMaterial->initWithProgramState(_quadColorMaterialProgState))
     {
         _quadColorMaterial->_type = MeshMaterial::MaterialType::QUAD_COLOR;
@@ -195,16 +195,16 @@ void MeshMaterial::releaseCachedMaterial()
     _materials.clear();
 }
 
-Material* MeshMaterial::clone() const
+cc::IntrusivePtr<Material> MeshMaterial::clone() const
 {
-    auto material = new MeshMaterial();
+    cc::IntrusivePtr<MeshMaterial> material{new MeshMaterial()};
 
     material->_renderState.copyFrom(_renderState);
 
     for (const auto& technique : _techniques)
     {
         auto t = technique->clone();
-        t->setMaterial(material);
+        t->setMaterial(material.get());
         for (ssize_t i = 0; i < t->getPassCount(); i++)
         {
             t->getPassByIndex(i)->setTechnique(t);
@@ -216,12 +216,10 @@ Material* MeshMaterial::clone() const
     auto name                   = _currentTechnique->getName();
     material->_currentTechnique = material->getTechniqueByName(name);
     material->_type             = _type;
-    material->autorelease();
-
     return material;
 }
 
-MeshMaterial* MeshMaterial::createBuiltInMaterial(MaterialType type, bool skinned)
+cc::IntrusivePtr<MeshMaterial> MeshMaterial::createBuiltInMaterial(MaterialType type, bool skinned)
 {
     /////
     if (_diffuseMaterial == nullptr)
@@ -266,45 +264,43 @@ MeshMaterial* MeshMaterial::createBuiltInMaterial(MaterialType type, bool skinne
         break;
     }
     if (material)
-        return (MeshMaterial*)material->clone();
+        return cc::static_pointer_cast<MeshMaterial>(material->clone());
 
     return nullptr;
 }
 
-MeshMaterial* MeshMaterial::createWithFilename(std::string_view path)
+cc::IntrusivePtr<MeshMaterial> MeshMaterial::createWithFilename(std::string_view path)
 {
     auto validfilename = FileUtils::getInstance()->fullPathForFilename(path);
     if (!validfilename.empty())
     {
         auto it = _materials.find(validfilename);
         if (it != _materials.end())
-            return (MeshMaterial*)it->second->clone();
+            return cc::static_pointer_cast<MeshMaterial>(it->second->clone());
 
-        auto material = new MeshMaterial();
+        cc::IntrusivePtr<MeshMaterial> material{new MeshMaterial()};
         if (material->initWithFile(path))
         {
             material->_type           = MeshMaterial::MaterialType::CUSTOM;
-            _materials[validfilename] = material;
-
-            return (MeshMaterial*)material->clone();
+            _materials[validfilename] = material.get();
+            auto result = cc::static_pointer_cast<MeshMaterial>(material->clone());
+            material.detach(); // The raw cache owns this share.
+            return result;
         }
-        CC_SAFE_DELETE(material);
     }
     return nullptr;
 }
 
-MeshMaterial* MeshMaterial::createWithProgramState(backend::ProgramState* programState)
+cc::IntrusivePtr<MeshMaterial> MeshMaterial::createWithProgramState(backend::ProgramState* programState)
 {
     CCASSERT(programState, "Invalid program state.");
 
-    auto mat = new MeshMaterial();
+    cc::IntrusivePtr<MeshMaterial> mat{new MeshMaterial()};
     if (mat->initWithProgramState(programState))
     {
         mat->_type = MeshMaterial::MaterialType::CUSTOM;
-        mat->autorelease();
         return mat;
     }
-    CC_SAFE_DELETE(mat);
     return nullptr;
 }
 

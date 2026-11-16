@@ -54,7 +54,7 @@ public:
     bool swing;
 
     //component
-    std::function<GComponent*()> extensionCreator;
+    std::function<cc::IntrusivePtr<GComponent>()> extensionCreator;
     bool translated;
 
     //font

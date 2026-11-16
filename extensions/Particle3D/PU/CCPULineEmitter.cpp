@@ -224,10 +224,9 @@ void PULineEmitter::initParticleDirection(PUParticle3D* particle)
     }
 }
 
-PULineEmitter* PULineEmitter::create()
+cc::IntrusivePtr<PULineEmitter> PULineEmitter::create()
 {
-    auto pe = new PULineEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PULineEmitter> pe{new PULineEmitter()};
     return pe;
 }
 
@@ -243,7 +242,7 @@ void PULineEmitter::copyAttributesTo(PUEmitter* emitter)
     lineEmitter->setMaxDeviation(_maxDeviation);
 }
 
-PULineEmitter* PULineEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PULineEmitter::clone()
 {
     auto be = PULineEmitter::create();
     copyAttributesTo(be);

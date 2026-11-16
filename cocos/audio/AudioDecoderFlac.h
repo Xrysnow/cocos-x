@@ -14,7 +14,7 @@ NS_CC_BEGIN
 		virtual ~AudioDecoderFlac();
 		bool init(AudioStream* src);
 	public:
-		static AudioDecoderFlac* create(AudioStream* src, size_t bufferSize);
+		static cc::IntrusivePtr<AudioDecoderFlac> create(AudioStream* src, size_t bufferSize);
 
 		int64_t decode(char* dst, uint64_t bytesToRead) override;
 		bool seek(int64_t frameOffset) override;

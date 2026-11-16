@@ -70,41 +70,41 @@ public:
      * create box shape
      * @param extent The extent of sphere.
      */
-    static Physics3DShape* createBox(const cocos2d::Vec3& extent);
+    static cc::IntrusivePtr<Physics3DShape> createBox(const cocos2d::Vec3& extent);
 
     /**
      * create sphere shape
      * @param radius The radius of sphere.
      */
-    static Physics3DShape* createSphere(float radius);
+    static cc::IntrusivePtr<Physics3DShape> createSphere(float radius);
 
     /**
      * create cylinder shape
      * @param radius The radius of cylinder.
      * @param height The height.
      */
-    static Physics3DShape* createCylinder(float radius, float height);
+    static cc::IntrusivePtr<Physics3DShape> createCylinder(float radius, float height);
 
     /**
      * create capsule shape
      * @param radius The radius of capsule.
      * @param height The height (cylinder part).
      */
-    static Physics3DShape* createCapsule(float radius, float height);
+    static cc::IntrusivePtr<Physics3DShape> createCapsule(float radius, float height);
 
     /**
      * create convex hull
      * @param points The vertices of convex hull
      * @param numPoints The number of vertices.
      */
-    static Physics3DShape* createConvexHull(const cocos2d::Vec3* points, int numPoints);
+    static cc::IntrusivePtr<Physics3DShape> createConvexHull(const cocos2d::Vec3* points, int numPoints);
 
     /**
      * create mesh
      * @param triangles The pointer of triangle list
      * @param numTriangles The number of triangles.
      */
-    static Physics3DShape* createMesh(const cocos2d::Vec3* triangles, int numTriangles);
+    static cc::IntrusivePtr<Physics3DShape> createMesh(const cocos2d::Vec3* triangles, int numTriangles);
 
     /**
      * create heightfield
@@ -115,7 +115,7 @@ public:
      * @param maxHeight The maxHeight of heightfield.
      * @param flipQuadEdges if flip QuadEdges
      */
-    static Physics3DShape* createHeightfield(int heightStickWidth,
+    static cc::IntrusivePtr<Physics3DShape> createHeightfield(int heightStickWidth,
                                              int heightStickLength,
                                              const void* heightfieldData,
                                              float heightScale,
@@ -129,7 +129,7 @@ public:
      * create Compound Shape
      * @param shapes The list of child shape
      */
-    static Physics3DShape* createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes);
+    static cc::IntrusivePtr<Physics3DShape> createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes);
 
         #if CC_ENABLE_BULLET_INTEGRATION
     btCollisionShape* getbtShape() const { return _btShape; }

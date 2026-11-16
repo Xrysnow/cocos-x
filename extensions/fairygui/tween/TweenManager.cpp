@@ -20,7 +20,7 @@ public:
 };
 static TweenEngine tweenEngine;
 
-GTweener* TweenManager::createTween()
+cc::IntrusivePtr<GTweener> TweenManager::createTween()
 {
     if (!_inited)
         init();
@@ -33,7 +33,7 @@ GTweener* TweenManager::createTween()
         _tweenerPool.pop_back();
     }
     else
-        tweener = new GTweener();
+        tweener = cc::IntrusivePtr<GTweener>{new GTweener()}.detach();
     tweener->_init();
     _activeTweens[_totalActiveTweens++] = tweener;
 
@@ -42,7 +42,7 @@ GTweener* TweenManager::createTween()
         int newLen = _arrayLength + ceil(_arrayLength * 0.5f);
         GTweener** newArray = new GTweener*[newLen];
         memcpy(newArray, _activeTweens, _arrayLength * sizeof(GTweener*));
-        delete _activeTweens;
+        delete[] _activeTweens;
         _activeTweens = newArray;
         _arrayLength = newLen;
     }

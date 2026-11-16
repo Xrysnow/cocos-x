@@ -58,14 +58,14 @@ class CC_DLL GLViewImpl : public GLView
     friend class GLFWEventHandler;
 
 public:
-    static GLViewImpl* create(std::string_view viewName);
-    static GLViewImpl* create(std::string_view viewName, bool resizable);
-    static GLViewImpl* createWithRect(std::string_view viewName,
+    static cc::IntrusivePtr<GLViewImpl> create(std::string_view viewName);
+    static cc::IntrusivePtr<GLViewImpl> create(std::string_view viewName, bool resizable);
+    static cc::IntrusivePtr<GLViewImpl> createWithRect(std::string_view viewName,
                                       Rect size,
                                       float frameZoomFactor = 1.0f,
                                       bool resizable        = false);
-    static GLViewImpl* createWithFullScreen(std::string_view viewName);
-    static GLViewImpl* createWithFullScreen(std::string_view viewName,
+    static cc::IntrusivePtr<GLViewImpl> createWithFullScreen(std::string_view viewName);
+    static cc::IntrusivePtr<GLViewImpl> createWithFullScreen(std::string_view viewName,
                                             const GLFWvidmode& videoMode,
                                             GLFWmonitor* monitor);
 

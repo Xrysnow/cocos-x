@@ -207,7 +207,7 @@ class CC_DLL EventListenerPhysicsContact : public EventListenerCustom
 {
 public:
     /** Create the listener. */
-    static EventListenerPhysicsContact* create();
+    static cc::IntrusivePtr<EventListenerPhysicsContact> create();
 
     /** Check the listener is available.
 
@@ -216,7 +216,7 @@ public:
     virtual bool checkAvailable() override;
 
     /** Clone an object from this listener.*/
-    virtual EventListenerPhysicsContact* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
 protected:
     /**
@@ -264,11 +264,11 @@ class CC_DLL EventListenerPhysicsContactWithBodies : public EventListenerPhysics
 {
 public:
     /** Create the listener. */
-    static EventListenerPhysicsContactWithBodies* create(PhysicsBody* bodyA, PhysicsBody* bodyB);
+    static cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> create(PhysicsBody* bodyA, PhysicsBody* bodyB);
 
     virtual bool hitTest(PhysicsShape* shapeA, PhysicsShape* shapeB) override;
 
-    virtual EventListenerPhysicsContactWithBodies* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
 protected:
     PhysicsBody* _a;
@@ -284,10 +284,10 @@ class CC_DLL EventListenerPhysicsContactWithShapes : public EventListenerPhysics
 {
 public:
     /** Create the listener. */
-    static EventListenerPhysicsContactWithShapes* create(PhysicsShape* shapeA, PhysicsShape* shapeB);
+    static cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> create(PhysicsShape* shapeA, PhysicsShape* shapeB);
 
     virtual bool hitTest(PhysicsShape* shapeA, PhysicsShape* shapeB) override;
-    virtual EventListenerPhysicsContactWithShapes* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
 protected:
     PhysicsShape* _a;
@@ -303,10 +303,10 @@ class CC_DLL EventListenerPhysicsContactWithGroup : public EventListenerPhysicsC
 {
 public:
     /** Create the listener. */
-    static EventListenerPhysicsContactWithGroup* create(int group);
+    static cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> create(int group);
 
     virtual bool hitTest(PhysicsShape* shapeA, PhysicsShape* shapeB) override;
-    virtual EventListenerPhysicsContactWithGroup* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
 protected:
     int _group;

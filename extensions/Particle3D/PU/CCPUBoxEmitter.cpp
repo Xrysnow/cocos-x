@@ -103,10 +103,9 @@ void CCPUBoxEmitter::initParticlePosition(PUParticle3D* particle)
     particle->originalPosition = particle->position;
 }
 
-CCPUBoxEmitter* CCPUBoxEmitter::create()
+cc::IntrusivePtr<CCPUBoxEmitter> CCPUBoxEmitter::create()
 {
-    auto pe = new CCPUBoxEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<CCPUBoxEmitter> pe{new CCPUBoxEmitter()};
     return pe;
 }
 
@@ -123,7 +122,7 @@ void CCPUBoxEmitter::copyAttributesTo(PUEmitter* emitter)
     boxEmitter->_zRange        = _zRange;
 }
 
-CCPUBoxEmitter* CCPUBoxEmitter::clone()
+cc::IntrusivePtr<PUEmitter> CCPUBoxEmitter::clone()
 {
     auto be = CCPUBoxEmitter::create();
     copyAttributesTo(be);

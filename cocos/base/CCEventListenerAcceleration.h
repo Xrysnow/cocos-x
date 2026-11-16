@@ -48,16 +48,16 @@ public:
     /** Create a acceleration EventListener.
      *
      * @param callback The acceleration callback method.
-     * @return An autoreleased EventListenerAcceleration object.
+     * @return An owned EventListenerAcceleration object.
      */
-    static EventListenerAcceleration* create(const std::function<void(Acceleration*, Event*)>& callback);
+    static cc::IntrusivePtr<EventListenerAcceleration> create(const std::function<void(Acceleration*, Event*)>& callback);
 
     /** Destructor.
      */
     virtual ~EventListenerAcceleration();
 
     /// Overrides
-    virtual EventListenerAcceleration* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
 
     EventListenerAcceleration();

@@ -83,7 +83,7 @@ public:
     static const Vec4 DEFAULT_INITIAL_COLOUR;
     static const Vec4 DEFAULT_COLOUR_CHANGE;
 
-    static PURibbonTrailRender* create(std::string_view texFile = "");
+    static cc::IntrusivePtr<PURibbonTrailRender> create(std::string_view texFile = "");
 
     virtual void notifyRescaled(const Vec3& scale) override;
     virtual void prepare() override;
@@ -121,7 +121,7 @@ public:
      */
     void destroyAll();
 
-    virtual PURibbonTrailRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
     void copyAttributesTo(PURibbonTrailRender* render);
 
     PURibbonTrailRender();

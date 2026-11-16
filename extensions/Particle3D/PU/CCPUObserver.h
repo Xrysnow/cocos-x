@@ -115,7 +115,7 @@ public:
 
     /** Todo
      */
-    PUEventHandler* createEventHandler(std::string_view eventHandlerType);
+    cc::IntrusivePtr<PUEventHandler> createEventHandler(std::string_view eventHandlerType);
 
     /** Todo
      */

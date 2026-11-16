@@ -41,10 +41,9 @@ void PUDoExpireEventHandler::handle(PUParticleSystem3D* /*particleSystem*/,
     particle->timeToLive = 0.0f;
 }
 
-PUDoExpireEventHandler* PUDoExpireEventHandler::create()
+cc::IntrusivePtr<PUDoExpireEventHandler> PUDoExpireEventHandler::create()
 {
-    auto peh = new PUDoExpireEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoExpireEventHandler> peh{new PUDoExpireEventHandler()};
     return peh;
 }
 

@@ -45,21 +45,21 @@ Size TableViewDataSource::cellSizeForTable(TableView* /*table*/)
     return Size::ZERO;
 }
 
-TableView* TableView::create()
+cc::IntrusivePtr<TableView> TableView::create()
 {
     return TableView::create(nullptr, Size::ZERO);
 }
 
-TableView* TableView::create(TableViewDataSource* dataSource, Size size)
+cc::IntrusivePtr<TableView> TableView::create(TableViewDataSource* dataSource, Size size)
 {
     return TableView::create(dataSource, size, nullptr);
 }
 
-TableView* TableView::create(TableViewDataSource* dataSource, Size size, Node* container)
+cc::IntrusivePtr<TableView> TableView::create(TableViewDataSource* dataSource, Size size, Node* container)
 {
-    TableView* table = new TableView();
+    cc::IntrusivePtr<TableView> table{new TableView()};
     table->initWithViewSize(size, container);
-    table->autorelease();
+
     table->setDataSource(dataSource);
     table->_updateCellPositions();
     table->_updateContentSize();

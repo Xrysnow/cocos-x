@@ -27,7 +27,7 @@ namespace video
 
 	bool VideoAudioSink::createSourceLocked()
 	{
-		source = cocos2d::AudioSource::createOwnedQueue(SampleRate, 16, 2, 10);
+		source = cocos2d::AudioSource::create(SampleRate, 16, 2, 10).detach();
 		if (!source)
 		{
 			failLocked("Could not create the video audio output queue");

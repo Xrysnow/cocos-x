@@ -60,7 +60,7 @@ namespace spine {
 	SkeletonBatch::SkeletonBatch() {
 
 		auto program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-		_programState = new backend::ProgramState(program);// new default program state
+		_programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();// new default program state
 		for (unsigned int i = 0; i < INITIAL_SIZE; i++) {
 			_commandsPool.push_back(newCommand());
 		}
@@ -103,7 +103,7 @@ namespace spine {
 		if(currentState == nullptr || currentState->getProgram() != programState->getProgram()) {
 	#endif
 			CC_SAFE_RELEASE(currentState);
-			currentState = programState->clone();
+			currentState = programState->clone().detach();
 		
 			command->_locMVP     = currentState->getUniformLocation(backend::UNIFORM_NAME_MVP_MATRIX);
 	        command->_locTexture = currentState->getUniformLocation(backend::UNIFORM_NAME_TEXTURE);

@@ -29,6 +29,9 @@ THE SOFTWARE.
 #include <vector>
 #include <string>
 #include "base/CCRef.h"
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+#include <unordered_map>
+#endif
 
 /**
  * @addtogroup base
@@ -82,7 +85,9 @@ public:
     /**
      * Clear the autorelease pool.
      *
-     * It will invoke each element's `release()` function.
+     * It releases one batch. Objects registered by destructors enter the next
+     * batch. Recursive clear requests are ignored with a diagnostic. Destruction
+     * drains subsequent batches, with a bounded fail-fast check for runaway work.
      *
      * @js NA
      * @lua NA
@@ -123,23 +128,15 @@ public:
     void dump();
 
 private:
-    /**
-     * The underlying array of object managed by the pool.
-     *
-     * Although Array retains the object once when an object is added, proper
-     * Ref::release() is called outside the array to make sure that the pool
-     * does not affect the managed object's reference count. So an object can
-     * be destructed properly by calling Ref::release() even if the object
-     * is in the pool.
-     */
+    friend class PoolManager;
+    // Every entry consumes one already-owned reference, without retaining it.
     std::vector<Ref*> _managedObjectArray;
     std::string _name;
+    bool _isClearing{false};
 
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    /**
-     *  The flag for checking whether the pool is doing `clear` operation.
-     */
-    bool _isClearing;
+    // Includes the unprocessed part of the active batch, without owning objects.
+    std::unordered_map<Ref*, unsigned int> _pendingReferences;
 #endif
 };
 
@@ -153,6 +150,8 @@ class CC_DLL PoolManager
 {
 public:
     static PoolManager* getInstance();
+    // Diagnostics and shutdown must not recreate the manager or its default pool.
+    static PoolManager* getInstanceIfExists() noexcept { return s_singleInstance; }
     static void destroyInstance();
 
     /**
@@ -160,6 +159,10 @@ public:
      * You can create your own auto release pool at demand, which will be put into auto release pool stack.
      */
     AutoreleasePool* getCurrentPool() const;
+    AutoreleasePool* getCurrentPoolIfExists() const noexcept
+    {
+        return _releasePoolStack.empty() ? nullptr : _releasePoolStack.back();
+    }
 
     bool isObjectInPools(Ref* obj) const;
 
@@ -171,10 +174,14 @@ private:
 
     void push(AutoreleasePool* pool);
     void pop();
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    unsigned int pendingReferences(Ref* object) const;
+#endif
 
     static PoolManager* s_singleInstance;
 
     std::vector<AutoreleasePool*> _releasePoolStack;
+    bool _isDestroying{false};
 };
 /**
  * @endcond

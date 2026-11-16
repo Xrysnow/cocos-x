@@ -66,7 +66,7 @@ public:
      */
     virtual void initParticleForExpiration(PUParticle3D* particle, float timeElapsed);
 
-    virtual PUBehaviour* clone();
+    virtual cc::IntrusivePtr<PUBehaviour> clone();
     virtual void copyAttributesTo(PUBehaviour* behaviour);
 
     PUBehaviour();

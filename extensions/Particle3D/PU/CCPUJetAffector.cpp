@@ -35,7 +35,7 @@ const float PUJetAffector::DEFAULT_ACCELERATION = 1.0f;
 //-----------------------------------------------------------------------
 PUJetAffector::PUJetAffector() : PUAffector(), _scaled(0.0f)
 {
-    _dynAcceleration = new PUDynamicAttributeFixed();
+    _dynAcceleration = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynAcceleration))->setValue(DEFAULT_ACCELERATION);
 }
 //-----------------------------------------------------------------------
@@ -74,10 +74,9 @@ void PUJetAffector::updatePUAffector(PUParticle3D* particle, float deltaTime)
     }
 }
 
-PUJetAffector* PUJetAffector::create()
+cc::IntrusivePtr<PUJetAffector> PUJetAffector::create()
 {
-    auto pja = new PUJetAffector();
-    pja->autorelease();
+    cc::IntrusivePtr<PUJetAffector> pja{new PUJetAffector()};
     return pja;
 }
 
@@ -86,7 +85,7 @@ void PUJetAffector::copyAttributesTo(PUAffector* affector)
     PUAffector::copyAttributesTo(affector);
 
     PUJetAffector* jetAffector = static_cast<PUJetAffector*>(affector);
-    jetAffector->setDynAcceleration(getDynAcceleration()->clone());
+    jetAffector->setDynAcceleration(getDynAcceleration()->clone().get());
 }
 
 NS_CC_END

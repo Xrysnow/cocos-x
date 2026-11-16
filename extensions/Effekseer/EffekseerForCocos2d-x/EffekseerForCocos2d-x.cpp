@@ -200,15 +200,15 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		char* data_texture = new char[size_texture];
 		reader->Read(data_texture, size_texture);
 
-		cocos2d::Image* image = new cocos2d::Image();
-		cocos2d::Texture2D* texture = new cocos2d::Texture2D();
+		cc::IntrusivePtr<cocos2d::Image> image{new cocos2d::Image()};
+		cc::IntrusivePtr<cocos2d::Texture2D> texture{new cocos2d::Texture2D()};
 
 		auto backup = ImageAccessor::getPngPremultipledAlphaEnabled();
 		cocos2d::Image::setPNGPremultipliedAlphaEnabled(false);
 
 		if (image != nullptr && texture != nullptr && image->initWithImageData((const uint8_t*)data_texture, size_texture))
 		{
-			if (texture->initWithImage(image))
+			if (texture->initWithImage(image.get()))
 			{
 
 				if(texture->getPixelsWide() > 1 || texture->getPixelsHigh() > 1)
@@ -233,17 +233,15 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 			}
 			else
 			{
-				CC_SAFE_DELETE(texture);
-				CC_SAFE_DELETE(image);
+				texture.reset();
 			}
 		}
-		CC_SAFE_DELETE(image);
 
 		delete[] data_texture;
 
 		Effekseer::TextureRef textureData = Effekseer::MakeRefPtr<Effekseer::Texture>();;
-		UpdateTextureData(textureData, texture);
-		g_filePath2CTex[key] = texture;
+		UpdateTextureData(textureData, texture.get());
+		g_filePath2CTex[key] = texture.detach(); // Released by TextureLoader::Unload.
 		g_filePath2EffectData[key] = textureData;
 		g_glTex2FilePath[textureData] = key;
 
@@ -473,7 +471,7 @@ InternalManager* getGlobalInternalManager()
 	return g_internalManager;
 }
 
-Effect* Effect::create(const std::string& filename, float maginification)
+cc::IntrusivePtr<Effect> Effect::create(const std::string& filename, float maginification)
 {
 	EFK_CHAR path_[300];
 	::Effekseer::ConvertUtf8ToUtf16(path_, 300, filename.c_str());
@@ -484,9 +482,9 @@ Effect* Effect::create(const std::string& filename, float maginification)
 
 	if (effect != nullptr)
 	{
-		auto e = new Effect(internalManager);
+		cc::IntrusivePtr<Effect> e{new Effect(internalManager)};
 		e->effect = effect;
-		e->autorelease();
+
 		ES_SAFE_RELEASE(internalManager);
 		return e;
 	}
@@ -511,11 +509,11 @@ Effect::~Effect()
 	ES_SAFE_RELEASE(internalManager_);
 }
 
-EffectEmitter* EffectEmitter::create(EffectManager* manager) { return new EffectEmitter(manager); }
+cc::IntrusivePtr<EffectEmitter> EffectEmitter::create(EffectManager* manager) { return cc::IntrusivePtr<EffectEmitter>{new EffectEmitter(manager)}; }
 
-EffectEmitter* EffectEmitter::create(EffectManager* manager, const std::string& filename, float maginification)
+cc::IntrusivePtr<EffectEmitter> EffectEmitter::create(EffectManager* manager, const std::string& filename, float maginification)
 {
-	auto effectEmitter = new EffectEmitter(manager);
+	cc::IntrusivePtr<EffectEmitter> effectEmitter{new EffectEmitter(manager)};
 	auto effect = Effect::create(filename, maginification);
 	effectEmitter->setEffect(effect);
 	effectEmitter->playOnEnter = true;
@@ -823,15 +821,14 @@ bool EffectManager::Initialize(cocos2d::Size visibleSize)
 	return true;
 }
 
-EffectManager* EffectManager::create(cocos2d::Size visibleSize)
+cc::IntrusivePtr<EffectManager> EffectManager::create(cocos2d::Size visibleSize)
 {
-	auto ret = new EffectManager();
+	cc::IntrusivePtr<EffectManager> ret{new EffectManager()};
 	if (ret->Initialize(visibleSize))
 	{
 		return ret;
 	}
 
-	ret->release();
 
 	return nullptr;
 }
@@ -955,7 +952,7 @@ void EffectManager::update(float delta)
 	renderer2d->SetTime(time_);
 }
 
-NetworkServer* NetworkServer::create() { return new NetworkServer(); }
+cc::IntrusivePtr<NetworkServer> NetworkServer::create() { return cc::IntrusivePtr<NetworkServer>{new NetworkServer()}; }
 
 NetworkServer::NetworkServer() { internalManager_ = getGlobalInternalManager(); }
 

@@ -37,7 +37,7 @@ StencilStateManager::StencilStateManager()
 {
     auto& pipelineDescriptor        = _customCommand.getPipelineDescriptor();
     auto* program                   = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_UCOLOR);
-    _programState                   = new backend::ProgramState(program);
+    _programState                   = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     pipelineDescriptor.programState = _programState;
 
     _mvpMatrixLocaiton    = pipelineDescriptor.programState->getUniformLocation("u_MVPMatrix");

@@ -39,7 +39,7 @@ public:
     // Constants
     static const float DEFAULT_VELOCITY_SCALE;
 
-    static PUScaleVelocityAffector* create();
+    static cc::IntrusivePtr<PUScaleVelocityAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

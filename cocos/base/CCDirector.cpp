@@ -95,7 +95,7 @@ Director* Director::getInstance()
 {
     if (!s_SharedDirector)
     {
-        s_SharedDirector = new Director;
+        s_SharedDirector = cc::IntrusivePtr<Director>{new Director}.detach();
         CCASSERT(s_SharedDirector, "FATAL: Not enough memory");
         s_SharedDirector->init();
     }
@@ -114,33 +114,33 @@ bool Director::init()
     // FPS
     _lastUpdate = std::chrono::steady_clock::now();
 
-    _console = new Console;
+    _console = cc::IntrusivePtr<Console>{new Console}.detach();
 
     // scheduler
-    _scheduler = new Scheduler();
+    _scheduler = cc::IntrusivePtr<Scheduler>{new Scheduler()}.detach();
     // action manager
-    _actionManager = new ActionManager();
+    _actionManager = cc::IntrusivePtr<ActionManager>{new ActionManager()}.detach();
     _scheduler->scheduleUpdate(_actionManager, Scheduler::PRIORITY_SYSTEM, false);
 
-    _eventDispatcher = new EventDispatcher();
+    _eventDispatcher = cc::IntrusivePtr<EventDispatcher>{new EventDispatcher()}.detach();
 
-    _beforeSetNextScene = new EventCustom(EVENT_BEFORE_SET_NEXT_SCENE);
+    _beforeSetNextScene = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_SET_NEXT_SCENE)}.detach();
     _beforeSetNextScene->setUserData(this);
-    _afterSetNextScene = new EventCustom(EVENT_AFTER_SET_NEXT_SCENE);
+    _afterSetNextScene = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_SET_NEXT_SCENE)}.detach();
     _afterSetNextScene->setUserData(this);
-    _eventAfterDraw = new EventCustom(EVENT_AFTER_DRAW);
+    _eventAfterDraw = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_DRAW)}.detach();
     _eventAfterDraw->setUserData(this);
-    _eventBeforeDraw = new EventCustom(EVENT_BEFORE_DRAW);
+    _eventBeforeDraw = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_DRAW)}.detach();
     _eventBeforeDraw->setUserData(this);
-    _eventAfterVisit = new EventCustom(EVENT_AFTER_VISIT);
+    _eventAfterVisit = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_VISIT)}.detach();
     _eventAfterVisit->setUserData(this);
-    _eventBeforeUpdate = new EventCustom(EVENT_BEFORE_UPDATE);
+    _eventBeforeUpdate = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_UPDATE)}.detach();
     _eventBeforeUpdate->setUserData(this);
-    _eventAfterUpdate = new EventCustom(EVENT_AFTER_UPDATE);
+    _eventAfterUpdate = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_UPDATE)}.detach();
     _eventAfterUpdate->setUserData(this);
-    _eventProjectionChanged = new EventCustom(EVENT_PROJECTION_CHANGED);
+    _eventProjectionChanged = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_PROJECTION_CHANGED)}.detach();
     _eventProjectionChanged->setUserData(this);
-    _eventResetDirector = new EventCustom(EVENT_RESET);
+    _eventResetDirector = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_RESET)}.detach();
     // init TextureCache
     initTextureCache();
     initMatrixStack();
@@ -427,7 +427,7 @@ TextureCache* Director::getTextureCache() const
 
 void Director::initTextureCache()
 {
-    _textureCache = new TextureCache();
+    _textureCache = cc::IntrusivePtr<TextureCache>{new TextureCache()}.detach();
 }
 
 void Director::destroyTextureCache()
@@ -1275,6 +1275,9 @@ void Director::getFPSImageData(unsigned char** datapointer, ssize_t* length)
 
 void Director::createStatsLabel()
 {
+    cc::IntrusivePtr<LabelAtlas> FPSLabel;
+    cc::IntrusivePtr<LabelAtlas> drawnBatchesLabel;
+    cc::IntrusivePtr<LabelAtlas> drawnVerticesLabel;
     Texture2D* texture             = nullptr;
     std::string fpsString          = "00.0";
     std::string drawBatchString    = "000";
@@ -1296,18 +1299,15 @@ void Director::createStatsLabel()
     ssize_t dataLength  = 0;
     getFPSImageData(&data, &dataLength);
 
-    Image* image = new Image();
+    cc::IntrusivePtr<Image> image{new Image()};
     bool isOK    = image->initWithImageData(data, dataLength, false);
     if (!isOK)
     {
-        if (image)
-            delete image;
         CCLOGERROR("%s", "Fails: init fps_images");
         return;
     }
 
-    texture = _textureCache->addImage(image, "/cc_fps_images", PixelFormat::RGBA4);
-    CC_SAFE_RELEASE(image);
+    texture = _textureCache->addImage(image.get(), "/cc_fps_images", PixelFormat::RGBA4);
 
     /*
      We want to use an image which is stored in the file named ccFPSImage.c
@@ -1319,17 +1319,17 @@ void Director::createStatsLabel()
      */
     float scaleFactor = 1 / CC_CONTENT_SCALE_FACTOR();
 
-    _FPSLabel = LabelAtlas::create(fpsString, texture, 12, 32, '.');
+    _FPSLabel = (FPSLabel = LabelAtlas::create(fpsString, texture, 12, 32, '.')).get();
     _FPSLabel->retain();
     _FPSLabel->setIgnoreContentScaleFactor(true);
     _FPSLabel->setScale(scaleFactor);
 
-    _drawnBatchesLabel = LabelAtlas::create(drawBatchString, texture, 12, 32, '.');
+    _drawnBatchesLabel = (drawnBatchesLabel = LabelAtlas::create(drawBatchString, texture, 12, 32, '.')).get();
     _drawnBatchesLabel->retain();
     _drawnBatchesLabel->setIgnoreContentScaleFactor(true);
     _drawnBatchesLabel->setScale(scaleFactor);
 
-    _drawnVerticesLabel = LabelAtlas::create(drawVerticesString, texture, 12, 32, '.');
+    _drawnVerticesLabel = (drawnVerticesLabel = LabelAtlas::create(drawVerticesString, texture, 12, 32, '.')).get();
     _drawnVerticesLabel->retain();
     _drawnVerticesLabel->setIgnoreContentScaleFactor(true);
     _drawnVerticesLabel->setScale(scaleFactor);

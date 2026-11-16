@@ -87,7 +87,7 @@ private:
 class CC_DLL EaseRateAction : public ActionEase
 {
 public:
-    static EaseRateAction* create(ActionInterval* action, float rate);
+    static cc::IntrusivePtr<EaseRateAction> create(ActionInterval* action, float rate);
     /**
     @brief Set the rate value for the ease rate action.
     @param rate The value will be set.
@@ -128,10 +128,10 @@ private:
         CLASSNAME() {}                                    \
                                                           \
     public:                                               \
-        static CLASSNAME* create(ActionInterval* action); \
-        virtual CLASSNAME* clone() const override;        \
+        static cc::IntrusivePtr<CLASSNAME> create(ActionInterval* action); \
+        virtual cc::IntrusivePtr<Action> clone() const override;        \
         virtual void update(float time) override;         \
-        virtual ActionEase* reverse() const override;     \
+        virtual cc::IntrusivePtr<Action> reverse() const override;     \
                                                           \
     private:                                              \
         CC_DISALLOW_COPY_AND_ASSIGN(CLASSNAME);           \
@@ -379,10 +379,10 @@ EASE_TEMPLATE_DECL_CLASS(EaseCubicActionInOut);
         virtual ~CLASSNAME() {}                                       \
         CLASSNAME() {}                                                \
                                                                       \
-        static CLASSNAME* create(ActionInterval* action, float rate); \
-        virtual CLASSNAME* clone() const override;                    \
+        static cc::IntrusivePtr<CLASSNAME> create(ActionInterval* action, float rate); \
+        virtual cc::IntrusivePtr<Action> clone() const override;                    \
         virtual void update(float time) override;                     \
-        virtual EaseRateAction* reverse() const override;             \
+        virtual cc::IntrusivePtr<Action> reverse() const override;             \
                                                                       \
     private:                                                          \
         CC_DISALLOW_COPY_AND_ASSIGN(CLASSNAME);                       \
@@ -465,10 +465,10 @@ private:
         virtual ~CLASSNAME() {}                                              \
         CLASSNAME() {}                                                       \
                                                                              \
-        static CLASSNAME* create(ActionInterval* action, float rate = 0.3f); \
-        virtual CLASSNAME* clone() const override;                           \
+        static cc::IntrusivePtr<CLASSNAME> create(ActionInterval* action, float rate = 0.3f); \
+        virtual cc::IntrusivePtr<Action> clone() const override;                           \
         virtual void update(float time) override;                            \
-        virtual EaseElastic* reverse() const override;                       \
+        virtual cc::IntrusivePtr<Action> reverse() const override;                       \
                                                                              \
     private:                                                                 \
         CC_DISALLOW_COPY_AND_ASSIGN(CLASSNAME);                              \
@@ -524,11 +524,11 @@ public:
      @param action The pointer of the inner action.
      @return A pointer of EaseBezierAction action. If creation failed, return nil.
     */
-    static EaseBezierAction* create(cocos2d::ActionInterval* action);
+    static cc::IntrusivePtr<EaseBezierAction> create(cocos2d::ActionInterval* action);
 
     virtual void update(float time) override;
-    virtual EaseBezierAction* clone() const override;
-    virtual EaseBezierAction* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     /**
      @brief Set the bezier parameters.

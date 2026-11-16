@@ -48,10 +48,10 @@ const bool PURibbonTrailRender::DEFAULT_RANDOM_INITIAL_COLOUR = true;
 const Vec4 PURibbonTrailRender::DEFAULT_INITIAL_COLOUR(1, 1, 1, 1);
 const Vec4 PURibbonTrailRender::DEFAULT_COLOUR_CHANGE(0.5, 0.5, 0.5, 0.5);
 
-PURibbonTrailRender* PURibbonTrailRender::create(std::string_view texFile)
+cc::IntrusivePtr<PURibbonTrailRender> PURibbonTrailRender::create(std::string_view texFile)
 {
-    auto br = new PURibbonTrailRender();
-    br->autorelease();
+    cc::IntrusivePtr<PURibbonTrailRender> br{new PURibbonTrailRender()};
+
     br->_texFile = texFile;
     return br;
 }
@@ -214,6 +214,7 @@ void PURibbonTrailRender::setColorChange(const Vec4& colourChange)
 
 void PURibbonTrailRender::prepare()
 {
+    cc::IntrusivePtr<Node> childNode;
     if (!_particleSystem)
         return;
 
@@ -238,7 +239,7 @@ void PURibbonTrailRender::prepare()
         auto parent = _particleSystem->getParent();
         if (parent)
         {
-            _childNode = Node::create();
+            _childNode = (childNode = Node::create()).get();
             parent->addChild(_childNode);
         }
     }
@@ -274,10 +275,11 @@ void PURibbonTrailRender::prepare()
             // visualData->node->setInheritOrientation(false);
             auto node = Node::create();
             _childNode->addChild(node);
-            PURibbonTrailVisualData* visualData = new PURibbonTrailVisualData(node, _trail);
+            cc::IntrusivePtr<PURibbonTrailVisualData> visualData{new PURibbonTrailVisualData(node, _trail)};
             visualData->index                   = i;
-            _allVisualData.emplace_back(visualData);  // Managed by this renderer
-            _visualData.emplace_back(visualData);     // Used to assign to a particle
+            _allVisualData.emplace_back(visualData.get());  // Managed by this renderer
+            _visualData.emplace_back(visualData.get());     // Used to assign to a particle
+            visualData.detach();
             if (_randomInitialColor)
             {
                 _trail->setInitialColour(i, CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1());
@@ -371,7 +373,7 @@ void PURibbonTrailRender::notifyRescaled(const Vec3& scale)
     }
 }
 
-PURibbonTrailRender* PURibbonTrailRender::clone()
+cc::IntrusivePtr<PURender> PURibbonTrailRender::clone()
 {
     auto tr = PURibbonTrailRender::create(_texFile);
     copyAttributesTo(tr);

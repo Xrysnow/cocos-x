@@ -63,7 +63,8 @@ void PUAffectorTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
     //     compiler->addError(ScriptCompiler::CE_INVALIDPARAMETERS, obj->file, obj->line);
     //     return;
     // }
-    _affector = PUAffectorManager::Instance()->createAffector(type);
+    auto owner = PUAffectorManager::Instance()->createAffector(type);
+    _affector = owner.get();
     if (!_affector)
         return;
     _affector->setAffectorType(type);

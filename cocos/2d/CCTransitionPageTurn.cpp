@@ -38,22 +38,17 @@ TransitionPageTurn::TransitionPageTurn()
     _inSceneProxy  = NodeGrid::create();
     _outSceneProxy = NodeGrid::create();
 
-    _inSceneProxy->retain();
-    _outSceneProxy->retain();
 }
 
 TransitionPageTurn::~TransitionPageTurn()
 {
-    CC_SAFE_RELEASE(_inSceneProxy);
-    CC_SAFE_RELEASE(_outSceneProxy);
 }
 
 /** creates a base transition with duration and incoming scene */
-TransitionPageTurn* TransitionPageTurn::create(float t, Scene* scene, bool backwards)
+cc::IntrusivePtr<TransitionPageTurn> TransitionPageTurn::create(float t, Scene* scene, bool backwards)
 {
-    TransitionPageTurn* transition = new TransitionPageTurn();
+    cc::IntrusivePtr<TransitionPageTurn> transition{new TransitionPageTurn()};
     transition->initWithDuration(t, scene, backwards);
-    transition->autorelease();
     return transition;
 }
 
@@ -114,20 +109,20 @@ void TransitionPageTurn::onEnter()
         y = 16;
     }
 
-    ActionInterval* action = this->actionWithSize(Vec2(x, y));
+    auto action = this->actionWithSize(Vec2(x, y));
 
     if (!_back)
     {
         _outSceneProxy->runAction(Sequence::create(
-            action, CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)), StopGrid::create(), nullptr));
+            action, CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)).get(), StopGrid::create().get(), nullptr).get());
     }
     else
     {
         // to prevent initial flicker
         _inSceneProxy->setVisible(false);
-        _inSceneProxy->runAction(Sequence::create(Show::create(), action,
-                                                  CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)),
-                                                  StopGrid::create(), nullptr));
+        _inSceneProxy->runAction(Sequence::create(Show::create().get(), action,
+                                                  CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)).get(),
+                                                  StopGrid::create().get(), nullptr).get());
     }
 }
 void TransitionPageTurn::onExit()
@@ -140,12 +135,12 @@ void TransitionPageTurn::onExit()
     TransitionScene::onExit();
 }
 
-ActionInterval* TransitionPageTurn::actionWithSize(const Vec2& vector)
+cc::IntrusivePtr<ActionInterval> TransitionPageTurn::actionWithSize(const Vec2& vector)
 {
     if (_back)
     {
         // Get hold of the PageTurn3DAction
-        return ReverseTime::create(PageTurn3D::create(_duration, vector));
+        return ReverseTime::create(PageTurn3D::create(_duration, vector).get());
     }
     else
     {

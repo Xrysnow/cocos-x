@@ -39,7 +39,7 @@ struct PUParticle3D;
 class CC_EX_DLL PUOnCollisionObserver : public PUObserver
 {
 public:
-    static PUOnCollisionObserver* create();
+    static cc::IntrusivePtr<PUOnCollisionObserver> create();
     /**
      */
     virtual bool observe(PUParticle3D* particle, float timeElapsed) override;

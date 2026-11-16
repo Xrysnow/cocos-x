@@ -55,7 +55,7 @@ class SpriteFrame;
 
  @since v2.0
  */
-class CC_DLL AnimationFrame : public Ref, public Clonable
+class CC_DLL AnimationFrame : public Ref, public Clonable<AnimationFrame>
 {
 public:
     /** @struct DisplayedEventInfo
@@ -75,7 +75,7 @@ public:
      * @param userInfo A notification user info.
      * @since 3.0
      */
-    static AnimationFrame* create(SpriteFrame* spriteFrame, float delayUnits, const ValueMap& userInfo);
+    static cc::IntrusivePtr<AnimationFrame> create(SpriteFrame* spriteFrame, float delayUnits, const ValueMap& userInfo);
     /** Return a SpriteFrameName to be used.
      *
      * @return a SpriteFrameName to be used.
@@ -119,7 +119,7 @@ public:
     void setUserInfo(const ValueMap& userInfo) { _userInfo = userInfo; }
 
     // Overrides
-    virtual AnimationFrame* clone() const override;
+    virtual cc::IntrusivePtr<AnimationFrame> clone() const override;
 
     /**
      * @js ctor
@@ -157,13 +157,13 @@ private:
  * sprite->runAction(Animate::create(animation));
  * @endcode
  */
-class CC_DLL Animation : public Ref, public Clonable
+class CC_DLL Animation : public Ref, public Clonable<Animation>
 {
 public:
     /** Creates an animation.
      * @since v0.99.5
      */
-    static Animation* create();
+    static cc::IntrusivePtr<Animation> create();
 
     /* Creates an animation with an array of SpriteFrame and a delay between frames in seconds.
      * The frames will be added with one "delay unit".
@@ -172,7 +172,7 @@ public:
      * @param delay A delay between frames in seconds.
      * @param loops The times the animation is going to loop.
      */
-    static Animation* createWithSpriteFrames(const Vector<SpriteFrame*>& arrayOfSpriteFrameNames,
+    static cc::IntrusivePtr<Animation> createWithSpriteFrames(const Vector<SpriteFrame*>& arrayOfSpriteFrameNames,
                                              float delay        = 0.0f,
                                              unsigned int loops = 1);
 
@@ -183,7 +183,7 @@ public:
      * @param delayPerUnit The delay per units in seconds and how many times it should be executed.
      * @param loops The times the animation is going to loop.
      */
-    static Animation* create(const Vector<AnimationFrame*>& arrayOfAnimationFrameNames,
+    static cc::IntrusivePtr<Animation> create(const Vector<AnimationFrame*>& arrayOfAnimationFrameNames,
                              float delayPerUnit,
                              unsigned int loops = 1);
 
@@ -271,7 +271,7 @@ public:
     void setLoops(unsigned int loops) { _loops = loops; };
 
     // overrides
-    virtual Animation* clone() const override;
+    virtual cc::IntrusivePtr<Animation> clone() const override;
 
     Animation();
     virtual ~Animation();

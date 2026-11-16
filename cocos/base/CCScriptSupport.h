@@ -76,7 +76,7 @@ public:
      * @lua NA
      * @js NA
      */
-    static ScriptHandlerEntry* create(int handler);
+    static cc::IntrusivePtr<ScriptHandlerEntry> create(int handler);
 
     /**
      * Destructor of ScriptHandlerEntry.
@@ -136,7 +136,7 @@ public:
      * @js NA
      * @lua NA
      */
-    static SchedulerScriptHandlerEntry* create(int handler, float interval, bool paused);
+    static cc::IntrusivePtr<SchedulerScriptHandlerEntry> create(int handler, float interval, bool paused);
 
     /**
      * Destructor of SchedulerScriptHandlerEntry.
@@ -195,7 +195,7 @@ private:
 class TouchScriptHandlerEntry : public ScriptHandlerEntry
 {
 public:
-    static TouchScriptHandlerEntry* create(int handler, bool isMultiTouches, int priority, bool swallowsTouches);
+    static cc::IntrusivePtr<TouchScriptHandlerEntry> create(int handler, bool isMultiTouches, int priority, bool swallowsTouches);
 
     virtual ~TouchScriptHandlerEntry();
 
@@ -812,6 +812,7 @@ public:
      * @js NA
      */
     static ScriptEngineManager* getInstance();
+    static ScriptEngineManager* getInstanceIfExists() noexcept;
     /**
      * Destroy the singleton about ScriptEngineManager.
      *

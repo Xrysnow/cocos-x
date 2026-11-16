@@ -46,7 +46,7 @@ public:
      * Create a page view indicator with its parent page view.
      * @return A page view indicator instance.
      */
-    static PageViewIndicator* create();
+    static cc::IntrusivePtr<PageViewIndicator> create();
 
     PageViewIndicator();
     virtual ~PageViewIndicator();

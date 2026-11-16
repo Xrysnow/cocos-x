@@ -49,43 +49,39 @@
 
 NS_CC_BEGIN
 
-static MeshMaterial* getMeshRendererMaterialForAttribs(MeshVertexData* meshVertexData, bool usesLight);
+static cc::IntrusivePtr<MeshMaterial> getMeshRendererMaterialForAttribs(MeshVertexData* meshVertexData, bool usesLight);
 
-MeshRenderer* MeshRenderer::create()
+cc::IntrusivePtr<MeshRenderer> MeshRenderer::create()
 {
-    auto mesh = new MeshRenderer();
+    cc::IntrusivePtr<MeshRenderer> mesh{new MeshRenderer()};
     if (mesh->init())
     {
-        mesh->autorelease();
         return mesh;
     }
-    CC_SAFE_DELETE(mesh);
     return nullptr;
 }
 
-MeshRenderer* MeshRenderer::create(std::string_view modelPath)
+cc::IntrusivePtr<MeshRenderer> MeshRenderer::create(std::string_view modelPath)
 {
     return create(modelPath, hlookup::empty_sv);
 }
 
-MeshRenderer* MeshRenderer::create(std::string_view modelPath, std::string_view texturePath)
+cc::IntrusivePtr<MeshRenderer> MeshRenderer::create(std::string_view modelPath, std::string_view texturePath)
 {
     CCASSERT(modelPath.length() >= 4, "Invalid filename.");
 
-    auto meshRenderer = new MeshRenderer();
+    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
     if (meshRenderer->initWithFile(modelPath))
     {
         meshRenderer->setModelTexture(modelPath, texturePath);
         meshRenderer->_contentSize = meshRenderer->getBoundingBox().size;
-        meshRenderer->autorelease();
         return meshRenderer;
     }
-    CC_SAFE_DELETE(meshRenderer);
     return nullptr;
 }
 
 void MeshRenderer::createAsync(std::string_view modelPath,
-                           const std::function<void(MeshRenderer*, void*)>& callback,
+                           const std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)>& callback,
                            void* callbackparam)
 {
     createAsync(modelPath, "", callback, callbackparam);
@@ -93,15 +89,14 @@ void MeshRenderer::createAsync(std::string_view modelPath,
 
 void MeshRenderer::createAsync(std::string_view modelPath,
                            std::string_view texturePath,
-                           const std::function<void(MeshRenderer*, void*)>& callback,
+                           const std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)>& callback,
                            void* callbackparam)
 {
-    MeshRenderer* meshRenderer = new MeshRenderer();
+    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
     if (meshRenderer->loadFromCache(modelPath))
     {
-        meshRenderer->autorelease();
         meshRenderer->setModelTexture(modelPath, texturePath);
-        callback(meshRenderer, callbackparam);
+        callback(std::move(meshRenderer), callbackparam);
         return;
     }
 
@@ -115,12 +110,12 @@ void MeshRenderer::createAsync(std::string_view modelPath,
     meshRenderer->_asyncLoadParam.nodeDatas           = new NodeDatas();
     // The task owns the initial native reference until delivery or queue removal.
     // The worker always hands its copy to the main-thread completion queue.
-    auto pending = std::shared_ptr<MeshRenderer>(meshRenderer, [](MeshRenderer* mesh) { mesh->release(); });
+    auto pending = std::shared_ptr<MeshRenderer>(meshRenderer.detach(), [](MeshRenderer* mesh) { mesh->release(); });
     AsyncTaskPool::getInstance()->enqueue(
         AsyncTaskPool::TaskType::TASK_IO, [pending](void* param) { pending->afterAsyncLoad(param); },
-        (void*)(&meshRenderer->_asyncLoadParam), [pending, meshRenderer]() {
-            auto& loadParam                      = meshRenderer->_asyncLoadParam;
-            loadParam.result = meshRenderer->loadFromFile(loadParam.modelFullPath, loadParam.nodeDatas,
+        (void*)(&pending->_asyncLoadParam), [pending]() {
+            auto& loadParam                      = pending->_asyncLoadParam;
+            loadParam.result = pending->loadFromFile(loadParam.modelFullPath, loadParam.nodeDatas,
                                                           loadParam.meshdatas, loadParam.materialdatas);
         });
 }
@@ -128,9 +123,6 @@ void MeshRenderer::createAsync(std::string_view modelPath,
 void MeshRenderer::afterAsyncLoad(void* param)
 {
     MeshRenderer::AsyncLoadParam* asyncParam = (MeshRenderer::AsyncLoadParam*)param;
-    // Delivery transfers an autoreleased reference while the task still owns one.
-    retain();
-    autorelease();
     if (asyncParam)
     {
         if (asyncParam->result)
@@ -185,7 +177,7 @@ void MeshRenderer::afterAsyncLoad(void* param)
         auto* callbackParam = asyncParam->callbackParam;
         asyncParam->afterLoadCallback = nullptr;
         asyncParam->callbackParam = nullptr;
-        if (callback) callback(this, callbackParam);
+        if (callback) callback(cc::IntrusivePtr<MeshRenderer>{this}, callbackParam);
     }
 }
 
@@ -206,6 +198,7 @@ AABB MeshRenderer::getAABBRecursivelyImp(Node* node)
 
 bool MeshRenderer::loadFromCache(std::string_view path)
 {
+    cc::IntrusivePtr<Skeleton3D> skeleton;
     auto meshdata = MeshRendererCache::getInstance()->getMeshRenderData(path);
     if (meshdata)
     {
@@ -213,7 +206,7 @@ bool MeshRenderer::loadFromCache(std::string_view path)
         {
             _meshVertexDatas.pushBack(it);
         }
-        _skeleton = Skeleton3D::create(meshdata->nodedatas->skeleton);
+        _skeleton = (skeleton = Skeleton3D::create(meshdata->nodedatas->skeleton)).get();
         CC_SAFE_RETAIN(_skeleton);
 
         const bool singleMesh = (meshdata->nodedatas->nodes.size() == 1);
@@ -237,9 +230,8 @@ bool MeshRenderer::loadFromCache(std::string_view path)
         {
             // cloning is needed in order to have one state per mesh
             auto glstate = meshdata->programStates.at(i);
-            auto* state = glstate->clone();
+            auto state = glstate->clone();
             _meshes.at(i)->setProgramState(state);
-            state->release();
         }
         return true;
     }
@@ -356,6 +348,7 @@ bool MeshRenderer::initWithFile(std::string_view path)
 
 bool MeshRenderer::initFrom(const NodeDatas& nodeDatas, const MeshDatas& meshdatas, const MaterialDatas& materialdatas)
 {
+    cc::IntrusivePtr<Skeleton3D> skeleton;
     for (const auto& it : meshdatas.meshDatas)
     {
         if (it)
@@ -366,7 +359,7 @@ bool MeshRenderer::initFrom(const NodeDatas& nodeDatas, const MeshDatas& meshdat
             _meshVertexDatas.pushBack(meshvertex);
         }
     }
-    _skeleton = Skeleton3D::create(nodeDatas.skeleton);
+    _skeleton = (skeleton = Skeleton3D::create(nodeDatas.skeleton)).get();
     CC_SAFE_RETAIN(_skeleton);
 
     auto size = nodeDatas.nodes.size();
@@ -389,9 +382,9 @@ bool MeshRenderer::initFrom(const NodeDatas& nodeDatas, const MeshDatas& meshdat
     return true;
 }
 
-MeshRenderer* MeshRenderer::createMeshRendererNode(NodeData* nodedata, ModelData* modeldata, const MaterialDatas& materialdatas)
+cc::IntrusivePtr<MeshRenderer> MeshRenderer::createMeshRendererNode(NodeData* nodedata, ModelData* modeldata, const MaterialDatas& materialdatas)
 {
-    auto meshRenderer = new MeshRenderer();
+    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
 
     meshRenderer->setName(nodedata->id);
     auto mesh = Mesh::create(nodedata->id, getMeshIndexData(modeldata->subMeshId));
@@ -457,7 +450,7 @@ MeshRenderer* MeshRenderer::createMeshRendererNode(NodeData* nodedata, ModelData
     meshRenderer->setScaleZ(scale.z);
 
     meshRenderer->addMesh(mesh);
-    meshRenderer->autorelease();
+
     meshRenderer->genMaterial();
 
     return meshRenderer;
@@ -495,7 +488,7 @@ void MeshRenderer::setMaterial(Material* material, int meshIndex)
     {
         for (ssize_t i = 0, size = _meshes.size(); i < size; ++i)
         {
-            _meshes.at(i)->setMaterial(i == 0 ? material : material->clone());
+            _meshes.at(i)->setMaterial(i == 0 ? material : material->clone().get());
         }
     }
     else
@@ -517,7 +510,7 @@ void MeshRenderer::genMaterial(bool useLight)
 {
     _shaderUsingLight = useLight;
 
-    std::unordered_map<const MeshVertexData*, MeshMaterial*> materials;
+    std::unordered_map<const MeshVertexData*, cc::IntrusivePtr<MeshMaterial>> materials;
     for (auto&& meshVertexData : _meshVertexDatas)
     {
         auto material = getMeshRendererMaterialForAttribs(meshVertexData, useLight);
@@ -527,7 +520,7 @@ void MeshRenderer::genMaterial(bool useLight)
 
     for (auto&& mesh : _meshes)
     {
-        auto material = materials[mesh->getMeshIndexData()->getMeshVertexData()];
+        const auto& material = materials[mesh->getMeshIndexData()->getMeshVertexData()];
         material->setTransparent(_transparentMaterialHint);
         // keep original state block if exist
         auto oldmaterial = mesh->getMaterial();
@@ -540,13 +533,13 @@ void MeshRenderer::genMaterial(bool useLight)
         if (material->getReferenceCount() == 1)
             mesh->setMaterial(material);
         else
-            mesh->setMaterial(material->clone());
+            mesh->setMaterial(material->clone().get());
     }
 }
 
 void MeshRenderer::createNode(NodeData* nodedata, Node* root, const MaterialDatas& materialdatas, bool singleMesh)
 {
-    Node* node = nullptr;
+    cc::IntrusivePtr<Node> node;
     for (const auto& it : nodedata->modelNodeDatas)
     {
         if (it)
@@ -1050,7 +1043,7 @@ MeshRendererCache::~MeshRendererCache()
     removeAllMeshRenderData();
 }
 
-static MeshMaterial* getMeshRendererMaterialForAttribs(MeshVertexData* meshVertexData, bool usesLight)
+static cc::IntrusivePtr<MeshMaterial> getMeshRendererMaterialForAttribs(MeshVertexData* meshVertexData, bool usesLight)
 {
     bool textured = meshVertexData->hasVertexAttrib(shaderinfos::VertexKey::VERTEX_ATTRIB_TEX_COORD);
     bool hasSkin  = meshVertexData->hasVertexAttrib(shaderinfos::VertexKey::VERTEX_ATTRIB_BLEND_INDEX) &&

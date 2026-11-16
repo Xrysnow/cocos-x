@@ -42,7 +42,7 @@ public:
     /**
      */
     PUScriptTranslator* getTranslator(std::string_view type);
-    PUBehaviour* createBehaviour(std::string_view type);
+    cc::IntrusivePtr<PUBehaviour> createBehaviour(std::string_view type);
 
     PUBehaviourManager();
     ~PUBehaviourManager();

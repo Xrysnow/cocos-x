@@ -34,7 +34,7 @@ const float PUScaleVelocityAffector::DEFAULT_VELOCITY_SCALE = 1.0f;
 //-----------------------------------------------------------------------
 PUScaleVelocityAffector::PUScaleVelocityAffector() : PUAffector(), _sinceStartSystem(false), _stopAtFlip(false)
 {
-    _dynScaleVelocity = new PUDynamicAttributeFixed();
+    _dynScaleVelocity = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynScaleVelocity))->setValue(DEFAULT_VELOCITY_SCALE);
 }
 //-----------------------------------------------------------------------
@@ -101,15 +101,14 @@ void PUScaleVelocityAffector::resetDynScaleVelocity(bool resetToDefault)
     if (resetToDefault)
     {
         CC_SAFE_DELETE(_dynScaleVelocity);
-        _dynScaleVelocity = new PUDynamicAttributeFixed();
+        _dynScaleVelocity = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleVelocity))->setValue(DEFAULT_VELOCITY_SCALE);
     }
 }
 
-PUScaleVelocityAffector* PUScaleVelocityAffector::create()
+cc::IntrusivePtr<PUScaleVelocityAffector> PUScaleVelocityAffector::create()
 {
-    auto psva = new PUScaleVelocityAffector();
-    psva->autorelease();
+    cc::IntrusivePtr<PUScaleVelocityAffector> psva{new PUScaleVelocityAffector()};
     return psva;
 }
 
@@ -118,7 +117,7 @@ void PUScaleVelocityAffector::copyAttributesTo(PUAffector* affector)
     PUAffector::copyAttributesTo(affector);
 
     PUScaleVelocityAffector* scaleVelocityAffector = static_cast<PUScaleVelocityAffector*>(affector);
-    scaleVelocityAffector->setDynScaleVelocity(getDynScaleVelocity()->clone());
+    scaleVelocityAffector->setDynScaleVelocity(getDynScaleVelocity()->clone().get());
     scaleVelocityAffector->_sinceStartSystem = _sinceStartSystem;
     scaleVelocityAffector->_stopAtFlip       = _stopAtFlip;
 }

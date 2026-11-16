@@ -45,16 +45,16 @@ class CC_DLL ParticleFire : public ParticleSystemQuad
 public:
     /** Create a fire particle system.
      *
-     * @return An autoreleased ParticleFire object.
+     * @return An owned ParticleFire object.
      */
-    static ParticleFire* create();
+    static cc::IntrusivePtr<ParticleFire> create();
     /** Create a fire particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleFire object.
+     * @return An owned ParticleFire object.
      * @js NA
      */
-    static ParticleFire* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleFire> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -81,16 +81,16 @@ class CC_DLL ParticleFireworks : public ParticleSystemQuad
 public:
     /** Create a fireworks particle system.
      *
-     * @return An autoreleased ParticleFireworks object.
+     * @return An owned ParticleFireworks object.
      */
-    static ParticleFireworks* create();
+    static cc::IntrusivePtr<ParticleFireworks> create();
     /** Create a fireworks particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleFireworks object.
+     * @return An owned ParticleFireworks object.
      * @js NA
      */
-    static ParticleFireworks* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleFireworks> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -117,16 +117,16 @@ class CC_DLL ParticleSun : public ParticleSystemQuad
 public:
     /** Create a sun particle system.
      *
-     * @return An autoreleased ParticleSun object.
+     * @return An owned ParticleSun object.
      */
-    static ParticleSun* create();
+    static cc::IntrusivePtr<ParticleSun> create();
     /** Create a sun particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSun object.
+     * @return An owned ParticleSun object.
      * @js NA
      */
-    static ParticleSun* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSun> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -153,16 +153,16 @@ class CC_DLL ParticleGalaxy : public ParticleSystemQuad
 public:
     /** Create a galaxy particle system.
      *
-     * @return An autoreleased ParticleGalaxy object.
+     * @return An owned ParticleGalaxy object.
      */
-    static ParticleGalaxy* create();
+    static cc::IntrusivePtr<ParticleGalaxy> create();
     /** Create a galaxy particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleGalaxy object.
+     * @return An owned ParticleGalaxy object.
      * @js NA
      */
-    static ParticleGalaxy* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleGalaxy> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -189,16 +189,16 @@ class CC_DLL ParticleFlower : public ParticleSystemQuad
 public:
     /** Create a flower particle system.
      *
-     * @return An autoreleased ParticleFlower object.
+     * @return An owned ParticleFlower object.
      */
-    static ParticleFlower* create();
+    static cc::IntrusivePtr<ParticleFlower> create();
     /** Create a flower particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleFlower object.
+     * @return An owned ParticleFlower object.
      * @js NA
      */
-    static ParticleFlower* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleFlower> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -225,16 +225,16 @@ class CC_DLL ParticleMeteor : public ParticleSystemQuad
 public:
     /** Create a meteor particle system.
      *
-     * @return An autoreleased ParticleMeteor object.
+     * @return An owned ParticleMeteor object.
      */
-    static ParticleMeteor* create();
+    static cc::IntrusivePtr<ParticleMeteor> create();
     /** Create a meteor particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleMeteor object.
+     * @return An owned ParticleMeteor object.
      * @js NA
      */
-    static ParticleMeteor* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleMeteor> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -261,16 +261,16 @@ class CC_DLL ParticleSpiral : public ParticleSystemQuad
 public:
     /** Create a spiral particle system.
      *
-     * @return An autoreleased ParticleSpiral object.
+     * @return An owned ParticleSpiral object.
      */
-    static ParticleSpiral* create();
+    static cc::IntrusivePtr<ParticleSpiral> create();
     /** Create a spiral particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSpiral object.
+     * @return An owned ParticleSpiral object.
      * @js NA
      */
-    static ParticleSpiral* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSpiral> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -297,16 +297,16 @@ class CC_DLL ParticleExplosion : public ParticleSystemQuad
 public:
     /** Create a explosion particle system.
      *
-     * @return An autoreleased ParticleExplosion object.
+     * @return An owned ParticleExplosion object.
      */
-    static ParticleExplosion* create();
+    static cc::IntrusivePtr<ParticleExplosion> create();
     /** Create a explosion particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleExplosion object.
+     * @return An owned ParticleExplosion object.
      * @js NA
      */
-    static ParticleExplosion* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleExplosion> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -333,16 +333,16 @@ class CC_DLL ParticleSmoke : public ParticleSystemQuad
 public:
     /** Create a smoke particle system.
      *
-     * @return An autoreleased ParticleSmoke object.
+     * @return An owned ParticleSmoke object.
      */
-    static ParticleSmoke* create();
+    static cc::IntrusivePtr<ParticleSmoke> create();
     /** Create a smoke particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSmoke object.
+     * @return An owned ParticleSmoke object.
      * @js NA
      */
-    static ParticleSmoke* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSmoke> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -369,16 +369,16 @@ class CC_DLL ParticleSnow : public ParticleSystemQuad
 public:
     /** Create a snow particle system.
      *
-     * @return An autoreleased ParticleSnow object.
+     * @return An owned ParticleSnow object.
      */
-    static ParticleSnow* create();
+    static cc::IntrusivePtr<ParticleSnow> create();
     /** Create a snow particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSnow object.
+     * @return An owned ParticleSnow object.
      * @js NA
      */
-    static ParticleSnow* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSnow> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor
@@ -405,16 +405,16 @@ class CC_DLL ParticleRain : public ParticleSystemQuad
 public:
     /** Create a rain particle system.
      *
-     * @return An autoreleased ParticleRain object.
+     * @return An owned ParticleRain object.
      */
-    static ParticleRain* create();
+    static cc::IntrusivePtr<ParticleRain> create();
     /** Create a rain particle system withe a fixed number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleRain object.
+     * @return An owned ParticleRain object.
      * @js NA
      */
-    static ParticleRain* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleRain> createWithTotalParticles(int numberOfParticles);
 
     /**
      * @js ctor

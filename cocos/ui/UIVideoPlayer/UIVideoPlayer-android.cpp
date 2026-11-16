@@ -118,7 +118,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_cocos_lib_VideoHelper_nativeExecuteVi
     if (it == players.end() || it->second.generation != generation) return;
     if (event == static_cast<int>(VideoPlayer::EventType::PLAYING) &&
         (!it->second.visible || !it->second.player->isRunning())) return;
-    RefPtr<VideoPlayer> keepAlive(it->second.player);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(it->second.player);
     keepAlive->onPlayEvent(event);
 }
 
@@ -127,12 +127,13 @@ extern "C" JNIEXPORT void JNICALL Java_org_cocos_lib_VideoHelper_nativeExitFullS
 {
     const auto it = players.find(id);
     if (it == players.end() || it->second.fullScreenRevision != revision) return;
-    RefPtr<VideoPlayer> keepAlive(it->second.player);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(it->second.player);
     keepAlive->onPlayEvent(quitFullscreen);
 }
 
 VideoPlayer::VideoPlayer()
 {
+    cc::IntrusivePtr<DrawNode> debugDrawNode;
     if (nextPlayerId > std::numeric_limits<int>::max())
     {
         CCLOGERROR("Android video player handle space exhausted");
@@ -143,7 +144,7 @@ VideoPlayer::VideoPlayer()
     players.emplace(_videoPlayerIndex, VideoEntry{this});
     JniHelper::callStaticVoidMethod(videoHelperClassName, "createVideoWidget", _videoPlayerIndex);
 #if CC_VIDEOPLAYER_DEBUG_DRAW
-    _debugDrawNode = DrawNode::create();
+    _debugDrawNode = (debugDrawNode = DrawNode::create()).get();
     addChild(_debugDrawNode);
 #endif
 }
@@ -292,7 +293,7 @@ void VideoPlayer::setVisible(bool visible)
 
 void VideoPlayer::onEnter()
 {
-    RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     setLifecycle(_videoPlayerIndex, true);
     Widget::onEnter();
     setLifecycle(_videoPlayerIndex, false);
@@ -307,7 +308,7 @@ void VideoPlayer::onEnter()
 
 void VideoPlayer::onExit()
 {
-    RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     syncVisible(this, _videoPlayerIndex, false);
     unschedule(visibilityKey);
     _isPlaying = false;
@@ -326,13 +327,13 @@ void VideoPlayer::onPlayEvent(int event)
         return;
     }
     if (event < static_cast<int>(EventType::PLAYING) || event > static_cast<int>(EventType::ERROR)) return;
-    RefPtr<VideoPlayer> keepAlive(this);
+    cc::IntrusivePtr<VideoPlayer> keepAlive(this);
     _isPlaying = event == static_cast<int>(EventType::PLAYING);
     const auto callback = _eventCallback;
     if (callback) callback(this, static_cast<EventType>(event));
 }
 
-Widget* VideoPlayer::createCloneInstance() { return VideoPlayer::create(); }
+cc::IntrusivePtr<Widget> VideoPlayer::createCloneInstance() { return VideoPlayer::create(); }
 
 void VideoPlayer::copySpecialProperties(Widget* widget)
 {

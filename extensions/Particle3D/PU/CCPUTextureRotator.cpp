@@ -40,9 +40,9 @@ PUTextureRotator::PUTextureRotator()
     , _scaledRotationSpeed(0.0f)
     , _twoPiRad(float(2.0 * M_PI))
 {
-    _dynRotation = new PUDynamicAttributeFixed();
+    _dynRotation = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotation))->setValue(DEFAULT_ROTATION);
-    _dynRotationSpeed = new PUDynamicAttributeFixed();
+    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 }
 //-----------------------------------------------------------------------
@@ -157,10 +157,9 @@ void PUTextureRotator::updatePUAffector(PUParticle3D* particle, float deltaTime)
     }
 }
 
-PUTextureRotator* PUTextureRotator::create()
+cc::IntrusivePtr<PUTextureRotator> PUTextureRotator::create()
 {
-    auto ptr = new PUTextureRotator();
-    ptr->autorelease();
+    cc::IntrusivePtr<PUTextureRotator> ptr{new PUTextureRotator()};
     return ptr;
 }
 
@@ -169,8 +168,8 @@ void PUTextureRotator::copyAttributesTo(PUAffector* affector)
     PUAffector::copyAttributesTo(affector);
 
     PUTextureRotator* textureRotator = static_cast<PUTextureRotator*>(affector);
-    textureRotator->setRotation(getRotation()->clone());
-    textureRotator->setRotationSpeed(getRotationSpeed()->clone());
+    textureRotator->setRotation(getRotation()->clone().get());
+    textureRotator->setRotationSpeed(getRotationSpeed()->clone().get());
     textureRotator->_useOwnRotationSpeed = _useOwnRotationSpeed;
 }
 

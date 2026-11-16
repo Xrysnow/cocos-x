@@ -42,15 +42,13 @@ enum
 
 TransitionProgress::TransitionProgress() : _to(0.0f), _from(0.0f), _sceneToBeModified(nullptr) {}
 
-TransitionProgress* TransitionProgress::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgress> TransitionProgress::create(float t, Scene* scene)
 {
-    TransitionProgress* newScene = new TransitionProgress();
+    cc::IntrusivePtr<TransitionProgress> newScene{new TransitionProgress()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -66,7 +64,7 @@ void TransitionProgress::onEnter()
     auto& size = _director->getWinSize();
 
     // create the second render texture for outScene
-    RenderTexture* texture = RenderTexture::create((int)size.width, (int)size.height, backend::PixelFormat::RGBA8,
+    cc::IntrusivePtr<RenderTexture> texture = RenderTexture::create((int)size.width, (int)size.height, backend::PixelFormat::RGBA8,
                                                    backend::PixelFormat::D24S8);
     texture->getSprite()->setAnchorPoint(Vec2(0.5f, 0.5f));
     texture->setPosition(size.width / 2, size.height / 2);
@@ -86,8 +84,8 @@ void TransitionProgress::onEnter()
     ProgressTimer* node = progressTimerNodeWithRenderTexture(texture);
 
     // create the blend action
-    auto layerAction = Sequence::create(ProgressFromTo::create(_duration, _from, _to),
-                                        CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)), nullptr);
+    auto layerAction = Sequence::create(ProgressFromTo::create(_duration, _from, _to).get(),
+                                        CallFunc::create(CC_CALLBACK_0(TransitionScene::finish, this)).get(), nullptr);
     // run the blend action
     node->runAction(layerAction);
 
@@ -127,7 +125,7 @@ ProgressTimer* TransitionProgressRadialCCW::progressTimerNodeWithRenderTexture(R
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);
@@ -142,28 +140,24 @@ ProgressTimer* TransitionProgressRadialCCW::progressTimerNodeWithRenderTexture(R
     return node;
 }
 
-TransitionProgressRadialCCW* TransitionProgressRadialCCW::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressRadialCCW> TransitionProgressRadialCCW::create(float t, Scene* scene)
 {
-    TransitionProgressRadialCCW* newScene = new TransitionProgressRadialCCW();
+    cc::IntrusivePtr<TransitionProgressRadialCCW> newScene{new TransitionProgressRadialCCW()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
 // TransitionProgressRadialCW
-TransitionProgressRadialCW* TransitionProgressRadialCW::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressRadialCW> TransitionProgressRadialCW::create(float t, Scene* scene)
 {
-    TransitionProgressRadialCW* newScene = new TransitionProgressRadialCW();
+    cc::IntrusivePtr<TransitionProgressRadialCW> newScene{new TransitionProgressRadialCW()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -171,7 +165,7 @@ ProgressTimer* TransitionProgressRadialCW::progressTimerNodeWithRenderTexture(Re
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);
@@ -187,15 +181,13 @@ ProgressTimer* TransitionProgressRadialCW::progressTimerNodeWithRenderTexture(Re
 }
 
 // TransitionProgressHorizontal
-TransitionProgressHorizontal* TransitionProgressHorizontal::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressHorizontal> TransitionProgressHorizontal::create(float t, Scene* scene)
 {
-    TransitionProgressHorizontal* newScene = new TransitionProgressHorizontal();
+    cc::IntrusivePtr<TransitionProgressHorizontal> newScene{new TransitionProgressHorizontal()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -203,7 +195,7 @@ ProgressTimer* TransitionProgressHorizontal::progressTimerNodeWithRenderTexture(
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);
@@ -220,15 +212,13 @@ ProgressTimer* TransitionProgressHorizontal::progressTimerNodeWithRenderTexture(
 }
 
 // TransitionProgressVertical
-TransitionProgressVertical* TransitionProgressVertical::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressVertical> TransitionProgressVertical::create(float t, Scene* scene)
 {
-    TransitionProgressVertical* newScene = new TransitionProgressVertical();
+    cc::IntrusivePtr<TransitionProgressVertical> newScene{new TransitionProgressVertical()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -236,7 +226,7 @@ ProgressTimer* TransitionProgressVertical::progressTimerNodeWithRenderTexture(Re
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);
@@ -253,15 +243,13 @@ ProgressTimer* TransitionProgressVertical::progressTimerNodeWithRenderTexture(Re
 }
 
 // TransitionProgressInOut
-TransitionProgressInOut* TransitionProgressInOut::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressInOut> TransitionProgressInOut::create(float t, Scene* scene)
 {
-    TransitionProgressInOut* newScene = new TransitionProgressInOut();
+    cc::IntrusivePtr<TransitionProgressInOut> newScene{new TransitionProgressInOut()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -281,7 +269,7 @@ ProgressTimer* TransitionProgressInOut::progressTimerNodeWithRenderTexture(Rende
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);
@@ -298,15 +286,13 @@ ProgressTimer* TransitionProgressInOut::progressTimerNodeWithRenderTexture(Rende
 }
 
 // TransitionProgressOutIn
-TransitionProgressOutIn* TransitionProgressOutIn::create(float t, Scene* scene)
+cc::IntrusivePtr<TransitionProgressOutIn> TransitionProgressOutIn::create(float t, Scene* scene)
 {
-    TransitionProgressOutIn* newScene = new TransitionProgressOutIn();
+    cc::IntrusivePtr<TransitionProgressOutIn> newScene{new TransitionProgressOutIn()};
     if (newScene->initWithDuration(t, scene))
     {
-        newScene->autorelease();
         return newScene;
     }
-    CC_SAFE_DELETE(newScene);
     return nullptr;
 }
 
@@ -314,7 +300,7 @@ ProgressTimer* TransitionProgressOutIn::progressTimerNodeWithRenderTexture(Rende
 {
     auto& size = _director->getWinSize();
 
-    ProgressTimer* node = ProgressTimer::create(texture->getSprite());
+    cc::IntrusivePtr<ProgressTimer> node = ProgressTimer::create(texture->getSprite());
 
     // but it is flipped upside down so we flip the sprite
     // node->getSprite()->setFlippedY(true);

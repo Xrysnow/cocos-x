@@ -104,10 +104,9 @@ bool PUOnTimeObserver::observe(PUParticle3D* particle, float /*timeElapsed*/)
     return false;
 }
 
-PUOnTimeObserver* PUOnTimeObserver::create()
+cc::IntrusivePtr<PUOnTimeObserver> PUOnTimeObserver::create()
 {
-    auto pto = new PUOnTimeObserver();
-    pto->autorelease();
+    cc::IntrusivePtr<PUOnTimeObserver> pto{new PUOnTimeObserver()};
     return pto;
 }
 

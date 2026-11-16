@@ -73,17 +73,17 @@ class CC_DLL Scene : public Node
 public:
     /** Creates a new Scene object.
      *
-     * @return An autoreleased Scene object.
+     * @return An owned Scene object.
      */
-    static Scene* create();
+    static cc::IntrusivePtr<Scene> create();
 
     /** Creates a new Scene object with a predefined size.
      *
      * @param size The predefined size of scene.
-     * @return An autoreleased Scene object.
+     * @return An owned Scene object.
      * @js NA
      */
-    static Scene* createWithSize(const Vec2& size);
+    static cc::IntrusivePtr<Scene> createWithSize(const Vec2& size);
 
     using Node::addChild;
     virtual std::string getDescription() const override;
@@ -177,10 +177,10 @@ public:
     #endif
 
     /** Create a scene with physics.
-     * @return An autoreleased Scene object with physics.
+     * @return An owned Scene object with physics.
      * @js NA
      */
-    static Scene* createWithPhysics();
+    static cc::IntrusivePtr<Scene> createWithPhysics();
 
     bool initWithPhysics();
 
@@ -194,7 +194,7 @@ protected:
     #endif
 
     #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-    Physics3DWorld* _physics3DWorld = nullptr;
+    cc::IntrusivePtr<Physics3DWorld> _physics3DWorld = nullptr;
     Camera* _physics3dDebugCamera   = nullptr;
     #endif
 #endif  // (CC_USE_PHYSICS || CC_USE_3D_PHYSICS)

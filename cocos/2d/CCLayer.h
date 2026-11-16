@@ -44,7 +44,7 @@ NS_CC_BEGIN
 class CC_DLL Layer : public Node
 {
 public:
-    static Layer* create();
+    static cc::IntrusivePtr<Layer> create();
 };
 
 //
@@ -62,23 +62,23 @@ public:
 
     /** Creates a fullscreen black layer.
      *
-     * @return An autoreleased LayerColor object.
+     * @return An owned LayerColor object.
      */
-    static LayerColor* create();
+    static cc::IntrusivePtr<LayerColor> create();
     /** Creates a Layer with color, width and height in Points.
      *
      * @param color The color of layer.
      * @param width The width of layer.
      * @param height The height of layer.
-     * @return An autoreleased LayerColor object.
+     * @return An owned LayerColor object.
      */
-    static LayerColor * create(const Color4B& color, float width, float height);
+    static cc::IntrusivePtr<LayerColor> create(const Color4B& color, float width, float height);
     /** Creates a Layer with color. Width and height are the window size.
      *
      * @param color The color of layer.
-     * @return An autoreleased LayerColor object.
+     * @return An owned LayerColor object.
      */
-    static LayerColor * create(const Color4B& color);
+    static cc::IntrusivePtr<LayerColor> create(const Color4B& color);
 
     /** Change width in Points.
      *
@@ -135,26 +135,26 @@ class CC_DLL LayerGradient : public LayerColor
 public:
     /** Creates a fullscreen black layer.
      *
-     * @return An autoreleased LayerGradient object.
+     * @return An owned LayerGradient object.
      */
-    static LayerGradient* create();
+    static cc::IntrusivePtr<LayerGradient> create();
 
     /** Creates a full-screen Layer with a gradient between start and end.
      *
      * @param start The start color.
      * @param end The end color.
-     * @return An autoreleased LayerGradient object.
+     * @return An owned LayerGradient object.
      */
-    static LayerGradient* create(const Color4B& start, const Color4B& end);
+    static cc::IntrusivePtr<LayerGradient> create(const Color4B& start, const Color4B& end);
 
     /** Creates a full-screen Layer with a gradient between start and end in the direction of v.
      *
      * @param start The start color.
      * @param end The end color.
      * @param v The direction of gradient color.
-     * @return An autoreleased LayerGradient object.
+     * @return An owned LayerGradient object.
      */
-    static LayerGradient* create(const Color4B& start, const Color4B& end, const Vec2& v);
+    static cc::IntrusivePtr<LayerGradient> create(const Color4B& start, const Color4B& end, const Vec2& v);
 
     /** Whether or not the interpolation will be compressed in order to display all the colors of the gradient both in
      canonical and non canonical vectors. Default: true.
@@ -268,12 +268,12 @@ public:
      * @param expand an alpha value(0.f-1.f) that specifies how much of that radius in only inner color(the gradient
                      starts outside of that amount)
      */
-    static LayerRadialGradient* create(const Color4B& startColor,
+    static cc::IntrusivePtr<LayerRadialGradient> create(const Color4B& startColor,
                                        const Color4B& endColor,
                                        float radius,
                                        const Vec2& center,
                                        float expand);
-    static LayerRadialGradient* create();
+    static cc::IntrusivePtr<LayerRadialGradient> create();
 
     //
     // overrides
@@ -355,18 +355,18 @@ public:
     /** Creates and initializes a LayerMultiplex object.
      * @lua NA
      *
-     * @return An autoreleased LayerMultiplex object.
+     * @return An owned LayerMultiplex object.
      */
-    static LayerMultiplex* create();
+    static cc::IntrusivePtr<LayerMultiplex> create();
 
     /** Creates a LayerMultiplex with an array of layers.
      @since v2.1
      * @js NA
      *
      * @param arrayOfLayers An array of layers.
-     * @return An autoreleased LayerMultiplex object.
+     * @return An owned LayerMultiplex object.
      */
-    static LayerMultiplex* createWithArray(const Vector<Node*>& arrayOfLayers);
+    static cc::IntrusivePtr<LayerMultiplex> createWithArray(const Vector<Node*>& arrayOfLayers);
 
     /** Creates a LayerMultiplex with one or more layers using a variable argument list.
      * @code
@@ -375,7 +375,18 @@ public:
      * In lua:local create(...)
      * @endcode
      */
-    static LayerMultiplex* create(Node* layer, ...);
+    template <class... Items>
+    static cc::IntrusivePtr<LayerMultiplex> create(const Items&... values)
+    {
+        Vector<Node*> items;
+        bool ended = false;
+        auto append = [&](Node* item) {
+            if (!item) ended = true;
+            if (!ended) items.pushBack(item);
+        };
+        (append(values), ...);
+        return createWithArray(items);
+    }
 
     /** Creates a LayerMultiplex with one layer.
      * Lua script can not init with undetermined number of variables
@@ -384,9 +395,9 @@ public:
      * @lua NA
      *
      * @param layer A certain layer.
-     * @return An autoreleased LayerMultiplex object.
+     * @return An owned LayerMultiplex object.
      */
-    static LayerMultiplex* createWithLayer(Node* layer);
+    static cc::IntrusivePtr<LayerMultiplex> createWithLayer(Node* layer);
 
     /** Add a certain layer to LayerMultiplex.
      *

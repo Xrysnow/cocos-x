@@ -92,7 +92,7 @@ public:
      * Create an empty PageView.
      *@return A PageView instance.
      */
-    static PageView* create();
+    static cc::IntrusivePtr<PageView> create();
 
     /**
      * Changes direction
@@ -343,7 +343,7 @@ protected:
     virtual void handleReleaseLogic(Touch* touch) override;
     virtual void handlePressLogic(Touch* touch) override;
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     void refreshIndicatorPosition();

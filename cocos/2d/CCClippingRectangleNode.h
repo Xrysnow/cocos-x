@@ -51,12 +51,12 @@ public:
     @param clippingRegion Specify the clipping rectangle.
     @return If the creation success, return a pointer of ClippingRectangleNode; otherwise return nil.
     */
-    static ClippingRectangleNode* create(const Rect& clippingRegion);
+    static cc::IntrusivePtr<ClippingRectangleNode> create(const Rect& clippingRegion);
     /**
     @brief Create a clipping rectangle node.
     @return If the creation success, return a pointer of ClippingRectangleNode; otherwise return nil.
     */
-    static ClippingRectangleNode* create();
+    static cc::IntrusivePtr<ClippingRectangleNode> create();
 
     /**
     @brief Get the clipping rectangle.

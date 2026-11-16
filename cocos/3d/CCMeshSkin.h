@@ -54,9 +54,9 @@ class CC_DLL MeshSkin : public Ref
 
 public:
     /**create a new meshskin if do not want to share meshskin*/
-    static MeshSkin* create(Skeleton3D* skeleton, std::string_view filename, std::string_view name);
+    static cc::IntrusivePtr<MeshSkin> create(Skeleton3D* skeleton, std::string_view filename, std::string_view name);
 
-    static MeshSkin* create(Skeleton3D* skeleton,
+    static cc::IntrusivePtr<MeshSkin> create(Skeleton3D* skeleton,
                             const std::vector<std::string>& boneNames,
                             const std::vector<Mat4>& invBindPose);
 

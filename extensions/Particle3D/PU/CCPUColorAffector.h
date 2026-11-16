@@ -47,7 +47,7 @@ public:
     // Constants
     static const ColorOperation DEFAULT_COLOR_OPERATION;
 
-    static PUColorAffector* create();
+    static cc::IntrusivePtr<PUColorAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

@@ -34,30 +34,26 @@
 
 NS_CC_BEGIN
 
-Technique* Technique::createWithProgramState(Material* parent, backend::ProgramState* state)
+cc::IntrusivePtr<Technique> Technique::createWithProgramState(Material* parent, backend::ProgramState* state)
 {
-    auto technique = new Technique();
+    cc::IntrusivePtr<Technique> technique{new Technique()};
     if (technique->init(parent))
     {
-        auto pass = Pass::createWithProgramState(technique, state);
+        auto pass = Pass::createWithProgramState(technique.get(), state);
         technique->addPass(pass);
 
-        technique->autorelease();
         return technique;
     }
-    delete technique;
     return nullptr;
 }
 
-Technique* Technique::create(Material* material)
+cc::IntrusivePtr<Technique> Technique::create(Material* material)
 {
-    auto technique = new Technique();
+    cc::IntrusivePtr<Technique> technique{new Technique()};
     if (technique->init(material))
     {
-        technique->autorelease();
         return technique;
     }
-    delete technique;
     return nullptr;
 }
 
@@ -71,20 +67,19 @@ bool Technique::init(Material* parent)
     return true;
 }
 
-Technique* Technique::clone() const
+cc::IntrusivePtr<Technique> Technique::clone() const
 {
-    auto technique = new Technique();
+    cc::IntrusivePtr<Technique> technique{new Technique()};
 
     technique->_name        = _name;
     technique->_renderState.copyFrom(_renderState);
     for (const auto pass : _passes)
     {
         auto p        = pass->clone();
-        p->_technique = technique;
+        p->_technique = technique.get();
         technique->_passes.pushBack(p);
     }
 
-    technique->autorelease();
     return technique;
 }
 

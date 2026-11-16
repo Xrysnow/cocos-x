@@ -417,24 +417,24 @@ WebViewImpl::WebViewImpl(WebView* webView) : _uiWebViewWrapper([UIWebViewWrapper
 {
 
     _uiWebViewWrapper.shouldStartLoading = [this](std::string url) {
-        cocos2d::RefPtr<WebView> sender(_webView);
+        cc::IntrusivePtr<WebView> sender(_webView);
         auto callback = sender->getOnShouldStartLoading();
         return callback ? callback(sender.get(), url) : true;
     };
     _uiWebViewWrapper.didFinishLoading = [this](std::string url) {
-        cocos2d::RefPtr<WebView> sender(_webView);
+        cc::IntrusivePtr<WebView> sender(_webView);
         auto callback = sender->getOnDidFinishLoading();
         if (callback)
             callback(sender.get(), url);
     };
     _uiWebViewWrapper.didFailLoading = [this](std::string url) {
-        cocos2d::RefPtr<WebView> sender(_webView);
+        cc::IntrusivePtr<WebView> sender(_webView);
         auto callback = sender->getOnDidFailLoading();
         if (callback)
             callback(sender.get(), url);
     };
     _uiWebViewWrapper.onJsCallback = [this](std::string url) {
-        cocos2d::RefPtr<WebView> sender(_webView);
+        cc::IntrusivePtr<WebView> sender(_webView);
         auto callback = sender->getOnJSCallback();
         if (callback)
             callback(sender.get(), url);

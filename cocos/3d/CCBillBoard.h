@@ -50,9 +50,9 @@ public:
     /**
      * Creates an empty BillBoard without texture. You can call setTexture method subsequently.
      *
-     * @return An autoreleased BillBoard object.
+     * @return An owned BillBoard object.
      */
-    static BillBoard* create(Mode mode = Mode::VIEW_POINT_ORIENTED);
+    static cc::IntrusivePtr<BillBoard> create(Mode mode = Mode::VIEW_POINT_ORIENTED);
 
     /**
      * Creates a BillBoard with an image filename.
@@ -61,18 +61,18 @@ public:
      * and the offset will be (0,0).
      *
      * @param   filename A path to image file, e.g., "scene1/monster.png"
-     * @return  An autoreleased BillBoard object.
+     * @return  An owned BillBoard object.
      */
-    static BillBoard* create(std::string_view filename, Mode mode = Mode::VIEW_POINT_ORIENTED);
+    static cc::IntrusivePtr<BillBoard> create(std::string_view filename, Mode mode = Mode::VIEW_POINT_ORIENTED);
 
     /**
      * Creates a BillBoard with an image filename and a rect.
      *
      * @param   filename A path to image file, e.g., "scene1/monster.png"
      * @param   rect     A subrect of the image file
-     * @return  An autoreleased BillBoard object
+     * @return  An owned BillBoard object
      */
-    static BillBoard* create(std::string_view filename, const Rect& rect, Mode mode = Mode::VIEW_POINT_ORIENTED);
+    static cc::IntrusivePtr<BillBoard> create(std::string_view filename, const Rect& rect, Mode mode = Mode::VIEW_POINT_ORIENTED);
 
     /**
      * Creates a BillBoard with a Texture2D object.
@@ -80,9 +80,9 @@ public:
      * After creation, the rect will be the size of the texture, and the offset will be (0,0).
      *
      * @param   texture    A pointer to a Texture2D object.
-     * @return  An autoreleased BillBoard object
+     * @return  An owned BillBoard object
      */
-    static BillBoard* createWithTexture(Texture2D* texture, Mode mode = Mode::VIEW_POINT_ORIENTED);
+    static cc::IntrusivePtr<BillBoard> createWithTexture(Texture2D* texture, Mode mode = Mode::VIEW_POINT_ORIENTED);
 
     /** Set the billboard rotation mode. */
     void setMode(Mode mode);

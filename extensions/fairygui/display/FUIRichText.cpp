@@ -322,7 +322,7 @@ void FUIRichText::addNewLine()
 
 void FUIRichText::handleTextRenderer(HtmlElement* element, const std::string& text)
 {
-    FUILabel* textRenderer = FUILabel::create();
+    cc::IntrusivePtr<FUILabel> textRenderer = FUILabel::create();
     textRenderer->setAnchorPoint(Vec2::ZERO);
     textRenderer->setCascadeOpacityEnabled(true);
     textRenderer->getTextFormat()->setFormat(element->format);
@@ -350,7 +350,7 @@ void FUIRichText::handleTextRenderer(HtmlElement* element, const std::string& te
     std::string cutWords = getSubStringOfUTF8String(text, rightStart, text.length() - leftLength);
     if (leftLength > 0)
     {
-        FUILabel* leftRenderer = FUILabel::create();
+        cc::IntrusivePtr<FUILabel> leftRenderer = FUILabel::create();
         leftRenderer->setAnchorPoint(Vec2::ZERO);
         leftRenderer->setCascadeOpacityEnabled(true);
         leftRenderer->getTextFormat()->setFormat(element->format);

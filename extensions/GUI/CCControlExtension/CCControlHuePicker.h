@@ -50,7 +50,7 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL ControlHuePicker : public Control
 {
 public:
-    static ControlHuePicker* create(Node* target, Vec2 pos);
+    static cc::IntrusivePtr<ControlHuePicker> create(Node* target, Vec2 pos);
     /**
      * @js ctor
      */

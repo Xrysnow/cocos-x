@@ -45,7 +45,7 @@ public:
     // Constants
     static const bool DEFAULT_PRE_POST;
 
-    static PUDoAffectorEventHandler* create();
+    static cc::IntrusivePtr<PUDoAffectorEventHandler> create();
 
     /** Get the indication whether pre- and postprocessing must be done.
      */

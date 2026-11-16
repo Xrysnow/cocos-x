@@ -43,7 +43,7 @@ public:
     // Constants
     static const float DEFAULT_THRESHOLD;
 
-    static PUOnRandomObserver* create();
+    static cc::IntrusivePtr<PUOnRandomObserver> create();
 
     /** See ParticleObserver::_preProcessParticles()
      */

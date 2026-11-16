@@ -41,9 +41,9 @@ void UIObjectFactory::setPackageItemExtension(const string& url, GComponentCreat
     _packageItemExtensions[url] = creator;
 }
 
-GObject* UIObjectFactory::newObject(PackageItem* pi)
+cc::IntrusivePtr<GObject> UIObjectFactory::newObject(PackageItem* pi)
 {
-    GObject* obj;
+    cc::IntrusivePtr<GObject> obj;
     if (pi->extensionCreator != nullptr)
         obj = pi->extensionCreator();
     else
@@ -54,7 +54,7 @@ GObject* UIObjectFactory::newObject(PackageItem* pi)
     return obj;
 }
 
-GObject* UIObjectFactory::newObject(ObjectType type)
+cc::IntrusivePtr<GObject> UIObjectFactory::newObject(ObjectType type)
 {
     switch (type)
     {

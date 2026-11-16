@@ -52,26 +52,25 @@ CameraBackgroundBrush::~CameraBackgroundBrush()
     CC_SAFE_RELEASE_NULL(_programState);
 }
 
-CameraBackgroundBrush* CameraBackgroundBrush::createNoneBrush()
+cc::IntrusivePtr<CameraBackgroundBrush> CameraBackgroundBrush::createNoneBrush()
 {
-    auto ret = new CameraBackgroundBrush();
+    cc::IntrusivePtr<CameraBackgroundBrush> ret{new CameraBackgroundBrush()};
     ret->init();
 
-    ret->autorelease();
     return ret;
 }
 
-CameraBackgroundColorBrush* CameraBackgroundBrush::createColorBrush(const Color4F& color, float depth)
+cc::IntrusivePtr<CameraBackgroundColorBrush> CameraBackgroundBrush::createColorBrush(const Color4F& color, float depth)
 {
     return CameraBackgroundColorBrush::create(color, depth);
 }
 
-CameraBackgroundDepthBrush* CameraBackgroundBrush::createDepthBrush(float depth)
+cc::IntrusivePtr<CameraBackgroundDepthBrush> CameraBackgroundBrush::createDepthBrush(float depth)
 {
     return CameraBackgroundDepthBrush::create(depth);
 }
 
-CameraBackgroundSkyBoxBrush* CameraBackgroundBrush::createSkyboxBrush(std::string_view positive_x,
+cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundBrush::createSkyboxBrush(std::string_view positive_x,
                                                                       std::string_view negative_x,
                                                                       std::string_view positive_y,
                                                                       std::string_view negative_y,
@@ -90,9 +89,10 @@ CameraBackgroundDepthBrush::CameraBackgroundDepthBrush()
     , _backToForegroundListener(nullptr)
 #endif
 {
+    cc::IntrusivePtr<EventListenerCustom> backToForegroundListener;
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     _backToForegroundListener =
-        EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { initBuffer(); });
+        (backToForegroundListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { initBuffer(); })).get();
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_backToForegroundListener, -1);
 #endif
 }
@@ -103,18 +103,18 @@ CameraBackgroundDepthBrush::~CameraBackgroundDepthBrush()
 #endif
 }
 
-CameraBackgroundDepthBrush* CameraBackgroundDepthBrush::create(float depth)
+cc::IntrusivePtr<CameraBackgroundDepthBrush> CameraBackgroundDepthBrush::create(float depth)
 {
-    auto ret = new CameraBackgroundDepthBrush();
+    cc::IntrusivePtr<CameraBackgroundDepthBrush> ret{new CameraBackgroundDepthBrush()};
 
     if (ret->init())
     {
         ret->_depth = depth;
-        ret->autorelease();
+
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -124,7 +124,7 @@ bool CameraBackgroundDepthBrush::init()
 {
     CC_SAFE_RELEASE_NULL(_programState);
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::CAMERA_CLEAR);
-    _programState = new backend::ProgramState(program);
+    _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
 
     _locDepth = _programState->getUniformLocation("dpeth");
 
@@ -239,19 +239,19 @@ void CameraBackgroundColorBrush::setColor(const Color4F& color)
     _customCommand.updateVertexBuffer(_vertices.data(), sizeof(_vertices[0]) * _vertices.size());
 }
 
-CameraBackgroundColorBrush* CameraBackgroundColorBrush::create(const Color4F& color, float depth)
+cc::IntrusivePtr<CameraBackgroundColorBrush> CameraBackgroundColorBrush::create(const Color4F& color, float depth)
 {
-    auto ret = new CameraBackgroundColorBrush();
+    cc::IntrusivePtr<CameraBackgroundColorBrush> ret{new CameraBackgroundColorBrush()};
 
     if (ret->init())
     {
         ret->setColor(color);
         ret->setDepth(depth);
-        ret->autorelease();
+
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -266,9 +266,10 @@ CameraBackgroundSkyBoxBrush::CameraBackgroundSkyBoxBrush()
     , _backToForegroundListener(nullptr)
 #endif
 {
+    cc::IntrusivePtr<EventListenerCustom> backToForegroundListener;
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     _backToForegroundListener =
-        EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { initBuffer(); });
+        (backToForegroundListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { initBuffer(); })).get();
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_backToForegroundListener, -1);
 #endif
 }
@@ -281,14 +282,14 @@ CameraBackgroundSkyBoxBrush::~CameraBackgroundSkyBoxBrush()
 #endif
 }
 
-CameraBackgroundSkyBoxBrush* CameraBackgroundSkyBoxBrush::create(std::string_view positive_x,
+cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundSkyBoxBrush::create(std::string_view positive_x,
                                                                  std::string_view negative_x,
                                                                  std::string_view positive_y,
                                                                  std::string_view negative_y,
                                                                  std::string_view positive_z,
                                                                  std::string_view negative_z)
 {
-    CameraBackgroundSkyBoxBrush* ret = nullptr;
+    cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> ret;
 
     auto texture = TextureCube::create(positive_x, negative_x, positive_y, negative_y, positive_z, negative_z);
 
@@ -302,34 +303,28 @@ CameraBackgroundSkyBoxBrush* CameraBackgroundSkyBoxBrush::create(std::string_vie
         tRepeatParams.tAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
         texture->setTexParameters(tRepeatParams);
 
-        ret = new CameraBackgroundSkyBoxBrush;
+        ret = cc::IntrusivePtr<CameraBackgroundSkyBoxBrush>{new CameraBackgroundSkyBoxBrush};
 
         if (ret->init())
         {
             ret->setTexture(texture);
-            ret->autorelease();
         }
         else
         {
-            CC_SAFE_DELETE(texture);
-            CC_SAFE_DELETE(ret);
+            return nullptr;
         }
     }
 
     return ret;
 }
 
-CameraBackgroundSkyBoxBrush* CameraBackgroundSkyBoxBrush::create()
+cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundSkyBoxBrush::create()
 {
-    auto ret = new CameraBackgroundSkyBoxBrush();
+    cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> ret{new CameraBackgroundSkyBoxBrush()};
 
-    if (ret->init())
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -376,7 +371,7 @@ bool CameraBackgroundSkyBoxBrush::init()
 
     CC_SAFE_RELEASE_NULL(_programState);
     auto* program        = backend::Program::getBuiltinProgram(backend::ProgramType::SKYBOX_3D);
-    _programState        = new backend::ProgramState(program);
+    _programState        = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     _uniformColorLoc     = _programState->getUniformLocation("u_color");
     _uniformCameraRotLoc = _programState->getUniformLocation("u_cameraRot");
     _uniformEnvLoc       = _programState->getUniformLocation("u_Env");

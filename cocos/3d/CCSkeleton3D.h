@@ -78,7 +78,7 @@ public:
     /**
      * Creates C3DBone.
      */
-    static Bone3D* create(std::string_view id);
+    static cc::IntrusivePtr<Bone3D> create(std::string_view id);
 
     /**
      * Sets the inverse bind pose matrix.
@@ -183,7 +183,7 @@ public:
     /**
      * @lua NA
      */
-    static Skeleton3D* create(const std::vector<NodeData*>& skeletondata);
+    static cc::IntrusivePtr<Skeleton3D> create(const std::vector<NodeData*>& skeletondata);
 
     /**get total bone count*/
     ssize_t getBoneCount() const;
@@ -213,7 +213,7 @@ public:
     void addBone(Bone3D* bone);
 
     /** create Bone3D from NodeData */
-    Bone3D* createBone3D(const NodeData& nodedata);
+    cc::IntrusivePtr<Bone3D> createBone3D(const NodeData& nodedata);
 
 protected:
     Vector<Bone3D*> _bones;  // bones

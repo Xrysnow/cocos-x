@@ -91,15 +91,13 @@ ScrollView::~ScrollView()
     _scrollViewEventListener = nullptr;
 }
 
-ScrollView* ScrollView::create()
+cc::IntrusivePtr<ScrollView> ScrollView::create()
 {
-    ScrollView* widget = new ScrollView();
+    cc::IntrusivePtr<ScrollView> widget{new ScrollView()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -132,8 +130,9 @@ bool ScrollView::init()
 
 void ScrollView::initRenderer()
 {
+    cc::IntrusivePtr<Layout> innerContainer;
     Layout::initRenderer();
-    _innerContainer = Layout::create();
+    _innerContainer = (innerContainer = Layout::create()).get();
     _innerContainer->setColor(Color3B(255, 255, 255));
     _innerContainer->setOpacity(255);
     _innerContainer->setCascadeColorEnabled(true);
@@ -1488,7 +1487,7 @@ std::string ScrollView::getDescription() const
     return "ScrollView";
 }
 
-Widget* ScrollView::createCloneInstance()
+cc::IntrusivePtr<Widget> ScrollView::createCloneInstance()
 {
     return ScrollView::create();
 }
@@ -1552,14 +1551,16 @@ void ScrollView::copySpecialProperties(Widget* widget)
 
 void ScrollView::initScrollBar()
 {
+    cc::IntrusivePtr<ScrollViewBar> verticalScrollBar;
+    cc::IntrusivePtr<ScrollViewBar> horizontalScrollBar;
     if (_direction != Direction::HORIZONTAL && _verticalScrollBar == nullptr)
     {
-        _verticalScrollBar = ScrollViewBar::create(this, Direction::VERTICAL);
+        _verticalScrollBar = (verticalScrollBar = ScrollViewBar::create(this, Direction::VERTICAL)).get();
         addProtectedChild(_verticalScrollBar, 2);
     }
     if (_direction != Direction::VERTICAL && _horizontalScrollBar == nullptr)
     {
-        _horizontalScrollBar = ScrollViewBar::create(this, Direction::HORIZONTAL);
+        _horizontalScrollBar = (horizontalScrollBar = ScrollViewBar::create(this, Direction::HORIZONTAL)).get();
         addProtectedChild(_horizontalScrollBar, 2);
     }
 }

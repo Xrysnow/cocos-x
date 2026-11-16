@@ -90,10 +90,9 @@ void PUParticleFollower::firstParticleUpdate(PUParticle3D* /*particle*/, float /
     _first = true;
 }
 
-PUParticleFollower* PUParticleFollower::create()
+cc::IntrusivePtr<PUParticleFollower> PUParticleFollower::create()
 {
-    auto ppf = new PUParticleFollower();
-    ppf->autorelease();
+    cc::IntrusivePtr<PUParticleFollower> ppf{new PUParticleFollower()};
     return ppf;
 }
 

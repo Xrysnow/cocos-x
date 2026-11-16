@@ -35,26 +35,22 @@ bool EventListenerMouse::checkAvailable()
     return true;
 }
 
-EventListenerMouse* EventListenerMouse::create()
+cc::IntrusivePtr<EventListenerMouse> EventListenerMouse::create()
 {
-    auto ret = new EventListenerMouse();
-    if (ret->init())
+    cc::IntrusivePtr<EventListenerMouse> ret{new EventListenerMouse()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-EventListenerMouse* EventListenerMouse::clone()
+cc::IntrusivePtr<EventListener> EventListenerMouse::clone()
 {
-    auto ret = new EventListenerMouse();
+    cc::IntrusivePtr<EventListenerMouse> ret{new EventListenerMouse()};
     if (ret->init())
     {
-        ret->autorelease();
+
         ret->onMouseUp     = onMouseUp;
         ret->onMouseDown   = onMouseDown;
         ret->onMouseMove   = onMouseMove;
@@ -62,7 +58,7 @@ EventListenerMouse* EventListenerMouse::clone()
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

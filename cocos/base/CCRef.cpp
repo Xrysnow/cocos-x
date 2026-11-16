@@ -48,9 +48,7 @@ Ref::Ref()
 {}
 
 Ref::Ref(RefConstructionToken token)
-    : _threading(token._threading)
-    , _referenceCount(1)
-    , _atomicReferenceCount(1)
+    : cc::RefCounted(token._threading)
 #if CC_ENABLE_SCRIPT_BINDING
     , _luaID(0)
     , _rooted(false)
@@ -74,7 +72,8 @@ Ref::~Ref()
     // Lua-bound objects still require destruction on the scripting thread.
     if (_luaID)
     {
-        ScriptEngineProtocol* pEngine = ScriptEngineManager::getInstance()->getScriptEngine();
+        auto* manager = ScriptEngineManager::getInstanceIfExists();
+        ScriptEngineProtocol* pEngine = manager ? manager->getScriptEngine() : nullptr;
         if (pEngine != nullptr)
         {
             // if the object is referenced by Lua engine, remove it
@@ -84,79 +83,27 @@ Ref::~Ref()
 #endif  // CC_ENABLE_SCRIPT_BINDING
 
 #if CC_REF_LEAK_DETECTION
-    if (getReferenceCount() != 0)
-        untrackRef(this);
+    untrackRef(this);
 #endif
 }
 
 void Ref::retain()
 {
-    const auto previousCount = _threading == RefThreading::Atomic
-                                   ? _atomicReferenceCount.fetch_add(1, std::memory_order_relaxed)
-                                   : _referenceCount++;
-    CCASSERT(previousCount > 0, "reference count should be greater than 0");
-    (void)previousCount;
+    addRef();
 }
 
-void Ref::release()
+void Ref::onFinalRelease() noexcept
 {
-    const auto previousCount = _threading == RefThreading::Atomic
-                                   ? _atomicReferenceCount.fetch_sub(1, std::memory_order_acq_rel)
-                                   : _referenceCount--;
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    if (previousCount == 0)
+    // This hook also runs when the last owner holds a cc::RefCounted*.
+    // Atomic owners must never query the thread-confined pool manager.
+    if (getReferenceThreading() == RefThreading::Local)
     {
-        print("Ref::release: invalid reference count in %s, got %u", typeid(*this).name(), previousCount);
-        CCASSERT(false, "reference count should be greater than 0");
-    }
-#endif
-
-    // Only the thread that removed the last reference may destroy the object.
-    // Do not reload the count here: another release may already have destroyed it.
-    if (previousCount == 1)
-    {
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
-        // PoolManager is thread-confined. Atomic final releases must not inspect it.
-        auto poolManager = _threading == RefThreading::Local ? PoolManager::getInstance() : nullptr;
-        if (poolManager && !poolManager->getCurrentPool()->isClearing() && poolManager->isObjectInPools(this))
-        {
-            // Trigger an assert if the reference count is 0 but the Ref is still in autorelease pool.
-            // This happens when 'autorelease/release' were not used in pairs with 'new/retain'.
-            //
-            // Wrong usage (1):
-            //
-            // auto obj = Node::create();   // Ref = 1, but it's an autorelease Ref which means it was in the
-            // autorelease pool. obj->autorelease();   // Wrong: If you wish to invoke autorelease several times, you
-            // should retain `obj` first.
-            //
-            // Wrong usage (2):
-            //
-            // auto obj = Node::create();
-            // obj->release();   // Wrong: obj is an autorelease Ref, it will be released when clearing current pool.
-            //
-            // Correct usage (1):
-            //
-            // auto obj = Node::create();
-            //                     |-   new Node();     // `new` is the pair of the `autorelease` of next line
-            //                     |-   autorelease();  // The pair of `new Node`.
-            //
-            // obj->retain();
-            // obj->autorelease();  // This `autorelease` is the pair of `retain` of previous line.
-            //
-            // Correct usage (2):
-            //
-            // auto obj = Node::create();
-            // obj->retain();
-            // obj->release();   // This `release` is the pair of `retain` of previous line.
+        auto* manager = PoolManager::getInstanceIfExists();
+        if (manager && manager->isObjectInPools(this))
             CCASSERT(false, "The reference shouldn't be 0 because it is still in autorelease pool.");
-        }
-#endif
-
-#if CC_REF_LEAK_DETECTION
-        untrackRef(this);
-#endif
-        delete this;
     }
+#endif
 }
 
 Ref* Ref::autorelease()
@@ -167,7 +114,7 @@ Ref* Ref::autorelease()
 
 unsigned int Ref::getReferenceCount() const
 {
-    return _threading == RefThreading::Atomic ? _atomicReferenceCount.load(std::memory_order_relaxed) : _referenceCount;
+    return getRefCount();
 }
 
 #if CC_REF_LEAK_DETECTION

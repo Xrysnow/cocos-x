@@ -53,38 +53,38 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL PhysicsSprite : public Sprite
 {
 public:
-    static PhysicsSprite* create();
+    static cc::IntrusivePtr<PhysicsSprite> create();
     /** Creates an sprite with a texture.
      The rect used will be the size of the texture.
      The offset will be (0,0).
      */
-    static PhysicsSprite* createWithTexture(Texture2D* pTexture);
+    static cc::IntrusivePtr<PhysicsSprite> createWithTexture(Texture2D* pTexture);
 
     /** Creates an sprite with a texture and a rect.
      The offset will be (0,0).
      */
-    static PhysicsSprite* createWithTexture(Texture2D* pTexture, const Rect& rect);
+    static cc::IntrusivePtr<PhysicsSprite> createWithTexture(Texture2D* pTexture, const Rect& rect);
 
     /** Creates an sprite with an sprite frame. */
-    static PhysicsSprite* createWithSpriteFrame(SpriteFrame* pSpriteFrame);
+    static cc::IntrusivePtr<PhysicsSprite> createWithSpriteFrame(SpriteFrame* pSpriteFrame);
 
     /** Creates an sprite with an sprite frame name.
      An SpriteFrame will be fetched from the SpriteFrameCache by name.
      If the SpriteFrame doesn't exist it will raise an exception.
      @since v0.9
      */
-    static PhysicsSprite* createWithSpriteFrameName(const char* pszSpriteFrameName);
+    static cc::IntrusivePtr<PhysicsSprite> createWithSpriteFrameName(const char* pszSpriteFrameName);
 
     /** Creates an sprite with an image filename.
      The rect used will be the size of the image.
      The offset will be (0,0).
      */
-    static PhysicsSprite* create(const char* pszFileName);
+    static cc::IntrusivePtr<PhysicsSprite> create(const char* pszFileName);
 
     /** Creates an sprite with an image filename and a rect.
      The offset will be (0,0).
      */
-    static PhysicsSprite* create(const char* pszFileName, const Rect& rect);
+    static cc::IntrusivePtr<PhysicsSprite> create(const char* pszFileName, const Rect& rect);
 
     PhysicsSprite();
 

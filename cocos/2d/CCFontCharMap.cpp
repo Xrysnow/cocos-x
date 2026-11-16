@@ -33,7 +33,7 @@
 
 NS_CC_BEGIN
 
-FontCharMap* FontCharMap::create(std::string_view plistFile)
+cc::IntrusivePtr<FontCharMap> FontCharMap::create(std::string_view plistFile)
 {
     std::string pathStr    = FileUtils::getInstance()->fullPathForFilename(plistFile);
     std::string relPathStr = pathStr.substr(0, pathStr.find_last_of('/')) + "/";
@@ -54,17 +54,16 @@ FontCharMap* FontCharMap::create(std::string_view plistFile)
         return nullptr;
     }
 
-    FontCharMap* tempFont = new FontCharMap(tempTexture, width, height, startChar);
+    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(tempTexture, width, height, startChar)};
 
     if (!tempFont)
     {
         return nullptr;
     }
-    tempFont->autorelease();
     return tempFont;
 }
 
-FontCharMap* FontCharMap::create(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap)
+cc::IntrusivePtr<FontCharMap> FontCharMap::create(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap)
 {
     Texture2D* tempTexture = Director::getInstance()->getTextureCache()->addImage(charMapFile);
 
@@ -73,25 +72,23 @@ FontCharMap* FontCharMap::create(std::string_view charMapFile, int itemWidth, in
         return nullptr;
     }
 
-    FontCharMap* tempFont = new FontCharMap(tempTexture, itemWidth, itemHeight, startCharMap);
+    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(tempTexture, itemWidth, itemHeight, startCharMap)};
 
     if (!tempFont)
     {
         return nullptr;
     }
-    tempFont->autorelease();
     return tempFont;
 }
 
-FontCharMap* FontCharMap::create(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
+cc::IntrusivePtr<FontCharMap> FontCharMap::create(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
 {
-    FontCharMap* tempFont = new FontCharMap(texture, itemWidth, itemHeight, startCharMap);
+    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(texture, itemWidth, itemHeight, startCharMap)};
 
     if (!tempFont)
     {
         return nullptr;
     }
-    tempFont->autorelease();
     return tempFont;
 }
 
@@ -104,7 +101,7 @@ int* FontCharMap::getHorizontalKerningForTextUTF32(const std::u32string& /*text*
 
 FontAtlas* FontCharMap::newFontAtlas()
 {
-    FontAtlas* tempAtlas = new FontAtlas(this);
+    cc::IntrusivePtr<FontAtlas> tempAtlas{new FontAtlas(this)};
 
     Vec2 s             = _texture->getContentSizeInPixels();
     int itemsPerColumn = (int)(s.height / _itemHeight);
@@ -139,7 +136,7 @@ FontAtlas* FontCharMap::newFontAtlas()
 
     tempAtlas->setTexture(0, _texture);
 
-    return tempAtlas;
+    return tempAtlas.detach();
 }
 
 NS_CC_END

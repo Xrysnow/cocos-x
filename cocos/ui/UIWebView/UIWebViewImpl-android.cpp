@@ -286,7 +286,7 @@ bool WebViewImpl::shouldStartLoading(const int viewTag, std::string_view url)
     auto it        = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        RefPtr<WebView> webView(it->second->_webView);
+        cc::IntrusivePtr<WebView> webView(it->second->_webView);
         auto callback = webView->getOnShouldStartLoading();
         return callback ? callback(webView.get(), url) : true;
     }
@@ -299,7 +299,7 @@ void WebViewImpl::didFinishLoading(const int viewTag, std::string_view url)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        RefPtr<WebView> webView(it->second->_webView);
+        cc::IntrusivePtr<WebView> webView(it->second->_webView);
         auto callback = webView->getOnDidFinishLoading();
         if (callback)
             callback(webView.get(), url);
@@ -311,7 +311,7 @@ void WebViewImpl::didFailLoading(const int viewTag, std::string_view url)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        RefPtr<WebView> webView(it->second->_webView);
+        cc::IntrusivePtr<WebView> webView(it->second->_webView);
         auto callback = webView->getOnDidFailLoading();
         if (callback)
             callback(webView.get(), url);
@@ -323,7 +323,7 @@ void WebViewImpl::onJsCallback(const int viewTag, std::string_view message)
     auto it = s_WebViewImpls.find(viewTag);
     if (it != s_WebViewImpls.end())
     {
-        RefPtr<WebView> webView(it->second->_webView);
+        cc::IntrusivePtr<WebView> webView(it->second->_webView);
         auto callback = webView->getOnJSCallback();
         if (callback)
             callback(webView.get(), message);

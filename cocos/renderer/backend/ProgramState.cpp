@@ -137,6 +137,7 @@ ProgramState::ProgramState(Program* program)
 
 bool ProgramState::init(Program* program)
 {
+    cc::IntrusivePtr<EventListenerCustom> backToForegroundListener;
     CC_SAFE_RETAIN(program);
     _program                 = program;
     _vertexLayout            = program->getVertexLayout();
@@ -148,7 +149,7 @@ bool ProgramState::init(Program* program)
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     _backToForegroundListener =
-        EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { this->resetUniforms(); });
+        (backToForegroundListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](EventCustom*) { this->resetUniforms(); })).get();
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_backToForegroundListener, -1);
 #endif
     return true;
@@ -190,9 +191,9 @@ ProgramState::~ProgramState()
         CC_SAFE_DELETE(_vertexLayout);
 }
 
-ProgramState* ProgramState::clone() const
+cc::IntrusivePtr<ProgramState> ProgramState::clone() const
 {
-    ProgramState* cp          = new ProgramState(_program);
+    cc::IntrusivePtr<ProgramState> cp{new ProgramState(_program)};
     cp->_vertexTextureInfos   = _vertexTextureInfos;
     cp->_fragmentTextureInfos = _fragmentTextureInfos;
     memcpy(cp->_vertexUniformBuffer, _vertexUniformBuffer, _vertexUniformBufferSize);
@@ -200,8 +201,8 @@ ProgramState* ProgramState::clone() const
     cp->_ownVertexLayout = _ownVertexLayout;
     cp->_vertexLayout    = !_ownVertexLayout ? _vertexLayout : new VertexLayout(*_vertexLayout);
     const auto p = static_cast<ProgramGFX*>(_program);
-    p->generateState(cp);
-    const auto stateGFX = p->getState(cp);
+    p->generateState(cp.get());
+    const auto stateGFX = p->getState(cp.get());
     CC_ASSERT(stateGFX);
     stateGFX->setAllBuffer(_vertexUniformBuffer, _vertexUniformBufferSize);
     stateGFX->textures = p->getState(this)->textures;

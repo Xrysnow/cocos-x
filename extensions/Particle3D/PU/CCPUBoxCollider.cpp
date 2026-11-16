@@ -262,10 +262,9 @@ void PUBoxCollider::preUpdateAffector(float deltaTime)
     calculateBounds();
 }
 
-PUBoxCollider* PUBoxCollider::create()
+cc::IntrusivePtr<PUBoxCollider> PUBoxCollider::create()
 {
-    auto pbc = new PUBoxCollider();
-    pbc->autorelease();
+    cc::IntrusivePtr<PUBoxCollider> pbc{new PUBoxCollider()};
     return pbc;
 }
 

@@ -47,7 +47,7 @@ VertexAttribBinding::~VertexAttribBinding()
     CC_SAFE_RELEASE(_programState);
 }
 
-VertexAttribBinding* VertexAttribBinding::create(MeshIndexData* meshIndexData, Pass* pass, MeshCommand* command)
+cc::IntrusivePtr<VertexAttribBinding> VertexAttribBinding::create(MeshIndexData* meshIndexData, Pass* pass, MeshCommand* command)
 {
     CCASSERT(meshIndexData && pass && pass->getProgramState(), "Invalid MeshIndexData and/or programState");
 
@@ -64,14 +64,11 @@ VertexAttribBinding* VertexAttribBinding::create(MeshIndexData* meshIndexData, P
         }
     }
 
-    b = new VertexAttribBinding();
-    if (b->init(meshIndexData, pass, command))
-    {
-        b->autorelease();
-        __vertexAttribBindingCache.emplace_back(b);
-    }
-
-    return b;
+    cc::IntrusivePtr<VertexAttribBinding> binding{new VertexAttribBinding()};
+    if (!binding->init(meshIndexData, pass, command))
+        return {};
+    __vertexAttribBindingCache.emplace_back(binding.get()); // Weak cache; destructor removes it.
+    return binding;
 }
 
 bool VertexAttribBinding::init(MeshIndexData* meshIndexData, Pass* pass, MeshCommand* command)

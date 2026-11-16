@@ -317,9 +317,10 @@ static cpSpaceDebugColor ColorForShape(cpShape* shape, cpDataPointer /*data*/)
 
 void PhysicsWorld::debugDraw()
 {
+    cc::IntrusivePtr<DrawNode> debugDraw;
     if (_debugDraw == nullptr)
     {
-        _debugDraw = DrawNode::create();
+        _debugDraw = (debugDraw = DrawNode::create()).get();
         _debugDraw->setIsolated(true);
         _debugDraw->retain();
         Director::getInstance()->getRunningScene()->addChild(_debugDraw);

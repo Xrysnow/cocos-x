@@ -590,7 +590,7 @@ unsigned int AssetsManager::getConnectionTimeout()
     return _connectionTimeout;
 }
 
-AssetsManager* AssetsManager::create(const char* packageUrl,
+cc::IntrusivePtr<AssetsManager> AssetsManager::create(const char* packageUrl,
                                      const char* versionFileUrl,
                                      const char* storagePath,
                                      ErrorCallback errorCallback,
@@ -616,11 +616,10 @@ AssetsManager* AssetsManager::create(const char* packageUrl,
         SuccessCallback successCallback;
     };
 
-    auto* manager  = new AssetsManager(packageUrl, versionFileUrl, storagePath);
+    cc::IntrusivePtr<AssetsManager> manager{new AssetsManager(packageUrl, versionFileUrl, storagePath)};
     auto* delegate = new DelegateProtocolImpl(errorCallback, progressCallback, successCallback);
     manager->setDelegate(delegate);
     manager->_shouldDeleteDelegateWhenExit = true;
-    manager->autorelease();
     return manager;
 }
 

@@ -60,7 +60,7 @@ class AnimationCurve : public Ref
 {
 public:
     /**create animation curve*/
-    static AnimationCurve* create(float* keytime, float* value, int count);
+    static cc::IntrusivePtr<AnimationCurve> create(float* keytime, float* value, int count);
 
     /**
      * evaluate value of time

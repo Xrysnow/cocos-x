@@ -186,10 +186,9 @@ void PUCircleEmitter::initParticleDirection(PUParticle3D* particle)
     }
 }
 
-PUCircleEmitter* PUCircleEmitter::create()
+cc::IntrusivePtr<PUCircleEmitter> PUCircleEmitter::create()
 {
-    auto pe = new PUCircleEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUCircleEmitter> pe{new PUCircleEmitter()};
     return pe;
 }
 
@@ -265,7 +264,7 @@ void PUCircleEmitter::copyAttributesTo(PUEmitter* emitter)
     circleEmitter->_orientation         = _orientation;
 }
 
-PUCircleEmitter* PUCircleEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUCircleEmitter::clone()
 {
     auto be = PUCircleEmitter::create();
     copyAttributesTo(be);

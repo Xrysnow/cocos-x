@@ -64,7 +64,7 @@ public:
      * @param action A given interval action.
      * @return The Ease action that will be performed on a linear action.
      */
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) = 0;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) = 0;
 };
 
 /** @class TransitionScene
@@ -91,9 +91,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionScene object.
+     * @return A owned TransitionScene object.
      */
-    static TransitionScene* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionScene> create(float t, Scene* scene);
 
     /** Called after the transition finishes.
      */
@@ -124,7 +124,7 @@ protected:
     void setNewScene(float dt);
 
     Scene* _inScene;
-    Scene* _outScene;
+    cc::IntrusivePtr<Scene> _outScene;
     float _duration;
     bool _isInSceneOnTop;
     bool _isSendCleanupToScene;
@@ -145,9 +145,9 @@ public:
      * @param t Duration time, in seconds.
      * @param scene A given scene.
      * @param orientation A given orientation: LeftOver, RightOver, UpOver, DownOver.
-     * @return A autoreleased TransitionSceneOriented object.
+     * @return A owned TransitionSceneOriented object.
      */
-    static TransitionSceneOriented* create(float t, Scene* scene, Orientation orientation);
+    static cc::IntrusivePtr<TransitionSceneOriented> create(float t, Scene* scene, Orientation orientation);
 
     TransitionSceneOriented();
     virtual ~TransitionSceneOriented();
@@ -173,9 +173,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionRotoZoom object.
+     * @return A owned TransitionRotoZoom object.
      */
-    static TransitionRotoZoom* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionRotoZoom> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -200,9 +200,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionJumpZoom object.
+     * @return A owned TransitionJumpZoom object.
      */
-    static TransitionJumpZoom* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionJumpZoom> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -227,17 +227,17 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionMoveInL object.
+     * @return A owned TransitionMoveInL object.
      */
-    static TransitionMoveInL* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionMoveInL> create(float t, Scene* scene);
 
     /** Returns the action that will be performed.
      *
      * @return The action that will be performed.
      */
-    virtual ActionInterval* action();
+    virtual cc::IntrusivePtr<ActionInterval> action();
 
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
 
     //
     // Overrides
@@ -266,9 +266,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionMoveInR object.
+     * @return A owned TransitionMoveInR object.
      */
-    static TransitionMoveInR* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionMoveInR> create(float t, Scene* scene);
 
     TransitionMoveInR();
     virtual ~TransitionMoveInR();
@@ -291,9 +291,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionMoveInT object.
+     * @return A owned TransitionMoveInT object.
      */
-    static TransitionMoveInT* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionMoveInT> create(float t, Scene* scene);
 
     TransitionMoveInT();
     virtual ~TransitionMoveInT();
@@ -316,9 +316,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionMoveInB object.
+     * @return A owned TransitionMoveInB object.
      */
-    static TransitionMoveInB* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionMoveInB> create(float t, Scene* scene);
 
     TransitionMoveInB();
     virtual ~TransitionMoveInB();
@@ -341,17 +341,17 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSlideInL object.
+     * @return A owned TransitionSlideInL object.
      */
-    static TransitionSlideInL* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSlideInL> create(float t, Scene* scene);
 
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
 
     /** Returns the action that will be performed by the incoming and outgoing scene.
      *
      * @return The action that will be performed by the incoming and outgoing scene.
      */
-    virtual ActionInterval* action();
+    virtual cc::IntrusivePtr<ActionInterval> action();
 
     //
     // Overrides
@@ -382,12 +382,12 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSlideInR object.
+     * @return A owned TransitionSlideInR object.
      */
-    static TransitionSlideInR* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSlideInR> create(float t, Scene* scene);
 
     /** Returns the action that will be performed by the incoming and outgoing scene. */
-    virtual ActionInterval* action() override;
+    virtual cc::IntrusivePtr<ActionInterval> action() override;
 
     TransitionSlideInR();
     virtual ~TransitionSlideInR();
@@ -413,12 +413,12 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSlideInB object.
+     * @return A owned TransitionSlideInB object.
      */
-    static TransitionSlideInB* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSlideInB> create(float t, Scene* scene);
 
     /** returns the action that will be performed by the incoming and outgoing scene */
-    virtual ActionInterval* action() override;
+    virtual cc::IntrusivePtr<ActionInterval> action() override;
 
     TransitionSlideInB();
     virtual ~TransitionSlideInB();
@@ -444,12 +444,12 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSlideInT object.
+     * @return A owned TransitionSlideInT object.
      */
-    static TransitionSlideInT* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSlideInT> create(float t, Scene* scene);
 
     /** returns the action that will be performed by the incoming and outgoing scene */
-    virtual ActionInterval* action() override;
+    virtual cc::IntrusivePtr<ActionInterval> action() override;
 
     TransitionSlideInT();
     virtual ~TransitionSlideInT();
@@ -474,9 +474,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionShrinkGrow object.
+     * @return A owned TransitionShrinkGrow object.
      */
-    static TransitionShrinkGrow* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionShrinkGrow> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -485,7 +485,7 @@ public:
      * @lua NA
      */
     virtual void onEnter() override;
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
 
     TransitionShrinkGrow();
     virtual ~TransitionShrinkGrow();
@@ -507,16 +507,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionFlipX object.
+     * @return A owned TransitionFlipX object.
      */
-    static TransitionFlipX* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionFlipX> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionFlipX object.
+     * @return A owned TransitionFlipX object.
      */
-    static TransitionFlipX* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionFlipX> create(float t, Scene* s);
 
     //
     // Overrides
@@ -546,16 +546,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionFlipY object.
+     * @return A owned TransitionFlipY object.
      */
-    static TransitionFlipY* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionFlipY> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionFlipY object.
+     * @return A owned TransitionFlipY object.
      */
-    static TransitionFlipY* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionFlipY> create(float t, Scene* s);
 
     //
     // Overrides
@@ -585,16 +585,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionFlipAngular object.
+     * @return A owned TransitionFlipAngular object.
      */
-    static TransitionFlipAngular* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionFlipAngular> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionFlipAngular object.
+     * @return A owned TransitionFlipAngular object.
      */
-    static TransitionFlipAngular* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionFlipAngular> create(float t, Scene* s);
 
     //
     // Overrides
@@ -624,16 +624,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionZoomFlipX object.
+     * @return A owned TransitionZoomFlipX object.
      */
-    static TransitionZoomFlipX* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionZoomFlipX> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionZoomFlipX object.
+     * @return A owned TransitionZoomFlipX object.
      */
-    static TransitionZoomFlipX* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionZoomFlipX> create(float t, Scene* s);
 
     //
     // Overrides
@@ -663,16 +663,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionZoomFlipY object.
+     * @return A owned TransitionZoomFlipY object.
      */
-    static TransitionZoomFlipY* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionZoomFlipY> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionZoomFlipY object.
+     * @return A owned TransitionZoomFlipY object.
      */
-    static TransitionZoomFlipY* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionZoomFlipY> create(float t, Scene* s);
 
     //
     // Overrides
@@ -702,16 +702,16 @@ public:
      * @param t Duration time, in seconds.
      * @param s A given scene.
      * @param o A given orientation.
-     * @return A autoreleased TransitionZoomFlipAngular object.
+     * @return A owned TransitionZoomFlipAngular object.
      */
-    static TransitionZoomFlipAngular* create(float t, Scene* s, Orientation o);
+    static cc::IntrusivePtr<TransitionZoomFlipAngular> create(float t, Scene* s, Orientation o);
     /** Creates a transition with duration and incoming scene.
      *
      * @param t Duration time, in seconds.
      * @param s A given scene.
-     * @return A autoreleased TransitionZoomFlipAngular object.
+     * @return A owned TransitionZoomFlipAngular object.
      */
-    static TransitionZoomFlipAngular* create(float t, Scene* s);
+    static cc::IntrusivePtr<TransitionZoomFlipAngular> create(float t, Scene* s);
 
     //
     // Overrides
@@ -741,16 +741,16 @@ public:
      * @param duration Duration time, in seconds.
      * @param scene A given scene.
      * @param color A given transition color.
-     * @return A autoreleased TransitionFade object.
+     * @return A owned TransitionFade object.
      */
-    static TransitionFade* create(float duration, Scene* scene, const Color3B& color);
+    static cc::IntrusivePtr<TransitionFade> create(float duration, Scene* scene, const Color3B& color);
     /** Creates the transition with a duration.
      *
      * @param duration Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionFade object.
+     * @return A owned TransitionFade object.
      */
-    static TransitionFade* create(float duration, Scene* scene);
+    static cc::IntrusivePtr<TransitionFade> create(float duration, Scene* scene);
 
     /**
      * @lua NA
@@ -787,9 +787,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionCrossFade object.
+     * @return A owned TransitionCrossFade object.
      */
-    static TransitionCrossFade* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionCrossFade> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -825,9 +825,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionTurnOffTiles object.
+     * @return A owned TransitionTurnOffTiles object.
      */
-    static TransitionTurnOffTiles* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionTurnOffTiles> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -840,7 +840,7 @@ public:
      * @js NA
      */
     virtual void onExit() override;
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
     /**
      * @js NA
      */
@@ -851,7 +851,7 @@ public:
 
 protected:
     virtual void sceneOrder() override;
-    NodeGrid* _outSceneProxy;
+    cc::IntrusivePtr<NodeGrid> _outSceneProxy;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(TransitionTurnOffTiles);
@@ -868,15 +868,15 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSplitCols object.
+     * @return A owned TransitionSplitCols object.
      */
-    static TransitionSplitCols* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSplitCols> create(float t, Scene* scene);
 
     /** Returns the action that will be performed.
      *
      * @return The action that will be performed.
      */
-    virtual ActionInterval* action();
+    virtual cc::IntrusivePtr<ActionInterval> action();
 
     //
     // Overrides
@@ -885,7 +885,7 @@ public:
      * @lua NA
      */
     virtual void onEnter() override;
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
     virtual void onExit() override;
     virtual void draw(Renderer* renderer, const Mat4& transform, uint32_t flags) override;
 
@@ -894,7 +894,7 @@ public:
 
 protected:
     void switchTargetToInscene();
-    NodeGrid* _gridProxy;
+    cc::IntrusivePtr<NodeGrid> _gridProxy;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(TransitionSplitCols);
@@ -911,14 +911,14 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionSplitRows object.
+     * @return A owned TransitionSplitRows object.
      */
-    static TransitionSplitRows* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionSplitRows> create(float t, Scene* scene);
 
     //
     // Overrides
     //
-    virtual ActionInterval* action() override;
+    virtual cc::IntrusivePtr<ActionInterval> action() override;
 
     TransitionSplitRows();
     virtual ~TransitionSplitRows();
@@ -938,16 +938,16 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionFadeTR object.
+     * @return A owned TransitionFadeTR object.
      */
-    static TransitionFadeTR* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionFadeTR> create(float t, Scene* scene);
 
     /** Returns the action that will be performed with size.
      *
      * @param size A given size.
      * @return The action that will be performed.
      */
-    virtual ActionInterval* actionWithSize(const Vec2& size);
+    virtual cc::IntrusivePtr<ActionInterval> actionWithSize(const Vec2& size);
 
     //
     // Overrides
@@ -957,7 +957,7 @@ public:
      * @lua NA
      */
     virtual void onEnter() override;
-    virtual ActionInterval* easeActionWithAction(ActionInterval* action) override;
+    virtual cc::IntrusivePtr<ActionInterval> easeActionWithAction(ActionInterval* action) override;
     virtual void onExit() override;
     virtual void draw(Renderer* renderer, const Mat4& transform, uint32_t flags) override;
 
@@ -967,7 +967,7 @@ public:
 protected:
     virtual void sceneOrder() override;
 
-    NodeGrid* _outSceneProxy;
+    cc::IntrusivePtr<NodeGrid> _outSceneProxy;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(TransitionFadeTR);
@@ -984,14 +984,14 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionFadeBL object.
+     * @return A owned TransitionFadeBL object.
      */
-    static TransitionFadeBL* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionFadeBL> create(float t, Scene* scene);
 
     //
     // Overrides
     //
-    virtual ActionInterval* actionWithSize(const Vec2& size) override;
+    virtual cc::IntrusivePtr<ActionInterval> actionWithSize(const Vec2& size) override;
 
     TransitionFadeBL();
     virtual ~TransitionFadeBL();
@@ -1011,14 +1011,14 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionFadeUp object.
+     * @return A owned TransitionFadeUp object.
      */
-    static TransitionFadeUp* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionFadeUp> create(float t, Scene* scene);
 
     //
     // Overrides
     //
-    virtual ActionInterval* actionWithSize(const Vec2& size) override;
+    virtual cc::IntrusivePtr<ActionInterval> actionWithSize(const Vec2& size) override;
 
     TransitionFadeUp();
     virtual ~TransitionFadeUp();
@@ -1038,14 +1038,14 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return A autoreleased TransitionFadeDown object.
+     * @return A owned TransitionFadeDown object.
      */
-    static TransitionFadeDown* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionFadeDown> create(float t, Scene* scene);
 
     //
     // Overrides
     //
-    virtual ActionInterval* actionWithSize(const Vec2& size) override;
+    virtual cc::IntrusivePtr<ActionInterval> actionWithSize(const Vec2& size) override;
 
     TransitionFadeDown();
     virtual ~TransitionFadeDown();

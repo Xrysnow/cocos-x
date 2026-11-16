@@ -49,84 +49,72 @@ THE SOFTWARE.
 NS_CC_BEGIN
 
 // MARK: create, init, dealloc
-Sprite* Sprite::createWithTexture(Texture2D* texture)
+cc::IntrusivePtr<Sprite> Sprite::createWithTexture(Texture2D* texture)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->initWithTexture(texture))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::createWithTexture(Texture2D* texture, const Rect& rect, bool rotated)
+cc::IntrusivePtr<Sprite> Sprite::createWithTexture(Texture2D* texture, const Rect& rect, bool rotated)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->initWithTexture(texture, rect, rotated))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::create(std::string_view filename)
+cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename)
 {
     return Sprite::create(filename, Texture2D::getDefaultAlphaPixelFormat());
 }
 
-Sprite* Sprite::create(std::string_view filename, PixelFormat format)
+cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, PixelFormat format)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->initWithFile(filename, format))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::create(const PolygonInfo& info)
+cc::IntrusivePtr<Sprite> Sprite::create(const PolygonInfo& info)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->initWithPolygon(info))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::create(std::string_view filename, const Rect& rect)
+cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, const Rect& rect)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->initWithFile(filename, rect))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame)
+cc::IntrusivePtr<Sprite> Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame)
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (spriteFrame && sprite->initWithSpriteFrame(spriteFrame))
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
-Sprite* Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
+cc::IntrusivePtr<Sprite> Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
 {
     SpriteFrame* frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(spriteFrameName);
 
@@ -139,15 +127,13 @@ Sprite* Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
     return createWithSpriteFrame(frame);
 }
 
-Sprite* Sprite::create()
+cc::IntrusivePtr<Sprite> Sprite::create()
 {
-    Sprite* sprite = new Sprite();
+    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
     if (sprite->init())
     {
-        sprite->autorelease();
         return sprite;
     }
-    CC_SAFE_DELETE(sprite);
     return nullptr;
 }
 
@@ -307,8 +293,9 @@ bool Sprite::initWithTexture(Texture2D* texture, const Rect& rect, bool rotated)
 
 Sprite::Sprite()
 {
+    cc::IntrusivePtr<DrawNode> debugDrawNode;
 #if CC_SPRITE_DEBUG_DRAW
-    _debugDrawNode = DrawNode::create();
+    _debugDrawNode = (debugDrawNode = DrawNode::create()).get();
     addChild(_debugDrawNode);
 #endif  // CC_SPRITE_DEBUG_DRAW
 }
@@ -399,12 +386,11 @@ void Sprite::setTexture(Texture2D* texture)
         // If texture wasn't in cache, create it from RAW data.
         if (texture == nullptr)
         {
-            Image* image        = new Image();
+            cc::IntrusivePtr<Image> image{new Image()};
             bool CC_UNUSED isOK = image->initWithRawData(cc_2x2_white_image, sizeof(cc_2x2_white_image), 2, 2, 8);
             CCASSERT(isOK, "The 2x2 empty texture was created unsuccessfully.");
 
-            texture = _director->getTextureCache()->addImage(image, CC_2x2_WHITE_IMAGE_KEY);
-            CC_SAFE_RELEASE(image);
+            texture = _director->getTextureCache()->addImage(image.get(), CC_2x2_WHITE_IMAGE_KEY);
         }
     }
 
@@ -1611,7 +1597,7 @@ bool Sprite::isFrameDisplayed(SpriteFrame* frame) const
             frame->getOffset().equals(_unflippedOffsetPositionFromCenter));
 }
 
-SpriteFrame* Sprite::getSpriteFrame() const
+cc::IntrusivePtr<SpriteFrame> Sprite::getSpriteFrame() const
 {
     if (nullptr != this->_spriteFrame)
         return this->_spriteFrame;

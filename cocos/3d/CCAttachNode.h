@@ -51,7 +51,7 @@ public:
      * @param attachBone The bone to which the AttachNode is going to attach, the attacheBone must be a bone of the
      * AttachNode's parent
      */
-    static AttachNode* create(Bone3D* attachBone);
+    static cc::IntrusivePtr<AttachNode> create(Bone3D* attachBone);
 
     // override
     virtual Mat4 getWorldToNodeTransform() const override;

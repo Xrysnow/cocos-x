@@ -82,10 +82,9 @@ void PUOnQuotaObserver::postUpdateObserver(float /*deltaTime*/)
     }
 }
 
-PUOnQuotaObserver* PUOnQuotaObserver::create()
+cc::IntrusivePtr<PUOnQuotaObserver> PUOnQuotaObserver::create()
 {
-    auto pqo = new PUOnQuotaObserver();
-    pqo->autorelease();
+    cc::IntrusivePtr<PUOnQuotaObserver> pqo{new PUOnQuotaObserver()};
     return pqo;
 }
 

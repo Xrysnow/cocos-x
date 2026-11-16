@@ -63,8 +63,8 @@ class TriangleBufferPool
 public:
     struct TriangleBuffer
     {
-        RefPtr<backend::BufferGFX> vb;
-        RefPtr<backend::BufferGFX> ib;
+        cc::IntrusivePtr<backend::BufferGFX> vb;
+        cc::IntrusivePtr<backend::BufferGFX> ib;
         bool used              = false;
     };
     struct VertexBuffer
@@ -384,7 +384,7 @@ static const int DEFAULT_RENDER_QUEUE = 0;
 //
 Renderer::Renderer()
 {
-    _groupCommandManager = new GroupCommandManager();
+    _groupCommandManager = cc::IntrusivePtr<GroupCommandManager>{new GroupCommandManager()}.detach();
 
     _commandGroupStack.push(DEFAULT_RENDER_QUEUE);
 

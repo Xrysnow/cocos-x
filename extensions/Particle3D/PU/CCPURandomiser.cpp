@@ -146,10 +146,9 @@ void PURandomiser::postUpdateAffector(float /*deltaTime*/)
     _update = false;
 }
 
-PURandomiser* PURandomiser::create()
+cc::IntrusivePtr<PURandomiser> PURandomiser::create()
 {
-    auto pr = new PURandomiser();
-    pr->autorelease();
+    cc::IntrusivePtr<PURandomiser> pr{new PURandomiser()};
     return pr;
 }
 

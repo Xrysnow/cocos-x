@@ -86,16 +86,14 @@ public:
         _letterVisible = true;
     }
 
-    static LabelLetter* createWithTexture(Texture2D* texture, const Rect& rect, bool rotated = false)
+    static cc::IntrusivePtr<LabelLetter> createWithTexture(Texture2D* texture, const Rect& rect, bool rotated = false)
     {
-        auto letter = new LabelLetter();
+        cc::IntrusivePtr<LabelLetter> letter{new LabelLetter()};
         if (letter->initWithTexture(texture, rect, rotated))
         {
             letter->Sprite::setVisible(false);
-            letter->autorelease();
             return letter;
         }
-        CC_SAFE_DELETE(letter);
         return nullptr;
     }
 
@@ -217,15 +215,15 @@ void Label::BatchCommand::setProgramState(backend::ProgramState* programState)
 
     auto& programStateText = textCommand.getPipelineDescriptor().programState;
     CC_SAFE_RELEASE(programStateText);
-    programStateText = programState->clone();
+    programStateText = programState->clone().detach();
 
     auto& programStateShadow = shadowCommand.getPipelineDescriptor().programState;
     CC_SAFE_RELEASE(programStateShadow);
-    programStateShadow = programState->clone();
+    programStateShadow = programState->clone().detach();
 
     auto& programStateOutline = outLineCommand.getPipelineDescriptor().programState;
     CC_SAFE_RELEASE(programStateOutline);
-    programStateOutline = programState->clone();
+    programStateOutline = programState->clone().detach();
 }
 
 std::array<CustomCommand*, 3> Label::BatchCommand::getCommandArray()
@@ -233,132 +231,116 @@ std::array<CustomCommand*, 3> Label::BatchCommand::getCommandArray()
     return std::array<CustomCommand*, 3>{&textCommand, &shadowCommand, &outLineCommand};
 }
 
-Label* Label::create()
+cc::IntrusivePtr<Label> Label::create()
 {
-    auto ret = new Label;
-    ret->autorelease();
+    cc::IntrusivePtr<Label> ret{new Label};
     return ret;
 }
 
-Label* Label::createWithSystemFont(std::string_view text,
+cc::IntrusivePtr<Label> Label::createWithSystemFont(std::string_view text,
                                    std::string_view font,
                                    float fontSize,
                                    const Vec2& dimensions /* = Vec2::ZERO */,
                                    TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
                                    TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    auto ret = new Label(hAlignment, vAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment, vAlignment)};
 
     ret->setSystemFontName(font);
     ret->setSystemFontSize(fontSize);
     ret->setDimensions(dimensions.width, dimensions.height);
     ret->setString(text);
 
-    ret->autorelease();
-
     return ret;
 }
 
-Label* Label::createWithTTF(std::string_view text,
+cc::IntrusivePtr<Label> Label::createWithTTF(std::string_view text,
                             std::string_view fontFile,
                             float fontSize,
                             const Vec2& dimensions /* = Vec2::ZERO */,
                             TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
                             TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    auto ret = new Label(hAlignment, vAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment, vAlignment)};
 
     if (ret->initWithTTF(text, fontFile, fontSize, dimensions, hAlignment, vAlignment))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Label* Label::createWithTTF(const TTFConfig& ttfConfig,
+cc::IntrusivePtr<Label> Label::createWithTTF(const TTFConfig& ttfConfig,
                             std::string_view text,
                             TextHAlignment hAlignment /* = TextHAlignment::CENTER */,
                             int maxLineWidth /* = 0 */)
 {
-    auto ret = new Label(hAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
 
     if (ret->initWithTTF(ttfConfig, text, hAlignment, maxLineWidth))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Label* Label::createWithBMFont(std::string_view bmfontPath,
+cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                std::string_view text,
                                const TextHAlignment& hAlignment,
                                int maxLineWidth)
 {
-    auto ret = new Label(hAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath))
     {
         ret->setMaxLineWidth(maxLineWidth);
         ret->setString(text);
-        ret->autorelease();
-
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-Label* Label::createWithBMFont(std::string_view bmfontPath,
+cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                std::string_view text,
                                const TextHAlignment& hAlignment,
                                int maxLineWidth,
                                const Rect& imageRect,
                                bool imageRotated)
 {
-    auto ret = new Label(hAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath, imageRect, imageRotated))
     {
         ret->setMaxLineWidth(maxLineWidth);
         ret->setString(text);
-        ret->autorelease();
-
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-Label* Label::createWithBMFont(std::string_view bmfontPath,
+cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                std::string_view text,
                                const TextHAlignment& hAlignment,
                                int maxLineWidth,
                                std::string_view subTextureKey)
 {
-    auto ret = new Label(hAlignment);
+    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath, subTextureKey))
     {
         ret->setMaxLineWidth(maxLineWidth);
         ret->setString(text);
-        ret->autorelease();
-
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-Label* Label::createWithBMFont(std::string_view bmfontPath,
+cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                std::string_view text,
                                const TextHAlignment& hAlignment,
                                int maxLineWidth,
@@ -368,45 +350,39 @@ Label* Label::createWithBMFont(std::string_view bmfontPath,
                             false);
 }
 
-Label* Label::createWithCharMap(std::string_view plistFile)
+cc::IntrusivePtr<Label> Label::createWithCharMap(std::string_view plistFile)
 {
-    auto ret = new Label();
+    cc::IntrusivePtr<Label> ret{new Label()};
 
     if (ret->setCharMap(plistFile))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-Label* Label::createWithCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
+cc::IntrusivePtr<Label> Label::createWithCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
 {
-    auto ret = new Label();
+    cc::IntrusivePtr<Label> ret{new Label()};
 
     if (ret->setCharMap(texture, itemWidth, itemHeight, startCharMap))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
-Label* Label::createWithCharMap(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap)
+cc::IntrusivePtr<Label> Label::createWithCharMap(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap)
 {
-    auto ret = new Label();
+    cc::IntrusivePtr<Label> ret{new Label()};
 
     if (ret->setCharMap(charMapFile, itemWidth, itemHeight, startCharMap))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -509,11 +485,12 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
     _vAlignment = vAlignment;
 
 #if CC_LABEL_DEBUG_DRAW
-    _debugDrawNode = DrawNode::create();
+    auto debugDrawNodeOwner = DrawNode::create();
+        _debugDrawNode = debugDrawNodeOwner.get();
     addChild(_debugDrawNode);
 #endif
 
-    _purgeTextureListener = EventListenerCustom::create(FontAtlas::CMD_PURGE_FONTATLAS, [this](EventCustom* event) {
+    auto purgeTextureListenerOwner = EventListenerCustom::create(FontAtlas::CMD_PURGE_FONTATLAS, [this](EventCustom* event) {
         if (_fontAtlas && _currentLabelType == LabelType::TTF && event->getUserData() == _fontAtlas)
         {
             for (auto&& it : _letters)
@@ -529,9 +506,10 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
             }
         }
     });
+    _purgeTextureListener = purgeTextureListenerOwner.get();
     _eventDispatcher->addEventListenerWithFixedPriority(_purgeTextureListener, 1);
 
-    _resetTextureListener = EventListenerCustom::create(FontAtlas::CMD_RESET_FONTATLAS, [this](EventCustom* event) {
+    auto resetTextureListenerOwner = EventListenerCustom::create(FontAtlas::CMD_RESET_FONTATLAS, [this](EventCustom* event) {
         if (_fontAtlas && _currentLabelType == LabelType::TTF && event->getUserData() == _fontAtlas)
         {
             _fontAtlas      = nullptr;
@@ -547,6 +525,7 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
             }
         }
     });
+    _resetTextureListener = resetTextureListenerOwner.get();
     _eventDispatcher->addEventListenerWithFixedPriority(_resetTextureListener, 2);
 }
 
@@ -557,7 +536,7 @@ Label::~Label()
     if (_fontAtlas)
     {
         Node::removeAllChildrenWithCleanup(true);
-        CC_SAFE_RELEASE_NULL(_reusedLetter);
+        _reusedLetter.reset();
         _batchNodes.clear();
         FontAtlasCache::releaseFontAtlas(_fontAtlas);
     }
@@ -565,16 +544,16 @@ Label::~Label()
     _eventDispatcher->removeEventListener(_purgeTextureListener);
     _eventDispatcher->removeEventListener(_resetTextureListener);
 
-    CC_SAFE_RELEASE_NULL(_textSprite);
-    CC_SAFE_RELEASE_NULL(_shadowNode);
+    _textSprite.reset();
+    _shadowNode.reset();
 }
 
 void Label::reset()
 {
-    CC_SAFE_RELEASE_NULL(_textSprite);
-    CC_SAFE_RELEASE_NULL(_shadowNode);
+    _textSprite.reset();
+    _shadowNode.reset();
     Node::removeAllChildrenWithCleanup(true);
-    CC_SAFE_RELEASE_NULL(_reusedLetter);
+    _reusedLetter.reset();
     _letters.clear();
     _batchNodes.clear();
     _batchCommands.clear();
@@ -751,7 +730,7 @@ void Label::updateShaderProgram()
     }
 
     auto* program = backend::Program::getBuiltinProgram(programType);
-    setProgramState(new backend::ProgramState(program), false);
+    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
 
     updateUniformLocations();
 
@@ -801,7 +780,6 @@ void Label::setFontAtlas(FontAtlas* atlas, bool distanceFieldEnabled /* = false 
     {
         _reusedLetter = Sprite::create();
         _reusedLetter->setOpacityModifyRGB(_isOpacityModifyRGB);
-        _reusedLetter->retain();
         _reusedLetter->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
     }
 
@@ -1438,7 +1416,7 @@ void Label::enableShadow(const Color4B& shadowColor /* = Color4B::BLACK */,
         {
             if (shadowColor != _shadowColor4F)
             {
-                _shadowNode->release();
+                _shadowNode.reset();
                 _shadowNode = nullptr;
                 createShadowSpriteForSystemFont(fontDef);
             }
@@ -1486,7 +1464,8 @@ void Label::enableUnderline()
     // remove it, just in case to prevent adding two or more
     if (!_underlineNode)
     {
-        _underlineNode = DrawNode::create();
+        auto underlineNodeOwner = DrawNode::create();
+        _underlineNode = underlineNodeOwner.get();
         _underlineNode->setGlobalZOrder(getGlobalZOrder());
         addChild(_underlineNode, 100000);
         _contentDirty = true;
@@ -1529,7 +1508,7 @@ void Label::disableEffect(LabelEffect effect)
         if (_shadowEnabled)
         {
             _shadowEnabled = false;
-            CC_SAFE_RELEASE_NULL(_shadowNode);
+            _shadowNode.reset();
             updateShaderProgram();
         }
         break;
@@ -1583,22 +1562,20 @@ void Label::createSpriteForSystemFont(const FontDefinition& fontDef)
 {
     _currentLabelType = LabelType::STRING_TEXTURE;
 
-    auto texture = new Texture2D;
+    cc::IntrusivePtr<Texture2D> texture{new Texture2D};
     texture->initWithString(_utf8Text.c_str(), fontDef);
 
-    _textSprite = Sprite::createWithTexture(texture);
+    _textSprite = Sprite::createWithTexture(texture.get());
     // set camera mask using label's camera mask, because _textSprite may be null when setting camera mask to label
     _textSprite->setCameraMask(getCameraMask());
     _textSprite->setGlobalZOrder(getGlobalZOrder());
     _textSprite->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
     this->setContentSize(_textSprite->getContentSize());
-    texture->release();
     if (_blendFuncDirty)
     {
         _textSprite->setBlendFunc(_blendFunc);
     }
 
-    _textSprite->retain();
     _textSprite->updateDisplayedColor(_displayedColor);
     _textSprite->updateDisplayedOpacity(_displayedOpacity);
 }
@@ -1621,10 +1598,9 @@ void Label::createShadowSpriteForSystemFont(const FontDefinition& fontDef)
         shadowFontDefinition._stroke._strokeColor = shadowFontDefinition._fontFillColor;
         shadowFontDefinition._stroke._strokeAlpha = shadowFontDefinition._fontAlpha;
 
-        auto texture = new Texture2D;
+        cc::IntrusivePtr<Texture2D> texture{new Texture2D};
         texture->initWithString(_utf8Text.c_str(), shadowFontDefinition);
-        _shadowNode = Sprite::createWithTexture(texture);
-        texture->release();
+        _shadowNode = Sprite::createWithTexture(texture.get());
     }
 
     if (_shadowNode)
@@ -1638,7 +1614,6 @@ void Label::createShadowSpriteForSystemFont(const FontDefinition& fontDef)
         _shadowNode->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
         _shadowNode->setPosition(_shadowOffset.width, _shadowOffset.height);
 
-        _shadowNode->retain();
         _shadowNode->updateDisplayedColor(_displayedColor);
         _shadowNode->updateDisplayedOpacity(_displayedOpacity);
     }
@@ -1666,7 +1641,7 @@ void Label::updateContent()
         {
             _batchNodes.clear();
             _batchCommands.clear();
-            CC_SAFE_RELEASE_NULL(_reusedLetter);
+            _reusedLetter.reset();
             FontAtlasCache::releaseFontAtlas(_fontAtlas);
             _fontAtlas = nullptr;
         }
@@ -1674,8 +1649,8 @@ void Label::updateContent()
         _systemFontDirty = false;
     }
 
-    CC_SAFE_RELEASE_NULL(_textSprite);
-    CC_SAFE_RELEASE_NULL(_shadowNode);
+    _textSprite.reset();
+    _shadowNode.reset();
     bool updateFinished = true;
 
     if (_fontAtlas)
@@ -2115,7 +2090,7 @@ void Label::setSystemFontSize(float fontSize)
 ///// PROTOCOL STUFF
 Sprite* Label::getLetter(int letterIndex)
 {
-    Sprite* letter = nullptr;
+    cc::IntrusivePtr<Sprite> letter;
     do
     {
         if (_systemFontDirty || _currentLabelType == LabelType::STRING_TEXTURE)
@@ -2177,7 +2152,7 @@ Sprite* Label::getLetter(int letterIndex)
         }
     } while (false);
 
-    return letter;
+    return letter.get();
 }
 
 void Label::setLineHeight(float height)

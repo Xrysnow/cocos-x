@@ -53,39 +53,25 @@ Menu::~Menu()
     CCLOGINFO("In the destructor of Menu. %p", this);
 }
 
-Menu* Menu::create()
+cc::IntrusivePtr<Menu> Menu::create()
 {
     return Menu::create(nullptr, nullptr);
 }
 
-Menu* Menu::create(MenuItem* item, ...)
+
+
+cc::IntrusivePtr<Menu> Menu::createWithArray(const Vector<MenuItem*>& arrayOfItems)
 {
-    va_list args;
-    va_start(args, item);
-
-    Menu* ret = Menu::createWithItems(item, args);
-
-    va_end(args);
-
-    return ret;
-}
-
-Menu* Menu::createWithArray(const Vector<MenuItem*>& arrayOfItems)
-{
-    auto ret = new Menu();
-    if (ret->initWithArray(arrayOfItems))
+    cc::IntrusivePtr<Menu> ret{new Menu()};
+    if (!(ret->initWithArray(arrayOfItems)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
 }
 
-Menu* Menu::createWithItems(MenuItem* item, va_list args)
+cc::IntrusivePtr<Menu> Menu::createWithItems(MenuItem* item, va_list args)
 {
     Vector<MenuItem*> items;
     if (item)
@@ -102,7 +88,7 @@ Menu* Menu::createWithItems(MenuItem* item, va_list args)
     return Menu::createWithArray(items);
 }
 
-Menu* Menu::createWithItem(MenuItem* item)
+cc::IntrusivePtr<Menu> Menu::createWithItem(MenuItem* item)
 {
     return Menu::create(item, nullptr);
 }

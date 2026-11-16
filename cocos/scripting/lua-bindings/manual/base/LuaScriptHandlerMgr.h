@@ -51,7 +51,7 @@ public:
     ScheduleHandlerDelegate() : _isUpdateSchedule(false) {}
     virtual ~ScheduleHandlerDelegate() {}
 
-    static ScheduleHandlerDelegate* create();
+    static cc::IntrusivePtr<ScheduleHandlerDelegate> create();
 
     void scheduleFunc(float elapse);
 
@@ -90,7 +90,7 @@ public:
      *
      * @param func a function pointer for callback.
      */
-    static LuaCallFunc* create(const std::function<void(Node*)>& func);
+    static cc::IntrusivePtr<LuaCallFunc> create(const std::function<void(Node*)>& func);
 
     /**
      * Init a LuaCallFunc object by a function pointer for callback.
@@ -98,7 +98,7 @@ public:
      * @param func a function pointer for callback.
      */
     bool initWithFunction(const std::function<void(Node*)>& func);
-    virtual LuaCallFunc* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void execute() override;
 
 protected:

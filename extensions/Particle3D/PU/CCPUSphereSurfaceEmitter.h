@@ -37,7 +37,7 @@ public:
     // Constants
     static const float DEFAULT_RADIUS;
 
-    static PUSphereSurfaceEmitter* create();
+    static cc::IntrusivePtr<PUSphereSurfaceEmitter> create();
     /**
      */
     float getRadius() const;
@@ -51,7 +51,7 @@ public:
      */
     virtual void initParticleDirection(PUParticle3D* particle) override;
 
-    virtual PUSphereSurfaceEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUSphereSurfaceEmitter();

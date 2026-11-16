@@ -96,7 +96,7 @@ public:
      *
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* create();
+    static cc::IntrusivePtr<Scale9Sprite> create();
 
     /**
      * Creates a 9-slice sprite with a texture file, a delimitation zone and
@@ -108,7 +108,7 @@ public:
      * @param capInsets A specified cap insets.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* create(std::string_view file, const Rect& rect, const Rect& capInsets);
+    static cc::IntrusivePtr<Scale9Sprite> create(std::string_view file, const Rect& rect, const Rect& capInsets);
 
     /**
      * Creates a 9-slice sprite with a texture file. The whole texture will be
@@ -119,7 +119,7 @@ public:
      * @param file A texture file name.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* create(const Rect& capInsets, std::string_view file);
+    static cc::IntrusivePtr<Scale9Sprite> create(const Rect& capInsets, std::string_view file);
 
     /**
      * Creates a 9-slice sprite with a texture file and a delimitation zone. The
@@ -130,7 +130,7 @@ public:
      * @param rect A delimitation zone.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* create(std::string_view file, const Rect& rect);
+    static cc::IntrusivePtr<Scale9Sprite> create(std::string_view file, const Rect& rect);
 
     /**
      * Creates a 9-slice sprite with a texture file. The whole texture will be
@@ -140,7 +140,7 @@ public:
      * @param file A texture file name.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* create(std::string_view file);
+    static cc::IntrusivePtr<Scale9Sprite> create(std::string_view file);
 
     /**
      * Creates a 9-slice sprite with an sprite frame.
@@ -152,7 +152,7 @@ public:
      * @param spriteFrame  A sprite frame pointer.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* createWithSpriteFrame(SpriteFrame* spriteFrame);
+    static cc::IntrusivePtr<Scale9Sprite> createWithSpriteFrame(SpriteFrame* spriteFrame);
 
     /**
      * Creates a 9-slice sprite with an sprite frame and the centre of its zone.
@@ -165,7 +165,7 @@ public:
      * @param capInsets  A delimitation zone.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* createWithSpriteFrame(SpriteFrame* spriteFrame, const Rect& capInsets);
+    static cc::IntrusivePtr<Scale9Sprite> createWithSpriteFrame(SpriteFrame* spriteFrame, const Rect& capInsets);
 
     /**
      * Creates a 9-slice sprite with an sprite frame name.
@@ -177,7 +177,7 @@ public:
      * @param spriteFrameName A sprite frame name.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* createWithSpriteFrameName(std::string_view spriteFrameName);
+    static cc::IntrusivePtr<Scale9Sprite> createWithSpriteFrameName(std::string_view spriteFrameName);
 
     /**
      * Creates a 9-slice sprite with an sprite frame name and the centre of its zone.
@@ -190,7 +190,7 @@ public:
      * @param capInsets A delimitation zone.
      * @return A Scale9Sprite instance.
      */
-    static Scale9Sprite* createWithSpriteFrameName(std::string_view spriteFrameName, const Rect& capInsets);
+    static cc::IntrusivePtr<Scale9Sprite> createWithSpriteFrameName(std::string_view spriteFrameName, const Rect& capInsets);
 
     // overridden methods that takes different parameters
     using Sprite::initWithFile;
@@ -352,7 +352,7 @@ public:
      * @param capInsets The values to use for the cap insets.
      * @return A Scale9Sprite instance.
      */
-    Scale9Sprite* resizableSpriteWithCapInsets(const Rect& capInsets) const;
+    cc::IntrusivePtr<Scale9Sprite> resizableSpriteWithCapInsets(const Rect& capInsets) const;
 
     /**
      * @brief Update Scale9Sprite with a specified sprite.

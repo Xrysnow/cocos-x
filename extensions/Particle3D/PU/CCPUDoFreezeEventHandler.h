@@ -42,7 +42,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUDoFreezeEventHandler : public PUEventHandler
 {
 public:
-    static PUDoFreezeEventHandler* create();
+    static cc::IntrusivePtr<PUDoFreezeEventHandler> create();
 
     /**
      */

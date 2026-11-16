@@ -47,16 +47,14 @@ NS_CC_BEGIN
  * creation with Texture2D
  */
 
-SpriteBatchNode* SpriteBatchNode::createWithTexture(Texture2D* tex, ssize_t capacity /* = DEFAULT_CAPACITY*/)
+cc::IntrusivePtr<SpriteBatchNode> SpriteBatchNode::createWithTexture(Texture2D* tex, ssize_t capacity /* = DEFAULT_CAPACITY*/)
 {
-    SpriteBatchNode* batchNode = new SpriteBatchNode();
+    cc::IntrusivePtr<SpriteBatchNode> batchNode{new SpriteBatchNode()};
     if (batchNode->initWithTexture(tex, capacity))
     {
-        batchNode->autorelease();
         return batchNode;
     }
 
-    delete batchNode;
     return nullptr;
 }
 
@@ -64,16 +62,14 @@ SpriteBatchNode* SpriteBatchNode::createWithTexture(Texture2D* tex, ssize_t capa
  * creation with File Image
  */
 
-SpriteBatchNode* SpriteBatchNode::create(std::string_view fileImage, ssize_t capacity /* = DEFAULT_CAPACITY*/)
+cc::IntrusivePtr<SpriteBatchNode> SpriteBatchNode::create(std::string_view fileImage, ssize_t capacity /* = DEFAULT_CAPACITY*/)
 {
-    SpriteBatchNode* batchNode = new SpriteBatchNode();
+    cc::IntrusivePtr<SpriteBatchNode> batchNode{new SpriteBatchNode()};
     if (batchNode->initWithFile(fileImage, capacity))
     {
-        batchNode->autorelease();
         return batchNode;
     }
 
-    delete batchNode;
     return nullptr;
 }
 
@@ -94,7 +90,7 @@ bool SpriteBatchNode::initWithTexture(Texture2D* tex, ssize_t capacity /* = DEFA
     {
         _blendFunc = BlendFunc::ALPHA_NON_PREMULTIPLIED;
     }
-    _textureAtlas = new TextureAtlas();
+    _textureAtlas = cc::IntrusivePtr<TextureAtlas>{new TextureAtlas()}.detach();
 
     if (capacity <= 0)
     {
@@ -145,9 +141,8 @@ bool SpriteBatchNode::setProgramState(backend::ProgramState* programState, bool 
 
 bool SpriteBatchNode::init()
 {
-    Texture2D* texture = new Texture2D();
-    texture->autorelease();
-    return this->initWithTexture(texture, 0);
+    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    return this->initWithTexture(texture.get(), 0);
 }
 
 /*

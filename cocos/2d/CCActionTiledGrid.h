@@ -53,10 +53,10 @@ public:
     @param shakeZ Specify whether shake on the z axis.
     @return If the creation success, return a pointer of ShakyTiles3D action; otherwise, return nil.
     */
-    static ShakyTiles3D* create(float duration, const Vec2& gridSize, int range, bool shakeZ);
+    static cc::IntrusivePtr<ShakyTiles3D> create(float duration, const Vec2& gridSize, int range, bool shakeZ);
 
     // Override
-    virtual ShakyTiles3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     ShakyTiles3D() {}
@@ -97,10 +97,10 @@ public:
      * @param shatterZ Specify whether shatter on the z axis.
      * @return If the creation success, return a pointer of ShatteredTiles3D action; otherwise, return nil.
      */
-    static ShatteredTiles3D* create(float duration, const Vec2& gridSize, int range, bool shatterZ);
+    static cc::IntrusivePtr<ShatteredTiles3D> create(float duration, const Vec2& gridSize, int range, bool shatterZ);
 
     // Override
-    virtual ShatteredTiles3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     ShatteredTiles3D() {}
@@ -142,7 +142,7 @@ public:
      * @param seed Specify the random seed.
      * @return If the creation success, return a pointer of ShuffleTiles action; otherwise, return nil.
      */
-    static ShuffleTiles* create(float duration, const Vec2& gridSize, unsigned int seed);
+    static cc::IntrusivePtr<ShuffleTiles> create(float duration, const Vec2& gridSize, unsigned int seed);
 
     void shuffle(unsigned int* array, unsigned int len);
     Vec2 getDelta(const Vec2& pos) const;
@@ -151,7 +151,7 @@ public:
     // Overrides
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
-    virtual ShuffleTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     ShuffleTiles() {}
     virtual ~ShuffleTiles();
@@ -188,7 +188,7 @@ public:
      * @param gridSize Specify the size of the grid.
      * @return If the creation success, return a pointer of FadeOutTRTiles action; otherwise, return nil.
      */
-    static FadeOutTRTiles* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<FadeOutTRTiles> create(float duration, const Vec2& gridSize);
 
     /**
     @brief Calculate the percentage a tile should be shown.
@@ -219,7 +219,7 @@ public:
 
     // Overrides
     virtual void update(float time) override;
-    virtual FadeOutTRTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     FadeOutTRTiles() {}
     virtual ~FadeOutTRTiles() {}
@@ -241,11 +241,11 @@ public:
      * @param gridSize Specify the size of the grid.
      * @return If the creation success, return a pointer of FadeOutBLTiles action; otherwise, return nil.
      */
-    static FadeOutBLTiles* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<FadeOutBLTiles> create(float duration, const Vec2& gridSize);
 
     // Overrides
     virtual float testFunc(const Vec2& pos, float time) override;
-    virtual FadeOutBLTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     FadeOutBLTiles() {}
     virtual ~FadeOutBLTiles() {}
@@ -267,12 +267,12 @@ public:
      * @param gridSize Specify the size of the grid.
      * @return If the creation success, return a pointer of FadeOutUpTiles action; otherwise, return nil.
      */
-    static FadeOutUpTiles* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<FadeOutUpTiles> create(float duration, const Vec2& gridSize);
 
     virtual void transformTile(const Vec2& pos, float distance) override;
 
     // Overrides
-    virtual FadeOutUpTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual float testFunc(const Vec2& pos, float time) override;
 
     FadeOutUpTiles() {}
@@ -295,10 +295,10 @@ public:
      * @param gridSize Specify the size of the grid.
      * @return If the creation success, return a pointer of FadeOutDownTiles action; otherwise, return nil.
      */
-    static FadeOutDownTiles* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<FadeOutDownTiles> create(float duration, const Vec2& gridSize);
 
     // Overrides
-    virtual FadeOutDownTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual float testFunc(const Vec2& pos, float time) override;
 
     FadeOutDownTiles() {}
@@ -321,7 +321,7 @@ public:
      * @param gridSize Specify the size of the grid.
      * @return If the creation success, return a pointer of TurnOffTiles action; otherwise, return nil.
      */
-    static TurnOffTiles* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<TurnOffTiles> create(float duration, const Vec2& gridSize);
     /**
      * @brief Create the action with the grid size and the duration.
      * @param duration Specify the duration of the TurnOffTiles action. It's a value in seconds.
@@ -329,7 +329,7 @@ public:
      * @param seed Specify the random seed.
      * @return If the creation success, return a pointer of TurnOffTiles action; otherwise, return nil.
      */
-    static TurnOffTiles* create(float duration, const Vec2& gridSize, unsigned int seed);
+    static cc::IntrusivePtr<TurnOffTiles> create(float duration, const Vec2& gridSize, unsigned int seed);
 
     /**
     @brief Shuffle the array specified.
@@ -351,7 +351,7 @@ public:
     void turnOffTile(const Vec2& pos);
 
     // Overrides
-    virtual TurnOffTiles* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
 
@@ -391,7 +391,7 @@ public:
      * @param amplitude Specify the amplitude of the WavesTiles3D action.
      * @return If the creation success, return a pointer of WavesTiles3D action; otherwise, return nil.
      */
-    static WavesTiles3D* create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
+    static cc::IntrusivePtr<WavesTiles3D> create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
 
     /**
     @brief Get the amplitude of the effect.
@@ -416,7 +416,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Override
-    virtual WavesTiles3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     WavesTiles3D() {}
@@ -456,7 +456,7 @@ public:
      * @param amplitude Specify the amplitude of the JumpTiles3D action.
      * @return If the creation success, return a pointer of JumpTiles3D action; otherwise, return nil.
      */
-    static JumpTiles3D* create(float duration, const Vec2& gridSize, unsigned int numberOfJumps, float amplitude);
+    static cc::IntrusivePtr<JumpTiles3D> create(float duration, const Vec2& gridSize, unsigned int numberOfJumps, float amplitude);
 
     /**
     @brief Get the amplitude of the effect.
@@ -481,7 +481,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Override
-    virtual JumpTiles3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     JumpTiles3D() {}
@@ -520,10 +520,10 @@ public:
      * @param rows Specify the rows count should be split.
      * @return If the creation success, return a pointer of SplitRows action; otherwise, return nil.
      */
-    static SplitRows* create(float duration, unsigned int rows);
+    static cc::IntrusivePtr<SplitRows> create(float duration, unsigned int rows);
 
     // Overrides
-    virtual SplitRows* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
     virtual void startWithTarget(Node* target) override;
 
@@ -560,10 +560,10 @@ public:
      * @param cols Specify the columns count should be split.
      * @return If the creation success, return a pointer of SplitCols action; otherwise, return nil.
      */
-    static SplitCols* create(float duration, unsigned int cols);
+    static cc::IntrusivePtr<SplitCols> create(float duration, unsigned int cols);
 
     // Overrides
-    virtual SplitCols* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     /**
      * @param time in seconds
      */

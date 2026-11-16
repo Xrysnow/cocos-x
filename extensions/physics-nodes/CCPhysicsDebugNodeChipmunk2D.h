@@ -50,7 +50,7 @@ class CC_EX_DLL PhysicsDebugNodeChipmunk2D : public DrawNode
 
 public:
     /** Create a debug node for a regular Chipmunk space. */
-    static PhysicsDebugNodeChipmunk2D* create(cpSpace* space);
+    static cc::IntrusivePtr<PhysicsDebugNodeChipmunk2D> create(cpSpace* space);
     /**
      * @js ctor
      */

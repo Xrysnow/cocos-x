@@ -179,7 +179,7 @@ public:
      * @param glowColor glow color
      * @return RichElementText instance.
      */
-    static RichElementText* create(int tag,
+    static cc::IntrusivePtr<RichElementText> create(int tag,
                                    const Color3B& color,
                                    uint8_t opacity,
                                    std::string_view text,
@@ -259,7 +259,7 @@ public:
      * @param texType texture type, may be a valid file path, or a sprite frame name
      * @return A RichElementImage instance.
      */
-    static RichElementImage* create(int tag,
+    static cc::IntrusivePtr<RichElementImage> create(int tag,
                                     const Color3B& color,
                                     uint8_t opacity,
                                     std::string_view filePath,
@@ -325,7 +325,7 @@ public:
      * @param customNode A custom node pointer.
      * @return A RichElementCustomNode instance.
      */
-    static RichElementCustomNode* create(int tag, const Color3B& color, uint8_t opacity, Node* customNode);
+    static cc::IntrusivePtr<RichElementCustomNode> create(int tag, const Color3B& color, uint8_t opacity, Node* customNode);
 
 protected:
     Node* _customNode;
@@ -361,7 +361,7 @@ public:
      * @param opacity A opacity in GLubyte.
      * @return A RichElementNewLine instance.
      */
-    static RichElementNewLine* create(int tag, const Color3B& color, uint8_t opacity);
+    static cc::IntrusivePtr<RichElementNewLine> create(int tag, const Color3B& color, uint8_t opacity);
 
 protected:
     friend class RichText;
@@ -398,7 +398,7 @@ public:
      * @param tagAttrValueMap the attributes of a tag
      * @result text attributes and RichElement
      */
-    typedef std::function<std::pair<ValueMap, RichElement*>(const ValueMap& tagAttrValueMap)> VisitEnterHandler;
+    typedef std::function<std::pair<ValueMap, cc::IntrusivePtr<RichElement>>(const ValueMap& tagAttrValueMap)> VisitEnterHandler;
 
     static const std::string KEY_VERTICAL_SPACE;                   /*!< key of vertical space */
     static const std::string KEY_WRAP_MODE;                        /*!< key of per word, or per char */
@@ -459,14 +459,14 @@ public:
      *
      * @return RichText instance.
      */
-    static RichText* create();
+    static cc::IntrusivePtr<RichText> create();
 
     /**
      * @brief Create a RichText from an XML
      *
      * @return RichText instance.
      */
-    static RichText* createWithXML(std::string_view xml,
+    static cc::IntrusivePtr<RichText> createWithXML(std::string_view xml,
                                    const ValueMap& defaults            = ValueMap(),
                                    const OpenUrlHandler& handleOpenUrl = nullptr);
 

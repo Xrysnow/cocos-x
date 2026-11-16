@@ -41,35 +41,32 @@ TextBMFont::TextBMFont()
 
 TextBMFont::~TextBMFont() {}
 
-TextBMFont* TextBMFont::create()
+cc::IntrusivePtr<TextBMFont> TextBMFont::create()
 {
-    TextBMFont* widget = new TextBMFont();
+    cc::IntrusivePtr<TextBMFont> widget{new TextBMFont()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-TextBMFont* TextBMFont::create(std::string_view text, std::string_view filename)
+cc::IntrusivePtr<TextBMFont> TextBMFont::create(std::string_view text, std::string_view filename)
 {
-    TextBMFont* widget = new TextBMFont();
+    cc::IntrusivePtr<TextBMFont> widget{new TextBMFont()};
     if (widget->init())
     {
         widget->setFntFile(filename);
         widget->setString(text);
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
 void TextBMFont::initRenderer()
 {
-    _labelBMFontRenderer = cocos2d::Label::create();
+    cc::IntrusivePtr<Label> labelBMFontRenderer;
+    _labelBMFontRenderer = (labelBMFontRenderer = cocos2d::Label::create()).get();
     addProtectedChild(_labelBMFontRenderer, LABELBMFONT_RENDERER_Z, -1);
 }
 
@@ -160,7 +157,7 @@ std::string TextBMFont::getDescription() const
     return "TextBMFont";
 }
 
-Widget* TextBMFont::createCloneInstance()
+cc::IntrusivePtr<Widget> TextBMFont::createCloneInstance()
 {
     return TextBMFont::create();
 }

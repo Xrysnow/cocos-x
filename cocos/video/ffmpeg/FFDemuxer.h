@@ -23,7 +23,7 @@ namespace ffmpeg
 		bool init(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 	public:
 		// Returns an owned reference.
-		static Demuxer* create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
+		static cc::IntrusivePtr<Demuxer> create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 
 		bool setAudioReceiver(FrameReceiver* receiver, int streamIndex = -1);
 		bool setVideoReceiver(FrameReceiver* receiver, int streamIndex = -1);

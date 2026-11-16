@@ -42,17 +42,16 @@ void PUSlaveBehaviour::updateBehaviour(PUParticle3D* particle, float /*deltaTime
     }
 }
 
-PUSlaveBehaviour* PUSlaveBehaviour::clone()
+cc::IntrusivePtr<PUBehaviour> PUSlaveBehaviour::clone()
 {
     auto pb = PUSlaveBehaviour::create();
     copyAttributesTo(pb);
     return pb;
 }
 
-PUSlaveBehaviour* PUSlaveBehaviour::create()
+cc::IntrusivePtr<PUSlaveBehaviour> PUSlaveBehaviour::create()
 {
-    auto pb = new PUSlaveBehaviour();
-    pb->autorelease();
+    cc::IntrusivePtr<PUSlaveBehaviour> pb{new PUSlaveBehaviour()};
     return pb;
 }
 

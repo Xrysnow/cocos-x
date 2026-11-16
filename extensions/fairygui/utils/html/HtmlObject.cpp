@@ -83,11 +83,12 @@ void HtmlObject::destroy()
 
 void HtmlObject::createCommon()
 {
+    cc::IntrusivePtr<GObject> ui;
     string src = _element->getString("src");
     if (!src.empty())
-        _ui = objectPool.getObject(src);
+        _ui = (ui = objectPool.getObject(src)).get();
     else
-        _ui = GComponent::create();
+        _ui = (ui = GComponent::create()).get();
 
     _ui->retain();
 
@@ -125,8 +126,7 @@ void HtmlObject::createImage()
     }
     else
     {
-        loader = GLoader::create();
-        loader->retain();
+        loader = GLoader::create().detach();
     }
 
     _ui = loader;
@@ -138,11 +138,12 @@ void HtmlObject::createImage()
 
 void HtmlObject::createButton()
 {
+    cc::IntrusivePtr<GObject> ui;
     if (!buttonResource.empty())
-        _ui = objectPool.getObject(buttonResource);
+        _ui = (ui = objectPool.getObject(buttonResource)).get();
     else
     {
-        _ui = GComponent::create();
+        _ui = (ui = GComponent::create()).get();
         CCLOGWARN("Set HtmlObject.buttonResource first");
     }
 
@@ -163,11 +164,12 @@ void HtmlObject::createButton()
 
 void HtmlObject::createInput()
 {
+    cc::IntrusivePtr<GObject> ui;
     if (!inputResource.empty())
-        _ui = objectPool.getObject(inputResource);
+        _ui = (ui = objectPool.getObject(inputResource)).get();
     else
     {
-        _ui = GComponent::create();
+        _ui = (ui = GComponent::create()).get();
         CCLOGWARN("Set HtmlObject.inputResource first");
     }
 
@@ -206,11 +208,12 @@ void HtmlObject::createInput()
 
 void HtmlObject::createSelect()
 {
+    cc::IntrusivePtr<GObject> ui;
     if (!selectResource.empty())
-        _ui = objectPool.getObject(selectResource);
+        _ui = (ui = objectPool.getObject(selectResource)).get();
     else
     {
-        _ui = GComponent::create();
+        _ui = (ui = GComponent::create()).get();
         CCLOGWARN("Set HtmlObject.selectResource first");
     }
 

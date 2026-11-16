@@ -123,7 +123,7 @@ int lua_cocos2d_ui_WebView_stopLoading_1(lua_State* lua_S)
 int lua_cocos2d_ui_WebView_create_1(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("ccui.WebView", "ccui.WebView:create");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::ui::WebView*(*)()>(&cocos2d::ui::WebView::create));
+	LUA_TRY_INVOKE_R(0, static_cast<cc::IntrusivePtr<cocos2d::ui::WebView>(*)()>(&cocos2d::ui::WebView::create));
 	LUA_SINVOKE_FOOTER("0");
 }
 int luaReg_cc_webview_ccuiWebView(lua_State* lua_S)

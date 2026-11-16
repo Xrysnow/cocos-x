@@ -576,10 +576,9 @@ void PUMeshSurfaceEmitter::build()
     _meshInfo = new MeshInfo(_meshName, _distribution, _orientation, _scale);
 }
 
-PUMeshSurfaceEmitter* PUMeshSurfaceEmitter::create()
+cc::IntrusivePtr<PUMeshSurfaceEmitter> PUMeshSurfaceEmitter::create()
 {
-    auto pe = new PUMeshSurfaceEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUMeshSurfaceEmitter> pe{new PUMeshSurfaceEmitter()};
     return pe;
 }
 
@@ -593,7 +592,7 @@ void PUMeshSurfaceEmitter::copyAttributesTo(PUEmitter* emitter)
     meshSurfaceEmitter->_scale               = _scale;
 }
 
-PUMeshSurfaceEmitter* PUMeshSurfaceEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUMeshSurfaceEmitter::clone()
 {
     auto be = PUMeshSurfaceEmitter::create();
     copyAttributesTo(be);

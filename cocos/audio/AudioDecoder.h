@@ -48,9 +48,9 @@ NS_CC_BEGIN
 
 		static DecoderType getDecoderTypeFromPath(const std::string& path);
 
-		static AudioDecoder* createFromStream(AudioStream* s, size_t bufferSize, DecoderType type);
-		static AudioDecoder* createFromFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
-		static AudioDecoder* createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
+		static cc::IntrusivePtr<AudioDecoder> createFromStream(AudioStream* s, size_t bufferSize, DecoderType type);
+		static cc::IntrusivePtr<AudioDecoder> createFromFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
+		static cc::IntrusivePtr<AudioDecoder> createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
 
 		/**
 		 * Indicates how many bytes of raw data should be generated at each
@@ -78,7 +78,7 @@ NS_CC_BEGIN
 		 * rewound, and does not have to be at the same place.
 		 * @return A new AudioDecoder object.
 		 **/
-		AudioDecoder* clone();
+		cc::IntrusivePtr<AudioDecoder> clone();
 
 		/**
 		 * Decodes the next chunk of the music stream, this will usually be

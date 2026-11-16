@@ -270,28 +270,24 @@ ParticleSystem::ParticleSystem()
 }
 // implementation ParticleSystem
 
-ParticleSystem* ParticleSystem::create(std::string_view plistFile)
+cc::IntrusivePtr<ParticleSystem> ParticleSystem::create(std::string_view plistFile)
 {
-    ParticleSystem* ret = new ParticleSystem();
+    cc::IntrusivePtr<ParticleSystem> ret{new ParticleSystem()};
     if (ret->initWithFile(plistFile))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
-ParticleSystem* ParticleSystem::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSystem> ParticleSystem::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleSystem* ret = new ParticleSystem();
+    cc::IntrusivePtr<ParticleSystem> ret{new ParticleSystem()};
     if (ret->initWithTotalParticles(numberOfParticles))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
 // static
@@ -647,7 +643,7 @@ bool ParticleSystem::initWithDictionary(const ValueMap& dictionary, std::string_
 
                         // For android, we should retain it in VolatileTexture::addImage which invoked in
                         // Director::getInstance()->getTextureCache()->addUIImage()
-                        image     = new Image();
+                        image     = cc::IntrusivePtr<Image>{new Image()}.detach();
                         bool isOK = image->initWithImageData(deflated, deflatedLen, true);
                         CCASSERT(isOK, "CCParticleSystem: error init image with Data");
                         CC_BREAK_IF(!isOK);
@@ -2269,7 +2265,7 @@ ParticleEmissionMaskCache* ParticleEmissionMaskCache::getInstance()
 {
     if (emissionMaskCache == nullptr)
     {
-        emissionMaskCache = new ParticleEmissionMaskCache();
+        emissionMaskCache = cc::IntrusivePtr<ParticleEmissionMaskCache>{new ParticleEmissionMaskCache()}.detach();
         return emissionMaskCache;
     }
     return emissionMaskCache;
@@ -2281,12 +2277,11 @@ void ParticleEmissionMaskCache::bakeEmissionMask(std::string_view maskId,
                                                  bool inverted,
                                                  int inbetweenSamples)
 {
-    auto img = new Image();
+    cc::IntrusivePtr<Image> img{new Image()};
     img->Image::initWithImageFile(texturePath);
-    img->autorelease();
 
-    CCASSERT(img, "image texture was nullptr.");
-    bakeEmissionMask(maskId, img, alphaThreshold, inverted, inbetweenSamples);
+    CCASSERT(img.get(), "image texture was nullptr.");
+    bakeEmissionMask(maskId, img.get(), alphaThreshold, inverted, inbetweenSamples);
 }
 
 void ParticleEmissionMaskCache::bakeEmissionMask(std::string_view maskId,

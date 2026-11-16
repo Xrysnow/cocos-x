@@ -107,7 +107,7 @@ public:
      * Create an empty ScrollView.
      * @return A ScrollView instance.
      */
-    static ScrollView* create();
+    static cc::IntrusivePtr<ScrollView> create();
 
     /**
      * Changes scroll direction of scrollview.
@@ -585,7 +585,7 @@ protected:
     virtual void onSizeChanged() override;
     virtual void doLayout() override;
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void copyClonedWidgetChildren(Widget* model) override;
 

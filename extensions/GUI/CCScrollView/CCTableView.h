@@ -147,7 +147,7 @@ public:
     };
 
     /** Empty constructor of TableView */
-    static TableView* create();
+    static cc::IntrusivePtr<TableView> create();
 
     /**
      * An initialized table view object
@@ -162,7 +162,7 @@ public:
      * in lua:
      * @endcode
      */
-    static TableView* create(TableViewDataSource* dataSource, Size size);
+    static cc::IntrusivePtr<TableView> create(TableViewDataSource* dataSource, Size size);
     /**
      * An initialized table view object
      *
@@ -177,7 +177,7 @@ public:
      * in lua:
      * @endcode
      */
-    static TableView* create(TableViewDataSource* dataSource, Size size, Node* container);
+    static cc::IntrusivePtr<TableView> create(TableViewDataSource* dataSource, Size size, Node* container);
     /**
      * @js ctor
      * @lua new

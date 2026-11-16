@@ -29,7 +29,7 @@ public:
      */
     virtual ~TextFieldEx();
 
-    static TextFieldEx* create(std::string_view placeholder,
+    static cc::IntrusivePtr<TextFieldEx> create(std::string_view placeholder,
                                std::string_view fontName,
                                float fontSize,
                                float cursorWidth    = 2,

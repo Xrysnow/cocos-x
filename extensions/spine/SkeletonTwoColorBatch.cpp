@@ -135,7 +135,7 @@ void main() {
 			return;
 		}
 		auto program = backend::Device::getInstance()->newProgram(TWO_COLOR_TINT_VERTEX_SHADER, TWO_COLOR_TINT_FRAGMENT_SHADER);
-		auto *programState = new backend::ProgramState(program);
+		auto *programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
 		program->release();
 
 		updateProgramStateLayout(programState);
@@ -208,7 +208,7 @@ namespace spine {
 		} else {
 			needsUpdateStateLayout = _programState != nullptr && _programState->getProgram() != __twoColorProgramState->getProgram();
 			CC_SAFE_RELEASE(_programState);
-			_programState = __twoColorProgramState->clone();
+			_programState = __twoColorProgramState->clone().detach();
 		}
 
 		CCASSERT(_programState, "programState should not be null");

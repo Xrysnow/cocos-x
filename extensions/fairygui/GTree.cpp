@@ -21,9 +21,10 @@ GTree::~GTree()
 
 void GTree::handleInit()
 {
+    cc::IntrusivePtr<GTreeNode> rootNode;
     GList::handleInit();
 
-    _rootNode = GTreeNode::create(true);
+    _rootNode = (rootNode = GTreeNode::create(true)).get();
     _rootNode->setTree(this);
     _rootNode->setExpaned(true);
     _rootNode->retain();
@@ -388,7 +389,7 @@ void GTree::readItems(ByteBuffer* buffer)
         isFolder = buffer->readBool();
         level = buffer->readByte();
 
-        GTreeNode* node = GTreeNode::create(isFolder, str);
+        cc::IntrusivePtr<GTreeNode> node = GTreeNode::create(isFolder, str);
         node->setExpaned(true);
         if (i == 0)
             _rootNode->addChild(node);

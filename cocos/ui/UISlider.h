@@ -87,18 +87,18 @@ public:
 
     /** Create a slider widget.
      *
-     * @return An autoreleased Slider object.
+     * @return An owned Slider object.
      */
-    static Slider* create();
+    static cc::IntrusivePtr<Slider> create();
 
     /** Create a slider widget with bar texture, ball texture and texture resource type.
      *
      * @param barTextureName Bar texture file name.
      * @param normalBallTextureName Ball texture file name.
      * @param resType Texture resource type.
-     * @return An autoreleased Slider object.
+     * @return An owned Slider object.
      */
-    static Slider* create(std::string_view barTextureName,
+    static cc::IntrusivePtr<Slider> create(std::string_view barTextureName,
                           std::string_view normalBallTextureName,
                           TextureResType resType = TextureResType::LOCAL);
 
@@ -302,7 +302,7 @@ protected:
 
     void barRendererScaleChangedWithSize();
     void progressBarRendererScaleChangedWithSize();
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void adaptRenderers() override;
 

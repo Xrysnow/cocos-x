@@ -43,7 +43,7 @@ protected:
     unsigned int _eventFlag;
 
 public:
-    static PUOnEventFlagObserver* create();
+    static cc::IntrusivePtr<PUOnEventFlagObserver> create();
 
     // Constants
     static const unsigned int DEFAULT_EVENT_FLAG;

@@ -181,10 +181,9 @@ void PUSphereCollider::preUpdateAffector(float /*deltaTime*/)
     _sphere.setCenter(getDerivedPosition());
 }
 
-PUSphereCollider* PUSphereCollider::create()
+cc::IntrusivePtr<PUSphereCollider> PUSphereCollider::create()
 {
-    auto psc = new PUSphereCollider();
-    psc->autorelease();
+    cc::IntrusivePtr<PUSphereCollider> psc{new PUSphereCollider()};
     return psc;
 }
 

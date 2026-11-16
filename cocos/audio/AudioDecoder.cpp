@@ -54,7 +54,7 @@ AudioDecoder::DecoderType AudioDecoder::getDecoderTypeFromPath(const std::string
 	return AudioDecoder::DecoderType::UNKNOWN;
 }
 
-AudioDecoder* AudioDecoder::createFromStream(AudioStream* s, size_t bufferSize, DecoderType type)
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromStream(AudioStream* s, size_t bufferSize, DecoderType type)
 {
 	if (!s)
 		return nullptr;
@@ -78,18 +78,18 @@ AudioDecoder* AudioDecoder::createFromStream(AudioStream* s, size_t bufferSize, 
 	return nullptr;
 }
 
-AudioDecoder* AudioDecoder::createFromFile(const std::string& path, size_t bufferSize, DecoderType type)
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromFile(const std::string& path, size_t bufferSize, DecoderType type)
 {
 	if (type == DecoderType::UNKNOWN)
 		type = getDecoderTypeFromPath(path);
-	return createFromStream(AudioStream::createFromFile(path), bufferSize, type);
+	return createFromStream(AudioStream::createFromFile(path).get(), bufferSize, type);
 }
 
-AudioDecoder* AudioDecoder::createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type)
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type)
 {
 	if (type == DecoderType::UNKNOWN)
 		type = getDecoderTypeFromPath(path);
-	return createFromStream(AudioStream::createFromLocalFile(path), bufferSize, type);
+	return createFromStream(AudioStream::createFromLocalFile(path).get(), bufferSize, type);
 }
 
 const uint8_t* AudioDecoder::getBuffer() const
@@ -102,7 +102,7 @@ bool AudioDecoder::seekTime(double seconds)
 	return seek(seconds * getSampleRate());
 }
 
-AudioDecoder* AudioDecoder::clone()
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::clone()
 {
 	//BUG: current implementation dose not support play from the same stream
 	return createFromStream(stream, bufferSize, decoderType);

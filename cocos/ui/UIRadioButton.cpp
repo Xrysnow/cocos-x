@@ -41,44 +41,38 @@ RadioButton::~RadioButton()
     _group                    = nullptr;
 }
 
-RadioButton* RadioButton::create()
+cc::IntrusivePtr<RadioButton> RadioButton::create()
 {
-    RadioButton* widget = new RadioButton();
+    cc::IntrusivePtr<RadioButton> widget{new RadioButton()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-RadioButton* RadioButton::create(std::string_view backGround,
+cc::IntrusivePtr<RadioButton> RadioButton::create(std::string_view backGround,
                                  std::string_view backGroundSelected,
                                  std::string_view cross,
                                  std::string_view backGroundDisabled,
                                  std::string_view frontCrossDisabled,
                                  TextureResType texType)
 {
-    RadioButton* pWidget = new RadioButton();
+    cc::IntrusivePtr<RadioButton> pWidget{new RadioButton()};
     if (pWidget->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
-        pWidget->autorelease();
         return pWidget;
     }
-    CC_SAFE_DELETE(pWidget);
     return nullptr;
 }
 
-RadioButton* RadioButton::create(std::string_view backGround, std::string_view cross, TextureResType texType)
+cc::IntrusivePtr<RadioButton> RadioButton::create(std::string_view backGround, std::string_view cross, TextureResType texType)
 {
-    RadioButton* pWidget = new RadioButton();
+    cc::IntrusivePtr<RadioButton> pWidget{new RadioButton()};
     if (pWidget->init(backGround, "", cross, "", "", texType))
     {
-        pWidget->autorelease();
         return pWidget;
     }
-    CC_SAFE_DELETE(pWidget);
     return nullptr;
 }
 
@@ -120,7 +114,7 @@ std::string RadioButton::getDescription() const
     return "RadioButton";
 }
 
-Widget* RadioButton::createCloneInstance()
+cc::IntrusivePtr<Widget> RadioButton::createCloneInstance()
 {
     return RadioButton::create();
 }
@@ -153,15 +147,13 @@ RadioButtonGroup::~RadioButtonGroup()
     _radioButtons.clear();
 }
 
-RadioButtonGroup* RadioButtonGroup::create()
+cc::IntrusivePtr<RadioButtonGroup> RadioButtonGroup::create()
 {
-    RadioButtonGroup* widget = new RadioButtonGroup();
+    cc::IntrusivePtr<RadioButtonGroup> widget{new RadioButtonGroup()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -324,7 +316,7 @@ bool RadioButtonGroup::isAllowedNoSelection() const
     return _allowedNoSelection;
 }
 
-Widget* RadioButtonGroup::createCloneInstance()
+cc::IntrusivePtr<Widget> RadioButtonGroup::createCloneInstance()
 {
     return RadioButtonGroup::create();
 }

@@ -171,7 +171,7 @@ CCArmatureDisplay* CCFactory::buildArmatureDisplay(std::string_view armatureName
     return nullptr;
 }
 
-cocos2d::Sprite* CCFactory::getTextureDisplay(std::string_view textureName, std::string_view dragonBonesName) const
+cc::IntrusivePtr<cocos2d::Sprite> CCFactory::getTextureDisplay(std::string_view textureName, std::string_view dragonBonesName) const
 {
     const auto textureData = static_cast<CCTextureData*>(_getTextureData(dragonBonesName, textureName));
     if (textureData != nullptr && textureData->spriteFrame != nullptr)

@@ -37,7 +37,7 @@ public:
     // Constants
     static const bool DEFAULT_RANDOMIZE;
 
-    static PUPositionEmitter* create();
+    static cc::IntrusivePtr<PUPositionEmitter> create();
     /**
      */
     bool isRandomized() const;
@@ -70,7 +70,7 @@ public:
      */
     virtual void initParticlePosition(PUParticle3D* particle) override;
 
-    virtual PUPositionEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUPositionEmitter();

@@ -34,27 +34,23 @@ VBox::VBox() {}
 
 VBox::~VBox() {}
 
-VBox* VBox::create()
+cc::IntrusivePtr<VBox> VBox::create()
 {
-    VBox* widget = new VBox();
+    cc::IntrusivePtr<VBox> widget{new VBox()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-VBox* VBox::create(const Vec2& size)
+cc::IntrusivePtr<VBox> VBox::create(const Vec2& size)
 {
-    VBox* widget = new VBox();
+    cc::IntrusivePtr<VBox> widget{new VBox()};
     if (widget->initWithSize(size))
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 

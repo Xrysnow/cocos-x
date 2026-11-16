@@ -22,205 +22,288 @@
  THE SOFTWARE.
 ****************************************************************************/
 
-// Originally the class is from WebRTC.
-// https://chromium.googlesource.com/external/webrtc/+/master/api/scoped_refptr.h
-//
-
-// A smart pointer class for reference counted objects.  Use this class instead
-// of calling addRef and Release manually on a reference counted object to
-// avoid common memory leaks caused by forgetting to Release an object
-// reference.  Sample usage:
-//
-//   class MyFoo : public RefCounted<MyFoo> {
-//    ...
-//   };
-//
-//   void some_function() {
-//     IntrusivePtr<MyFoo> foo = ccnew MyFoo();
-//     foo->Method(param);
-//     // `foo` is released when this function returns
-//   }
-//
-//   void some_other_function() {
-//     IntrusivePtr<MyFoo> foo = ccnew MyFoo();
-//     ...
-//     foo = nullptr;  // explicitly releases `foo`
-//     ...
-//     if (foo)
-//       foo->Method(param);
-//   }
-//
-// The above examples show how IntrusivePtr<T> acts like a pointer to T.
-// Given two IntrusivePtr<T> classes, it is also possible to exchange
-// references between the two objects, like so:
-//
-//   {
-//     IntrusivePtr<MyFoo> a = ccnew MyFoo();
-//     IntrusivePtr<MyFoo> b;
-//
-//     b.swap(a);
-//     // now, `b` references the MyFoo object, and `a` references null.
-//   }
-//
-// To make both `a` and `b` in the above example reference the same MyFoo
-// object, simply use the assignment operator:
-//
-//   {
-//     IntrusivePtr<MyFoo> a = ccnew MyFoo();
-//     IntrusivePtr<MyFoo> b;
-//
-//     b = a;
-//     // now, `a` and `b` each own a reference to the same MyFoo object.
-//   }
-//
-
 #pragma once
 
+#include <cstddef>
 #include <functional>
+#include <type_traits>
 #include <utility>
 
 namespace cc {
 
-template <class T>
+struct retain_ref_t { explicit constexpr retain_ref_t() = default; };
+struct adopt_ref_t { explicit constexpr adopt_ref_t() = default; };
+inline constexpr retain_ref_t retain_ref{};
+inline constexpr adopt_ref_t adopt_ref{};
+
+// Const handles restrict object access, not ownership bookkeeping. The object
+// itself must permit reference-count mutation (as with the legacy RefPtr).
+struct IntrusiveRefOps {
+    template <class T> static void addRef(T *ptr) {
+        const_cast<std::remove_const_t<T> *>(ptr)->addRef();
+    }
+    template <class T> static void release(T *ptr) {
+        const_cast<std::remove_const_t<T> *>(ptr)->release();
+    }
+};
+
+// One reference per non-null handle. Raw pointers retain by default; adopt_ref
+// consumes an existing owned reference, never a borrow or a pool's reference.
+// Concurrent access to the same handle needs external synchronization even when
+// the pointee uses an atomic counter. RefOps adds no counter/control block.
+template <class T, class RefOps = IntrusiveRefOps>
 class IntrusivePtr {
 public:
     using element_type = T;
 
-    IntrusivePtr() {
+    constexpr IntrusivePtr() noexcept = default;
+    constexpr IntrusivePtr(std::nullptr_t) noexcept {}
+    IntrusivePtr(T *ptr) : _ptr(ptr) { // NOLINT: legacy API
+        if (_ptr) RefOps::addRef(_ptr);
     }
+    IntrusivePtr(T *ptr, retain_ref_t) : _ptr(ptr) {
+        if (_ptr) RefOps::addRef(_ptr);
+    }
+    IntrusivePtr(T *ptr, adopt_ref_t) noexcept : _ptr(ptr) {}
+    IntrusivePtr(const IntrusivePtr &other) : _ptr(other._ptr) {
+        if (_ptr) RefOps::addRef(_ptr);
+    }
+    IntrusivePtr(IntrusivePtr &&other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
 
-    IntrusivePtr(T *p) : _ptr(p) { // NOLINT
-        if (_ptr) {
-            _ptr->addRef();
-        }
+    template <class U, std::enable_if_t<std::is_convertible<U *, T *>::value, int> = 0>
+    IntrusivePtr(const IntrusivePtr<U, RefOps> &other) : _ptr(other._ptr) {
+        if (_ptr) RefOps::addRef(_ptr);
     }
-
-    IntrusivePtr(const IntrusivePtr<T> &r) : _ptr(r._ptr) {
-        if (_ptr) {
-            _ptr->addRef();
-        }
-    }
-
-    template <typename U>
-    IntrusivePtr(const IntrusivePtr<U> &r) : _ptr(r.get()) { // NOLINT
-        if (_ptr) {
-            _ptr->addRef();
-        }
-    }
-
-    // Move constructors.
-    IntrusivePtr(IntrusivePtr<T> &&r) noexcept : _ptr(r.release()) {
-    }
-
-    template <typename U>
-    IntrusivePtr(IntrusivePtr<U> &&r) noexcept : _ptr(r.release()) { // NOLINT
-    }
+    template <class U, std::enable_if_t<std::is_convertible<U *, T *>::value, int> = 0>
+    IntrusivePtr(IntrusivePtr<U, RefOps> &&other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
 
     ~IntrusivePtr() {
-        if (_ptr) {
-            _ptr->release();
-        }
-    }
-
-    T *get() const { return _ptr; }
-    operator T *() const { return _ptr; } // NOLINT
-    T &operator*() const { return *_ptr; }
-    T *operator->() const { return _ptr; }
-
-    // As reference count is 1 after creating a RefCounted object, so do not have to
-    // invoke p->addRef();
-    IntrusivePtr<T> &operator=(T *p) {
-        reset(p);
-        return *this;
-    }
-
-    IntrusivePtr<T> &operator=(const IntrusivePtr<T> &r) { // NOLINT
-        return *this = r._ptr;                             // NOLINT
-    }
-
-    template <typename U>
-    IntrusivePtr<T> &operator=(const IntrusivePtr<U> &r) {
-        return *this = r.get(); // NOLINT
-    }
-
-    IntrusivePtr<T> &operator=(IntrusivePtr<T> &&r) noexcept {
-        IntrusivePtr<T>(std::move(r)).swap(*this);
-        return *this;
-    }
-
-    template <typename U>
-    IntrusivePtr<T> &operator=(IntrusivePtr<U> &&r) noexcept {
-        IntrusivePtr<T>(std::move(r)).swap(*this);
-        return *this;
-    }
-
-    bool operator==(std::nullptr_t) {
-        return _ptr == nullptr;
-    }
-
-    bool operator==(T *r) {
-        return _ptr == r;
-    }
-
-    bool operator!=(std::nullptr_t) {
-        return _ptr != nullptr;
-    }
-
-    bool operator!=(T *r) {
-        return _ptr != r;
-    }
-
-    void reset() noexcept {
-        if (_ptr) {
-            _ptr->release();
-        }
+        T *old = _ptr;
         _ptr = nullptr;
+        if (old) RefOps::release(old);
     }
 
-    void reset(T *p) {
-        // AddRef first so that self assignment should work
-        if (p) {
-            p->addRef();
-        }
-        if (_ptr) {
-            _ptr->release();
-        }
-        _ptr = p;
-    }
+    T *get() const noexcept { return _ptr; }
+    // Borrow only from a named owner. Temporary ownership must be explicit.
+    operator T *() const & noexcept { return _ptr; } // NOLINT: legacy lvalue API
+    operator T *() && = delete;
+    operator T *() const && = delete;
+    explicit operator bool() const & noexcept { return _ptr != nullptr; }
+    explicit operator bool() && noexcept { return _ptr != nullptr; }
+    explicit operator bool() const && noexcept { return _ptr != nullptr; }
+    T &operator*() const { return *_ptr; }
+    T *operator->() const noexcept { return _ptr; }
 
-    void swap(T **pp) noexcept {
-        T *p = _ptr;
-        _ptr = *pp;
-        *pp = p;
+    IntrusivePtr &operator=(const IntrusivePtr &other) {
+        reset(other.get());
+        return *this;
     }
+    IntrusivePtr &operator=(IntrusivePtr &&other) noexcept {
+        IntrusivePtr(std::move(other)).swap(*this);
+        return *this;
+    }
+    template <class U, std::enable_if_t<std::is_convertible<U *, T *>::value, int> = 0>
+    IntrusivePtr &operator=(const IntrusivePtr<U, RefOps> &other) {
+        reset(other.get());
+        return *this;
+    }
+    template <class U, std::enable_if_t<std::is_convertible<U *, T *>::value, int> = 0>
+    IntrusivePtr &operator=(IntrusivePtr<U, RefOps> &&other) noexcept {
+        IntrusivePtr(std::move(other)).swap(*this);
+        return *this;
+    }
+    IntrusivePtr &operator=(T *ptr) { reset(ptr); return *this; }
+    IntrusivePtr &operator=(std::nullptr_t) noexcept { reset(); return *this; }
 
-    void swap(IntrusivePtr<T> &r) noexcept { swap(&r._ptr); }
+    // Transfer one owned reference to the caller without releasing it.
+    T *detach() noexcept {
+        T *old = _ptr;
+        _ptr = nullptr;
+        return old;
+    }
+    void reset() noexcept {
+        T *old = _ptr;
+        _ptr = nullptr; // Publish null before a destructor can reenter.
+        if (old) RefOps::release(old);
+    }
+    void reset(T *ptr) { reset(ptr, retain_ref); }
+    void reset(T *ptr, retain_ref_t) {
+        if (ptr == _ptr) return;
+        if (ptr) RefOps::addRef(ptr); // Keep the replacement alive first.
+        T *old = _ptr;
+        _ptr = ptr;
+        if (old) RefOps::release(old);
+    }
+    void reset(T *ptr, adopt_ref_t) noexcept {
+        // Even for the same address the caller must supply a separate share.
+        T *old = _ptr;
+        _ptr = ptr;
+        if (old) RefOps::release(old);
+    }
+    void swap(IntrusivePtr &other) noexcept { std::swap(_ptr, other._ptr); }
+    // Legacy owned-raw exchange: *ptr must own one reference (or be null).
+    void swap(T **ptr) noexcept { std::swap(_ptr, *ptr); }
 
 private:
-    // Returns the (possibly null) raw pointer, and makes the scoped_refptr hold a
-    // null pointer, all without touching the reference count of the underlying
-    // pointed-to object. The object is still reference counted, and the caller of
-    // release() is now the proud owner of one reference, so it is responsible for
-    // calling Release() once on the object when no longer using it.
-    T *release() {
-        T *retVal = _ptr;
-        _ptr = nullptr;
-        return retVal;
-    }
-
-protected:
+    template <class U, class Ops> friend class IntrusivePtr;
     T *_ptr{nullptr};
 };
+
+template <class T, class Ops>
+void swap(IntrusivePtr<T, Ops> &lhs, IntrusivePtr<T, Ops> &rhs) noexcept { lhs.swap(rhs); }
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator==(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return lhs.get() == rhs.get();
+}
+template <class T, class U, class Ops>
+bool operator==(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return lhs.get() == rhs;
+}
+template <class T, class U, class Ops>
+bool operator==(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return lhs == rhs.get();
+}
+template <class T, class Ops>
+bool operator==(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return ptr.get() == nullptr;
+}
+template <class T, class Ops>
+bool operator==(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return nullptr == ptr.get();
+}
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator!=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return !(lhs.get() == rhs.get());
+}
+template <class T, class U, class Ops>
+bool operator!=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return !(lhs.get() == rhs);
+}
+template <class T, class U, class Ops>
+bool operator!=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return !(lhs == rhs.get());
+}
+template <class T, class Ops>
+bool operator!=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return !(ptr.get() == nullptr);
+}
+template <class T, class Ops>
+bool operator!=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return !(nullptr == ptr.get());
+}
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator<(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs.get());
+}
+template <class T, class U, class Ops>
+bool operator<(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs);
+}
+template <class T, class U, class Ops>
+bool operator<(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(lhs, rhs.get());
+}
+template <class T, class Ops>
+bool operator<(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return std::less<T *>{}(ptr.get(), nullptr);
+}
+template <class T, class Ops>
+bool operator<(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return std::less<T *>{}(nullptr, ptr.get());
+}
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator>(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs.get());
+}
+template <class T, class U, class Ops>
+bool operator>(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(rhs, lhs.get());
+}
+template <class T, class U, class Ops>
+bool operator>(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs);
+}
+template <class T, class Ops>
+bool operator>(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return std::less<T *>{}(nullptr, ptr.get());
+}
+template <class T, class Ops>
+bool operator>(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return std::less<T *>{}(ptr.get(), nullptr);
+}
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator<=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs.get());
+}
+template <class T, class U, class Ops>
+bool operator<=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(rhs, lhs.get());
+}
+template <class T, class U, class Ops>
+bool operator<=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs);
+}
+template <class T, class Ops>
+bool operator<=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return !std::less<T *>{}(nullptr, ptr.get());
+}
+template <class T, class Ops>
+bool operator<=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return !std::less<T *>{}(ptr.get(), nullptr);
+}
+
+template <class T, class U, class Ops, class OtherOps>
+bool operator>=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs.get());
+}
+template <class T, class U, class Ops>
+bool operator>=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs);
+}
+template <class T, class U, class Ops>
+bool operator>=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
+    return !std::less<std::common_type_t<T *, U *>>{}(lhs, rhs.get());
+}
+template <class T, class Ops>
+bool operator>=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return !std::less<T *>{}(ptr.get(), nullptr);
+}
+template <class T, class Ops>
+bool operator>=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
+    return !std::less<T *>{}(nullptr, ptr.get());
+}
+
+template <class T, class U, class Ops>
+IntrusivePtr<T, Ops> static_pointer_cast(const IntrusivePtr<U, Ops> &ptr) {
+    return IntrusivePtr<T, Ops>(static_cast<T *>(ptr.get()), retain_ref);
+}
+template <class T, class U, class Ops>
+IntrusivePtr<T, Ops> static_pointer_cast(IntrusivePtr<U, Ops> &&ptr) noexcept {
+    return IntrusivePtr<T, Ops>(static_cast<T *>(ptr.detach()), adopt_ref);
+}
+template <class T, class U, class Ops>
+IntrusivePtr<T, Ops> dynamic_pointer_cast(const IntrusivePtr<U, Ops> &ptr) {
+    return IntrusivePtr<T, Ops>(dynamic_cast<T *>(ptr.get()), retain_ref);
+}
+template <class T, class U, class Ops>
+IntrusivePtr<T, Ops> dynamic_pointer_cast(IntrusivePtr<U, Ops> &&ptr) noexcept {
+    auto *value = dynamic_cast<T *>(ptr.get());
+    if (value) ptr.detach(); // Failure leaves the source unchanged.
+    return IntrusivePtr<T, Ops>(value, adopt_ref);
+}
 
 } // namespace cc
 
 namespace std {
-
-template <class T>
-struct hash<cc::IntrusivePtr<T>> {
-    size_t operator()(const cc::IntrusivePtr<T> &val) const noexcept {
-        return hash<T *>{}(val.get());
+template <class T, class Ops>
+struct hash<cc::IntrusivePtr<T, Ops>> {
+    size_t operator()(const cc::IntrusivePtr<T, Ops> &value) const noexcept {
+        return hash<T *>{}(value.get());
     }
 };
-
-} // namespace ccstd
+} // namespace std

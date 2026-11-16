@@ -46,16 +46,15 @@ const unsigned int kZoomActionTag = 0xc0c05002;
 // MenuItem
 //
 
-MenuItem* MenuItem::create()
+cc::IntrusivePtr<MenuItem> MenuItem::create()
 {
     return MenuItem::create((const ccMenuCallback&)nullptr);
 }
 
-MenuItem* MenuItem::create(const ccMenuCallback& callback)
+cc::IntrusivePtr<MenuItem> MenuItem::create(const ccMenuCallback& callback)
 {
-    MenuItem* ret = new MenuItem();
+    cc::IntrusivePtr<MenuItem> ret{new MenuItem()};
     ret->initWithCallback(callback);
-    ret->autorelease();
     return ret;
 }
 
@@ -148,19 +147,17 @@ void MenuItemLabel::setLabel(Node* var)
     _label = var;
 }
 
-MenuItemLabel* MenuItemLabel::create(Node* label, const ccMenuCallback& callback)
+cc::IntrusivePtr<MenuItemLabel> MenuItemLabel::create(Node* label, const ccMenuCallback& callback)
 {
-    MenuItemLabel* ret = new MenuItemLabel();
+    cc::IntrusivePtr<MenuItemLabel> ret{new MenuItemLabel()};
     ret->initWithLabel(label, callback);
-    ret->autorelease();
     return ret;
 }
 
-MenuItemLabel* MenuItemLabel::create(Node* label)
+cc::IntrusivePtr<MenuItemLabel> MenuItemLabel::create(Node* label)
 {
-    MenuItemLabel* ret = new MenuItemLabel();
+    cc::IntrusivePtr<MenuItemLabel> ret{new MenuItemLabel()};
     ret->initWithLabel(label, (const ccMenuCallback&)nullptr);
-    ret->autorelease();
     return ret;
 }
 
@@ -219,7 +216,7 @@ void MenuItemLabel::selected()
             _originalScale = this->getScale();
         }
 
-        Action* zoomAction = ScaleTo::create(0.1f, _originalScale * 1.2f);
+        cc::IntrusivePtr<Action> zoomAction = ScaleTo::create(0.1f, _originalScale * 1.2f);
         zoomAction->setTag(kZoomActionTag);
         this->runAction(zoomAction);
     }
@@ -232,7 +229,7 @@ void MenuItemLabel::unselected()
     {
         MenuItem::unselected();
         this->stopActionByTag(kZoomActionTag);
-        Action* zoomAction = ScaleTo::create(0.1f, _originalScale);
+        cc::IntrusivePtr<Action> zoomAction = ScaleTo::create(0.1f, _originalScale);
         zoomAction->setTag(kZoomActionTag);
         this->runAction(zoomAction);
     }
@@ -259,7 +256,7 @@ void MenuItemLabel::setEnabled(bool enabled)
 // CCMenuItemAtlasFont
 //
 
-MenuItemAtlasFont* MenuItemAtlasFont::create(std::string_view value,
+cc::IntrusivePtr<MenuItemAtlasFont> MenuItemAtlasFont::create(std::string_view value,
                                              std::string_view charMapFile,
                                              int itemWidth,
                                              int itemHeight,
@@ -269,16 +266,15 @@ MenuItemAtlasFont* MenuItemAtlasFont::create(std::string_view value,
                                      (const ccMenuCallback&)nullptr);
 }
 
-MenuItemAtlasFont* MenuItemAtlasFont::create(std::string_view value,
+cc::IntrusivePtr<MenuItemAtlasFont> MenuItemAtlasFont::create(std::string_view value,
                                              std::string_view charMapFile,
                                              int itemWidth,
                                              int itemHeight,
                                              char startCharMap,
                                              const ccMenuCallback& callback)
 {
-    MenuItemAtlasFont* ret = new MenuItemAtlasFont();
+    cc::IntrusivePtr<MenuItemAtlasFont> ret{new MenuItemAtlasFont()};
     ret->initWithString(value, charMapFile, itemWidth, itemHeight, startCharMap, callback);
-    ret->autorelease();
     return ret;
 }
 
@@ -290,7 +286,7 @@ bool MenuItemAtlasFont::initWithString(std::string_view value,
                                        const ccMenuCallback& callback)
 {
     CCASSERT(value.size() != 0, "value length must be greater than 0");
-    LabelAtlas* label = LabelAtlas::create(value, charMapFile, itemWidth, itemHeight, startCharMap);
+    cc::IntrusivePtr<LabelAtlas> label = LabelAtlas::create(value, charMapFile, itemWidth, itemHeight, startCharMap);
     if (MenuItemLabel::initWithLabel(label, callback))
     {
         // do something ?
@@ -327,19 +323,17 @@ std::string_view MenuItemFont::getFontName()
     return _globalFontName;
 }
 
-MenuItemFont* MenuItemFont::create(std::string_view value, const ccMenuCallback& callback)
+cc::IntrusivePtr<MenuItemFont> MenuItemFont::create(std::string_view value, const ccMenuCallback& callback)
 {
-    MenuItemFont* ret = new MenuItemFont();
+    cc::IntrusivePtr<MenuItemFont> ret{new MenuItemFont()};
     ret->initWithString(value, callback);
-    ret->autorelease();
     return ret;
 }
 
-MenuItemFont* MenuItemFont::create(std::string_view value)
+cc::IntrusivePtr<MenuItemFont> MenuItemFont::create(std::string_view value)
 {
-    MenuItemFont* ret = new MenuItemFont();
+    cc::IntrusivePtr<MenuItemFont> ret{new MenuItemFont()};
     ret->initWithString(value, (const ccMenuCallback&)nullptr);
-    ret->autorelease();
     return ret;
 }
 
@@ -357,7 +351,7 @@ bool MenuItemFont::initWithString(std::string_view value, const ccMenuCallback& 
     _fontName = _globalFontName;
     _fontSize = _globalFontSize;
 
-    Label* label = Label::createWithSystemFont(value, _fontName, _fontSize);
+    cc::IntrusivePtr<Label> label = Label::createWithSystemFont(value, _fontName, _fontSize);
     if (MenuItemLabel::initWithLabel(label, callback))
     {
         // do something ?
@@ -461,24 +455,23 @@ void MenuItemSprite::setDisabledImage(Node* image)
 // CCMenuItemSprite
 //
 
-MenuItemSprite* MenuItemSprite::create(Node* normalSprite, Node* selectedSprite, Node* disabledSprite)
+cc::IntrusivePtr<MenuItemSprite> MenuItemSprite::create(Node* normalSprite, Node* selectedSprite, Node* disabledSprite)
 {
     return MenuItemSprite::create(normalSprite, selectedSprite, disabledSprite, (const ccMenuCallback&)nullptr);
 }
 
-MenuItemSprite* MenuItemSprite::create(Node* normalSprite, Node* selectedSprite, const ccMenuCallback& callback)
+cc::IntrusivePtr<MenuItemSprite> MenuItemSprite::create(Node* normalSprite, Node* selectedSprite, const ccMenuCallback& callback)
 {
     return MenuItemSprite::create(normalSprite, selectedSprite, nullptr, callback);
 }
 
-MenuItemSprite* MenuItemSprite::create(Node* normalSprite,
+cc::IntrusivePtr<MenuItemSprite> MenuItemSprite::create(Node* normalSprite,
                                        Node* selectedSprite,
                                        Node* disabledSprite,
                                        const ccMenuCallback& callback)
 {
-    MenuItemSprite* ret = new MenuItemSprite();
+    cc::IntrusivePtr<MenuItemSprite> ret{new MenuItemSprite()};
     ret->initWithNormalSprite(normalSprite, selectedSprite, disabledSprite, callback);
-    ret->autorelease();
     return ret;
 }
 
@@ -583,15 +576,13 @@ void MenuItemSprite::updateImagesVisibility()
 /// MenuItemImage
 ///
 
-MenuItemImage* MenuItemImage::create()
+cc::IntrusivePtr<MenuItemImage> MenuItemImage::create()
 {
-    MenuItemImage* ret = new MenuItemImage();
+    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
     if (ret->init())
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -600,44 +591,40 @@ bool MenuItemImage::init()
     return initWithNormalImage("", "", "", (const ccMenuCallback&)nullptr);
 }
 
-MenuItemImage* MenuItemImage::create(std::string_view normalImage, std::string_view selectedImage)
+cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalImage, std::string_view selectedImage)
 {
     return MenuItemImage::create(normalImage, selectedImage, "", (const ccMenuCallback&)nullptr);
 }
 
-MenuItemImage* MenuItemImage::create(std::string_view normalImage,
+cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalImage,
                                      std::string_view selectedImage,
                                      const ccMenuCallback& callback)
 {
     return MenuItemImage::create(normalImage, selectedImage, "", callback);
 }
 
-MenuItemImage* MenuItemImage::create(std::string_view normalImage,
+cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalImage,
                                      std::string_view selectedImage,
                                      std::string_view disabledImage,
                                      const ccMenuCallback& callback)
 {
-    MenuItemImage* ret = new MenuItemImage();
+    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
     if (ret->initWithNormalImage(normalImage, selectedImage, disabledImage, callback))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-MenuItemImage* MenuItemImage::create(std::string_view normalImage,
+cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalImage,
                                      std::string_view selectedImage,
                                      std::string_view disabledImage)
 {
-    MenuItemImage* ret = new MenuItemImage();
+    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
     if (ret->initWithNormalImage(normalImage, selectedImage, disabledImage, (const ccMenuCallback&)nullptr))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -646,9 +633,9 @@ bool MenuItemImage::initWithNormalImage(std::string_view normalImage,
                                         std::string_view disabledImage,
                                         const ccMenuCallback& callback)
 {
-    Node* normalSprite   = nullptr;
-    Node* selectedSprite = nullptr;
-    Node* disabledSprite = nullptr;
+    cc::IntrusivePtr<Node> normalSprite   = nullptr;
+    cc::IntrusivePtr<Node> selectedSprite = nullptr;
+    cc::IntrusivePtr<Node> disabledSprite = nullptr;
 
     if (normalImage.size() > 0)
     {
@@ -672,28 +659,28 @@ bool MenuItemImage::initWithNormalImage(std::string_view normalImage,
 //
 void MenuItemImage::setNormalSpriteFrame(SpriteFrame* frame)
 {
-    setNormalImage(Sprite::createWithSpriteFrame(frame));
+    setNormalImage(Sprite::createWithSpriteFrame(frame).get());
 }
 
 void MenuItemImage::setSelectedSpriteFrame(SpriteFrame* frame)
 {
-    setSelectedImage(Sprite::createWithSpriteFrame(frame));
+    setSelectedImage(Sprite::createWithSpriteFrame(frame).get());
 }
 
 void MenuItemImage::setDisabledSpriteFrame(SpriteFrame* frame)
 {
-    setDisabledImage(Sprite::createWithSpriteFrame(frame));
+    setDisabledImage(Sprite::createWithSpriteFrame(frame).get());
 }
 
 //
 // MenuItemToggle
 //
 
-MenuItemToggle* MenuItemToggle::createWithCallback(const ccMenuCallback& callback, const Vector<MenuItem*>& menuItems)
+cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::createWithCallback(const ccMenuCallback& callback, const Vector<MenuItem*>& menuItems)
 {
-    MenuItemToggle* ret = new MenuItemToggle();
+    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
     ret->MenuItem::initWithCallback(callback);
-    ret->autorelease();
+
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
     if (sEngine)
@@ -702,7 +689,7 @@ MenuItemToggle* MenuItemToggle::createWithCallback(const ccMenuCallback& callbac
         {
             if (item)
             {
-                sEngine->retainScriptObject(ret, item);
+                sEngine->retainScriptObject(ret.get(), item);
             }
         }
     }
@@ -713,22 +700,12 @@ MenuItemToggle* MenuItemToggle::createWithCallback(const ccMenuCallback& callbac
     return ret;
 }
 
-MenuItemToggle* MenuItemToggle::createWithCallback(const ccMenuCallback& callback, MenuItem* item, ...)
-{
-    va_list args;
-    va_start(args, item);
-    MenuItemToggle* ret = new MenuItemToggle();
-    ret->initWithCallback(callback, item, args);
-    ret->autorelease();
-    va_end(args);
-    return ret;
-}
 
-MenuItemToggle* MenuItemToggle::create()
+
+cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::create()
 {
-    MenuItemToggle* ret = new MenuItemToggle();
+    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
     ret->initWithItem(nullptr);
-    ret->autorelease();
     return ret;
 }
 
@@ -760,11 +737,10 @@ bool MenuItemToggle::initWithCallback(const ccMenuCallback& callback, MenuItem* 
     return true;
 }
 
-MenuItemToggle* MenuItemToggle::create(MenuItem* item)
+cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::create(MenuItem* item)
 {
-    MenuItemToggle* ret = new MenuItemToggle();
+    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
     ret->initWithItem(item);
-    ret->autorelease();
     return ret;
 }
 

@@ -66,7 +66,7 @@ ProgramManager* ProgramManager::getInstance()
 {
     if (!_sharedProgramManager)
     {
-        _sharedProgramManager = new ProgramManager();
+        _sharedProgramManager = cc::IntrusivePtr<ProgramManager>{new ProgramManager()}.detach();
         if (!_sharedProgramManager->init())
         {
             CC_SAFE_DELETE(_sharedProgramManager);

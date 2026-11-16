@@ -75,10 +75,9 @@ void PUGravityAffector::preUpdateAffector(float /*deltaTime*/)
     getDerivedPosition();
 }
 
-PUGravityAffector* PUGravityAffector::create()
+cc::IntrusivePtr<PUGravityAffector> PUGravityAffector::create()
 {
-    auto pga = new PUGravityAffector();
-    pga->autorelease();
+    cc::IntrusivePtr<PUGravityAffector> pga{new PUGravityAffector()};
     return pga;
 }
 

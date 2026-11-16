@@ -169,7 +169,7 @@ public:
     static const Vec3 DEFAULT_SCALE;
     static const MeshInfo::MeshSurfaceDistribution DEFAULT_DISTRIBUTION;
 
-    static PUMeshSurfaceEmitter* create();
+    static cc::IntrusivePtr<PUMeshSurfaceEmitter> create();
 
     /** Returns the mesh name.
      */
@@ -232,7 +232,7 @@ public:
      */
     virtual void initParticleDirection(PUParticle3D* particle) override;
 
-    virtual PUMeshSurfaceEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     PUMeshSurfaceEmitter();

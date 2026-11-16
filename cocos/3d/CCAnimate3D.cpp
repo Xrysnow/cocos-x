@@ -40,30 +40,24 @@ std::unordered_map<Node*, Animate3D*> Animate3D::s_runningAnimates;
 float Animate3D::_transTime = 0.1f;
 
 // create Animate3D using Animation.
-Animate3D* Animate3D::create(Animation3D* animation)
+cc::IntrusivePtr<Animate3D> Animate3D::create(Animation3D* animation)
 {
-    auto animate = new Animate3D();
+    cc::IntrusivePtr<Animate3D> animate{new Animate3D()};
     animate->init(animation);
-    animate->autorelease();
-
     return animate;
 }
 
-Animate3D* Animate3D::create(Animation3D* animation, float fromTime, float duration)
+cc::IntrusivePtr<Animate3D> Animate3D::create(Animation3D* animation, float fromTime, float duration)
 {
-    auto animate = new Animate3D();
+    cc::IntrusivePtr<Animate3D> animate{new Animate3D()};
     animate->init(animation, fromTime, duration);
-    animate->autorelease();
-
     return animate;
 }
 
-Animate3D* Animate3D::createWithFrames(Animation3D* animation, int startFrame, int endFrame, float frameRate)
+cc::IntrusivePtr<Animate3D> Animate3D::createWithFrames(Animation3D* animation, int startFrame, int endFrame, float frameRate)
 {
-    auto animate = new Animate3D();
+    cc::IntrusivePtr<Animate3D> animate{new Animate3D()};
     animate->initWithFrames(animation, startFrame, endFrame, frameRate);
-    animate->autorelease();
-
     return animate;
 }
 
@@ -104,7 +98,7 @@ bool Animate3D::initWithFrames(Animation3D* animation, int startFrame, int endFr
 }
 
 /** returns a clone of action */
-Animate3D* Animate3D::clone() const
+cc::IntrusivePtr<Action> Animate3D::clone() const
 {
     auto animate = const_cast<Animate3D*>(this);
     auto copy    = Animate3D::create(animate->_animation);
@@ -121,9 +115,9 @@ Animate3D* Animate3D::clone() const
 }
 
 /** returns a new action that performs the exactly the reverse action */
-Animate3D* Animate3D::reverse() const
+cc::IntrusivePtr<Action> Animate3D::reverse() const
 {
-    auto animate          = clone();
+    auto animate = cc::static_pointer_cast<Animate3D>(clone());
     animate->_playReverse = !animate->_playReverse;
     return animate;
 }
@@ -401,7 +395,7 @@ void Animate3D::update(float t)
                         {
                             auto& frameEvent = _keyFrameEvent[keyFrame.first];
                             if (frameEvent == nullptr)
-                                frameEvent = new EventCustom(Animate3DDisplayedNotification);
+                                frameEvent = cc::IntrusivePtr<EventCustom>{new EventCustom(Animate3DDisplayedNotification)}.detach();
                             auto eventInfo      = &_displayedEventInfo[keyFrame.first];
                             eventInfo->target   = _target;
                             eventInfo->frame    = keyFrame.first;

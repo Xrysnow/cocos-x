@@ -139,17 +139,11 @@ Node::Node()
     _transform = _inverse = Mat4::IDENTITY;
 }
 
-Node* Node::create()
+cc::IntrusivePtr<Node> Node::create()
 {
-    Node* ret = new Node();
-    if (ret->init())
-    {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
-    }
+    cc::IntrusivePtr<Node> ret{new Node()};
+    if (!ret->init())
+        return {};
     return ret;
 }
 

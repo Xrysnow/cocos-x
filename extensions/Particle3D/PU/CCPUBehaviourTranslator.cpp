@@ -62,7 +62,8 @@ void PUBehaviourTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode
         return;
 
     // Create the Behaviour
-    _behaviour = PUBehaviourManager::Instance()->createBehaviour(type);
+    auto owner = PUBehaviourManager::Instance()->createBehaviour(type);
+    _behaviour = owner.get();
     if (!_behaviour)
     {
         // compiler->addError(ScriptCompiler::CE_INVALIDPARAMETERS, obj->file, obj->line);

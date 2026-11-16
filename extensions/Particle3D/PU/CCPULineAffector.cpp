@@ -156,10 +156,9 @@ void PULineAffector::firstParticleUpdate(PUParticle3D* /*particle*/, float /*del
     _first = true;
 }
 
-PULineAffector* PULineAffector::create()
+cc::IntrusivePtr<PULineAffector> PULineAffector::create()
 {
-    auto pla = new PULineAffector();
-    pla->autorelease();
+    cc::IntrusivePtr<PULineAffector> pla{new PULineAffector()};
     return pla;
 }
 

@@ -61,7 +61,7 @@ public:
      *
      * @return Return an autorelease object.
      */
-    static DrawNode* create(float defaultLineWidth = DEFAULT_LINE_WIDTH);
+    static cc::IntrusivePtr<DrawNode> create(float defaultLineWidth = DEFAULT_LINE_WIDTH);
 
     /** Draw a point.
      *

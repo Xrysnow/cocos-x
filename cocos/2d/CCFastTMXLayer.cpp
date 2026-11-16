@@ -57,15 +57,13 @@ const int FastTMXLayer::FAST_TMX_ORIENTATION_HEX   = 1;
 const int FastTMXLayer::FAST_TMX_ORIENTATION_ISO   = 2;
 
 // FastTMXLayer - init & alloc & dealloc
-FastTMXLayer* FastTMXLayer::create(TMXTilesetInfo* tilesetInfo, TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo)
+cc::IntrusivePtr<FastTMXLayer> FastTMXLayer::create(TMXTilesetInfo* tilesetInfo, TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo)
 {
-    FastTMXLayer* ret = new FastTMXLayer();
+    cc::IntrusivePtr<FastTMXLayer> ret{new FastTMXLayer()};
     if (ret->initWithTilesetInfo(tilesetInfo, layerInfo, mapInfo))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -377,7 +375,7 @@ void FastTMXLayer::setupTiles()
 
         if (hasTileAnimation())
         {
-            _tileAnimManager = new TMXTileAnimManager(this);
+            _tileAnimManager = cc::IntrusivePtr<TMXTileAnimManager>{new TMXTileAnimManager(this)}.detach();
         }
     }
 }
@@ -446,8 +444,8 @@ void FastTMXLayer::updatePrimitives()
                 CC_SAFE_RELEASE(pipelineDescriptor.programState);
                 auto* program =
                     backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
-                auto programState               = new backend::ProgramState(program);
-                pipelineDescriptor.programState = programState;
+                cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+                pipelineDescriptor.programState = programState.detach();
                 _alphaValueLocation             = pipelineDescriptor.programState->getUniformLocation("u_alpha_value");
                 pipelineDescriptor.programState->setUniform(_alphaValueLocation, &_alphaFuncValue,
                                                             sizeof(_alphaFuncValue));
@@ -456,8 +454,8 @@ void FastTMXLayer::updatePrimitives()
             {
                 CC_SAFE_RELEASE(pipelineDescriptor.programState);
                 auto* program     = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-                auto programState = new backend::ProgramState(program);
-                pipelineDescriptor.programState = programState;
+                cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+                pipelineDescriptor.programState = programState.detach();
             }
 
             _mvpMatrixLocaiton = pipelineDescriptor.programState->getUniformLocation("u_MVPMatrix");
@@ -632,7 +630,7 @@ Sprite* FastTMXLayer::getTileAt(const Vec2& tileCoordinate)
              "TMXLayer: invalid position");
     CCASSERT(_tiles, "TMXLayer: the tiles map has been released");
 
-    Sprite* tile = nullptr;
+    cc::IntrusivePtr<Sprite> tile;
     int gid      = this->getTileGIDAt(tileCoordinate);
 
     // if GID == 0, then no tile is present
@@ -665,7 +663,7 @@ Sprite* FastTMXLayer::getTileAt(const Vec2& tileCoordinate)
             setFlaggedTileGIDByIndex(index, 0);
         }
     }
-    return tile;
+    return tile.get(); // The layer owns each returned sprite.
 }
 
 int FastTMXLayer::getTileGIDAt(const Vec2& tileCoordinate, TMXTileFlags* flags /* = nullptr*/)
@@ -958,15 +956,14 @@ TMXTileAnimManager::TMXTileAnimManager(FastTMXLayer* layer)
     {
         for (auto&& tilePos : p.second)
         {
-            _tasks.pushBack(TMXTileAnimTask::create(_layer, _layer->getTileSet()->_animationInfo.at(p.first), tilePos));
+            _tasks.pushBack(TMXTileAnimTask::create(_layer, _layer->getTileSet()->_animationInfo.at(p.first), tilePos).get());
         }
     }
 }
 
-TMXTileAnimManager* TMXTileAnimManager::create(FastTMXLayer* layer)
+cc::IntrusivePtr<TMXTileAnimManager> TMXTileAnimManager::create(FastTMXLayer* layer)
 {
-    TMXTileAnimManager* ret = new TMXTileAnimManager(layer);
-    ret->autorelease();
+    cc::IntrusivePtr<TMXTileAnimManager> ret{new TMXTileAnimManager(layer)};
     return ret;
 }
 
@@ -1028,10 +1025,9 @@ void TMXTileAnimTask::setCurrFrame()
     _currentFrame = (_currentFrame + 1) % _frameCount;
 }
 
-TMXTileAnimTask* TMXTileAnimTask::create(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos)
+cc::IntrusivePtr<TMXTileAnimTask> TMXTileAnimTask::create(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos)
 {
-    TMXTileAnimTask* ret = new TMXTileAnimTask(layer, animation, tilePos);
-    ret->autorelease();
+    cc::IntrusivePtr<TMXTileAnimTask> ret{new TMXTileAnimTask(layer, animation, tilePos)};
     return ret;
 }
 

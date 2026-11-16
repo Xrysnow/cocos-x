@@ -95,24 +95,22 @@ static void ft_stream_close_callback(FT_Stream stream)
     stream->descriptor.pointer = nullptr;
 }
 
-FontFreeType* FontFreeType::create(std::string_view fontName,
+cc::IntrusivePtr<FontFreeType> FontFreeType::create(std::string_view fontName,
                                    float fontSize,
                                    GlyphCollection glyphs,
                                    std::string_view customGlyphs,
                                    bool distanceFieldEnabled /* = false */,
                                    float outline /* = 0 */)
 {
-    FontFreeType* tempFont = new FontFreeType(distanceFieldEnabled, outline);
+    cc::IntrusivePtr<FontFreeType> tempFont{new FontFreeType(distanceFieldEnabled, outline)};
 
     tempFont->setGlyphCollection(glyphs, customGlyphs);
 
     if (tempFont->loadFontFace(fontName, fontSize))
     {
-        tempFont->autorelease();
         return tempFont;
     }
 
-    delete tempFont;
     return nullptr;
 }
 
@@ -301,7 +299,7 @@ bool FontFreeType::loadFontFace(std::string_view fontPath, float fontSize)
 
 FontAtlas* FontFreeType::newFontAtlas()
 {
-    auto fontAtlas = new FontAtlas(this);
+    cc::IntrusivePtr<FontAtlas> fontAtlas{new FontAtlas(this)};
     if (_usedGlyphs != GlyphCollection::DYNAMIC)
     {
         std::u32string utf32;
@@ -310,7 +308,7 @@ FontAtlas* FontFreeType::newFontAtlas()
             fontAtlas->prepareLetterDefinitions(utf32);
         }
     }
-    return fontAtlas;
+    return fontAtlas.detach();
 }
 
 int* FontFreeType::getHorizontalKerningForTextUTF32(const std::u32string& text, int& outNumLetters) const

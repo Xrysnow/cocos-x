@@ -230,12 +230,11 @@ void PhysicsDebugNodeChipmunk2D::draw(Renderer* renderer, const Mat4& transform,
 
 PhysicsDebugNodeChipmunk2D::PhysicsDebugNodeChipmunk2D() : _spacePtr(nullptr) {}
 
-PhysicsDebugNodeChipmunk2D* PhysicsDebugNodeChipmunk2D::create(cpSpace* space)
+cc::IntrusivePtr<PhysicsDebugNodeChipmunk2D> PhysicsDebugNodeChipmunk2D::create(cpSpace* space)
 {
-    PhysicsDebugNodeChipmunk2D* node = new PhysicsDebugNodeChipmunk2D();
+    cc::IntrusivePtr<PhysicsDebugNodeChipmunk2D> node{new PhysicsDebugNodeChipmunk2D()};
     node->init();
     node->_spacePtr = space;
-    node->autorelease();
     return node;
 }
 

@@ -111,7 +111,7 @@ void setListener(Node* self, Channel channel, Callback callback)
     }
 }
 
-Node* create(const std::string& skeleton, const std::string& atlas, float scale)
+cc::IntrusivePtr<Node> create(const std::string& skeleton, const std::string& atlas, float scale)
 {
     if (cocos2d::FileUtils::getInstance()->getFileExtension(skeleton) == ".json")
         return Node::createWithJsonFile(skeleton, atlas, scale);

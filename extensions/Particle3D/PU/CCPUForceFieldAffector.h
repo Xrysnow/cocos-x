@@ -48,7 +48,7 @@ public:
     static const Vec3 DEFAULT_MOVEMENT;
     static const float DEFAULT_MOVEMENT_FREQUENCY;
 
-    static PUForceFieldAffector* create();
+    static cc::IntrusivePtr<PUForceFieldAffector> create();
 
     virtual void notifyStart() override;
     virtual void preUpdateAffector(float deltaTime) override;

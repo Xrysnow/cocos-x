@@ -47,15 +47,13 @@ PageView::PageView()
 
 PageView::~PageView() {}
 
-PageView* PageView::create()
+cc::IntrusivePtr<PageView> PageView::create()
 {
-    PageView* widget = new PageView();
+    cc::IntrusivePtr<PageView> widget{new PageView()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -314,7 +312,7 @@ std::string PageView::getDescription() const
     return "PageView";
 }
 
-Widget* PageView::createCloneInstance()
+cc::IntrusivePtr<Widget> PageView::createCloneInstance()
 {
     return PageView::create();
 }
@@ -338,6 +336,7 @@ void PageView::copySpecialProperties(Widget* widget)
 
 void PageView::setIndicatorEnabled(bool enabled)
 {
+    cc::IntrusivePtr<PageViewIndicator> indicator;
     if (enabled == (_indicator != nullptr))
     {
         return;
@@ -350,7 +349,7 @@ void PageView::setIndicatorEnabled(bool enabled)
     }
     else
     {
-        _indicator = PageViewIndicator::create();
+        _indicator = (indicator = PageViewIndicator::create()).get();
         _indicator->setDirection(getDirection());
         addProtectedChild(_indicator, 10000);
         setIndicatorSelectedIndexColor(Color3B(100, 100, 255));

@@ -52,7 +52,7 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL ControlColourPicker : public Control
 {
 public:
-    static ControlColourPicker* create();
+    static cc::IntrusivePtr<ControlColourPicker> create();
     /**
      * @js ctor
      * @lua new

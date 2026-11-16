@@ -47,9 +47,9 @@ public:
      *
      * @return An autorelease Grid Node.
      */
-    static NodeGrid* create();
+    static cc::IntrusivePtr<NodeGrid> create();
 
-    static NodeGrid* create(const Rect& rect);
+    static cc::IntrusivePtr<NodeGrid> create(const Rect& rect);
 
     /** Get a Grid Node.
      *

@@ -38,16 +38,12 @@ EventListenerAcceleration::~EventListenerAcceleration()
     CCLOGINFO("In the destructor of AccelerationEventListener. %p", this);
 }
 
-EventListenerAcceleration* EventListenerAcceleration::create(const std::function<void(Acceleration*, Event*)>& callback)
+cc::IntrusivePtr<EventListenerAcceleration> EventListenerAcceleration::create(const std::function<void(Acceleration*, Event*)>& callback)
 {
-    EventListenerAcceleration* ret = new EventListenerAcceleration();
-    if (ret->init(callback))
+    cc::IntrusivePtr<EventListenerAcceleration> ret{new EventListenerAcceleration()};
+    if (!(ret->init(callback)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -69,17 +65,13 @@ bool EventListenerAcceleration::init(const std::function<void(Acceleration*, Eve
     return false;
 }
 
-EventListenerAcceleration* EventListenerAcceleration::clone()
+cc::IntrusivePtr<EventListener> EventListenerAcceleration::clone()
 {
-    auto ret = new EventListenerAcceleration();
+    cc::IntrusivePtr<EventListenerAcceleration> ret{new EventListenerAcceleration()};
 
-    if (ret->init(onAccelerationEvent))
+    if (!(ret->init(onAccelerationEvent)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;

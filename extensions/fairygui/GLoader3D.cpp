@@ -36,12 +36,13 @@ GLoader3D::~GLoader3D()
 
 void GLoader3D::handleInit()
 {
-    FUIContainer* c = FUIContainer::create();
+    cc::IntrusivePtr<FUIContainer> container;
+    cc::IntrusivePtr<FUIContainer> c = FUIContainer::create();
     c->retain();
     c->gOwner = this;
     _displayObject = c;
 
-    _container = FUIContainer::create();
+    _container = (container = FUIContainer::create()).get();
     _container->retain();
     _container->setAnchorPoint(Vec2::ZERO);
     _displayObject->addChild(_container);
@@ -198,7 +199,7 @@ void GLoader3D::loadFromPackage()
             std::string atlasFile = _contentItem->file.substr(0, pos + 1).append("atlas");
             if (!ToolSet::isFileExist(atlasFile))
                 atlasFile = _contentItem->file.substr(0, pos + 1).append("atlas.txt");
-            spine::SkeletonAnimation* skeletonAni;
+            cc::IntrusivePtr<spine::SkeletonAnimation> skeletonAni;
             if (FileUtils::getInstance()->getFileExtension(_contentItem->file) == ".skel")
                 skeletonAni = spine::SkeletonAnimation::createWithBinaryFile(_contentItem->file, atlasFile);
             else

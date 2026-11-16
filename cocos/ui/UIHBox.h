@@ -63,14 +63,14 @@ public:
      * Create a empty HBox instance.
      * @return A HBox instance pointer.
      */
-    static HBox* create();
+    static cc::IntrusivePtr<HBox> create();
 
     /**
      *Create a HBox with a certain size.
      *@param size The content size of the layout.
      *@return A HBox instance pointer.
      */
-    static HBox* create(const Vec2& size);
+    static cc::IntrusivePtr<HBox> create(const Vec2& size);
 
     // initializes state of widget.
     virtual bool init() override;

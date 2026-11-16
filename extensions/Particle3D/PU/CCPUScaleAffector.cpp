@@ -44,10 +44,10 @@ PUScaleAffector::PUScaleAffector()
     , _dynScaleXYZSet(false)
     , _sinceStartSystem(false)
 {
-    _dynScaleX   = new PUDynamicAttributeFixed();
-    _dynScaleY   = new PUDynamicAttributeFixed();
-    _dynScaleZ   = new PUDynamicAttributeFixed();
-    _dynScaleXYZ = new PUDynamicAttributeFixed();
+    _dynScaleX   = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynScaleY   = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynScaleZ   = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynScaleXYZ = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynScaleX))->setValue(DEFAULT_X_SCALE);
     (static_cast<PUDynamicAttributeFixed*>(_dynScaleY))->setValue(DEFAULT_Y_SCALE);
     (static_cast<PUDynamicAttributeFixed*>(_dynScaleZ))->setValue(DEFAULT_Z_SCALE);
@@ -89,7 +89,7 @@ void PUScaleAffector::resetDynScaleX(bool resetToDefault)
     if (resetToDefault)
     {
         CC_SAFE_DELETE(_dynScaleX);
-        _dynScaleX = new PUDynamicAttributeFixed();
+        _dynScaleX = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleX))->setValue(DEFAULT_X_SCALE);
         _dynScaleXSet = false;
     }
@@ -114,7 +114,7 @@ void PUScaleAffector::resetDynScaleY(bool resetToDefault)
     {
 
         CC_SAFE_DELETE(_dynScaleY);
-        _dynScaleY = new PUDynamicAttributeFixed();
+        _dynScaleY = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleY))->setValue(DEFAULT_X_SCALE);
         _dynScaleYSet = false;
     }
@@ -138,7 +138,7 @@ void PUScaleAffector::resetDynScaleZ(bool resetToDefault)
     if (resetToDefault)
     {
         CC_SAFE_DELETE(_dynScaleZ);
-        _dynScaleZ = new PUDynamicAttributeFixed();
+        _dynScaleZ = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleZ))->setValue(DEFAULT_X_SCALE);
         _dynScaleYSet = false;
     }
@@ -162,7 +162,7 @@ void PUScaleAffector::resetDynScaleXYZ(bool resetToDefault)
     if (resetToDefault)
     {
         CC_SAFE_DELETE(_dynScaleXYZ);
-        _dynScaleXYZ = new PUDynamicAttributeFixed();
+        _dynScaleXYZ = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleXYZ))->setValue(DEFAULT_XYZ_SCALE);
         _dynScaleXYZSet = false;
     }
@@ -261,10 +261,9 @@ void PUScaleAffector::updatePUAffector(PUParticle3D* particle, float deltaTime)
     }
 }
 
-PUScaleAffector* PUScaleAffector::create()
+cc::IntrusivePtr<PUScaleAffector> PUScaleAffector::create()
 {
-    auto psa = new PUScaleAffector();
-    psa->autorelease();
+    cc::IntrusivePtr<PUScaleAffector> psa{new PUScaleAffector()};
     return psa;
 }
 
@@ -273,10 +272,10 @@ void PUScaleAffector::copyAttributesTo(PUAffector* affector)
     PUAffector::copyAttributesTo(affector);
 
     PUScaleAffector* scaleAffector = static_cast<PUScaleAffector*>(affector);
-    scaleAffector->setDynScaleX(getDynScaleX()->clone());
-    scaleAffector->setDynScaleY(getDynScaleY()->clone());
-    scaleAffector->setDynScaleZ(getDynScaleZ()->clone());
-    scaleAffector->setDynScaleXYZ(getDynScaleXYZ()->clone());
+    scaleAffector->setDynScaleX(getDynScaleX()->clone().get());
+    scaleAffector->setDynScaleY(getDynScaleY()->clone().get());
+    scaleAffector->setDynScaleZ(getDynScaleZ()->clone().get());
+    scaleAffector->setDynScaleXYZ(getDynScaleXYZ()->clone().get());
     scaleAffector->_dynScaleXSet     = _dynScaleXSet;
     scaleAffector->_dynScaleYSet     = _dynScaleYSet;
     scaleAffector->_dynScaleZSet     = _dynScaleZSet;

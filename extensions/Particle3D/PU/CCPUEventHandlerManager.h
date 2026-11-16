@@ -46,7 +46,7 @@ public:
     /**
      */
     PUScriptTranslator* getTranslator(std::string_view type);
-    PUEventHandler* createEventHandler(std::string_view type);
+    cc::IntrusivePtr<PUEventHandler> createEventHandler(std::string_view type);
 
     PUEventHandlerManager();
     ~PUEventHandlerManager();

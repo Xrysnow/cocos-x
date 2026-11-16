@@ -40,19 +40,17 @@ NS_CC_BEGIN
 
 // CCLabelAtlas - Creation & Init
 
-LabelAtlas* LabelAtlas::create(std::string_view string,
+cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string,
                                std::string_view charMapFile,
                                int itemWidth,
                                int itemHeight,
                                int startCharMap)
 {
-    LabelAtlas* ret = new LabelAtlas();
+    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
     if (ret->initWithString(string, charMapFile, itemWidth, itemHeight, startCharMap))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -81,37 +79,29 @@ bool LabelAtlas::initWithString(std::string_view string,
     return false;
 }
 
-LabelAtlas* LabelAtlas::create(std::string_view string, std::string_view fntFile)
+cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string, std::string_view fntFile)
 {
-    LabelAtlas* ret = new LabelAtlas();
+    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
 
-    if (ret->initWithString(string, fntFile))
+    if (!(ret->initWithString(string, fntFile)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
 }
 
-LabelAtlas* LabelAtlas::create(std::string_view string,
+cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string,
                                Texture2D* texture,
                                int itemWidth,
                                int itemHeight,
                                int startCharMap)
 {
-    LabelAtlas* ret = new LabelAtlas();
+    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
 
-    if (ret->initWithString(string, texture, itemWidth, itemHeight, startCharMap))
+    if (!(ret->initWithString(string, texture, itemWidth, itemHeight, startCharMap)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;

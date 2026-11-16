@@ -88,10 +88,9 @@ void PUCollisionAvoidanceAffector::updatePUAffector(PUParticle3D* /*particle*/, 
     //}
 }
 
-PUCollisionAvoidanceAffector* PUCollisionAvoidanceAffector::create()
+cc::IntrusivePtr<PUCollisionAvoidanceAffector> PUCollisionAvoidanceAffector::create()
 {
-    auto pcaa = new PUCollisionAvoidanceAffector();
-    pcaa->autorelease();
+    cc::IntrusivePtr<PUCollisionAvoidanceAffector> pcaa{new PUCollisionAvoidanceAffector()};
     return pcaa;
 }
 

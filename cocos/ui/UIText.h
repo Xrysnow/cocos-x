@@ -76,9 +76,9 @@ public:
     /**
      * Create a Text object.
      *
-     * @return An autoreleased Text object.
+     * @return An owned Text object.
      */
-    static Text* create();
+    static cc::IntrusivePtr<Text> create();
 
     /**
      *  Create a Text object with textContent, fontName and fontSize.
@@ -94,9 +94,9 @@ public:
      * @param textContent Text content string.
      * @param fontName A given font name.
      * @param fontSize A given font size.
-     * @return An autoreleased Text object.
+     * @return An owned Text object.
      */
-    static Text* create(std::string_view textContent, std::string_view fontName, float fontSize);
+    static cc::IntrusivePtr<Text> create(std::string_view textContent, std::string_view fontName, float fontSize);
 
     /**
      * Changes the string value of label.
@@ -352,7 +352,7 @@ protected:
     virtual void onSizeChanged() override;
 
     void labelScaleChangedWithSize();
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void adaptRenderers() override;
 

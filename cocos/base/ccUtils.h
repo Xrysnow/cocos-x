@@ -73,7 +73,7 @@ namespace utils
  * etc.).
  * @since v4.0 with axmol
  */
-CC_DLL void captureScreen(std::function<void(RefPtr<Image>)> imageCallback);
+CC_DLL void captureScreen(std::function<void(cc::IntrusivePtr<Image>)> imageCallback);
 
 /** Capture a specific Node.
  * @param startNode specify the snapshot Node. It should be cocos2d::Scene
@@ -81,7 +81,7 @@ CC_DLL void captureScreen(std::function<void(RefPtr<Image>)> imageCallback);
  * @returns: return a Image, then can call saveToFile to save the image as "xxx.png or xxx.jpg".
  * @since v4.0 with axmol
  */
-CC_DLL void captureNode(Node* startNode, std::function<void(RefPtr<Image>)> imageCallback, float scale = 1.0f);
+CC_DLL void captureNode(Node* startNode, std::function<void(cc::IntrusivePtr<Image>)> imageCallback, float scale = 1.0f);
 
 /** Capture the entire screen. V4-copmatiable only, [DEPRECATED]
  * To ensure the snapshot is applied after everything is updated and rendered in the current frame,
@@ -137,14 +137,14 @@ CC_DLL Rect getCascadeBoundingBox(Node* node);
 
  * @return Returns an instance of sprite
  */
-CC_DLL Sprite* createSpriteFromBase64Cached(const char* base64String, const char* key);
+CC_DLL cc::IntrusivePtr<Sprite> createSpriteFromBase64Cached(const char* base64String, const char* key);
 
 /**
 * Create a sprite instance from base64 encoded image.
 
 * @return Returns an instance of sprite
 */
-CC_DLL Sprite* createSpriteFromBase64(const char* base64String);
+CC_DLL cc::IntrusivePtr<Sprite> createSpriteFromBase64(const char* base64String);
 
 /**
  * Find a child by name recursively
@@ -257,100 +257,31 @@ CC_DLL void killCurrentProcess();
 /**
 * Create a Game Object, like CREATE_FUNC, but more powerful
 
-* @return  Returns a RefPtr<T> game object
-* @remark  Auto manage cocos2d::Ref reference count, use std::unique_ptr
+* @return  Returns a cc::IntrusivePtr<T> game object
+* @remark  Auto manage cocos2d::Ref reference count, use cc::IntrusivePtr
 * @limition  The init function finit must be public
 */
 template <typename T, typename F, typename... Ts>
-static RefPtr<T> makeInstance(F&& memf, Ts&&... args)
+static cc::IntrusivePtr<T> makeInstance(F&& memf, Ts&&... args)
 {
-    RefPtr<T> pRet(ReferencedObject<T>{new T()});
+    cc::IntrusivePtr<T> pRet{new T()};
     if (pRet && std::mem_fn(memf)(pRet.get(), std::forward<Ts>(args)...))
         return pRet;
 
-    pRet.reset();
-    return pRet;
+    return nullptr;
 }
 
 /**
 * Create a Game Object with 'bool T::init()', like CREATE_FUNC, but more powerful
 
-* @return  Returns a autorelease game object
-* @remark  Auto manage cocos2d::Ref reference count, use std::unique_ptr
+* @return  Returns an owned game object
+* @remark  Auto manage cocos2d::Ref reference count, use cc::IntrusivePtr
 * @limition  The init function finit must be public
 */
 template <typename T>
-inline static RefPtr<T> makeInstance()
+inline static cc::IntrusivePtr<T> makeInstance()
 {
     return makeInstance<T>(&T::init);
-}
-
-/**
-* Create a Game Object, like CREATE_FUNC, but more powerful
-
-* @return  Returns a autorelease game object
-* @remark  Auto manage cocos2d::Ref reference count, use AutoReleasePool
-* @limition The init function finit must be public
-*/
-template <typename T, typename F, typename... Ts>
-inline T* createInstance(F&& finit, Ts&&... args)
-{
-    T* pRet = new T();
-    if (std::mem_fn(finit)(pRet, std::forward<Ts>(args)...))
-        pRet->autorelease();
-    else
-    {
-        delete pRet;
-        pRet = nullptr;
-    }
-    return pRet;
-}
-
-/**
-* Create a Game Object with 'bool T::init()', like CREATE_FUNC, but more powerful
-
-* @return  Returns a autorelease game object
-* @remark  Auto manage cocos2d::Ref reference count, use AutoReleasePool
-* @limition  The init function finit must be public
-*/
-template <typename T>
-inline T* createInstance()
-{
-    return ::cocos2d::utils::createInstance<T>(&T::init);
-}
-
-/**
-* Create a Game Object with 'bool T::init()', like CREATE_FUNC, but more powerful
-
-* @return  Returns a game object
-* @remark  You need call release after you don't want use it manually
-* @limition  The init function finit must be public
-*/
-template <typename T, typename F, typename... Ts>
-static T* newInstance(F&& memf, Ts&&... args)
-{
-    T* pRet = new T();
-    if (std::mem_fn(memf)(pRet, std::forward<Ts>(args)...))
-        return pRet;
-    else
-    {
-        delete pRet;
-        pRet = nullptr;
-        return nullptr;
-    }
-}
-
-/**
-* Create a Game Object with 'bool T::init()', like CREATE_FUNC, but more powerful
-
-* @return  Returns a game object
-* @remark  You need call release after you don't want use it manually
-* @limition  The init function finit must be public
-*/
-template <typename T>
-inline static T* newInstance()
-{
-    return newInstance<T>(&T::init);
 }
 
 // check a number is power of two.

@@ -69,12 +69,11 @@ bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name, const std::a
 	return true;
 }
 
-Demuxer* Demuxer::create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
+cc::IntrusivePtr<Demuxer> Demuxer::create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
-	auto ret = new (std::nothrow) Demuxer();
+	cc::IntrusivePtr<Demuxer> ret{new (std::nothrow) Demuxer()};
 	if (ret && ret->init(std::move(source), name, stop))
 		return ret;
-	delete ret;
 	return nullptr;
 }
 
@@ -263,30 +262,27 @@ InputStream* Demuxer::getOrCreateInputStream(int streamIndex)
 
 	const auto stream = containerContext->streams[streamIndex];
 	const auto codecID = stream->codecpar->codec_id;
-	InputStream* input = nullptr;
+	cc::IntrusivePtr<InputStream> input;
 	switch (stream->codecpar->codec_type)
 	{
 	case AVMEDIA_TYPE_VIDEO:
-		if (auto decoder = VideoDecoder::createById(codecID, false))
+		if (auto decoder = VideoDecoder::createById(codecID))
 		{
 			input = VideoInputStream::create(decoder, containerContext, stream);
-			decoder->release();
 			if (!input)
 			{
 				// Start software fallback with a fresh context and stream parameters.
-				if (auto software = VideoDecoder::createById(codecID, false))
+				if (auto software = VideoDecoder::createById(codecID))
 				{
 					input = VideoInputStream::create(software, containerContext, stream, false);
-					software->release();
 				}
 			}
 		}
 		break;
 	case AVMEDIA_TYPE_AUDIO:
-		if (auto decoder = AudioDecoder::createById(codecID, false))
+		if (auto decoder = AudioDecoder::createById(codecID))
 		{
 			input = AudioInputStream::create(decoder, containerContext, stream);
-			decoder->release();
 		}
 		break;
 	default:
@@ -295,9 +291,8 @@ InputStream* Demuxer::getOrCreateInputStream(int streamIndex)
 	if (input)
 	{
 		inputStreams.insert(streamIndex, input);
-		input->release();
 	}
-	return input;
+	return input.get(); // inputStreams retains the returned borrow.
 }
 
 void Demuxer::clean()

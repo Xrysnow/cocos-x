@@ -14,7 +14,7 @@ public:
     GObjectPool();
     ~GObjectPool();
 
-    GObject* getObject(const std::string& url);
+    cc::IntrusivePtr<GObject> getObject(const std::string& url);
     void returnObject(GObject* obj);
 
 private:

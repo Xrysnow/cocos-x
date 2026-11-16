@@ -155,10 +155,9 @@ void PUSlaveEmitter::notifyStart()
     setEnabled(false);
 }
 
-PUSlaveEmitter* PUSlaveEmitter::create()
+cc::IntrusivePtr<PUSlaveEmitter> PUSlaveEmitter::create()
 {
-    auto pe = new PUSlaveEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUSlaveEmitter> pe{new PUSlaveEmitter()};
     return pe;
 }
 
@@ -172,7 +171,7 @@ void PUSlaveEmitter::copyAttributesTo(PUEmitter* emitter)
     slaveEmitter->_masterEmitterNameSet = _masterEmitterNameSet;
 }
 
-PUSlaveEmitter* PUSlaveEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUSlaveEmitter::clone()
 {
     auto be = PUSlaveEmitter::create();
     copyAttributesTo(be);

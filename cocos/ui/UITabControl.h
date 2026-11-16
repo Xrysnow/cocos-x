@@ -59,7 +59,7 @@ public:
     /**
      * Create and return a empty TabHeader instance pointer.
      */
-    static TabHeader* create();
+    static cc::IntrusivePtr<TabHeader> create();
 
     /**
      * factory method to create a TabHeader instance.
@@ -70,7 +70,7 @@ public:
      * @param texType  The texture's resource type in `Widget::TextureResType`.
      * @return A TabHeader instance pointer
      */
-    static TabHeader* create(std::string_view titleStr,
+    static cc::IntrusivePtr<TabHeader> create(std::string_view titleStr,
                              std::string_view backGround,
                              std::string_view cross,
                              TextureResType texType = TextureResType::LOCAL);
@@ -87,7 +87,7 @@ public:
      *
      * @return A TabHeader instance pointer.
      */
-    static TabHeader* create(std::string_view titleStr,
+    static cc::IntrusivePtr<TabHeader> create(std::string_view titleStr,
                              std::string_view backGround,
                              std::string_view backGroundSelected,
                              std::string_view cross,
@@ -206,7 +206,7 @@ public:
 
     typedef std::function<void(int tabIndex, EventType)> ccTabControlCallback;
 
-    static TabControl* create();
+    static cc::IntrusivePtr<TabControl> create();
 
     /// @{
     /// @name behaviours

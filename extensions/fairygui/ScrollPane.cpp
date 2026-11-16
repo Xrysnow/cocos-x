@@ -70,7 +70,8 @@ ScrollPane::ScrollPane(GComponent* owner)
       _bouncebackEffect(UIConfig::defaultScrollBounceEffect),
       _pageSize(Vec2::ONE)
 {
-    _maskContainer = FUIContainer::create();
+    cc::IntrusivePtr<FUIContainer> maskContainer;
+    _maskContainer = (maskContainer = FUIContainer::create()).get();
     _maskContainer->setCascadeOpacityEnabled(true);
     _owner->displayObject()->addChild(_maskContainer);
 
@@ -160,12 +161,11 @@ void ScrollPane::setup(ByteBuffer* buffer)
             const std::string& res = vtScrollBarRes.size() == 0 ? UIConfig::verticalScrollBar : vtScrollBarRes;
             if (res.length() > 0)
             {
-                _vtScrollBar = dynamic_cast<GScrollBar*>(UIPackage::createObjectFromURL(res));
+                _vtScrollBar = cc::dynamic_pointer_cast<GScrollBar>(UIPackage::createObjectFromURL(res)).detach();
                 if (_vtScrollBar == nullptr)
                     CCLOGWARN("FairyGUI: cannot create scrollbar from %s", res.c_str());
                 else
                 {
-                    _vtScrollBar->retain();
                     _vtScrollBar->setScrollPane(this, true);
                     _vtScrollBar->_alignToBL = true;
                     _owner->displayObject()->addChild(_vtScrollBar->displayObject());
@@ -177,12 +177,11 @@ void ScrollPane::setup(ByteBuffer* buffer)
             const std::string& res = hzScrollBarRes.length() == 0 ? UIConfig::horizontalScrollBar : hzScrollBarRes;
             if (res.length() > 0)
             {
-                _hzScrollBar = dynamic_cast<GScrollBar*>(UIPackage::createObjectFromURL(res));
+                _hzScrollBar = cc::dynamic_pointer_cast<GScrollBar>(UIPackage::createObjectFromURL(res)).detach();
                 if (_hzScrollBar == nullptr)
                     CCLOGWARN("FairyGUI: cannot create scrollbar from %s", res.c_str());
                 else
                 {
-                    _hzScrollBar->retain();
                     _hzScrollBar->setScrollPane(this, false);
                     _hzScrollBar->_alignToBL = true;
                     _owner->displayObject()->addChild(_hzScrollBar->displayObject());
@@ -207,12 +206,11 @@ void ScrollPane::setup(ByteBuffer* buffer)
 
     if (headerRes.length() > 0)
     {
-        _header = dynamic_cast<GComponent*>(UIPackage::createObjectFromURL(headerRes));
+        _header = cc::dynamic_pointer_cast<GComponent>(UIPackage::createObjectFromURL(headerRes)).detach();
         if (_header == nullptr)
             CCLOGWARN("FairyGUI: cannot create scrollPane header from %s", headerRes.c_str());
         else
         {
-            _header->retain();
             _header->setVisible(false);
             _header->_alignToBL = true;
             _owner->displayObject()->addChild(_header->displayObject());
@@ -221,12 +219,11 @@ void ScrollPane::setup(ByteBuffer* buffer)
 
     if (footerRes.length() > 0)
     {
-        _footer = dynamic_cast<GComponent*>(UIPackage::createObjectFromURL(footerRes));
+        _footer = cc::dynamic_pointer_cast<GComponent>(UIPackage::createObjectFromURL(footerRes)).detach();
         if (_footer == nullptr)
             CCLOGWARN("FairyGUI: cannot create scrollPane footer from %s", footerRes.c_str());
         else
         {
-            _footer->retain();
             _footer->setVisible(false);
             _footer->_alignToBL = true;
             _owner->displayObject()->addChild(_footer->displayObject());

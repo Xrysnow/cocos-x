@@ -71,7 +71,7 @@ public:
      * @param depthStencilFormat The depthStencil format.
      * @param sharedRenderTarget Select whether to use a new or shared render target.
      */
-    static RenderTexture* create(int w, int h, backend::PixelFormat format, backend::PixelFormat depthStencilFormat, bool sharedRenderTarget = true);
+    static cc::IntrusivePtr<RenderTexture> create(int w, int h, backend::PixelFormat format, backend::PixelFormat depthStencilFormat, bool sharedRenderTarget = true);
 
     /** Creates a RenderTexture object with width and height in Points and a pixel format, only RGB and RGBA formats are
      * valid.
@@ -81,7 +81,7 @@ public:
      * @param format In Points and a pixel format( only RGB and RGBA formats are valid ).
      * @param sharedRenderTarget Select whether to use a new or shared render target.
      */
-    static RenderTexture* create(int w, int h, backend::PixelFormat format, bool sharedRenderTarget = true);
+    static cc::IntrusivePtr<RenderTexture> create(int w, int h, backend::PixelFormat format, bool sharedRenderTarget = true);
 
     /** Creates a RenderTexture object with width and height in Points, pixel format is RGBA8888.
      *
@@ -89,7 +89,7 @@ public:
      * @param h The RenderTexture object height.
      * @param sharedRenderTarget Select wether to use a new or shared render target.
      */
-    static RenderTexture* create(int w, int h, bool sharedRenderTarget = true);
+    static cc::IntrusivePtr<RenderTexture> create(int w, int h, bool sharedRenderTarget = true);
 
     // Overrides
     virtual void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
@@ -165,7 +165,7 @@ public:
      * @return An image.
      * @js NA
      */
-    void newImage(std::function<void(RefPtr<Image>)> imageCallback, bool flipImage = true);
+    void newImage(std::function<void(cc::IntrusivePtr<Image>)> imageCallback, bool flipImage = true);
 
     /** Saves the texture into a file using JPEG format. The file will be saved in the Documents folder.
      * Returns true if the operation is successful.
@@ -397,7 +397,7 @@ protected:
     backend::RenderTarget* _oldRenderTarget = nullptr;
     RenderTargetFlag _renderTargetFlags{};
 
-    Image* _UITextureImage            = nullptr;
+    cc::IntrusivePtr<Image> _UITextureImage;
     backend::PixelFormat _pixelFormat = backend::PixelFormat::RGBA8;
 
     Color4F _clearColor;

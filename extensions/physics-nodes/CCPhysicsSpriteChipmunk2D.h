@@ -48,38 +48,38 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL PhysicsSpriteChipmunk2D : public Sprite
 {
 public:
-    static PhysicsSpriteChipmunk2D* create();
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> create();
     /** Creates an sprite with a texture.
      The rect used will be the size of the texture.
      The offset will be (0,0).
      */
-    static PhysicsSpriteChipmunk2D* createWithTexture(Texture2D* pTexture);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> createWithTexture(Texture2D* pTexture);
 
     /** Creates an sprite with a texture and a rect.
      The offset will be (0,0).
      */
-    static PhysicsSpriteChipmunk2D* createWithTexture(Texture2D* pTexture, const Rect& rect);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> createWithTexture(Texture2D* pTexture, const Rect& rect);
 
     /** Creates an sprite with an sprite frame. */
-    static PhysicsSpriteChipmunk2D* createWithSpriteFrame(SpriteFrame* pSpriteFrame);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> createWithSpriteFrame(SpriteFrame* pSpriteFrame);
 
     /** Creates an sprite with an sprite frame name.
      An SpriteFrame will be fetched from the SpriteFrameCache by name.
      If the SpriteFrame doesn't exist it will raise an exception.
      @since v0.9
      */
-    static PhysicsSpriteChipmunk2D* createWithSpriteFrameName(const char* pszSpriteFrameName);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> createWithSpriteFrameName(const char* pszSpriteFrameName);
 
     /** Creates an sprite with an image filename.
      The rect used will be the size of the image.
      The offset will be (0,0).
      */
-    static PhysicsSpriteChipmunk2D* create(const char* pszFileName);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> create(const char* pszFileName);
 
     /** Creates an sprite with an image filename and a rect.
      The offset will be (0,0).
      */
-    static PhysicsSpriteChipmunk2D* create(const char* pszFileName, const Rect& rect);
+    static cc::IntrusivePtr<PhysicsSpriteChipmunk2D> create(const char* pszFileName, const Rect& rect);
 
     PhysicsSpriteChipmunk2D();
 

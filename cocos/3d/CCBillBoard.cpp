@@ -40,55 +40,47 @@ BillBoard::BillBoard() : _mode(Mode::VIEW_POINT_ORIENTED), _modeDirty(false)
 
 BillBoard::~BillBoard() {}
 
-BillBoard* BillBoard::createWithTexture(Texture2D* texture, Mode mode)
+cc::IntrusivePtr<BillBoard> BillBoard::createWithTexture(Texture2D* texture, Mode mode)
 {
-    BillBoard* billboard = new BillBoard();
+    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
     if (billboard->initWithTexture(texture))
     {
         billboard->_mode = mode;
-        billboard->autorelease();
         return billboard;
     }
-    CC_SAFE_DELETE(billboard);
     return nullptr;
 }
 
-BillBoard* BillBoard::create(std::string_view filename, Mode mode)
+cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, Mode mode)
 {
-    BillBoard* billboard = new BillBoard();
+    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
     if (billboard->initWithFile(filename))
     {
         billboard->_mode = mode;
-        billboard->autorelease();
         return billboard;
     }
-    CC_SAFE_DELETE(billboard);
     return nullptr;
 }
 
-BillBoard* BillBoard::create(std::string_view filename, const Rect& rect, Mode mode)
+cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, const Rect& rect, Mode mode)
 {
-    BillBoard* billboard = new BillBoard();
+    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
     if (billboard->initWithFile(filename, rect))
     {
         billboard->_mode = mode;
-        billboard->autorelease();
         return billboard;
     }
-    CC_SAFE_DELETE(billboard);
     return nullptr;
 }
 
-BillBoard* BillBoard::create(Mode mode)
+cc::IntrusivePtr<BillBoard> BillBoard::create(Mode mode)
 {
-    BillBoard* billboard = new BillBoard();
+    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
     if (billboard->init())
     {
         billboard->_mode = mode;
-        billboard->autorelease();
         return billboard;
     }
-    CC_SAFE_DELETE(billboard);
     return nullptr;
 }
 

@@ -29,16 +29,14 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
-ActionTween* ActionTween::create(float duration, std::string_view key, float from, float to)
+cc::IntrusivePtr<ActionTween> ActionTween::create(float duration, std::string_view key, float from, float to)
 {
-    ActionTween* ret = new ActionTween();
+    cc::IntrusivePtr<ActionTween> ret{new ActionTween()};
     if (ret->initWithDuration(duration, key, from, to))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -55,7 +53,7 @@ bool ActionTween::initWithDuration(float duration, std::string_view key, float f
     return false;
 }
 
-ActionTween* ActionTween::clone() const
+cc::IntrusivePtr<Action> ActionTween::clone() const
 {
     return ActionTween::create(_duration, _key, _from, _to);
 }
@@ -72,7 +70,7 @@ void ActionTween::update(float dt)
     dynamic_cast<ActionTweenDelegate*>(_target)->updateTweenAction(_to - _delta * (1 - dt), _key);
 }
 
-ActionTween* ActionTween::reverse() const
+cc::IntrusivePtr<Action> ActionTween::reverse() const
 {
     return ActionTween::create(_duration, _key, _to, _from);
 }

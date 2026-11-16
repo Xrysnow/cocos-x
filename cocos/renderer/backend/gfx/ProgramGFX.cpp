@@ -780,9 +780,8 @@ bool ProgramGFX::generateState(const ProgramState* state)
         return false;
     if (getState(state))
         return true;
-    const auto stateGFX = new ProgramStateGFX(this);
-    stateGFX->autorelease();
-    _states.insert((void*)state, stateGFX);
+    cc::IntrusivePtr<ProgramStateGFX> stateGFX{new ProgramStateGFX(this)};
+    _states.insert((void*)state, stateGFX.get());
     return true;
 }
 
@@ -884,10 +883,9 @@ ShaderModuleGFX* ProgramGFX::getShaderModule(const cc::gfx::ShaderStage& stage)
     }
     else
     {
-        auto m = new ShaderModuleGFX(stage);
-        m->autorelease();
-        cachedModules.insert(hash, m);
-        return m;
+        cc::IntrusivePtr<ShaderModuleGFX> m{new ShaderModuleGFX(stage)};
+        cachedModules.insert(hash, m.get());
+        return m.get(); // cachedModules owns this borrow.
     }
 }
 
@@ -1086,7 +1084,7 @@ ProgramStateGFX::ProgramStateGFX(ProgramGFX* program_, const cocos2d::Map<std::s
             info.size     = program->getUniformBlockSize(name);
             info.stride   = info.size;
             //info.flags    = gfx::BufferFlags::ENABLE_STAGING_WRITE;
-            buffer        = new BufferGFX(info);  // owned by this
+            buffer        = cc::IntrusivePtr<BufferGFX>{new BufferGFX(info)}.detach();  // owned by this
             buffer->autorelease();
             buffers.insert(name, buffer);
         }

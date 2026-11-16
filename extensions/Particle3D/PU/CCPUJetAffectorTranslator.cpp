@@ -47,9 +47,9 @@ bool PUJetAffectorTranslator::translateChildProperty(PUScriptCompiler* compiler,
             float val = 0.0f;
             if (getFloat(*prop->values.front(), &val))
             {
-                PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                 dynamicAttributeFixed->setValue(val);
-                affector->setDynAcceleration(dynamicAttributeFixed);
+                affector->setDynAcceleration(dynamicAttributeFixed.detach());
                 return true;
             }
         }
@@ -62,9 +62,9 @@ bool PUJetAffectorTranslator::translateChildProperty(PUScriptCompiler* compiler,
             float val = 0.0f;
             if (getFloat(*prop->values.front(), &val))
             {
-                PUDynamicAttributeFixed* dynamicAttributeFixed = new PUDynamicAttributeFixed();
+                cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                 dynamicAttributeFixed->setValue(val);
-                affector->setDynAcceleration(dynamicAttributeFixed);
+                affector->setDynAcceleration(dynamicAttributeFixed.detach());
                 return true;
             }
         }

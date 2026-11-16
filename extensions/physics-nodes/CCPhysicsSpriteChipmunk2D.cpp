@@ -34,106 +34,78 @@ PhysicsSpriteChipmunk2D::PhysicsSpriteChipmunk2D()
     : _ignoreBodyRotation(false), _CPBody(nullptr), _syncTransform(nullptr)
 {}
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::create()
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::create()
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->init())
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->init()))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::createWithTexture(Texture2D* pTexture)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::createWithTexture(Texture2D* pTexture)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithTexture(pTexture))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithTexture(pTexture)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::createWithTexture(Texture2D* pTexture, const Rect& rect)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::createWithTexture(Texture2D* pTexture, const Rect& rect)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithTexture(pTexture, rect))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithTexture(pTexture, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithSpriteFrame(pSpriteFrame))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithSpriteFrame(pSpriteFrame)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::createWithSpriteFrameName(const char* pszSpriteFrameName)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::createWithSpriteFrameName(const char* pszSpriteFrameName)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithSpriteFrameName(pszSpriteFrameName))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithSpriteFrameName(pszSpriteFrameName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::create(const char* pszFileName)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::create(const char* pszFileName)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithFile(pszFileName))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithFile(pszFileName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSpriteChipmunk2D* PhysicsSpriteChipmunk2D::create(const char* pszFileName, const Rect& rect)
+cc::IntrusivePtr<PhysicsSpriteChipmunk2D> PhysicsSpriteChipmunk2D::create(const char* pszFileName, const Rect& rect)
 {
-    PhysicsSpriteChipmunk2D* pRet = new PhysicsSpriteChipmunk2D();
-    if (pRet->initWithFile(pszFileName, rect))
+    cc::IntrusivePtr<PhysicsSpriteChipmunk2D> pRet{new PhysicsSpriteChipmunk2D()};
+    if (!(pRet->initWithFile(pszFileName, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;

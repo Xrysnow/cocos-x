@@ -26,18 +26,22 @@
 
 #pragma once
 
-#include "base/Macros.h"
+#include "RefCountedExport.h"
+#include <atomic>
 
 #define CC_REF_LEAK_DETECTION 0
 
 namespace cc {
+
+// Fixed at construction. Atomic synchronizes ownership, not object state.
+enum class RefThreading { Local, Atomic };
 
 class RefCounted;
 
 /**
   * Interface that defines how to clone an Ref.
   */
-class CC_DLL Clonable {
+class CC_REF_API Clonable {
 public:
     /** Returns a copy of the Ref. */
     virtual Clonable *clone() const = 0;
@@ -49,8 +53,12 @@ public:
  * Ref is used for reference count management. If a class inherits from Ref,
  * then it is easy to be shared in different places.
  */
-class CC_DLL RefCounted {
+class CC_REF_API RefCounted {
 public:
+    RefCounted(const RefCounted &) = delete;
+    RefCounted(RefCounted &&) = delete;
+    RefCounted &operator=(const RefCounted &) = delete;
+    RefCounted &operator=(RefCounted &&) = delete;
     virtual ~RefCounted();
 
     /**
@@ -81,16 +89,30 @@ public:
      */
     unsigned int getRefCount() const;
 
+    RefThreading getReferenceThreading() const noexcept { return _threading; }
+
 protected:
     /**
      * Constructor
      *
-     * The Ref's reference count is 1 after construction.
+     * A newly constructed object has no owner (reference count 0).
+     * addRef() establishes its first share after construction completes.
      */
-    RefCounted();
+    explicit RefCounted(RefThreading threading = RefThreading::Local);
 
-    /// count of references
-    unsigned int _referenceCount{0};
+    // Always dispatched by the common release(), including calls through a
+    // RefCounted*. The object is still alive, with count 0, during this hook.
+    virtual void onFinalRelease() noexcept {}
+
+private:
+    const RefThreading _threading;
+    union Counter {
+        explicit Counter(unsigned int count) : local(count) {}
+        ~Counter() {}
+        unsigned int local;
+        std::atomic<unsigned int> atomic;
+    } _counter;
+
 
     // Memory leak diagnostic data (only included when CC_REF_LEAK_DETECTION is defined and its value isn't zero)
 #if CC_REF_LEAK_DETECTION

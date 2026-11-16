@@ -59,10 +59,9 @@ void PUFlockCenteringAffector::preUpdateAffector(float /*deltaTime*/)
     _count = 0;
 }
 
-PUFlockCenteringAffector* PUFlockCenteringAffector::create()
+cc::IntrusivePtr<PUFlockCenteringAffector> PUFlockCenteringAffector::create()
 {
-    auto pfca = new PUFlockCenteringAffector();
-    pfca->autorelease();
+    cc::IntrusivePtr<PUFlockCenteringAffector> pfca{new PUFlockCenteringAffector()};
     return pfca;
 }
 

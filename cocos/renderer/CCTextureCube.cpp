@@ -122,7 +122,7 @@ unsigned char* getImageData(Image* img, backend::PixelFormat& ePixFmt)
     return pTmpData;
 }
 
-Image* createImage(std::string_view path)
+cc::IntrusivePtr<Image> createImage(std::string_view path)
 {
     // Split up directory and filename
     // MUTEX:
@@ -135,11 +135,10 @@ Image* createImage(std::string_view path)
     }
 
     // all images are handled by UIImage except PVR extension that is handled by our own handler
-    Image* image = new Image();
+    cc::IntrusivePtr<Image> image{new Image()};
     if (image->initWithImageFile(fullpath))
         return image;
 
-    delete image;
     return nullptr;
 }
 
@@ -153,20 +152,18 @@ TextureCube::~TextureCube()
     CC_SAFE_RELEASE_NULL(_texture);
 }
 
-TextureCube* TextureCube::create(std::string_view positive_x,
+cc::IntrusivePtr<TextureCube> TextureCube::create(std::string_view positive_x,
                                  std::string_view negative_x,
                                  std::string_view positive_y,
                                  std::string_view negative_y,
                                  std::string_view positive_z,
                                  std::string_view negative_z)
 {
-    auto ret = new TextureCube();
+    cc::IntrusivePtr<TextureCube> ret{new TextureCube()};
     if (ret->init(positive_x, negative_x, positive_y, negative_y, positive_z, negative_z))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -184,14 +181,14 @@ bool TextureCube::init(std::string_view positive_x,
     _imgPath[4] = positive_z;
     _imgPath[5] = negative_z;
 
-    std::vector<std::unique_ptr<Image>> images(6);
+    std::vector<cc::IntrusivePtr<Image>> images(6);
 
-    images[0].reset(createImage(positive_x));
-    images[1].reset(createImage(negative_x));
-    images[2].reset(createImage(positive_y));
-    images[3].reset(createImage(negative_y));
-    images[4].reset(createImage(positive_z));
-    images[5].reset(createImage(negative_z));
+    images[0] = createImage(positive_x);
+    images[1] = createImage(negative_x);
+    images[2] = createImage(positive_y);
+    images[3] = createImage(negative_y);
+    images[4] = createImage(positive_z);
+    images[5] = createImage(negative_z);
 
     for (const auto& image : images)
         if (!image) return false;

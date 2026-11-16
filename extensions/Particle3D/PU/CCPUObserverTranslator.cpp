@@ -65,7 +65,8 @@ void PUObserverTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode*
         return;
 
     // Create the Observer
-    _observer = PUObserverManager::Instance()->createObserver(type);
+    auto owner = PUObserverManager::Instance()->createObserver(type);
+    _observer = owner.get();
     if (!_observer)
     {
         // compiler->addError(ScriptCompiler::CE_INVALIDPARAMETERS, obj->file, obj->line);

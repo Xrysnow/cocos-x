@@ -33,15 +33,13 @@
 
 NS_CC_BEGIN
 
-NavMeshObstacle* NavMeshObstacle::create(float radius, float height)
+cc::IntrusivePtr<NavMeshObstacle> NavMeshObstacle::create(float radius, float height)
 {
-    auto ref = new NavMeshObstacle();
+    cc::IntrusivePtr<NavMeshObstacle> ref{new NavMeshObstacle()};
     if (ref->initWith(radius, height))
     {
-        ref->autorelease();
         return ref;
     }
-    CC_SAFE_DELETE(ref);
     return nullptr;
 }
 

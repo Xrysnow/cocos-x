@@ -30,17 +30,13 @@ NS_CC_BEGIN
 
 EventListenerCustom::EventListenerCustom() : _onCustomEvent(nullptr) {}
 
-EventListenerCustom* EventListenerCustom::create(std::string_view eventName,
+cc::IntrusivePtr<EventListenerCustom> EventListenerCustom::create(std::string_view eventName,
                                                  const std::function<void(EventCustom*)>& callback)
 {
-    EventListenerCustom* ret = new EventListenerCustom();
-    if (ret->init(eventName, callback))
+    cc::IntrusivePtr<EventListenerCustom> ret{new EventListenerCustom()};
+    if (!(ret->init(eventName, callback)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -65,16 +61,12 @@ bool EventListenerCustom::init(std::string_view listenerId, const std::function<
     return ret;
 }
 
-EventListenerCustom* EventListenerCustom::clone()
+cc::IntrusivePtr<EventListener> EventListenerCustom::clone()
 {
-    EventListenerCustom* ret = new EventListenerCustom();
-    if (ret->init(_listenerID, _onCustomEvent))
+    cc::IntrusivePtr<EventListenerCustom> ret{new EventListenerCustom()};
+    if (!(ret->init(_listenerID, _onCustomEvent)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

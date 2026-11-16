@@ -52,12 +52,11 @@ class ListenerComponent : public Component
 public:
     static const std::string COMPONENT_NAME; /*!< component name */
 
-    static ListenerComponent* create(Node* parent,
+    static cc::IntrusivePtr<ListenerComponent> create(Node* parent,
                                      std::string_view url,
                                      const RichText::OpenUrlHandler handleOpenUrl = nullptr)
     {
-        auto component = new ListenerComponent(parent, url, std::move(handleOpenUrl));
-        component->autorelease();
+        cc::IntrusivePtr<ListenerComponent> component{new ListenerComponent(parent, url, std::move(handleOpenUrl))};
         return component;
     }
 
@@ -66,11 +65,10 @@ public:
     {
         setName(ListenerComponent::COMPONENT_NAME);
 
-        _touchListener                 = cocos2d::EventListenerTouchAllAtOnce::create();
+        _touchListener                 = cocos2d::EventListenerTouchAllAtOnce::create().detach();
         _touchListener->onTouchesEnded = CC_CALLBACK_2(ListenerComponent::onTouchesEnded, this);
 
         Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(_touchListener, _parent);
-        _touchListener->retain();
     }
 
     virtual ~ListenerComponent()
@@ -134,7 +132,7 @@ void RichElement::setColor(const Color3B& color)
     _color = color;
 }
 
-RichElementText* RichElementText::create(int tag,
+cc::IntrusivePtr<RichElementText> RichElementText::create(int tag,
                                          const Color3B& color,
                                          uint8_t opacity,
                                          std::string_view text,
@@ -149,14 +147,12 @@ RichElementText* RichElementText::create(int tag,
                                          int shadowBlurRadius,
                                          const Color3B& glowColor)
 {
-    RichElementText* element = new RichElementText();
+    cc::IntrusivePtr<RichElementText> element{new RichElementText()};
     if (element->init(tag, color, opacity, text, fontName, fontSize, flags, url, outlineColor, outlineSize, shadowColor,
                       shadowOffset, shadowBlurRadius, glowColor))
     {
-        element->autorelease();
         return element;
     }
-    CC_SAFE_DELETE(element);
     return nullptr;
 }
 
@@ -193,20 +189,18 @@ bool RichElementText::init(int tag,
     return false;
 }
 
-RichElementImage* RichElementImage::create(int tag,
+cc::IntrusivePtr<RichElementImage> RichElementImage::create(int tag,
                                            const Color3B& color,
                                            uint8_t opacity,
                                            std::string_view filePath,
                                            std::string_view url,
                                            Widget::TextureResType texType)
 {
-    RichElementImage* element = new RichElementImage();
+    cc::IntrusivePtr<RichElementImage> element{new RichElementImage()};
     if (element->init(tag, color, opacity, filePath, url, texType))
     {
-        element->autorelease();
         return element;
     }
-    CC_SAFE_DELETE(element);
     return nullptr;
 }
 
@@ -244,18 +238,16 @@ void RichElementImage::setUrl(std::string_view url)
     _url = url;
 }
 
-RichElementCustomNode* RichElementCustomNode::create(int tag,
+cc::IntrusivePtr<RichElementCustomNode> RichElementCustomNode::create(int tag,
                                                      const Color3B& color,
                                                      uint8_t opacity,
                                                      cocos2d::Node* customNode)
 {
-    RichElementCustomNode* element = new RichElementCustomNode();
+    cc::IntrusivePtr<RichElementCustomNode> element{new RichElementCustomNode()};
     if (element->init(tag, color, opacity, customNode))
     {
-        element->autorelease();
         return element;
     }
-    CC_SAFE_DELETE(element);
     return nullptr;
 }
 
@@ -270,15 +262,13 @@ bool RichElementCustomNode::init(int tag, const Color3B& color, uint8_t opacity,
     return false;
 }
 
-RichElementNewLine* RichElementNewLine::create(int tag, const Color3B& color, uint8_t opacity)
+cc::IntrusivePtr<RichElementNewLine> RichElementNewLine::create(int tag, const Color3B& color, uint8_t opacity)
 {
-    RichElementNewLine* element = new RichElementNewLine();
+    cc::IntrusivePtr<RichElementNewLine> element{new RichElementNewLine()};
     if (element->init(tag, color, opacity))
     {
-        element->autorelease();
         return element;
     }
-    CC_SAFE_DELETE(element);
     return nullptr;
 }
 
@@ -536,7 +526,7 @@ MyXMLVisitor::MyXMLVisitor(RichText* richText) : _fontElements(20), _richText(ri
             resType  = type == 0 ? Widget::TextureResType::LOCAL : Widget::TextureResType::PLIST;
         }
 
-        RichElementImage* elementImg = nullptr;
+        cc::IntrusivePtr<RichElementImage> elementImg;
         if (src.length())
         {
             elementImg = RichElementImage::create(0, Color3B::WHITE, 255, src, "", resType);
@@ -563,7 +553,7 @@ MyXMLVisitor::MyXMLVisitor(RichText* richText) : _fontElements(20), _richText(ri
     });
 
     MyXMLVisitor::setTagDescription("br", false, [](const ValueMap& /*tagAttrValueMap*/) {
-        RichElementNewLine* richElement = RichElementNewLine::create(0, Color3B::WHITE, 255);
+        cc::IntrusivePtr<RichElementNewLine> richElement = RichElementNewLine::create(0, Color3B::WHITE, 255);
         return make_pair(ValueMap(), richElement);
     });
 
@@ -1056,27 +1046,23 @@ RichText::~RichText()
     _richElements.clear();
 }
 
-RichText* RichText::create()
+cc::IntrusivePtr<RichText> RichText::create()
 {
-    RichText* widget = new RichText();
+    cc::IntrusivePtr<RichText> widget{new RichText()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-RichText* RichText::createWithXML(std::string_view xml, const ValueMap& defaults, const OpenUrlHandler& handleOpenUrl)
+cc::IntrusivePtr<RichText> RichText::createWithXML(std::string_view xml, const ValueMap& defaults, const OpenUrlHandler& handleOpenUrl)
 {
-    RichText* widget = new RichText();
+    cc::IntrusivePtr<RichText> widget{new RichText()};
     if (widget->initWithXML(xml, defaults, handleOpenUrl))
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -1546,13 +1532,13 @@ void RichText::formatText(bool force)
             for (ssize_t i = 0, size = _richElements.size(); i < size; ++i)
             {
                 RichElement* element  = _richElements.at(i);
-                Node* elementRenderer = nullptr;
+                cc::IntrusivePtr<Node> elementRenderer;
                 switch (element->_type)
                 {
                 case RichElement::Type::TEXT:
                 {
                     RichElementText* elmtText = static_cast<RichElementText*>(element);
-                    Label* label;
+                    cc::IntrusivePtr<Label> label;
                     if (FileUtils::getInstance()->isFileExist(elmtText->_fontName))
                     {
                         label = Label::createWithTTF(elmtText->_text, elmtText->_fontName, elmtText->_fontSize);
@@ -1571,7 +1557,7 @@ void RichText::formatText(bool force)
                         label->enableStrikethrough();
                     if (elmtText->_flags & RichElementText::URL_FLAG)
                         label->addComponent(ListenerComponent::create(
-                            label, elmtText->_url, std::bind(&RichText::openUrl, this, std::placeholders::_1)));
+                            label, elmtText->_url, std::bind(&RichText::openUrl, this, std::placeholders::_1)).get());
                     if (elmtText->_flags & RichElementText::OUTLINE_FLAG)
                     {
                         label->enableOutline(Color4B(elmtText->_outlineColor), elmtText->_outlineSize);
@@ -1614,7 +1600,7 @@ void RichText::formatText(bool force)
                                                              currentSize.height * elementRenderer->getScaleY()));
                         elementRenderer->addComponent(
                             ListenerComponent::create(elementRenderer, elmtImage->_url,
-                                                      std::bind(&RichText::openUrl, this, std::placeholders::_1)));
+                                                      std::bind(&RichText::openUrl, this, std::placeholders::_1)).get());
                         elementRenderer->setColor(element->_color);
                     }
                     break;
@@ -1882,7 +1868,7 @@ void RichText::handleTextRenderer(std::string_view text,
             }
             ++splitParts;
 
-            Label* textRenderer = fileExist ? Label::createWithTTF(currentText, fontName, fontSize)
+            auto textRenderer = fileExist ? Label::createWithTTF(currentText, fontName, fontSize)
                                             : Label::createWithSystemFont(currentText, fontName, fontSize);
 
             if (flags & RichElementText::ITALICS_FLAG)
@@ -1895,7 +1881,7 @@ void RichText::handleTextRenderer(std::string_view text,
                 textRenderer->enableStrikethrough();
             if (flags & RichElementText::URL_FLAG)
                 textRenderer->addComponent(ListenerComponent::create(
-                    textRenderer, url, std::bind(&RichText::openUrl, this, std::placeholders::_1)));
+                    textRenderer, url, std::bind(&RichText::openUrl, this, std::placeholders::_1)).get());
             if (flags & RichElementText::OUTLINE_FLAG)
                 textRenderer->enableOutline(Color4B(outlineColor), outlineSize);
             if (flags & RichElementText::SHADOW_FLAG)
@@ -1961,7 +1947,7 @@ void RichText::handleImageRenderer(std::string_view filePath,
                                    float scaleX,
                                    float scaleY)
 {
-    Sprite* imageRenderer;
+    cc::IntrusivePtr<Sprite> imageRenderer;
     if (textureType == Widget::TextureResType::LOCAL)
         imageRenderer = Sprite::create(filePath);
     else
@@ -1983,7 +1969,7 @@ void RichText::handleImageRenderer(std::string_view filePath,
         imageRenderer->setScale(1.f, 1.f);
         handleCustomRenderer(imageRenderer);
         imageRenderer->addComponent(
-            ListenerComponent::create(imageRenderer, url, std::bind(&RichText::openUrl, this, std::placeholders::_1)));
+            ListenerComponent::create(imageRenderer, url, std::bind(&RichText::openUrl, this, std::placeholders::_1)).get());
     }
 }
 

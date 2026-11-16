@@ -60,28 +60,28 @@ class CC_DLL ParticleSystemQuad : public ParticleSystem
 public:
     /** Creates a Particle Emitter.
      *
-     * @return An autoreleased ParticleSystemQuad object.
+     * @return An owned ParticleSystemQuad object.
      */
-    static ParticleSystemQuad* create();
+    static cc::IntrusivePtr<ParticleSystemQuad> create();
     /** Creates a Particle Emitter with a number of particles.
      *
      * @param numberOfParticles A given number of particles.
-     * @return An autoreleased ParticleSystemQuad object.
+     * @return An owned ParticleSystemQuad object.
      */
-    static ParticleSystemQuad* createWithTotalParticles(int numberOfParticles);
+    static cc::IntrusivePtr<ParticleSystemQuad> createWithTotalParticles(int numberOfParticles);
     /** Creates an initializes a ParticleSystemQuad from a plist file.
      This plist files can be created manually or with Particle Designer.
      *
      * @param filename Particle plist file name.
-     * @return An autoreleased ParticleSystemQuad object.
+     * @return An owned ParticleSystemQuad object.
      */
-    static ParticleSystemQuad* create(std::string_view filename);
+    static cc::IntrusivePtr<ParticleSystemQuad> create(std::string_view filename);
     /** Creates a Particle Emitter with a dictionary.
      *
      * @param dictionary Particle dictionary.
-     * @return An autoreleased ParticleSystemQuad object.
+     * @return An owned ParticleSystemQuad object.
      */
-    static ParticleSystemQuad* create(ValueMap& dictionary);
+    static cc::IntrusivePtr<ParticleSystemQuad> create(ValueMap& dictionary);
 
     /** Sets a new SpriteFrame as particle.
     WARNING: this method is experimental. Use setTextureWithRect instead.

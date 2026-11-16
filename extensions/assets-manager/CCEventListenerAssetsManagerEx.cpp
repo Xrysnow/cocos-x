@@ -36,18 +36,14 @@ EventListenerAssetsManagerEx::EventListenerAssetsManagerEx()
     : _onAssetsManagerExEvent(nullptr), _AssetsManagerEx(nullptr)
 {}
 
-EventListenerAssetsManagerEx* EventListenerAssetsManagerEx::create(
+cc::IntrusivePtr<EventListenerAssetsManagerEx> EventListenerAssetsManagerEx::create(
     cocos2d::extension::AssetsManagerEx* AssetsManagerEx,
     const std::function<void(EventAssetsManagerEx*)>& callback)
 {
-    EventListenerAssetsManagerEx* ret = new EventListenerAssetsManagerEx();
-    if (ret->init(AssetsManagerEx, callback))
+    cc::IntrusivePtr<EventListenerAssetsManagerEx> ret{new EventListenerAssetsManagerEx()};
+    if (!(ret->init(AssetsManagerEx, callback)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -72,16 +68,12 @@ bool EventListenerAssetsManagerEx::init(const AssetsManagerEx* AssetsManagerEx,
     return ret;
 }
 
-EventListenerAssetsManagerEx* EventListenerAssetsManagerEx::clone()
+cc::IntrusivePtr<EventListener> EventListenerAssetsManagerEx::clone()
 {
-    EventListenerAssetsManagerEx* ret = new EventListenerAssetsManagerEx();
-    if (ret->init(_AssetsManagerEx, _onAssetsManagerExEvent))
+    cc::IntrusivePtr<EventListenerAssetsManagerEx> ret{new EventListenerAssetsManagerEx()};
+    if (!(ret->init(_AssetsManagerEx, _onAssetsManagerExEvent)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

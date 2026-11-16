@@ -35,10 +35,9 @@ USING_NS_CC;
 
 NS_CC_BEGIN
 
-ScheduleHandlerDelegate* ScheduleHandlerDelegate::create()
+cc::IntrusivePtr<ScheduleHandlerDelegate> ScheduleHandlerDelegate::create()
 {
-    ScheduleHandlerDelegate* ret = new ScheduleHandlerDelegate();
-    ret->autorelease();
+    cc::IntrusivePtr<ScheduleHandlerDelegate> ret{new ScheduleHandlerDelegate()};
     return ret;
 }
 
@@ -46,17 +45,15 @@ void ScheduleHandlerDelegate::scheduleFunc(float elapse) {}
 
 void ScheduleHandlerDelegate::update(float elapse) {}
 
-LuaCallFunc* LuaCallFunc::create(const std::function<void(Node*)>& func)
+cc::IntrusivePtr<LuaCallFunc> LuaCallFunc::create(const std::function<void(Node*)>& func)
 {
-    auto ret = new LuaCallFunc();
+    cc::IntrusivePtr<LuaCallFunc> ret{new LuaCallFunc()};
 
     if (ret->initWithFunction(func))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -80,7 +77,7 @@ bool LuaCallFunc::initWithFunction(const std::function<void(Node*)>& func)
     return true;
 }
 
-LuaCallFunc* LuaCallFunc::clone() const
+cc::IntrusivePtr<Action> LuaCallFunc::clone() const
 {
     // std::function copies share the owned Lua callback and its captured data.
     // No lookup on the original action or integer handler survives cloning.

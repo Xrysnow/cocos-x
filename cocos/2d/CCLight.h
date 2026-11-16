@@ -113,7 +113,7 @@ public:
      *
      * @return The new direction light.
      */
-    static DirectionLight* create(const Vec3& direction, const Color3B& color);
+    static cc::IntrusivePtr<DirectionLight> create(const Vec3& direction, const Color3B& color);
 
     // get light type
     virtual LightType getLightType() const override { return LightType::DIRECTIONAL; }
@@ -153,7 +153,7 @@ public:
      *
      * @return The new point light.
      */
-    static PointLight* create(const Vec3& position, const Color3B& color, float range);
+    static cc::IntrusivePtr<PointLight> create(const Vec3& position, const Color3B& color, float range);
 
     // get light type
     virtual LightType getLightType() const override { return LightType::POINT; }
@@ -186,7 +186,7 @@ public:
      *
      * @return The new spot light.
      */
-    static SpotLight* create(const Vec3& direction,
+    static cc::IntrusivePtr<SpotLight> create(const Vec3& direction,
                              const Vec3& position,
                              const Color3B& color,
                              float innerAngle,
@@ -279,7 +279,7 @@ public:
      *
      * @return The new ambient light.
      */
-    static AmbientLight* create(const Color3B& color);
+    static cc::IntrusivePtr<AmbientLight> create(const Color3B& color);
 
     // get light type
     virtual LightType getLightType() const override { return LightType::AMBIENT; }

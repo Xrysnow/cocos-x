@@ -43,51 +43,43 @@ void* GLViewImpl::_pixelFormat      = kEAGLColorFormatRGB565;
 int GLViewImpl::_depthFormat        = GL_DEPTH_COMPONENT16;
 int GLViewImpl::_multisamplingCount = 0;
 
-GLViewImpl* GLViewImpl::createWithEAGLView(void* eaglView)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithEAGLView(void* eaglView)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret->initWithEAGLView(eaglView))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::create(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret->initWithFullScreen(viewName))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor)
 {
-    auto ret = new GLViewImpl;
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
     if (ret->initWithRect(viewName, rect, frameZoomFactor))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-GLViewImpl* GLViewImpl::createWithFullScreen(std::string_view viewName)
+cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    auto ret = new GLViewImpl();
+    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
     if (ret->initWithFullScreen(viewName))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

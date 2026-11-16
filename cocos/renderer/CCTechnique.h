@@ -59,8 +59,8 @@ public:
     /** Creates a new Technique with a GLProgramState.
      Method added to support legacy code
      */
-    static Technique* createWithProgramState(Material* parent, backend::ProgramState* state);
-    static Technique* create(Material* parent);
+    static cc::IntrusivePtr<Technique> createWithProgramState(Material* parent, backend::ProgramState* state);
+    static cc::IntrusivePtr<Technique> create(Material* parent);
 
     /** Adds a new pass to the Technique.
      Order matters. First added, first rendered
@@ -80,7 +80,7 @@ public:
     const Vector<Pass*>& getPasses() const;
 
     /** Returns a new clone of the Technique */
-    Technique* clone() const;
+    cc::IntrusivePtr<Technique> clone() const;
 
     void setMaterial(Material* material) { _material = material; }
 

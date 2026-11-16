@@ -120,15 +120,13 @@ void Layout::setGlobalZOrder(float globalZOrder)
         child->setGlobalZOrder(globalZOrder);
 }
 
-Layout* Layout::create()
+cc::IntrusivePtr<Layout> Layout::create()
 {
-    Layout* layout = new Layout();
+    cc::IntrusivePtr<Layout> layout{new Layout()};
     if (layout->init())
     {
-        layout->autorelease();
         return layout;
     }
-    CC_SAFE_DELETE(layout);
     return nullptr;
 }
 
@@ -392,6 +390,7 @@ void Layout::scissorClippingVisit(Renderer* renderer, const Mat4& parentTransfor
 
 void Layout::setClippingEnabled(bool able)
 {
+    cc::IntrusivePtr<DrawNode> clippingStencil;
     if (able == _clippingEnabled)
     {
         return;
@@ -402,7 +401,7 @@ void Layout::setClippingEnabled(bool able)
     case ClippingType::STENCIL:
         if (able)
         {
-            _clippingStencil = DrawNode::create();
+            _clippingStencil = (clippingStencil = DrawNode::create()).get();
             _clippingStencil->setGlobalZOrder(_globalZOrder);
             if (_running)
             {
@@ -649,7 +648,7 @@ void Layout::supplyTheLayoutParameterLackToChild(Widget* child)
         LinearLayoutParameter* layoutParameter = dynamic_cast<LinearLayoutParameter*>(child->getLayoutParameter());
         if (!layoutParameter)
         {
-            child->setLayoutParameter(LinearLayoutParameter::create());
+            child->setLayoutParameter(LinearLayoutParameter::create().get());
         }
         break;
     }
@@ -658,7 +657,7 @@ void Layout::supplyTheLayoutParameterLackToChild(Widget* child)
         RelativeLayoutParameter* layoutParameter = dynamic_cast<RelativeLayoutParameter*>(child->getLayoutParameter());
         if (!layoutParameter)
         {
-            child->setLayoutParameter(RelativeLayoutParameter::create());
+            child->setLayoutParameter(RelativeLayoutParameter::create().get());
         }
         break;
     }
@@ -669,7 +668,8 @@ void Layout::supplyTheLayoutParameterLackToChild(Widget* child)
 
 void Layout::addBackGroundImage()
 {
-    _backGroundImage = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> backGroundImage;
+    _backGroundImage = (backGroundImage = Scale9Sprite::create()).get();
     _backGroundImage->setRenderingType(Scale9Sprite::RenderingType::SIMPLE);
 
     addProtectedChild(_backGroundImage, BACKGROUNDIMAGE_Z, -1);
@@ -691,6 +691,8 @@ void Layout::removeBackGroundImage()
 
 void Layout::setBackGroundColorType(BackGroundColorType type)
 {
+    cc::IntrusivePtr<LayerColor> colorRender;
+    cc::IntrusivePtr<LayerGradient> gradientRender;
     if (_colorType == type)
     {
         return;
@@ -732,14 +734,14 @@ void Layout::setBackGroundColorType(BackGroundColorType type)
     case BackGroundColorType::NONE:
         break;
     case BackGroundColorType::SOLID:
-        _colorRender = LayerColor::create();
+        _colorRender = (colorRender = LayerColor::create()).get();
         _colorRender->setContentSize(_contentSize);
         _colorRender->setOpacity(_cOpacity);
         _colorRender->setColor(_cColor);
         addProtectedChild(_colorRender, BCAKGROUNDCOLORRENDERER_Z, -1);
         break;
     case BackGroundColorType::GRADIENT:
-        _gradientRender = LayerGradient::create();
+        _gradientRender = (gradientRender = LayerGradient::create()).get();
         _gradientRender->setContentSize(_contentSize);
         _gradientRender->setOpacity(_cOpacity);
         _gradientRender->setStartColor(_gStartColor);
@@ -925,9 +927,9 @@ const Vector<Node*>& Layout::getLayoutElements() const
     return this->getChildren();
 }
 
-LayoutManager* Layout::createLayoutManager()
+cc::IntrusivePtr<LayoutManager> Layout::createLayoutManager()
 {
-    LayoutManager* exe = nullptr;
+    cc::IntrusivePtr<LayoutManager> exe;
     switch (_layoutType)
     {
     case Type::VERTICAL:
@@ -961,7 +963,7 @@ void Layout::doLayout()
 
     sortAllChildren();
 
-    LayoutManager* executant = this->createLayoutManager();
+    auto executant = this->createLayoutManager();
 
     if (executant)
     {
@@ -976,7 +978,7 @@ std::string Layout::getDescription() const
     return "Layout";
 }
 
-Widget* Layout::createCloneInstance()
+cc::IntrusivePtr<Widget> Layout::createCloneInstance()
 {
     return Layout::create();
 }

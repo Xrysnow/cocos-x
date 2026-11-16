@@ -36,15 +36,13 @@ NS_CC_BEGIN
 
 // implementation TileMapAtlas
 
-TileMapAtlas* TileMapAtlas::create(std::string_view tile, std::string_view mapFile, int tileWidth, int tileHeight)
+cc::IntrusivePtr<TileMapAtlas> TileMapAtlas::create(std::string_view tile, std::string_view mapFile, int tileWidth, int tileHeight)
 {
-    TileMapAtlas* ret = new TileMapAtlas();
+    cc::IntrusivePtr<TileMapAtlas> ret{new TileMapAtlas()};
     if (ret->initWithTileFile(tile, mapFile, tileWidth, tileHeight))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

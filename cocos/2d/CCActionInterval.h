@@ -98,13 +98,13 @@ public:
      */
     virtual void step(float dt) override;
     virtual void startWithTarget(Node* target) override;
-    virtual ActionInterval* reverse() const override
+    virtual cc::IntrusivePtr<Action> reverse() const override
     {
         CC_ASSERT(0);
         return nullptr;
     }
 
-    virtual ActionInterval* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
@@ -132,7 +132,20 @@ public:
      *
      * @return An autoreleased Sequence object.
      */
-    static Sequence* create(FiniteTimeAction* action1, ...) CC_REQUIRES_NULL_TERMINATION;
+    // Typed arguments keep temporary owners alive and never pass a C++
+    // smart pointer through a C ellipsis. A legacy nullptr terminator is safe.
+    template <class... Actions>
+    static cc::IntrusivePtr<Sequence> create(const Actions&... values)
+    {
+        Vector<FiniteTimeAction*> actions;
+        bool ended = false;
+        auto append = [&](FiniteTimeAction* action) {
+            if (!action) ended = true;
+            if (!ended) actions.pushBack(action);
+        };
+        (append(values), ...);
+        return create(actions);
+    }
 
     /** Helper constructor to create an array of sequenceable actions given an array.
      * @code
@@ -142,30 +155,30 @@ public:
      * @endcode
      *
      * @param arrayOfActions An array of sequenceable actions.
-     * @return An autoreleased Sequence object.
+     * @return An owned Sequence object.
      */
-    static Sequence* create(const Vector<FiniteTimeAction*>& arrayOfActions);
+    static cc::IntrusivePtr<Sequence> create(const Vector<FiniteTimeAction*>& arrayOfActions);
     /** Helper constructor to create an array of sequence-able actions.
      *
      * @param action1 The first sequenceable action.
      * @param args The va_list variable.
-     * @return An autoreleased Sequence object.
+     * @return An owned Sequence object.
      * @js NA
      */
-    static Sequence* createWithVariableList(FiniteTimeAction* action1, va_list args);
+    static cc::IntrusivePtr<Sequence> createWithVariableList(FiniteTimeAction* action1, va_list args);
     /** Creates the action.
      * @param actionOne The first sequenceable action.
      * @param actionTwo The second sequenceable action.
-     * @return An autoreleased Sequence object.
+     * @return An owned Sequence object.
      * @js NA
      */
-    static Sequence* createWithTwoActions(FiniteTimeAction* actionOne, FiniteTimeAction* actionTwo);
+    static cc::IntrusivePtr<Sequence> createWithTwoActions(FiniteTimeAction* actionOne, FiniteTimeAction* actionTwo);
 
     //
     // Overrides
     //
-    virtual Sequence* clone() const override;
-    virtual Sequence* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     virtual bool isDone() const override;
@@ -201,9 +214,9 @@ public:
      *
      * @param action The action needs to repeat.
      * @param times The repeat times.
-     * @return An autoreleased Repeat object.
+     * @return An owned Repeat object.
      */
-    static Repeat* create(FiniteTimeAction* action, unsigned int times);
+    static cc::IntrusivePtr<Repeat> create(FiniteTimeAction* action, unsigned int times);
 
     /** Sets the inner action.
      *
@@ -228,8 +241,8 @@ public:
     //
     // Overrides
     //
-    virtual Repeat* clone() const override;
-    virtual Repeat* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -267,9 +280,9 @@ public:
     /** Creates the action.
      *
      * @param action The action need to repeat forever.
-     * @return An autoreleased RepeatForever object.
+     * @return An owned RepeatForever object.
      */
-    static RepeatForever* create(ActionInterval* action);
+    static cc::IntrusivePtr<RepeatForever> create(ActionInterval* action);
 
     /** Sets the inner action.
      *
@@ -294,8 +307,8 @@ public:
     //
     // Overrides
     //
-    virtual RepeatForever* clone() const override;
-    virtual RepeatForever* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param dt In seconds.
@@ -332,38 +345,51 @@ public:
      *
      * @return An autoreleased Spawn object.
      */
-    static Spawn* create(FiniteTimeAction* action1, ...) CC_REQUIRES_NULL_TERMINATION;
+    // Typed arguments keep temporary owners alive and never pass a C++
+    // smart pointer through a C ellipsis. A legacy nullptr terminator is safe.
+    template <class... Actions>
+    static cc::IntrusivePtr<Spawn> create(const Actions&... values)
+    {
+        Vector<FiniteTimeAction*> actions;
+        bool ended = false;
+        auto append = [&](FiniteTimeAction* action) {
+            if (!action) ended = true;
+            if (!ended) actions.pushBack(action);
+        };
+        (append(values), ...);
+        return create(actions);
+    }
 
     /** Helper constructor to create an array of spawned actions.
      *
      * @param action1   The first sequenceable action.
      * @param args  The va_list variable.
-     * @return  An autoreleased Spawn object.
+     * @return  An owned Spawn object.
      * @js NA
      */
-    static Spawn* createWithVariableList(FiniteTimeAction* action1, va_list args);
+    static cc::IntrusivePtr<Spawn> createWithVariableList(FiniteTimeAction* action1, va_list args);
 
     /** Helper constructor to create an array of spawned actions given an array.
      *
      * @param arrayOfActions    An array of spawned actions.
-     * @return  An autoreleased Spawn object.
+     * @return  An owned Spawn object.
      */
-    static Spawn* create(const Vector<FiniteTimeAction*>& arrayOfActions);
+    static cc::IntrusivePtr<Spawn> create(const Vector<FiniteTimeAction*>& arrayOfActions);
 
     /** Creates the Spawn action.
      *
      * @param action1   The first spawned action.
      * @param action2   The second spawned action.
-     * @return An autoreleased Spawn object.
+     * @return An owned Spawn object.
      * @js NA
      */
-    static Spawn* createWithTwoActions(FiniteTimeAction* action1, FiniteTimeAction* action2);
+    static cc::IntrusivePtr<Spawn> createWithTwoActions(FiniteTimeAction* action1, FiniteTimeAction* action2);
 
     //
     // Overrides
     //
-    virtual Spawn* clone() const override;
-    virtual Spawn* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -399,32 +425,32 @@ public:
      * @param duration Duration time, in seconds.
      * @param dstAngleX In degreesCW.
      * @param dstAngleY In degreesCW.
-     * @return An autoreleased RotateTo object.
+     * @return An owned RotateTo object.
      */
-    static RotateTo* create(float duration, float dstAngleX, float dstAngleY);
+    static cc::IntrusivePtr<RotateTo> create(float duration, float dstAngleX, float dstAngleY);
 
     /**
      * Creates the action.
      *
      * @param duration Duration time, in seconds.
      * @param dstAngle In degreesCW.
-     * @return An autoreleased RotateTo object.
+     * @return An owned RotateTo object.
      */
-    static RotateTo* create(float duration, float dstAngle);
+    static cc::IntrusivePtr<RotateTo> create(float duration, float dstAngle);
 
     /**
      * Creates the action with 3D rotation angles.
      * @param duration Duration time, in seconds.
      * @param dstAngle3D A Vec3 angle.
-     * @return An autoreleased RotateTo object.
+     * @return An owned RotateTo object.
      */
-    static RotateTo* create(float duration, const Vec3& dstAngle3D);
+    static cc::IntrusivePtr<RotateTo> create(float duration, const Vec3& dstAngle3D);
 
     //
     // Overrides
     //
-    virtual RotateTo* clone() const override;
-    virtual RotateTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -474,32 +500,32 @@ public:
      *
      * @param duration Duration time, in seconds.
      * @param deltaAngle In degreesCW.
-     * @return An autoreleased RotateBy object.
+     * @return An owned RotateBy object.
      */
-    static RotateBy* create(float duration, float deltaAngle);
+    static cc::IntrusivePtr<RotateBy> create(float duration, float deltaAngle);
     /**
      * Creates the action with separate rotation angles.
      *
      * @param duration Duration time, in seconds.
      * @param deltaAngleZ_X In degreesCW.
      * @param deltaAngleZ_Y In degreesCW.
-     * @return An autoreleased RotateBy object.
+     * @return An owned RotateBy object.
      * @warning The physics body contained in Node doesn't support rotate with different x and y angle.
      */
-    static RotateBy* create(float duration, float deltaAngleZ_X, float deltaAngleZ_Y);
+    static cc::IntrusivePtr<RotateBy> create(float duration, float deltaAngleZ_X, float deltaAngleZ_Y);
     /** Creates the action with 3D rotation angles.
      *
      * @param duration Duration time, in seconds.
      * @param deltaAngle3D A Vec3 angle.
-     * @return An autoreleased RotateBy object.
+     * @return An owned RotateBy object.
      */
-    static RotateBy* create(float duration, const Vec3& deltaAngle3D);
+    static cc::IntrusivePtr<RotateBy> create(float duration, const Vec3& deltaAngle3D);
 
     //
     // Override
     //
-    virtual RotateBy* clone() const override;
-    virtual RotateBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -543,23 +569,23 @@ public:
      *
      * @param duration Duration time, in seconds.
      * @param deltaPosition The delta distance in 2d, it's a Vec2 type.
-     * @return An autoreleased MoveBy object.
+     * @return An owned MoveBy object.
      */
-    static MoveBy* create(float duration, const Vec2& deltaPosition);
+    static cc::IntrusivePtr<MoveBy> create(float duration, const Vec2& deltaPosition);
     /**
      * Creates the action.
      *
      * @param duration Duration time, in seconds.
      * @param deltaPosition The delta distance in 3d, it's a Vec3 type.
-     * @return An autoreleased MoveBy object.
+     * @return An owned MoveBy object.
      */
-    static MoveBy* create(float duration, const Vec3& deltaPosition);
+    static cc::IntrusivePtr<MoveBy> create(float duration, const Vec3& deltaPosition);
 
     //
     // Overrides
     //
-    virtual MoveBy* clone() const override;
-    virtual MoveBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time in seconds
@@ -596,22 +622,22 @@ public:
      * Creates the action.
      * @param duration Duration time, in seconds.
      * @param position The destination position in 2d.
-     * @return An autoreleased MoveTo object.
+     * @return An owned MoveTo object.
      */
-    static MoveTo* create(float duration, const Vec2& position);
+    static cc::IntrusivePtr<MoveTo> create(float duration, const Vec2& position);
     /**
      * Creates the action.
      * @param duration Duration time, in seconds.
      * @param position The destination position in 3d.
-     * @return An autoreleased MoveTo object.
+     * @return An owned MoveTo object.
      */
-    static MoveTo* create(float duration, const Vec3& position);
+    static cc::IntrusivePtr<MoveTo> create(float duration, const Vec3& position);
 
     //
     // Overrides
     //
-    virtual MoveTo* clone() const override;
-    virtual MoveTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
 
     MoveTo() {}
@@ -647,15 +673,15 @@ public:
      * @param t Duration time, in seconds.
      * @param sx Skew x angle.
      * @param sy Skew y angle.
-     * @return An autoreleased SkewTo object.
+     * @return An owned SkewTo object.
      */
-    static SkewTo* create(float t, float sx, float sy);
+    static cc::IntrusivePtr<SkewTo> create(float t, float sx, float sy);
 
     //
     // Overrides
     //
-    virtual SkewTo* clone() const override;
-    virtual SkewTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -695,16 +721,16 @@ public:
      * @param t Duration time, in seconds.
      * @param deltaSkewX Skew x delta angle.
      * @param deltaSkewY Skew y delta angle.
-     * @return An autoreleased SkewBy object.
+     * @return An owned SkewBy object.
      */
-    static SkewBy* create(float t, float deltaSkewX, float deltaSkewY);
+    static cc::IntrusivePtr<SkewBy> create(float t, float deltaSkewX, float deltaSkewY);
 
     //
     // Overrides
     //
     virtual void startWithTarget(Node* target) override;
-    virtual SkewBy* clone() const override;
-    virtual SkewBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     SkewBy() {}
     virtual ~SkewBy() {}
@@ -729,14 +755,14 @@ public:
      * setContentSize is effective. But it's mostly useful for nodes where 9-slice is enabled
      * @param duration Duration time, in seconds.
      * @param final_size The target size to reach
-     * @return An autoreleased RotateTo object.
+     * @return An owned RotateTo object.
      */
-    static ResizeTo* create(float duration, const Vec2& final_size);
+    static cc::IntrusivePtr<ResizeTo> create(float duration, const Vec2& final_size);
 
     //
     // Overrides
     //
-    virtual ResizeTo* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     void startWithTarget(cocos2d::Node* target) override;
     void update(float time) override;
 
@@ -771,15 +797,15 @@ public:
      *
      * @param duration Duration time, in seconds.
      * @param deltaSize The delta size.
-     * @return An autoreleased ResizeBy object.
+     * @return An owned ResizeBy object.
      */
-    static ResizeBy* create(float duration, const Vec2& deltaSize);
+    static cc::IntrusivePtr<ResizeBy> create(float duration, const Vec2& deltaSize);
 
     //
     // Overrides
     //
-    virtual ResizeBy* clone() const override;
-    virtual ResizeBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time in seconds
@@ -813,15 +839,15 @@ public:
      * @param position The jumping distance.
      * @param height The jumping height.
      * @param jumps The jumping times.
-     * @return An autoreleased JumpBy object.
+     * @return An owned JumpBy object.
      */
-    static JumpBy* create(float duration, const Vec2& position, float height, int jumps);
+    static cc::IntrusivePtr<JumpBy> create(float duration, const Vec2& position, float height, int jumps);
 
     //
     // Overrides
     //
-    virtual JumpBy* clone() const override;
-    virtual JumpBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -860,16 +886,16 @@ public:
      * @param position The jumping destination position.
      * @param height The jumping height.
      * @param jumps The jumping times.
-     * @return An autoreleased JumpTo object.
+     * @return An owned JumpTo object.
      */
-    static JumpTo* create(float duration, const Vec2& position, float height, int jumps);
+    static cc::IntrusivePtr<JumpTo> create(float duration, const Vec2& position, float height, int jumps);
 
     //
     // Override
     //
     virtual void startWithTarget(Node* target) override;
-    virtual JumpTo* clone() const override;
-    virtual JumpTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     JumpTo() {}
     virtual ~JumpTo() {}
@@ -908,20 +934,20 @@ public:
     /** Creates the action with a duration and a bezier configuration.
      * @param t Duration time, in seconds.
      * @param c Bezier config.
-     * @return An autoreleased BezierBy object.
+     * @return An owned BezierBy object.
      * @code
      * When this function bound to js or lua,the input params are changed.
      * in js: var create(var t,var table)
      * in lua: local create(local t, local table)
      * @endcode
      */
-    static BezierBy* create(float t, const ccBezierConfig& c);
+    static cc::IntrusivePtr<BezierBy> create(float t, const ccBezierConfig& c);
 
     //
     // Overrides
     //
-    virtual BezierBy* clone() const override;
-    virtual BezierBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -956,21 +982,21 @@ public:
     /** Creates the action with a duration and a bezier configuration.
      * @param t Duration time, in seconds.
      * @param c Bezier config.
-     * @return An autoreleased BezierTo object.
+     * @return An owned BezierTo object.
      * @code
      * when this function bound to js or lua,the input params are changed
      * in js: var create(var t,var table)
      * in lua: local create(local t, local table)
      * @endcode
      */
-    static BezierTo* create(float t, const ccBezierConfig& c);
+    static cc::IntrusivePtr<BezierTo> create(float t, const ccBezierConfig& c);
 
     //
     // Overrides
     //
     virtual void startWithTarget(Node* target) override;
-    virtual BezierTo* clone() const override;
-    virtual BezierTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     BezierTo() {}
     virtual ~BezierTo() {}
@@ -998,18 +1024,18 @@ public:
      * Creates the action with the same scale factor for X and Y.
      * @param duration Duration time, in seconds.
      * @param s Scale factor of x and y.
-     * @return An autoreleased ScaleTo object.
+     * @return An owned ScaleTo object.
      */
-    static ScaleTo* create(float duration, float s);
+    static cc::IntrusivePtr<ScaleTo> create(float duration, float s);
 
     /**
      * Creates the action with and X factor and a Y factor.
      * @param duration Duration time, in seconds.
      * @param sx Scale factor of x.
      * @param sy Scale factor of y.
-     * @return An autoreleased ScaleTo object.
+     * @return An owned ScaleTo object.
      */
-    static ScaleTo* create(float duration, float sx, float sy);
+    static cc::IntrusivePtr<ScaleTo> create(float duration, float sx, float sy);
 
     /**
      * Creates the action with X Y Z factor.
@@ -1017,15 +1043,15 @@ public:
      * @param sx Scale factor of x.
      * @param sy Scale factor of y.
      * @param sz Scale factor of z.
-     * @return An autoreleased ScaleTo object.
+     * @return An owned ScaleTo object.
      */
-    static ScaleTo* create(float duration, float sx, float sy, float sz);
+    static cc::IntrusivePtr<ScaleTo> create(float duration, float sx, float sy, float sz);
 
     //
     // Overrides
     //
-    virtual ScaleTo* clone() const override;
-    virtual ScaleTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -1080,18 +1106,18 @@ public:
      * Creates the action with the same scale factor for X and Y.
      * @param duration Duration time, in seconds.
      * @param s Scale factor of x and y.
-     * @return An autoreleased ScaleBy object.
+     * @return An owned ScaleBy object.
      */
-    static ScaleBy* create(float duration, float s);
+    static cc::IntrusivePtr<ScaleBy> create(float duration, float s);
 
     /**
      * Creates the action with and X factor and a Y factor.
      * @param duration Duration time, in seconds.
      * @param sx Scale factor of x.
      * @param sy Scale factor of y.
-     * @return An autoreleased ScaleBy object.
+     * @return An owned ScaleBy object.
      */
-    static ScaleBy* create(float duration, float sx, float sy);
+    static cc::IntrusivePtr<ScaleBy> create(float duration, float sx, float sy);
 
     /**
      * Creates the action with X Y Z factor.
@@ -1099,16 +1125,16 @@ public:
      * @param sx Scale factor of x.
      * @param sy Scale factor of y.
      * @param sz Scale factor of z.
-     * @return An autoreleased ScaleBy object.
+     * @return An owned ScaleBy object.
      */
-    static ScaleBy* create(float duration, float sx, float sy, float sz);
+    static cc::IntrusivePtr<ScaleBy> create(float duration, float sx, float sy, float sz);
 
     //
     // Overrides
     //
     virtual void startWithTarget(Node* target) override;
-    virtual ScaleBy* clone() const override;
-    virtual ScaleBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     ScaleBy() {}
     virtual ~ScaleBy() {}
@@ -1127,15 +1153,15 @@ public:
      * Creates the action.
      * @param duration Duration time, in seconds.
      * @param blinks Blink times.
-     * @return An autoreleased Blink object.
+     * @return An owned Blink object.
      */
-    static Blink* create(float duration, int blinks);
+    static cc::IntrusivePtr<Blink> create(float duration, int blinks);
 
     //
     // Overrides
     //
-    virtual Blink* clone() const override;
-    virtual Blink* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     /**
      * @param time In seconds.
      */
@@ -1172,15 +1198,15 @@ public:
      * Creates an action with duration and opacity.
      * @param duration Duration time, in seconds.
      * @param opacity A certain opacity, the range is from 0 to 255.
-     * @return An autoreleased FadeTo object.
+     * @return An owned FadeTo object.
      */
-    static FadeTo* create(float duration, uint8_t opacity);
+    static cc::IntrusivePtr<FadeTo> create(float duration, uint8_t opacity);
 
     //
     // Overrides
     //
-    virtual FadeTo* clone() const override;
-    virtual FadeTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -1216,16 +1242,16 @@ public:
     /**
      * Creates the action.
      * @param d Duration time, in seconds.
-     * @return An autoreleased FadeIn object.
+     * @return An owned FadeIn object.
      */
-    static FadeIn* create(float d);
+    static cc::IntrusivePtr<FadeIn> create(float d);
 
     //
     // Overrides
     //
     virtual void startWithTarget(Node* target) override;
-    virtual FadeIn* clone() const override;
-    virtual FadeTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     /**
      * @js NA
@@ -1251,14 +1277,14 @@ public:
      * Creates the action.
      * @param d Duration time, in seconds.
      */
-    static FadeOut* create(float d);
+    static cc::IntrusivePtr<FadeOut> create(float d);
 
     //
     // Overrides
     //
     virtual void startWithTarget(Node* target) override;
-    virtual FadeOut* clone() const override;
-    virtual FadeTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     /**
      * @js NA
@@ -1287,22 +1313,22 @@ public:
      * @param red Red Color, from 0 to 255.
      * @param green Green Color, from 0 to 255.
      * @param blue Blue Color, from 0 to 255.
-     * @return An autoreleased TintTo object.
+     * @return An owned TintTo object.
      */
-    static TintTo* create(float duration, uint8_t red, uint8_t green, uint8_t blue);
+    static cc::IntrusivePtr<TintTo> create(float duration, uint8_t red, uint8_t green, uint8_t blue);
     /**
      * Creates an action with duration and color.
      * @param duration Duration time, in seconds.
      * @param color It's a Color3B type.
-     * @return An autoreleased TintTo object.
+     * @return An owned TintTo object.
      */
-    static TintTo* create(float duration, const Color3B& color);
+    static cc::IntrusivePtr<TintTo> create(float duration, const Color3B& color);
 
     //
     // Overrides
     //
-    virtual TintTo* clone() const override;
-    virtual TintTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -1336,15 +1362,15 @@ public:
      * @param deltaRed Delta red color.
      * @param deltaGreen Delta green color.
      * @param deltaBlue Delta blue color.
-     * @return An autoreleased TintBy object.
+     * @return An owned TintBy object.
      */
-    static TintBy* create(float duration, int16_t deltaRed, int16_t deltaGreen, int16_t deltaBlue);
+    static cc::IntrusivePtr<TintBy> create(float duration, int16_t deltaRed, int16_t deltaGreen, int16_t deltaBlue);
 
     //
     // Overrides
     //
-    virtual TintBy* clone() const override;
-    virtual TintBy* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     /**
      * @param time In seconds.
@@ -1379,9 +1405,9 @@ public:
     /**
      * Creates the action.
      * @param d Duration time, in seconds.
-     * @return An autoreleased DelayTime object.
+     * @return An owned DelayTime object.
      */
-    static DelayTime* create(float d);
+    static cc::IntrusivePtr<DelayTime> create(float d);
 
     //
     // Overrides
@@ -1390,8 +1416,8 @@ public:
      * @param time In seconds.
      */
     virtual void update(float time) override;
-    virtual DelayTime* reverse() const override;
-    virtual DelayTime* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     DelayTime() {}
     virtual ~DelayTime() {}
@@ -1414,15 +1440,15 @@ public:
     /** Creates the action.
      *
      * @param action a certain action.
-     * @return An autoreleased ReverseTime object.
+     * @return An owned ReverseTime object.
      */
-    static ReverseTime* create(FiniteTimeAction* action);
+    static cc::IntrusivePtr<ReverseTime> create(FiniteTimeAction* action);
 
     //
     // Overrides
     //
-    virtual ReverseTime* reverse() const override;
-    virtual ReverseTime* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -1453,9 +1479,9 @@ public:
     /** Creates the action with an Animation and will restore the original frame when the animation is over.
      *
      * @param animation A certain animation.
-     * @return An autoreleased Animate object.
+     * @return An owned Animate object.
      */
-    static Animate* create(Animation* animation);
+    static cc::IntrusivePtr<Animate> create(Animation* animation);
 
     /** Sets the Animation object to be animated
      *
@@ -1477,8 +1503,8 @@ public:
     //
     // Overrides
     //
-    virtual Animate* clone() const override;
-    virtual Animate* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -1518,9 +1544,9 @@ public:
      *
      * @param target The target needs to override.
      * @param action The action needs to override.
-     * @return An autoreleased TargetedAction object.
+     * @return An owned TargetedAction object.
      */
-    static TargetedAction* create(Node* target, FiniteTimeAction* action);
+    static cc::IntrusivePtr<TargetedAction> create(Node* target, FiniteTimeAction* action);
 
     /** Sets the target that the action will be forced to run with.
      *
@@ -1537,8 +1563,8 @@ public:
     //
     // Overrides
     //
-    virtual TargetedAction* clone() const override;
-    virtual TargetedAction* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void stop() override;
     /**
@@ -1580,17 +1606,17 @@ public:
      * @param to value to be at the end of the action
      * @param callback to report back result
      *
-     * @return An autoreleased ActionFloat object
+     * @return An owned ActionFloat object
      */
-    static ActionFloat* create(float duration, float from, float to, ActionFloatCallback callback);
+    static cc::IntrusivePtr<ActionFloat> create(float duration, float from, float to, ActionFloatCallback callback);
 
     /**
      * Overridden ActionInterval methods
      */
     void startWithTarget(Node* target) override;
     void update(float delta) override;
-    ActionFloat* reverse() const override;
-    ActionFloat* clone() const override;
+    cc::IntrusivePtr<Action> reverse() const override;
+    cc::IntrusivePtr<Action> clone() const override;
 
     ActionFloat(){};
     virtual ~ActionFloat(){};

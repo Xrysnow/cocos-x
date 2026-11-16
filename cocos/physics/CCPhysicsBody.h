@@ -72,26 +72,26 @@ public:
      *
      * This default mass value is 1.0.
      * This default moment value is 200.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* create();
+    static cc::IntrusivePtr<PhysicsBody> create();
 
     /**
      * Create a body with mass and default moment.
      *
      * @param mass This body's mass.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* create(float mass);
+    static cc::IntrusivePtr<PhysicsBody> create(float mass);
 
     /**
      * Create a body with mass and moment.
      *
      * @param mass This body's mass.
      * @param moment This body's moment.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* create(float mass, float moment);
+    static cc::IntrusivePtr<PhysicsBody> create(float mass, float moment);
 
     /**
      * Create a body contains a circle.
@@ -99,9 +99,9 @@ public:
      * @param   radius A float number, it is the circle's radius.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createCircle(float radius,
+    static cc::IntrusivePtr<PhysicsBody> createCircle(float radius,
                                      const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                      const Vec2& offset              = Vec2::ZERO);
     /**
@@ -110,9 +110,9 @@ public:
      * @param   size Size contains this box's width and height.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createBox(const Vec2& size,
+    static cc::IntrusivePtr<PhysicsBody> createBox(const Vec2& size,
                                   const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                   const Vec2& offset              = Vec2::ZERO);
 
@@ -123,9 +123,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createPolygon(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsBody> createPolygon(const Vec2* points,
                                       int count,
                                       const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                       const Vec2& offset              = Vec2::ZERO);
@@ -137,9 +137,9 @@ public:
      * @param   b It's the edge's end position.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createEdgeSegment(const Vec2& a,
+    static cc::IntrusivePtr<PhysicsBody> createEdgeSegment(const Vec2& a,
                                           const Vec2& b,
                                           const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                           float border                    = 1);
@@ -150,9 +150,9 @@ public:
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createEdgeBox(const Vec2& size,
+    static cc::IntrusivePtr<PhysicsBody> createEdgeBox(const Vec2& size,
                                       const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                       float border                    = 1,
                                       const Vec2& offset              = Vec2::ZERO);
@@ -164,9 +164,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createEdgePolygon(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsBody> createEdgePolygon(const Vec2* points,
                                           int count,
                                           const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                           float border                    = 1);
@@ -178,9 +178,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsBody object pointer.
+     * @return  An owned PhysicsBody object pointer.
      */
-    static PhysicsBody* createEdgeChain(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsBody> createEdgeChain(const Vec2* points,
                                         int count,
                                         const PhysicsMaterial& material = PHYSICSBODY_MATERIAL_DEFAULT,
                                         float border                    = 1);

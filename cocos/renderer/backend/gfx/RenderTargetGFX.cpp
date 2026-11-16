@@ -20,9 +20,9 @@ void RenderTargetGFX::destroyRenderPassCache()
     renderPasses.clear();
 }
 
-RenderTargetGFX* RenderTargetGFX::createDefault(const gfx::Swapchain* swapchain)
+cc::IntrusivePtr<RenderTargetGFX> RenderTargetGFX::createDefault(const gfx::Swapchain* swapchain)
 {
-    auto ret = new RenderTargetGFX(true);
+    cc::IntrusivePtr<RenderTargetGFX> ret{new RenderTargetGFX(true)};
     if (swapchain)
     {
         ret->info.colorTextures = { swapchain->getColorTexture() };

@@ -51,9 +51,9 @@ public:
 
     /** Create a focus event listener.
      *
-     * @return An autoreleased EventListenerFocus object.
+     * @return An owned EventListenerFocus object.
      */
-    static EventListenerFocus* create();
+    static cc::IntrusivePtr<EventListenerFocus> create();
 
     /** Destructor.
      * @js NA
@@ -61,7 +61,7 @@ public:
     virtual ~EventListenerFocus();
 
     /// Overrides
-    virtual EventListenerFocus* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
     //
 

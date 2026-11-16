@@ -75,19 +75,19 @@ public:
      *
      * @param tex A given texture.
      * @param capacity A capacity of particles.
-     * @return An autoreleased ParticleBatchNode object.
+     * @return An owned ParticleBatchNode object.
      * @js NA
      */
-    static ParticleBatchNode* createWithTexture(Texture2D* tex, int capacity = kParticleDefaultCapacity);
+    static cc::IntrusivePtr<ParticleBatchNode> createWithTexture(Texture2D* tex, int capacity = kParticleDefaultCapacity);
 
     /** Create the particle system with the name of a file on disk (for a list of supported formats look at the
      * Texture2D class), a capacity of particles.
      *
      * @param fileImage A given file name.
      * @param capacity A capacity of particles.
-     * @return An autoreleased ParticleBatchNode object.
+     * @return An owned ParticleBatchNode object.
      */
-    static ParticleBatchNode* create(std::string_view fileImage, int capacity = kParticleDefaultCapacity);
+    static cc::IntrusivePtr<ParticleBatchNode> create(std::string_view fileImage, int capacity = kParticleDefaultCapacity);
 
     /** Inserts a child into the ParticleBatchNode.
      *

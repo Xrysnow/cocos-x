@@ -84,15 +84,13 @@ Speed::~Speed()
     CC_SAFE_RELEASE(_innerAction);
 }
 
-Speed* Speed::create(ActionInterval* action, float speed)
+cc::IntrusivePtr<Speed> Speed::create(ActionInterval* action, float speed)
 {
-    Speed* ret = new Speed();
+    cc::IntrusivePtr<Speed> ret{new Speed()};
     if (ret->initWithAction(action, speed))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -111,11 +109,11 @@ bool Speed::initWithAction(ActionInterval* action, float speed)
     return true;
 }
 
-Speed* Speed::clone() const
+cc::IntrusivePtr<Action> Speed::clone() const
 {
     // no copy constructor
     if (_innerAction)
-        return Speed::create(_innerAction->clone(), _speed);
+        return Speed::create(cc::static_pointer_cast<ActionInterval>(_innerAction->clone()).get(), _speed);
 
     return nullptr;
 }
@@ -149,10 +147,10 @@ bool Speed::isDone() const
     return _innerAction->isDone();
 }
 
-Speed* Speed::reverse() const
+cc::IntrusivePtr<Action> Speed::reverse() const
 {
     if (_innerAction)
-        return Speed::create(_innerAction->reverse(), _speed);
+        return Speed::create(cc::static_pointer_cast<ActionInterval>(_innerAction->reverse()).get(), _speed);
 
     return nullptr;
 }
@@ -175,34 +173,32 @@ Follow::~Follow()
     CC_SAFE_RELEASE(_followedNode);
 }
 
-Follow* Follow::create(Node* followedNode, const Rect& rect /* = Rect::ZERO*/)
+cc::IntrusivePtr<Follow> Follow::create(Node* followedNode, const Rect& rect /* = Rect::ZERO*/)
 {
     return createWithOffset(followedNode, 0.0, 0.0, rect);
 }
 
-Follow* Follow::createWithOffset(Node* followedNode, float xOffset, float yOffset, const Rect& rect /*= Rect::ZERO*/)
+cc::IntrusivePtr<Follow> Follow::createWithOffset(Node* followedNode, float xOffset, float yOffset, const Rect& rect /*= Rect::ZERO*/)
 {
 
-    Follow* follow = new Follow();
+    cc::IntrusivePtr<Follow> follow{new Follow()};
 
     bool valid = follow->initWithTargetAndOffset(followedNode, xOffset, yOffset, rect);
 
     if (valid)
     {
-        follow->autorelease();
         return follow;
     }
 
-    delete follow;
     return nullptr;
 }
-Follow* Follow::clone() const
+cc::IntrusivePtr<Action> Follow::clone() const
 {
     // no copy constructor
     return Follow::createWithOffset(_followedNode, _offsetX, _offsetY, _worldRect);
 }
 
-Follow* Follow::reverse() const
+cc::IntrusivePtr<Action> Follow::reverse() const
 {
     return clone();
 }

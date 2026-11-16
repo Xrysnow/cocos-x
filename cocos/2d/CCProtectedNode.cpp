@@ -42,16 +42,12 @@ ProtectedNode::~ProtectedNode()
     removeAllProtectedChildren();
 }
 
-ProtectedNode* ProtectedNode::create()
+cc::IntrusivePtr<ProtectedNode> ProtectedNode::create()
 {
-    ProtectedNode* ret = new ProtectedNode();
-    if (ret->init())
+    cc::IntrusivePtr<ProtectedNode> ret{new ProtectedNode()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

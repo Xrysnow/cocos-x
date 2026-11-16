@@ -46,31 +46,23 @@ ClippingNode::~ClippingNode()
     CC_SAFE_DELETE(_stencilStateManager);
 }
 
-ClippingNode* ClippingNode::create()
+cc::IntrusivePtr<ClippingNode> ClippingNode::create()
 {
-    ClippingNode* ret = new ClippingNode();
-    if (ret->init())
+    cc::IntrusivePtr<ClippingNode> ret{new ClippingNode()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
 }
 
-ClippingNode* ClippingNode::create(Node* pStencil)
+cc::IntrusivePtr<ClippingNode> ClippingNode::create(Node* pStencil)
 {
-    ClippingNode* ret = new ClippingNode();
-    if (ret->init(pStencil))
+    cc::IntrusivePtr<ClippingNode> ret{new ClippingNode()};
+    if (!(ret->init(pStencil)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -162,12 +154,11 @@ void ClippingNode::visit(Renderer* renderer, const Mat4& parentTransform, uint32
     if (alphaThreshold < 1)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
-        auto programState  = new backend::ProgramState(program);
+        cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
         auto alphaLocation = programState->getUniformLocation("u_alpha_value");
         programState->setUniform(alphaLocation, &alphaThreshold, sizeof(alphaThreshold));
-        setProgramStateRecursively(_stencil, programState);
+        setProgramStateRecursively(_stencil, programState.get());
 
-        CC_SAFE_RELEASE_NULL(programState);
     }
     _stencil->visit(renderer, _modelViewTransform, flags);
 

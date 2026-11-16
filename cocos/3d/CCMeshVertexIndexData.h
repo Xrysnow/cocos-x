@@ -55,7 +55,7 @@ class CC_DLL MeshIndexData : public Ref
 {
 public:
     /** create  */
-    static MeshIndexData* create(std::string_view id,
+    static cc::IntrusivePtr<MeshIndexData> create(std::string_view id,
                                  MeshVertexData* vertexData,
                                  backend::Buffer* indexbuffer,
                                  const AABB& aabb);
@@ -112,7 +112,7 @@ class CC_DLL MeshVertexData : public Ref
 
 public:
     /**create*/
-    static MeshVertexData* create(const MeshData& meshdata, CustomCommand::IndexFormat format = CustomCommand::IndexFormat::U_SHORT);
+    static cc::IntrusivePtr<MeshVertexData> create(const MeshData& meshdata, CustomCommand::IndexFormat format = CustomCommand::IndexFormat::U_SHORT);
 
     /** get vertexbuffer */
     backend::Buffer* getVertexBuffer() const { return _vertexBuffer; }

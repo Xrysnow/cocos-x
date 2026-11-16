@@ -183,7 +183,7 @@ bool CommandBufferGFX::detachSurface()
     _deviceLost = hasDeviceLost();
     _currentFBO = nullptr;
     _usedFBOs.clear();
-    CC_SAFE_DELETE(_defaultRT);
+    _defaultRT.reset();
     bool detached = true;
     for (auto* swapchain : swapchains)
     {
@@ -269,7 +269,7 @@ bool CommandBufferGFX::resizeSurface(uint32_t width, uint32_t height)
     }
     _currentFBO = nullptr;
     _usedFBOs.clear();
-    CC_SAFE_DELETE(_defaultRT);
+    _defaultRT.reset();
     _defaultRTGeneration = 0;
     bool ready = width && height;
     for (auto* swapchain : swapchains)
@@ -854,9 +854,9 @@ void CommandBufferGFX::cleanResources()
 
 void CommandBufferGFX::resetDefaultFBO()
 {
-    CC_SAFE_DELETE(_defaultRT);
+    _defaultRT.reset();
     // this is the only one real instance
-    _defaultRT  = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
+    _defaultRT = RenderTargetGFX::createDefault(swapchains.empty() ? nullptr : swapchains[0]);
     _defaultRTGeneration = swapchains.empty() ? 0 : swapchains[0]->getGeneration();
     _currentFBO = _defaultRT->getFramebuffer(gfx::ClearFlagBit::ALL);
     _usedFBOs.pushBack(_currentFBO);

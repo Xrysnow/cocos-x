@@ -35,10 +35,9 @@ NS_CC_BEGIN
 namespace ui
 {
 
-UICCTextField* UICCTextField::create()
+cc::IntrusivePtr<UICCTextField> UICCTextField::create()
 {
-    UICCTextField* ret = new UICCTextField();
-    ret->autorelease();
+    cc::IntrusivePtr<UICCTextField> ret{new UICCTextField()};
     return ret;
 }
 
@@ -53,20 +52,19 @@ UICCTextField::UICCTextField()
 
 UICCTextField::~UICCTextField() {}
 
-UICCTextField* UICCTextField::create(std::string_view placeholder, std::string_view fontName, float fontSize)
+cc::IntrusivePtr<UICCTextField> UICCTextField::create(std::string_view placeholder, std::string_view fontName, float fontSize)
 {
-    UICCTextField* pRet = new UICCTextField();
+    cc::IntrusivePtr<UICCTextField> pRet{new UICCTextField()};
 
     if (pRet->initWithPlaceHolder("", fontName, fontSize))
     {
-        pRet->autorelease();
+
         if (!placeholder.empty())
         {
             pRet->setPlaceHolder(placeholder);
         }
         return pRet;
     }
-    CC_SAFE_DELETE(pRet);
 
     return nullptr;
 }
@@ -281,30 +279,26 @@ TextField::~TextField()
     _textFieldEventListener = nullptr;
 }
 
-TextField* TextField::create()
+cc::IntrusivePtr<TextField> TextField::create()
 {
-    TextField* widget = new TextField();
+    cc::IntrusivePtr<TextField> widget{new TextField()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-TextField* TextField::create(std::string_view placeholder, std::string_view fontName, int fontSize)
+cc::IntrusivePtr<TextField> TextField::create(std::string_view placeholder, std::string_view fontName, int fontSize)
 {
-    TextField* widget = new TextField();
+    cc::IntrusivePtr<TextField> widget{new TextField()};
     if (widget->init())
     {
         widget->setFontName(fontName);
         widget->setFontSize(fontSize);
         widget->setPlaceHolder(placeholder);
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -326,7 +320,8 @@ void TextField::onEnter()
 
 void TextField::initRenderer()
 {
-    _textFieldRenderer = UICCTextField::create();
+    cc::IntrusivePtr<UICCTextField> textFieldRenderer;
+    _textFieldRenderer = (textFieldRenderer = UICCTextField::create()).get();
     addProtectedChild(_textFieldRenderer, TEXTFIELD_RENDERER_Z, -1);
 }
 
@@ -750,7 +745,7 @@ void TextField::detachWithIME()
     _textFieldRenderer->detachWithIME();
 }
 
-Widget* TextField::createCloneInstance()
+cc::IntrusivePtr<Widget> TextField::createCloneInstance()
 {
     return TextField::create();
 }

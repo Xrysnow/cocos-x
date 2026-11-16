@@ -41,90 +41,78 @@
 USING_NS_CC;
 using namespace cocos2d::ui;
 
-Scale9Sprite* Scale9Sprite::create()
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create()
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->init())
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Scale9Sprite* Scale9Sprite::create(std::string_view filename, const Rect& rect, const Rect& capInsets)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view filename, const Rect& rect, const Rect& capInsets)
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->initWithFile(filename, rect, capInsets))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Scale9Sprite* Scale9Sprite::create(std::string_view filename, const Rect& rect)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view filename, const Rect& rect)
 {
     return create(filename, rect, Rect::ZERO);
 }
 
-Scale9Sprite* Scale9Sprite::create(const Rect& capInsets, std::string_view file)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(const Rect& capInsets, std::string_view file)
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->initWithFile(capInsets, file))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Scale9Sprite* Scale9Sprite::create(std::string_view fileaname)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view fileaname)
 {
     return create(Rect::ZERO, fileaname);
 }
 
-Scale9Sprite* Scale9Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame, const Rect& capInsets)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame, const Rect& capInsets)
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrame(spriteFrame, capInsets))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Scale9Sprite* Scale9Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame)
 {
     return createWithSpriteFrame(spriteFrame, Rect::ZERO);
 }
 
-Scale9Sprite* Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName, const Rect& capInsets)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName, const Rect& capInsets)
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrameName(spriteFrameName, capInsets))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-Scale9Sprite* Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
 {
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrameName(spriteFrameName, Rect::ZERO))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
 
     log("Could not allocate Scale9Sprite()");
     return nullptr;
@@ -271,7 +259,7 @@ bool Scale9Sprite::updateWithSprite(Sprite* sprite,
                                     const Vec2& originalSize,
                                     const Rect& capInsets)
 {
-    SpriteFrame* spriteframe =
+    cc::IntrusivePtr<SpriteFrame> spriteframe =
         SpriteFrame::createWithTexture(sprite->getTexture(), CC_RECT_POINTS_TO_PIXELS(textureRect), rotated,
                                        CC_POINT_POINTS_TO_PIXELS(offset), CC_SIZE_POINTS_TO_PIXELS(originalSize));
     setSpriteFrame(spriteframe);
@@ -279,16 +267,14 @@ bool Scale9Sprite::updateWithSprite(Sprite* sprite,
     return true;
 }
 
-Scale9Sprite* Scale9Sprite::resizableSpriteWithCapInsets(const Rect& capInsets) const
+cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::resizableSpriteWithCapInsets(const Rect& capInsets) const
 {
     // FIXME: there are no test cases for this method
-    Scale9Sprite* ret = new Scale9Sprite();
+    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
     if (ret->init(const_cast<Scale9Sprite*>(this), _rect, _rectRotated, Vec2::ZERO, _originalContentSize, capInsets))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -423,7 +409,7 @@ Sprite* Scale9Sprite::getSprite()
  */
 void Scale9Sprite::copyTo(Scale9Sprite* copy) const
 {
-    copy->initWithSpriteFrame(getSpriteFrame(), getCapInsets());
+    copy->initWithSpriteFrame(getSpriteFrame().get(), getCapInsets());
 
     copy->setRenderingType(_renderingType);
     copy->setScale9Enabled(isScale9Enabled());
@@ -506,7 +492,7 @@ void Scale9Sprite::setupSlice9(Texture2D* texture, const Rect& capInsets)
 {
     if (texture && texture->isContain9PatchInfo())
     {
-        auto& parsedCapInset = texture->getSpriteFrameCapInset(getSpriteFrame());
+        auto& parsedCapInset = texture->getSpriteFrameCapInset(getSpriteFrame().get());
 
         if (!parsedCapInset.equals(Rect::ZERO))
         {

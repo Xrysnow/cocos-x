@@ -42,7 +42,7 @@ class ControlSwitchSprite : public Sprite, public ActionTweenDelegate
 {
 public:
     /** creates an autorelease instance of ControlSwitchSprite */
-    static ControlSwitchSprite* create(Sprite* maskSprite,
+    static cc::IntrusivePtr<ControlSwitchSprite> create(Sprite* maskSprite,
                                        Sprite* onSprite,
                                        Sprite* offSprite,
                                        Sprite* thumbSprite,
@@ -123,16 +123,15 @@ private:
     CC_DISALLOW_COPY_AND_ASSIGN(ControlSwitchSprite);
 };
 
-ControlSwitchSprite* ControlSwitchSprite::create(Sprite* maskSprite,
+cc::IntrusivePtr<ControlSwitchSprite> ControlSwitchSprite::create(Sprite* maskSprite,
                                                  Sprite* onSprite,
                                                  Sprite* offSprite,
                                                  Sprite* thumbSprite,
                                                  Label* onLabel,
                                                  Label* offLabel)
 {
-    auto ret = new ControlSwitchSprite();
+    cc::IntrusivePtr<ControlSwitchSprite> ret{new ControlSwitchSprite()};
     ret->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel);
-    ret->autorelease();
     return ret;
 }
 
@@ -182,9 +181,8 @@ bool ControlSwitchSprite::initWithMaskSprite(Sprite* maskSprite,
         setOnLabel(onLabel);
         setOffLabel(offLabel);
 
-        ClippingNode* clipper = ClippingNode::create();
-        _clipperStencil       = Sprite::createWithTexture(maskSprite->getTexture());
-        _clipperStencil->retain();
+        cc::IntrusivePtr<ClippingNode> clipper = ClippingNode::create();
+        _clipperStencil = Sprite::createWithTexture(maskSprite->getTexture()).detach();
         clipper->setAlphaThreshold(0.1f);
 
         clipper->setStencil(_clipperStencil);
@@ -290,16 +288,12 @@ bool ControlSwitch::initWithMaskSprite(Sprite* maskSprite, Sprite* onSprite, Spr
     return initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, nullptr, nullptr);
 }
 
-ControlSwitch* ControlSwitch::create(Sprite* maskSprite, Sprite* onSprite, Sprite* offSprite, Sprite* thumbSprite)
+cc::IntrusivePtr<ControlSwitch> ControlSwitch::create(Sprite* maskSprite, Sprite* onSprite, Sprite* offSprite, Sprite* thumbSprite)
 {
-    ControlSwitch* pRet = new ControlSwitch();
-    if (pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, nullptr, nullptr))
+    cc::IntrusivePtr<ControlSwitch> pRet{new ControlSwitch()};
+    if (!(pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, nullptr, nullptr)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }
@@ -311,6 +305,7 @@ bool ControlSwitch::initWithMaskSprite(Sprite* maskSprite,
                                        Label* onLabel,
                                        Label* offLabel)
 {
+    cc::IntrusivePtr<ControlSwitchSprite> switchSprite;
     if (Control::init())
     {
         CCASSERT(maskSprite, "Mask must not be nil.");
@@ -320,7 +315,7 @@ bool ControlSwitch::initWithMaskSprite(Sprite* maskSprite,
 
         _on = true;
 
-        _switchSprite = ControlSwitchSprite::create(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel);
+        _switchSprite = (switchSprite = ControlSwitchSprite::create(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel).get()).get();
         _switchSprite->retain();
         _switchSprite->setPosition(_switchSprite->getContentSize().width / 2,
                                    _switchSprite->getContentSize().height / 2);
@@ -334,21 +329,17 @@ bool ControlSwitch::initWithMaskSprite(Sprite* maskSprite,
     return false;
 }
 
-ControlSwitch* ControlSwitch::create(Sprite* maskSprite,
+cc::IntrusivePtr<ControlSwitch> ControlSwitch::create(Sprite* maskSprite,
                                      Sprite* onSprite,
                                      Sprite* offSprite,
                                      Sprite* thumbSprite,
                                      Label* onLabel,
                                      Label* offLabel)
 {
-    ControlSwitch* pRet = new ControlSwitch();
-    if (pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel))
+    cc::IntrusivePtr<ControlSwitch> pRet{new ControlSwitch()};
+    if (!(pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }
@@ -366,7 +357,7 @@ void ControlSwitch::setOn(bool isOn, bool animated)
     {
         _switchSprite->runAction(
             ActionTween::create(0.2f, "sliderXPosition", _switchSprite->getSliderXPosition(),
-                                (_on) ? _switchSprite->getOnPosition() : _switchSprite->getOffPosition()));
+                                (_on) ? _switchSprite->getOnPosition() : _switchSprite->getOffPosition()).get());
     }
     else
     {

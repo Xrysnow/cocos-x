@@ -97,7 +97,7 @@ PUScriptTranslator* PUObserverManager::getTranslator(std::string_view type)
     return nullptr;
 }
 
-PUObserver* PUObserverManager::createObserver(std::string_view type)
+cc::IntrusivePtr<PUObserver> PUObserverManager::createObserver(std::string_view type)
 {
     if (type == "OnClear")
     {

@@ -36,7 +36,7 @@ const float PUVortexAffector::DEFAULT_ROTATION_SPEED = 1.0f;
 //-----------------------------------------------------------------------
 PUVortexAffector::PUVortexAffector() : PUAffector(), _rotationVector(DEFAULT_ROTATION_VECTOR)
 {
-    _dynRotationSpeed = new PUDynamicAttributeFixed();
+    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 }
 //-----------------------------------------------------------------------
@@ -116,10 +116,9 @@ void PUVortexAffector::preUpdateAffector(float deltaTime)
     getDerivedPosition();
 }
 
-PUVortexAffector* PUVortexAffector::create()
+cc::IntrusivePtr<PUVortexAffector> PUVortexAffector::create()
 {
-    auto pvf = new PUVortexAffector();
-    pvf->autorelease();
+    cc::IntrusivePtr<PUVortexAffector> pvf{new PUVortexAffector()};
     return pvf;
 }
 
@@ -130,7 +129,7 @@ void PUVortexAffector::copyAttributesTo(PUAffector* affector)
     PUVortexAffector* vortexAffector = static_cast<PUVortexAffector*>(affector);
     vortexAffector->_rotation        = _rotation;
     vortexAffector->_rotationVector  = _rotationVector;
-    vortexAffector->setRotationSpeed(getRotationSpeed()->clone());
+    vortexAffector->setRotationSpeed(getRotationSpeed()->clone().get());
 }
 
 NS_CC_END

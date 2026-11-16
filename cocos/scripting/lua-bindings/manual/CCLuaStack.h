@@ -53,11 +53,11 @@ public:
     /**
      * Create a LuaStack object, it will new a lua_State.
      */
-    static LuaStack* create();
+    static cc::IntrusivePtr<LuaStack> create();
     /**
      * Create a LuaStack object with the existed lua_State.
      */
-    static LuaStack* attach(lua_State* L);
+    static cc::IntrusivePtr<LuaStack> attach(lua_State* L);
 
     /** Destructor. */
     virtual ~LuaStack();

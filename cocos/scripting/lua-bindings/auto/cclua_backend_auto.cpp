@@ -299,7 +299,7 @@ int luaReg_CoreBackend_ccbTextureCubeFace(lua_State* lua_S)
 int lua_cocos2d_backend_Program_getActiveAttributes(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getActiveAttributes");
-	LUA_TRY_INVOKE_R(0, (static_cast<const std::unordered_map<std::string, cocos2d::backend::AttributeBindInfo>&(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getActiveAttributes)));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getActiveAttributes);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_getAttributeLocation_1(lua_State* lua_S)
@@ -323,31 +323,31 @@ int lua_cocos2d_backend_Program_getBuiltinUniformLocation_1(lua_State* lua_S)
 int lua_cocos2d_backend_Program_getFragmentShader(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getFragmentShader");
-	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getFragmentShader));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getFragmentShader);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_getMaxFragmentLocation(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getMaxFragmentLocation");
-	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getMaxFragmentLocation));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getMaxFragmentLocation);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_getMaxVertexLocation(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getMaxVertexLocation");
-	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getMaxVertexLocation));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getMaxVertexLocation);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_getProgramType(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getProgramType");
-	LUA_TRY_INVOKE_R(0, static_cast<uint32_t(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getProgramType));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getProgramType);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_getUniformBufferSize(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getUniformBufferSize");
-	LUA_TRY_INVOKE_R(1, static_cast<std::size_t(cocos2d::backend::Program::*)(cocos2d::backend::ShaderStage)const>(&cocos2d::backend::Program::getUniformBufferSize));
+	LUA_TRY_INVOKE_R(1, &cocos2d::backend::Program::getUniformBufferSize);
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_backend_Program_getUniformLocation_1(lua_State* lua_S)
@@ -359,19 +359,19 @@ int lua_cocos2d_backend_Program_getUniformLocation_1(lua_State* lua_S)
 int lua_cocos2d_backend_Program_getVertexShader(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:getVertexShader");
-	LUA_TRY_INVOKE_R(0, static_cast<std::string_view(cocos2d::backend::Program::*)()const>(&cocos2d::backend::Program::getVertexShader));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Program::getVertexShader);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_Program_setProgramType(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.Program", "ccb.Program:setProgramType");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::Program::*)(uint32_t)>(&cocos2d::backend::Program::setProgramType));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::Program::setProgramType);
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_backend_Program_getBuiltinProgram(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("ccb.Program", "ccb.Program:getBuiltinProgram");
-	LUA_TRY_INVOKE_R(1, static_cast<cocos2d::backend::Program*(*)(uint32_t)>(&cocos2d::backend::Program::getBuiltinProgram));
+	LUA_TRY_INVOKE_R(1, &cocos2d::backend::Program::getBuiltinProgram);
 	LUA_SINVOKE_FOOTER("1");
 }
 int luaReg_CoreBackend_ccbProgram(lua_State* lua_S)
@@ -407,31 +407,31 @@ int lua_cocos2d_backend_VertexLayout_new(lua_State* lua_S)
 int lua_cocos2d_backend_VertexLayout_getStride(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.VertexLayout", "ccb.VertexLayout:getStride");
-	LUA_TRY_INVOKE_R(0, static_cast<std::size_t(cocos2d::backend::VertexLayout::*)()const>(&cocos2d::backend::VertexLayout::getStride));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::VertexLayout::getStride);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_VertexLayout_getVertexStepMode(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.VertexLayout", "ccb.VertexLayout:getVertexStepMode");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::VertexStepMode(cocos2d::backend::VertexLayout::*)()const>(&cocos2d::backend::VertexLayout::getVertexStepMode));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::VertexLayout::getVertexStepMode);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_VertexLayout_isValid(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.VertexLayout", "ccb.VertexLayout:isValid");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::backend::VertexLayout::*)()const>(&cocos2d::backend::VertexLayout::isValid));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::VertexLayout::isValid);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_VertexLayout_setAttribute(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.VertexLayout", "ccb.VertexLayout:setAttribute");
-	LUA_TRY_INVOKE(5, (static_cast<void(cocos2d::backend::VertexLayout::*)(std::string_view, std::size_t, cocos2d::backend::VertexFormat, std::size_t, bool)>(&cocos2d::backend::VertexLayout::setAttribute)));
+	LUA_TRY_INVOKE(5, &cocos2d::backend::VertexLayout::setAttribute);
 	LUA_INVOKE_FOOTER("5");
 }
 int lua_cocos2d_backend_VertexLayout_setStride(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.VertexLayout", "ccb.VertexLayout:setStride");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::VertexLayout::*)(std::size_t)>(&cocos2d::backend::VertexLayout::setStride));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::VertexLayout::setStride);
 	LUA_INVOKE_FOOTER("1");
 }
 int luaReg_CoreBackend_ccbVertexLayout(lua_State* lua_S)
@@ -472,13 +472,13 @@ int lua_cocos2d_backend_ProgramState_getBuiltinUniformLocation_1(lua_State* lua_
 int lua_cocos2d_backend_ProgramState_getProgram(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:getProgram");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::Program*(cocos2d::backend::ProgramState::*)()const>(&cocos2d::backend::ProgramState::getProgram));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::ProgramState::getProgram);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_ProgramState_getUniformID(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:getUniformID");
-	LUA_TRY_INVOKE_R(0, static_cast<uint32_t(cocos2d::backend::ProgramState::*)()>(&cocos2d::backend::ProgramState::getUniformID));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::ProgramState::getUniformID);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_ProgramState_getUniformLocation_1(lua_State* lua_S)
@@ -490,7 +490,7 @@ int lua_cocos2d_backend_ProgramState_getUniformLocation_1(lua_State* lua_S)
 int lua_cocos2d_backend_ProgramState_setParameterAutoBinding(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:setParameterAutoBinding");
-	LUA_TRY_INVOKE(2, (static_cast<void(cocos2d::backend::ProgramState::*)(std::string_view, std::string_view)>(&cocos2d::backend::ProgramState::setParameterAutoBinding)));
+	LUA_TRY_INVOKE(2, &cocos2d::backend::ProgramState::setParameterAutoBinding);
 	LUA_INVOKE_FOOTER("2");
 }
 int lua_cocos2d_backend_ProgramState_setTexture_1(lua_State* lua_S)
@@ -504,25 +504,25 @@ int lua_cocos2d_backend_ProgramState_setTexture_1(lua_State* lua_S)
 int lua_cocos2d_backend_ProgramState_setVertexAttrib(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:setVertexAttrib");
-	LUA_TRY_INVOKE(5, (static_cast<void(cocos2d::backend::ProgramState::*)(std::string_view, std::size_t, cocos2d::backend::VertexFormat, std::size_t, bool)>(&cocos2d::backend::ProgramState::setVertexAttrib)));
+	LUA_TRY_INVOKE(5, &cocos2d::backend::ProgramState::setVertexAttrib);
 	LUA_INVOKE_FOOTER("5");
 }
 int lua_cocos2d_backend_ProgramState_setVertexLayout(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:setVertexLayout");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::ProgramState::*)(const cocos2d::backend::VertexLayout&)>(&cocos2d::backend::ProgramState::setVertexLayout));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::ProgramState::setVertexLayout);
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_backend_ProgramState_setVertexStride(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:setVertexStride");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::ProgramState::*)(uint32_t)>(&cocos2d::backend::ProgramState::setVertexStride));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::ProgramState::setVertexStride);
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cocos2d_backend_ProgramState_updateUniformID(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:updateUniformID");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::ProgramState::*)(int)>(&cocos2d::backend::ProgramState::updateUniformID));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::ProgramState::updateUniformID);
 	LUA_TRY_INVOKE(0, [](cocos2d::backend::ProgramState* obj){{return obj->updateUniformID();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
@@ -530,7 +530,7 @@ int lua_cocos2d_backend_ProgramState_validateSharedVertexLayout(lua_State* lua_S
 {
 	LUA_INVOKE_HEADER("ccb.ProgramState", "ccb.ProgramState:validateSharedVertexLayout");
 	if (argc == 1 && !ok && lua_isnil(lua_S, 2)) { arg_cur = 1; } else {
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::ProgramState::*)(std::function<void(cocos2d::backend::Program*)>)>(&cocos2d::backend::ProgramState::validateSharedVertexLayout));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::ProgramState::validateSharedVertexLayout);
 	}
 	LUA_INVOKE_FOOTER("1");
 }
@@ -560,62 +560,62 @@ int luaReg_CoreBackend_ccbProgramState(lua_State* lua_S)
 int lua_cocos2d_backend_TextureBackend_generateMipmaps(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:generateMipmaps");
-	LUA_TRY_INVOKE(0, static_cast<void(cocos2d::backend::TextureBackend::*)()>(&cocos2d::backend::TextureBackend::generateMipmaps));
+	LUA_TRY_INVOKE(0, &cocos2d::backend::TextureBackend::generateMipmaps);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getCount(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getCount");
-	LUA_TRY_INVOKE_R(0, static_cast<int(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getCount));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getCount);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getHandler(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getHandler");
-	LUA_TRY_INVOKE_R(1, static_cast<uintptr_t(cocos2d::backend::TextureBackend::*)(int)const>(&cocos2d::backend::TextureBackend::getHandler));
+	LUA_TRY_INVOKE_R(1, &cocos2d::backend::TextureBackend::getHandler);
 	LUA_TRY_INVOKE_R(0, [](const cocos2d::backend::TextureBackend* obj){{return obj->getHandler();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_cocos2d_backend_TextureBackend_getHeight(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getHeight");
-	LUA_TRY_INVOKE_R(0, static_cast<uint32_t(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getHeight));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getHeight);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getTextureFormat(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getTextureFormat");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::PixelFormat(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getTextureFormat));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getTextureFormat);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getTextureType(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getTextureType");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::TextureType(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getTextureType));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getTextureType);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getTextureUsage(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getTextureUsage");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::TextureUsage(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getTextureUsage));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getTextureUsage);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_getWidth(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:getWidth");
-	LUA_TRY_INVOKE_R(0, static_cast<uint32_t(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::getWidth));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::getWidth);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_hasMipmaps(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:hasMipmaps");
-	LUA_TRY_INVOKE_R(0, static_cast<bool(cocos2d::backend::TextureBackend::*)()const>(&cocos2d::backend::TextureBackend::hasMipmaps));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::TextureBackend::hasMipmaps);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cocos2d_backend_TextureBackend_updateSamplerDescriptor(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccb.TextureBackend", "ccb.TextureBackend:updateSamplerDescriptor");
-	LUA_TRY_INVOKE(1, static_cast<void(cocos2d::backend::TextureBackend::*)(const cocos2d::backend::SamplerDescriptor&)>(&cocos2d::backend::TextureBackend::updateSamplerDescriptor));
+	LUA_TRY_INVOKE(1, &cocos2d::backend::TextureBackend::updateSamplerDescriptor);
 	LUA_INVOKE_FOOTER("1");
 }
 int luaReg_CoreBackend_ccbTextureBackend(lua_State* lua_S)
@@ -663,7 +663,7 @@ int luaReg_CoreBackend_ccbTextureCubemapBackend(lua_State* lua_S)
 int lua_cocos2d_backend_Device_getInstance(lua_State* lua_S)
 {
 	LUA_SINVOKE_HEADER("ccb.Device", "ccb.Device:getInstance");
-	LUA_TRY_INVOKE_R(0, static_cast<cocos2d::backend::Device*(*)()>(&cocos2d::backend::Device::getInstance));
+	LUA_TRY_INVOKE_R(0, &cocos2d::backend::Device::getInstance);
 	LUA_SINVOKE_FOOTER("0");
 }
 int luaReg_CoreBackend_ccbDevice(lua_State* lua_S)

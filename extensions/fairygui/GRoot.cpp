@@ -14,18 +14,17 @@ bool GRoot::_soundEnabled = true;
 float GRoot::_soundVolumeScale = 1.0f;
 int GRoot::contentScaleLevel = 0;
 
-GRoot* GRoot::create(Scene* scene, int zOrder)
+cc::IntrusivePtr<GRoot> GRoot::create(Scene* scene, int zOrder)
 {
-    GRoot* pRet = new GRoot();
+    cc::IntrusivePtr<GRoot> pRet{new GRoot()};
     if (pRet->initWithScene(scene, zOrder))
     {
-        pRet->autorelease();
+
         return pRet;
     }
     else
     {
-        delete pRet;
-        pRet = nullptr;
+
         return nullptr;
     }
 }
@@ -140,7 +139,8 @@ GGraph* GRoot::getModalLayer()
 
 void GRoot::createModalLayer()
 {
-    _modalLayer = GGraph::create();
+    cc::IntrusivePtr<GGraph> modalLayer;
+    _modalLayer = (modalLayer = GGraph::create()).get();
     _modalLayer->retain();
     _modalLayer->drawRect(getWidth(), getHeight(), 0, Color4F::WHITE, UIConfig::modalLayerColor);
     _modalLayer->addRelation(this, RelationType::Size);
@@ -193,11 +193,12 @@ void GRoot::closeModalWait()
 
 GObject* GRoot::getModalWaitingPane()
 {
+    cc::IntrusivePtr<GObject> modalWaitPane;
     if (!UIConfig::globalModalWaiting.empty())
     {
         if (_modalWaitPane == nullptr)
         {
-            _modalWaitPane = UIPackage::createObjectFromURL(UIConfig::globalModalWaiting);
+            _modalWaitPane = (modalWaitPane = UIPackage::createObjectFromURL(UIConfig::globalModalWaiting)).get();
             _modalWaitPane->setSortingOrder(INT_MAX);
             _modalWaitPane->retain();
         }
@@ -413,6 +414,7 @@ cocos2d::Vec2 GRoot::getPoupPosition(GObject* popup, GObject* target, PopupDirec
 
 void GRoot::showTooltips(const std::string& msg)
 {
+    cc::IntrusivePtr<GObject> defaultTooltipWin;
     if (_defaultTooltipWin == nullptr)
     {
         const std::string& resourceURL = UIConfig::tooltipsWin;
@@ -422,7 +424,7 @@ void GRoot::showTooltips(const std::string& msg)
             return;
         }
 
-        _defaultTooltipWin = UIPackage::createObjectFromURL(resourceURL);
+        _defaultTooltipWin = (defaultTooltipWin = UIPackage::createObjectFromURL(resourceURL)).get();
         _defaultTooltipWin->setTouchable(false);
         _defaultTooltipWin->retain();
     }
@@ -488,7 +490,7 @@ void GRoot::playSound(const std::string& url, float volumnScale)
     if (!decoder)
         return;
 
-    AudioSource* source = nullptr;
+    cc::IntrusivePtr<AudioSource> source;
     const auto frames = decoder->getTotalFrames();
     const auto frameBytes = decoder->getBytesPerFrame();
     const auto sampleRate = decoder->getSampleRate();

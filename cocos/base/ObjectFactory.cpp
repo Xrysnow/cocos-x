@@ -89,9 +89,9 @@ void ObjectFactory::destroyInstance()
     delete factory;
 }
 
-Ref* ObjectFactory::createObject(std::string_view name)
+cc::IntrusivePtr<Ref> ObjectFactory::createObject(std::string_view name)
 {
-    Ref* o = nullptr;
+    cc::IntrusivePtr<Ref> o;
     do
     {
         // const TInfo t = _typeMap[name.data];

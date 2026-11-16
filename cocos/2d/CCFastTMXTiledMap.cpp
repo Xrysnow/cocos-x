@@ -33,27 +33,23 @@ NS_CC_BEGIN
 
 // implementation FastTMXTiledMap
 
-FastTMXTiledMap* FastTMXTiledMap::create(std::string_view tmxFile)
+cc::IntrusivePtr<FastTMXTiledMap> FastTMXTiledMap::create(std::string_view tmxFile)
 {
-    FastTMXTiledMap* ret = new FastTMXTiledMap();
+    cc::IntrusivePtr<FastTMXTiledMap> ret{new FastTMXTiledMap()};
     if (ret->initWithTMXFile(tmxFile))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-FastTMXTiledMap* FastTMXTiledMap::createWithXML(std::string_view tmxString, std::string_view resourcePath)
+cc::IntrusivePtr<FastTMXTiledMap> FastTMXTiledMap::createWithXML(std::string_view tmxString, std::string_view resourcePath)
 {
-    FastTMXTiledMap* ret = new FastTMXTiledMap();
+    cc::IntrusivePtr<FastTMXTiledMap> ret{new FastTMXTiledMap()};
     if (ret->initWithXML(tmxString, resourcePath))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -63,7 +59,7 @@ bool FastTMXTiledMap::initWithTMXFile(std::string_view tmxFile)
 
     setContentSize(Vec2::ZERO);
 
-    TMXMapInfo* mapInfo = TMXMapInfo::create(tmxFile);
+    cc::IntrusivePtr<TMXMapInfo> mapInfo = TMXMapInfo::create(tmxFile);
 
     if (!mapInfo)
     {
@@ -81,7 +77,7 @@ bool FastTMXTiledMap::initWithXML(std::string_view tmxString, std::string_view r
 {
     setContentSize(Vec2::ZERO);
 
-    TMXMapInfo* mapInfo = TMXMapInfo::createWithXML(tmxString, resourcePath);
+    cc::IntrusivePtr<TMXMapInfo> mapInfo = TMXMapInfo::createWithXML(tmxString, resourcePath);
 
     CCASSERT(!mapInfo->getTilesets().empty(), "FastTMXTiledMap: Map not found. Please check the filename.");
     buildWithMapInfo(mapInfo);
@@ -94,13 +90,13 @@ FastTMXTiledMap::FastTMXTiledMap() : _mapSize(Vec2::ZERO), _tileSize(Vec2::ZERO)
 FastTMXTiledMap::~FastTMXTiledMap() {}
 
 // private
-FastTMXLayer* FastTMXTiledMap::parseLayer(TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo)
+cc::IntrusivePtr<FastTMXLayer> FastTMXTiledMap::parseLayer(TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo)
 {
     TMXTilesetInfo* tileset = tilesetForLayer(layerInfo, mapInfo);
     if (tileset == nullptr)
         return nullptr;
 
-    FastTMXLayer* layer = FastTMXLayer::create(tileset, layerInfo, mapInfo);
+    cc::IntrusivePtr<FastTMXLayer> layer = FastTMXLayer::create(tileset, layerInfo, mapInfo);
 
     // tell the layerinfo to release the ownership of the tiles map.
     layerInfo->_ownTiles = false;
@@ -171,7 +167,7 @@ void FastTMXTiledMap::buildWithMapInfo(TMXMapInfo* mapInfo)
     {
         if (layerInfo->_visible)
         {
-            FastTMXLayer* child = parseLayer(layerInfo, mapInfo);
+            auto child = parseLayer(layerInfo, mapInfo);
             if (child == nullptr)
             {
                 idx++;

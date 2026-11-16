@@ -62,27 +62,23 @@ static const char* s_spotLightUniformRangeInverseName  = "u_SpotLightSourceRange
 
 static const char* s_ambientLightUniformColorName = "u_AmbientLightSourceColor";
 
-Pass* Pass::create(Technique* technique)
+cc::IntrusivePtr<Pass> Pass::create(Technique* technique)
 {
-    auto pass = new Pass();
+    cc::IntrusivePtr<Pass> pass{new Pass()};
     if (pass->init(technique))
     {
-        pass->autorelease();
         return pass;
     }
-    CC_SAFE_DELETE(pass);
     return nullptr;
 }
 
-Pass* Pass::createWithProgramState(Technique* technique, backend::ProgramState* programState)
+cc::IntrusivePtr<Pass> Pass::createWithProgramState(Technique* technique, backend::ProgramState* programState)
 {
-    auto pass = new Pass();
+    cc::IntrusivePtr<Pass> pass{new Pass()};
     if (pass->initWithProgramState(technique, programState))
     {
-        pass->autorelease();
         return pass;
     }
-    CC_SAFE_DELETE(pass);
     return nullptr;
 }
 
@@ -107,21 +103,18 @@ Pass::~Pass()
     CC_SAFE_RELEASE(_programState);
 }
 
-Pass* Pass::clone() const
+cc::IntrusivePtr<Pass> Pass::clone() const
 {
-    auto pass          = new Pass();
+    cc::IntrusivePtr<Pass> pass{new Pass()};
     pass->_renderState.copyFrom(_renderState);
 
-    auto* state = _programState->clone();
+    auto state = _programState->clone();
     pass->setProgramState(state);
-    state->release();
 
     pass->_vertexAttribBinding = _vertexAttribBinding;
     CC_SAFE_RETAIN(pass->_vertexAttribBinding);
 
     pass->setTechnique(_technique);
-
-    pass->autorelease();
 
     return pass;
 }

@@ -56,13 +56,12 @@ PhysicsContact::~PhysicsContact()
 
 PhysicsContact* PhysicsContact::construct(PhysicsShape* a, PhysicsShape* b)
 {
-    PhysicsContact* contact = new PhysicsContact();
+    cc::IntrusivePtr<PhysicsContact> contact{new PhysicsContact()};
     if (contact->init(a, b))
     {
-        return contact;
+        return contact.detach();
     }
 
-    CC_SAFE_DELETE(contact);
     return nullptr;
 }
 
@@ -243,17 +242,15 @@ void EventListenerPhysicsContact::onEvent(EventCustom* event)
 
 EventListenerPhysicsContact::~EventListenerPhysicsContact() {}
 
-EventListenerPhysicsContact* EventListenerPhysicsContact::create()
+cc::IntrusivePtr<EventListenerPhysicsContact> EventListenerPhysicsContact::create()
 {
-    EventListenerPhysicsContact* obj = new EventListenerPhysicsContact();
+    cc::IntrusivePtr<EventListenerPhysicsContact> obj{new EventListenerPhysicsContact()};
 
     if (obj->init())
     {
-        obj->autorelease();
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -274,9 +271,9 @@ bool EventListenerPhysicsContact::checkAvailable()
     return true;
 }
 
-EventListenerPhysicsContact* EventListenerPhysicsContact::clone()
+cc::IntrusivePtr<EventListener> EventListenerPhysicsContact::clone()
 {
-    EventListenerPhysicsContact* obj = EventListenerPhysicsContact::create();
+    cc::IntrusivePtr<EventListenerPhysicsContact> obj = EventListenerPhysicsContact::create();
 
     if (obj != nullptr)
     {
@@ -288,24 +285,21 @@ EventListenerPhysicsContact* EventListenerPhysicsContact::clone()
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
-EventListenerPhysicsContactWithBodies* EventListenerPhysicsContactWithBodies::create(PhysicsBody* bodyA,
+cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> EventListenerPhysicsContactWithBodies::create(PhysicsBody* bodyA,
                                                                                      PhysicsBody* bodyB)
 {
-    EventListenerPhysicsContactWithBodies* obj = new EventListenerPhysicsContactWithBodies();
+    cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> obj{new EventListenerPhysicsContactWithBodies()};
 
     if (obj->init())
     {
         obj->_a = bodyA;
         obj->_b = bodyB;
-        obj->autorelease();
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -323,9 +317,9 @@ bool EventListenerPhysicsContactWithBodies::hitTest(PhysicsShape* shapeA, Physic
     return false;
 }
 
-EventListenerPhysicsContactWithBodies* EventListenerPhysicsContactWithBodies::clone()
+cc::IntrusivePtr<EventListener> EventListenerPhysicsContactWithBodies::clone()
 {
-    EventListenerPhysicsContactWithBodies* obj = EventListenerPhysicsContactWithBodies::create(_a, _b);
+    cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> obj = EventListenerPhysicsContactWithBodies::create(_a, _b);
 
     if (obj != nullptr)
     {
@@ -337,7 +331,6 @@ EventListenerPhysicsContactWithBodies* EventListenerPhysicsContactWithBodies::cl
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -345,20 +338,18 @@ EventListenerPhysicsContactWithShapes::EventListenerPhysicsContactWithShapes() :
 
 EventListenerPhysicsContactWithShapes::~EventListenerPhysicsContactWithShapes() {}
 
-EventListenerPhysicsContactWithShapes* EventListenerPhysicsContactWithShapes::create(PhysicsShape* shapeA,
+cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> EventListenerPhysicsContactWithShapes::create(PhysicsShape* shapeA,
                                                                                      PhysicsShape* shapeB)
 {
-    EventListenerPhysicsContactWithShapes* obj = new EventListenerPhysicsContactWithShapes();
+    cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> obj{new EventListenerPhysicsContactWithShapes()};
 
     if (obj->init())
     {
         obj->_a = shapeA;
         obj->_b = shapeB;
-        obj->autorelease();
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -372,9 +363,9 @@ bool EventListenerPhysicsContactWithShapes::hitTest(PhysicsShape* shapeA, Physic
     return false;
 }
 
-EventListenerPhysicsContactWithShapes* EventListenerPhysicsContactWithShapes::clone()
+cc::IntrusivePtr<EventListener> EventListenerPhysicsContactWithShapes::clone()
 {
-    EventListenerPhysicsContactWithShapes* obj = EventListenerPhysicsContactWithShapes::create(_a, _b);
+    cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> obj = EventListenerPhysicsContactWithShapes::create(_a, _b);
 
     if (obj != nullptr)
     {
@@ -386,7 +377,6 @@ EventListenerPhysicsContactWithShapes* EventListenerPhysicsContactWithShapes::cl
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -394,18 +384,16 @@ EventListenerPhysicsContactWithGroup::EventListenerPhysicsContactWithGroup() : _
 
 EventListenerPhysicsContactWithGroup::~EventListenerPhysicsContactWithGroup() {}
 
-EventListenerPhysicsContactWithGroup* EventListenerPhysicsContactWithGroup::create(int group)
+cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> EventListenerPhysicsContactWithGroup::create(int group)
 {
-    EventListenerPhysicsContactWithGroup* obj = new EventListenerPhysicsContactWithGroup();
+    cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> obj{new EventListenerPhysicsContactWithGroup()};
 
     if (obj->init())
     {
         obj->_group = group;
-        obj->autorelease();
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 
@@ -419,9 +407,9 @@ bool EventListenerPhysicsContactWithGroup::hitTest(PhysicsShape* shapeA, Physics
     return false;
 }
 
-EventListenerPhysicsContactWithGroup* EventListenerPhysicsContactWithGroup::clone()
+cc::IntrusivePtr<EventListener> EventListenerPhysicsContactWithGroup::clone()
 {
-    EventListenerPhysicsContactWithGroup* obj = EventListenerPhysicsContactWithGroup::create(_group);
+    cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> obj = EventListenerPhysicsContactWithGroup::create(_group);
 
     if (obj != nullptr)
     {
@@ -433,7 +421,6 @@ EventListenerPhysicsContactWithGroup* EventListenerPhysicsContactWithGroup::clon
         return obj;
     }
 
-    CC_SAFE_DELETE(obj);
     return nullptr;
 }
 

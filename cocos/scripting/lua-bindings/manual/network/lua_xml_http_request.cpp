@@ -310,7 +310,7 @@ static int cclua_XMLHttpRequest_constructor(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (argc == 0)
     {
-        self = new LuaMinXmlHttpRequest();
+        self = cc::IntrusivePtr<LuaMinXmlHttpRequest>{new LuaMinXmlHttpRequest()}.detach();
         tolua_pushusertype(L, (void*)self, "cc.XMLHttpRequest");
         tolua_register_gc(L, lua_gettop(L));
         return 1;

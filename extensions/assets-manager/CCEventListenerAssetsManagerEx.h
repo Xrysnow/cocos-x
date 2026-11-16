@@ -59,12 +59,12 @@ public:
      *  @param eventType The type of the event.
      *  @param callback The callback function when the specified event was emitted.
      */
-    static EventListenerAssetsManagerEx* create(AssetsManagerEx* AssetsManagerEx,
+    static cc::IntrusivePtr<EventListenerAssetsManagerEx> create(AssetsManagerEx* AssetsManagerEx,
                                                 const std::function<void(EventAssetsManagerEx*)>& callback);
 
     /// Overrides
     virtual bool checkAvailable() override;
-    virtual EventListenerAssetsManagerEx* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
     /** Constructor */
     EventListenerAssetsManagerEx();

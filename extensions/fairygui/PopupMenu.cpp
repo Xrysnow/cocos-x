@@ -8,18 +8,17 @@
 NS_FGUI_BEGIN
 USING_NS_CC;
 
-PopupMenu* PopupMenu::create(const std::string & resourceURL)
+cc::IntrusivePtr<PopupMenu> PopupMenu::create(const std::string & resourceURL)
 {
-    PopupMenu *pRet = new PopupMenu();
+    cc::IntrusivePtr<PopupMenu> pRet{new PopupMenu()};
     if (pRet->init(resourceURL))
     {
-        pRet->autorelease();
+
         return pRet;
     }
     else
     {
-        delete pRet;
-        pRet = nullptr;
+
         return nullptr;
     }
 }
@@ -37,6 +36,7 @@ PopupMenu::~PopupMenu()
 
 bool PopupMenu::init(const std::string & resourceURL)
 {
+    cc::IntrusivePtr<GObject> contentPane;
     std::string url = resourceURL;
     if (url.empty())
     {
@@ -48,7 +48,7 @@ bool PopupMenu::init(const std::string & resourceURL)
         }
     }
 
-    _contentPane = UIPackage::createObjectFromURL(url)->as<GComponent>();
+    _contentPane = (contentPane = UIPackage::createObjectFromURL(url))->as<GComponent>();
     _contentPane->retain();
     _contentPane->addEventListener(UIEventType::Enter, CC_CALLBACK_1(PopupMenu::onEnter, this));
 
@@ -81,7 +81,8 @@ GButton * PopupMenu::addItem(const std::string & caption, EventCallback callback
 
 GButton * PopupMenu::addItemAt(const std::string & caption, int index, EventCallback callback)
 {
-    GButton* item = _list->getFromPool(_list->getDefaultItem())->as<GButton>();
+    auto itemOwner = _list->getFromPool(_list->getDefaultItem());
+    GButton* item = itemOwner->as<GButton>();
     _list->addChildAt(item, index);
 
     item->setTitle(caption);

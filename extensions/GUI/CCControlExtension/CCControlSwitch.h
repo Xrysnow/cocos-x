@@ -54,14 +54,14 @@ class CC_EX_DLL ControlSwitch : public Control
 {
 public:
     /** Creates a switch with a mask sprite, on/off sprites for on/off states, a thumb sprite and an on/off labels. */
-    static ControlSwitch* create(Sprite* maskSprite,
+    static cc::IntrusivePtr<ControlSwitch> create(Sprite* maskSprite,
                                  Sprite* onSprite,
                                  Sprite* offSprite,
                                  Sprite* thumbSprite,
                                  Label* onLabel,
                                  Label* offLabel);
     /** Creates a switch with a mask sprite, on/off sprites for on/off states and a thumb sprite. */
-    static ControlSwitch* create(Sprite* maskSprite, Sprite* onSprite, Sprite* offSprite, Sprite* thumbSprite);
+    static cc::IntrusivePtr<ControlSwitch> create(Sprite* maskSprite, Sprite* onSprite, Sprite* offSprite, Sprite* thumbSprite);
     /**
      * @js ctor
      * @lua new

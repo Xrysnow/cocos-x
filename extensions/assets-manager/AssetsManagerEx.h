@@ -77,7 +77,7 @@ public:
      @warning   The cached manifest in your storage path have higher priority and will be searched first,
                 only if it doesn't exist, AssetsManagerEx will use the given manifestUrl.
      */
-    static AssetsManagerEx* create(std::string_view manifestUrl, std::string_view storagePath);
+    static cc::IntrusivePtr<AssetsManagerEx> create(std::string_view manifestUrl, std::string_view storagePath);
 
     /** @brief  Check out if there is a new version of manifest.
      *          You may use this method before updating, then let user determine whether

@@ -36,9 +36,9 @@ class CC_DLL GLViewImpl : public GLView
 {
 public:
     // static function
-    static GLViewImpl* create(std::string_view viewname);
-    static GLViewImpl* createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor = 1.0f, bool resizable = false);
-    static GLViewImpl* createWithFullScreen(std::string_view viewName);
+    static cc::IntrusivePtr<GLViewImpl> create(std::string_view viewname);
+    static cc::IntrusivePtr<GLViewImpl> createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor = 1.0f, bool resizable = false);
+    static cc::IntrusivePtr<GLViewImpl> createWithFullScreen(std::string_view viewName);
 
     bool isOpenGLReady() override;
     void end() override;

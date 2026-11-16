@@ -51,7 +51,7 @@ public:
     static const ScaleType DEFAULT_SCALE_TYPE;
     static const float DEFAULT_SCALE_FRACTION;
 
-    static PUDoScaleEventHandler* create();
+    static cc::IntrusivePtr<PUDoScaleEventHandler> create();
 
     /** Returns the scale type
      */

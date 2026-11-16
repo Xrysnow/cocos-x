@@ -68,9 +68,9 @@ public:
     /**
      * Create a TexAtlas object.
      *
-     * @return An autoreleased TextAtlas object.
+     * @return An owned TextAtlas object.
      */
-    static TextAtlas* create();
+    static cc::IntrusivePtr<TextAtlas> create();
 
     /**
      * Create a LabelAtlas from a char map file.
@@ -80,9 +80,9 @@ public:
      * @param itemWidth The element width.
      * @param itemHeight The element height.
      * @param startCharMap The starting char of the atlas.
-     * @return An autoreleased TextAtlas object.
+     * @return An owned TextAtlas object.
      */
-    static TextAtlas* create(std::string_view stringValue,
+    static cc::IntrusivePtr<TextAtlas> create(std::string_view stringValue,
                              std::string_view charMapFile,
                              int itemWidth,
                              int itemHeight,
@@ -148,7 +148,7 @@ protected:
     virtual void onSizeChanged() override;
 
     void labelAtlasScaleChangedWithSize();
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
 protected:

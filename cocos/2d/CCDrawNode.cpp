@@ -73,16 +73,12 @@ DrawNode::~DrawNode()
     freeShaderInternal(_customCommandLine);
 }
 
-DrawNode* DrawNode::create(float defaultLineWidth)
+cc::IntrusivePtr<DrawNode> DrawNode::create(float defaultLineWidth)
 {
-    DrawNode* ret = new DrawNode(defaultLineWidth);
-    if (ret->init())
+    cc::IntrusivePtr<DrawNode> ret{new DrawNode(defaultLineWidth)};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;
@@ -169,7 +165,7 @@ void DrawNode::updateShaderInternal(CustomCommand& cmd,
     CC_SAFE_RELEASE(pipelinePS);
 
     auto program = backend::Program::getBuiltinProgram(programType);
-    pipelinePS   = new backend::ProgramState(program);
+    pipelinePS   = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     setVertexLayout(cmd);
     cmd.setPrimitiveType(primitiveType);
     cmd.setDrawType(drawType);

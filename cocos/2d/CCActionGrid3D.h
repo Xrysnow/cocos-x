@@ -53,7 +53,7 @@ public:
     @param amplitude Specify the amplitude of the Waves3D action.
     @return If the creation success, return a pointer of Waves3D action; otherwise, return nil.
     */
-    static Waves3D* create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
+    static cc::IntrusivePtr<Waves3D> create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
 
     /**
     @brief Get the amplitude of the effect.
@@ -78,7 +78,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Overrides
-    virtual Waves3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Waves3D() {}
@@ -115,10 +115,10 @@ public:
     @param duration Specify the duration of the FilpX3D action. It's a value in seconds.
     @return If the creation success, return a pointer of FilpX3D action; otherwise, return nil.
     */
-    static FlipX3D* create(float duration);
+    static cc::IntrusivePtr<FlipX3D> create(float duration);
 
     // Override
-    virtual FlipX3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     FlipX3D() {}
@@ -155,11 +155,11 @@ public:
     @param duration Specify the duration of the FlipY3D action. It's a value in seconds.
     @return If the creation success, return a pointer of FlipY3D action; otherwise, return nil.
     */
-    static FlipY3D* create(float duration);
+    static cc::IntrusivePtr<FlipY3D> create(float duration);
 
     // Overrides
     virtual void update(float time) override;
-    virtual FlipY3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     FlipY3D() {}
     virtual ~FlipY3D() {}
@@ -186,7 +186,7 @@ public:
     @param radius Specify the radius of the lens.
     @return If the creation success, return a pointer of Lens3D action; otherwise, return nil.
     */
-    static Lens3D* create(float duration, const Vec2& gridSize, const Vec2& position, float radius);
+    static cc::IntrusivePtr<Lens3D> create(float duration, const Vec2& gridSize, const Vec2& position, float radius);
 
     /**
     @brief Get the value of lens effect. Default value is 0.7.
@@ -219,7 +219,7 @@ public:
     void setPosition(const Vec2& position);
 
     // Overrides
-    virtual Lens3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Lens3D() {}
@@ -270,7 +270,7 @@ public:
     @param amplitude Specify the amplitude of the ripple effect.
     @return If the creation success, return a pointer of Ripple3D action; otherwise, return nil.
     */
-    static Ripple3D* create(float duration,
+    static cc::IntrusivePtr<Ripple3D> create(float duration,
                             const Vec2& gridSize,
                             const Vec2& position,
                             float radius,
@@ -311,7 +311,7 @@ public:
     void setAmplitudeRate(float fAmplitudeRate) { _amplitudeRate = fAmplitudeRate; }
 
     // Override
-    virtual Ripple3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Ripple3D() {}
@@ -363,10 +363,10 @@ public:
     @param shakeZ Specify whether shake on the z axis.
     @return If the creation success, return a pointer of Shaky3D action; otherwise, return nil.
     */
-    static Shaky3D* create(float initWithDuration, const Vec2& gridSize, int range, bool shakeZ);
+    static cc::IntrusivePtr<Shaky3D> create(float initWithDuration, const Vec2& gridSize, int range, bool shakeZ);
 
     // Overrides
-    virtual Shaky3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Shaky3D() {}
@@ -407,7 +407,7 @@ public:
     @param amplitude Specify the amplitude of the Liquid action.
     @return If the creation success, return a pointer of Liquid action; otherwise, return nil.
     */
-    static Liquid* create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
+    static cc::IntrusivePtr<Liquid> create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude);
 
     /**
     @brief Get the amplitude of the effect.
@@ -432,7 +432,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Overrides
-    virtual Liquid* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Liquid() {}
@@ -477,7 +477,7 @@ public:
     @param vertical Specify whether waves on vertical.
     @return If the creation success, return a pointer of Waves action; otherwise, return nil.
     */
-    static Waves* create(float duration,
+    static cc::IntrusivePtr<Waves> create(float duration,
                          const Vec2& gridSize,
                          unsigned int waves,
                          float amplitude,
@@ -507,7 +507,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Overrides
-    virtual Waves* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Waves() {}
@@ -559,7 +559,7 @@ public:
     @param amplitude Specify the amplitude of the Twirl action.
     @return If the creation success, return a pointer of Twirl action; otherwise, return nil.
     */
-    static Twirl* create(float duration,
+    static cc::IntrusivePtr<Twirl> create(float duration,
                          const Vec2& gridSize,
                          const Vec2& position,
                          unsigned int twirls,
@@ -599,7 +599,7 @@ public:
     void setAmplitudeRate(float amplitudeRate) { _amplitudeRate = amplitudeRate; }
 
     // Overrides
-    virtual Twirl* clone() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
     virtual void update(float time) override;
 
     Twirl() {}

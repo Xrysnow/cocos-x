@@ -43,7 +43,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUDoEnableComponentEventHandler : public PUEventHandler
 {
 public:
-    static PUDoEnableComponentEventHandler* create();
+    static cc::IntrusivePtr<PUDoEnableComponentEventHandler> create();
 
     /** Get the name of the component that must be enabled or disabled.
      */

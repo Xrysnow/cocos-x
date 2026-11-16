@@ -46,13 +46,14 @@ GComponent::~GComponent()
 
 void GComponent::handleInit()
 {
-    FUIContainer* c = FUIContainer::create();
+    cc::IntrusivePtr<FUIInnerContainer> container;
+    cc::IntrusivePtr<FUIContainer> c = FUIContainer::create();
     c->retain();
     c->gOwner = this;
 
     _displayObject = c;
 
-    _container = FUIInnerContainer::create();
+    _container = (container = FUIInnerContainer::create()).get();
     _container->retain();
     _container->setCascadeOpacityEnabled(true);
     _displayObject->addChild(_container);
@@ -1051,7 +1052,7 @@ void GComponent::setupOverflow(OverflowType overflow)
 
 void GComponent::setupScroll(ByteBuffer* buffer)
 {
-    _scrollPane = new ScrollPane(this);
+    _scrollPane = cc::IntrusivePtr<ScrollPane>{new ScrollPane(this)}.detach();
     _scrollPane->setup(buffer);
 }
 
@@ -1197,18 +1198,17 @@ void GComponent::constructFromResource(std::vector<GObject*>* objectPool, int po
         int nextPos = buffer->readUshort();
         nextPos += buffer->getPos();
 
-        GController* controller = new GController();
-        _controllers.pushBack(controller);
+        cc::IntrusivePtr<GController> controller{new GController()};
+        _controllers.pushBack(controller.get());
         controller->setParent(this);
         controller->setup(buffer);
-        controller->release();
 
         buffer->setPos(nextPos);
     }
 
     buffer->seek(0, 2);
 
-    GObject* child;
+    cc::IntrusivePtr<GObject> child;
     int childCount = buffer->readShort();
     for (int i = 0; i < childCount; i++)
     {
@@ -1319,10 +1319,9 @@ void GComponent::constructFromResource(std::vector<GObject*>* objectPool, int po
         int nextPos = buffer->readUshort();
         nextPos += buffer->getPos();
 
-        Transition* trans = new Transition(this);
+        cc::IntrusivePtr<Transition> trans{new Transition(this)};
         trans->setup(buffer);
-        _transitions.pushBack(trans);
-        trans->release();
+        _transitions.pushBack(trans.get());
 
         buffer->setPos(nextPos);
     }

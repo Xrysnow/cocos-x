@@ -57,7 +57,8 @@ void PUEventHandlerTranslator::translate(PUScriptCompiler* compiler, PUAbstractN
 
     // Create the ParticleEventHandler
     // mParticleEventHandler = ParticleSystemManager::getSingletonPtr()->createEventHandler(type);
-    _handler = PUEventHandlerManager::Instance()->createEventHandler(type);
+    auto owner = PUEventHandlerManager::Instance()->createEventHandler(type);
+    _handler = owner.get();
     if (!_handler)
     {
         return;

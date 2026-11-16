@@ -56,7 +56,7 @@ public:
        @param negative_z texture for the rear side of the texture cube face.
        @return  A new texture cube inited with given parameters.
     */
-    static TextureCube* create(std::string_view positive_x,
+    static cc::IntrusivePtr<TextureCube> create(std::string_view positive_x,
                                std::string_view negative_x,
                                std::string_view positive_y,
                                std::string_view negative_y,

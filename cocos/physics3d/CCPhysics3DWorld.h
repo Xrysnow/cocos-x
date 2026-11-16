@@ -89,9 +89,9 @@ public:
     /**
      * Creates a Physics3DWorld with Physics3DWorldDes.
      *
-     * @return An autoreleased Physics3DWorld object.
+     * @return An owned Physics3DWorld object.
      */
-    static Physics3DWorld* create(Physics3DWorldDes* info);
+    static cc::IntrusivePtr<Physics3DWorld> create(Physics3DWorldDes* info);
 
     /** set gravity for the physics world */
     void setGravity(const Vec3& gravity);

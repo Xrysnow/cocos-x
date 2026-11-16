@@ -156,9 +156,9 @@ public:
     /**
      * Creates a Physics3DRigidBody with Physics3DRigidBody.
      *
-     * @return An autoreleased Physics3DRigidBody object.
+     * @return An owned Physics3DRigidBody object.
      */
-    static Physics3DRigidBody* create(Physics3DRigidBodyDes* info);
+    static cc::IntrusivePtr<Physics3DRigidBody> create(Physics3DRigidBodyDes* info);
 
     /** Get the pointer of btRigidBody. */
     btRigidBody* getRigidBody() const { return _btRigidBody; }
@@ -391,9 +391,9 @@ public:
     /**
      * Creates a Physics3DCollider with Physics3DColliderDes.
      *
-     * @return An autoreleased Physics3DCollider object.
+     * @return An owned Physics3DCollider object.
      */
-    static Physics3DCollider* create(Physics3DColliderDes* info);
+    static cc::IntrusivePtr<Physics3DCollider> create(Physics3DColliderDes* info);
 
     /** Get the pointer of btGhostObject.
      *  @return The pointer of btGhostObject.

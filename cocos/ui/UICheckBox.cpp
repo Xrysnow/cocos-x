@@ -37,44 +37,38 @@ CheckBox::CheckBox() : _checkBoxEventListener(nullptr) {}
 
 CheckBox::~CheckBox() {}
 
-CheckBox* CheckBox::create()
+cc::IntrusivePtr<CheckBox> CheckBox::create()
 {
-    CheckBox* widget = new CheckBox();
+    cc::IntrusivePtr<CheckBox> widget{new CheckBox()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-CheckBox* CheckBox::create(std::string_view backGround,
+cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround,
                            std::string_view backGroundSelected,
                            std::string_view cross,
                            std::string_view backGroundDisabled,
                            std::string_view frontCrossDisabled,
                            TextureResType texType)
 {
-    CheckBox* pWidget = new CheckBox;
+    cc::IntrusivePtr<CheckBox> pWidget{new CheckBox};
     if (pWidget->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
-        pWidget->autorelease();
         return pWidget;
     }
-    CC_SAFE_DELETE(pWidget);
     return nullptr;
 }
 
-CheckBox* CheckBox::create(std::string_view backGround, std::string_view cross, TextureResType texType)
+cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround, std::string_view cross, TextureResType texType)
 {
-    CheckBox* pWidget = new CheckBox;
+    cc::IntrusivePtr<CheckBox> pWidget{new CheckBox};
     if (pWidget->init(backGround, "", cross, "", "", texType))
     {
-        pWidget->autorelease();
         return pWidget;
     }
-    CC_SAFE_DELETE(pWidget);
     return nullptr;
 }
 
@@ -123,7 +117,7 @@ std::string CheckBox::getDescription() const
     return "CheckBox";
 }
 
-Widget* CheckBox::createCloneInstance()
+cc::IntrusivePtr<Widget> CheckBox::createCloneInstance()
 {
     return CheckBox::create();
 }

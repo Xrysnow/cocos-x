@@ -46,7 +46,7 @@ static Texture2D* getDefaultTexture()
         texture               = Director::getInstance()->getTextureCache()->getTextureForKey(key);
         CC_BREAK_IF(texture != nullptr);
 
-        image    = new Image();
+        image    = cc::IntrusivePtr<Image>{new Image()}.detach();
         bool ret = image->initWithImageData(__firePngData, sizeof(__firePngData));
         CC_BREAK_IF(!ret);
 
@@ -58,30 +58,22 @@ static Texture2D* getDefaultTexture()
     return texture;
 }
 
-ParticleFire* ParticleFire::create()
+cc::IntrusivePtr<ParticleFire> ParticleFire::create()
 {
-    ParticleFire* ret = new ParticleFire();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleFire> ret{new ParticleFire()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleFire* ParticleFire::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleFire> ParticleFire::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleFire* ret = new ParticleFire();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleFire> ret{new ParticleFire()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -162,30 +154,22 @@ bool ParticleFire::initWithTotalParticles(int numberOfParticles)
 // ParticleFireworks
 //
 
-ParticleFireworks* ParticleFireworks::create()
+cc::IntrusivePtr<ParticleFireworks> ParticleFireworks::create()
 {
-    ParticleFireworks* ret = new ParticleFireworks();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleFireworks> ret{new ParticleFireworks()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleFireworks* ParticleFireworks::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleFireworks> ParticleFireworks::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleFireworks* ret = new ParticleFireworks();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleFireworks> ret{new ParticleFireworks()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -263,30 +247,22 @@ bool ParticleFireworks::initWithTotalParticles(int numberOfParticles)
 //
 // ParticleSun
 //
-ParticleSun* ParticleSun::create()
+cc::IntrusivePtr<ParticleSun> ParticleSun::create()
 {
-    ParticleSun* ret = new ParticleSun();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleSun> ret{new ParticleSun()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleSun* ParticleSun::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSun> ParticleSun::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleSun* ret = new ParticleSun();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleSun> ret{new ParticleSun()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -369,30 +345,22 @@ bool ParticleSun::initWithTotalParticles(int numberOfParticles)
 // ParticleGalaxy
 //
 
-ParticleGalaxy* ParticleGalaxy::create()
+cc::IntrusivePtr<ParticleGalaxy> ParticleGalaxy::create()
 {
-    ParticleGalaxy* ret = new ParticleGalaxy();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleGalaxy> ret{new ParticleGalaxy()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleGalaxy* ParticleGalaxy::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleGalaxy> ParticleGalaxy::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleGalaxy* ret = new ParticleGalaxy();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleGalaxy> ret{new ParticleGalaxy()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -478,30 +446,22 @@ bool ParticleGalaxy::initWithTotalParticles(int numberOfParticles)
 // ParticleFlower
 //
 
-ParticleFlower* ParticleFlower::create()
+cc::IntrusivePtr<ParticleFlower> ParticleFlower::create()
 {
-    ParticleFlower* ret = new ParticleFlower();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleFlower> ret{new ParticleFlower()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleFlower* ParticleFlower::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleFlower> ParticleFlower::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleFlower* ret = new ParticleFlower();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleFlower> ret{new ParticleFlower()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -586,30 +546,22 @@ bool ParticleFlower::initWithTotalParticles(int numberOfParticles)
 // ParticleMeteor
 //
 
-ParticleMeteor* ParticleMeteor::create()
+cc::IntrusivePtr<ParticleMeteor> ParticleMeteor::create()
 {
-    ParticleMeteor* ret = new ParticleMeteor();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleMeteor> ret{new ParticleMeteor()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleMeteor* ParticleMeteor::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleMeteor> ParticleMeteor::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleMeteor* ret = new ParticleMeteor();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleMeteor> ret{new ParticleMeteor()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -695,30 +647,22 @@ bool ParticleMeteor::initWithTotalParticles(int numberOfParticles)
 // ParticleSpiral
 //
 
-ParticleSpiral* ParticleSpiral::create()
+cc::IntrusivePtr<ParticleSpiral> ParticleSpiral::create()
 {
-    ParticleSpiral* ret = new ParticleSpiral();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleSpiral> ret{new ParticleSpiral()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleSpiral* ParticleSpiral::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSpiral> ParticleSpiral::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleSpiral* ret = new ParticleSpiral();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleSpiral> ret{new ParticleSpiral()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -804,30 +748,22 @@ bool ParticleSpiral::initWithTotalParticles(int numberOfParticles)
 // ParticleExplosion
 //
 
-ParticleExplosion* ParticleExplosion::create()
+cc::IntrusivePtr<ParticleExplosion> ParticleExplosion::create()
 {
-    ParticleExplosion* ret = new ParticleExplosion();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleExplosion> ret{new ParticleExplosion()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleExplosion* ParticleExplosion::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleExplosion> ParticleExplosion::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleExplosion* ret = new ParticleExplosion();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleExplosion> ret{new ParticleExplosion()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -912,30 +848,22 @@ bool ParticleExplosion::initWithTotalParticles(int numberOfParticles)
 // ParticleSmoke
 //
 
-ParticleSmoke* ParticleSmoke::create()
+cc::IntrusivePtr<ParticleSmoke> ParticleSmoke::create()
 {
-    ParticleSmoke* ret = new ParticleSmoke();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleSmoke> ret{new ParticleSmoke()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleSmoke* ParticleSmoke::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSmoke> ParticleSmoke::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleSmoke* ret = new ParticleSmoke();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleSmoke> ret{new ParticleSmoke()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -1017,30 +945,22 @@ bool ParticleSmoke::initWithTotalParticles(int numberOfParticles)
 // ParticleSnow
 //
 
-ParticleSnow* ParticleSnow::create()
+cc::IntrusivePtr<ParticleSnow> ParticleSnow::create()
 {
-    ParticleSnow* ret = new ParticleSnow();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleSnow> ret{new ParticleSnow()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleSnow* ParticleSnow::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSnow> ParticleSnow::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleSnow* ret = new ParticleSnow();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleSnow> ret{new ParticleSnow()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -1125,30 +1045,22 @@ bool ParticleSnow::initWithTotalParticles(int numberOfParticles)
 // ParticleRain
 //
 
-ParticleRain* ParticleRain::create()
+cc::IntrusivePtr<ParticleRain> ParticleRain::create()
 {
-    ParticleRain* ret = new ParticleRain();
-    if (ret->init())
+    cc::IntrusivePtr<ParticleRain> ret{new ParticleRain()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
 
-ParticleRain* ParticleRain::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleRain> ParticleRain::createWithTotalParticles(int numberOfParticles)
 {
-    ParticleRain* ret = new ParticleRain();
-    if (ret->initWithTotalParticles(numberOfParticles))
+    cc::IntrusivePtr<ParticleRain> ret{new ParticleRain()};
+    if (!(ret->initWithTotalParticles(numberOfParticles)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

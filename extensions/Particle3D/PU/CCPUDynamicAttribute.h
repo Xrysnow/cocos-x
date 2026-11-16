@@ -93,7 +93,7 @@ public:
     bool isValueChangedExternally() const;
 
     virtual void copyAttributesTo(PUDynamicAttribute* dynamicAttribute) = 0;
-    virtual PUDynamicAttribute* clone()                                 = 0;
+    virtual cc::IntrusivePtr<PUDynamicAttribute> clone()                                 = 0;
 
 protected:
     DynamicAttributeType _type;
@@ -129,7 +129,7 @@ public:
      */
     virtual void setValue(float value);
 
-    virtual PUDynamicAttributeFixed* clone() override;
+    virtual cc::IntrusivePtr<PUDynamicAttribute> clone() override;
     virtual void copyAttributesTo(PUDynamicAttribute* dynamicAttribute) override;
 
 protected:
@@ -165,7 +165,7 @@ public:
     float getMax() const;
     void setMinMax(float min, float max);
 
-    virtual PUDynamicAttributeRandom* clone() override;
+    virtual cc::IntrusivePtr<PUDynamicAttribute> clone() override;
     virtual void copyAttributesTo(PUDynamicAttribute* dynamicAttribute) override;
 
 protected:
@@ -225,7 +225,7 @@ public:
      */
     void removeAllControlPoints();
 
-    virtual PUDynamicAttributeCurved* clone() override;
+    virtual cc::IntrusivePtr<PUDynamicAttribute> clone() override;
     virtual void copyAttributesTo(PUDynamicAttribute* dynamicAttribute) override;
 
 protected:
@@ -307,7 +307,7 @@ public:
     float getAmplitude() const;
     void setAmplitude(float amplitude);
 
-    virtual PUDynamicAttributeOscillate* clone() override;
+    virtual cc::IntrusivePtr<PUDynamicAttribute> clone() override;
     virtual void copyAttributesTo(PUDynamicAttribute* dynamicAttribute) override;
 
 protected:

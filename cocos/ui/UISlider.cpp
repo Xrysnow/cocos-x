@@ -92,29 +92,25 @@ Slider::~Slider()
     _sliderEventListener = nullptr;
 }
 
-Slider* Slider::create()
+cc::IntrusivePtr<Slider> Slider::create()
 {
-    Slider* widget = new Slider();
+    cc::IntrusivePtr<Slider> widget{new Slider()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-Slider* Slider::create(std::string_view barTextureName, std::string_view normalBallTextureName, TextureResType resType)
+cc::IntrusivePtr<Slider> Slider::create(std::string_view barTextureName, std::string_view normalBallTextureName, TextureResType resType)
 {
-    Slider* widget = new Slider();
+    cc::IntrusivePtr<Slider> widget{new Slider()};
     if (widget->init())
     {
         widget->loadBarTexture(barTextureName, resType);
         widget->loadSlidBallTextureNormal(normalBallTextureName, resType);
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
@@ -129,8 +125,14 @@ bool Slider::init()
 
 void Slider::initRenderer()
 {
-    _barRenderer         = Scale9Sprite::create();
-    _progressBarRenderer = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> barRenderer;
+    cc::IntrusivePtr<Scale9Sprite> progressBarRenderer;
+    cc::IntrusivePtr<Sprite> slidBallNormalRenderer;
+    cc::IntrusivePtr<Sprite> slidBallPressedRenderer;
+    cc::IntrusivePtr<Sprite> slidBallDisabledRenderer;
+    cc::IntrusivePtr<Node> slidBallRenderer;
+    _barRenderer         = (barRenderer = Scale9Sprite::create()).get();
+    _progressBarRenderer = (progressBarRenderer = Scale9Sprite::create()).get();
     _barRenderer->setScale9Enabled(false);
     _progressBarRenderer->setScale9Enabled(false);
 
@@ -139,13 +141,13 @@ void Slider::initRenderer()
     addProtectedChild(_barRenderer, BASEBAR_RENDERER_Z, -1);
     addProtectedChild(_progressBarRenderer, PROGRESSBAR_RENDERER_Z, -1);
 
-    _slidBallNormalRenderer  = Sprite::create();
-    _slidBallPressedRenderer = Sprite::create();
+    _slidBallNormalRenderer  = (slidBallNormalRenderer = Sprite::create()).get();
+    _slidBallPressedRenderer = (slidBallPressedRenderer = Sprite::create()).get();
     _slidBallPressedRenderer->setVisible(false);
-    _slidBallDisabledRenderer = Sprite::create();
+    _slidBallDisabledRenderer = (slidBallDisabledRenderer = Sprite::create()).get();
     _slidBallDisabledRenderer->setVisible(false);
 
-    _slidBallRenderer = Node::create();
+    _slidBallRenderer = (slidBallRenderer = Node::create()).get();
 
     _slidBallRenderer->addChild(_slidBallNormalRenderer);
     _slidBallRenderer->addChild(_slidBallPressedRenderer);
@@ -734,7 +736,7 @@ std::string Slider::getDescription() const
     return "Slider";
 }
 
-Widget* Slider::createCloneInstance()
+cc::IntrusivePtr<Widget> Slider::createCloneInstance()
 {
     return Slider::create();
 }
@@ -753,9 +755,9 @@ void Slider::copySpecialProperties(Widget* widget)
         slider->_progressBarRenderer->copyTo(_progressBarRenderer);
         setupProgressBarTexture();
 
-        loadSlidBallTextureNormal(slider->_slidBallNormalRenderer->getSpriteFrame());
-        loadSlidBallTexturePressed(slider->_slidBallPressedRenderer->getSpriteFrame());
-        loadSlidBallTextureDisabled(slider->_slidBallDisabledRenderer->getSpriteFrame());
+        loadSlidBallTextureNormal(slider->_slidBallNormalRenderer->getSpriteFrame().get());
+        loadSlidBallTexturePressed(slider->_slidBallPressedRenderer->getSpriteFrame().get());
+        loadSlidBallTextureDisabled(slider->_slidBallDisabledRenderer->getSpriteFrame().get());
         setPercent(slider->getPercent());
         setMaxPercent(slider->getMaxPercent());
         _isSliderBallPressedTextureLoaded   = slider->_isSliderBallPressedTextureLoaded;

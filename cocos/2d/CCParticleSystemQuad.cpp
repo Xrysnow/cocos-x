@@ -52,7 +52,7 @@ ParticleSystemQuad::ParticleSystemQuad()
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
 
     //!!! support etc1 with alpha?
-    pipelinePS = (new backend::ProgramState(program));
+    pipelinePS = (cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach());
 
     _mvpMatrixLocaiton = pipelinePS->getUniformLocation("u_MVPMatrix");
     _textureLocation   = pipelinePS->getUniformLocation("u_tex0");
@@ -71,44 +71,38 @@ ParticleSystemQuad::~ParticleSystemQuad()
 
 // implementation ParticleSystemQuad
 
-ParticleSystemQuad* ParticleSystemQuad::create(std::string_view filename)
+cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create(std::string_view filename)
 {
-    ParticleSystemQuad* ret = new ParticleSystemQuad();
+    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
     if (ret->initWithFile(filename))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
-ParticleSystemQuad* ParticleSystemQuad::createWithTotalParticles(int numberOfParticles)
+cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::createWithTotalParticles(int numberOfParticles)
 {
     CCASSERT(numberOfParticles <= 10000,
              "Adding more than 10000 particles will crash the renderer, the mesh generated has an index format of "
              "U_SHORT (uint16_t)");
 
-    ParticleSystemQuad* ret = new ParticleSystemQuad();
+    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
     if (ret->initWithTotalParticles(numberOfParticles))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
-ParticleSystemQuad* ParticleSystemQuad::create(ValueMap& dictionary)
+cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create(ValueMap& dictionary)
 {
-    ParticleSystemQuad* ret = new ParticleSystemQuad();
+    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
     if (ret->initWithDictionary(dictionary))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
-    return ret;
+    return nullptr;
 }
 
 // implementation ParticleSystemQuad
@@ -841,15 +835,13 @@ void ParticleSystemQuad::setBatchNode(ParticleBatchNode* batchNode)
     }
 }
 
-ParticleSystemQuad* ParticleSystemQuad::create()
+cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create()
 {
-    ParticleSystemQuad* particleSystemQuad = new ParticleSystemQuad();
+    cc::IntrusivePtr<ParticleSystemQuad> particleSystemQuad{new ParticleSystemQuad()};
     if (particleSystemQuad->init())
     {
-        particleSystemQuad->autorelease();
         return particleSystemQuad;
     }
-    CC_SAFE_DELETE(particleSystemQuad);
     return nullptr;
 }
 

@@ -22,7 +22,7 @@ public:
     GRoot();
     virtual ~GRoot();
 
-    static GRoot* create(cocos2d::Scene* scene, int zOrder = 1000);
+    static cc::IntrusivePtr<GRoot> create(cocos2d::Scene* scene, int zOrder = 1000);
     static GRoot* getInstance() { return _inst; }
 
     void showWindow(Window* win);

@@ -145,7 +145,7 @@ public:
      * Create a empty LayoutParameter.
      * @return A autorelease LayoutParameter instance.
      */
-    static LayoutParameter* create();
+    static cc::IntrusivePtr<LayoutParameter> create();
 
     /**
      * Set margin parameter for LayoutParameter.
@@ -175,13 +175,13 @@ public:
      * Create a copy of original LayoutParameter.
      *@return A LayoutParameter pointer.
      */
-    LayoutParameter* clone();
+    cc::IntrusivePtr<LayoutParameter> clone();
 
     /**
      * Create a cloned instance of LayoutParameter.
      *@return A LayoutParameter pointer.
      */
-    virtual LayoutParameter* createCloneInstance();
+    virtual cc::IntrusivePtr<LayoutParameter> createCloneInstance();
 
     /**
      * Copy all the member field from argument LayoutParameter to self.
@@ -252,7 +252,7 @@ public:
      * Create a empty LinearLayoutParameter instance.
      * @return A initialized LayoutParameter which is marked as "autorelease".
      */
-    static LinearLayoutParameter* create();
+    static cc::IntrusivePtr<LinearLayoutParameter> create();
 
     /**
      * Sets LinearGravity parameter for LayoutParameter.
@@ -271,7 +271,7 @@ public:
     LinearGravity getGravity() const;
 
     // override functions.
-    virtual LayoutParameter* createCloneInstance() override;
+    virtual cc::IntrusivePtr<LayoutParameter> createCloneInstance() override;
     virtual void copyProperties(LayoutParameter* model) override;
 
 protected:
@@ -340,7 +340,7 @@ public:
      * Create a RelativeLayoutParameter instance.
      * @return A initialized LayoutParameter which is marked as "autorelease".
      */
-    static RelativeLayoutParameter* create();
+    static cc::IntrusivePtr<RelativeLayoutParameter> create();
 
     /**
      * Sets RelativeAlign parameter for LayoutParameter.
@@ -386,7 +386,7 @@ public:
     std::string_view getRelativeName() const;
 
     // override functions.
-    virtual LayoutParameter* createCloneInstance() override;
+    virtual cc::IntrusivePtr<LayoutParameter> createCloneInstance() override;
     virtual void copyProperties(LayoutParameter* model) override;
 
 protected:

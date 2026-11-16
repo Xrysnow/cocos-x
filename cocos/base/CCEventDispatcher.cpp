@@ -582,7 +582,7 @@ void EventDispatcher::addEventListenerWithFixedPriority(EventListener* listener,
 EventListenerCustom* EventDispatcher::addCustomEventListener(std::string_view eventName,
                                                              const std::function<void(EventCustom*)>& callback)
 {
-    EventListenerCustom* listener = EventListenerCustom::create(eventName, callback);
+    cc::IntrusivePtr<EventListenerCustom> listener = EventListenerCustom::create(eventName, callback);
     addEventListenerWithFixedPriority(listener, 1);
     return listener;
 }

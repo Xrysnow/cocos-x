@@ -118,9 +118,9 @@ public:
      * Creates an empty sprite without texture. You can call setTexture method subsequently.
      *
      * @memberof Sprite
-     * @return An autoreleased sprite object.
+     * @return An owned sprite object.
      */
-    static Sprite* create();
+    static cc::IntrusivePtr<Sprite> create();
 
     /**
      * Creates a sprite with an image filename.
@@ -129,10 +129,10 @@ public:
      * and the offset will be (0,0).
      *
      * @param   filename A path to image file, e.g., "scene1/monster.png".
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* create(std::string_view filename);
-    static Sprite* create(std::string_view filename, PixelFormat format);
+    static cc::IntrusivePtr<Sprite> create(std::string_view filename);
+    static cc::IntrusivePtr<Sprite> create(std::string_view filename, PixelFormat format);
 
     /**
      * Creates a polygon sprite with a polygon info.
@@ -141,18 +141,18 @@ public:
      * and the offset will be (0,0).
      *
      * @param   polygonInfo A path to image file, e.g., "scene1/monster.png".
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* create(const PolygonInfo& info);
+    static cc::IntrusivePtr<Sprite> create(const PolygonInfo& info);
 
     /**
      * Creates a sprite with an image filename and a rect.
      *
      * @param   filename A path to image file, e.g., "scene1/monster.png".
      * @param   rect     A subrect of the image file.
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* create(std::string_view filename, const Rect& rect);
+    static cc::IntrusivePtr<Sprite> create(std::string_view filename, const Rect& rect);
 
     /**
      * Creates a sprite with a Texture2D object.
@@ -160,9 +160,9 @@ public:
      * After creation, the rect will be the size of the texture, and the offset will be (0,0).
      *
      * @param   texture    A pointer to a Texture2D object.
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* createWithTexture(Texture2D* texture);
+    static cc::IntrusivePtr<Sprite> createWithTexture(Texture2D* texture);
 
     /**
      * Creates a sprite with a texture and a rect.
@@ -173,17 +173,17 @@ public:
      *                      You can use a Texture2D object for many sprites.
      * @param   rect        Only the contents inside the rect of this texture will be applied for this sprite.
      * @param   rotated     Whether or not the rect is rotated.
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* createWithTexture(Texture2D* texture, const Rect& rect, bool rotated = false);
+    static cc::IntrusivePtr<Sprite> createWithTexture(Texture2D* texture, const Rect& rect, bool rotated = false);
 
     /**
      * Creates a sprite with an sprite frame.
      *
      * @param   spriteFrame    A sprite frame which involves a texture and a rect.
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* createWithSpriteFrame(SpriteFrame* spriteFrame);
+    static cc::IntrusivePtr<Sprite> createWithSpriteFrame(SpriteFrame* spriteFrame);
 
     /**
      * Creates a sprite with an sprite frame name.
@@ -192,9 +192,9 @@ public:
      * If the SpriteFrame doesn't exist it will raise an exception.
      *
      * @param   spriteFrameName The name of sprite frame.
-     * @return  An autoreleased sprite object.
+     * @return  An owned sprite object.
      */
-    static Sprite* createWithSpriteFrameName(std::string_view spriteFrameName);
+    static cc::IntrusivePtr<Sprite> createWithSpriteFrameName(std::string_view spriteFrameName);
 
     //  end of creators group
     /// @}
@@ -319,7 +319,7 @@ public:
     /**
      * Returns the current displayed frame.
      */
-    virtual SpriteFrame* getSpriteFrame() const;
+    virtual cc::IntrusivePtr<SpriteFrame> getSpriteFrame() const;
 
     /// @} End of frames methods
 

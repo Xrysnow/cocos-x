@@ -34,7 +34,8 @@ GGraph::~GGraph()
 
 void GGraph::handleInit()
 {
-    _shape = DrawNode::create();
+    cc::IntrusivePtr<cocos2d::DrawNode> shape;
+    _shape = (shape = DrawNode::create()).get();
     _shape->retain();
 
     _displayObject = _shape;

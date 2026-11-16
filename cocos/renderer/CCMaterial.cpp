@@ -72,46 +72,40 @@ std::string replaceDefines(std::string_view compileTimeDefines)
 static const char* getOptionalString(Properties* properties, const char* key, const char* defaultValue);
 static bool isValidUniform(const char* name);
 
-Material* Material::createWithFilename(std::string_view filepath)
+cc::IntrusivePtr<Material> Material::createWithFilename(std::string_view filepath)
 {
     auto validfilename = FileUtils::getInstance()->fullPathForFilename(filepath);
     if (!validfilename.empty())
     {
-        auto mat = new Material();
+        cc::IntrusivePtr<Material> mat{new Material()};
         if (mat->initWithFile(validfilename))
         {
-            mat->autorelease();
             return mat;
         }
-        delete mat;
     }
 
     return nullptr;
 }
 
-Material* Material::createWithProperties(Properties* materialProperties)
+cc::IntrusivePtr<Material> Material::createWithProperties(Properties* materialProperties)
 {
-    auto mat = new Material();
+    cc::IntrusivePtr<Material> mat{new Material()};
     if (mat->initWithProperties(materialProperties))
     {
-        mat->autorelease();
         return mat;
     }
-    delete mat;
     return nullptr;
 }
 
-Material* Material::createWithProgramState(backend::ProgramState* programState)
+cc::IntrusivePtr<Material> Material::createWithProgramState(backend::ProgramState* programState)
 {
     CCASSERT(programState, "Invalid Program State");
 
-    auto mat = new Material();
+    cc::IntrusivePtr<Material> mat{new Material()};
     if (mat->initWithProgramState(programState))
     {
-        mat->autorelease();
         return mat;
     }
-    delete mat;
     return nullptr;
 }
 
@@ -383,8 +377,8 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         fragShaderSrc = defs + "\n" + fragShaderSrc;
 
         auto* program     = backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
-        auto programState = new backend::ProgramState(program);
-        pass->setProgramState(programState);
+        cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+        pass->setProgramState(programState.get());
 
         // Parse uniforms only if the GLProgramState was created
         auto property = shaderProperties->getNextProperty();
@@ -392,7 +386,7 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         {
             if (isValidUniform(property))
             {
-                parseUniform(programState, shaderProperties, property);
+                parseUniform(programState.get(), shaderProperties, property);
             }
 
             property = shaderProperties->getNextProperty();
@@ -404,12 +398,11 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
             const char* name = space->getNamespace();
             if (strcmp(name, "sampler") == 0)
             {
-                parseSampler(programState, space);
+                parseSampler(programState.get(), space);
             }
             space = shaderProperties->getNextNamespace();
         }
         CC_SAFE_RELEASE(program);
-        CC_SAFE_RELEASE(programState);
     }
 
     return true;
@@ -522,16 +515,16 @@ Material::Material() : _name(""), _currentTechnique(nullptr), _target(nullptr) {
 
 Material::~Material() {}
 
-Material* Material::clone() const
+cc::IntrusivePtr<Material> Material::clone() const
 {
-    auto material = new Material();
+    cc::IntrusivePtr<Material> material{new Material()};
     // RenderState::cloneInto(material);
     material->_renderState.copyFrom(_renderState);
 
     for (const auto& technique : _techniques)
     {
         auto t       = technique->clone();
-        t->_material = material;
+        t->_material = material.get();
         material->_techniques.pushBack(t);
     }
 
@@ -540,7 +533,6 @@ Material* Material::clone() const
     material->_currentTechnique = material->getTechniqueByName(name);
     material->_textureSlots     = material->_textureSlots;
     material->_textureSlotIndex = material->_textureSlotIndex;
-    material->autorelease();
     return material;
 }
 

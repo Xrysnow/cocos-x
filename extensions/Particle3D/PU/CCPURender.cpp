@@ -56,17 +56,17 @@ void PURender::copyAttributesTo(PURender* render)
 //     return left->depthInView > right->depthInView;
 // }
 
-PUParticle3DQuadRender* PUParticle3DQuadRender::create(std::string_view texFile)
+cc::IntrusivePtr<PUParticle3DQuadRender> PUParticle3DQuadRender::create(std::string_view texFile)
 {
-    auto ret = new PUParticle3DQuadRender();
+    cc::IntrusivePtr<PUParticle3DQuadRender> ret{new PUParticle3DQuadRender()};
     if (ret->initRender(texFile))
     {
         ret->_texFile = texFile;
-        ret->autorelease();
+
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -481,16 +481,16 @@ void PUParticle3DQuadRender::copyAttributesTo(PUParticle3DQuadRender* quadRender
     quadRender->_textureCoordsColStep = _textureCoordsColStep;
 }
 
-PUParticle3DQuadRender* PUParticle3DQuadRender::clone()
+cc::IntrusivePtr<PURender> PUParticle3DQuadRender::clone()
 {
     auto render = PUParticle3DQuadRender::create(_texFile);
     copyAttributesTo(render);
     return render;
 }
 
-PUParticle3DModelRender* PUParticle3DModelRender::create(std::string_view modelFile, std::string_view texFile /*= ""*/)
+cc::IntrusivePtr<PUParticle3DModelRender> PUParticle3DModelRender::create(std::string_view modelFile, std::string_view texFile /*= ""*/)
 {
-    auto ret        = new PUParticle3DModelRender();
+    cc::IntrusivePtr<PUParticle3DModelRender> ret{new PUParticle3DModelRender()};
     ret->_modelFile = modelFile;
     ret->_texFile   = texFile;
     return ret;
@@ -505,7 +505,7 @@ void PUParticle3DModelRender::render(Renderer* renderer, const Mat4& transform, 
     {
         for (unsigned int i = 0; i < particleSystem->getParticleQuota(); ++i)
         {
-            MeshRenderer* mesh = MeshRenderer::create(_modelFile);
+            cc::IntrusivePtr<MeshRenderer> mesh = MeshRenderer::create(_modelFile);
             if (mesh == nullptr)
             {
                 CCLOG("failed to load file %s", _modelFile.c_str());
@@ -578,7 +578,7 @@ void PUParticle3DModelRender::copyAttributesTo(PUParticle3DModelRender* render)
     PURender::copyAttributesTo(render);
 }
 
-PUParticle3DModelRender* PUParticle3DModelRender::clone()
+cc::IntrusivePtr<PURender> PUParticle3DModelRender::clone()
 {
     auto mr = PUParticle3DModelRender::create(_modelFile, _texFile);
     copyAttributesTo(mr);
@@ -623,14 +623,14 @@ bool PUParticle3DEntityRender::initRender(std::string_view texFile)
         {
             _texture      = tex;
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_TEXTURE_3D);
-            _programState = new backend::ProgramState(program);
+            _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
         }
     }
 
     if (!_programState)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_COLOR_3D);
-        _programState = new backend::ProgramState(program);
+        _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     }
 
     auto& pipelineDescriptor        = _meshCommand.getPipelineDescriptor();
@@ -671,16 +671,12 @@ PUParticle3DBoxRender::PUParticle3DBoxRender()
 
 PUParticle3DBoxRender::~PUParticle3DBoxRender() {}
 
-PUParticle3DBoxRender* PUParticle3DBoxRender::create(std::string_view texFile)
+cc::IntrusivePtr<PUParticle3DBoxRender> PUParticle3DBoxRender::create(std::string_view texFile)
 {
-    auto ret = new PUParticle3DBoxRender();
-    if (ret->initRender(texFile))
+    cc::IntrusivePtr<PUParticle3DBoxRender> ret{new PUParticle3DBoxRender()};
+    if (!(ret->initRender(texFile)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -854,23 +850,19 @@ void PUParticle3DBoxRender::reBuildIndices(unsigned short count)
     }
 }
 
-PUParticle3DBoxRender* PUParticle3DBoxRender::clone()
+cc::IntrusivePtr<PURender> PUParticle3DBoxRender::clone()
 {
     auto render = PUParticle3DBoxRender::create(_texFile);
     copyAttributesTo(render);
     return render;
 }
 
-PUSphereRender* PUSphereRender::create(std::string_view texFile)
+cc::IntrusivePtr<PUSphereRender> PUSphereRender::create(std::string_view texFile)
 {
-    auto ret = new PUSphereRender();
-    if (ret->initRender(texFile))
+    cc::IntrusivePtr<PUSphereRender> ret{new PUSphereRender()};
+    if (!(ret->initRender(texFile)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -1034,7 +1026,7 @@ void PUSphereRender::copyAttributesTo(PUSphereRender* sphereRender)
     sphereRender->_numberOfSegments = _numberOfSegments;
 }
 
-PUSphereRender* PUSphereRender::clone()
+cc::IntrusivePtr<PURender> PUSphereRender::clone()
 {
     auto render = PUSphereRender::create(_texFile);
     copyAttributesTo(render);

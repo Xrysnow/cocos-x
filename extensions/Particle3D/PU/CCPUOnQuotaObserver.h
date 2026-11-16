@@ -40,7 +40,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUOnQuotaObserver : public PUObserver
 {
 public:
-    static PUOnQuotaObserver* create();
+    static cc::IntrusivePtr<PUOnQuotaObserver> create();
 
     /** @copydoc ParticleObserver::_notifyStart */
     virtual bool observe(PUParticle3D* particle, float timeElapsed) override;

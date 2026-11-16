@@ -129,7 +129,7 @@ void Physics3DDebugDrawer::init()
 {
     CC_SAFE_RELEASE_NULL(_programState);
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_COLOR);
-    _programState = new backend::ProgramState(program);
+    _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     _locMVP       = _programState->getUniformLocation("u_MVPMatrix");
 
     _buffer.reserve(512);

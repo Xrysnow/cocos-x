@@ -54,10 +54,9 @@ void PULinearForceAffector::updatePUAffector(PUParticle3D* particle, float /*del
     }
 }
 
-PULinearForceAffector* PULinearForceAffector::create()
+cc::IntrusivePtr<PULinearForceAffector> PULinearForceAffector::create()
 {
-    auto plfa = new PULinearForceAffector();
-    plfa->autorelease();
+    cc::IntrusivePtr<PULinearForceAffector> plfa{new PULinearForceAffector()};
     return plfa;
 }
 

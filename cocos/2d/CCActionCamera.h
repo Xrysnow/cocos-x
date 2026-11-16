@@ -61,8 +61,8 @@ public:
 
     // Overrides
     virtual void startWithTarget(Node* target) override;
-    virtual ActionCamera* reverse() const override;
-    virtual ActionCamera* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     /* Sets the Eye value of the Camera.
      *
@@ -131,8 +131,7 @@ public:
      * @param deltaAngleX The delta angle in X.
      * @return An OrbitCamera.
      */
-    static OrbitCamera*
-    create(float t, float radius, float deltaRadius, float angleZ, float deltaAngleZ, float angleX, float deltaAngleX);
+    static cc::IntrusivePtr<OrbitCamera> create(float t, float radius, float deltaRadius, float angleZ, float deltaAngleZ, float angleX, float deltaAngleX);
 
     /** Positions the camera according to spherical coordinates.
      *
@@ -143,7 +142,7 @@ public:
     void sphericalRadius(float* r, float* zenith, float* azimuth);
 
     // Overrides
-    OrbitCamera* clone() const override;
+    cc::IntrusivePtr<Action> clone() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
 

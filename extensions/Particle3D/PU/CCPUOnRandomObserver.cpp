@@ -54,10 +54,9 @@ bool PUOnRandomObserver::observe(PUParticle3D* /*particle*/, float /*timeElapsed
     return (CCRANDOM_0_1() > _threshold);
 }
 
-PUOnRandomObserver* PUOnRandomObserver::create()
+cc::IntrusivePtr<PUOnRandomObserver> PUOnRandomObserver::create()
 {
-    auto pro = new PUOnRandomObserver();
-    pro->autorelease();
+    cc::IntrusivePtr<PUOnRandomObserver> pro{new PUOnRandomObserver()};
     return pro;
 }
 

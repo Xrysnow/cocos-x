@@ -50,12 +50,12 @@ public:
 
     /** Create a mouse event listener.
      *
-     * @return An autoreleased EventListenerMouse object.
+     * @return An owned EventListenerMouse object.
      */
-    static EventListenerMouse* create();
+    static cc::IntrusivePtr<EventListenerMouse> create();
 
     /// Overrides
-    virtual EventListenerMouse* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
 
     std::function<void(EventMouse* event)> onMouseDown;

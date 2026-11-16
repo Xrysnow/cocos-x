@@ -18,13 +18,13 @@ namespace video
 	class CC_DLL Player : public cocos2d::Sprite
 	{
 	public:
-		static Player* create(const std::string& path);
+		static cc::IntrusivePtr<Player> create(const std::string& path);
 		// The input must support seeking and have a dedicated cursor at offset zero.
-		static Player* createFromStream(cocos2d::io::StreamPtr source);
+		static cc::IntrusivePtr<Player> createFromStream(cocos2d::io::StreamPtr source);
 		// Shutdown cooperatively waits for the current stream operation to return.
 		// An optional prompt, thread-safe cancel hook can unblock that operation.
-		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
-		static Player* createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+		static cc::IntrusivePtr<Player> createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
+		static cc::IntrusivePtr<Player> createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
 			const PlaybackOptions& options);
 		std::optional<AsyncVideoSnapshot> getAsyncSnapshot() const;
 		void closeAsync();
@@ -68,7 +68,7 @@ namespace video
 		~Player() override;
 
 	private:
-		static Player* createWithDecoder(Decoder* source);
+		static cc::IntrusivePtr<Player> createWithDecoder(Decoder* source);
 		bool initPlayback(Decoder* source);
 		bool initVideoTexture(const cocos2d::Size& size, bool replace);
 		cocos2d::Size getFrameSize() const;

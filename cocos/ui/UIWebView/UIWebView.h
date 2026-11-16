@@ -56,7 +56,7 @@ public:
     /**
      * Allocates and initializes a WebView.
      */
-    static WebView* create();
+    static cc::IntrusivePtr<WebView> create();
 
     /** Initializes the widget and validates its native implementation. */
     virtual bool init() override;
@@ -241,7 +241,7 @@ public:
     virtual ~WebView();
 
 protected:
-    virtual cocos2d::ui::Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<cocos2d::ui::Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     std::function<bool(WebView* sender, std::string_view url)> _onShouldStartLoading = nullptr;

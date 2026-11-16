@@ -53,7 +53,7 @@ ParticleBatchNode::ParticleBatchNode()
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
     //!!! ParticleBatchNode private programState don't want affect by Node::_programState, so store at _customCommand
     //!!! support etc1 with alpha?
-    pipelinePS = new backend::ProgramState(program);
+    pipelinePS = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
 
     _mvpMatrixLocaiton = pipelinePS->getUniformLocation("u_MVPMatrix");
     _textureLocation   = pipelinePS->getUniformLocation("u_tex0");
@@ -71,15 +71,13 @@ ParticleBatchNode::~ParticleBatchNode()
  * creation with Texture2D
  */
 
-ParticleBatchNode* ParticleBatchNode::createWithTexture(Texture2D* tex, int capacity /* = kParticleDefaultCapacity*/)
+cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::createWithTexture(Texture2D* tex, int capacity /* = kParticleDefaultCapacity*/)
 {
-    ParticleBatchNode* p = new ParticleBatchNode();
+    cc::IntrusivePtr<ParticleBatchNode> p{new ParticleBatchNode()};
     if (p->initWithTexture(tex, capacity))
     {
-        p->autorelease();
         return p;
     }
-    CC_SAFE_DELETE(p);
     return nullptr;
 }
 
@@ -87,15 +85,13 @@ ParticleBatchNode* ParticleBatchNode::createWithTexture(Texture2D* tex, int capa
  * creation with File Image
  */
 
-ParticleBatchNode* ParticleBatchNode::create(std::string_view imageFile, int capacity /* = kParticleDefaultCapacity*/)
+cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::create(std::string_view imageFile, int capacity /* = kParticleDefaultCapacity*/)
 {
-    ParticleBatchNode* p = new ParticleBatchNode();
+    cc::IntrusivePtr<ParticleBatchNode> p{new ParticleBatchNode()};
     if (p->initWithFile(imageFile, capacity))
     {
-        p->autorelease();
         return p;
     }
-    CC_SAFE_DELETE(p);
     return nullptr;
 }
 
@@ -104,7 +100,7 @@ ParticleBatchNode* ParticleBatchNode::create(std::string_view imageFile, int cap
  */
 bool ParticleBatchNode::initWithTexture(Texture2D* tex, int capacity)
 {
-    _textureAtlas = new TextureAtlas();
+    _textureAtlas = cc::IntrusivePtr<TextureAtlas>{new TextureAtlas()}.detach();
     _textureAtlas->initWithTexture(tex, capacity);
 
     updateProgramStateTexture();

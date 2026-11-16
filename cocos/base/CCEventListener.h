@@ -94,7 +94,7 @@ public:
 
     /** Clones the listener, its subclasses have to override this method.
      */
-    virtual EventListener* clone() = 0;
+    virtual cc::IntrusivePtr<EventListener> clone() = 0;
 
     /** Enables or disables the listener.
      * @note Only listeners with `enabled` state will be able to receive events.

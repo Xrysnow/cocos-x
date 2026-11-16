@@ -16,7 +16,7 @@ public:
     ProgramGFX* getProgram() const { return _programGFX; }
 
 private:
-    cocos2d::RefPtr<ProgramGFX> _programGFX;
+    cc::IntrusivePtr<ProgramGFX> _programGFX;
     BlendDescriptor _blendDescriptor;
 };
 

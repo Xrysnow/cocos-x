@@ -57,7 +57,7 @@ public:
     void SetDrawNode(cocos2d::DrawNode* drawNode);
     cocos2d::Vec2& GetDebugNodeOffset();
 
-    cocos2d::DrawNode* drawBP = NULL;  // axis "interface"!
+    cc::IntrusivePtr<cocos2d::DrawNode> drawBP;  // axis "interface"!
     cocos2d::Vec2 debugNodeOffset;
     float mRatio;
 

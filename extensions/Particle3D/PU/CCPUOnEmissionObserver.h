@@ -40,7 +40,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUOnEmissionObserver : public PUObserver
 {
 public:
-    static PUOnEmissionObserver* create();
+    static cc::IntrusivePtr<PUOnEmissionObserver> create();
     /**
      */
     virtual bool observe(PUParticle3D* particle, float timeElapsed) override;

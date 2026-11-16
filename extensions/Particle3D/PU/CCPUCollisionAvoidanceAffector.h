@@ -37,7 +37,7 @@ public:
     // Constants
     static const float DEFAULT_RADIUS;
 
-    static PUCollisionAvoidanceAffector* create();
+    static cc::IntrusivePtr<PUCollisionAvoidanceAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

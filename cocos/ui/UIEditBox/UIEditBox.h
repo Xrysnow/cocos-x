@@ -205,7 +205,7 @@ public:
      * create a edit box with size.
      * @return An autorelease pointer of EditBox, you don't need to release it only if you retain it again.
      */
-    static EditBox* create(const Size& size,
+    static cc::IntrusivePtr<EditBox> create(const Size& size,
                            Scale9Sprite* normalSprite,
                            Scale9Sprite* pressedSprite  = nullptr,
                            Scale9Sprite* disabledSprite = nullptr);
@@ -214,13 +214,13 @@ public:
      * create a edit box with size.
      * @return An autorelease pointer of EditBox, you don't need to release it only if you retain it again.
      */
-    static EditBox* create(const Size& size, std::string_view normalImage, TextureResType texType);
+    static cc::IntrusivePtr<EditBox> create(const Size& size, std::string_view normalImage, TextureResType texType);
 
     /**
      * create a edit box with size.
      * @return An autorelease pointer of EditBox, you don't need to release it only if you retain it again.
      */
-    static EditBox* create(const Size& size,
+    static cc::IntrusivePtr<EditBox> create(const Size& size,
                            std::string_view normalImage,
                            std::string_view pressedImage  = "",
                            std::string_view disabledImage = "",

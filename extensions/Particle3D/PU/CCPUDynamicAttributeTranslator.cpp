@@ -41,24 +41,24 @@ void PUDynamicAttributeTranslator::translate(PUScriptCompiler* compiler, PUAbstr
 
     if (type == token[TOKEN_DYN_RANDOM])
     {
-        _dynamicAttribute = new PUDynamicAttributeRandom();
+        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeRandom>{new PUDynamicAttributeRandom()}.detach();
     }
     else if (type == token[TOKEN_DYN_CURVED_LINEAR])
     {
-        _dynamicAttribute = new PUDynamicAttributeCurved();
+        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeCurved>{new PUDynamicAttributeCurved()}.detach();
     }
     else if (type == token[TOKEN_DYN_CURVED_SPLINE])
     {
-        _dynamicAttribute = new PUDynamicAttributeCurved();
+        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeCurved>{new PUDynamicAttributeCurved()}.detach();
     }
     else if (type == token[TOKEN_DYN_OSCILLATE])
     {
-        _dynamicAttribute = new PUDynamicAttributeOscillate();
+        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeOscillate>{new PUDynamicAttributeOscillate()}.detach();
     }
     else
     {
         // Create a fixed one.
-        _dynamicAttribute = new PUDynamicAttributeFixed();
+        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     }
 
     // Run through properties

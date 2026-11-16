@@ -92,7 +92,7 @@ inline int decBound(int sourceLen)
  * Capture screen interface
  */
 static EventListenerCustom* s_captureScreenListener;
-void captureScreen(std::function<void(RefPtr<Image>)> imageCallback)
+void captureScreen(std::function<void(cc::IntrusivePtr<Image>)> imageCallback)
 {
     if (s_captureScreenListener)
     {
@@ -129,7 +129,7 @@ void captureScreen(std::function<void(RefPtr<Image>)> imageCallback)
 }
 
 static std::unordered_map<Node*, EventListenerCustom*> s_captureNodeListener;
-void captureNode(Node* startNode, std::function<void(RefPtr<Image>)> imageCallback, float scale)
+void captureNode(Node* startNode, std::function<void(cc::IntrusivePtr<Image>)> imageCallback, float scale)
 {
     if (s_captureNodeListener.find(startNode) != s_captureNodeListener.end())
     {
@@ -146,7 +146,7 @@ void captureNode(Node* startNode, std::function<void(RefPtr<Image>)> imageCallba
 
         director->setNextDeltaTimeZero(true);
 
-        RenderTexture* finalRtx = nullptr;
+        cc::IntrusivePtr<RenderTexture> finalRtx;
 
         auto rtx =
             RenderTexture::create(size.width, size.height, backend::PixelFormat::RGBA8, PixelFormat::D24S8, false);
@@ -169,7 +169,7 @@ void captureNode(Node* startNode, std::function<void(RefPtr<Image>)> imageCallba
         {
             /* scale */
             auto finalRect = Rect(0, 0, size.width, size.height);
-            Sprite* sprite = Sprite::createWithTexture(rtx->getSprite()->getTexture(), finalRect);
+            cc::IntrusivePtr<Sprite> sprite = Sprite::createWithTexture(rtx->getSprite()->getTexture(), finalRect);
             sprite->setAnchorPoint(Point(0, 0));
             sprite->setFlippedY(true);
             finalRtx = RenderTexture::create(size.width * scale, size.height * scale, backend::PixelFormat::RGBA8,
@@ -210,7 +210,7 @@ void captureScreen(std::function<void(bool, std::string_view)> afterCap, std::st
         outfile = writablePath + std::string(filename);
     }
 
-    captureScreen([_afterCap = std::move(afterCap), _outfile = std::move(outfile)](RefPtr<Image> image) mutable {
+    captureScreen([_afterCap = std::move(afterCap), _outfile = std::move(outfile)](cc::IntrusivePtr<Image> image) mutable {
         AsyncTaskPool::getInstance()->enqueue(
             AsyncTaskPool::TaskType::TASK_IO,
             [_afterCap = std::move(_afterCap), image = std::move(image), _outfile = std::move(_outfile)]() mutable {
@@ -319,7 +319,7 @@ Rect getCascadeBoundingBox(Node* node)
     return cbb;
 }
 
-Sprite* createSpriteFromBase64Cached(const char* base64String, const char* key)
+cc::IntrusivePtr<Sprite> createSpriteFromBase64Cached(const char* base64String, const char* key)
 {
     Texture2D* texture = Director::getInstance()->getTextureCache()->getTextureForKey(key);
 
@@ -328,47 +328,42 @@ Sprite* createSpriteFromBase64Cached(const char* base64String, const char* key)
         unsigned char* decoded;
         int length = base64Decode((const unsigned char*)base64String, (unsigned int)strlen(base64String), &decoded);
 
-        Image* image     = new Image();
+        cc::IntrusivePtr<Image> image{new Image()};
         bool imageResult = image->initWithImageData(decoded, length, true);
         CCASSERT(imageResult, "Failed to create image from base64!");
 
         if (!imageResult)
         {
-            CC_SAFE_RELEASE_NULL(image);
             return nullptr;
         }
 
-        texture = Director::getInstance()->getTextureCache()->addImage(image, key);
-        image->release();
+        texture = Director::getInstance()->getTextureCache()->addImage(image.get(), key);
     }
 
-    Sprite* sprite = Sprite::createWithTexture(texture);
+    cc::IntrusivePtr<Sprite> sprite = Sprite::createWithTexture(texture);
 
     return sprite;
 }
 
-Sprite* createSpriteFromBase64(const char* base64String)
+cc::IntrusivePtr<Sprite> createSpriteFromBase64(const char* base64String)
 {
     unsigned char* decoded;
     int length = base64Decode((const unsigned char*)base64String, (unsigned int)strlen(base64String), &decoded);
 
-    Image* image     = new Image();
+    cc::IntrusivePtr<Image> image{new Image()};
     bool imageResult = image->initWithImageData(decoded, length, decoded);
     CCASSERT(imageResult, "Failed to create image from base64!");
 
     if (!imageResult)
     {
-        CC_SAFE_RELEASE_NULL(image);
         return nullptr;
     }
 
-    Texture2D* texture = new Texture2D();
-    texture->initWithImage(image);
+    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    texture->initWithImage(image.get());
     texture->setAliasTexParameters();
-    image->release();
 
-    Sprite* sprite = Sprite::createWithTexture(texture);
-    texture->release();
+    cc::IntrusivePtr<Sprite> sprite = Sprite::createWithTexture(texture.get());
 
     return sprite;
 }

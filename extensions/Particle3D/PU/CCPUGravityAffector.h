@@ -38,7 +38,7 @@ public:
     // Constants
     static const float DEFAULT_GRAVITY;
 
-    static PUGravityAffector* create();
+    static cc::IntrusivePtr<PUGravityAffector> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

@@ -12,7 +12,7 @@ class GTweener;
 class TweenManager
 {
 public:
-    static GTweener* createTween();
+    static cc::IntrusivePtr<GTweener> createTween();
     static bool isTweening(cocos2d::Ref* target, TweenPropType propType);
     static bool killTweens(cocos2d::Ref* target, TweenPropType propType, bool completed);
     static GTweener* getTween(cocos2d::Ref* target, TweenPropType propType);

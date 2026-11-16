@@ -87,7 +87,7 @@ public:
     static const size_t DEFAULT_NUMBER_OF_SEGMENTS;
     static const PUBillboardChain::TexCoordDirection DEFAULT_TEXTURE_DIRECTION;
 
-    static PUBeamRender* create(std::string_view texFile = "");
+    static cc::IntrusivePtr<PUBeamRender> create(std::string_view texFile = "");
 
     virtual void prepare() override;
     virtual void unPrepare() override;
@@ -124,7 +124,7 @@ public:
      */
     void destroyAll();
 
-    virtual PUBeamRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
     void copyAttributesTo(PUBeamRender* render);
 
     PUBeamRender();

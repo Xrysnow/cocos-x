@@ -32,16 +32,12 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
-AnimationFrame* AnimationFrame::create(SpriteFrame* spriteFrame, float delayUnits, const ValueMap& userInfo)
+cc::IntrusivePtr<AnimationFrame> AnimationFrame::create(SpriteFrame* spriteFrame, float delayUnits, const ValueMap& userInfo)
 {
-    auto ret = new AnimationFrame();
-    if (ret->initWithSpriteFrame(spriteFrame, delayUnits, userInfo))
+    cc::IntrusivePtr<AnimationFrame> ret{new AnimationFrame()};
+    if (!(ret->initWithSpriteFrame(spriteFrame, delayUnits, userInfo)))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -64,45 +60,39 @@ AnimationFrame::~AnimationFrame()
     CC_SAFE_RELEASE(_spriteFrame);
 }
 
-AnimationFrame* AnimationFrame::clone() const
+cc::IntrusivePtr<AnimationFrame> AnimationFrame::clone() const
 {
     // no copy constructor
-    auto frame = new AnimationFrame();
-    frame->initWithSpriteFrame(_spriteFrame->clone(), _delayUnits, _userInfo);
+    cc::IntrusivePtr<AnimationFrame> frame{new AnimationFrame()};
+    frame->initWithSpriteFrame(_spriteFrame->clone().get(), _delayUnits, _userInfo);
 
-    frame->autorelease();
     return frame;
 }
 
 // implementation of Animation
 
-Animation* Animation::create()
+cc::IntrusivePtr<Animation> Animation::create()
 {
-    Animation* animation = new Animation();
+    cc::IntrusivePtr<Animation> animation{new Animation()};
     animation->init();
-    animation->autorelease();
-
     return animation;
 }
 
-Animation* Animation::createWithSpriteFrames(const Vector<SpriteFrame*>& frames,
+cc::IntrusivePtr<Animation> Animation::createWithSpriteFrames(const Vector<SpriteFrame*>& frames,
                                              float delay /* = 0.0f*/,
                                              unsigned int loops /* = 1*/)
 {
-    Animation* animation = new Animation();
+    cc::IntrusivePtr<Animation> animation{new Animation()};
     animation->initWithSpriteFrames(frames, delay, loops);
-    animation->autorelease();
-
     return animation;
 }
 
-Animation* Animation::create(const Vector<AnimationFrame*>& arrayOfAnimationFrameNames,
+cc::IntrusivePtr<Animation> Animation::create(const Vector<AnimationFrame*>& arrayOfAnimationFrameNames,
                              float delayPerUnit,
                              unsigned int loops /* = 1 */)
 {
-    Animation* animation = new Animation();
+    cc::IntrusivePtr<Animation> animation{new Animation()};
     animation->initWithAnimationFrames(arrayOfAnimationFrameNames, delayPerUnit, loops);
-    animation->autorelease();
     return animation;
 }
 
@@ -158,7 +148,7 @@ Animation::~Animation()
 
 void Animation::addSpriteFrame(SpriteFrame* spriteFrame)
 {
-    AnimationFrame* animFrame = AnimationFrame::create(spriteFrame, 1.0f, ValueMap());
+    cc::IntrusivePtr<AnimationFrame> animFrame = AnimationFrame::create(spriteFrame, 1.0f, ValueMap());
     _frames.pushBack(animFrame);
 
     // update duration
@@ -170,13 +160,13 @@ void Animation::addSpriteFrameWithFile(std::string_view filename)
     Texture2D* texture = Director::getInstance()->getTextureCache()->addImage(filename);
     Rect rect          = Rect::ZERO;
     rect.size          = texture->getContentSize();
-    SpriteFrame* frame = SpriteFrame::createWithTexture(texture, rect);
+    cc::IntrusivePtr<SpriteFrame> frame = SpriteFrame::createWithTexture(texture, rect);
     addSpriteFrame(frame);
 }
 
 void Animation::addSpriteFrameWithTexture(Texture2D* pobTexture, const Rect& rect)
 {
-    SpriteFrame* frame = SpriteFrame::createWithTexture(pobTexture, rect);
+    cc::IntrusivePtr<SpriteFrame> frame = SpriteFrame::createWithTexture(pobTexture, rect);
     addSpriteFrame(frame);
 }
 
@@ -185,13 +175,12 @@ float Animation::getDuration() const
     return _totalDelayUnits * _delayPerUnit;
 }
 
-Animation* Animation::clone() const
+cc::IntrusivePtr<Animation> Animation::clone() const
 {
     // no copy constructor
-    auto a = new Animation();
+    cc::IntrusivePtr<Animation> a{new Animation()};
     a->initWithAnimationFrames(_frames, _delayPerUnit, _loops);
     a->setRestoreOriginalFrame(_restoreOriginalFrame);
-    a->autorelease();
     return a;
 }
 

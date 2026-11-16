@@ -64,43 +64,35 @@ void EditBox::closeKeyboard() const
     _editBoxImpl->closeKeyboard();
 }
 
-EditBox* EditBox::create(const Vec2& size, std::string_view normalImage, TextureResType texType)
+cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size, std::string_view normalImage, TextureResType texType)
 {
     return EditBox::create(size, normalImage, "", "", texType);
 }
 
-EditBox* EditBox::create(const Vec2& size,
+cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
                          std::string_view normalImage,
                          std::string_view pressedImage /* = "" */,
                          std::string_view disabledImage /* = "" */,
                          TextureResType texType /* = TextureResType::LOCAL */)
 {
-    EditBox* pRet = new EditBox();
-    if (pRet->initWithSizeAndTexture(size, normalImage, pressedImage, disabledImage, texType))
+    cc::IntrusivePtr<EditBox> pRet{new EditBox()};
+    if (!(pRet->initWithSizeAndTexture(size, normalImage, pressedImage, disabledImage, texType)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-EditBox* EditBox::create(const Vec2& size,
+cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
                          cocos2d::ui::Scale9Sprite* normalSprite,
                          ui::Scale9Sprite* pressedSprite,
                          Scale9Sprite* disabledSprite)
 {
-    EditBox* pRet = new EditBox();
-    if (pRet->initWithSizeAndBackgroundSprite(size, normalSprite, pressedSprite, disabledSprite))
+    cc::IntrusivePtr<EditBox> pRet{new EditBox()};
+    if (!(pRet->initWithSizeAndBackgroundSprite(size, normalSprite, pressedSprite, disabledSprite)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }
@@ -174,9 +166,12 @@ bool EditBox::initWithSizeAndTexture(const Vec2& size,
 
 void EditBox::initRenderer()
 {
-    _normalRenderer   = Scale9Sprite::create();
-    _pressedRenderer  = Scale9Sprite::create();
-    _disabledRenderer = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> normalRenderer;
+    cc::IntrusivePtr<Scale9Sprite> pressedRenderer;
+    cc::IntrusivePtr<Scale9Sprite> disabledRenderer;
+    _normalRenderer   = (normalRenderer = Scale9Sprite::create()).get();
+    _pressedRenderer  = (pressedRenderer = Scale9Sprite::create()).get();
+    _disabledRenderer = (disabledRenderer = Scale9Sprite::create()).get();
     _normalRenderer->setRenderingType(Scale9Sprite::RenderingType::SLICE);
     _pressedRenderer->setRenderingType(Scale9Sprite::RenderingType::SLICE);
     _disabledRenderer->setRenderingType(Scale9Sprite::RenderingType::SLICE);

@@ -60,7 +60,7 @@ public:
     @param navFilePath The NavMesh File path.
     @param geomFilePath The geometry File Path,include offmesh information,etc.
     */
-    static NavMesh* create(std::string_view navFilePath, std::string_view geomFilePath);
+    static cc::IntrusivePtr<NavMesh> create(std::string_view navFilePath, std::string_view geomFilePath);
 
     /** update navmesh. */
     void update(float dt);

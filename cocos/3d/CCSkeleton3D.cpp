@@ -136,10 +136,9 @@ void Bone3D::clearBoneBlendState()
 /**
  * Creates C3DBone.
  */
-Bone3D* Bone3D::create(std::string_view id)
+cc::IntrusivePtr<Bone3D> Bone3D::create(std::string_view id)
 {
-    auto bone = new Bone3D(id);
-    bone->autorelease();
+    cc::IntrusivePtr<Bone3D> bone{new Bone3D(id)};
     return bone;
 }
 
@@ -253,16 +252,15 @@ Skeleton3D::~Skeleton3D()
     removeAllBones();
 }
 
-Skeleton3D* Skeleton3D::create(const std::vector<NodeData*>& skeletondata)
+cc::IntrusivePtr<Skeleton3D> Skeleton3D::create(const std::vector<NodeData*>& skeletondata)
 {
-    auto skeleton = new Skeleton3D();
+    cc::IntrusivePtr<Skeleton3D> skeleton{new Skeleton3D()};
     for (const auto& it : skeletondata)
     {
         auto bone = skeleton->createBone3D(*it);
         bone->resetPose();
         skeleton->_rootBones.pushBack(bone);
     }
-    skeleton->autorelease();
     return skeleton;
 }
 
@@ -333,7 +331,7 @@ void Skeleton3D::addBone(Bone3D* bone)
     _bones.pushBack(bone);
 }
 
-Bone3D* Skeleton3D::createBone3D(const NodeData& nodedata)
+cc::IntrusivePtr<Bone3D> Skeleton3D::createBone3D(const NodeData& nodedata)
 {
     auto bone = Bone3D::create(nodedata.id);
     for (const auto& it : nodedata.children)

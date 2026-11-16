@@ -217,9 +217,9 @@ public:
     static const unsigned int DEFAULT_EMITTED_SYSTEM_QUOTA;
     static const float DEFAULT_MAX_VELOCITY;
 
-    static PUParticleSystem3D* create();
-    static PUParticleSystem3D* create(std::string_view filePath);
-    static PUParticleSystem3D* create(std::string_view filePath, std::string_view materialPath);
+    static cc::IntrusivePtr<PUParticleSystem3D> create();
+    static cc::IntrusivePtr<PUParticleSystem3D> create(std::string_view filePath);
+    static cc::IntrusivePtr<PUParticleSystem3D> create(std::string_view filePath, std::string_view materialPath);
 
     virtual void draw(Renderer* renderer, const Mat4& transform, uint32_t flags) override;
 
@@ -343,7 +343,7 @@ public:
     bool makeParticleLocal(PUParticle3D* particle);
     void calulateRotationOffset();
 
-    virtual PUParticleSystem3D* clone();
+    virtual cc::IntrusivePtr<PUParticleSystem3D> clone();
     virtual void copyAttributesTo(PUParticleSystem3D* system);
 
     bool initSystem(std::string_view filePath);

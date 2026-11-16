@@ -56,7 +56,7 @@ class Texture2D;
     sprite->setSpriteFrame(frame);
  @endcode
  */
-class CC_DLL SpriteFrame : public Ref, public Clonable
+class CC_DLL SpriteFrame : public Ref, public Clonable<SpriteFrame>
 {
 public:
     /** Create a SpriteFrame with a texture filename, rect in points.
@@ -64,9 +64,9 @@ public:
      *
      * @param filename Texture file name.
      * @param rect A specified rect.
-     * @return An autoreleased SpriteFrame object.
+     * @return An owned SpriteFrame object.
      */
-    static SpriteFrame* create(std::string_view filename, const Rect& rect);
+    static cc::IntrusivePtr<SpriteFrame> create(std::string_view filename, const Rect& rect);
 
     /** Create a SpriteFrame with a texture filename, rect, rotated, offset and originalSize in pixels.
      The originalSize is the size in pixels of the frame before being trimmed.
@@ -76,9 +76,9 @@ public:
      * @param rotated Is rotated if true.
      * @param offset A specified offset.
      * @param originalSize A specified original size.
-     * @return An autoreleased SpriteFrame object.
+     * @return An owned SpriteFrame object.
      */
-    static SpriteFrame* create(std::string_view filename,
+    static cc::IntrusivePtr<SpriteFrame> create(std::string_view filename,
                                const Rect& rect,
                                bool rotated,
                                const Vec2& offset,
@@ -88,9 +88,9 @@ public:
      It is assumed that the frame was not trimmed.
      * @param pobTexture The texture pointer.
      * @param rect A specified rect.
-     * @return An autoreleased SpriteFrame object.
+     * @return An owned SpriteFrame object.
      */
-    static SpriteFrame* createWithTexture(Texture2D* pobTexture, const Rect& rect);
+    static cc::IntrusivePtr<SpriteFrame> createWithTexture(Texture2D* pobTexture, const Rect& rect);
 
     /** Create a SpriteFrame with a texture, rect, rotated, offset and originalSize in pixels.
      The originalSize is the size in points of the frame before being trimmed.
@@ -99,9 +99,9 @@ public:
      * @param rotated Is rotated if true.
      * @param offset A specified offset.
      * @param originalSize A specified original size.
-     * @return An autoreleased SpriteFrame object.
+     * @return An owned SpriteFrame object.
      */
-    static SpriteFrame* createWithTexture(Texture2D* pobTexture,
+    static cc::IntrusivePtr<SpriteFrame> createWithTexture(Texture2D* pobTexture,
                                           const Rect& rect,
                                           bool rotated,
                                           const Vec2& offset,
@@ -240,7 +240,7 @@ public:
     bool hasAnchorPoint() const;
 
     // Overrides
-    virtual SpriteFrame* clone() const override;
+    virtual cc::IntrusivePtr<SpriteFrame> clone() const override;
 
     /** Set the polygon info for polygon mesh sprites
      *

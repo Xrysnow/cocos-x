@@ -39,7 +39,7 @@ public:
     // Constants
     static const float DEFAULT_ACCELERATION;
 
-    static PUJetAffector* create();
+    static cc::IntrusivePtr<PUJetAffector> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

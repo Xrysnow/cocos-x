@@ -41,10 +41,10 @@ namespace spine {
 	class SP_API SkeletonRenderer : public cocos2d::Node, public cocos2d::BlendProtocol {
 	public:
 		CREATE_FUNC(SkeletonRenderer);
-		static SkeletonRenderer *createWithSkeleton(Skeleton *skeleton, bool ownsSkeleton = false, bool ownsSkeletonData = false);
-		static SkeletonRenderer *createWithData(SkeletonData *skeletonData, bool ownsSkeletonData = false);
-		static SkeletonRenderer *createWithFile(const std::string &skeletonDataFile, Atlas *atlas, float scale = 1);
-		static SkeletonRenderer *createWithFile(const std::string &skeletonDataFile, const std::string &atlasFile, float scale = 1);
+		static cc::IntrusivePtr<SkeletonRenderer> createWithSkeleton(Skeleton *skeleton, bool ownsSkeleton = false, bool ownsSkeletonData = false);
+		static cc::IntrusivePtr<SkeletonRenderer> createWithData(SkeletonData *skeletonData, bool ownsSkeletonData = false);
+		static cc::IntrusivePtr<SkeletonRenderer> createWithFile(const std::string &skeletonDataFile, Atlas *atlas, float scale = 1);
+		static cc::IntrusivePtr<SkeletonRenderer> createWithFile(const std::string &skeletonDataFile, const std::string &atlasFile, float scale = 1);
 
 		void update(float deltaTime) override;
 		void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) override;

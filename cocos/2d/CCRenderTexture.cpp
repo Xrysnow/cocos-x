@@ -66,7 +66,6 @@ RenderTexture::~RenderTexture()
     CC_SAFE_RELEASE(_renderTarget);
     CC_SAFE_RELEASE(_sprite);
     CC_SAFE_RELEASE(_depthStencilTexture);
-    CC_SAFE_RELEASE(_UITextureImage);
 }
 
 void RenderTexture::listenToBackground(EventCustom* /*event*/)
@@ -75,24 +74,20 @@ void RenderTexture::listenToBackground(EventCustom* /*event*/)
     // So we disable this pair of message handler at present.
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     // to get the rendered texture data
-    auto func = [&](Image* uiTextureImage) {
+    auto func = [this](cc::IntrusivePtr<Image> uiTextureImage) {
         if (uiTextureImage)
         {
-            CC_SAFE_RELEASE(_UITextureImage);
-            _UITextureImage = uiTextureImage;
-            CC_SAFE_RETAIN(_UITextureImage);
+            _UITextureImage = std::move(uiTextureImage);
             const Vec2& s = _texture2D->getContentSizeInPixels();
-            VolatileTextureMgr::addDataTexture(_texture2D, uiTextureImage->getData(), s.width * s.height * 4,
+            VolatileTextureMgr::addDataTexture(_texture2D, _UITextureImage->getData(), s.width * s.height * 4,
                                                backend::PixelFormat::RGBA8, s);
         }
         else
         {
             CCLOG("Cache rendertexture failed!");
         }
-        CC_SAFE_RELEASE(uiTextureImage);
     };
-    auto callback = std::bind(func, std::placeholders::_1);
-    newImage(callback, false);
+    newImage(std::move(func), false);
 
 #endif
 }
@@ -111,42 +106,36 @@ void RenderTexture::listenToForeground(EventCustom* /*event*/)
 #endif
 }
 
-RenderTexture* RenderTexture::create(int w, int h, backend::PixelFormat eFormat, bool sharedRenderTarget)
+cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::PixelFormat eFormat, bool sharedRenderTarget)
 {
-    RenderTexture* ret = new RenderTexture();
+    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, eFormat, sharedRenderTarget))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-RenderTexture* RenderTexture::create(int w, int h, backend::PixelFormat eFormat, PixelFormat uDepthStencilFormat, bool sharedRenderTarget)
+cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::PixelFormat eFormat, PixelFormat uDepthStencilFormat, bool sharedRenderTarget)
 {
-    RenderTexture* ret = new RenderTexture();
+    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, eFormat, uDepthStencilFormat, sharedRenderTarget))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-RenderTexture* RenderTexture::create(int w, int h, bool sharedRenderTarget)
+cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, bool sharedRenderTarget)
 {
-    RenderTexture* ret = new RenderTexture();
+    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, backend::PixelFormat::RGBA8, PixelFormat::NONE, sharedRenderTarget))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -191,7 +180,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
         descriptor.height        = powH;
         descriptor.textureUsage  = TextureUsage::RENDER_TARGET;
         descriptor.textureFormat = PixelFormat::RGBA8;
-        _texture2D               = new Texture2D();
+        _texture2D               = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
         _texture2D->updateTextureDescriptor(descriptor, !!CC_ENABLE_PREMULTIPLIED_ALPHA);
         _renderTargetFlags = RenderTargetFlag::COLOR;
 
@@ -200,7 +189,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
             _renderTargetFlags       = RenderTargetFlag::COLOR | RenderTargetFlag::DEPTH_AND_STENCIL;
             descriptor.textureFormat = PixelFormat::D24S8;
 
-            _depthStencilTexture = new Texture2D();
+            _depthStencilTexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
             _depthStencilTexture->updateTextureDescriptor(descriptor);
         }
 
@@ -230,7 +219,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
         _texture2D->setAntiAliasTexParameters();
 
         // retained
-        setSprite(Sprite::createWithTexture(_texture2D));
+        setSprite(Sprite::createWithTexture(_texture2D).get());
 
         const auto api = cc::gfx::Device::getInstance()->getGfxAPI();
         if (api != cc::gfx::API::VULKAN && api != cc::gfx::API::METAL)
@@ -468,7 +457,7 @@ bool RenderTexture::saveToFile(std::string_view fileName,
 
 void RenderTexture::onSaveToFile(std::string filename, bool isRGBA, bool forceNonPMA)
 {
-    auto callbackFunc = [this, _filename = std::move(filename), isRGBA, forceNonPMA](RefPtr<Image> image) {
+    auto callbackFunc = [this, _filename = std::move(filename), isRGBA, forceNonPMA](cc::IntrusivePtr<Image> image) {
         if (image)
         {
             if (forceNonPMA && image->hasPremultipliedAlpha())
@@ -486,7 +475,7 @@ void RenderTexture::onSaveToFile(std::string filename, bool isRGBA, bool forceNo
 }
 
 /* get buffer as Image */
-void RenderTexture::newImage(std::function<void(RefPtr<Image>)> imageCallback, bool flipImage)
+void RenderTexture::newImage(std::function<void(cc::IntrusivePtr<Image>)> imageCallback, bool flipImage)
 {
     CCASSERT(_pixelFormat == backend::PixelFormat::RGBA8, "only RGBA8888 can be saved as image");
 

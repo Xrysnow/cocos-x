@@ -63,10 +63,9 @@ void PUPathFollower::updatePUAffector(PUParticle3D* particle, float deltaTime)
     }
 }
 
-PUPathFollower* PUPathFollower::create()
+cc::IntrusivePtr<PUPathFollower> PUPathFollower::create()
 {
-    auto ppf = new PUPathFollower();
-    ppf->autorelease();
+    cc::IntrusivePtr<PUPathFollower> ppf{new PUPathFollower()};
     return ppf;
 }
 

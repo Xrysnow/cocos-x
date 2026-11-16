@@ -79,7 +79,7 @@ public:
 
 protected:
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-    EventListenerCustom* _rendererRecreatedListener;
+    cc::IntrusivePtr<EventListenerCustom> _rendererRecreatedListener;
 #endif
 };
 

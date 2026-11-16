@@ -120,10 +120,9 @@ void PUPositionEmitter::initParticlePosition(PUParticle3D* particle)
     particle->originalPosition = particle->position;
 }
 
-PUPositionEmitter* PUPositionEmitter::create()
+cc::IntrusivePtr<PUPositionEmitter> PUPositionEmitter::create()
 {
-    auto pe = new PUPositionEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUPositionEmitter> pe{new PUPositionEmitter()};
     return pe;
 }
 
@@ -135,7 +134,7 @@ void PUPositionEmitter::copyAttributesTo(PUEmitter* emitter)
     positionEmitter->_positionList     = _positionList;
 }
 
-PUPositionEmitter* PUPositionEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUPositionEmitter::clone()
 {
     auto be = PUPositionEmitter::create();
     copyAttributesTo(be);

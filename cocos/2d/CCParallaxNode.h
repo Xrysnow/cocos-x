@@ -51,9 +51,9 @@ class CC_DLL ParallaxNode : public Node
 public:
     /** Create a Parallax node.
      *
-     * @return An autoreleased ParallaxNode object.
+     * @return An owned ParallaxNode object.
      */
-    static ParallaxNode* create();
+    static cc::IntrusivePtr<ParallaxNode> create();
 
     // prevents compiler warning: "Included function hides overloaded virtual functions"
     using Node::addChild;

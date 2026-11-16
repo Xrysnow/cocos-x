@@ -47,7 +47,7 @@ public:
     // Constants
     static const unsigned int DEFAULT_NUMBER_OF_PARTICLES;
 
-    static PUDoPlacementParticleEventHandler* create();
+    static cc::IntrusivePtr<PUDoPlacementParticleEventHandler> create();
 
     /** Getters/Setters
      */

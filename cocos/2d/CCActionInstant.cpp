@@ -60,10 +60,9 @@ void ActionInstant::update(float /*time*/)
 // Show
 //
 
-Show* Show::create()
+cc::IntrusivePtr<Show> Show::create()
 {
-    Show* ret = new Show();
-    ret->autorelease();
+    cc::IntrusivePtr<Show> ret{new Show()};
     return ret;
 }
 
@@ -73,12 +72,12 @@ void Show::update(float time)
     _target->setVisible(true);
 }
 
-ActionInstant* Show::reverse() const
+cc::IntrusivePtr<Action> Show::reverse() const
 {
     return Hide::create();
 }
 
-Show* Show::clone() const
+cc::IntrusivePtr<Action> Show::clone() const
 {
     // no copy constructor
     return Show::create();
@@ -87,11 +86,9 @@ Show* Show::clone() const
 //
 // Hide
 //
-Hide* Hide::create()
+cc::IntrusivePtr<Hide> Hide::create()
 {
-    Hide* ret = new Hide();
-
-    ret->autorelease();
+    cc::IntrusivePtr<Hide> ret{new Hide()};
 
     return ret;
 }
@@ -102,12 +99,12 @@ void Hide::update(float time)
     _target->setVisible(false);
 }
 
-ActionInstant* Hide::reverse() const
+cc::IntrusivePtr<Action> Hide::reverse() const
 {
     return Show::create();
 }
 
-Hide* Hide::clone() const
+cc::IntrusivePtr<Action> Hide::clone() const
 {
     // no copy constructor
     return Hide::create();
@@ -116,10 +113,9 @@ Hide* Hide::clone() const
 //
 // ToggleVisibility
 //
-ToggleVisibility* ToggleVisibility::create()
+cc::IntrusivePtr<ToggleVisibility> ToggleVisibility::create()
 {
-    ToggleVisibility* ret = new ToggleVisibility();
-    ret->autorelease();
+    cc::IntrusivePtr<ToggleVisibility> ret{new ToggleVisibility()};
     return ret;
 }
 
@@ -129,12 +125,12 @@ void ToggleVisibility::update(float time)
     _target->setVisible(!_target->isVisible());
 }
 
-ToggleVisibility* ToggleVisibility::reverse() const
+cc::IntrusivePtr<Action> ToggleVisibility::reverse() const
 {
     return ToggleVisibility::create();
 }
 
-ToggleVisibility* ToggleVisibility::clone() const
+cc::IntrusivePtr<Action> ToggleVisibility::clone() const
 {
     // no copy constructor
     return ToggleVisibility::create();
@@ -143,16 +139,12 @@ ToggleVisibility* ToggleVisibility::clone() const
 //
 // Remove Self
 //
-RemoveSelf* RemoveSelf::create(bool isNeedCleanUp /*= true*/)
+cc::IntrusivePtr<RemoveSelf> RemoveSelf::create(bool isNeedCleanUp /*= true*/)
 {
-    RemoveSelf* ret = new RemoveSelf();
+    cc::IntrusivePtr<RemoveSelf> ret{new RemoveSelf()};
 
-    if (ret->init(isNeedCleanUp))
-        ret->autorelease();
-    else
-        CC_SAFE_DELETE(ret);
-
-    return ret;
+    if (!ret->init(isNeedCleanUp))
+        return nullptr;
 }
 
 bool RemoveSelf::init(bool isNeedCleanUp)
@@ -167,12 +159,12 @@ void RemoveSelf::update(float time)
     _target->removeFromParentAndCleanup(_isNeedCleanUp);
 }
 
-RemoveSelf* RemoveSelf::reverse() const
+cc::IntrusivePtr<Action> RemoveSelf::reverse() const
 {
     return RemoveSelf::create(_isNeedCleanUp);
 }
 
-RemoveSelf* RemoveSelf::clone() const
+cc::IntrusivePtr<Action> RemoveSelf::clone() const
 {
     // no copy constructor
     return RemoveSelf::create(_isNeedCleanUp);
@@ -182,17 +174,15 @@ RemoveSelf* RemoveSelf::clone() const
 // FlipX
 //
 
-FlipX* FlipX::create(bool x)
+cc::IntrusivePtr<FlipX> FlipX::create(bool x)
 {
-    FlipX* ret = new FlipX();
+    cc::IntrusivePtr<FlipX> ret{new FlipX()};
 
     if (ret->initWithFlipX(x))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -208,12 +198,12 @@ void FlipX::update(float time)
     static_cast<Sprite*>(_target)->setFlippedX(_flipX);
 }
 
-FlipX* FlipX::reverse() const
+cc::IntrusivePtr<Action> FlipX::reverse() const
 {
     return FlipX::create(!_flipX);
 }
 
-FlipX* FlipX::clone() const
+cc::IntrusivePtr<Action> FlipX::clone() const
 {
     // no copy constructor
     return FlipX::create(_flipX);
@@ -222,17 +212,15 @@ FlipX* FlipX::clone() const
 // FlipY
 //
 
-FlipY* FlipY::create(bool y)
+cc::IntrusivePtr<FlipY> FlipY::create(bool y)
 {
-    FlipY* ret = new FlipY();
+    cc::IntrusivePtr<FlipY> ret{new FlipY()};
 
     if (ret->initWithFlipY(y))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -248,12 +236,12 @@ void FlipY::update(float time)
     static_cast<Sprite*>(_target)->setFlippedY(_flipY);
 }
 
-FlipY* FlipY::reverse() const
+cc::IntrusivePtr<Action> FlipY::reverse() const
 {
     return FlipY::create(!_flipY);
 }
 
-FlipY* FlipY::clone() const
+cc::IntrusivePtr<Action> FlipY::clone() const
 {
     // no copy constructor
     return FlipY::create(_flipY);
@@ -263,17 +251,15 @@ FlipY* FlipY::clone() const
 // Place
 //
 
-Place* Place::create(const Vec2& pos)
+cc::IntrusivePtr<Place> Place::create(const Vec2& pos)
 {
-    Place* ret = new Place();
+    cc::IntrusivePtr<Place> ret{new Place()};
 
     if (ret->initWithPosition(pos))
     {
-        ret->autorelease();
         return ret;
     }
 
-    delete ret;
     return nullptr;
 }
 
@@ -283,13 +269,13 @@ bool Place::initWithPosition(const Vec2& pos)
     return true;
 }
 
-Place* Place::clone() const
+cc::IntrusivePtr<Action> Place::clone() const
 {
     // no copy constructor
     return Place::create(_position);
 }
 
-Place* Place::reverse() const
+cc::IntrusivePtr<Action> Place::reverse() const
 {
     // no reverse, just clone
     return this->clone();
@@ -305,17 +291,15 @@ void Place::update(float time)
 // CallFunc
 //
 
-CallFunc* CallFunc::create(const std::function<void()>& func)
+cc::IntrusivePtr<CallFunc> CallFunc::create(const std::function<void()>& func)
 {
-    CallFunc* ret = new CallFunc();
+    cc::IntrusivePtr<CallFunc> ret{new CallFunc()};
 
     if (ret->initWithFunction(func))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -325,18 +309,17 @@ bool CallFunc::initWithFunction(const std::function<void()>& func)
     return true;
 }
 
-CallFunc* CallFunc::clone() const
+cc::IntrusivePtr<Action> CallFunc::clone() const
 {
     // no copy constructor
-    auto a = new CallFunc();
+    cc::IntrusivePtr<CallFunc> a{new CallFunc()};
     if (_function)
         a->initWithFunction(_function);
 
-    a->autorelease();
     return a;
 }
 
-CallFunc* CallFunc::reverse() const
+cc::IntrusivePtr<Action> CallFunc::reverse() const
 {
     // no reverse here, just return a clone
     return this->clone();
@@ -360,17 +343,15 @@ void CallFunc::execute()
 // CallFuncN
 //
 
-CallFuncN* CallFuncN::create(const std::function<void(Node*)>& func)
+cc::IntrusivePtr<CallFuncN> CallFuncN::create(const std::function<void(Node*)>& func)
 {
-    auto ret = new CallFuncN();
+    cc::IntrusivePtr<CallFuncN> ret{new CallFuncN()};
 
     if (ret->initWithFunction(func))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -388,14 +369,13 @@ bool CallFuncN::initWithFunction(const std::function<void(Node*)>& func)
     return true;
 }
 
-CallFuncN* CallFuncN::clone() const
+cc::IntrusivePtr<Action> CallFuncN::clone() const
 {
     // no copy constructor
-    auto a = new CallFuncN();
+    cc::IntrusivePtr<CallFuncN> a{new CallFuncN()};
     if (_functionN)
         a->initWithFunction(_functionN);
 
-    a->autorelease();
     return a;
 }
 

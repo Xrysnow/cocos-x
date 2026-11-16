@@ -37,7 +37,7 @@ namespace ffmpeg
 		AudioFrameQueue() = default;
 		virtual ~AudioFrameQueue() = default;
 	public:
-		static AudioFrameQueue* create(bool autorelease = true);
+		static cc::IntrusivePtr<AudioFrameQueue> create();
 		AVMediaType getMediaType() override { return AVMEDIA_TYPE_AUDIO; }
 	};
 
@@ -47,7 +47,7 @@ namespace ffmpeg
 		VideoFrameQueue() = default;
 		virtual ~VideoFrameQueue() = default;
 	public:
-		static VideoFrameQueue* create(bool autorelease = true);
+		static cc::IntrusivePtr<VideoFrameQueue> create();
 		AVMediaType getMediaType() override { return AVMEDIA_TYPE_VIDEO; }
 	};
 }

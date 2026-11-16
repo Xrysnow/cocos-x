@@ -84,7 +84,7 @@ public:
     /**
      * Create and return a empty RadioButton instance pointer.
      */
-    static RadioButton* create();
+    static cc::IntrusivePtr<RadioButton> create();
 
     /**
      * Create a radio button with various images.
@@ -98,7 +98,7 @@ public:
      *
      * @return A RadioButton instance pointer.
      */
-    static RadioButton* create(std::string_view backGround,
+    static cc::IntrusivePtr<RadioButton> create(std::string_view backGround,
                                std::string_view backGroundSelected,
                                std::string_view cross,
                                std::string_view backGroundDisabled,
@@ -113,7 +113,7 @@ public:
      * @param texType  The texture's resource type in `Widget::TextureResType`.
      * @return A RadioButton instance pointer
      */
-    static RadioButton* create(std::string_view backGround,
+    static cc::IntrusivePtr<RadioButton> create(std::string_view backGround,
                                std::string_view cross,
                                TextureResType texType = TextureResType::LOCAL);
 
@@ -130,7 +130,7 @@ protected:
 
     virtual void dispatchSelectChangedEvent(bool selected) override;
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     ccRadioButtonCallback _radioButtonEventCallback;
@@ -177,7 +177,7 @@ public:
     /**
      * Create and return a empty RadioButtonGroup instance pointer.
      */
-    static RadioButtonGroup* create();
+    static cc::IntrusivePtr<RadioButtonGroup> create();
 
     /**
      * Add a callback function which would be called when radio button is selected or unselected.
@@ -274,7 +274,7 @@ public:
     virtual std::string getDescription() const override;
 
 protected:
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     void onChangedRadioButtonSelect(RadioButton* radioButton);

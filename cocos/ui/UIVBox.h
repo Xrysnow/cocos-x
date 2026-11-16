@@ -63,14 +63,14 @@ public:
      * Create a empty VBox instance.
      * @return A VBox instance pointer.
      */
-    static VBox* create();
+    static cc::IntrusivePtr<VBox> create();
 
     /**
      * Create a VBox with a certain size.
      *@param size The content size of the layout.
      *@return A VBox instance pointer.
      */
-    static VBox* create(const Vec2& size);
+    static cc::IntrusivePtr<VBox> create(const Vec2& size);
 
     // initializes state of widget.
     virtual bool init() override;

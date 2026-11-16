@@ -72,7 +72,7 @@ class CC_GUI_DLL LinearVerticalLayoutManager : public LayoutManager
 private:
     LinearVerticalLayoutManager(){}
     virtual ~LinearVerticalLayoutManager(){}
-    static LinearVerticalLayoutManager* create();
+    static cc::IntrusivePtr<LinearVerticalLayoutManager> create();
     virtual void doLayout(LayoutProtocol* layout) override;
 
     friend class Layout;
@@ -89,7 +89,7 @@ class CC_GUI_DLL LinearHorizontalLayoutManager : public LayoutManager
 private:
     LinearHorizontalLayoutManager(){}
     virtual ~LinearHorizontalLayoutManager(){}
-    static LinearHorizontalLayoutManager* create();
+    static cc::IntrusivePtr<LinearHorizontalLayoutManager> create();
     virtual void doLayout(LayoutProtocol* layout) override;
 
     friend class Layout;
@@ -106,7 +106,7 @@ class CC_GUI_DLL LinearCenterVerticalLayoutManager : public LayoutManager
 private:
     LinearCenterVerticalLayoutManager(){}
     virtual ~LinearCenterVerticalLayoutManager(){}
-    static LinearCenterVerticalLayoutManager* create();
+    static cc::IntrusivePtr<LinearCenterVerticalLayoutManager> create();
     virtual void doLayout(LayoutProtocol* layout) override;
 
     friend class Layout;
@@ -123,7 +123,7 @@ class CC_GUI_DLL LinearCenterHorizontalLayoutManager : public LayoutManager
 private:
     LinearCenterHorizontalLayoutManager(){}
     virtual ~LinearCenterHorizontalLayoutManager(){}
-    static LinearCenterHorizontalLayoutManager* create();
+    static cc::IntrusivePtr<LinearCenterHorizontalLayoutManager> create();
     virtual void doLayout(LayoutProtocol* layout) override;
 
     friend class Layout;
@@ -147,7 +147,7 @@ private:
         , _relativeWidgetLP(nullptr)
     {}
     virtual ~RelativeLayoutManager(){}
-    static RelativeLayoutManager* create();
+    static cc::IntrusivePtr<RelativeLayoutManager> create();
     virtual void doLayout(LayoutProtocol* layout) override;
 
     Vector<Widget*> getAllWidgets(LayoutProtocol* layout);

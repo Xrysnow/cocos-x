@@ -74,7 +74,7 @@ public:
      * @param capacity The capacity of children.
      * @return Return an autorelease object.
      */
-    static SpriteBatchNode* createWithTexture(Texture2D* tex, ssize_t capacity = DEFAULT_CAPACITY);
+    static cc::IntrusivePtr<SpriteBatchNode> createWithTexture(Texture2D* tex, ssize_t capacity = DEFAULT_CAPACITY);
 
     /** Creates a SpriteBatchNode with a file image (.png, .jpeg, .pvr, etc) and capacity of children.
      * The capacity will be increased in 33% in runtime if it runs out of space.
@@ -84,7 +84,7 @@ public:
      * @param capacity The capacity of children.
      * @return Return an autorelease object.
      */
-    static SpriteBatchNode* create(std::string_view fileImage, ssize_t capacity = DEFAULT_CAPACITY);
+    static cc::IntrusivePtr<SpriteBatchNode> create(std::string_view fileImage, ssize_t capacity = DEFAULT_CAPACITY);
 
     /** Returns the TextureAtlas object.
      *

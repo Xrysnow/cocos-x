@@ -72,7 +72,7 @@ public:
      *
      * @return A LayoutManager descendants instance.
      */
-    virtual LayoutManager* createLayoutManager() = 0;
+    virtual cc::IntrusivePtr<LayoutManager> createLayoutManager() = 0;
 
     /**
      * @brief Return the content size of layout.
@@ -164,7 +164,7 @@ public:
     /**
      * Create a empty layout.
      */
-    static Layout* create();
+    static cc::IntrusivePtr<Layout> create();
 
     /**
      * Sets a background image for layout.
@@ -476,7 +476,7 @@ protected:
     void addBackGroundImage();
 
     void supplyTheLayoutParameterLackToChild(Widget* child);
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void copyClonedWidgetChildren(Widget* model) override;
 
@@ -487,7 +487,7 @@ protected:
     const Rect& getClippingRect();
 
     virtual void doLayout() override;
-    virtual LayoutManager* createLayoutManager() override;
+    virtual cc::IntrusivePtr<LayoutManager> createLayoutManager() override;
     virtual Vec2 getLayoutContentSize() const override;
     virtual const Vector<Node*>& getLayoutElements() const override;
 

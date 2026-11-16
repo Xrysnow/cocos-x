@@ -51,13 +51,13 @@ public:
      *
      * @return An autorelease ClippingNode.
      */
-    static ClippingNode* create();
+    static cc::IntrusivePtr<ClippingNode> create();
 
     /** Creates and initializes a clipping node with an other node as its stencil.
      * The stencil node will be retained.
      * @param stencil The stencil node.
      */
-    static ClippingNode* create(Node* stencil);
+    static cc::IntrusivePtr<ClippingNode> create(Node* stencil);
 
     /** The Node to use as a stencil to do the clipping.
      * The stencil node will be retained.

@@ -38,7 +38,7 @@ public:
     /**
      * @internal
      */
-    static CCArmatureDisplay* create();
+    static cc::IntrusivePtr<CCArmatureDisplay> create();
 
 public:
     bool debugDraw;
@@ -57,7 +57,7 @@ public:
         , _armature(nullptr)
         , _dispatcher(nullptr)
     {
-        _dispatcher = new cocos2d::EventDispatcher();
+        _dispatcher = cc::IntrusivePtr<cocos2d::EventDispatcher>{new cocos2d::EventDispatcher()}.detach();
         setEventDispatcher(_dispatcher);
         // _dispatcher->setEnabled(true);
     }
@@ -118,7 +118,7 @@ class DBCCSprite : public cocos2d::Sprite
     DRAGONBONES_DISALLOW_COPY_AND_ASSIGN(DBCCSprite)
 
 public:
-    static DBCCSprite* create();
+    static cc::IntrusivePtr<DBCCSprite> create();
 
 protected:
     DBCCSprite() {}

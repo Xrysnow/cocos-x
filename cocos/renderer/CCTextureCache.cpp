@@ -352,25 +352,24 @@ void TextureCache::addImageAsyncCallBack(float /*dt*/)
             {
                 Image* image = &(asyncStruct->image);
                 // generate texture in render thread
-                texture = new Texture2D();
+                cc::IntrusivePtr<Texture2D> newTexture{new Texture2D()};
 
-                texture->initWithImage(image, asyncStruct->pixelFormat);
+                newTexture->initWithImage(image, asyncStruct->pixelFormat);
                 // parse 9-patch info
-                this->parseNinePatchImage(image, texture, asyncStruct->filename);
+                this->parseNinePatchImage(image, newTexture.get(), asyncStruct->filename);
 #if CC_ENABLE_CACHE_TEXTURE_DATA
                 // cache the texture file name
-                VolatileTextureMgr::addImageTexture(texture, asyncStruct->filename);
+                VolatileTextureMgr::addImageTexture(newTexture.get(), asyncStruct->filename);
 #endif
-                // cache the texture. retain it, since it is added in the map
-                _textures.emplace(asyncStruct->filename, texture);
-                texture->retain();
+                // The raw cache takes this reference after initialization.
+                _textures.emplace(asyncStruct->filename, newTexture.get());
 
-                texture->autorelease();
                 // ETC1 ALPHA supports.
                 if (asyncStruct->imageAlpha.getFileType() == Image::Format::ETC1)
                 {
-                    texture->updateWithImage(&asyncStruct->imageAlpha, asyncStruct->pixelFormat, 1);
+                    newTexture->updateWithImage(&asyncStruct->imageAlpha, asyncStruct->pixelFormat, 1);
                 }
+                texture = newTexture.detach();
             }
             else
             {
@@ -405,7 +404,7 @@ Texture2D* TextureCache::addImage(std::string_view path)
 Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
 {
     Texture2D* texture = nullptr;
-    Image* image       = nullptr;
+    cc::IntrusivePtr<Image> image;
     // Split up directory and filename
     // MUTEX:
     // Needed since addImageAsync calls this method from a different thread
@@ -424,21 +423,21 @@ Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
         // all images are handled by UIImage except PVR extension that is handled by our own handler
         do
         {
-            image = new Image();
+            image = cc::IntrusivePtr<Image>{new Image()};
 
             bool bRet = image->initWithImageFile(fullpath);
             CC_BREAK_IF(!bRet);
 
-            texture = new Texture2D();
+            cc::IntrusivePtr<Texture2D> newTexture{new Texture2D()};
 
-            if (texture->initWithImage(image, format))
+            if (newTexture->initWithImage(image, format))
             {
 #if CC_ENABLE_CACHE_TEXTURE_DATA
                 // cache the texture file name
-                VolatileTextureMgr::addImageTexture(texture, fullpath);
+                VolatileTextureMgr::addImageTexture(newTexture.get(), fullpath);
 #endif
-                // texture already retained, no need to re-retain it
-                _textures.emplace(fullpath, texture);
+                // The raw cache takes this reference after initialization.
+                _textures.emplace(fullpath, newTexture.get());
 
                 //-- ANDROID ETC1 ALPHA SUPPORTS.
                 std::string alphaFullPath{path};
@@ -449,23 +448,21 @@ Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
                     Image imageAlpha;
                     if (imageAlpha.initWithImageFile(alphaFullPath))
                     {
-                        texture->updateWithImage(&imageAlpha, format, 1);
+                        newTexture->updateWithImage(&imageAlpha, format, 1);
                     }
                 }
 
                 // parse 9-patch info
-                this->parseNinePatchImage(image, texture, path);
+                this->parseNinePatchImage(image, newTexture.get(), path);
+                texture = newTexture.detach();
             }
             else
             {
                 CCLOG("cocos2d: Couldn't create texture for file:%s in TextureCache", path.data());
-                CC_SAFE_RELEASE(texture);
                 texture = nullptr;
             }
         } while (0);
     }
-
-    CC_SAFE_RELEASE(image);
 
     return texture;
 }
@@ -501,15 +498,15 @@ Texture2D* TextureCache::addImage(Image* image, std::string_view key, PixelForma
             break;
         }
 
-        texture = new Texture2D();
-        if (texture->initWithImage(image, format))
+        cc::IntrusivePtr<Texture2D> owner{new Texture2D()};
+        if (owner->initWithImage(image, format))
         {
-            _textures.emplace(key, texture);
+            // The map owns exactly this share; emplace may allocate/throw.
+            _textures.emplace(key, owner.get());
+            texture = owner.detach();
         }
         else
         {
-            CC_SAFE_RELEASE(texture);
-            texture = nullptr;
             CCLOG("cocos2d: initWithImage failed!");
         }
 
@@ -894,13 +891,12 @@ void VolatileTextureMgr::reloadTexture(Texture2D* texture, std::string_view file
     if (!texture)
         return;
 
-    Image* image = new Image();
+    cc::IntrusivePtr<Image> image{new Image()};
     Data data    = FileUtils::getInstance()->getDataFromFile(filename);
 
     if (image->initWithImageData(data.getBytes(), data.getSize()))
-        texture->initWithImage(image, pixelFormat);
+        texture->initWithImage(image.get(), pixelFormat);
 
-    CC_SAFE_DELETE(image);
 }
 
 #endif  // CC_ENABLE_CACHE_TEXTURE_DATA

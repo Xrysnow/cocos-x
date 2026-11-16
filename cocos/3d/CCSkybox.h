@@ -58,7 +58,7 @@ public:
      @param negative_z texture for the rear side of the texture cube face.
      @return  A new skybox inited with given parameters.
      */
-    static Skybox* create(std::string_view positive_x,
+    static cc::IntrusivePtr<Skybox> create(std::string_view positive_x,
                           std::string_view negative_x,
                           std::string_view positive_y,
                           std::string_view negative_y,

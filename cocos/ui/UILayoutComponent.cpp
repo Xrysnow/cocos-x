@@ -64,14 +64,13 @@ LayoutComponent* LayoutComponent::bindLayoutComponent(Node* node)
     if (layout != nullptr)
         return layout;
 
-    layout = new LayoutComponent();
+    cc::IntrusivePtr<LayoutComponent> owner{new LayoutComponent()};
+    layout = owner.get();
     if (layout->init())
     {
-        layout->autorelease();
         node->addComponent(layout);
         return layout;
     }
-    CC_SAFE_DELETE(layout);
     return nullptr;
 }
 

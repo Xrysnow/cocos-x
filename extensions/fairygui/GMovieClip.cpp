@@ -23,10 +23,12 @@ GMovieClip::~GMovieClip()
 
 void GMovieClip::handleInit()
 {
-    _content = FUISprite::create();
+    cc::IntrusivePtr<cocos2d::Sprite> content;
+    cc::IntrusivePtr<ActionMovieClip> playAction;
+    _content = (content = FUISprite::create()).get();
     _content->retain();
 
-    _playAction = ActionMovieClip::create(nullptr);
+    _playAction = (playAction = ActionMovieClip::create(nullptr)).get();
     _playAction->retain();
 
     _displayObject = _content;
@@ -195,11 +197,10 @@ ActionMovieClip::~ActionMovieClip()
     CC_SAFE_RELEASE(_animation);
 }
 
-ActionMovieClip* ActionMovieClip::create(cocos2d::Animation* animation, float repeatDelay, bool swing)
+cc::IntrusivePtr<ActionMovieClip> ActionMovieClip::create(cocos2d::Animation* animation, float repeatDelay, bool swing)
 {
-    ActionMovieClip* action = new ActionMovieClip();
+    cc::IntrusivePtr<ActionMovieClip> action{new ActionMovieClip()};
     action->setAnimation(animation, repeatDelay, swing);
-    action->autorelease();
     return action;
 }
 
@@ -305,15 +306,15 @@ void ActionMovieClip::startWithTarget(Node* target)
     drawFrame();
 }
 
-ActionMovieClip* ActionMovieClip::reverse() const
+cc::IntrusivePtr<Action> ActionMovieClip::reverse() const
 {
     CC_ASSERT(0);
     return nullptr;
 }
 
-ActionMovieClip* ActionMovieClip::clone() const
+cc::IntrusivePtr<Action> ActionMovieClip::clone() const
 {
-    return ActionMovieClip::create(_animation->clone(), _repeatDelay, _swing);
+    return ActionMovieClip::create(_animation->clone().get(), _repeatDelay, _swing);
 }
 
 void ActionMovieClip::setFrame(int value)

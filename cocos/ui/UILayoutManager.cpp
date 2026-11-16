@@ -31,10 +31,9 @@ NS_CC_BEGIN
 namespace ui
 {
 
-LinearHorizontalLayoutManager* LinearHorizontalLayoutManager::create()
+cc::IntrusivePtr<LinearHorizontalLayoutManager> LinearHorizontalLayoutManager::create()
 {
-    LinearHorizontalLayoutManager* ret = new LinearHorizontalLayoutManager();
-    ret->autorelease();
+    cc::IntrusivePtr<LinearHorizontalLayoutManager> ret{new LinearHorizontalLayoutManager()};
     return ret;
 }
 
@@ -81,10 +80,9 @@ void LinearHorizontalLayoutManager::doLayout(LayoutProtocol* layout)
 }
 
 // LinearVerticalLayoutManager
-LinearVerticalLayoutManager* LinearVerticalLayoutManager::create()
+cc::IntrusivePtr<LinearVerticalLayoutManager> LinearVerticalLayoutManager::create()
 {
-    LinearVerticalLayoutManager* ret = new LinearVerticalLayoutManager();
-    ret->autorelease();
+    cc::IntrusivePtr<LinearVerticalLayoutManager> ret{new LinearVerticalLayoutManager()};
     return ret;
 }
 
@@ -134,10 +132,9 @@ void LinearVerticalLayoutManager::doLayout(LayoutProtocol* layout)
 }
 
 // LinearCenterVerticalLayoutManager
-LinearCenterVerticalLayoutManager* LinearCenterVerticalLayoutManager::create()
+cc::IntrusivePtr<LinearCenterVerticalLayoutManager> LinearCenterVerticalLayoutManager::create()
 {
-    auto* ret = new LinearCenterVerticalLayoutManager();
-    ret->autorelease();
+    cc::IntrusivePtr<LinearCenterVerticalLayoutManager> ret{new LinearCenterVerticalLayoutManager()};
     return ret;
 }
 
@@ -205,10 +202,9 @@ void LinearCenterVerticalLayoutManager::doLayout(LayoutProtocol* layout)
 }
 
 // LinearCenterHorizontalLayoutManager
-LinearCenterHorizontalLayoutManager* LinearCenterHorizontalLayoutManager::create()
+cc::IntrusivePtr<LinearCenterHorizontalLayoutManager> LinearCenterHorizontalLayoutManager::create()
 {
-    auto* ret = new LinearCenterHorizontalLayoutManager();
-    ret->autorelease();
+    cc::IntrusivePtr<LinearCenterHorizontalLayoutManager> ret{new LinearCenterHorizontalLayoutManager()};
     return ret;
 }
 
@@ -274,10 +270,9 @@ void LinearCenterHorizontalLayoutManager::doLayout(LayoutProtocol* layout)
 
 // RelativeLayoutManager
 
-RelativeLayoutManager* RelativeLayoutManager::create()
+cc::IntrusivePtr<RelativeLayoutManager> RelativeLayoutManager::create()
 {
-    RelativeLayoutManager* ret = new RelativeLayoutManager();
-    ret->autorelease();
+    cc::IntrusivePtr<RelativeLayoutManager> ret{new RelativeLayoutManager()};
     return ret;
 }
 

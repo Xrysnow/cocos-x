@@ -80,7 +80,7 @@ public:
      * @js NA
      * @lua NA
      */
-    ProfilingTimer* createAndAddTimerWithName(const char* timerName);
+    cc::IntrusivePtr<ProfilingTimer> createAndAddTimerWithName(const char* timerName);
     /** releases a timer
      * @js NA
      * @lua NA

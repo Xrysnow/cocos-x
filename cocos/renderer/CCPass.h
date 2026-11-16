@@ -61,9 +61,9 @@ class CC_DLL Pass : public Ref
 public:
     /** Creates a Pass with a GLProgramState.
      */
-    static Pass* createWithProgramState(Technique* parent, backend::ProgramState* programState);
+    static cc::IntrusivePtr<Pass> createWithProgramState(Technique* parent, backend::ProgramState* programState);
 
-    static Pass* create(Technique* parent);
+    static cc::IntrusivePtr<Pass> create(Technique* parent);
 
     /** Returns the ProgramState */
     backend::ProgramState* getProgramState() const;
@@ -101,7 +101,7 @@ public:
 
     /**
      * Returns a clone (deep-copy) of this instance */
-    Pass* clone() const;
+    cc::IntrusivePtr<Pass> clone() const;
 
     void setTechnique(Technique* technique);
 

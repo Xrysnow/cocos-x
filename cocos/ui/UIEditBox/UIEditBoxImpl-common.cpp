@@ -89,16 +89,18 @@ bool EditBoxImplCommon::initWithSize(const Vec2& size)
 
 void EditBoxImplCommon::initInactiveLabels(const Vec2& size)
 {
+    cc::IntrusivePtr<Label> label;
+    cc::IntrusivePtr<Label> labelPlaceHolder;
     const char* pDefaultFontName = this->getNativeDefaultFontName();
 
-    _label = Label::create();
+    _label = (label = Label::create()).get();
     _label->setAnchorPoint(Vec2(0.0f, 1.0f));
     _label->setOverflow(Label::Overflow::CLAMP);
     _label->setVisible(false);
     _label->setGlobalZOrder(_editBox->getGlobalZOrder());
     _editBox->addChild(_label, kLabelZOrder);
 
-    _labelPlaceHolder = Label::create();
+    _labelPlaceHolder = (labelPlaceHolder = Label::create()).get();
     _labelPlaceHolder->setAnchorPoint(Vec2(0.0f, 1.0f));
     _labelPlaceHolder->setTextColor(Color4B::GRAY);
     _labelPlaceHolder->enableWrap(false);

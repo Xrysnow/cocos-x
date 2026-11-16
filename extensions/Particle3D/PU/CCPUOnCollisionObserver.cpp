@@ -34,10 +34,9 @@ bool PUOnCollisionObserver::observe(PUParticle3D* particle, float /*timeElapsed*
     return particle->hasEventFlags(PUParticle3D::PEF_COLLIDED);
 }
 
-PUOnCollisionObserver* PUOnCollisionObserver::create()
+cc::IntrusivePtr<PUOnCollisionObserver> PUOnCollisionObserver::create()
 {
-    auto pco = new PUOnCollisionObserver();
-    pco->autorelease();
+    cc::IntrusivePtr<PUOnCollisionObserver> pco{new PUOnCollisionObserver()};
     return pco;
 }
 

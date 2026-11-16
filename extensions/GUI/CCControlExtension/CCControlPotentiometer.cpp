@@ -41,27 +41,23 @@ ControlPotentiometer::~ControlPotentiometer()
     CC_SAFE_RELEASE(_progressTimer);
 }
 
-ControlPotentiometer* ControlPotentiometer::create(const char* backgroundFile,
+cc::IntrusivePtr<ControlPotentiometer> ControlPotentiometer::create(const char* backgroundFile,
                                                    const char* progressFile,
                                                    const char* thumbFile)
 {
-    ControlPotentiometer* pRet = new ControlPotentiometer();
+    cc::IntrusivePtr<ControlPotentiometer> pRet{new ControlPotentiometer()};
     // Prepare track for potentiometer
-    Sprite* backgroundSprite = Sprite::create(backgroundFile);
+    cc::IntrusivePtr<Sprite> backgroundSprite = Sprite::create(backgroundFile);
 
     // Prepare thumb for potentiometer
-    Sprite* thumbSprite = Sprite::create(thumbFile);
+    cc::IntrusivePtr<Sprite> thumbSprite = Sprite::create(thumbFile);
 
     // Prepare progress for potentiometer
-    ProgressTimer* progressTimer = ProgressTimer::create(Sprite::create(progressFile));
+    cc::IntrusivePtr<ProgressTimer> progressTimer = ProgressTimer::create(Sprite::create(progressFile).get());
     // progressTimer.type              = ProgressTimer::RADIALCW;
-    if (pRet->initWithTrackSprite_ProgressTimer_ThumbSprite(backgroundSprite, progressTimer, thumbSprite))
+    if (!(pRet->initWithTrackSprite_ProgressTimer_ThumbSprite(backgroundSprite, progressTimer, thumbSprite)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }

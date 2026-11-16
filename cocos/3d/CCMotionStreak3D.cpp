@@ -57,33 +57,29 @@ MotionStreak3D::~MotionStreak3D()
     CC_SAFE_RELEASE(_texture);
 }
 
-MotionStreak3D* MotionStreak3D::create(float fade,
+cc::IntrusivePtr<MotionStreak3D> MotionStreak3D::create(float fade,
                                        float minSeg,
                                        float stroke,
                                        const Color3B& color,
                                        std::string_view path)
 {
-    MotionStreak3D* ret = new MotionStreak3D();
+    cc::IntrusivePtr<MotionStreak3D> ret{new MotionStreak3D()};
     if (ret && ret->initWithFade(fade, minSeg, stroke, color, path))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-MotionStreak3D* MotionStreak3D::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
+cc::IntrusivePtr<MotionStreak3D> MotionStreak3D::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
 {
-    MotionStreak3D* ret = new MotionStreak3D();
+    cc::IntrusivePtr<MotionStreak3D> ret{new MotionStreak3D()};
     if (ret && ret->initWithFade(fade, minSeg, stroke, color, texture))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -122,7 +118,7 @@ bool MotionStreak3D::initWithFade(float fade, float minSeg, float stroke, const 
 
     // shader state
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-    setProgramState(new backend::ProgramState(program), false);
+    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
 
     _customCommand.getPipelineDescriptor().programState = _programState;
 

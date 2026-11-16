@@ -41,10 +41,9 @@ void PUDoFreezeEventHandler::handle(PUParticleSystem3D* /*particleSystem*/,
     particle->setFreezed(true);
 }
 
-PUDoFreezeEventHandler* PUDoFreezeEventHandler::create()
+cc::IntrusivePtr<PUDoFreezeEventHandler> PUDoFreezeEventHandler::create()
 {
-    auto peh = new PUDoFreezeEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoFreezeEventHandler> peh{new PUDoFreezeEventHandler()};
     return peh;
 }
 

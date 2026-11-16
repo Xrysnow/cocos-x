@@ -70,7 +70,7 @@ public:
      * Create a empty Button.
      *@return A empty Button instance.
      */
-    static Button* create();
+    static cc::IntrusivePtr<Button> create();
 
     /**
      * Create a button with custom textures.
@@ -80,7 +80,7 @@ public:
      * @param texType    @see `TextureResType`
      * @return a Button instance.
      */
-    static Button* create(std::string_view normalImage,
+    static cc::IntrusivePtr<Button> create(std::string_view normalImage,
                           std::string_view selectedImage = "",
                           std::string_view disableImage  = "",
                           TextureResType texType         = TextureResType::LOCAL);
@@ -345,7 +345,7 @@ protected:
     virtual void createTitleRenderer();
     bool createTitleRendererIfNull();
 
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     virtual Vec2 getNormalSize() const;

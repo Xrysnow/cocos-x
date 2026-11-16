@@ -25,14 +25,14 @@ THE SOFTWARE.
 ****************************************************************************/
 #include "base/CCAutoreleasePool.h"
 #include "base/ccMacros.h"
+#include <exception>
+#include <stdexcept>
+#include <cstdio>
 
 NS_CC_BEGIN
 
 AutoreleasePool::AutoreleasePool()
     : _name("")
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    , _isClearing(false)
-#endif
 {
     _managedObjectArray.reserve(150);
     PoolManager::getInstance()->push(this);
@@ -40,9 +40,6 @@ AutoreleasePool::AutoreleasePool()
 
 AutoreleasePool::AutoreleasePool(std::string_view name)
     : _name(name)
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    , _isClearing(false)
-#endif
 {
     _managedObjectArray.reserve(150);
     PoolManager::getInstance()->push(this);
@@ -51,40 +48,72 @@ AutoreleasePool::AutoreleasePool(std::string_view name)
 AutoreleasePool::~AutoreleasePool()
 {
     CCLOGINFO("deallocing AutoreleasePool: %p", this);
-    clear();
-
-    PoolManager::getInstance()->pop();
+    // Destructors may enqueue another batch. Never discard those references at
+    // shutdown, and never hang forever on a destructor that perpetually enqueues.
+    unsigned int batches = 0;
+    while (!_managedObjectArray.empty())
+    {
+        if (++batches > 1024)
+        {
+            std::fprintf(stderr, "AutoreleasePool '%s': shutdown exceeded 1024 batches\n", _name.c_str());
+            std::terminate();
+        }
+        clear();
+    }
+    auto* manager = PoolManager::getInstanceIfExists();
+    CCASSERT(manager, "AutoreleasePool outlived its manager");
+    if (manager) manager->pop();
 }
 
 void AutoreleasePool::addObject(Ref* object)
 {
+    if (!object || object->getReferenceCount() == 0)
+        throw std::logic_error("AutoreleasePool requires an existing reference");
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    if (object->getReferenceCount() <= PoolManager::getInstance()->pendingReferences(object))
+        throw std::logic_error("AutoreleasePool registration has no untransferred reference");
+#endif
     _managedObjectArray.emplace_back(object);
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    try { ++_pendingReferences[object]; }
+    catch (...) { _managedObjectArray.pop_back(); throw; }
+#endif
 }
 
 void AutoreleasePool::clear()
 {
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    if (_isClearing)
+    {
+        std::fprintf(stderr, "AutoreleasePool '%s': recursive clear deferred\n", _name.c_str());
+        return;
+    }
     _isClearing = true;
-#endif
     std::vector<Ref*> releasings;
     releasings.swap(_managedObjectArray);
     for (const auto& obj : releasings)
     {
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+        auto entry = _pendingReferences.find(obj);
+        CCASSERT(entry != _pendingReferences.end(), "Missing pool reference record");
+        if (--entry->second == 0) _pendingReferences.erase(entry);
+#endif
         obj->release();
     }
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
     _isClearing = false;
-#endif
 }
 
 bool AutoreleasePool::contains(Ref* object) const
 {
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+    return _pendingReferences.find(object) != _pendingReferences.end();
+#else
     for (const auto& obj : _managedObjectArray)
     {
         if (obj == object)
             return true;
     }
     return false;
+#endif
 }
 
 void AutoreleasePool::dump()
@@ -119,6 +148,21 @@ PoolManager* PoolManager::getInstance()
 
 void PoolManager::destroyInstance()
 {
+    if (!s_singleInstance) return;
+    if (s_singleInstance->_isDestroying)
+    {
+        std::fputs("PoolManager: recursive destruction ignored\n", stderr);
+        return;
+    }
+    for (const auto* pool : s_singleInstance->_releasePoolStack)
+    {
+        if (pool->_isClearing)
+        {
+            std::fputs("PoolManager: destruction during clear rejected\n", stderr);
+            return;
+        }
+    }
+    s_singleInstance->_isDestroying = true;
     delete s_singleInstance;
     s_singleInstance = nullptr;
 }
@@ -154,6 +198,19 @@ bool PoolManager::isObjectInPools(Ref* obj) const
     }
     return false;
 }
+
+#if defined(CC_DEBUG) && (CC_DEBUG > 0)
+unsigned int PoolManager::pendingReferences(Ref* object) const
+{
+    unsigned int count = 0;
+    for (const auto* pool : _releasePoolStack)
+    {
+        auto entry = pool->_pendingReferences.find(object);
+        if (entry != pool->_pendingReferences.end()) count += entry->second;
+    }
+    return count;
+}
+#endif
 
 void PoolManager::push(AutoreleasePool* pool)
 {

@@ -39,7 +39,7 @@ public:
     static const float DEFAULT_FREQ_MIN;
     static const float DEFAULT_FREQ_MAX;
 
-    static PUSineForceAffector* create();
+    static cc::IntrusivePtr<PUSineForceAffector> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

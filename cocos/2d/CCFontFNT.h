@@ -115,7 +115,7 @@ public:
     std::string description() const;
 
     /** allocates a BMFontConfiguration with a FNT file */
-    static BMFontConfiguration* create(std::string_view FNTfile);
+    static cc::IntrusivePtr<BMFontConfiguration> create(std::string_view FNTfile);
 
     /** initializes a BitmapFontConfiguration with a FNT file */
     bool initWithFNTfile(std::string_view FNTfile);
@@ -145,11 +145,11 @@ class CC_DLL FontFNT : public Font
 {
 
 public:
-    static FontFNT* create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated);
-    static FontFNT* create(std::string_view fntFilePath, std::string_view subTextureKey);
-    static FontFNT* create(std::string_view fntFilePath);
+    static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated);
+    static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, std::string_view subTextureKey);
+    static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath);
 
-    CC_DEPRECATED_ATTRIBUTE static FontFNT* create(std::string_view fntFilePath, const Vec2& imageOffset = Vec2::ZERO);
+    CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, const Vec2& imageOffset = Vec2::ZERO);
 
     /** Purges the cached data.
     Removes from memory the cached configurations and the atlas name dictionary.

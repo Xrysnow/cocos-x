@@ -88,7 +88,7 @@ bool ControlStepper::initWithMinusSpriteAndPlusSprite(Sprite* minusSprite, Sprit
         _minusSprite->setPosition(minusSprite->getContentSize().width / 2, minusSprite->getContentSize().height / 2);
         this->addChild(_minusSprite);
 
-        this->setMinusLabel(Label::createWithSystemFont("-", ControlStepperLabelFont, 40));
+        this->setMinusLabel(Label::createWithSystemFont("-", ControlStepperLabelFont, 40).get());
         _minusLabel->setColor(ControlStepperLabelColorDisabled);
         _minusLabel->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
         _minusLabel->setPosition(_minusSprite->getContentSize().width / 2, _minusSprite->getContentSize().height / 2);
@@ -100,7 +100,7 @@ bool ControlStepper::initWithMinusSpriteAndPlusSprite(Sprite* minusSprite, Sprit
                                  minusSprite->getContentSize().height / 2);
         this->addChild(_plusSprite);
 
-        this->setPlusLabel(Label::createWithSystemFont("+", ControlStepperLabelFont, 40));
+        this->setPlusLabel(Label::createWithSystemFont("+", ControlStepperLabelFont, 40).get());
         _plusLabel->setColor(ControlStepperLabelColorEnabled);
         _plusLabel->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
         _plusLabel->setPosition(_plusSprite->getContentSize().width / 2, _plusSprite->getContentSize().height / 2);
@@ -115,16 +115,12 @@ bool ControlStepper::initWithMinusSpriteAndPlusSprite(Sprite* minusSprite, Sprit
     return false;
 }
 
-ControlStepper* ControlStepper::create(Sprite* minusSprite, Sprite* plusSprite)
+cc::IntrusivePtr<ControlStepper> ControlStepper::create(Sprite* minusSprite, Sprite* plusSprite)
 {
-    ControlStepper* pRet = new ControlStepper();
-    if (pRet->initWithMinusSpriteAndPlusSprite(minusSprite, plusSprite))
+    cc::IntrusivePtr<ControlStepper> pRet{new ControlStepper()};
+    if (!(pRet->initWithMinusSpriteAndPlusSprite(minusSprite, plusSprite)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }

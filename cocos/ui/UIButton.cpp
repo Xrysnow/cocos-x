@@ -80,30 +80,26 @@ Button::Button()
 
 Button::~Button() {}
 
-Button* Button::create()
+cc::IntrusivePtr<Button> Button::create()
 {
-    Button* widget = new Button();
+    cc::IntrusivePtr<Button> widget{new Button()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-Button* Button::create(std::string_view normalImage,
+cc::IntrusivePtr<Button> Button::create(std::string_view normalImage,
                        std::string_view selectedImage,
                        std::string_view disableImage,
                        TextureResType texType)
 {
-    Button* btn = new Button;
+    cc::IntrusivePtr<Button> btn{new Button};
     if (btn->init(normalImage, selectedImage, disableImage, texType))
     {
-        btn->autorelease();
         return btn;
     }
-    CC_SAFE_DELETE(btn);
     return nullptr;
 }
 
@@ -135,9 +131,12 @@ bool Button::init()
 
 void Button::initRenderer()
 {
-    _buttonNormalRenderer   = Scale9Sprite::create();
-    _buttonClickedRenderer  = Scale9Sprite::create();
-    _buttonDisabledRenderer = Scale9Sprite::create();
+    cc::IntrusivePtr<Scale9Sprite> buttonNormalRenderer;
+    cc::IntrusivePtr<Scale9Sprite> buttonClickedRenderer;
+    cc::IntrusivePtr<Scale9Sprite> buttonDisabledRenderer;
+    _buttonNormalRenderer   = (buttonNormalRenderer = Scale9Sprite::create()).get();
+    _buttonClickedRenderer  = (buttonClickedRenderer = Scale9Sprite::create()).get();
+    _buttonDisabledRenderer = (buttonDisabledRenderer = Scale9Sprite::create()).get();
     _buttonClickedRenderer->setRenderingType(Scale9Sprite::RenderingType::SIMPLE);
     _buttonNormalRenderer->setRenderingType(Scale9Sprite::RenderingType::SIMPLE);
     _buttonDisabledRenderer->setRenderingType(Scale9Sprite::RenderingType::SIMPLE);
@@ -160,7 +159,8 @@ bool Button::createTitleRendererIfNull()
 
 void Button::createTitleRenderer()
 {
-    _titleRenderer = Label::create();
+    cc::IntrusivePtr<Label> titleRenderer;
+    _titleRenderer = (titleRenderer = Label::create()).get();
     _titleRenderer->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
     addProtectedChild(_titleRenderer, TITLE_RENDERER_Z, -1);
 }
@@ -489,7 +489,7 @@ void Button::onPressStateChangedToNormal()
                 _titleRenderer->stopAllActions();
                 if (_unifySize)
                 {
-                    Action* zoomTitleAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f, 1.0f);
+                    cc::IntrusivePtr<Action> zoomTitleAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f, 1.0f);
                     _titleRenderer->runAction(zoomTitleAction);
                 }
                 else
@@ -529,7 +529,7 @@ void Button::onPressStateChangedToPressed()
             _buttonNormalRenderer->stopAllActions();
             _buttonClickedRenderer->stopAllActions();
 
-            Action* zoomAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f + _zoomScale, 1.0f + _zoomScale);
+            cc::IntrusivePtr<Action> zoomAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f + _zoomScale, 1.0f + _zoomScale);
             _buttonClickedRenderer->runAction(zoomAction);
 
             _buttonNormalRenderer->setScale(1.0f + _zoomScale, 1.0f + _zoomScale);
@@ -537,7 +537,7 @@ void Button::onPressStateChangedToPressed()
             if (nullptr != _titleRenderer)
             {
                 _titleRenderer->stopAllActions();
-                Action* zoomTitleAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f + _zoomScale, 1.0f + _zoomScale);
+                cc::IntrusivePtr<Action> zoomTitleAction = ScaleTo::create(ZOOM_ACTION_TIME_STEP, 1.0f + _zoomScale, 1.0f + _zoomScale);
                 _titleRenderer->runAction(zoomTitleAction);
             }
         }
@@ -865,7 +865,7 @@ std::string Button::getDescription() const
     return "Button";
 }
 
-Widget* Button::createCloneInstance()
+cc::IntrusivePtr<Widget> Button::createCloneInstance()
 {
     return Button::create();
 }

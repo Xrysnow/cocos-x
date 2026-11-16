@@ -104,10 +104,9 @@ void PUVelocityMatchingAffector::updatePUAffector(PUParticle3D* /*particle*/, fl
     //}
 }
 
-PUVelocityMatchingAffector* PUVelocityMatchingAffector::create()
+cc::IntrusivePtr<PUVelocityMatchingAffector> PUVelocityMatchingAffector::create()
 {
-    auto pvma = new PUVelocityMatchingAffector();
-    pvma->autorelease();
+    cc::IntrusivePtr<PUVelocityMatchingAffector> pvma{new PUVelocityMatchingAffector()};
     return pvma;
 }
 

@@ -39,7 +39,7 @@ public:
     // Constants
     static const float DEFAULT_RADIUS;
 
-    static PUSphereCollider* create();
+    static cc::IntrusivePtr<PUSphereCollider> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

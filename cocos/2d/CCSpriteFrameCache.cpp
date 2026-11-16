@@ -51,7 +51,7 @@ SpriteFrameCache* SpriteFrameCache::getInstance()
 {
     if (!_sharedSpriteFrameCache)
     {
-        _sharedSpriteFrameCache = new SpriteFrameCache();
+        _sharedSpriteFrameCache = cc::IntrusivePtr<SpriteFrameCache>{new SpriteFrameCache()}.detach();
         _sharedSpriteFrameCache->init();
     }
 

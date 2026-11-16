@@ -155,9 +155,9 @@ void GList::setAutoResizeItem(bool value)
     }
 }
 
-GObject* GList::getFromPool(const std::string& url)
+cc::IntrusivePtr<GObject> GList::getFromPool(const std::string& url)
 {
-    GObject* ret;
+    cc::IntrusivePtr<GObject> ret;
     if (url.length() == 0)
         ret = _pool->getObject(_defaultItem);
     else
@@ -174,7 +174,7 @@ void GList::returnToPool(GObject* obj)
 
 GObject* GList::addItemFromPool(const std::string& url)
 {
-    GObject* obj = getFromPool(url);
+    auto obj = getFromPool(url);
 
     return addChild(obj);
 }
@@ -1012,7 +1012,7 @@ void GList::setVirtual(bool loop)
 
         if (_itemSize.x == 0 || _itemSize.y == 0)
         {
-            GObject* obj = getFromPool();
+            auto obj = getFromPool();
             CCASSERT(obj != nullptr, "FairyGUI: Virtual List must have a default list item resource.");
             _itemSize = obj->getSize();
             _itemSize.x = ceil(_itemSize.x);
@@ -1565,7 +1565,8 @@ bool GList::handleScroll1(bool forceUpdate)
             }
             else
             {
-                ii.obj = _pool->getObject(url);
+                auto itemOwner = _pool->getObject(url);
+                ii.obj = itemOwner.get();
                 if (forward)
                     addChildAt(ii.obj, curIndex - newFirstIndex);
                 else
@@ -1732,7 +1733,8 @@ bool GList::handleScroll2(bool forceUpdate)
             }
             else
             {
-                ii.obj = _pool->getObject(url);
+                auto itemOwner = _pool->getObject(url);
+                ii.obj = itemOwner.get();
                 if (forward)
                     addChildAt(ii.obj, curIndex - newFirstIndex);
                 else
@@ -1895,7 +1897,8 @@ void GList::handleScroll3(bool forceUpdate)
                     url = UIPackage::normalizeURL(url);
                 }
 
-                ii.obj = _pool->getObject(url);
+                auto itemOwner = _pool->getObject(url);
+                ii.obj = itemOwner.get();
                 addChildAt(ii.obj, insertIndex);
             }
             else
@@ -2494,7 +2497,7 @@ void GList::readItems(ByteBuffer* buffer)
             }
         }
 
-        GObject* obj = getFromPool(*str);
+        auto obj = getFromPool(*str);
         if (obj != nullptr)
         {
             addChild(obj);

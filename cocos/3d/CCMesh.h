@@ -66,7 +66,7 @@ class CC_DLL Mesh : public Ref
 public:
 
     /**create mesh from positions, normals, and so on, single SubMesh*/
-    static Mesh* create(const std::vector<float>& positions,
+    static cc::IntrusivePtr<Mesh> create(const std::vector<float>& positions,
                         const std::vector<float>& normals,
                         const std::vector<float>& texs,
                         const IndexArray& indices);
@@ -74,7 +74,7 @@ public:
     /**
      * @lua NA
      */
-    static Mesh* create(const std::vector<float>& vertices,
+    static cc::IntrusivePtr<Mesh> create(const std::vector<float>& vertices,
                         int perVertexSizeInFloat,
                         const IndexArray& indices,
                         const std::vector<MeshVertexAttrib>& attribs);
@@ -83,7 +83,7 @@ public:
      * create mesh
      * @lua NA
      */
-    static Mesh* create(std::string_view name, MeshIndexData* indexData, MeshSkin* skin = nullptr);
+    static cc::IntrusivePtr<Mesh> create(std::string_view name, MeshIndexData* indexData, MeshSkin* skin = nullptr);
 
     /**
      * get vertex buffer

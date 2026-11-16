@@ -29,7 +29,7 @@ NS_CC_EXT_BEGIN
 
 Sprite* ControlUtils::addSpriteToTargetWithPosAndAnchor(const char* spriteName, Node* target, Vec2 pos, Vec2 anchor)
 {
-    Sprite* sprite = Sprite::createWithSpriteFrameName(spriteName);
+    cc::IntrusivePtr<Sprite> sprite = Sprite::createWithSpriteFrameName(spriteName);
 
     if (!sprite)
         return nullptr;

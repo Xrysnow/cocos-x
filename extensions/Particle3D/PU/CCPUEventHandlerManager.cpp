@@ -77,7 +77,7 @@ PUScriptTranslator* PUEventHandlerManager::getTranslator(std::string_view type)
     return nullptr;
 }
 
-PUEventHandler* PUEventHandlerManager::createEventHandler(std::string_view type)
+cc::IntrusivePtr<PUEventHandler> PUEventHandlerManager::createEventHandler(std::string_view type)
 {
     if (type == "DoAffector")
     {

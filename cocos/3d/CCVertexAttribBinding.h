@@ -71,7 +71,7 @@ public:
      *
      * @return A VertexAttribBinding for the requested parameters.
      */
-    static VertexAttribBinding* create(MeshIndexData* meshIndexData, Pass* pass, MeshCommand*);
+    static cc::IntrusivePtr<VertexAttribBinding> create(MeshIndexData* meshIndexData, Pass* pass, MeshCommand*);
 
     /**
      * Binds this vertex array object.

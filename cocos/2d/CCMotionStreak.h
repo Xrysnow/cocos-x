@@ -53,9 +53,9 @@ public:
      * @param strokeWidth The width of stroke.
      * @param strokeColor The color of stroke.
      * @param imagePath The texture file name of stoke.
-     * @return An autoreleased MotionStreak object.
+     * @return An owned MotionStreak object.
      */
-    static MotionStreak* create(float timeToFade,
+    static cc::IntrusivePtr<MotionStreak> create(float timeToFade,
                                 float minSeg,
                                 float strokeWidth,
                                 const Color3B& strokeColor,
@@ -67,9 +67,9 @@ public:
      * @param strokeWidth The width of stroke.
      * @param strokeColor The color of stroke.
      * @param texture The texture name of stoke.
-     * @return An autoreleased MotionStreak object.
+     * @return An owned MotionStreak object.
      */
-    static MotionStreak* create(float timeToFade,
+    static cc::IntrusivePtr<MotionStreak> create(float timeToFade,
                                 float minSeg,
                                 float strokeWidth,
                                 const Color3B& strokeColor,

@@ -172,7 +172,7 @@ PUScriptTranslator* PUAffectorManager::getTranslator(std::string_view type)
     return nullptr;
 }
 
-PUAffector* PUAffectorManager::createAffector(std::string_view type)
+cc::IntrusivePtr<PUAffector> PUAffectorManager::createAffector(std::string_view type)
 {
     if (type == "Align")
     {

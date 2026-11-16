@@ -43,7 +43,7 @@ class CC_EX_DLL PUDoStopSystemEventHandler : public PUEventHandler
 {
 protected:
 public:
-    static PUDoStopSystemEventHandler* create();
+    static cc::IntrusivePtr<PUDoStopSystemEventHandler> create();
 
     /**
      */

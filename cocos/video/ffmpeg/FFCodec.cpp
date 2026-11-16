@@ -97,19 +97,17 @@ bool Codec::init(const AVCodec* codec_)
 	return true;
 }
 
-Codec* Codec::create(const AVCodec* codec)
+cc::IntrusivePtr<Codec> Codec::create(const AVCodec* codec)
 {
-	auto ret = new (nothrow) Codec();
+	cc::IntrusivePtr<Codec> ret{new (nothrow) Codec()};
 	if (ret&&ret->init(codec))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
-Codec* Codec::createByName(const char* name, bool isEncoder)
+cc::IntrusivePtr<Codec> Codec::createByName(const char* name, bool isEncoder)
 {
 	return create(
 		isEncoder ?
@@ -117,7 +115,7 @@ Codec* Codec::createByName(const char* name, bool isEncoder)
 		avcodec_find_decoder_by_name(name));
 }
 
-Codec* Codec::createById(AVCodecID id, bool isEncoder)
+cc::IntrusivePtr<Codec> Codec::createById(AVCodecID id, bool isEncoder)
 {
 	return create(
 		isEncoder ?
@@ -186,28 +184,23 @@ bool AudioDecoder::init(const AVCodec* codec_)
 	return Codec::init(codec_) && codec_->type == AVMEDIA_TYPE_AUDIO;
 }
 
-AudioDecoder* AudioDecoder::createByName(const char* name)
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createByName(const char* name)
 {
-	auto ret = new (nothrow) AudioDecoder();
+	cc::IntrusivePtr<AudioDecoder> ret{new (nothrow) AudioDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder_by_name(name)))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
-AudioDecoder* AudioDecoder::createById(AVCodecID id, bool autorelease)
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createById(AVCodecID id)
 {
-	auto ret = new (nothrow) AudioDecoder();
+	cc::IntrusivePtr<AudioDecoder> ret{new (nothrow) AudioDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
-		if (autorelease)
-			ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
@@ -216,28 +209,23 @@ bool VideoDecoder::init(const AVCodec* codec_)
 	return Codec::init(codec_) && codec_->type == AVMEDIA_TYPE_VIDEO;
 }
 
-VideoDecoder* VideoDecoder::createByName(const char* name)
+cc::IntrusivePtr<VideoDecoder> VideoDecoder::createByName(const char* name)
 {
-	auto ret = new (nothrow) VideoDecoder();
+	cc::IntrusivePtr<VideoDecoder> ret{new (nothrow) VideoDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder_by_name(name)))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
-VideoDecoder* VideoDecoder::createById(AVCodecID id, bool autorelease)
+cc::IntrusivePtr<VideoDecoder> VideoDecoder::createById(AVCodecID id)
 {
-	auto ret = new (nothrow) VideoDecoder();
+	cc::IntrusivePtr<VideoDecoder> ret{new (nothrow) VideoDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
-		if (autorelease)
-			ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 

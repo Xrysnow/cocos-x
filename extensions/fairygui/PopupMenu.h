@@ -15,8 +15,8 @@ class GList;
 class PopupMenu : public cocos2d::Ref
 {
 public:
-    static PopupMenu* create(const std::string& resourceURL);
-    static PopupMenu* create() { return create(""); }
+    static cc::IntrusivePtr<PopupMenu> create(const std::string& resourceURL);
+    static cc::IntrusivePtr<PopupMenu> create() { return create(""); }
 
     PopupMenu();
     virtual ~PopupMenu();

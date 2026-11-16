@@ -207,10 +207,9 @@ AssetsManagerEx::~AssetsManagerEx()
     CC_SAFE_RELEASE(_remoteManifest);
 }
 
-AssetsManagerEx* AssetsManagerEx::create(std::string_view manifestUrl, std::string_view storagePath)
+cc::IntrusivePtr<AssetsManagerEx> AssetsManagerEx::create(std::string_view manifestUrl, std::string_view storagePath)
 {
-    AssetsManagerEx* ret = new AssetsManagerEx(manifestUrl, storagePath);
-    ret->autorelease();
+    cc::IntrusivePtr<AssetsManagerEx> ret{new AssetsManagerEx(manifestUrl, storagePath)};
     return ret;
 }
 
@@ -218,11 +217,11 @@ void AssetsManagerEx::initManifests(std::string_view manifestUrl)
 {
     _inited = true;
     // Init and load local manifest
-    _localManifest = new Manifest();
+    _localManifest = cc::IntrusivePtr<Manifest>{new Manifest()}.detach();
     loadLocalManifest(manifestUrl);
 
     // Init and load temporary manifest
-    _tempManifest = new Manifest();
+    _tempManifest = cc::IntrusivePtr<Manifest>{new Manifest()}.detach();
     _tempManifest->parse(_tempManifestPath);
     // Previous update is interrupted
     if (_fileUtils->isFileExist(_tempManifestPath))
@@ -237,7 +236,7 @@ void AssetsManagerEx::initManifests(std::string_view manifestUrl)
     }
 
     // Init remote manifest for future usage
-    _remoteManifest = new Manifest();
+    _remoteManifest = cc::IntrusivePtr<Manifest>{new Manifest()}.detach();
 
     if (!_inited)
     {
@@ -265,7 +264,7 @@ void AssetsManagerEx::loadLocalManifest(std::string_view /*manifestUrl*/)
     // Find the cached manifest file
     if (_fileUtils->isFileExist(_cacheManifestPath))
     {
-        cachedManifest = new Manifest();
+        cachedManifest = cc::IntrusivePtr<Manifest>{new Manifest()}.detach();
         cachedManifest->parse(_cacheManifestPath);
         if (!cachedManifest->isLoaded())
         {

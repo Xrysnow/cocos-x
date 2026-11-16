@@ -59,7 +59,7 @@ public:
     /** creates a TileMap with a tile file (atlas) with a map file and the width and height of each tile in points.
      The tile file will be loaded using the TextureMgr.
      */
-    static TileMapAtlas* create(std::string_view tile, std::string_view mapFile, int tileWidth, int tileHeight);
+    static cc::IntrusivePtr<TileMapAtlas> create(std::string_view tile, std::string_view mapFile, int tileWidth, int tileHeight);
     /**
      * @js ctor
      */

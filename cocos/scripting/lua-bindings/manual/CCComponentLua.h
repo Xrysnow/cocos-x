@@ -34,7 +34,7 @@ NS_CC_BEGIN
 class ComponentLua : public Component
 {
 public:
-    static ComponentLua* create(std::string_view scriptFileName);
+    static cc::IntrusivePtr<ComponentLua> create(std::string_view scriptFileName);
 
     ComponentLua(std::string_view scriptFileName);
     /**

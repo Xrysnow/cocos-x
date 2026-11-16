@@ -41,7 +41,7 @@ public:
     static const float DEFAULT_ROTATION_SPEED;
     static const float DEFAULT_ROTATION;
 
-    static PUTextureRotator* create();
+    static cc::IntrusivePtr<PUTextureRotator> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
 

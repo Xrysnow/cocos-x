@@ -338,10 +338,9 @@ void Scheduler::schedule(const ccSchedulerFunc& callback,
         ccArrayEnsureExtraCapacity(element->timers, 1);
     }
 
-    TimerTargetCallback* timer = new TimerTargetCallback();
+    cc::IntrusivePtr<TimerTargetCallback> timer{new TimerTargetCallback()};
     timer->initWithCallback(this, callback, target, key, interval, repeat, delay);
-    ccArrayAppendObject(element->timers, timer);
-    timer->release();
+    ccArrayAppendObject(element->timers, timer.get());
 }
 
 void Scheduler::unschedule(std::string_view key, void* target)
@@ -666,7 +665,7 @@ void Scheduler::unscheduleAllForTarget(void* target)
 #if CC_ENABLE_SCRIPT_BINDING
 unsigned int Scheduler::scheduleScriptFunc(unsigned int handler, float interval, bool paused)
 {
-    SchedulerScriptHandlerEntry* entry = SchedulerScriptHandlerEntry::create(handler, interval, paused);
+    cc::IntrusivePtr<SchedulerScriptHandlerEntry> entry = SchedulerScriptHandlerEntry::create(handler, interval, paused);
     _scriptHandlerEntries.pushBack(entry);
     return entry->getEntryId();
 }
@@ -1007,10 +1006,9 @@ void Scheduler::schedule(SEL_SCHEDULE selector,
         ccArrayEnsureExtraCapacity(element->timers, 1);
     }
 
-    TimerTargetSelector* timer = new TimerTargetSelector();
+    cc::IntrusivePtr<TimerTargetSelector> timer{new TimerTargetSelector()};
     timer->initWithSelector(this, selector, target, interval, repeat, delay);
-    ccArrayAppendObject(element->timers, timer);
-    timer->release();
+    ccArrayAppendObject(element->timers, timer.get());
 }
 
 void Scheduler::schedule(SEL_SCHEDULE selector, Ref* target, float interval, bool paused)

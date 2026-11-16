@@ -15,7 +15,7 @@ NS_CC_BEGIN
 		bool init(AudioStream* src);
 	public:
 
-		static AudioDecoderVorbis* create(AudioStream* src, size_t bufferSize);
+		static cc::IntrusivePtr<AudioDecoderVorbis> create(AudioStream* src, size_t bufferSize);
 
 		int64_t decode(char* dst, uint64_t bytesToRead) override;
 		bool seek(int64_t frameOffset) override;

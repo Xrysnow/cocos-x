@@ -38,10 +38,9 @@ void PUDoStopSystemEventHandler::handle(PUParticleSystem3D* particleSystem,
         parent->stopParticleSystem();
 }
 
-PUDoStopSystemEventHandler* PUDoStopSystemEventHandler::create()
+cc::IntrusivePtr<PUDoStopSystemEventHandler> PUDoStopSystemEventHandler::create()
 {
-    auto peh = new PUDoStopSystemEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoStopSystemEventHandler> peh{new PUDoStopSystemEventHandler()};
     return peh;
 }
 

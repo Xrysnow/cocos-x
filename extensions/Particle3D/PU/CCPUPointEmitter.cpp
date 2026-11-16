@@ -33,10 +33,9 @@ PUPointEmitter::PUPointEmitter(void) {}
 
 PUPointEmitter::~PUPointEmitter(void) {}
 
-PUPointEmitter* PUPointEmitter::create()
+cc::IntrusivePtr<PUPointEmitter> PUPointEmitter::create()
 {
-    auto pe = new PUPointEmitter();
-    pe->autorelease();
+    cc::IntrusivePtr<PUPointEmitter> pe{new PUPointEmitter()};
     return pe;
 }
 
@@ -45,7 +44,7 @@ void PUPointEmitter::copyAttributesTo(PUEmitter* emitter)
     PUEmitter::copyAttributesTo(emitter);
 }
 
-PUPointEmitter* PUPointEmitter::clone()
+cc::IntrusivePtr<PUEmitter> PUPointEmitter::clone()
 {
     auto be = PUPointEmitter::create();
     copyAttributesTo(be);

@@ -46,15 +46,13 @@ bool WebView::init()
     return Widget::init() && _impl && _impl->isInitialized();
 }
 
-WebView* WebView::create()
+cc::IntrusivePtr<WebView> WebView::create()
 {
-    auto webView = new WebView();
+    cc::IntrusivePtr<WebView> webView{new WebView()};
     if (webView->init())
     {
-        webView->autorelease();
         return webView;
     }
-    CC_SAFE_DELETE(webView);
     return nullptr;
 }
 
@@ -189,7 +187,7 @@ void WebView::setBounces(bool bounces)
     _impl->setBounces(bounces);
 }
 
-cocos2d::ui::Widget* WebView::createCloneInstance()
+cc::IntrusivePtr<cocos2d::ui::Widget> WebView::createCloneInstance()
 {
     return WebView::create();
 }

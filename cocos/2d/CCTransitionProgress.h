@@ -50,9 +50,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgress object.
+     * @return An owned TransitionProgress object.
      */
-    static TransitionProgress* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgress> create(float t, Scene* scene);
 
     //
     // Overrides
@@ -87,9 +87,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressRadialCCW object.
+     * @return An owned TransitionProgressRadialCCW object.
      */
-    static TransitionProgressRadialCCW* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressRadialCCW> create(float t, Scene* scene);
 
     /**
      * @js ctor
@@ -115,9 +115,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressRadialCW object.
+     * @return An owned TransitionProgressRadialCW object.
      */
-    static TransitionProgressRadialCW* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressRadialCW> create(float t, Scene* scene);
 
     /**
      * @js ctor
@@ -143,9 +143,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressHorizontal object.
+     * @return An owned TransitionProgressHorizontal object.
      */
-    static TransitionProgressHorizontal* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressHorizontal> create(float t, Scene* scene);
 
     /**
      * @js ctor
@@ -170,9 +170,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressVertical object.
+     * @return An owned TransitionProgressVertical object.
      */
-    static TransitionProgressVertical* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressVertical> create(float t, Scene* scene);
 
     /**
      * @js ctor
@@ -197,9 +197,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressInOut object.
+     * @return An owned TransitionProgressInOut object.
      */
-    static TransitionProgressInOut* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressInOut> create(float t, Scene* scene);
 
     /**
      * @js ctor
@@ -226,9 +226,9 @@ public:
      *
      * @param t Duration time, in seconds.
      * @param scene A given scene.
-     * @return An autoreleased TransitionProgressOutIn object.
+     * @return An owned TransitionProgressOutIn object.
      */
-    static TransitionProgressOutIn* create(float t, Scene* scene);
+    static cc::IntrusivePtr<TransitionProgressOutIn> create(float t, Scene* scene);
 
     /**
      * @js ctor

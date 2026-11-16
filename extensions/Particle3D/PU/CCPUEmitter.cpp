@@ -103,29 +103,29 @@ PUEmitter::PUEmitter()
 {
     // particleType = PT_EMITTER;
     // mAliasType = AT_EMITTER;
-    _dynEmissionRate = new PUDynamicAttributeFixed();
+    _dynEmissionRate = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynEmissionRate))->setValue(DEFAULT_EMISSION_RATE);
-    _dynTotalTimeToLive = new PUDynamicAttributeFixed();
+    _dynTotalTimeToLive = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynTotalTimeToLive))->setValue(DEFAULT_TIME_TO_LIVE);
-    _dynParticleMass = new PUDynamicAttributeFixed();
+    _dynParticleMass = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynParticleMass))->setValue(DEFAULT_MASS);
-    _dynVelocity = new PUDynamicAttributeFixed();
+    _dynVelocity = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynVelocity))->setValue(DEFAULT_VELOCITY);
-    _dynDuration = new PUDynamicAttributeFixed();
+    _dynDuration = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynDuration))->setValue(DEFAULT_DURATION);
-    _dynRepeatDelay = new PUDynamicAttributeFixed();
+    _dynRepeatDelay = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRepeatDelay))->setValue(DEFAULT_REPEAT_DELAY);
-    _dynAngle = new PUDynamicAttributeFixed();
+    _dynAngle = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynAngle))->setValue(DEFAULT_ANGLE);
 
     // Set the dimensions attributes to 0; the default is to use the default dimensions of the ParticleTechnique
-    _dynParticleAllDimensions = new PUDynamicAttributeFixed();
+    _dynParticleAllDimensions = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynParticleAllDimensions))->setValue(DEFAULT_DIMENSIONS);
-    _dynParticleWidth = new PUDynamicAttributeFixed();
+    _dynParticleWidth = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynParticleWidth))->setValue(DEFAULT_WIDTH);
-    _dynParticleHeight = new PUDynamicAttributeFixed();
+    _dynParticleHeight = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynParticleHeight))->setValue(DEFAULT_HEIGHT);
-    _dynParticleDepth = new PUDynamicAttributeFixed();
+    _dynParticleDepth = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynParticleDepth))->setValue(DEFAULT_DEPTH);
 }
 
@@ -934,48 +934,48 @@ void PUEmitter::copyAttributesTo(PUEmitter* emitter)
     emitter->_keepLocal                       = _keepLocal;
 
     // Copy Dyn. Emission rate if available
-    emitter->setDynEmissionRate(getDynEmissionRate()->clone());
+    emitter->setDynEmissionRate(getDynEmissionRate()->clone().get());
 
     // Copy Dyn. Total time to live if available
-    emitter->setDynTotalTimeToLive(getDynTotalTimeToLive()->clone());
+    emitter->setDynTotalTimeToLive(getDynTotalTimeToLive()->clone().get());
 
     // Copy Dyn. Velocity if available
-    emitter->setDynVelocity(getDynVelocity()->clone());
+    emitter->setDynVelocity(getDynVelocity()->clone().get());
 
     // Copy Dyn. Duration if available
     if (_dynDurationSet)
     {
-        emitter->setDynDuration(getDynDuration()->clone());
+        emitter->setDynDuration(getDynDuration()->clone().get());
     }
 
     // Copy Dyn. RepeatDelay if available
     if (_dynRepeatDelaySet)
     {
-        emitter->setDynRepeatDelay(getDynRepeatDelay()->clone());
+        emitter->setDynRepeatDelay(getDynRepeatDelay()->clone().get());
     }
 
     // Copy Dyn. Particle Mass if available
-    emitter->setDynParticleMass(getDynParticleMass()->clone());
+    emitter->setDynParticleMass(getDynParticleMass()->clone().get());
 
     // Copy Dyn. Angle if available
-    emitter->setDynAngle(getDynAngle()->clone());
+    emitter->setDynAngle(getDynAngle()->clone().get());
 
     // Copy Dyn. own width, height and depth if available
     if (_dynParticleAllDimensionsSet)
     {
-        emitter->setDynParticleAllDimensions(getDynParticleAllDimensions()->clone());
+        emitter->setDynParticleAllDimensions(getDynParticleAllDimensions()->clone().get());
     }
     if (_dynParticleWidthSet)
     {
-        emitter->setDynParticleWidth(getDynParticleWidth()->clone());
+        emitter->setDynParticleWidth(getDynParticleWidth()->clone().get());
     }
     if (_dynParticleHeightSet)
     {
-        emitter->setDynParticleHeight(getDynParticleHeight()->clone());
+        emitter->setDynParticleHeight(getDynParticleHeight()->clone().get());
     }
     if (_dynParticleDepthSet)
     {
-        emitter->setDynParticleDepth(getDynParticleDepth()->clone());
+        emitter->setDynParticleDepth(getDynParticleDepth()->clone().get());
     }
 }
 

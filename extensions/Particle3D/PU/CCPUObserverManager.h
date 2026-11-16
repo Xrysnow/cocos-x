@@ -51,7 +51,7 @@ public:
     /**
      */
     PUScriptTranslator* getTranslator(std::string_view type);
-    PUObserver* createObserver(std::string_view type);
+    cc::IntrusivePtr<PUObserver> createObserver(std::string_view type);
 
     PUObserverManager();
     ~PUObserverManager();

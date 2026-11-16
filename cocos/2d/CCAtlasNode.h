@@ -57,7 +57,7 @@ public:
      * @param tileHeight The height of the item.
      * @param itemsToRender The quantity of items to render.
      */
-    static AtlasNode* create(std::string_view filename, int tileWidth, int tileHeight, int itemsToRender);
+    static cc::IntrusivePtr<AtlasNode> create(std::string_view filename, int tileWidth, int tileHeight, int itemsToRender);
 
     /** updates the Atlas (indexed vertex array).
      * Shall be overridden in subclasses.

@@ -638,14 +638,14 @@ void PUBillboardChain::init(std::string_view texFile)
         {
             _texture      = tex;
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_TEXTURE_3D);
-            _programState = new backend::ProgramState(program);
+            _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
         }
     }
 
     if (!_programState)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_COLOR_3D);
-        _programState = new backend::ProgramState(program);
+        _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
     }
 
     auto& pipelineDescriptor        = _meshCommand.getPipelineDescriptor();

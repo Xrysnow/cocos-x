@@ -41,17 +41,15 @@ struct Tile
 
 // implementation of ShakyTiles3D
 
-ShakyTiles3D* ShakyTiles3D::create(float duration, const Vec2& gridSize, int range, bool shakeZ)
+cc::IntrusivePtr<ShakyTiles3D> ShakyTiles3D::create(float duration, const Vec2& gridSize, int range, bool shakeZ)
 {
-    ShakyTiles3D* action = new ShakyTiles3D();
+    cc::IntrusivePtr<ShakyTiles3D> action{new ShakyTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, range, shakeZ))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -68,7 +66,7 @@ bool ShakyTiles3D::initWithDuration(float duration, const Vec2& gridSize, int ra
     return false;
 }
 
-ShakyTiles3D* ShakyTiles3D::clone() const
+cc::IntrusivePtr<Action> ShakyTiles3D::clone() const
 {
     // no copy constructor
     return ShakyTiles3D::create(_duration, _gridSize, _randrange, _shakeZ);
@@ -112,17 +110,15 @@ void ShakyTiles3D::update(float /*time*/)
 
 // implementation of ShatteredTiles3D
 
-ShatteredTiles3D* ShatteredTiles3D::create(float duration, const Vec2& gridSize, int range, bool shatterZ)
+cc::IntrusivePtr<ShatteredTiles3D> ShatteredTiles3D::create(float duration, const Vec2& gridSize, int range, bool shatterZ)
 {
-    ShatteredTiles3D* action = new ShatteredTiles3D();
+    cc::IntrusivePtr<ShatteredTiles3D> action{new ShatteredTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, range, shatterZ))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -140,7 +136,7 @@ bool ShatteredTiles3D::initWithDuration(float duration, const Vec2& gridSize, in
     return false;
 }
 
-ShatteredTiles3D* ShatteredTiles3D::clone() const
+cc::IntrusivePtr<Action> ShatteredTiles3D::clone() const
 {
     // no copy constructor
     return ShatteredTiles3D::create(_duration, _gridSize, _randrange, _shatterZ);
@@ -189,17 +185,15 @@ void ShatteredTiles3D::update(float /*time*/)
 
 // implementation of ShuffleTiles
 
-ShuffleTiles* ShuffleTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
+cc::IntrusivePtr<ShuffleTiles> ShuffleTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
 {
-    ShuffleTiles* action = new ShuffleTiles();
+    cc::IntrusivePtr<ShuffleTiles> action{new ShuffleTiles()};
 
     if (action->initWithDuration(duration, gridSize, seed))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -217,7 +211,7 @@ bool ShuffleTiles::initWithDuration(float duration, const Vec2& gridSize, unsign
     return false;
 }
 
-ShuffleTiles* ShuffleTiles::clone() const
+cc::IntrusivePtr<Action> ShuffleTiles::clone() const
 {
     // no copy constructor
     return ShuffleTiles::create(_duration, _gridSize, _seed);
@@ -325,21 +319,19 @@ void ShuffleTiles::update(float time)
 
 // implementation of FadeOutTRTiles
 
-FadeOutTRTiles* FadeOutTRTiles::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<FadeOutTRTiles> FadeOutTRTiles::create(float duration, const Vec2& gridSize)
 {
-    FadeOutTRTiles* action = new FadeOutTRTiles();
+    cc::IntrusivePtr<FadeOutTRTiles> action{new FadeOutTRTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-FadeOutTRTiles* FadeOutTRTiles::clone() const
+cc::IntrusivePtr<Action> FadeOutTRTiles::clone() const
 {
     // no copy constructor
     return FadeOutTRTiles::create(_duration, _gridSize);
@@ -414,21 +406,19 @@ void FadeOutTRTiles::update(float time)
 
 // implementation of FadeOutBLTiles
 
-FadeOutBLTiles* FadeOutBLTiles::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<FadeOutBLTiles> FadeOutBLTiles::create(float duration, const Vec2& gridSize)
 {
-    FadeOutBLTiles* action = new FadeOutBLTiles();
+    cc::IntrusivePtr<FadeOutBLTiles> action{new FadeOutBLTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-FadeOutBLTiles* FadeOutBLTiles::clone() const
+cc::IntrusivePtr<Action> FadeOutBLTiles::clone() const
 {
     // no copy constructor
     return FadeOutBLTiles::create(_duration, _gridSize);
@@ -447,21 +437,19 @@ float FadeOutBLTiles::testFunc(const Vec2& pos, float time)
 
 // implementation of FadeOutUpTiles
 
-FadeOutUpTiles* FadeOutUpTiles::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<FadeOutUpTiles> FadeOutUpTiles::create(float duration, const Vec2& gridSize)
 {
-    FadeOutUpTiles* action = new FadeOutUpTiles();
+    cc::IntrusivePtr<FadeOutUpTiles> action{new FadeOutUpTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-FadeOutUpTiles* FadeOutUpTiles::clone() const
+cc::IntrusivePtr<Action> FadeOutUpTiles::clone() const
 {
     // no copy constructor
     return FadeOutUpTiles::create(_duration, _gridSize);
@@ -493,21 +481,19 @@ void FadeOutUpTiles::transformTile(const Vec2& pos, float distance)
 
 // implementation of FadeOutDownTiles
 
-FadeOutDownTiles* FadeOutDownTiles::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<FadeOutDownTiles> FadeOutDownTiles::create(float duration, const Vec2& gridSize)
 {
-    FadeOutDownTiles* action = new FadeOutDownTiles();
+    cc::IntrusivePtr<FadeOutDownTiles> action{new FadeOutDownTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-FadeOutDownTiles* FadeOutDownTiles::clone() const
+cc::IntrusivePtr<Action> FadeOutDownTiles::clone() const
 {
     // no copy constructor
     return FadeOutDownTiles::create(_duration, _gridSize);
@@ -521,30 +507,26 @@ float FadeOutDownTiles::testFunc(const Vec2& pos, float time)
 
 // implementation of TurnOffTiles
 
-TurnOffTiles* TurnOffTiles::create(float duration, const Vec2& gridSize)
+cc::IntrusivePtr<TurnOffTiles> TurnOffTiles::create(float duration, const Vec2& gridSize)
 {
-    TurnOffTiles* action = new TurnOffTiles();
+    cc::IntrusivePtr<TurnOffTiles> action{new TurnOffTiles()};
     if (action->initWithDuration(duration, gridSize, 0))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
-TurnOffTiles* TurnOffTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
+cc::IntrusivePtr<TurnOffTiles> TurnOffTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
 {
-    TurnOffTiles* action = new TurnOffTiles();
+    cc::IntrusivePtr<TurnOffTiles> action{new TurnOffTiles()};
 
     if (action->initWithDuration(duration, gridSize, seed))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -561,7 +543,7 @@ bool TurnOffTiles::initWithDuration(float duration, const Vec2& gridSize, unsign
     return false;
 }
 
-TurnOffTiles* TurnOffTiles::clone() const
+cc::IntrusivePtr<Action> TurnOffTiles::clone() const
 {
     // no copy constructor
     return TurnOffTiles::create(_duration, _gridSize, _seed);
@@ -641,17 +623,15 @@ void TurnOffTiles::update(float time)
 
 // implementation of WavesTiles3D
 
-WavesTiles3D* WavesTiles3D::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
+cc::IntrusivePtr<WavesTiles3D> WavesTiles3D::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
 {
-    WavesTiles3D* action = new WavesTiles3D();
+    cc::IntrusivePtr<WavesTiles3D> action{new WavesTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, waves, amplitude))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -669,7 +649,7 @@ bool WavesTiles3D::initWithDuration(float duration, const Vec2& gridSize, unsign
     return false;
 }
 
-WavesTiles3D* WavesTiles3D::clone() const
+cc::IntrusivePtr<Action> WavesTiles3D::clone() const
 {
     // no copy constructor
     return WavesTiles3D::create(_duration, _gridSize, _waves, _amplitude);
@@ -697,17 +677,15 @@ void WavesTiles3D::update(float time)
 
 // implementation of JumpTiles3D
 
-JumpTiles3D* JumpTiles3D::create(float duration, const Vec2& gridSize, unsigned int numberOfJumps, float amplitude)
+cc::IntrusivePtr<JumpTiles3D> JumpTiles3D::create(float duration, const Vec2& gridSize, unsigned int numberOfJumps, float amplitude)
 {
-    JumpTiles3D* action = new JumpTiles3D();
+    cc::IntrusivePtr<JumpTiles3D> action{new JumpTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, numberOfJumps, amplitude))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -725,7 +703,7 @@ bool JumpTiles3D::initWithDuration(float duration, const Vec2& gridSize, unsigne
     return false;
 }
 
-JumpTiles3D* JumpTiles3D::clone() const
+cc::IntrusivePtr<Action> JumpTiles3D::clone() const
 {
     // no copy constructor
     return JumpTiles3D::create(_duration, _gridSize, _jumps, _amplitude);
@@ -765,17 +743,15 @@ void JumpTiles3D::update(float time)
 
 // implementation of SplitRows
 
-SplitRows* SplitRows::create(float duration, unsigned int nRows)
+cc::IntrusivePtr<SplitRows> SplitRows::create(float duration, unsigned int nRows)
 {
-    SplitRows* action = new SplitRows();
+    cc::IntrusivePtr<SplitRows> action{new SplitRows()};
 
     if (action->initWithDuration(duration, nRows))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -786,7 +762,7 @@ bool SplitRows::initWithDuration(float duration, unsigned int rows)
     return TiledGrid3DAction::initWithDuration(duration, Vec2(1.0f, (float)rows));
 }
 
-SplitRows* SplitRows::clone() const
+cc::IntrusivePtr<Action> SplitRows::clone() const
 {
     // no copy constructor
     return SplitRows::create(_duration, _rows);
@@ -822,17 +798,15 @@ void SplitRows::update(float time)
 
 // implementation of SplitCols
 
-SplitCols* SplitCols::create(float duration, unsigned int cols)
+cc::IntrusivePtr<SplitCols> SplitCols::create(float duration, unsigned int cols)
 {
-    SplitCols* action = new SplitCols();
+    cc::IntrusivePtr<SplitCols> action{new SplitCols()};
 
     if (action->initWithDuration(duration, cols))
     {
-        action->autorelease();
         return action;
     }
 
-    delete action;
     return nullptr;
 }
 
@@ -842,7 +816,7 @@ bool SplitCols::initWithDuration(float duration, unsigned int cols)
     return TiledGrid3DAction::initWithDuration(duration, Vec2((float)cols, 1.0f));
 }
 
-SplitCols* SplitCols::clone() const
+cc::IntrusivePtr<Action> SplitCols::clone() const
 {
     // no copy constructor
     return SplitCols::create(_duration, _cols);

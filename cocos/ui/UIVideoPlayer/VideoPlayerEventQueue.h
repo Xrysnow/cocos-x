@@ -21,7 +21,7 @@ public:
 
     static std::shared_ptr<VideoPlayerEventQueue> create(Owner* owner, Delivery delivery)
     {
-        return std::shared_ptr<VideoPlayerEventQueue>(new VideoPlayerEventQueue(owner, delivery));
+        return std::shared_ptr<VideoPlayerEventQueue>(cc::IntrusivePtr<VideoPlayerEventQueue>{new VideoPlayerEventQueue(owner, delivery)}.detach());
     }
 
     void setCallback(Callback callback)

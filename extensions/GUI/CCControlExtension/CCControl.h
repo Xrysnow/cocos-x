@@ -98,7 +98,7 @@ public:
     };
 
     /** Creates a Control object */
-    static Control* create();
+    static cc::IntrusivePtr<Control> create();
 
     /** Tells whether the control is enabled. */
     virtual void setEnabled(bool bEnabled);

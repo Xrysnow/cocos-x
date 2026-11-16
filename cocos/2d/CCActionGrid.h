@@ -52,15 +52,15 @@ public:
     @brief Get the pointer of GridBase.
     @return The pointer of GridBase.
     */
-    virtual GridBase* getGrid();
+    virtual cc::IntrusivePtr<GridBase> getGrid();
 
     // overrides
-    virtual GridAction* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
     }
-    virtual GridAction* reverse() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
 
     GridAction() {}
@@ -91,7 +91,7 @@ private:
 class CC_DLL Grid3DAction : public GridAction
 {
 public:
-    virtual GridBase* getGrid() override;
+    virtual cc::IntrusivePtr<GridBase> getGrid() override;
     /**
      * @brief Get the vertex that belongs to certain position in the grid.
      * @param position The position of the grid.
@@ -120,7 +120,7 @@ public:
     void setVertex(const Vec2& position, const Vec3& vertex);
 
     // Overrides
-    virtual Grid3DAction* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
@@ -146,7 +146,7 @@ public:
      * @return A pointer of TiledGrid3DAction. If creation failed, return nil.
      * @lua NA
      */
-    static TiledGrid3DAction* create(float duration, const Vec2& gridSize);
+    static cc::IntrusivePtr<TiledGrid3DAction> create(float duration, const Vec2& gridSize);
 
     /**
      * @brief Get the tile that belongs to a certain position of the grid.
@@ -175,10 +175,10 @@ public:
     void setTile(const Vec2& position, const Quad3& coords);
 
     /** returns the grid */
-    virtual GridBase* getGrid() override;
+    virtual cc::IntrusivePtr<GridBase> getGrid() override;
 
     // Override
-    virtual TiledGrid3DAction* clone() const override
+    virtual cc::IntrusivePtr<Action> clone() const override
     {
         CC_ASSERT(0);
         return nullptr;
@@ -198,7 +198,7 @@ public:
     @param duration Specify the duration of the AccelDeccelAmplitude action.
     @return Return a pointer of AccelDeccelAmplitude action. When the creation failed, return nil.
     */
-    static AccelDeccelAmplitude* create(Action* action, float duration);
+    static cc::IntrusivePtr<AccelDeccelAmplitude> create(Action* action, float duration);
 
     /**
     @brief Get the value of amplitude rate.
@@ -214,8 +214,8 @@ public:
     // Overrides
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
-    virtual AccelDeccelAmplitude* clone() const override;
-    virtual AccelDeccelAmplitude* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     AccelDeccelAmplitude() {}
     virtual ~AccelDeccelAmplitude();
@@ -249,7 +249,7 @@ public:
     @param duration Specify the duration of the AccelAmplitude action.
     @return Return a pointer of AccelAmplitude action. When the creation failed, return nil.
      */
-    static AccelAmplitude* create(Action* action, float duration);
+    static cc::IntrusivePtr<AccelAmplitude> create(Action* action, float duration);
 
     /**
     @brief Get the value of amplitude rate.
@@ -265,8 +265,8 @@ public:
     // Overrides
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
-    virtual AccelAmplitude* clone() const override;
-    virtual AccelAmplitude* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     AccelAmplitude() {}
     virtual ~AccelAmplitude();
@@ -294,7 +294,7 @@ public:
     @param duration Specify the duration of the DeccelAmplitude action.
     @return Return a pointer of DeccelAmplitude. When the creation failed, return nil.
     */
-    static DeccelAmplitude* create(Action* action, float duration);
+    static cc::IntrusivePtr<DeccelAmplitude> create(Action* action, float duration);
 
     /**
     @brief Get the value of amplitude rate.
@@ -310,8 +310,8 @@ public:
     // overrides
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
-    virtual DeccelAmplitude* clone() const override;
-    virtual DeccelAmplitude* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     DeccelAmplitude() {}
     virtual ~DeccelAmplitude();
@@ -347,12 +347,12 @@ public:
     @brief Create a StopGrid Action.
     @return Return a pointer of StopGrid. When the creation failed, return nil.
     */
-    static StopGrid* create();
+    static cc::IntrusivePtr<StopGrid> create();
 
     // Overrides
     virtual void startWithTarget(Node* target) override;
-    virtual StopGrid* clone() const override;
-    virtual StopGrid* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     StopGrid() {}
     virtual ~StopGrid() {}
@@ -377,12 +377,12 @@ public:
     @param times Specify times the grid will be reused.
     @return Return a pointer of ReuseGrid. When the creation failed, return nil.
     */
-    static ReuseGrid* create(int times);
+    static cc::IntrusivePtr<ReuseGrid> create(int times);
 
     // Override
     virtual void startWithTarget(Node* target) override;
-    virtual ReuseGrid* clone() const override;
-    virtual ReuseGrid* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
 
     ReuseGrid() {}
     virtual ~ReuseGrid() {}

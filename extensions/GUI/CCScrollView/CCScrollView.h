@@ -76,20 +76,20 @@ public:
         BOTH
     };
     /**
-     * Returns an autoreleased scroll view object.
+     * Returns an owned scroll view object.
      *
      * @param size view size
      * @param container parent object
-     * @return autoreleased scroll view object
+     * @return owned scroll view object
      */
-    static ScrollView* create(Size size, Node* container = NULL);
+    static cc::IntrusivePtr<ScrollView> create(Size size, Node* container = NULL);
 
     /**
-     * Returns an autoreleased scroll view object.
+     * Returns an owned scroll view object.
      *
-     * @return autoreleased scroll view object
+     * @return owned scroll view object
      */
-    static ScrollView* create();
+    static cc::IntrusivePtr<ScrollView> create();
     /**
      * @js ctor
      * @lua new

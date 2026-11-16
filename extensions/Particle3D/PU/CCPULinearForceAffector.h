@@ -35,7 +35,7 @@ NS_CC_BEGIN
 class CC_EX_DLL PULinearForceAffector : public PUBaseForceAffector
 {
 public:
-    static PULinearForceAffector* create();
+    static cc::IntrusivePtr<PULinearForceAffector> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

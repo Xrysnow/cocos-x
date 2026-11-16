@@ -50,7 +50,7 @@ public:
     std::string_view getRenderType() const { return _renderType; };
     void setRenderType(std::string_view observerType) { _renderType = observerType; };
 
-    virtual PURender* clone() = 0;
+    virtual cc::IntrusivePtr<PURender> clone() = 0;
     void copyAttributesTo(PURender* render);
 
 public:
@@ -141,7 +141,7 @@ public:
         VERTEX
     };
 
-    static PUParticle3DQuadRender* create(std::string_view texFile = "");
+    static cc::IntrusivePtr<PUParticle3DQuadRender> create(std::string_view texFile = "");
 
     void setType(Type type);
     Type getType() const { return _type; }
@@ -162,7 +162,7 @@ public:
 
     virtual void render(Renderer* renderer, const Mat4& transform, ParticleSystem3D* particleSystem) override;
 
-    virtual PUParticle3DQuadRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
     void copyAttributesTo(PUParticle3DQuadRender* render);
 
     PUParticle3DQuadRender();
@@ -191,11 +191,11 @@ protected:
 class CC_EX_DLL PUParticle3DModelRender : public PURender
 {
 public:
-    static PUParticle3DModelRender* create(std::string_view modelFile, std::string_view texFile = "");
+    static cc::IntrusivePtr<PUParticle3DModelRender> create(std::string_view modelFile, std::string_view texFile = "");
 
     virtual void render(Renderer* renderer, const Mat4& transform, ParticleSystem3D* particleSystem) override;
 
-    virtual PUParticle3DModelRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
     void copyAttributesTo(PUParticle3DModelRender* render);
 
     virtual void reset() override;
@@ -212,11 +212,11 @@ protected:
 class CC_EX_DLL PUParticle3DBoxRender : public PUParticle3DEntityRender
 {
 public:
-    static PUParticle3DBoxRender* create(std::string_view texFile = "");
+    static cc::IntrusivePtr<PUParticle3DBoxRender> create(std::string_view texFile = "");
 
     virtual void render(Renderer* renderer, const Mat4& transform, ParticleSystem3D* particleSystem) override;
 
-    virtual PUParticle3DBoxRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
 
     PUParticle3DBoxRender();
     virtual ~PUParticle3DBoxRender();
@@ -228,11 +228,11 @@ protected:
 class CC_EX_DLL PUSphereRender : public PUParticle3DEntityRender
 {
 public:
-    static PUSphereRender* create(std::string_view texFile = "");
+    static cc::IntrusivePtr<PUSphereRender> create(std::string_view texFile = "");
 
     virtual void render(Renderer* renderer, const Mat4& transform, ParticleSystem3D* particleSystem) override;
 
-    virtual PUSphereRender* clone() override;
+    virtual cc::IntrusivePtr<PURender> clone() override;
     void copyAttributesTo(PUSphereRender* render);
 
     PUSphereRender();

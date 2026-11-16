@@ -50,19 +50,17 @@ bool Physics3DComponent::init()
     return Component::init();
 }
 
-Physics3DComponent* Physics3DComponent::create(Physics3DObject* physicsObj,
+cc::IntrusivePtr<Physics3DComponent> Physics3DComponent::create(Physics3DObject* physicsObj,
                                                const cocos2d::Vec3& translateInPhysics,
                                                const cocos2d::Quaternion& rotInPhsyics)
 {
-    auto ret = new Physics3DComponent();
+    cc::IntrusivePtr<Physics3DComponent> ret{new Physics3DComponent()};
     if (ret->init())
     {
         ret->setPhysics3DObject(physicsObj);
         ret->setTransformInPhysics(translateInPhysics, rotInPhsyics);
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

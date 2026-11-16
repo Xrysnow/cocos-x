@@ -60,7 +60,7 @@ class CC_DLL Animate3D : public ActionInterval
 {
 public:
     /**create Animate3D using Animation.*/
-    static Animate3D* create(Animation3D* animation);
+    static cc::IntrusivePtr<Animate3D> create(Animation3D* animation);
 
     /**
      * create Animate3D
@@ -69,7 +69,7 @@ public:
      * @param duration Time the Animate3D lasts
      * @return Animate3D created using animate
      */
-    static Animate3D* create(Animation3D* animation, float fromTime, float duration);
+    static cc::IntrusivePtr<Animate3D> create(Animation3D* animation, float fromTime, float duration);
 
     /**
      * create Animate3D by frame section, [startFrame, endFrame)
@@ -79,7 +79,7 @@ public:
      * @param frameRate default is 30 per second
      * @return Animate3D created using animate
      */
-    static Animate3D* createWithFrames(Animation3D* animation, int startFrame, int endFrame, float frameRate = 30.f);
+    static cc::IntrusivePtr<Animate3D> createWithFrames(Animation3D* animation, int startFrame, int endFrame, float frameRate = 30.f);
 
     //
     // Overrides
@@ -87,8 +87,8 @@ public:
     virtual void stop() override;
     virtual void step(float dt) override;
     virtual void startWithTarget(Node* target) override;
-    virtual Animate3D* reverse() const override;
-    virtual Animate3D* clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
 
     virtual void update(float t) override;
 

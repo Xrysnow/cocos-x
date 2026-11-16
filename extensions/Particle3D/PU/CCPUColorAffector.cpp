@@ -122,10 +122,9 @@ void PUColorAffector::updatePUAffector(PUParticle3D* particle, float /*deltaTime
     }
 }
 
-PUColorAffector* PUColorAffector::create()
+cc::IntrusivePtr<PUColorAffector> PUColorAffector::create()
 {
-    auto pca = new PUColorAffector();
-    pca->autorelease();
+    cc::IntrusivePtr<PUColorAffector> pca{new PUColorAffector()};
     return pca;
 }
 

@@ -22,8 +22,8 @@ public:
     static UIPackage* addPackage(const std::string& descFilePath);
     static void removePackage(const std::string& packageIdOrName);
     static void removeAllPackages();
-    static GObject* createObject(const std::string& pkgName, const std::string& resName);
-    static GObject* createObjectFromURL(const std::string& url);
+    static cc::IntrusivePtr<GObject> createObject(const std::string& pkgName, const std::string& resName);
+    static cc::IntrusivePtr<GObject> createObjectFromURL(const std::string& url);
     static std::string getItemURL(const std::string& pkgName, const std::string& resName);
     static PackageItem* getItemByURL(std::string_view url);
     static std::string normalizeURL(const std::string& url);
@@ -50,13 +50,13 @@ private:
     bool loadPackage(ByteBuffer* buffer);
     void loadAtlas(PackageItem* item);
     AtlasSprite* getSprite(const std::string& spriteId);
-    cocos2d::SpriteFrame* createSpriteTexture(AtlasSprite* sprite);
+    cc::IntrusivePtr<cocos2d::SpriteFrame> createSpriteTexture(AtlasSprite* sprite);
     void loadImage(PackageItem* item);
     void loadMovieClip(PackageItem* item);
     void loadFont(PackageItem* item);
 
-    GObject* createObject(const std::string& resName);
-    GObject* createObject(PackageItem* item);
+    cc::IntrusivePtr<GObject> createObject(const std::string& resName);
+    cc::IntrusivePtr<GObject> createObject(PackageItem* item);
 
 private:
     std::string _id;

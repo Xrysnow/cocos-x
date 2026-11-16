@@ -107,11 +107,16 @@ bool AbstractCheckButton::init()
 
 void AbstractCheckButton::initRenderer()
 {
-    _backGroundBoxRenderer         = Sprite::create();
-    _backGroundSelectedBoxRenderer = Sprite::create();
-    _frontCrossRenderer            = Sprite::create();
-    _backGroundBoxDisabledRenderer = Sprite::create();
-    _frontCrossDisabledRenderer    = Sprite::create();
+    cc::IntrusivePtr<Sprite> backGroundBoxRenderer;
+    cc::IntrusivePtr<Sprite> backGroundSelectedBoxRenderer;
+    cc::IntrusivePtr<Sprite> frontCrossRenderer;
+    cc::IntrusivePtr<Sprite> backGroundBoxDisabledRenderer;
+    cc::IntrusivePtr<Sprite> frontCrossDisabledRenderer;
+    _backGroundBoxRenderer         = (backGroundBoxRenderer = Sprite::create()).get();
+    _backGroundSelectedBoxRenderer = (backGroundSelectedBoxRenderer = Sprite::create()).get();
+    _frontCrossRenderer            = (frontCrossRenderer = Sprite::create()).get();
+    _backGroundBoxDisabledRenderer = (backGroundBoxDisabledRenderer = Sprite::create()).get();
+    _frontCrossDisabledRenderer    = (frontCrossDisabledRenderer = Sprite::create()).get();
 
     addProtectedChild(_backGroundBoxRenderer, BACKGROUNDBOX_RENDERER_Z, -1);
     addProtectedChild(_backGroundSelectedBoxRenderer, BACKGROUNDSELECTEDBOX_RENDERER_Z, -1);
@@ -561,11 +566,11 @@ void AbstractCheckButton::copySpecialProperties(Widget* widget)
     AbstractCheckButton* abstractCheckButton = dynamic_cast<AbstractCheckButton*>(widget);
     if (abstractCheckButton)
     {
-        loadTextureBackGround(abstractCheckButton->_backGroundBoxRenderer->getSpriteFrame());
-        loadTextureBackGroundSelected(abstractCheckButton->_backGroundSelectedBoxRenderer->getSpriteFrame());
-        loadTextureFrontCross(abstractCheckButton->_frontCrossRenderer->getSpriteFrame());
-        loadTextureBackGroundDisabled(abstractCheckButton->_backGroundBoxDisabledRenderer->getSpriteFrame());
-        loadTextureFrontCrossDisabled(abstractCheckButton->_frontCrossDisabledRenderer->getSpriteFrame());
+        loadTextureBackGround(abstractCheckButton->_backGroundBoxRenderer->getSpriteFrame().get());
+        loadTextureBackGroundSelected(abstractCheckButton->_backGroundSelectedBoxRenderer->getSpriteFrame().get());
+        loadTextureFrontCross(abstractCheckButton->_frontCrossRenderer->getSpriteFrame().get());
+        loadTextureBackGroundDisabled(abstractCheckButton->_backGroundBoxDisabledRenderer->getSpriteFrame().get());
+        loadTextureFrontCrossDisabled(abstractCheckButton->_frontCrossDisabledRenderer->getSpriteFrame().get());
         setSelected(abstractCheckButton->_isSelected);
         _zoomScale                         = abstractCheckButton->_zoomScale;
         _backgroundTextureScaleX           = abstractCheckButton->_backgroundTextureScaleX;

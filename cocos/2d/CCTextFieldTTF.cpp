@@ -109,41 +109,39 @@ TextFieldTTF::~TextFieldTTF() {}
 // static constructor
 //////////////////////////////////////////////////////////////////////////
 
-TextFieldTTF* TextFieldTTF::textFieldWithPlaceHolder(std::string_view placeholder,
+cc::IntrusivePtr<TextFieldTTF> TextFieldTTF::textFieldWithPlaceHolder(std::string_view placeholder,
                                                      const Vec2& dimensions,
                                                      TextHAlignment alignment,
                                                      std::string_view fontName,
                                                      float fontSize)
 {
-    TextFieldTTF* ret = new TextFieldTTF();
+    cc::IntrusivePtr<TextFieldTTF> ret{new TextFieldTTF()};
     if (ret->initWithPlaceHolder("", dimensions, alignment, fontName, fontSize))
     {
-        ret->autorelease();
+
         if (placeholder.size() > 0)
         {
             ret->setPlaceHolder(placeholder);
         }
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-TextFieldTTF* TextFieldTTF::textFieldWithPlaceHolder(std::string_view placeholder,
+cc::IntrusivePtr<TextFieldTTF> TextFieldTTF::textFieldWithPlaceHolder(std::string_view placeholder,
                                                      std::string_view fontName,
                                                      float fontSize)
 {
-    TextFieldTTF* ret = new TextFieldTTF();
+    cc::IntrusivePtr<TextFieldTTF> ret{new TextFieldTTF()};
     if (ret->initWithPlaceHolder("", fontName, fontSize))
     {
-        ret->autorelease();
+
         if (placeholder.size() > 0)
         {
             ret->setPlaceHolder(placeholder);
         }
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

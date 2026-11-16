@@ -67,9 +67,9 @@ public:
     /**
      * Allocates and initializes.
      */
-    static TextBMFont* create();
+    static cc::IntrusivePtr<TextBMFont> create();
 
-    static TextBMFont* create(std::string_view text, std::string_view filename);
+    static cc::IntrusivePtr<TextBMFont> create(std::string_view text, std::string_view filename);
 
     /** init a bitmap font atlas with an initial string and the FNT file */
     void setFntFile(std::string_view fileName);
@@ -108,7 +108,7 @@ protected:
     virtual void onSizeChanged() override;
 
     void labelBMFontScaleChangedWithSize();
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void adaptRenderers() override;
 

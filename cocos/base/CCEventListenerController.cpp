@@ -33,16 +33,12 @@ NS_CC_BEGIN
 
 const std::string EventListenerController::LISTENER_ID = "__cc_controller";
 
-EventListenerController* EventListenerController::create()
+cc::IntrusivePtr<EventListenerController> EventListenerController::create()
 {
-    auto ret = new EventListenerController();
-    if (ret->init())
+    cc::IntrusivePtr<EventListenerController> ret{new EventListenerController()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -110,12 +106,12 @@ bool EventListenerController::checkAvailable()
     return true;
 }
 
-EventListenerController* EventListenerController::clone()
+cc::IntrusivePtr<EventListener> EventListenerController::clone()
 {
-    auto ret = new EventListenerController();
+    cc::IntrusivePtr<EventListenerController> ret{new EventListenerController()};
     if (ret->init())
     {
-        ret->autorelease();
+
         ret->onConnected    = onConnected;
         ret->onDisconnected = onDisconnected;
         ret->onKeyDown      = onKeyDown;
@@ -125,7 +121,7 @@ EventListenerController* EventListenerController::clone()
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

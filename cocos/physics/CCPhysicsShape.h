@@ -392,9 +392,9 @@ public:
      * @param   radius A float number, it is the circle's radius.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsShapeCircle object pointer.
+     * @return  An owned PhysicsShapeCircle object pointer.
      */
-    static PhysicsShapeCircle* create(float radius,
+    static cc::IntrusivePtr<PhysicsShapeCircle> create(float radius,
                                       const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                       const Vec2& offset              = Vec2(0.0f, 0.0f));
 
@@ -460,9 +460,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsShapePolygon object pointer.
+     * @return  An owned PhysicsShapePolygon object pointer.
      */
-    static PhysicsShapePolygon* create(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsShapePolygon> create(const Vec2* points,
                                        int count,
                                        const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                        const Vec2& offset              = Vec2::ZERO,
@@ -552,9 +552,9 @@ public:
      * @param   size The size contains this box's width and height.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsShapeBox object pointer.
+     * @return  An owned PhysicsShapeBox object pointer.
      */
-    static PhysicsShapeBox* create(const Vec2& size,
+    static cc::IntrusivePtr<PhysicsShapeBox> create(const Vec2& size,
                                    const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                    const Vec2& offset              = Vec2::ZERO,
                                    float radius                    = 0.0f);
@@ -595,9 +595,9 @@ public:
      * @param   b It's the edge's end position.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsShapeEdgeSegment object pointer.
+     * @return  An owned PhysicsShapeEdgeSegment object pointer.
      */
-    static PhysicsShapeEdgeSegment* create(const Vec2& a,
+    static cc::IntrusivePtr<PhysicsShapeEdgeSegment> create(const Vec2& a,
                                            const Vec2& b,
                                            const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                            float border                    = 1);
@@ -648,9 +648,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsShapeEdgePolygon object pointer.
+     * @return  An owned PhysicsShapeEdgePolygon object pointer.
      */
-    static PhysicsShapeEdgePolygon* create(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsShapeEdgePolygon> create(const Vec2* points,
                                            int count,
                                            const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                            float border                    = 1);
@@ -701,9 +701,9 @@ public:
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
-     * @return  An autoreleased PhysicsShapeEdgeBox object pointer.
+     * @return  An owned PhysicsShapeEdgeBox object pointer.
      */
-    static PhysicsShapeEdgeBox* create(const Vec2& size,
+    static cc::IntrusivePtr<PhysicsShapeEdgeBox> create(const Vec2& size,
                                        const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                        float border                    = 0,
                                        const Vec2& offset              = Vec2::ZERO);
@@ -739,9 +739,9 @@ public:
      * @param   count An integer number, contains the count of the points array.
      * @param   material A PhysicsMaterial object, the default value is PHYSICSSHAPE_MATERIAL_DEFAULT.
      * @param   border It's a edge's border width.
-     * @return  An autoreleased PhysicsShapeEdgeChain object pointer.
+     * @return  An owned PhysicsShapeEdgeChain object pointer.
      */
-    static PhysicsShapeEdgeChain* create(const Vec2* points,
+    static cc::IntrusivePtr<PhysicsShapeEdgeChain> create(const Vec2* points,
                                          int count,
                                          const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT,
                                          float border                    = 1);

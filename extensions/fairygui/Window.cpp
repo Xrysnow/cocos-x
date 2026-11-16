@@ -145,6 +145,7 @@ bool Window::isTop() const
 
 void Window::showModalWait(int requestingCmd)
 {
+    cc::IntrusivePtr<GObject> modalWaitPane;
     if (requestingCmd != 0)
         _requestingCmd = requestingCmd;
 
@@ -152,7 +153,7 @@ void Window::showModalWait(int requestingCmd)
     {
         if (_modalWaitPane == nullptr)
         {
-            _modalWaitPane = UIPackage::createObjectFromURL(UIConfig::windowModalWaiting);
+            _modalWaitPane = (modalWaitPane = UIPackage::createObjectFromURL(UIConfig::windowModalWaiting)).get();
             _modalWaitPane->retain();
         }
 

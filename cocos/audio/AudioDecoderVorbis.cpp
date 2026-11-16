@@ -111,15 +111,13 @@ bool AudioDecoderVorbis::init(AudioStream* src)
 	return true;
 }
 
-AudioDecoderVorbis* AudioDecoderVorbis::create(AudioStream* src, size_t bufferSize)
+cc::IntrusivePtr<AudioDecoderVorbis> AudioDecoderVorbis::create(AudioStream* src, size_t bufferSize)
 {
-	auto ret = new (std::nothrow) AudioDecoderVorbis(bufferSize);
+	cc::IntrusivePtr<AudioDecoderVorbis> ret{new (std::nothrow) AudioDecoderVorbis(bufferSize)};
 	if (ret&&ret->init(src))
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 

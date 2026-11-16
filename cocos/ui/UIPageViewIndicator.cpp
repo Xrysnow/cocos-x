@@ -46,15 +46,13 @@ static const uint8_t INDEX_NODES_OPACITY_DEFAULT     = 0.3 * 255;
 namespace ui
 {
 
-PageViewIndicator* PageViewIndicator::create()
+cc::IntrusivePtr<PageViewIndicator> PageViewIndicator::create()
 {
-    PageViewIndicator* node = new PageViewIndicator();
+    cc::IntrusivePtr<PageViewIndicator> node{new PageViewIndicator()};
     if (node->init())
     {
-        node->autorelease();
         return node;
     }
-    CC_SAFE_DELETE(node);
     return nullptr;
 }
 
@@ -75,7 +73,8 @@ PageViewIndicator::~PageViewIndicator() {}
 
 bool PageViewIndicator::init()
 {
-    _currentIndexNode = utils::createSpriteFromBase64Cached(CIRCLE_IMAGE, CIRCLE_IMAGE_KEY);
+    auto currentIndexNode = utils::createSpriteFromBase64Cached(CIRCLE_IMAGE, CIRCLE_IMAGE_KEY);
+    _currentIndexNode = currentIndexNode.get();
     _currentIndexNode->setVisible(false);
     addProtectedChild(_currentIndexNode, 1);
     return true;
@@ -231,7 +230,7 @@ void PageViewIndicator::increaseNumberOfPages()
         _currentOverlappingIndexNode->setVisible(true);
         _currentOverlappingIndexNode = nullptr;
     }
-    Sprite* indexNode;
+    cc::IntrusivePtr<Sprite> indexNode;
 
     if (_useDefaultTexture)
     {

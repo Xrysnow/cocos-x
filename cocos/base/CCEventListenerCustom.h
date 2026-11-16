@@ -64,13 +64,13 @@ public:
     /** Creates an event listener with type and callback.
      * @param eventName The type of the event.
      * @param callback The callback function when the specified event was emitted.
-     * @return An autoreleased EventListenerCustom object.
+     * @return An owned EventListenerCustom object.
      */
-    static EventListenerCustom* create(std::string_view eventName, const std::function<void(EventCustom*)>& callback);
+    static cc::IntrusivePtr<EventListenerCustom> create(std::string_view eventName, const std::function<void(EventCustom*)>& callback);
 
     /// Overrides
     virtual bool checkAvailable() override;
-    virtual EventListenerCustom* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
 
     /** Constructor */
     EventListenerCustom();

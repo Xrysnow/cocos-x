@@ -49,7 +49,7 @@ public:
     static const TextureAnimationType DEFAULT_ANIMATION_TYPE;
     static const bool DEFAULT_START_RANDOM;
 
-    static PUTextureAnimator* create();
+    static cc::IntrusivePtr<PUTextureAnimator> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void initParticleForEmission(PUParticle3D* particle) override;

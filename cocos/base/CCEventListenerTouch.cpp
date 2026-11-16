@@ -67,16 +67,12 @@ bool EventListenerTouchOneByOne::isSwallowTouches()
     return _needSwallow;
 }
 
-EventListenerTouchOneByOne* EventListenerTouchOneByOne::create()
+cc::IntrusivePtr<EventListenerTouchOneByOne> EventListenerTouchOneByOne::create()
 {
-    auto ret = new EventListenerTouchOneByOne();
-    if (ret->init())
+    cc::IntrusivePtr<EventListenerTouchOneByOne> ret{new EventListenerTouchOneByOne()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -94,12 +90,12 @@ bool EventListenerTouchOneByOne::checkAvailable()
     return true;
 }
 
-EventListenerTouchOneByOne* EventListenerTouchOneByOne::clone()
+cc::IntrusivePtr<EventListener> EventListenerTouchOneByOne::clone()
 {
-    auto ret = new EventListenerTouchOneByOne();
+    cc::IntrusivePtr<EventListenerTouchOneByOne> ret{new EventListenerTouchOneByOne()};
     if (ret->init())
     {
-        ret->autorelease();
+
 
         ret->onTouchBegan     = onTouchBegan;
         ret->onTouchMoved     = onTouchMoved;
@@ -111,7 +107,7 @@ EventListenerTouchOneByOne* EventListenerTouchOneByOne::clone()
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -139,16 +135,12 @@ bool EventListenerTouchAllAtOnce::init()
     return false;
 }
 
-EventListenerTouchAllAtOnce* EventListenerTouchAllAtOnce::create()
+cc::IntrusivePtr<EventListenerTouchAllAtOnce> EventListenerTouchAllAtOnce::create()
 {
-    auto ret = new EventListenerTouchAllAtOnce();
-    if (ret->init())
+    cc::IntrusivePtr<EventListenerTouchAllAtOnce> ret{new EventListenerTouchAllAtOnce()};
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }
@@ -165,12 +157,12 @@ bool EventListenerTouchAllAtOnce::checkAvailable()
     return true;
 }
 
-EventListenerTouchAllAtOnce* EventListenerTouchAllAtOnce::clone()
+cc::IntrusivePtr<EventListener> EventListenerTouchAllAtOnce::clone()
 {
-    auto ret = new EventListenerTouchAllAtOnce();
+    cc::IntrusivePtr<EventListenerTouchAllAtOnce> ret{new EventListenerTouchAllAtOnce()};
     if (ret->init())
     {
-        ret->autorelease();
+
 
         ret->onTouchesBegan     = onTouchesBegan;
         ret->onTouchesMoved     = onTouchesMoved;
@@ -179,7 +171,7 @@ EventListenerTouchAllAtOnce* EventListenerTouchAllAtOnce::clone()
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

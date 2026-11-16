@@ -67,7 +67,7 @@ public:
     /**
      */
     PUScriptTranslator* getTranslator(std::string_view type);
-    PUAffector* createAffector(std::string_view type);
+    cc::IntrusivePtr<PUAffector> createAffector(std::string_view type);
 
     PUAffectorManager();
     ~PUAffectorManager();

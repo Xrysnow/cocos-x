@@ -51,17 +51,13 @@ bool Component::serialize(void* /*ar*/)
     return true;
 }
 
-Component* Component::create()
+cc::IntrusivePtr<Component> Component::create()
 {
-    Component* ret = new Component();
+    cc::IntrusivePtr<Component> ret{new Component()};
 
-    if (ret->init())
+    if (!(ret->init()))
     {
-        ret->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 
     return ret;

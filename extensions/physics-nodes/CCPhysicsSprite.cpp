@@ -40,106 +40,78 @@ PhysicsSprite::PhysicsSprite()
     : _ignoreBodyRotation(false), _CPBody(nullptr), _pB2Body(nullptr), _PTMRatio(0.0f), _syncTransform(nullptr)
 {}
 
-PhysicsSprite* PhysicsSprite::create()
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create()
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->init())
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->init()))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::createWithTexture(Texture2D* pTexture)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTexture)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithTexture(pTexture))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithTexture(pTexture)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::createWithTexture(Texture2D* pTexture, const Rect& rect)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTexture, const Rect& rect)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithTexture(pTexture, rect))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithTexture(pTexture, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithSpriteFrame(pSpriteFrame))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithSpriteFrame(pSpriteFrame)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::createWithSpriteFrameName(const char* pszSpriteFrameName)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrameName(const char* pszSpriteFrameName)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithSpriteFrameName(pszSpriteFrameName))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithSpriteFrameName(pszSpriteFrameName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::create(const char* pszFileName)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create(const char* pszFileName)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithFile(pszFileName))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithFile(pszFileName)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;
 }
 
-PhysicsSprite* PhysicsSprite::create(const char* pszFileName, const Rect& rect)
+cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create(const char* pszFileName, const Rect& rect)
 {
-    PhysicsSprite* pRet = new PhysicsSprite();
-    if (pRet->initWithFile(pszFileName, rect))
+    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    if (!(pRet->initWithFile(pszFileName, rect)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;

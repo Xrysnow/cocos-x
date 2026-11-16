@@ -40,28 +40,24 @@ Viewport Camera::_defaultViewport;
 
 // start static methods
 
-Camera* Camera::create()
+cc::IntrusivePtr<Camera> Camera::create()
 {
-    Camera* camera = new Camera();
+    cc::IntrusivePtr<Camera> camera{new Camera()};
     camera->initDefault();
-    camera->autorelease();
-
     return camera;
 }
 
-Camera* Camera::createPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
+cc::IntrusivePtr<Camera> Camera::createPerspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
 {
-    auto ret = new Camera();
+    cc::IntrusivePtr<Camera> ret{new Camera()};
     ret->initPerspective(fieldOfView, aspectRatio, nearPlane, farPlane);
-    ret->autorelease();
     return ret;
 }
 
-Camera* Camera::createOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane)
+cc::IntrusivePtr<Camera> Camera::createOrthographic(float zoomX, float zoomY, float nearPlane, float farPlane)
 {
-    auto ret = new Camera();
+    cc::IntrusivePtr<Camera> ret{new Camera()};
     ret->initOrthographic(zoomX, zoomY, nearPlane, farPlane);
-    ret->autorelease();
     return ret;
 }
 

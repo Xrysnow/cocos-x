@@ -34,27 +34,23 @@ RelativeBox::RelativeBox() {}
 
 RelativeBox::~RelativeBox() {}
 
-RelativeBox* RelativeBox::create()
+cc::IntrusivePtr<RelativeBox> RelativeBox::create()
 {
-    RelativeBox* widget = new RelativeBox();
+    cc::IntrusivePtr<RelativeBox> widget{new RelativeBox()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-RelativeBox* RelativeBox::create(const Vec2& size)
+cc::IntrusivePtr<RelativeBox> RelativeBox::create(const Vec2& size)
 {
-    RelativeBox* widget = new RelativeBox();
+    cc::IntrusivePtr<RelativeBox> widget{new RelativeBox()};
     if (widget->initWithSize(size))
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 

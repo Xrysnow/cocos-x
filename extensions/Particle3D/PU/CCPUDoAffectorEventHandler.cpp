@@ -76,10 +76,9 @@ void PUDoAffectorEventHandler::handle(PUParticleSystem3D* particleSystem, PUPart
     }
 }
 
-PUDoAffectorEventHandler* PUDoAffectorEventHandler::create()
+cc::IntrusivePtr<PUDoAffectorEventHandler> PUDoAffectorEventHandler::create()
 {
-    auto peh = new PUDoAffectorEventHandler();
-    peh->autorelease();
+    cc::IntrusivePtr<PUDoAffectorEventHandler> peh{new PUDoAffectorEventHandler()};
     return peh;
 }
 

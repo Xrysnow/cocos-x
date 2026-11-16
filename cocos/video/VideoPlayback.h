@@ -78,7 +78,7 @@ namespace video
 		void beginAsyncSeek(uint64_t generation, bool atOrigin);
 		bool usesDeviceClock() const { return audioEnabled && mode == PlayMode::REALTIME; }
 
-		cocos2d::RefPtr<Decoder> decoder;
+		cc::IntrusivePtr<Decoder> decoder;
 		std::unique_ptr<VideoDecodeWorker> worker;
 		std::shared_ptr<const std::atomic<bool>> closeCompletion;
 		std::optional<AsyncVideoSnapshot> async;

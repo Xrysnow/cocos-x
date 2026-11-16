@@ -47,15 +47,13 @@ AtlasNode::~AtlasNode()
     CC_SAFE_RELEASE(_textureAtlas);
 }
 
-AtlasNode* AtlasNode::create(std::string_view tile, int tileWidth, int tileHeight, int itemsToRender)
+cc::IntrusivePtr<AtlasNode> AtlasNode::create(std::string_view tile, int tileWidth, int tileHeight, int itemsToRender)
 {
-    AtlasNode* ret = new AtlasNode();
+    cc::IntrusivePtr<AtlasNode> ret{new AtlasNode()};
     if (ret->initWithTileFile(tile, tileWidth, tileHeight, itemsToRender))
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -76,7 +74,7 @@ bool AtlasNode::initWithTexture(Texture2D* texture, int tileWidth, int tileHeigh
 
     _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
 
-    _textureAtlas = new TextureAtlas();
+    _textureAtlas = cc::IntrusivePtr<TextureAtlas>{new TextureAtlas()}.detach();
 
     _textureAtlas->initWithTexture(texture, itemsToRender);
 

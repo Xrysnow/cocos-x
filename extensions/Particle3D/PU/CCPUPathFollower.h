@@ -36,7 +36,7 @@ NS_CC_BEGIN
 class CC_EX_DLL PUPathFollower : public PUAffector
 {
 public:
-    static PUPathFollower* create();
+    static cc::IntrusivePtr<PUPathFollower> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
     /**

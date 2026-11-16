@@ -150,7 +150,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* create();
+    static cc::IntrusivePtr<Label> create();
 
     /**
      * Allocates and initializes a Label, base on platform-dependent API.
@@ -166,7 +166,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* createWithSystemFont(std::string_view text,
+    static cc::IntrusivePtr<Label> createWithSystemFont(std::string_view text,
                                        std::string_view font,
                                        float fontSize,
                                        const Vec2& dimensions    = Vec2::ZERO,
@@ -185,7 +185,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* createWithTTF(std::string_view text,
+    static cc::IntrusivePtr<Label> createWithTTF(std::string_view text,
                                 std::string_view fontFilePath,
                                 float fontSize,
                                 const Vec2& dimensions    = Vec2::ZERO,
@@ -203,7 +203,7 @@ public:
      * @return An automatically released Label object.
      * @see TTFConfig setTTFConfig setMaxLineWidth
      */
-    static Label* createWithTTF(const TTFConfig& ttfConfig,
+    static cc::IntrusivePtr<Label> createWithTTF(const TTFConfig& ttfConfig,
                                 std::string_view text,
                                 TextHAlignment hAlignment = TextHAlignment::LEFT,
                                 int maxLineWidth          = 0);
@@ -219,7 +219,7 @@ public:
      * @return An automatically released Label object.
      * @see setBMFontFilePath setMaxLineWidth
      */
-    static Label* createWithBMFont(std::string_view bmfontPath,
+    static cc::IntrusivePtr<Label> createWithBMFont(std::string_view bmfontPath,
                                    std::string_view text,
                                    const TextHAlignment& hAlignment = TextHAlignment::LEFT,
                                    int maxLineWidth                 = 0);
@@ -237,7 +237,7 @@ public:
      * @return An automatically released Label object.
      * @see setBMFontFilePath setMaxLineWidth
      */
-    static Label* createWithBMFont(std::string_view bmfontPath,
+    static cc::IntrusivePtr<Label> createWithBMFont(std::string_view bmfontPath,
                                    std::string_view text,
                                    const TextHAlignment& hAlignment,
                                    int maxLineWidth,
@@ -256,7 +256,7 @@ public:
      * @return An automatically released Label object.
      * @see setBMFontFilePath setMaxLineWidth
      */
-    static Label* createWithBMFont(std::string_view bmfontPath,
+    static cc::IntrusivePtr<Label> createWithBMFont(std::string_view bmfontPath,
                                    std::string_view text,
                                    const TextHAlignment& hAlignment,
                                    int maxLineWidth,
@@ -274,7 +274,7 @@ public:
      * @return An automatically released Label object.
      * @see setBMFontFilePath setMaxLineWidth
      */
-    CC_DEPRECATED_ATTRIBUTE static Label* createWithBMFont(std::string_view bmfontPath,
+    CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<Label> createWithBMFont(std::string_view bmfontPath,
                                                            std::string_view text,
                                                            const TextHAlignment& hAlignment,
                                                            int maxLineWidth,
@@ -290,7 +290,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* createWithCharMap(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap);
+    static cc::IntrusivePtr<Label> createWithCharMap(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap);
 
     /**
      * Allocates and initializes a Label, with char map configuration.
@@ -302,7 +302,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* createWithCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap);
+    static cc::IntrusivePtr<Label> createWithCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap);
 
     /**
      * Allocates and initializes a Label, with char map configuration.
@@ -311,7 +311,7 @@ public:
      *
      * @return An automatically released Label object.
      */
-    static Label* createWithCharMap(std::string_view plistFile);
+    static cc::IntrusivePtr<Label> createWithCharMap(std::string_view plistFile);
 
     //  end of creators group
     /// @}
@@ -828,15 +828,15 @@ protected:
     bool _systemFontDirty;
     std::string _systemFont;
     float _systemFontSize;
-    Sprite* _textSprite;
-    Sprite* _shadowNode;
+    cc::IntrusivePtr<Sprite> _textSprite;
+    cc::IntrusivePtr<Sprite> _shadowNode;
 
     FontAtlas* _fontAtlas;
     Vector<SpriteBatchNode*> _batchNodes;
     std::vector<LetterInfo> _lettersInfo;
 
     //! used for optimization
-    Sprite* _reusedLetter;
+    cc::IntrusivePtr<Sprite> _reusedLetter;
     Rect _reusedRect;
     int _lengthOfString;
 

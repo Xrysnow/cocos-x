@@ -34,7 +34,7 @@ private:
 	InternalManager* internalManager_ = nullptr;
 
 public:
-	static Effect* create(const std::string& filename, float maginification = 1.0f);
+	static cc::IntrusivePtr<Effect> create(const std::string& filename, float maginification = 1.0f);
 
 	Effect(InternalManager* internalManager = nullptr);
 
@@ -99,7 +99,7 @@ public:
 		\~English	Instance
 		\~Japanese	インスタンス
 	*/
-	static EffectEmitter* create(EffectManager* manager);
+	static cc::IntrusivePtr<EffectEmitter> create(EffectManager* manager);
 
 	/**
 	@brief
@@ -118,7 +118,7 @@ public:
 	\~English	Instance
 	\~Japanese	インスタンス
 	*/
-	static EffectEmitter* create(EffectManager* manager, const std::string& filename, float maginification = 1.0f);
+	static cc::IntrusivePtr<EffectEmitter> create(EffectManager* manager, const std::string& filename, float maginification = 1.0f);
 
 	/**
 		@brief
@@ -355,7 +355,7 @@ public:
 		\~English	Instance
 		\~Japanese	インスタンス
 	*/
-	static EffectManager* create(cocos2d::Size visibleSize);
+	static cc::IntrusivePtr<EffectManager> create(cocos2d::Size visibleSize);
 
 	/**
 		@brief
@@ -455,7 +455,7 @@ public:
 		\~English	Instance
 		\~Japanese	インスタンス
 	*/
-	static NetworkServer* create();
+	static cc::IntrusivePtr<NetworkServer> create();
 
 	/**
 	@brief

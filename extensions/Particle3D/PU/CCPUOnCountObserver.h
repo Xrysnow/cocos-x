@@ -46,7 +46,7 @@ protected:
     PUComparisionOperator _compare;
 
 public:
-    static PUOnCountObserver* create();
+    static cc::IntrusivePtr<PUOnCountObserver> create();
 
     // Constants
     static const unsigned int DEFAULT_THRESHOLD;

@@ -50,8 +50,8 @@ public:
     void setSelectionMode(ListSelectionMode value) { _selectionMode = value; }
 
     GObjectPool* getItemPool() const { return _pool; }
-    GObject* getFromPool() { return getFromPool(cocos2d::STD_STRING_EMPTY); }
-    GObject* getFromPool(const std::string& url);
+    cc::IntrusivePtr<GObject> getFromPool() { return getFromPool(cocos2d::STD_STRING_EMPTY); }
+    cc::IntrusivePtr<GObject> getFromPool(const std::string& url);
     void returnToPool(GObject* obj);
     GObject* addItemFromPool() { return addItemFromPool(cocos2d::STD_STRING_EMPTY); }
     GObject* addItemFromPool(const std::string& url);

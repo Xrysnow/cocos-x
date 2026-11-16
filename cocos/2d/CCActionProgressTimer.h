@@ -51,13 +51,13 @@ public:
      * @param percent Specify the destination percentage.
      * @return If the creation success, return a pointer of ProgressTo action; otherwise, return nil.
      */
-    static ProgressTo* create(float duration, float percent);
+    static cc::IntrusivePtr<ProgressTo> create(float duration, float percent);
 
     //
     // Overrides
     //
-    virtual ProgressTo* clone() const override;
-    virtual ProgressTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
 
@@ -94,13 +94,13 @@ public:
      * @param toPercentage Specify the destination percentage.
      * @return If the creation success, return a pointer of ProgressFromTo action; otherwise, return nil.
      */
-    static ProgressFromTo* create(float duration, float fromPercentage, float toPercentage);
+    static cc::IntrusivePtr<ProgressFromTo> create(float duration, float fromPercentage, float toPercentage);
 
     //
     // Overrides
     //
-    virtual ProgressFromTo* clone() const override;
-    virtual ProgressFromTo* reverse() const override;
+    virtual cc::IntrusivePtr<Action> clone() const override;
+    virtual cc::IntrusivePtr<Action> reverse() const override;
     virtual void startWithTarget(Node* target) override;
     virtual void update(float time) override;
 

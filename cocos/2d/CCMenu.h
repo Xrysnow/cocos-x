@@ -60,16 +60,27 @@ public:
     /**
      *@brief Creates an empty Menu.
      */
-    static Menu* create();
+    static cc::IntrusivePtr<Menu> create();
 
     /** Creates a Menu with MenuItem objects. */
-    static Menu* create(MenuItem* item, ...) CC_REQUIRES_NULL_TERMINATION;
+    template <class... Items>
+    static cc::IntrusivePtr<Menu> create(const Items&... values)
+    {
+        Vector<MenuItem*> items;
+        bool ended = false;
+        auto append = [&](MenuItem* item) {
+            if (!item) ended = true;
+            if (!ended) items.pushBack(item);
+        };
+        (append(values), ...);
+        return createWithArray(items);
+    }
 
     /**
      * Creates a Menu with a Array of MenuItem objects.
      * @js NA
      */
-    static Menu* createWithArray(const Vector<MenuItem*>& arrayOfItems);
+    static cc::IntrusivePtr<Menu> createWithArray(const Vector<MenuItem*>& arrayOfItems);
 
     /**
      * Creates a Menu with it's item, then use addChild() to add
@@ -77,12 +88,12 @@ public:
      * number of variables.
      * @js NA
      */
-    static Menu* createWithItem(MenuItem* item);
+    static cc::IntrusivePtr<Menu> createWithItem(MenuItem* item);
 
     /** Creates a Menu with MenuItem objects.
      * @js NA
      */
-    static Menu* createWithItems(MenuItem* firstItem, va_list args);
+    static cc::IntrusivePtr<Menu> createWithItems(MenuItem* firstItem, va_list args);
 
     /** Align items vertically. */
     void alignItemsVertically();

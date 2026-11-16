@@ -56,7 +56,8 @@ LuaEngine::~LuaEngine(void)
 
 bool LuaEngine::init(void)
 {
-    _stack = LuaStack::create();
+    cc::IntrusivePtr<LuaStack> stack;
+    _stack = (stack = LuaStack::create()).get();
     _stack->retain();
     return true;
 }

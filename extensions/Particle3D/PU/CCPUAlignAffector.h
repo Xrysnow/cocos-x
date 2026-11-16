@@ -37,7 +37,7 @@ public:
     // Constants
     static const bool DEFAULT_RESIZE;
 
-    static PUAlignAffector* create();
+    static cc::IntrusivePtr<PUAlignAffector> create();
 
     virtual void firstParticleUpdate(PUParticle3D* particle, float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

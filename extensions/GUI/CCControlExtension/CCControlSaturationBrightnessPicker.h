@@ -77,7 +77,7 @@ public:
     virtual ~ControlSaturationBrightnessPicker();
     virtual bool initWithTargetAndPos(Node* target, Vec2 pos);
 
-    static ControlSaturationBrightnessPicker* create(Node* target, Vec2 pos);
+    static cc::IntrusivePtr<ControlSaturationBrightnessPicker> create(Node* target, Vec2 pos);
 
     virtual void setEnabled(bool enabled) override;
     /**

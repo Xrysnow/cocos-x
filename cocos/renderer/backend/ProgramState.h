@@ -99,7 +99,7 @@ public:
     /**
      * Deep clone ProgramState
      */
-    ProgramState* clone() const;
+    cc::IntrusivePtr<ProgramState> clone() const;
 
     /**
      * Get the program object.

@@ -35,12 +35,13 @@ GLoader::~GLoader()
 
 void GLoader::handleInit()
 {
-    _content = FUISprite::create();
+    cc::IntrusivePtr<FUISprite> content;
+    _content = (content = FUISprite::create()).get();
     _content->retain();
     _content->setAnchorPoint(Vec2::ZERO);
     _content->setCascadeOpacityEnabled(true);
 
-    FUIContainer* c = FUIContainer::create();
+    cc::IntrusivePtr<FUIContainer> c = FUIContainer::create();
     c->retain();
     c->gOwner = this;
 
@@ -208,6 +209,7 @@ void GLoader::loadContent()
 
 void GLoader::loadFromPackage()
 {
+    cc::IntrusivePtr<ActionMovieClip> playAction;
     _contentItem = UIPackage::getItemByURL(_url);
 
     if (_contentItem != nullptr)
@@ -231,7 +233,7 @@ void GLoader::loadFromPackage()
             _contentStatus = 2;
             if (_playAction == nullptr)
             {
-                _playAction = ActionMovieClip::create(_contentItem->animation, _contentItem->repeatDelay);
+                _playAction = (playAction = ActionMovieClip::create(_contentItem->animation, _contentItem->repeatDelay)).get();
                 _playAction->retain();
             }
             else
@@ -245,10 +247,10 @@ void GLoader::loadFromPackage()
         }
         else if (_contentItem->type == PackageItemType::COMPONENT)
         {
-            GObject* obj = UIPackage::createObjectFromURL(_url);
+            cc::IntrusivePtr<GObject> obj = UIPackage::createObjectFromURL(_url);
             if (obj == nullptr)
                 setErrorState();
-            else if (dynamic_cast<GComponent*>(obj) == nullptr)
+            else if (dynamic_cast<GComponent*>(obj.get()) == nullptr)
             {
                 setErrorState();
             }
@@ -310,7 +312,7 @@ void GLoader::clearContent()
     clearErrorState();
 
     if (_contentStatus == 4)
-        freeExternal(_content->getSpriteFrame());
+        freeExternal(_content->getSpriteFrame().get());
 
     if (_contentStatus == 2)
     {

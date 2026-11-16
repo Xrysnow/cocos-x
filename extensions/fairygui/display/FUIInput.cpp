@@ -5,19 +5,21 @@
 NS_FGUI_BEGIN
 USING_NS_CC;
 
-FUIInput * FUIInput::create()
+cc::IntrusivePtr<FUIInput> FUIInput::create()
 {
-    FUIInput* pRet = new FUIInput();
+    cc::IntrusivePtr<FUIInput> pRet{new FUIInput()};
 
-    if (pRet->initWithSizeAndBackgroundSprite(Size(100, 100),
-        (ui::Scale9Sprite*)ui::Scale9Sprite::createWithTexture(UIPackage::getEmptyTexture())))
+    auto* texture = UIPackage::getEmptyTexture();
+    auto frame = SpriteFrame::createWithTexture(texture, Rect(Vec2::ZERO, texture->getContentSize()));
+    auto background = ui::Scale9Sprite::createWithSpriteFrame(frame.get());
+    if (pRet->initWithSizeAndBackgroundSprite(Size(100, 100), background.get()))
     {
-        pRet->autorelease();
+
         pRet->continueInit();
     }
     else
     {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
 
     return pRet;

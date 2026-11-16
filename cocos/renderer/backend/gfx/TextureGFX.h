@@ -107,7 +107,7 @@ class TextureGFX : public TextureBackend
 public:
     ~TextureGFX() override;
 
-    static TextureGFX* create(const cc::gfx::TextureInfo& info);
+    static cc::IntrusivePtr<TextureGFX> create(const cc::gfx::TextureInfo& info);
 
     void setSampler(const cc::gfx::SamplerInfo& sinfo);
     void setSampler(cc::gfx::Sampler* sampler);

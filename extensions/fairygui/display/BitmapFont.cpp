@@ -10,11 +10,9 @@ BitmapFont::~BitmapFont()
 {
 }
 
-BitmapFont * BitmapFont::create()
+cc::IntrusivePtr<BitmapFont> BitmapFont::create()
 {
-    BitmapFont *font = new BitmapFont();
-    font->autorelease();
-
+    cc::IntrusivePtr<BitmapFont> font{new BitmapFont()};
     return font;
 }
 

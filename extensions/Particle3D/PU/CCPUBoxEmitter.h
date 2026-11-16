@@ -39,7 +39,7 @@ public:
     static const float DEFAULT_HEIGHT;
     static const float DEFAULT_DEPTH;
 
-    static CCPUBoxEmitter* create();
+    static cc::IntrusivePtr<CCPUBoxEmitter> create();
 
     /**
      */
@@ -56,7 +56,7 @@ public:
     float getDepth() const;
     void setDepth(const float depth);
 
-    virtual CCPUBoxEmitter* clone() override;
+    virtual cc::IntrusivePtr<PUEmitter> clone() override;
     virtual void copyAttributesTo(PUEmitter* emitter) override;
 
     CCPUBoxEmitter();

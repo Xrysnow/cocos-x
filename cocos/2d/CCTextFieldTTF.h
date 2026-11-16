@@ -98,7 +98,7 @@ public:
     /** Creates a TextFieldTTF from a fontname, alignment, dimension and font size.
      * @js NA
      */
-    static TextFieldTTF* textFieldWithPlaceHolder(std::string_view placeholder,
+    static cc::IntrusivePtr<TextFieldTTF> textFieldWithPlaceHolder(std::string_view placeholder,
                                                   const Vec2& dimensions,
                                                   TextHAlignment alignment,
                                                   std::string_view fontName,
@@ -107,7 +107,7 @@ public:
     /** Creates a TextFieldTTF from a fontname and font size.
      * @js NA
      */
-    static TextFieldTTF* textFieldWithPlaceHolder(std::string_view placeholder,
+    static cc::IntrusivePtr<TextFieldTTF> textFieldWithPlaceHolder(std::string_view placeholder,
                                                   std::string_view fontName,
                                                   float fontSize);
 

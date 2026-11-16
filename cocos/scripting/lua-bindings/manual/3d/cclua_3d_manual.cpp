@@ -75,16 +75,16 @@ int cclua_3d_MeshRenderer_createAsync(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.MeshRenderer", "cc.MeshRenderer:createAsync");
     const auto start = [](std::string_view model, std::string_view texture,
-                          std::function<void(cocos2d::MeshRenderer*)> callback) {
+                          std::function<void(cc::IntrusivePtr<cocos2d::MeshRenderer>)> callback) {
         cocos2d::MeshRenderer::createAsync(model, texture,
-            [callback = std::move(callback)](cocos2d::MeshRenderer* mesh, void*) { callback(mesh); }, nullptr);
+            [callback = std::move(callback)](cc::IntrusivePtr<cocos2d::MeshRenderer> mesh, void*) { callback(std::move(mesh)); }, nullptr);
     };
     if (argc == 2 || argc == 3) {
         // Required callable in both checks modes; the owned converter handles its lifetime.
         if (lua_type(lua_S, argc + 1) != LUA_TFUNCTION) arg_cur = argc;
         else {
             LUA_TRY_INVOKE(3, start);
-            const auto shortStart = [&](std::string_view model, std::function<void(cocos2d::MeshRenderer*)> callback) {
+            const auto shortStart = [&](std::string_view model, std::function<void(cc::IntrusivePtr<cocos2d::MeshRenderer>)> callback) {
                 start(model, "", std::move(callback));
             };
             LUA_TRY_INVOKE(2, shortStart);

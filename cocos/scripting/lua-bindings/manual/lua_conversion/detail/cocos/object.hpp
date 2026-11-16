@@ -129,8 +129,8 @@ namespace lua
 
 	// Transparent RefPtr ownership and conversion contract: see ../../README.md (RefPtr conversion).
 	template<typename T>
-	struct to_native<cocos2d::RefPtr<T>> {
-		static bool F(lua_State* L, int lo, cocos2d::RefPtr<T>* outValue, const char* fName = "") {
+	struct to_native<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
+		static bool F(lua_State* L, int lo, cc::IntrusivePtr<T>* outValue, const char* fName = "") {
 			if (!L || !outValue) return false;
 			T* value = nullptr;
 			if (!to_native<T*>::F(L, lo, &value, fName)) return false;
@@ -140,8 +140,15 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_lua<cocos2d::RefPtr<T>> {
-		static void F(lua_State* L, const cocos2d::RefPtr<T>& inValue) {
+	struct to_lua<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
+		static void F(lua_State* L, cc::IntrusivePtr<T>&& inValue) {
+			if (!L) return;
+			// Owned factory results transfer their share before Lua can raise an
+			// allocation error. L0 userdata borrows it until the pool is cleared.
+			auto* value = cocos2d::transferToAutoreleasePool(std::move(inValue));
+			to_lua<T*>::F(L, value);
+		}
+		static void F(lua_State* L, const cc::IntrusivePtr<T>& inValue) {
 			if (!L) return;
 			auto* value = inValue.get();
 			if (value) {
@@ -155,9 +162,9 @@ namespace lua
 	};
 
 	template<typename T>
-	struct binding_read<cocos2d::RefPtr<T>> {
+	struct binding_read<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
 		template<bool Checked>
-		static bool F(lua_State* L, int lo, cocos2d::RefPtr<T>* outValue) {
+		static bool F(lua_State* L, int lo, cc::IntrusivePtr<T>* outValue) {
 			LUA_CHECK_TO_NATIVE;
 			const bool wrapper = lua_istable(L, lo);
 			T* value = nullptr;
@@ -171,7 +178,7 @@ namespace lua
 	};
 
 	template<typename T> struct is_ref_ptr : std::false_type {};
-	template<typename T> struct is_ref_ptr<cocos2d::RefPtr<T>> : std::true_type {};
+	template<typename T> struct is_ref_ptr<cc::IntrusivePtr<T>> : std::is_base_of<cocos2d::Ref, std::remove_const_t<T>> {};
 
 	template<typename Targ>
 	struct binding_argument<Targ, std::enable_if_t<is_ref_ptr<std::remove_cv_t<std::remove_reference_t<Targ>>>::value>> {

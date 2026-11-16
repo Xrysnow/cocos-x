@@ -13,13 +13,13 @@ public:
     BitmapFont();
     virtual ~BitmapFont();
 
-    static BitmapFont* create();
+    static cc::IntrusivePtr<BitmapFont> create();
 
     virtual int* getHorizontalKerningForTextUTF32(const std::u32string& text, int &outNumLetters) const override;
 #if defined(CC_VERSION)
-    virtual cocos2d::FontAtlas* newFontAtlas() override { return new cocos2d::FontAtlas(this); }
+    virtual cocos2d::FontAtlas* newFontAtlas() override { return cc::IntrusivePtr<cocos2d::FontAtlas>{new cocos2d::FontAtlas(this)}.detach(); }
 #else
-    virtual cocos2d::FontAtlas* createFontAtlas() override { return new cocos2d::FontAtlas(*this); }
+    virtual cc::IntrusivePtr<cocos2d::FontAtlas> createFontAtlas() override { return cc::IntrusivePtr<cocos2d::FontAtlas>{new cocos2d::FontAtlas(*this)}.detach(); }
 #endif
     cocos2d::FontAtlas* resetFontAtlas(cocos2d::FontAtlas* fontAtlas)
     {

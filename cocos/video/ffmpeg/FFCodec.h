@@ -22,9 +22,9 @@ namespace ffmpeg
 		virtual bool init(const AVCodec* codec_);
 	public:
 
-		static Codec* create(const AVCodec* codec);
-		static Codec* createByName(const char* name, bool isEncoder = false);
-		static Codec* createById(AVCodecID id, bool isEncoder = false);
+		static cc::IntrusivePtr<Codec> create(const AVCodec* codec);
+		static cc::IntrusivePtr<Codec> createByName(const char* name, bool isEncoder = false);
+		static cc::IntrusivePtr<Codec> createById(AVCodecID id, bool isEncoder = false);
 
 		const AVCodec* getCodec() const { return codec; }
 		AVCodecContext* getCodecContext() const { return codecContext; }
@@ -54,8 +54,8 @@ namespace ffmpeg
 	protected:
 		bool init(const AVCodec* codec_) override;
 	public:
-		static AudioDecoder* createByName(const char* name);
-		static AudioDecoder* createById(AVCodecID id, bool autorelease = true);
+		static cc::IntrusivePtr<AudioDecoder> createByName(const char* name);
+		static cc::IntrusivePtr<AudioDecoder> createById(AVCodecID id);
 	};
 
 	class VideoDecoder : public Decoder
@@ -63,8 +63,8 @@ namespace ffmpeg
 	protected:
 		bool init(const AVCodec* codec_) override;
 	public:
-		static VideoDecoder* createByName(const char* name);
-		static VideoDecoder* createById(AVCodecID id, bool autorelease = true);
+		static cc::IntrusivePtr<VideoDecoder> createByName(const char* name);
+		static cc::IntrusivePtr<VideoDecoder> createById(AVCodecID id);
 		~VideoDecoder() override;
 		bool open() override;
 		bool openHardware(AVPixelFormat desiredSWFormat = AV_PIX_FMT_NONE);

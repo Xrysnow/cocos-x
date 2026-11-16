@@ -247,7 +247,7 @@ public:
     virtual ~VideoPlayer();
 
 protected:
-    virtual cocos2d::ui::Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<cocos2d::ui::Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     #if CC_VIDEOPLAYER_DEBUG_DRAW

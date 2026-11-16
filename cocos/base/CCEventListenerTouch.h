@@ -50,7 +50,7 @@ public:
 
     /** Create a one by one touch event listener.
      */
-    static EventListenerTouchOneByOne* create();
+    static cc::IntrusivePtr<EventListenerTouchOneByOne> create();
 
     /**
      * Destructor.
@@ -70,7 +70,7 @@ public:
     bool isSwallowTouches();
 
     /// Overrides
-    virtual EventListenerTouchOneByOne* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
     //
 
@@ -103,16 +103,16 @@ public:
 
     /** Create a all at once event listener.
      *
-     * @return An autoreleased EventListenerTouchAllAtOnce object.
+     * @return An owned EventListenerTouchAllAtOnce object.
      */
-    static EventListenerTouchAllAtOnce* create();
+    static cc::IntrusivePtr<EventListenerTouchAllAtOnce> create();
     /** Destructor.
      * @js NA
      */
     virtual ~EventListenerTouchAllAtOnce();
 
     /// Overrides
-    virtual EventListenerTouchAllAtOnce* clone() override;
+    virtual cc::IntrusivePtr<EventListener> clone() override;
     virtual bool checkAvailable() override;
     //
 public:

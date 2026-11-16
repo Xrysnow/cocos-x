@@ -41,7 +41,7 @@ public:
     static const Vec3 DEFAULT_END;
     static const float DEFAULT_DRIFT;
 
-    static PULineAffector* create();
+    static cc::IntrusivePtr<PULineAffector> create();
 
     /**
      */

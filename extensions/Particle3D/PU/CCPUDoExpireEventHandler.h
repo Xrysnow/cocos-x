@@ -42,7 +42,7 @@ class PUParticleSystem3D;
 class CC_EX_DLL PUDoExpireEventHandler : public PUEventHandler
 {
 public:
-    static PUDoExpireEventHandler* create();
+    static cc::IntrusivePtr<PUDoExpireEventHandler> create();
 
     ///** Get indication that all particles are expired
     //*/

@@ -228,12 +228,11 @@ void PhysicsDebugNode::draw(Renderer* renderer, const Mat4& transform, uint32_t 
 
 PhysicsDebugNode::PhysicsDebugNode() : _spacePtr(nullptr) {}
 
-PhysicsDebugNode* PhysicsDebugNode::create(cpSpace* space)
+cc::IntrusivePtr<PhysicsDebugNode> PhysicsDebugNode::create(cpSpace* space)
 {
-    PhysicsDebugNode* node = new PhysicsDebugNode();
+    cc::IntrusivePtr<PhysicsDebugNode> node{new PhysicsDebugNode()};
     node->init();
     node->_spacePtr = space;
-    node->autorelease();
     return node;
 }
 

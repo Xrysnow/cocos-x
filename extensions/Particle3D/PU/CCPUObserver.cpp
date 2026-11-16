@@ -130,9 +130,9 @@ void PUObserver::notifyRescaled(const Vec3& scale)
     }
 }
 //-----------------------------------------------------------------------
-PUEventHandler* PUObserver::createEventHandler(std::string_view eventHandlerType)
+cc::IntrusivePtr<PUEventHandler> PUObserver::createEventHandler(std::string_view eventHandlerType)
 {
-    PUEventHandler* eventHandler = PUEventHandlerManager::Instance()->createEventHandler(eventHandlerType);
+    auto eventHandler = PUEventHandlerManager::Instance()->createEventHandler(eventHandlerType);
     addEventHandler(eventHandler);
     return eventHandler;
 }
@@ -332,7 +332,7 @@ void PUObserver::copyAttributesTo(PUObserver* observer)
     for (i = 0; i < getNumEventHandlers(); ++i)
     {
         eventHandler = getEventHandler(i);
-        PUEventHandler* clonedEventHandler =
+        auto clonedEventHandler =
             PUEventHandlerManager::Instance()->createEventHandler(eventHandler->getEventHandlerType());
         eventHandler->copyAttributesTo(clonedEventHandler);
         observer->addEventHandler(clonedEventHandler);

@@ -170,10 +170,9 @@ void PUParticle3DInterParticleCollider::updatePUAffector(PUParticle3D* /*particl
     //}
 }
 
-PUParticle3DInterParticleCollider* PUParticle3DInterParticleCollider::create()
+cc::IntrusivePtr<PUParticle3DInterParticleCollider> PUParticle3DInterParticleCollider::create()
 {
-    auto pipc = new PUParticle3DInterParticleCollider();
-    pipc->autorelease();
+    cc::IntrusivePtr<PUParticle3DInterParticleCollider> pipc{new PUParticle3DInterParticleCollider()};
     return pipc;
 }
 

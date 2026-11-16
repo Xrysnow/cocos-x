@@ -25,7 +25,7 @@ NS_CC_BEGIN
     #define nxbeep(t)
 #endif
 
-static Label* createLabel(std::string_view text,
+static cc::IntrusivePtr<Label> createLabel(std::string_view text,
                           std::string_view font,
                           float fontSize,
                           const Vec2& dimensions    = Vec2::ZERO,
@@ -87,7 +87,7 @@ static uint32_t engine_inj_c4b2dw(const Color4B& value)
     return rvalue;
 }
 
-static Sprite* engine_inj_create_lump(const Color4B& color, int height, int width)
+static cc::IntrusivePtr<Sprite> engine_inj_create_lump(const Color4B& color, int height, int width)
 {
     unsigned int* pixels((unsigned int*)malloc(height * width * sizeof(unsigned int)));
 
@@ -100,16 +100,15 @@ static Sprite* engine_inj_create_lump(const Color4B& color, int height, int widt
     }
 
     // create cursor by pixels
-    Texture2D* texture = new Texture2D();
+    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
 
     texture->initWithData(pixels, height * width * sizeof(unsigned int), backend::PixelFormat::RGBA8, width, height);
 
-    auto cursor = Sprite::createWithTexture(texture);
+    auto cursor = Sprite::createWithTexture(texture.get());
 
     cursor->setColor(Color3B(color));
     cursor->setOpacity(color.a);
 
-    texture->release();
 
     free(pixels);
 
@@ -265,23 +264,22 @@ TextFieldEx::~TextFieldEx()
 //////////////////////////////////////////////////////////////////////////
 // static constructor
 //////////////////////////////////////////////////////////////////////////
-TextFieldEx* TextFieldEx::create(std::string_view placeholder,
+cc::IntrusivePtr<TextFieldEx> TextFieldEx::create(std::string_view placeholder,
                                  std::string_view fontName,
                                  float fontSize,
                                  float cursorWidth,
                                  const Color4B& cursorColor)
 {
-    TextFieldEx* ret = new TextFieldEx();
+    cc::IntrusivePtr<TextFieldEx> ret{new TextFieldEx()};
     if (ret && ret->initWithPlaceHolder("", fontName, fontSize, cursorWidth, cursorColor))
     {
-        ret->autorelease();
+
         if (placeholder.size() > 0)
         {
             ret->setPlaceholderText(placeholder);
         }
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
@@ -296,8 +294,9 @@ bool TextFieldEx::initWithPlaceHolder(std::string_view placeholder,
 {
     this->placeHolder = placeholder;
 
-    this->renderLabel =
+    auto labelOwner =
         createLabel(placeholder, fontName, fontSize, Vec2::ZERO, TextHAlignment::CENTER, TextVAlignment::CENTER);
+    this->renderLabel = labelOwner.get();
     this->renderLabel->setAnchorPoint(Point::ANCHOR_MIDDLE_LEFT);
     this->addChild(this->renderLabel);
 
@@ -375,7 +374,8 @@ void TextFieldEx::enableIME(Node* control)
     {
         return;
     }
-    touchListener = EventListenerTouchOneByOne::create();
+    auto touchOwner = EventListenerTouchOneByOne::create();
+    touchListener = touchOwner.get();
 
     if (control == nullptr)
         control = this;
@@ -430,7 +430,8 @@ void TextFieldEx::enableIME(Node* control)
     CCEVENTMGR->addEventListenerWithSceneGraphPriority(touchListener, this);
 
     /// enable use keyboard <- -> to move cursor.
-    kbdListener               = EventListenerKeyboard::create();
+    auto keyboardOwner = EventListenerKeyboard::create();
+    kbdListener = keyboardOwner.get();
     kbdListener->onKeyPressed = [this](EventKeyboard::KeyCode code, Event*) {
         if (this->cursorVisible)
         {
@@ -901,7 +902,8 @@ int TextFieldEx::getFontType() const
 
 void TextFieldEx::__initCursor(int height, int width, const Color4B& color)
 {
-    this->cursor = engine_inj_create_lump(Color4B(color), height, width);
+    auto cursorOwner = engine_inj_create_lump(Color4B(color), height, width);
+    this->cursor = cursorOwner.get();
 
     this->addChild(this->cursor);
 
@@ -924,7 +926,7 @@ void TextFieldEx::__showCursor(void)
     {
         this->cursorVisible = true;
         this->cursor->setVisible(true);
-        this->cursor->runAction(RepeatForever::create(Blink::create(1, 1)));
+        this->cursor->runAction(RepeatForever::create(Blink::create(1, 1).get()).get());
     }
 }
 

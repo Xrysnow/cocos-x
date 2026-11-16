@@ -112,7 +112,7 @@ public:
      * Create an empty ListView.
      *@return A ListView instance.
      */
-    static ListView* create();
+    static cc::IntrusivePtr<ListView> create();
 
     /**
      * Set an item model for listview.
@@ -440,7 +440,7 @@ protected:
     void remedyHorizontalLayoutParameter(LinearLayoutParameter* layoutParameter, ssize_t itemIndex);
 
     virtual void onSizeChanged() override;
-    virtual Widget* createCloneInstance() override;
+    virtual cc::IntrusivePtr<Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
     virtual void copyClonedWidgetChildren(Widget* model) override;
     void selectedItemEvent(TouchEventType event);

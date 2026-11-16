@@ -43,7 +43,7 @@ public:
     // Constants
     static const Vec3 DEFAULT_POSITION_THRESHOLD;
 
-    static PUOnPositionObserver* create();
+    static cc::IntrusivePtr<PUOnPositionObserver> create();
 
     /**
      */

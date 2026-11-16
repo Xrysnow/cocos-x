@@ -78,13 +78,13 @@ public:
      *
      * @return A new Material or NULL if there was an error.
      */
-    static Material* createWithFilename(std::string_view path);
+    static cc::IntrusivePtr<Material> createWithFilename(std::string_view path);
 
     /** Creates a Material with a GLProgramState.
      It will only contain one Technique and one Pass.
      Added in order to support legacy code.
      */
-    static Material* createWithProgramState(backend::ProgramState* programState);
+    static cc::IntrusivePtr<Material> createWithProgramState(backend::ProgramState* programState);
 
     /**
      * Creates a material from the specified properties object.
@@ -93,7 +93,7 @@ public:
      *      material (must have namespace equal to 'material').
      * @return A new Material.
      */
-    static Material* createWithProperties(Properties* materialProperties);
+    static cc::IntrusivePtr<Material> createWithProperties(Properties* materialProperties);
 
     void draw(MeshCommand* meshCommand,
               float globalZOrder,
@@ -135,7 +135,7 @@ public:
     void setTechnique(std::string_view techniqueName);
 
     /** returns a clone (deep-copy) of the material */
-    virtual Material* clone() const;
+    virtual cc::IntrusivePtr<Material> clone() const;
 
     inline RenderState::StateBlock& getStateBlock() { return _renderState._state; }
 

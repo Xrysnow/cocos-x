@@ -52,29 +52,25 @@ MotionStreak::~MotionStreak()
     CC_SAFE_FREE(_texCoords);
 }
 
-MotionStreak* MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, std::string_view path)
+cc::IntrusivePtr<MotionStreak> MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, std::string_view path)
 {
-    MotionStreak* ret = new MotionStreak();
+    cc::IntrusivePtr<MotionStreak> ret{new MotionStreak()};
     if (ret->initWithFade(fade, minSeg, stroke, color, path))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-MotionStreak* MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
+cc::IntrusivePtr<MotionStreak> MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
 {
-    MotionStreak* ret = new MotionStreak();
+    cc::IntrusivePtr<MotionStreak> ret{new MotionStreak()};
     if (ret->initWithFade(fade, minSeg, stroke, color, texture))
     {
-        ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 

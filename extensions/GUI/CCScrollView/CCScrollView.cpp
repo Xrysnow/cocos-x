@@ -69,43 +69,36 @@ ScrollView::ScrollView()
 
 ScrollView::~ScrollView() {}
 
-ScrollView* ScrollView::create(Size size, Node* container /* = nullptr*/)
+cc::IntrusivePtr<ScrollView> ScrollView::create(Size size, Node* container /* = nullptr*/)
 {
-    ScrollView* pRet = new ScrollView();
-    if (pRet->initWithViewSize(size, container))
+    cc::IntrusivePtr<ScrollView> pRet{new ScrollView()};
+    if (!(pRet->initWithViewSize(size, container)))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }
 
-ScrollView* ScrollView::create()
+cc::IntrusivePtr<ScrollView> ScrollView::create()
 {
-    ScrollView* pRet = new ScrollView();
-    if (pRet->init())
+    cc::IntrusivePtr<ScrollView> pRet{new ScrollView()};
+    if (!(pRet->init()))
     {
-        pRet->autorelease();
-    }
-    else
-    {
-        CC_SAFE_DELETE(pRet);
+        return nullptr;
     }
     return pRet;
 }
 
 bool ScrollView::initWithViewSize(Size size, Node* container /* = nullptr*/)
 {
+    cc::IntrusivePtr<Node> newContainer;
     if (Layer::init())
     {
         _container = container;
 
         if (!this->_container)
         {
-            _container = Layer::create();
+            _container = (newContainer = Layer::create()).get();
             _container->setIgnoreAnchorPointForPosition(false);
             _container->setAnchorPoint(Vec2(0.0f, 0.0f));
         }
@@ -179,12 +172,13 @@ bool ScrollView::isTouchEnabled() const
 
 void ScrollView::setTouchEnabled(bool enabled)
 {
+    cc::IntrusivePtr<EventListenerTouchOneByOne> touchListener;
     _eventDispatcher->removeEventListener(_touchListener);
     _touchListener = nullptr;
 
     if (enabled)
     {
-        _touchListener = EventListenerTouchOneByOne::create();
+        _touchListener = (touchListener = EventListenerTouchOneByOne::create()).get();
         _touchListener->setSwallowTouches(true);
         _touchListener->onTouchBegan     = CC_CALLBACK_2(ScrollView::onTouchBegan, this);
         _touchListener->onTouchMoved     = CC_CALLBACK_2(ScrollView::onTouchMoved, this);
@@ -237,7 +231,7 @@ void ScrollView::setContentOffset(Vec2 offset, bool animated /* = false*/)
 
 void ScrollView::setContentOffsetInDuration(Vec2 offset, float dt)
 {
-    FiniteTimeAction *scroll, *expire;
+    cc::IntrusivePtr<FiniteTimeAction> scroll, expire;
 
     if (_animatedScrollAction)
     {
@@ -245,7 +239,7 @@ void ScrollView::setContentOffsetInDuration(Vec2 offset, float dt)
     }
     scroll                = MoveTo::create(dt, offset);
     expire                = CallFuncN::create(CC_CALLBACK_1(ScrollView::stoppedAnimatedScroll, this));
-    _animatedScrollAction = _container->runAction(Sequence::create(scroll, expire, nullptr));
+    _animatedScrollAction = _container->runAction(Sequence::create(scroll, expire, nullptr).get());
     _animatedScrollAction->retain();
     this->schedule(CC_SCHEDULE_SELECTOR(ScrollView::performedAnimatedScroll));
 }
@@ -316,7 +310,7 @@ void ScrollView::setZoomScaleInDuration(float s, float dt)
     {
         if (_container->getScale() != s)
         {
-            ActionTween* scaleAction;
+            cc::IntrusivePtr<ActionTween> scaleAction;
             scaleAction = ActionTween::create(dt, "zoomScale", _container->getScale(), s);
             this->runAction(scaleAction);
         }

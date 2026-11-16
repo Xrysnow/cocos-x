@@ -34,27 +34,23 @@ HBox::HBox() {}
 
 HBox::~HBox() {}
 
-HBox* HBox::create()
+cc::IntrusivePtr<HBox> HBox::create()
 {
-    HBox* widget = new HBox();
+    cc::IntrusivePtr<HBox> widget{new HBox()};
     if (widget->init())
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 
-HBox* HBox::create(const Vec2& size)
+cc::IntrusivePtr<HBox> HBox::create(const Vec2& size)
 {
-    HBox* widget = new HBox();
+    cc::IntrusivePtr<HBox> widget{new HBox()};
     if (widget->initWithSize(size))
     {
-        widget->autorelease();
         return widget;
     }
-    CC_SAFE_DELETE(widget);
     return nullptr;
 }
 

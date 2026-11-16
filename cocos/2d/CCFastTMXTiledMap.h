@@ -101,7 +101,7 @@ public:
      *
      * @return An autorelease object.
      */
-    static FastTMXTiledMap* create(std::string_view tmxFile);
+    static cc::IntrusivePtr<FastTMXTiledMap> create(std::string_view tmxFile);
 
     /** Initializes a TMX Tiled Map with a TMX formatted XML string and a path to TMX resources.
      *
@@ -109,7 +109,7 @@ public:
      * @param resourcePath A path to TMX resources.
      * @return An autorelease object.
      */
-    static FastTMXTiledMap* createWithXML(std::string_view tmxString, std::string_view resourcePath);
+    static cc::IntrusivePtr<FastTMXTiledMap> createWithXML(std::string_view tmxString, std::string_view resourcePath);
 
     /** Return the FastTMXLayer for the specific layer.
      *
@@ -226,7 +226,7 @@ public:
     bool initWithXML(std::string_view tmxString, std::string_view resourcePath);
 
 protected:
-    FastTMXLayer* parseLayer(TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo);
+    cc::IntrusivePtr<FastTMXLayer> parseLayer(TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo);
     TMXTilesetInfo* tilesetForLayer(TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo);
     void buildWithMapInfo(TMXMapInfo* mapInfo);
 

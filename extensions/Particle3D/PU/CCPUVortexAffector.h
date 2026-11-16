@@ -40,7 +40,7 @@ public:
     static const Vec3 DEFAULT_ROTATION_VECTOR;
     static const float DEFAULT_ROTATION_SPEED;
 
-    static PUVortexAffector* create();
+    static cc::IntrusivePtr<PUVortexAffector> create();
 
     virtual void preUpdateAffector(float deltaTime) override;
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;

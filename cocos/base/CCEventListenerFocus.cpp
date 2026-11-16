@@ -41,30 +41,28 @@ EventListenerFocus::~EventListenerFocus()
     CCLOGINFO("In the destructor of EventListenerFocus, %p", this);
 }
 
-EventListenerFocus* EventListenerFocus::create()
+cc::IntrusivePtr<EventListenerFocus> EventListenerFocus::create()
 {
-    EventListenerFocus* ret = new EventListenerFocus;
+    cc::IntrusivePtr<EventListenerFocus> ret{new EventListenerFocus};
     if (ret->init())
     {
-        ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
     return nullptr;
 }
 
-EventListenerFocus* EventListenerFocus::clone()
+cc::IntrusivePtr<EventListener> EventListenerFocus::clone()
 {
-    EventListenerFocus* ret = new EventListenerFocus;
+    cc::IntrusivePtr<EventListenerFocus> ret{new EventListenerFocus};
     if (ret->init())
     {
-        ret->autorelease();
+
 
         ret->onFocusChanged = onFocusChanged;
     }
     else
     {
-        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
     return ret;
 }

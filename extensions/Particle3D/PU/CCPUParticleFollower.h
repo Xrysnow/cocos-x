@@ -39,7 +39,7 @@ public:
     static const float DEFAULT_MAX_DISTANCE;
     static const float DEFAULT_MIN_DISTANCE;
 
-    static PUParticleFollower* create();
+    static cc::IntrusivePtr<PUParticleFollower> create();
 
     virtual void updatePUAffector(PUParticle3D* particle, float deltaTime) override;
     virtual void firstParticleUpdate(PUParticle3D* particle, float deltaTime) override;

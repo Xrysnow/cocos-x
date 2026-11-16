@@ -30,6 +30,8 @@ THE SOFTWARE.
 #include "platform/CCPlatformMacros.h"
 #include "base/ccConfig.h"
 #include <atomic>
+#include "gfx/base/Ptr.h"
+#include "gfx/base/RefCounted.h"
 
 #define CC_REF_LEAK_DETECTION 0
 
@@ -46,17 +48,13 @@ class Ref;
  * @lua NA
  * @js NA
  */
-enum class RefThreading
-{
-    Local,
-    Atomic,
-};
+using RefThreading = cc::RefThreading;
 
 template <class T>
-class RefPtr;
+using RefPtr = cc::IntrusivePtr<T>;
 
 template <class T, RefThreading Threading, class... Args>
-RefPtr<T> makeRef(Args&&... args);
+cc::IntrusivePtr<T> makeRef(Args&&... args);
 
 /** Construction-only policy token supplied by makeRef<T, Threading>().
  * Opt-in constructors must forward this token to their Ref base constructor.
@@ -75,7 +73,7 @@ private:
 
     friend class Ref;
     template <class T, RefThreading Threading, class... Args>
-    friend RefPtr<T> makeRef(Args&&... args);
+    friend cc::IntrusivePtr<T> makeRef(Args&&... args);
 };
 
 /**
@@ -83,11 +81,12 @@ private:
  * @lua NA
  * @js NA
  */
-class CC_DLL Clonable
+template <class T>
+class Clonable
 {
 public:
     /** Returns a copy of the Ref. */
-    virtual Clonable* clone() const = 0;
+    virtual cc::IntrusivePtr<T> clone() const = 0;
 
     /**
      * @js NA
@@ -101,7 +100,7 @@ public:
  * then it is easy to be shared in different places.
  * @js NA
  */
-class CC_DLL Ref
+class CC_DLL Ref : public cc::RefCounted
 {
 public:
     Ref(const Ref&) = delete;
@@ -121,6 +120,12 @@ public:
      */
     void retain();
 
+    /** Unified intrusive-pointer protocol; retains one existing live reference.
+     * @lua NA
+     * @js NA
+     */
+    using cc::RefCounted::addRef;
+
     /**
      * Releases the ownership immediately.
      *
@@ -132,7 +137,9 @@ public:
      * @see retain, autorelease
      * @js NA
      */
-    void release();
+    // Keep the legacy pointer-to-member type used by Lua bindings. Both entry
+    // points run the same counter algorithm and virtual final-release hook.
+    void release() { cc::RefCounted::release(); }
 
     /**
      * Releases the ownership sometime soon automatically.
@@ -164,13 +171,15 @@ public:
      * @lua NA
      * @js NA
      */
-    RefThreading getReferenceThreading() const noexcept { return _threading; }
+    using cc::RefCounted::getReferenceThreading;
 
 protected:
     /**
      * Constructor
      *
-     * The Ref's reference count is 1 after construction.
+     * The Ref's reference count is 0 after construction.
+     * Immediately establish ownership with cc::IntrusivePtr<T>{new T(...)}.
+     * Stack and embedded values stay unowned and are destroyed naturally.
      * Existing default construction always selects the Local policy.
      * @js NA
      */
@@ -183,6 +192,8 @@ protected:
      */
     explicit Ref(RefConstructionToken token);
 
+    void onFinalRelease() noexcept override;
+
 public:
     /**
      * Destructor
@@ -193,14 +204,8 @@ public:
     virtual ~Ref();
 
 private:
-    const RefThreading _threading;
-
-    // Only the counter selected at construction is used. Never switch policies.
-    unsigned int _referenceCount;
-    std::atomic<unsigned int> _atomicReferenceCount;
-
     template <class T, RefThreading Threading, class... Args>
-    friend RefPtr<T> makeRef(Args&&... args);
+    friend cc::IntrusivePtr<T> makeRef(Args&&... args);
 
 #if CC_ENABLE_SCRIPT_BINDING
 public:
@@ -225,6 +230,16 @@ public:
 };
 
 class Node;
+
+/** Transfer exactly one owned share. Keep the owner intact if enqueue throws. */
+template <class T>
+T* transferToAutoreleasePool(cc::IntrusivePtr<T>&& owner)
+{
+    static_assert(std::is_convertible<T*, const Ref*>::value, "Only cocos Ref objects use this pool");
+    if (owner)
+        const_cast<std::remove_const_t<T>*>(owner.get())->autorelease();
+    return owner.detach();
+}
 
 typedef void (Ref::*SEL_CallFunc)();
 typedef void (Ref::*SEL_CallFuncN)(Node*);
