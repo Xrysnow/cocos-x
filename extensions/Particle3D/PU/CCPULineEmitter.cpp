@@ -226,7 +226,7 @@ void PULineEmitter::initParticleDirection(PUParticle3D* particle)
 
 cc::IntrusivePtr<PULineEmitter> PULineEmitter::create()
 {
-    cc::IntrusivePtr<PULineEmitter> pe{new PULineEmitter()};
+    cc::IntrusivePtr pe{new PULineEmitter()};
     return pe;
 }
 

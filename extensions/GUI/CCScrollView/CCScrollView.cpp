@@ -71,7 +71,7 @@ ScrollView::~ScrollView() {}
 
 cc::IntrusivePtr<ScrollView> ScrollView::create(Size size, Node* container /* = nullptr*/)
 {
-    cc::IntrusivePtr<ScrollView> pRet{new ScrollView()};
+    cc::IntrusivePtr pRet{new ScrollView()};
     if (!(pRet->initWithViewSize(size, container)))
     {
         return nullptr;
@@ -81,7 +81,7 @@ cc::IntrusivePtr<ScrollView> ScrollView::create(Size size, Node* container /* = 
 
 cc::IntrusivePtr<ScrollView> ScrollView::create()
 {
-    cc::IntrusivePtr<ScrollView> pRet{new ScrollView()};
+    cc::IntrusivePtr pRet{new ScrollView()};
     if (!(pRet->init()))
     {
         return nullptr;

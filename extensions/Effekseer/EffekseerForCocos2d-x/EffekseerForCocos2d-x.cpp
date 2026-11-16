@@ -200,8 +200,8 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		char* data_texture = new char[size_texture];
 		reader->Read(data_texture, size_texture);
 
-		cc::IntrusivePtr<cocos2d::Image> image{new cocos2d::Image()};
-		cc::IntrusivePtr<cocos2d::Texture2D> texture{new cocos2d::Texture2D()};
+		cc::IntrusivePtr image{new cocos2d::Image()};
+		cc::IntrusivePtr texture{new cocos2d::Texture2D()};
 
 		auto backup = ImageAccessor::getPngPremultipledAlphaEnabled();
 		cocos2d::Image::setPNGPremultipliedAlphaEnabled(false);
@@ -482,7 +482,7 @@ cc::IntrusivePtr<Effect> Effect::create(const std::string& filename, float magin
 
 	if (effect != nullptr)
 	{
-		cc::IntrusivePtr<Effect> e{new Effect(internalManager)};
+		cc::IntrusivePtr e{new Effect(internalManager)};
 		e->effect = effect;
 
 		ES_SAFE_RELEASE(internalManager);
@@ -509,11 +509,11 @@ Effect::~Effect()
 	ES_SAFE_RELEASE(internalManager_);
 }
 
-cc::IntrusivePtr<EffectEmitter> EffectEmitter::create(EffectManager* manager) { return cc::IntrusivePtr<EffectEmitter>{new EffectEmitter(manager)}; }
+cc::IntrusivePtr<EffectEmitter> EffectEmitter::create(EffectManager* manager) { return cc::IntrusivePtr{new EffectEmitter(manager)}; }
 
 cc::IntrusivePtr<EffectEmitter> EffectEmitter::create(EffectManager* manager, const std::string& filename, float maginification)
 {
-	cc::IntrusivePtr<EffectEmitter> effectEmitter{new EffectEmitter(manager)};
+	cc::IntrusivePtr effectEmitter{new EffectEmitter(manager)};
 	auto effect = Effect::create(filename, maginification);
 	effectEmitter->setEffect(effect);
 	effectEmitter->playOnEnter = true;
@@ -823,7 +823,7 @@ bool EffectManager::Initialize(cocos2d::Size visibleSize)
 
 cc::IntrusivePtr<EffectManager> EffectManager::create(cocos2d::Size visibleSize)
 {
-	cc::IntrusivePtr<EffectManager> ret{new EffectManager()};
+	cc::IntrusivePtr ret{new EffectManager()};
 	if (ret->Initialize(visibleSize))
 	{
 		return ret;
@@ -833,7 +833,7 @@ cc::IntrusivePtr<EffectManager> EffectManager::create(cocos2d::Size visibleSize)
 	return nullptr;
 }
 
-EffectManager::EffectManager() {}
+EffectManager::EffectManager() = default;
 
 EffectManager::~EffectManager()
 {
@@ -952,7 +952,7 @@ void EffectManager::update(float delta)
 	renderer2d->SetTime(time_);
 }
 
-cc::IntrusivePtr<NetworkServer> NetworkServer::create() { return cc::IntrusivePtr<NetworkServer>{new NetworkServer()}; }
+cc::IntrusivePtr<NetworkServer> NetworkServer::create() { return cc::IntrusivePtr{new NetworkServer()}; }
 
 NetworkServer::NetworkServer() { internalManager_ = getGlobalInternalManager(); }
 

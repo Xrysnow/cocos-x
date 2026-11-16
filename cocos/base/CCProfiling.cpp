@@ -42,7 +42,7 @@ Profiler* Profiler::getInstance()
 {
     if (!g_sSharedProfiler)
     {
-        g_sSharedProfiler = cc::IntrusivePtr<Profiler>{new Profiler()}.detach();
+        g_sSharedProfiler = cc::IntrusivePtr{new Profiler()}.detach();
         g_sSharedProfiler->init();
     }
 
@@ -51,7 +51,7 @@ Profiler* Profiler::getInstance()
 
 cc::IntrusivePtr<ProfilingTimer> Profiler::createAndAddTimerWithName(const char* timerName)
 {
-    cc::IntrusivePtr<ProfilingTimer> t{new ProfilingTimer()};
+    cc::IntrusivePtr t{new ProfilingTimer()};
     t->initWithName(timerName);
     _activeTimers.insert(timerName, t.get());
     return t; // The timer map retains its own share.

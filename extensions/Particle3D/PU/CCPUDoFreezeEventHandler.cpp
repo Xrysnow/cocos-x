@@ -43,7 +43,7 @@ void PUDoFreezeEventHandler::handle(PUParticleSystem3D* /*particleSystem*/,
 
 cc::IntrusivePtr<PUDoFreezeEventHandler> PUDoFreezeEventHandler::create()
 {
-    cc::IntrusivePtr<PUDoFreezeEventHandler> peh{new PUDoFreezeEventHandler()};
+    cc::IntrusivePtr peh{new PUDoFreezeEventHandler()};
     return peh;
 }
 

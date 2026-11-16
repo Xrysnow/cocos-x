@@ -57,7 +57,7 @@ public:
         , _armature(nullptr)
         , _dispatcher(nullptr)
     {
-        _dispatcher = cc::IntrusivePtr<cocos2d::EventDispatcher>{new cocos2d::EventDispatcher()}.detach();
+        _dispatcher = cc::IntrusivePtr{new cocos2d::EventDispatcher()}.detach();
         setEventDispatcher(_dispatcher);
         // _dispatcher->setEnabled(true);
     }

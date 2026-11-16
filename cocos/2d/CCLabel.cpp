@@ -88,7 +88,7 @@ public:
 
     static cc::IntrusivePtr<LabelLetter> createWithTexture(Texture2D* texture, const Rect& rect, bool rotated = false)
     {
-        cc::IntrusivePtr<LabelLetter> letter{new LabelLetter()};
+        cc::IntrusivePtr letter{new LabelLetter()};
         if (letter->initWithTexture(texture, rect, rotated))
         {
             letter->Sprite::setVisible(false);
@@ -233,7 +233,7 @@ std::array<CustomCommand*, 3> Label::BatchCommand::getCommandArray()
 
 cc::IntrusivePtr<Label> Label::create()
 {
-    cc::IntrusivePtr<Label> ret{new Label};
+    cc::IntrusivePtr ret{new Label};
     return ret;
 }
 
@@ -244,7 +244,7 @@ cc::IntrusivePtr<Label> Label::createWithSystemFont(std::string_view text,
                                    TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
                                    TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment, vAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment, vAlignment)};
 
     ret->setSystemFontName(font);
     ret->setSystemFontSize(fontSize);
@@ -261,7 +261,7 @@ cc::IntrusivePtr<Label> Label::createWithTTF(std::string_view text,
                             TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
                             TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment, vAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment, vAlignment)};
 
     if (ret->initWithTTF(text, fontFile, fontSize, dimensions, hAlignment, vAlignment))
     {
@@ -276,7 +276,7 @@ cc::IntrusivePtr<Label> Label::createWithTTF(const TTFConfig& ttfConfig,
                             TextHAlignment hAlignment /* = TextHAlignment::CENTER */,
                             int maxLineWidth /* = 0 */)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment)};
 
     if (ret->initWithTTF(ttfConfig, text, hAlignment, maxLineWidth))
     {
@@ -291,7 +291,7 @@ cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                const TextHAlignment& hAlignment,
                                int maxLineWidth)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath))
     {
@@ -310,7 +310,7 @@ cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                const Rect& imageRect,
                                bool imageRotated)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath, imageRect, imageRotated))
     {
@@ -328,7 +328,7 @@ cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
                                int maxLineWidth,
                                std::string_view subTextureKey)
 {
-    cc::IntrusivePtr<Label> ret{new Label(hAlignment)};
+    cc::IntrusivePtr ret{new Label(hAlignment)};
 
     if (ret->setBMFontFilePath(bmfontPath, subTextureKey))
     {
@@ -352,7 +352,7 @@ cc::IntrusivePtr<Label> Label::createWithBMFont(std::string_view bmfontPath,
 
 cc::IntrusivePtr<Label> Label::createWithCharMap(std::string_view plistFile)
 {
-    cc::IntrusivePtr<Label> ret{new Label()};
+    cc::IntrusivePtr ret{new Label()};
 
     if (ret->setCharMap(plistFile))
     {
@@ -364,7 +364,7 @@ cc::IntrusivePtr<Label> Label::createWithCharMap(std::string_view plistFile)
 
 cc::IntrusivePtr<Label> Label::createWithCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
 {
-    cc::IntrusivePtr<Label> ret{new Label()};
+    cc::IntrusivePtr ret{new Label()};
 
     if (ret->setCharMap(texture, itemWidth, itemHeight, startCharMap))
     {
@@ -376,7 +376,7 @@ cc::IntrusivePtr<Label> Label::createWithCharMap(Texture2D* texture, int itemWid
 
 cc::IntrusivePtr<Label> Label::createWithCharMap(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap)
 {
-    cc::IntrusivePtr<Label> ret{new Label()};
+    cc::IntrusivePtr ret{new Label()};
 
     if (ret->setCharMap(charMapFile, itemWidth, itemHeight, startCharMap))
     {
@@ -730,7 +730,7 @@ void Label::updateShaderProgram()
     }
 
     auto* program = backend::Program::getBuiltinProgram(programType);
-    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
 
     updateUniformLocations();
 
@@ -1562,7 +1562,7 @@ void Label::createSpriteForSystemFont(const FontDefinition& fontDef)
 {
     _currentLabelType = LabelType::STRING_TEXTURE;
 
-    cc::IntrusivePtr<Texture2D> texture{new Texture2D};
+    cc::IntrusivePtr texture{new Texture2D};
     texture->initWithString(_utf8Text.c_str(), fontDef);
 
     _textSprite = Sprite::createWithTexture(texture.get());
@@ -1598,7 +1598,7 @@ void Label::createShadowSpriteForSystemFont(const FontDefinition& fontDef)
         shadowFontDefinition._stroke._strokeColor = shadowFontDefinition._fontFillColor;
         shadowFontDefinition._stroke._strokeAlpha = shadowFontDefinition._fontAlpha;
 
-        cc::IntrusivePtr<Texture2D> texture{new Texture2D};
+        cc::IntrusivePtr texture{new Texture2D};
         texture->initWithString(_utf8Text.c_str(), shadowFontDefinition);
         _shadowNode = Sprite::createWithTexture(texture.get());
     }

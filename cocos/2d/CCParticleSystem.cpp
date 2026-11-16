@@ -272,7 +272,7 @@ ParticleSystem::ParticleSystem()
 
 cc::IntrusivePtr<ParticleSystem> ParticleSystem::create(std::string_view plistFile)
 {
-    cc::IntrusivePtr<ParticleSystem> ret{new ParticleSystem()};
+    cc::IntrusivePtr ret{new ParticleSystem()};
     if (ret->initWithFile(plistFile))
     {
         return ret;
@@ -282,7 +282,7 @@ cc::IntrusivePtr<ParticleSystem> ParticleSystem::create(std::string_view plistFi
 
 cc::IntrusivePtr<ParticleSystem> ParticleSystem::createWithTotalParticles(int numberOfParticles)
 {
-    cc::IntrusivePtr<ParticleSystem> ret{new ParticleSystem()};
+    cc::IntrusivePtr ret{new ParticleSystem()};
     if (ret->initWithTotalParticles(numberOfParticles))
     {
         return ret;
@@ -643,7 +643,7 @@ bool ParticleSystem::initWithDictionary(const ValueMap& dictionary, std::string_
 
                         // For android, we should retain it in VolatileTexture::addImage which invoked in
                         // Director::getInstance()->getTextureCache()->addUIImage()
-                        image     = cc::IntrusivePtr<Image>{new Image()}.detach();
+                        image     = cc::IntrusivePtr{new Image()}.detach();
                         bool isOK = image->initWithImageData(deflated, deflatedLen, true);
                         CCASSERT(isOK, "CCParticleSystem: error init image with Data");
                         CC_BREAK_IF(!isOK);
@@ -2265,7 +2265,7 @@ ParticleEmissionMaskCache* ParticleEmissionMaskCache::getInstance()
 {
     if (emissionMaskCache == nullptr)
     {
-        emissionMaskCache = cc::IntrusivePtr<ParticleEmissionMaskCache>{new ParticleEmissionMaskCache()}.detach();
+        emissionMaskCache = cc::IntrusivePtr{new ParticleEmissionMaskCache()}.detach();
         return emissionMaskCache;
     }
     return emissionMaskCache;
@@ -2277,7 +2277,7 @@ void ParticleEmissionMaskCache::bakeEmissionMask(std::string_view maskId,
                                                  bool inverted,
                                                  int inbetweenSamples)
 {
-    cc::IntrusivePtr<Image> img{new Image()};
+    cc::IntrusivePtr img{new Image()};
     img->Image::initWithImageFile(texturePath);
 
     CCASSERT(img.get(), "image texture was nullptr.");

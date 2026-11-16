@@ -32,7 +32,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<PageTurn3D> PageTurn3D::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<PageTurn3D> action{new PageTurn3D()};
+    cc::IntrusivePtr action{new PageTurn3D()};
 
     if (action->initWithDuration(duration, gridSize))
     {

@@ -47,7 +47,7 @@ bool PUScaleVelocityAffectorTranslator::translateChildProperty(PUScriptCompiler*
             float val = 0.0f;
             if (getFloat(*prop->values.front(), &val))
             {
-                cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                 dynamicAttributeFixed->setValue(val);
                 affector->setDynScaleVelocity(dynamicAttributeFixed.detach());
                 return true;

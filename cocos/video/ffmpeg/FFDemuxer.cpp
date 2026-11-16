@@ -19,9 +19,7 @@ std::vector<const AVInputFormat*> Demuxer::getInputFormats()
 	return ret;
 }
 
-Demuxer::Demuxer()
-{
-}
+Demuxer::Demuxer() = default;
 
 Demuxer::~Demuxer()
 {
@@ -71,7 +69,7 @@ bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name, const std::a
 
 cc::IntrusivePtr<Demuxer> Demuxer::create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
-	cc::IntrusivePtr<Demuxer> ret{new (std::nothrow) Demuxer()};
+	cc::IntrusivePtr ret{new (std::nothrow) Demuxer()};
 	if (ret && ret->init(std::move(source), name, stop))
 		return ret;
 	return nullptr;

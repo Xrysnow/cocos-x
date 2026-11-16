@@ -60,7 +60,7 @@ namespace spine {
 	SkeletonBatch::SkeletonBatch() {
 
 		auto program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-		_programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();// new default program state
+		_programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();// new default program state
 		for (unsigned int i = 0; i < INITIAL_SIZE; i++) {
 			_commandsPool.push_back(newCommand());
 		}

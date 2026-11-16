@@ -148,7 +148,7 @@ void PURandomiser::postUpdateAffector(float /*deltaTime*/)
 
 cc::IntrusivePtr<PURandomiser> PURandomiser::create()
 {
-    cc::IntrusivePtr<PURandomiser> pr{new PURandomiser()};
+    cc::IntrusivePtr pr{new PURandomiser()};
     return pr;
 }
 

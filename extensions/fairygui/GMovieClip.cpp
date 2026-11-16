@@ -199,7 +199,7 @@ ActionMovieClip::~ActionMovieClip()
 
 cc::IntrusivePtr<ActionMovieClip> ActionMovieClip::create(cocos2d::Animation* animation, float repeatDelay, bool swing)
 {
-    cc::IntrusivePtr<ActionMovieClip> action{new ActionMovieClip()};
+    cc::IntrusivePtr action{new ActionMovieClip()};
     action->setAnimation(animation, repeatDelay, swing);
     return action;
 }

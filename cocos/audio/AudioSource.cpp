@@ -97,7 +97,7 @@ bool AudioSource::initWithSoundData(AudioSoundData* soundData)
 		return false;
 	}
 
-	staticBuffer = cc::IntrusivePtr<AudioStaticDataBuffer>{new (std::nothrow) AudioStaticDataBuffer(fmt, soundData->getData(), (ALsizei)soundData->getSize(), sampleRate)}.detach();
+	staticBuffer = cc::IntrusivePtr{new (std::nothrow) AudioStaticDataBuffer(fmt, soundData->getData(), (ALsizei)soundData->getSize(), sampleRate)}.detach();
 	if (!staticBuffer)
 		return false;
 
@@ -330,7 +330,7 @@ cc::IntrusivePtr<AudioSource> AudioSource::createFromSoundData(AudioSoundData* s
 {
 	if (!AudioEngine::isValid() || !soundData)
 		return nullptr;
-	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithSoundData(soundData))
 	{
 		return ret;
@@ -342,7 +342,7 @@ cc::IntrusivePtr<AudioSource> AudioSource::createFromDecoder(AudioDecoder* decod
 {
 	if (!AudioEngine::isValid() || !decoder)
 		return nullptr;
-	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithDecoder(decoder))
 	{
 		return ret;
@@ -355,7 +355,7 @@ cc::IntrusivePtr<AudioSource> AudioSource::create(int sampleRate, int bitDepth, 
 	if (!AudioEngine::isValid())
 		return nullptr;
 	auto ownerPool = AudioPool::getInstance();
-	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioSource()};
 	bool initialized = false;
 	{
 		auto lock = ownerPool->lock();
@@ -371,7 +371,7 @@ cc::IntrusivePtr<AudioSource> AudioSource::clone()
 {
 	if (!AudioEngine::isValid())
 		return nullptr;
-	cc::IntrusivePtr<AudioSource> ret{new (std::nothrow) AudioSource()};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioSource()};
 	if (ret&&ret->initWithOther(*this))
 	{
 		return ret;

@@ -40,7 +40,7 @@ cc::IntrusivePtr<EventListenerAssetsManagerEx> EventListenerAssetsManagerEx::cre
     cocos2d::extension::AssetsManagerEx* AssetsManagerEx,
     const std::function<void(EventAssetsManagerEx*)>& callback)
 {
-    cc::IntrusivePtr<EventListenerAssetsManagerEx> ret{new EventListenerAssetsManagerEx()};
+    cc::IntrusivePtr ret{new EventListenerAssetsManagerEx()};
     if (!(ret->init(AssetsManagerEx, callback)))
     {
         return nullptr;
@@ -70,7 +70,7 @@ bool EventListenerAssetsManagerEx::init(const AssetsManagerEx* AssetsManagerEx,
 
 cc::IntrusivePtr<EventListener> EventListenerAssetsManagerEx::clone()
 {
-    cc::IntrusivePtr<EventListenerAssetsManagerEx> ret{new EventListenerAssetsManagerEx()};
+    cc::IntrusivePtr ret{new EventListenerAssetsManagerEx()};
     if (!(ret->init(_AssetsManagerEx, _onAssetsManagerExEvent)))
     {
         return nullptr;

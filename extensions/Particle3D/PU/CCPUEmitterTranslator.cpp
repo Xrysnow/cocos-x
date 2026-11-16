@@ -202,7 +202,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynEmissionRate(dynamicAttributeFixed.detach());
                     }
@@ -217,7 +217,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynTotalTimeToLive(dynamicAttributeFixed.detach());
                     }
@@ -232,7 +232,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynParticleMass(dynamicAttributeFixed.detach());
                     }
@@ -343,7 +343,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynVelocity(dynamicAttributeFixed.detach());
                     }
@@ -358,7 +358,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynDuration(dynamicAttributeFixed.detach());
                     }
@@ -373,7 +373,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynRepeatDelay(dynamicAttributeFixed.detach());
                     }
@@ -425,7 +425,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynAngle(dynamicAttributeFixed.detach());
                     }
@@ -440,7 +440,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynParticleAllDimensions(dynamicAttributeFixed.detach());
                     }
@@ -455,7 +455,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynParticleWidth(dynamicAttributeFixed.detach());
                     }
@@ -470,7 +470,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynParticleHeight(dynamicAttributeFixed.detach());
                     }
@@ -485,7 +485,7 @@ void PUEmitterTranslator::translate(PUScriptCompiler* compiler, PUAbstractNode* 
                     float val = 0.0f;
                     if (getFloat(*prop->values.front(), &val))
                     {
-                        cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                        cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                         dynamicAttributeFixed->setValue(val);
                         _emitter->setDynParticleDepth(dynamicAttributeFixed.detach());
                     }

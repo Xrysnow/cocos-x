@@ -53,7 +53,7 @@ ParticleBatchNode::ParticleBatchNode()
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
     //!!! ParticleBatchNode private programState don't want affect by Node::_programState, so store at _customCommand
     //!!! support etc1 with alpha?
-    pipelinePS = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    pipelinePS = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
 
     _mvpMatrixLocaiton = pipelinePS->getUniformLocation("u_MVPMatrix");
     _textureLocation   = pipelinePS->getUniformLocation("u_tex0");
@@ -73,7 +73,7 @@ ParticleBatchNode::~ParticleBatchNode()
 
 cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::createWithTexture(Texture2D* tex, int capacity /* = kParticleDefaultCapacity*/)
 {
-    cc::IntrusivePtr<ParticleBatchNode> p{new ParticleBatchNode()};
+    cc::IntrusivePtr p{new ParticleBatchNode()};
     if (p->initWithTexture(tex, capacity))
     {
         return p;
@@ -87,7 +87,7 @@ cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::createWithTexture(Texture
 
 cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::create(std::string_view imageFile, int capacity /* = kParticleDefaultCapacity*/)
 {
-    cc::IntrusivePtr<ParticleBatchNode> p{new ParticleBatchNode()};
+    cc::IntrusivePtr p{new ParticleBatchNode()};
     if (p->initWithFile(imageFile, capacity))
     {
         return p;
@@ -100,7 +100,7 @@ cc::IntrusivePtr<ParticleBatchNode> ParticleBatchNode::create(std::string_view i
  */
 bool ParticleBatchNode::initWithTexture(Texture2D* tex, int capacity)
 {
-    _textureAtlas = cc::IntrusivePtr<TextureAtlas>{new TextureAtlas()}.detach();
+    _textureAtlas = cc::IntrusivePtr{new TextureAtlas()}.detach();
     _textureAtlas->initWithTexture(tex, capacity);
 
     updateProgramStateTexture();

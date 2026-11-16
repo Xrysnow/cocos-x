@@ -33,7 +33,7 @@ namespace ui
 
 cc::IntrusivePtr<LinearHorizontalLayoutManager> LinearHorizontalLayoutManager::create()
 {
-    cc::IntrusivePtr<LinearHorizontalLayoutManager> ret{new LinearHorizontalLayoutManager()};
+    cc::IntrusivePtr ret{new LinearHorizontalLayoutManager()};
     return ret;
 }
 
@@ -82,7 +82,7 @@ void LinearHorizontalLayoutManager::doLayout(LayoutProtocol* layout)
 // LinearVerticalLayoutManager
 cc::IntrusivePtr<LinearVerticalLayoutManager> LinearVerticalLayoutManager::create()
 {
-    cc::IntrusivePtr<LinearVerticalLayoutManager> ret{new LinearVerticalLayoutManager()};
+    cc::IntrusivePtr ret{new LinearVerticalLayoutManager()};
     return ret;
 }
 
@@ -134,7 +134,7 @@ void LinearVerticalLayoutManager::doLayout(LayoutProtocol* layout)
 // LinearCenterVerticalLayoutManager
 cc::IntrusivePtr<LinearCenterVerticalLayoutManager> LinearCenterVerticalLayoutManager::create()
 {
-    cc::IntrusivePtr<LinearCenterVerticalLayoutManager> ret{new LinearCenterVerticalLayoutManager()};
+    cc::IntrusivePtr ret{new LinearCenterVerticalLayoutManager()};
     return ret;
 }
 
@@ -204,7 +204,7 @@ void LinearCenterVerticalLayoutManager::doLayout(LayoutProtocol* layout)
 // LinearCenterHorizontalLayoutManager
 cc::IntrusivePtr<LinearCenterHorizontalLayoutManager> LinearCenterHorizontalLayoutManager::create()
 {
-    cc::IntrusivePtr<LinearCenterHorizontalLayoutManager> ret{new LinearCenterHorizontalLayoutManager()};
+    cc::IntrusivePtr ret{new LinearCenterHorizontalLayoutManager()};
     return ret;
 }
 
@@ -272,7 +272,7 @@ void LinearCenterHorizontalLayoutManager::doLayout(LayoutProtocol* layout)
 
 cc::IntrusivePtr<RelativeLayoutManager> RelativeLayoutManager::create()
 {
-    cc::IntrusivePtr<RelativeLayoutManager> ret{new RelativeLayoutManager()};
+    cc::IntrusivePtr ret{new RelativeLayoutManager()};
     return ret;
 }
 

@@ -50,7 +50,7 @@ const Vec4 PURibbonTrailRender::DEFAULT_COLOUR_CHANGE(0.5, 0.5, 0.5, 0.5);
 
 cc::IntrusivePtr<PURibbonTrailRender> PURibbonTrailRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<PURibbonTrailRender> br{new PURibbonTrailRender()};
+    cc::IntrusivePtr br{new PURibbonTrailRender()};
 
     br->_texFile = texFile;
     return br;
@@ -275,7 +275,7 @@ void PURibbonTrailRender::prepare()
             // visualData->node->setInheritOrientation(false);
             auto node = Node::create();
             _childNode->addChild(node);
-            cc::IntrusivePtr<PURibbonTrailVisualData> visualData{new PURibbonTrailVisualData(node, _trail)};
+            cc::IntrusivePtr visualData{new PURibbonTrailVisualData(node, _trail)};
             visualData->index                   = i;
             _allVisualData.emplace_back(visualData.get());  // Managed by this renderer
             _visualData.emplace_back(visualData.get());     // Used to assign to a particle

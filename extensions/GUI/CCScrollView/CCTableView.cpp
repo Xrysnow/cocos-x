@@ -57,7 +57,7 @@ cc::IntrusivePtr<TableView> TableView::create(TableViewDataSource* dataSource, S
 
 cc::IntrusivePtr<TableView> TableView::create(TableViewDataSource* dataSource, Size size, Node* container)
 {
-    cc::IntrusivePtr<TableView> table{new TableView()};
+    cc::IntrusivePtr table{new TableView()};
     table->initWithViewSize(size, container);
 
     table->setDataSource(dataSource);

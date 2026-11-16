@@ -40,9 +40,9 @@ PUTextureRotator::PUTextureRotator()
     , _scaledRotationSpeed(0.0f)
     , _twoPiRad(float(2.0 * M_PI))
 {
-    _dynRotation = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynRotation = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotation))->setValue(DEFAULT_ROTATION);
-    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynRotationSpeed = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 }
 //-----------------------------------------------------------------------
@@ -159,7 +159,7 @@ void PUTextureRotator::updatePUAffector(PUParticle3D* particle, float deltaTime)
 
 cc::IntrusivePtr<PUTextureRotator> PUTextureRotator::create()
 {
-    cc::IntrusivePtr<PUTextureRotator> ptr{new PUTextureRotator()};
+    cc::IntrusivePtr ptr{new PUTextureRotator()};
     return ptr;
 }
 

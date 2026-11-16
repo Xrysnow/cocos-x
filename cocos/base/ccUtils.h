@@ -264,7 +264,7 @@ CC_DLL void killCurrentProcess();
 template <typename T, typename F, typename... Ts>
 static cc::IntrusivePtr<T> makeInstance(F&& memf, Ts&&... args)
 {
-    cc::IntrusivePtr<T> pRet{new T()};
+    cc::IntrusivePtr pRet{new T()};
     if (pRet && std::mem_fn(memf)(pRet.get(), std::forward<Ts>(args)...))
         return pRet;
 

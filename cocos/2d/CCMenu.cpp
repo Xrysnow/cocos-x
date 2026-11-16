@@ -62,7 +62,7 @@ cc::IntrusivePtr<Menu> Menu::create()
 
 cc::IntrusivePtr<Menu> Menu::createWithArray(const Vector<MenuItem*>& arrayOfItems)
 {
-    cc::IntrusivePtr<Menu> ret{new Menu()};
+    cc::IntrusivePtr ret{new Menu()};
     if (!(ret->initWithArray(arrayOfItems)))
     {
         return nullptr;

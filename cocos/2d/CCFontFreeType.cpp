@@ -102,7 +102,7 @@ cc::IntrusivePtr<FontFreeType> FontFreeType::create(std::string_view fontName,
                                    bool distanceFieldEnabled /* = false */,
                                    float outline /* = 0 */)
 {
-    cc::IntrusivePtr<FontFreeType> tempFont{new FontFreeType(distanceFieldEnabled, outline)};
+    cc::IntrusivePtr tempFont{new FontFreeType(distanceFieldEnabled, outline)};
 
     tempFont->setGlyphCollection(glyphs, customGlyphs);
 
@@ -299,7 +299,7 @@ bool FontFreeType::loadFontFace(std::string_view fontPath, float fontSize)
 
 FontAtlas* FontFreeType::newFontAtlas()
 {
-    cc::IntrusivePtr<FontAtlas> fontAtlas{new FontAtlas(this)};
+    cc::IntrusivePtr fontAtlas{new FontAtlas(this)};
     if (_usedGlyphs != GlyphCollection::DYNAMIC)
     {
         std::u32string utf32;

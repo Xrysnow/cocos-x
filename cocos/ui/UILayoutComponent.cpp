@@ -64,7 +64,7 @@ LayoutComponent* LayoutComponent::bindLayoutComponent(Node* node)
     if (layout != nullptr)
         return layout;
 
-    cc::IntrusivePtr<LayoutComponent> owner{new LayoutComponent()};
+    cc::IntrusivePtr owner{new LayoutComponent()};
     layout = owner.get();
     if (layout->init())
     {

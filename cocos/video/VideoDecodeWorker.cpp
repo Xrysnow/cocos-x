@@ -468,7 +468,7 @@ void VideoDecodeWorker::run(State& state, StreamPtr source)
 
 void VideoDecodeWorker::runSilent(State& state, StreamPtr source)
 {
-	cc::IntrusivePtr<Decoder> decoder{new Decoder()};
+	cc::IntrusivePtr decoder{new Decoder()};
 	if (state.stop)
 		return;
 	if (!decoder->openInput(std::move(source), nullptr, false, &state.stop))

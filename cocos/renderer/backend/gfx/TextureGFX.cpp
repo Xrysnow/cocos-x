@@ -372,7 +372,7 @@ TextureGFX::~TextureGFX()
 
 cc::IntrusivePtr<TextureGFX> TextureGFX::create(const cc::gfx::TextureInfo& info)
 {
-    cc::IntrusivePtr<TextureGFX> p{new (std::nothrow) TextureGFX(info)};
+    cc::IntrusivePtr p{new (std::nothrow) TextureGFX(info)};
     if (!(p && p->getHandler()))
     {
         return nullptr;

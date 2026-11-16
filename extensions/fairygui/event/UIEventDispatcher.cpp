@@ -83,7 +83,7 @@ bool EventTag::operator==(const EventTag & v) const
     return _value == v._value;
 }
 
-UIEventDispatcher::UIEventDispatcher() :_dispatching(0)
+UIEventDispatcher::UIEventDispatcher() : _dispatching(0)
 {
 }
 

@@ -12,7 +12,7 @@ BitmapFont::~BitmapFont()
 
 cc::IntrusivePtr<BitmapFont> BitmapFont::create()
 {
-    cc::IntrusivePtr<BitmapFont> font{new BitmapFont()};
+    cc::IntrusivePtr font{new BitmapFont()};
     return font;
 }
 

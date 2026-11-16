@@ -72,7 +72,7 @@ void PUOnClearObserver::postUpdateObserver(float timeElapsed)
 
 cc::IntrusivePtr<PUOnClearObserver> PUOnClearObserver::create()
 {
-    cc::IntrusivePtr<PUOnClearObserver> pco{new PUOnClearObserver()};
+    cc::IntrusivePtr pco{new PUOnClearObserver()};
     return pco;
 }
 

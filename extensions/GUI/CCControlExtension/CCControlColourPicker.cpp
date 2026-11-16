@@ -86,10 +86,10 @@ bool ControlColourPicker::init()
         float hueShift    = 8;
         float colourShift = 28;
 
-        _huePicker = cc::IntrusivePtr<ControlHuePicker>{new ControlHuePicker()}.detach();
+        _huePicker = cc::IntrusivePtr{new ControlHuePicker()}.detach();
         _huePicker->initWithTargetAndPos(spriteSheet,
                                          Vec2(backgroundPointZero.x + hueShift, backgroundPointZero.y + hueShift));
-        _colourPicker = cc::IntrusivePtr<ControlSaturationBrightnessPicker>{new ControlSaturationBrightnessPicker()}.detach();
+        _colourPicker = cc::IntrusivePtr{new ControlSaturationBrightnessPicker()}.detach();
         _colourPicker->initWithTargetAndPos(
             spriteSheet, Vec2(backgroundPointZero.x + colourShift, backgroundPointZero.y + colourShift));
 
@@ -114,7 +114,7 @@ bool ControlColourPicker::init()
 
 cc::IntrusivePtr<ControlColourPicker> ControlColourPicker::create()
 {
-    cc::IntrusivePtr<ControlColourPicker> pRet{new ControlColourPicker()};
+    cc::IntrusivePtr pRet{new ControlColourPicker()};
     pRet->init();
     return pRet;
 }

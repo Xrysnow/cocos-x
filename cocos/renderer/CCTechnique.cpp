@@ -36,7 +36,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<Technique> Technique::createWithProgramState(Material* parent, backend::ProgramState* state)
 {
-    cc::IntrusivePtr<Technique> technique{new Technique()};
+    cc::IntrusivePtr technique{new Technique()};
     if (technique->init(parent))
     {
         auto pass = Pass::createWithProgramState(technique.get(), state);
@@ -49,7 +49,7 @@ cc::IntrusivePtr<Technique> Technique::createWithProgramState(Material* parent, 
 
 cc::IntrusivePtr<Technique> Technique::create(Material* material)
 {
-    cc::IntrusivePtr<Technique> technique{new Technique()};
+    cc::IntrusivePtr technique{new Technique()};
     if (technique->init(material))
     {
         return technique;
@@ -69,7 +69,7 @@ bool Technique::init(Material* parent)
 
 cc::IntrusivePtr<Technique> Technique::clone() const
 {
-    cc::IntrusivePtr<Technique> technique{new Technique()};
+    cc::IntrusivePtr technique{new Technique()};
 
     technique->_name        = _name;
     technique->_renderState.copyFrom(_renderState);

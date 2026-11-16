@@ -125,7 +125,7 @@ bool ControlButton::initWithLabelAndBackgroundSprite(Node* node,
 
 cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite)
 {
-    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
+    cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithLabelAndBackgroundSprite(label, backgroundSprite, true);
     return pRet;
 }
@@ -134,7 +134,7 @@ cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label,
                                      cocos2d::ui::Scale9Sprite* backgroundSprite,
                                      bool adjustBackGroundSize)
 {
-    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
+    cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithLabelAndBackgroundSprite(label, backgroundSprite, adjustBackGroundSize);
     return pRet;
 }
@@ -149,7 +149,7 @@ bool ControlButton::initWithTitleAndFontNameAndFontSize(std::string_view title,
 
 cc::IntrusivePtr<ControlButton> ControlButton::create(std::string_view title, std::string_view fontName, float fontSize)
 {
-    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
+    cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithTitleAndFontNameAndFontSize(title, fontName, fontSize);
     return pRet;
 }
@@ -162,7 +162,7 @@ bool ControlButton::initWithBackgroundSprite(cocos2d::ui::Scale9Sprite* sprite)
 
 cc::IntrusivePtr<ControlButton> ControlButton::create(cocos2d::ui::Scale9Sprite* sprite)
 {
-    cc::IntrusivePtr<ControlButton> pRet{new ControlButton()};
+    cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithBackgroundSprite(sprite);
     return pRet;
 }
@@ -730,7 +730,7 @@ void ControlButton::onTouchCancelled(Touch* /*pTouch*/, Event* /*pEvent*/)
 
 cc::IntrusivePtr<ControlButton> ControlButton::create()
 {
-    cc::IntrusivePtr<ControlButton> pControlButton{new ControlButton()};
+    cc::IntrusivePtr pControlButton{new ControlButton()};
     if (pControlButton->init())
     {
         return pControlButton;

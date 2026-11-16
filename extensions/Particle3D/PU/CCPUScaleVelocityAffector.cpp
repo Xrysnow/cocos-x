@@ -34,7 +34,7 @@ const float PUScaleVelocityAffector::DEFAULT_VELOCITY_SCALE = 1.0f;
 //-----------------------------------------------------------------------
 PUScaleVelocityAffector::PUScaleVelocityAffector() : PUAffector(), _sinceStartSystem(false), _stopAtFlip(false)
 {
-    _dynScaleVelocity = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynScaleVelocity = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynScaleVelocity))->setValue(DEFAULT_VELOCITY_SCALE);
 }
 //-----------------------------------------------------------------------
@@ -101,14 +101,14 @@ void PUScaleVelocityAffector::resetDynScaleVelocity(bool resetToDefault)
     if (resetToDefault)
     {
         CC_SAFE_DELETE(_dynScaleVelocity);
-        _dynScaleVelocity = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+        _dynScaleVelocity = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
         (static_cast<PUDynamicAttributeFixed*>(_dynScaleVelocity))->setValue(DEFAULT_VELOCITY_SCALE);
     }
 }
 
 cc::IntrusivePtr<PUScaleVelocityAffector> PUScaleVelocityAffector::create()
 {
-    cc::IntrusivePtr<PUScaleVelocityAffector> psva{new PUScaleVelocityAffector()};
+    cc::IntrusivePtr psva{new PUScaleVelocityAffector()};
     return psva;
 }
 

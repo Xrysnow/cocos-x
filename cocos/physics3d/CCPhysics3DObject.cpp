@@ -55,7 +55,7 @@ Physics3DRigidBody::~Physics3DRigidBody()
 
 cc::IntrusivePtr<Physics3DRigidBody> Physics3DRigidBody::create(Physics3DRigidBodyDes* info)
 {
-    cc::IntrusivePtr<Physics3DRigidBody> ret{new Physics3DRigidBody()};
+    cc::IntrusivePtr ret{new Physics3DRigidBody()};
     if (ret->init(info))
     {
         return ret;
@@ -440,7 +440,7 @@ Physics3DCollider::~Physics3DCollider()
 
 cc::IntrusivePtr<Physics3DCollider> Physics3DCollider::create(Physics3DColliderDes* info)
 {
-    cc::IntrusivePtr<Physics3DCollider> ret{new Physics3DCollider()};
+    cc::IntrusivePtr ret{new Physics3DCollider()};
     if (ret->init(info))
     {
         return ret;

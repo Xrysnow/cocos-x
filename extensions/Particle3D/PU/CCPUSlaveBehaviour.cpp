@@ -51,7 +51,7 @@ cc::IntrusivePtr<PUBehaviour> PUSlaveBehaviour::clone()
 
 cc::IntrusivePtr<PUSlaveBehaviour> PUSlaveBehaviour::create()
 {
-    cc::IntrusivePtr<PUSlaveBehaviour> pb{new PUSlaveBehaviour()};
+    cc::IntrusivePtr pb{new PUSlaveBehaviour()};
     return pb;
 }
 

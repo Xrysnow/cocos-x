@@ -105,7 +105,7 @@ void PUSineForceAffector::updatePUAffector(PUParticle3D* particle, float /*delta
 
 cc::IntrusivePtr<PUSineForceAffector> PUSineForceAffector::create()
 {
-    cc::IntrusivePtr<PUSineForceAffector> psfa{new PUSineForceAffector()};
+    cc::IntrusivePtr psfa{new PUSineForceAffector()};
     return psfa;
 }
 

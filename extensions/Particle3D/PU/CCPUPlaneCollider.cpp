@@ -157,7 +157,7 @@ void PUPlaneCollider::updatePUAffector(PUParticle3D* particle, float deltaTime)
 
 cc::IntrusivePtr<PUPlaneCollider> PUPlaneCollider::create()
 {
-    cc::IntrusivePtr<PUPlaneCollider> ppc{new PUPlaneCollider()};
+    cc::IntrusivePtr ppc{new PUPlaneCollider()};
     return ppc;
 }
 

@@ -16,7 +16,7 @@ int GRoot::contentScaleLevel = 0;
 
 cc::IntrusivePtr<GRoot> GRoot::create(Scene* scene, int zOrder)
 {
-    cc::IntrusivePtr<GRoot> pRet{new GRoot()};
+    cc::IntrusivePtr pRet{new GRoot()};
     if (pRet->initWithScene(scene, zOrder))
     {
 

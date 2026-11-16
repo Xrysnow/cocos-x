@@ -47,7 +47,7 @@ TransitionPageTurn::~TransitionPageTurn()
 /** creates a base transition with duration and incoming scene */
 cc::IntrusivePtr<TransitionPageTurn> TransitionPageTurn::create(float t, Scene* scene, bool backwards)
 {
-    cc::IntrusivePtr<TransitionPageTurn> transition{new TransitionPageTurn()};
+    cc::IntrusivePtr transition{new TransitionPageTurn()};
     transition->initWithDuration(t, scene, backwards);
     return transition;
 }

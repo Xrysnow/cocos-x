@@ -35,7 +35,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<FastTMXTiledMap> FastTMXTiledMap::create(std::string_view tmxFile)
 {
-    cc::IntrusivePtr<FastTMXTiledMap> ret{new FastTMXTiledMap()};
+    cc::IntrusivePtr ret{new FastTMXTiledMap()};
     if (ret->initWithTMXFile(tmxFile))
     {
         return ret;
@@ -45,7 +45,7 @@ cc::IntrusivePtr<FastTMXTiledMap> FastTMXTiledMap::create(std::string_view tmxFi
 
 cc::IntrusivePtr<FastTMXTiledMap> FastTMXTiledMap::createWithXML(std::string_view tmxString, std::string_view resourcePath)
 {
-    cc::IntrusivePtr<FastTMXTiledMap> ret{new FastTMXTiledMap()};
+    cc::IntrusivePtr ret{new FastTMXTiledMap()};
     if (ret->initWithXML(tmxString, resourcePath))
     {
         return ret;

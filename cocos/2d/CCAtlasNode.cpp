@@ -49,7 +49,7 @@ AtlasNode::~AtlasNode()
 
 cc::IntrusivePtr<AtlasNode> AtlasNode::create(std::string_view tile, int tileWidth, int tileHeight, int itemsToRender)
 {
-    cc::IntrusivePtr<AtlasNode> ret{new AtlasNode()};
+    cc::IntrusivePtr ret{new AtlasNode()};
     if (ret->initWithTileFile(tile, tileWidth, tileHeight, itemsToRender))
     {
         return ret;
@@ -74,7 +74,7 @@ bool AtlasNode::initWithTexture(Texture2D* texture, int tileWidth, int tileHeigh
 
     _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
 
-    _textureAtlas = cc::IntrusivePtr<TextureAtlas>{new TextureAtlas()}.detach();
+    _textureAtlas = cc::IntrusivePtr{new TextureAtlas()}.detach();
 
     _textureAtlas->initWithTexture(texture, itemsToRender);
 

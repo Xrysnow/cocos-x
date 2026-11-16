@@ -44,7 +44,7 @@ TransitionProgress::TransitionProgress() : _to(0.0f), _from(0.0f), _sceneToBeMod
 
 cc::IntrusivePtr<TransitionProgress> TransitionProgress::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgress> newScene{new TransitionProgress()};
+    cc::IntrusivePtr newScene{new TransitionProgress()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -142,7 +142,7 @@ ProgressTimer* TransitionProgressRadialCCW::progressTimerNodeWithRenderTexture(R
 
 cc::IntrusivePtr<TransitionProgressRadialCCW> TransitionProgressRadialCCW::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressRadialCCW> newScene{new TransitionProgressRadialCCW()};
+    cc::IntrusivePtr newScene{new TransitionProgressRadialCCW()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -153,7 +153,7 @@ cc::IntrusivePtr<TransitionProgressRadialCCW> TransitionProgressRadialCCW::creat
 // TransitionProgressRadialCW
 cc::IntrusivePtr<TransitionProgressRadialCW> TransitionProgressRadialCW::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressRadialCW> newScene{new TransitionProgressRadialCW()};
+    cc::IntrusivePtr newScene{new TransitionProgressRadialCW()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -183,7 +183,7 @@ ProgressTimer* TransitionProgressRadialCW::progressTimerNodeWithRenderTexture(Re
 // TransitionProgressHorizontal
 cc::IntrusivePtr<TransitionProgressHorizontal> TransitionProgressHorizontal::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressHorizontal> newScene{new TransitionProgressHorizontal()};
+    cc::IntrusivePtr newScene{new TransitionProgressHorizontal()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -214,7 +214,7 @@ ProgressTimer* TransitionProgressHorizontal::progressTimerNodeWithRenderTexture(
 // TransitionProgressVertical
 cc::IntrusivePtr<TransitionProgressVertical> TransitionProgressVertical::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressVertical> newScene{new TransitionProgressVertical()};
+    cc::IntrusivePtr newScene{new TransitionProgressVertical()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -245,7 +245,7 @@ ProgressTimer* TransitionProgressVertical::progressTimerNodeWithRenderTexture(Re
 // TransitionProgressInOut
 cc::IntrusivePtr<TransitionProgressInOut> TransitionProgressInOut::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressInOut> newScene{new TransitionProgressInOut()};
+    cc::IntrusivePtr newScene{new TransitionProgressInOut()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -288,7 +288,7 @@ ProgressTimer* TransitionProgressInOut::progressTimerNodeWithRenderTexture(Rende
 // TransitionProgressOutIn
 cc::IntrusivePtr<TransitionProgressOutIn> TransitionProgressOutIn::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionProgressOutIn> newScene{new TransitionProgressOutIn()};
+    cc::IntrusivePtr newScene{new TransitionProgressOutIn()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;

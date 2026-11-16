@@ -616,7 +616,7 @@ cc::IntrusivePtr<AssetsManager> AssetsManager::create(const char* packageUrl,
         SuccessCallback successCallback;
     };
 
-    cc::IntrusivePtr<AssetsManager> manager{new AssetsManager(packageUrl, versionFileUrl, storagePath)};
+    cc::IntrusivePtr manager{new AssetsManager(packageUrl, versionFileUrl, storagePath)};
     auto* delegate = new DelegateProtocolImpl(errorCallback, progressCallback, successCallback);
     manager->setDelegate(delegate);
     manager->_shouldDeleteDelegateWhenExit = true;

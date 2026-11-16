@@ -100,7 +100,7 @@ static cc::IntrusivePtr<Sprite> engine_inj_create_lump(const Color4B& color, int
     }
 
     // create cursor by pixels
-    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    cc::IntrusivePtr texture{new Texture2D()};
 
     texture->initWithData(pixels, height * width * sizeof(unsigned int), backend::PixelFormat::RGBA8, width, height);
 
@@ -270,7 +270,7 @@ cc::IntrusivePtr<TextFieldEx> TextFieldEx::create(std::string_view placeholder,
                                  float cursorWidth,
                                  const Color4B& cursorColor)
 {
-    cc::IntrusivePtr<TextFieldEx> ret{new TextFieldEx()};
+    cc::IntrusivePtr ret{new TextFieldEx()};
     if (ret && ret->initWithPlaceHolder("", fontName, fontSize, cursorWidth, cursorColor))
     {
 

@@ -157,7 +157,7 @@ void PUSlaveEmitter::notifyStart()
 
 cc::IntrusivePtr<PUSlaveEmitter> PUSlaveEmitter::create()
 {
-    cc::IntrusivePtr<PUSlaveEmitter> pe{new PUSlaveEmitter()};
+    cc::IntrusivePtr pe{new PUSlaveEmitter()};
     return pe;
 }
 

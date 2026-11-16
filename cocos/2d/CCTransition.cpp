@@ -54,7 +54,7 @@ TransitionScene::~TransitionScene()
 
 cc::IntrusivePtr<TransitionScene> TransitionScene::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionScene> pScene{new TransitionScene()};
+    cc::IntrusivePtr pScene{new TransitionScene()};
     if (pScene->initWithDuration(t, scene))
     {
         return pScene;
@@ -220,7 +220,7 @@ TransitionSceneOriented::~TransitionSceneOriented() {}
 
 cc::IntrusivePtr<TransitionSceneOriented> TransitionSceneOriented::create(float t, Scene* scene, Orientation orientation)
 {
-    cc::IntrusivePtr<TransitionSceneOriented> newScene{new TransitionSceneOriented()};
+    cc::IntrusivePtr newScene{new TransitionSceneOriented()};
     newScene->initWithDuration(t, scene, orientation);
     return newScene;
 }
@@ -241,7 +241,7 @@ TransitionRotoZoom::TransitionRotoZoom() {}
 
 cc::IntrusivePtr<TransitionRotoZoom> TransitionRotoZoom::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionRotoZoom> newScene{new TransitionRotoZoom()};
+    cc::IntrusivePtr newScene{new TransitionRotoZoom()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -278,7 +278,7 @@ TransitionJumpZoom::~TransitionJumpZoom() {}
 
 cc::IntrusivePtr<TransitionJumpZoom> TransitionJumpZoom::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionJumpZoom> newScene{new TransitionJumpZoom()};
+    cc::IntrusivePtr newScene{new TransitionJumpZoom()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -319,7 +319,7 @@ TransitionMoveInL::~TransitionMoveInL() {}
 
 cc::IntrusivePtr<TransitionMoveInL> TransitionMoveInL::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionMoveInL> newScene{new TransitionMoveInL()};
+    cc::IntrusivePtr newScene{new TransitionMoveInL()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -363,7 +363,7 @@ TransitionMoveInR::~TransitionMoveInR() {}
 
 cc::IntrusivePtr<TransitionMoveInR> TransitionMoveInR::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionMoveInR> newScene{new TransitionMoveInR()};
+    cc::IntrusivePtr newScene{new TransitionMoveInR()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -385,7 +385,7 @@ TransitionMoveInT::~TransitionMoveInT() {}
 
 cc::IntrusivePtr<TransitionMoveInT> TransitionMoveInT::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionMoveInT> newScene{new TransitionMoveInT()};
+    cc::IntrusivePtr newScene{new TransitionMoveInT()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -407,7 +407,7 @@ TransitionMoveInB::~TransitionMoveInB() {}
 
 cc::IntrusivePtr<TransitionMoveInB> TransitionMoveInB::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionMoveInB> newScene{new TransitionMoveInB()};
+    cc::IntrusivePtr newScene{new TransitionMoveInB()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -473,7 +473,7 @@ cc::IntrusivePtr<ActionInterval> TransitionSlideInL::easeActionWithAction(Action
 
 cc::IntrusivePtr<TransitionSlideInL> TransitionSlideInL::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSlideInL> newScene{new TransitionSlideInL()};
+    cc::IntrusivePtr newScene{new TransitionSlideInL()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -489,7 +489,7 @@ TransitionSlideInR::~TransitionSlideInR() {}
 
 cc::IntrusivePtr<TransitionSlideInR> TransitionSlideInR::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSlideInR> newScene{new TransitionSlideInR()};
+    cc::IntrusivePtr newScene{new TransitionSlideInR()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -522,7 +522,7 @@ TransitionSlideInT::~TransitionSlideInT() {}
 
 cc::IntrusivePtr<TransitionSlideInT> TransitionSlideInT::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSlideInT> newScene{new TransitionSlideInT()};
+    cc::IntrusivePtr newScene{new TransitionSlideInT()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -555,7 +555,7 @@ TransitionSlideInB::~TransitionSlideInB() {}
 
 cc::IntrusivePtr<TransitionSlideInB> TransitionSlideInB::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSlideInB> newScene{new TransitionSlideInB()};
+    cc::IntrusivePtr newScene{new TransitionSlideInB()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -588,7 +588,7 @@ TransitionShrinkGrow::~TransitionShrinkGrow() {}
 
 cc::IntrusivePtr<TransitionShrinkGrow> TransitionShrinkGrow::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionShrinkGrow> newScene{new TransitionShrinkGrow()};
+    cc::IntrusivePtr newScene{new TransitionShrinkGrow()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -662,7 +662,7 @@ void TransitionFlipX::onEnter()
 
 cc::IntrusivePtr<TransitionFlipX> TransitionFlipX::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionFlipX> newScene{new TransitionFlipX()};
+    cc::IntrusivePtr newScene{new TransitionFlipX()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -714,7 +714,7 @@ void TransitionFlipY::onEnter()
 
 cc::IntrusivePtr<TransitionFlipY> TransitionFlipY::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionFlipY> newScene{new TransitionFlipY()};
+    cc::IntrusivePtr newScene{new TransitionFlipY()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -767,7 +767,7 @@ void TransitionFlipAngular::onEnter()
 
 cc::IntrusivePtr<TransitionFlipAngular> TransitionFlipAngular::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionFlipAngular> newScene{new TransitionFlipAngular()};
+    cc::IntrusivePtr newScene{new TransitionFlipAngular()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -821,7 +821,7 @@ void TransitionZoomFlipX::onEnter()
 
 cc::IntrusivePtr<TransitionZoomFlipX> TransitionZoomFlipX::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionZoomFlipX> newScene{new TransitionZoomFlipX()};
+    cc::IntrusivePtr newScene{new TransitionZoomFlipX()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -878,7 +878,7 @@ void TransitionZoomFlipY::onEnter()
 
 cc::IntrusivePtr<TransitionZoomFlipY> TransitionZoomFlipY::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionZoomFlipY> newScene{new TransitionZoomFlipY()};
+    cc::IntrusivePtr newScene{new TransitionZoomFlipY()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -934,7 +934,7 @@ void TransitionZoomFlipAngular::onEnter()
 
 cc::IntrusivePtr<TransitionZoomFlipAngular> TransitionZoomFlipAngular::create(float t, Scene* s, Orientation o)
 {
-    cc::IntrusivePtr<TransitionZoomFlipAngular> newScene{new TransitionZoomFlipAngular()};
+    cc::IntrusivePtr newScene{new TransitionZoomFlipAngular()};
     newScene->initWithDuration(t, s, o);
     return newScene;
 }
@@ -952,7 +952,7 @@ TransitionFade::~TransitionFade() {}
 
 cc::IntrusivePtr<TransitionFade> TransitionFade::create(float duration, Scene* scene, const Color3B& color)
 {
-    cc::IntrusivePtr<TransitionFade> transition{new TransitionFade()};
+    cc::IntrusivePtr transition{new TransitionFade()};
     transition->initWithDuration(duration, scene, color);
     return transition;
 }
@@ -1012,7 +1012,7 @@ TransitionCrossFade::~TransitionCrossFade() {}
 
 cc::IntrusivePtr<TransitionCrossFade> TransitionCrossFade::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionCrossFade> newScene{new TransitionCrossFade()};
+    cc::IntrusivePtr newScene{new TransitionCrossFade()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1113,7 +1113,7 @@ TransitionTurnOffTiles::~TransitionTurnOffTiles()
 
 cc::IntrusivePtr<TransitionTurnOffTiles> TransitionTurnOffTiles::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionTurnOffTiles> newScene{new TransitionTurnOffTiles()};
+    cc::IntrusivePtr newScene{new TransitionTurnOffTiles()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1185,7 +1185,7 @@ TransitionSplitCols::~TransitionSplitCols()
 
 cc::IntrusivePtr<TransitionSplitCols> TransitionSplitCols::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSplitCols> newScene{new TransitionSplitCols()};
+    cc::IntrusivePtr newScene{new TransitionSplitCols()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1252,7 +1252,7 @@ cc::IntrusivePtr<ActionInterval> TransitionSplitRows::action()
 
 cc::IntrusivePtr<TransitionSplitRows> TransitionSplitRows::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionSplitRows> newScene{new TransitionSplitRows()};
+    cc::IntrusivePtr newScene{new TransitionSplitRows()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1273,7 +1273,7 @@ TransitionFadeTR::~TransitionFadeTR()
 
 cc::IntrusivePtr<TransitionFadeTR> TransitionFadeTR::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionFadeTR> newScene{new TransitionFadeTR()};
+    cc::IntrusivePtr newScene{new TransitionFadeTR()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1347,7 +1347,7 @@ TransitionFadeBL::~TransitionFadeBL() {}
 
 cc::IntrusivePtr<TransitionFadeBL> TransitionFadeBL::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionFadeBL> newScene{new TransitionFadeBL()};
+    cc::IntrusivePtr newScene{new TransitionFadeBL()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1369,7 +1369,7 @@ TransitionFadeUp::~TransitionFadeUp() {}
 
 cc::IntrusivePtr<TransitionFadeUp> TransitionFadeUp::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionFadeUp> newScene{new TransitionFadeUp()};
+    cc::IntrusivePtr newScene{new TransitionFadeUp()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;
@@ -1390,7 +1390,7 @@ TransitionFadeDown::~TransitionFadeDown() {}
 
 cc::IntrusivePtr<TransitionFadeDown> TransitionFadeDown::create(float t, Scene* scene)
 {
-    cc::IntrusivePtr<TransitionFadeDown> newScene{new TransitionFadeDown()};
+    cc::IntrusivePtr newScene{new TransitionFadeDown()};
     if (newScene->initWithDuration(t, scene))
     {
         return newScene;

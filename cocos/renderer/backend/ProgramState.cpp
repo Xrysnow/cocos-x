@@ -193,7 +193,7 @@ ProgramState::~ProgramState()
 
 cc::IntrusivePtr<ProgramState> ProgramState::clone() const
 {
-    cc::IntrusivePtr<ProgramState> cp{new ProgramState(_program)};
+    cc::IntrusivePtr cp{new ProgramState(_program)};
     cp->_vertexTextureInfos   = _vertexTextureInfos;
     cp->_fragmentTextureInfos = _fragmentTextureInfos;
     memcpy(cp->_vertexUniformBuffer, _vertexUniformBuffer, _vertexUniformBufferSize);

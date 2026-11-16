@@ -41,24 +41,24 @@ void PUDynamicAttributeTranslator::translate(PUScriptCompiler* compiler, PUAbstr
 
     if (type == token[TOKEN_DYN_RANDOM])
     {
-        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeRandom>{new PUDynamicAttributeRandom()}.detach();
+        _dynamicAttribute = cc::IntrusivePtr{new PUDynamicAttributeRandom()}.detach();
     }
     else if (type == token[TOKEN_DYN_CURVED_LINEAR])
     {
-        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeCurved>{new PUDynamicAttributeCurved()}.detach();
+        _dynamicAttribute = cc::IntrusivePtr{new PUDynamicAttributeCurved()}.detach();
     }
     else if (type == token[TOKEN_DYN_CURVED_SPLINE])
     {
-        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeCurved>{new PUDynamicAttributeCurved()}.detach();
+        _dynamicAttribute = cc::IntrusivePtr{new PUDynamicAttributeCurved()}.detach();
     }
     else if (type == token[TOKEN_DYN_OSCILLATE])
     {
-        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeOscillate>{new PUDynamicAttributeOscillate()}.detach();
+        _dynamicAttribute = cc::IntrusivePtr{new PUDynamicAttributeOscillate()}.detach();
     }
     else
     {
         // Create a fixed one.
-        _dynamicAttribute = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+        _dynamicAttribute = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     }
 
     // Run through properties

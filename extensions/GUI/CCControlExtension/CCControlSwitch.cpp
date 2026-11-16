@@ -130,7 +130,7 @@ cc::IntrusivePtr<ControlSwitchSprite> ControlSwitchSprite::create(Sprite* maskSp
                                                  Label* onLabel,
                                                  Label* offLabel)
 {
-    cc::IntrusivePtr<ControlSwitchSprite> ret{new ControlSwitchSprite()};
+    cc::IntrusivePtr ret{new ControlSwitchSprite()};
     ret->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel);
     return ret;
 }
@@ -290,7 +290,7 @@ bool ControlSwitch::initWithMaskSprite(Sprite* maskSprite, Sprite* onSprite, Spr
 
 cc::IntrusivePtr<ControlSwitch> ControlSwitch::create(Sprite* maskSprite, Sprite* onSprite, Sprite* offSprite, Sprite* thumbSprite)
 {
-    cc::IntrusivePtr<ControlSwitch> pRet{new ControlSwitch()};
+    cc::IntrusivePtr pRet{new ControlSwitch()};
     if (!(pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, nullptr, nullptr)))
     {
         return nullptr;
@@ -336,7 +336,7 @@ cc::IntrusivePtr<ControlSwitch> ControlSwitch::create(Sprite* maskSprite,
                                      Label* onLabel,
                                      Label* offLabel)
 {
-    cc::IntrusivePtr<ControlSwitch> pRet{new ControlSwitch()};
+    cc::IntrusivePtr pRet{new ControlSwitch()};
     if (!(pRet->initWithMaskSprite(maskSprite, onSprite, offSprite, thumbSprite, onLabel, offLabel)))
     {
         return nullptr;

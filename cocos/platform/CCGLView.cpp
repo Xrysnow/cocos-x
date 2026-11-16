@@ -318,7 +318,7 @@ void GLView::handleTouchesBegin(int num, intptr_t ids[], float xs[], float ys[])
                 continue;
             }
 
-            Touch* touch = g_touches[unusedIndex] = cc::IntrusivePtr<Touch>{new Touch()}.detach();
+            Touch* touch = g_touches[unusedIndex] = cc::IntrusivePtr{new Touch()}.detach();
             touch->setTouchInfo(unusedIndex, (x - _viewPortRect.origin.x) / _scaleX,
                                 (y - _viewPortRect.origin.y) / _scaleY);
 

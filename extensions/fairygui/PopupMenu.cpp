@@ -10,7 +10,7 @@ USING_NS_CC;
 
 cc::IntrusivePtr<PopupMenu> PopupMenu::create(const std::string & resourceURL)
 {
-    cc::IntrusivePtr<PopupMenu> pRet{new PopupMenu()};
+    cc::IntrusivePtr pRet{new PopupMenu()};
     if (pRet->init(resourceURL))
     {
 
@@ -23,8 +23,7 @@ cc::IntrusivePtr<PopupMenu> PopupMenu::create(const std::string & resourceURL)
     }
 }
 
-PopupMenu::PopupMenu() :
-    _contentPane(nullptr),
+PopupMenu::PopupMenu() : _contentPane(nullptr),
     _list(nullptr)
 {
 }

@@ -201,7 +201,7 @@ bool AudioDecoderWav::init(AudioStream* src)
 
 cc::IntrusivePtr<AudioDecoderWav> AudioDecoderWav::create(AudioStream* src, size_t bufSize)
 {
-	cc::IntrusivePtr<AudioDecoderWav> ret{new (std::nothrow) AudioDecoderWav(bufSize)};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioDecoderWav(bufSize)};
 	if (ret&&ret->init(src))
 	{
 		return ret;

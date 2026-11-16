@@ -52,7 +52,7 @@ backend::ProgramState* initPipelineDescriptor(cocos2d::CustomCommand& command,
 {
     auto& pipelieDescriptor = command.getPipelineDescriptor();
     auto* program           = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-    auto programState       = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    auto programState       = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     CC_SAFE_RELEASE(pipelieDescriptor.programState);
     pipelieDescriptor.programState = programState;
 
@@ -87,7 +87,7 @@ backend::ProgramState* initPipelineDescriptor(cocos2d::CustomCommand& command,
 
 cc::IntrusivePtr<ProgressTimer> ProgressTimer::create(Sprite* sp)
 {
-    cc::IntrusivePtr<ProgressTimer> progressTimer{new ProgressTimer()};
+    cc::IntrusivePtr progressTimer{new ProgressTimer()};
     if (progressTimer->initWithSprite(sp))
     {
         return progressTimer;

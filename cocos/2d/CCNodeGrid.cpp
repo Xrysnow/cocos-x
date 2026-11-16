@@ -30,7 +30,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<NodeGrid> NodeGrid::create()
 {
-    cc::IntrusivePtr<NodeGrid> ret{new NodeGrid()};
+    cc::IntrusivePtr ret{new NodeGrid()};
     if (!(ret->init()))
     {
         return nullptr;

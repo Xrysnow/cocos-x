@@ -97,7 +97,7 @@ void PUSphereSurfaceEmitter::initParticleDirection(PUParticle3D* particle)
 
 cc::IntrusivePtr<PUSphereSurfaceEmitter> PUSphereSurfaceEmitter::create()
 {
-    cc::IntrusivePtr<PUSphereSurfaceEmitter> pe{new PUSphereSurfaceEmitter()};
+    cc::IntrusivePtr pe{new PUSphereSurfaceEmitter()};
     return pe;
 }
 

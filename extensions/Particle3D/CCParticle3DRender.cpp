@@ -53,7 +53,7 @@ Particle3DQuadRender::~Particle3DQuadRender()
 
 cc::IntrusivePtr<Particle3DQuadRender> Particle3DQuadRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<Particle3DQuadRender> ret{new Particle3DQuadRender()};
+    cc::IntrusivePtr ret{new Particle3DQuadRender()};
     if (ret->initQuadRender(texFile))
     {
         ret->_texFile = texFile;
@@ -202,14 +202,14 @@ bool Particle3DQuadRender::initQuadRender(std::string_view texFile)
         {
             _texture      = tex;
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_TEXTURE_3D);
-            _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+            _programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
         }
     }
 
     if (!_programState)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_COLOR_3D);
-        _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+        _programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     }
 
     auto& pipelineDescriptor        = _meshCommand.getPipelineDescriptor();
@@ -270,7 +270,7 @@ Particle3DModelRender::~Particle3DModelRender()
 
 cc::IntrusivePtr<Particle3DModelRender> Particle3DModelRender::create(std::string_view modelFile, std::string_view texFile)
 {
-    cc::IntrusivePtr<Particle3DModelRender> ret{new Particle3DModelRender()};
+    cc::IntrusivePtr ret{new Particle3DModelRender()};
     ret->_modelFile = modelFile;
     ret->_texFile   = texFile;
     return ret;

@@ -7,7 +7,7 @@ USING_NS_CC;
 
 cc::IntrusivePtr<FUIInput> FUIInput::create()
 {
-    cc::IntrusivePtr<FUIInput> pRet{new FUIInput()};
+    cc::IntrusivePtr pRet{new FUIInput()};
 
     auto* texture = UIPackage::getEmptyTexture();
     auto frame = SpriteFrame::createWithTexture(texture, Rect(Vec2::ZERO, texture->getContentSize()));

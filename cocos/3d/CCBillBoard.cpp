@@ -42,7 +42,7 @@ BillBoard::~BillBoard() {}
 
 cc::IntrusivePtr<BillBoard> BillBoard::createWithTexture(Texture2D* texture, Mode mode)
 {
-    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
+    cc::IntrusivePtr billboard{new BillBoard()};
     if (billboard->initWithTexture(texture))
     {
         billboard->_mode = mode;
@@ -53,7 +53,7 @@ cc::IntrusivePtr<BillBoard> BillBoard::createWithTexture(Texture2D* texture, Mod
 
 cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, Mode mode)
 {
-    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
+    cc::IntrusivePtr billboard{new BillBoard()};
     if (billboard->initWithFile(filename))
     {
         billboard->_mode = mode;
@@ -64,7 +64,7 @@ cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, Mode mo
 
 cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, const Rect& rect, Mode mode)
 {
-    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
+    cc::IntrusivePtr billboard{new BillBoard()};
     if (billboard->initWithFile(filename, rect))
     {
         billboard->_mode = mode;
@@ -75,7 +75,7 @@ cc::IntrusivePtr<BillBoard> BillBoard::create(std::string_view filename, const R
 
 cc::IntrusivePtr<BillBoard> BillBoard::create(Mode mode)
 {
-    cc::IntrusivePtr<BillBoard> billboard{new BillBoard()};
+    cc::IntrusivePtr billboard{new BillBoard()};
     if (billboard->init())
     {
         billboard->_mode = mode;

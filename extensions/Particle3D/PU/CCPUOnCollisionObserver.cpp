@@ -36,7 +36,7 @@ bool PUOnCollisionObserver::observe(PUParticle3D* particle, float /*timeElapsed*
 
 cc::IntrusivePtr<PUOnCollisionObserver> PUOnCollisionObserver::create()
 {
-    cc::IntrusivePtr<PUOnCollisionObserver> pco{new PUOnCollisionObserver()};
+    cc::IntrusivePtr pco{new PUOnCollisionObserver()};
     return pco;
 }
 

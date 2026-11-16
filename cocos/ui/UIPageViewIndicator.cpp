@@ -48,7 +48,7 @@ namespace ui
 
 cc::IntrusivePtr<PageViewIndicator> PageViewIndicator::create()
 {
-    cc::IntrusivePtr<PageViewIndicator> node{new PageViewIndicator()};
+    cc::IntrusivePtr node{new PageViewIndicator()};
     if (node->init())
     {
         return node;

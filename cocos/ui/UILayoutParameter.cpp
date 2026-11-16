@@ -60,7 +60,7 @@ bool Margin::equals(const Margin& target) const
 
 cc::IntrusivePtr<LayoutParameter> LayoutParameter::create()
 {
-    cc::IntrusivePtr<LayoutParameter> parameter{new LayoutParameter()};
+    cc::IntrusivePtr parameter{new LayoutParameter()};
     return parameter;
 }
 
@@ -98,7 +98,7 @@ void LayoutParameter::copyProperties(LayoutParameter* model)
 
 cc::IntrusivePtr<LinearLayoutParameter> LinearLayoutParameter::create()
 {
-    cc::IntrusivePtr<LinearLayoutParameter> parameter{new LinearLayoutParameter()};
+    cc::IntrusivePtr parameter{new LinearLayoutParameter()};
     return parameter;
 }
 
@@ -129,7 +129,7 @@ void LinearLayoutParameter::copyProperties(LayoutParameter* model)
 
 cc::IntrusivePtr<RelativeLayoutParameter> RelativeLayoutParameter::create()
 {
-    cc::IntrusivePtr<RelativeLayoutParameter> parameter{new RelativeLayoutParameter()};
+    cc::IntrusivePtr parameter{new RelativeLayoutParameter()};
     return parameter;
 }
 

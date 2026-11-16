@@ -53,7 +53,7 @@ static cc::IntrusivePtr<MeshMaterial> getMeshRendererMaterialForAttribs(MeshVert
 
 cc::IntrusivePtr<MeshRenderer> MeshRenderer::create()
 {
-    cc::IntrusivePtr<MeshRenderer> mesh{new MeshRenderer()};
+    cc::IntrusivePtr mesh{new MeshRenderer()};
     if (mesh->init())
     {
         return mesh;
@@ -70,7 +70,7 @@ cc::IntrusivePtr<MeshRenderer> MeshRenderer::create(std::string_view modelPath, 
 {
     CCASSERT(modelPath.length() >= 4, "Invalid filename.");
 
-    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
+    cc::IntrusivePtr meshRenderer{new MeshRenderer()};
     if (meshRenderer->initWithFile(modelPath))
     {
         meshRenderer->setModelTexture(modelPath, texturePath);
@@ -92,7 +92,7 @@ void MeshRenderer::createAsync(std::string_view modelPath,
                            const std::function<void(cc::IntrusivePtr<MeshRenderer>, void*)>& callback,
                            void* callbackparam)
 {
-    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
+    cc::IntrusivePtr meshRenderer{new MeshRenderer()};
     if (meshRenderer->loadFromCache(modelPath))
     {
         meshRenderer->setModelTexture(modelPath, texturePath);
@@ -384,7 +384,7 @@ bool MeshRenderer::initFrom(const NodeDatas& nodeDatas, const MeshDatas& meshdat
 
 cc::IntrusivePtr<MeshRenderer> MeshRenderer::createMeshRendererNode(NodeData* nodedata, ModelData* modeldata, const MaterialDatas& materialdatas)
 {
-    cc::IntrusivePtr<MeshRenderer> meshRenderer{new MeshRenderer()};
+    cc::IntrusivePtr meshRenderer{new MeshRenderer()};
 
     meshRenderer->setName(nodedata->id);
     auto mesh = Mesh::create(nodedata->id, getMeshIndexData(modeldata->subMeshId));

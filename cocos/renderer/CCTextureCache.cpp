@@ -352,7 +352,7 @@ void TextureCache::addImageAsyncCallBack(float /*dt*/)
             {
                 Image* image = &(asyncStruct->image);
                 // generate texture in render thread
-                cc::IntrusivePtr<Texture2D> newTexture{new Texture2D()};
+                cc::IntrusivePtr newTexture{new Texture2D()};
 
                 newTexture->initWithImage(image, asyncStruct->pixelFormat);
                 // parse 9-patch info
@@ -423,12 +423,12 @@ Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
         // all images are handled by UIImage except PVR extension that is handled by our own handler
         do
         {
-            image = cc::IntrusivePtr<Image>{new Image()};
+            image = cc::IntrusivePtr{new Image()};
 
             bool bRet = image->initWithImageFile(fullpath);
             CC_BREAK_IF(!bRet);
 
-            cc::IntrusivePtr<Texture2D> newTexture{new Texture2D()};
+            cc::IntrusivePtr newTexture{new Texture2D()};
 
             if (newTexture->initWithImage(image, format))
             {
@@ -498,7 +498,7 @@ Texture2D* TextureCache::addImage(Image* image, std::string_view key, PixelForma
             break;
         }
 
-        cc::IntrusivePtr<Texture2D> owner{new Texture2D()};
+        cc::IntrusivePtr owner{new Texture2D()};
         if (owner->initWithImage(image, format))
         {
             // The map owns exactly this share; emplace may allocate/throw.
@@ -891,7 +891,7 @@ void VolatileTextureMgr::reloadTexture(Texture2D* texture, std::string_view file
     if (!texture)
         return;
 
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     Data data    = FileUtils::getInstance()->getDataFromFile(filename);
 
     if (image->initWithImageData(data.getBytes(), data.getSize()))

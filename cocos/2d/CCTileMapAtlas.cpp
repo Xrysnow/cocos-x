@@ -38,7 +38,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<TileMapAtlas> TileMapAtlas::create(std::string_view tile, std::string_view mapFile, int tileWidth, int tileHeight)
 {
-    cc::IntrusivePtr<TileMapAtlas> ret{new TileMapAtlas()};
+    cc::IntrusivePtr ret{new TileMapAtlas()};
     if (ret->initWithTileFile(tile, mapFile, tileWidth, tileHeight))
     {
         return ret;

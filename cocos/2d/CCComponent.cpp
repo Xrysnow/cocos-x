@@ -53,7 +53,7 @@ bool Component::serialize(void* /*ar*/)
 
 cc::IntrusivePtr<Component> Component::create()
 {
-    cc::IntrusivePtr<Component> ret{new Component()};
+    cc::IntrusivePtr ret{new Component()};
 
     if (!(ret->init()))
     {

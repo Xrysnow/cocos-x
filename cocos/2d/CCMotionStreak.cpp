@@ -54,7 +54,7 @@ MotionStreak::~MotionStreak()
 
 cc::IntrusivePtr<MotionStreak> MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, std::string_view path)
 {
-    cc::IntrusivePtr<MotionStreak> ret{new MotionStreak()};
+    cc::IntrusivePtr ret{new MotionStreak()};
     if (ret->initWithFade(fade, minSeg, stroke, color, path))
     {
         return ret;
@@ -65,7 +65,7 @@ cc::IntrusivePtr<MotionStreak> MotionStreak::create(float fade, float minSeg, fl
 
 cc::IntrusivePtr<MotionStreak> MotionStreak::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
 {
-    cc::IntrusivePtr<MotionStreak> ret{new MotionStreak()};
+    cc::IntrusivePtr ret{new MotionStreak()};
     if (ret->initWithFade(fade, minSeg, stroke, color, texture))
     {
         return ret;

@@ -54,7 +54,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<Layer> Layer::create()
 {
-    cc::IntrusivePtr<Layer> ret{new Layer()};
+    cc::IntrusivePtr ret{new Layer()};
     ret->initLayer();
     return ret;
 }
@@ -64,7 +64,7 @@ LayerColor::LayerColor() {}
 
 cc::IntrusivePtr<LayerColor> LayerColor::create()
 {
-    cc::IntrusivePtr<LayerColor> ret{new LayerColor()};
+    cc::IntrusivePtr ret{new LayerColor()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -74,7 +74,7 @@ cc::IntrusivePtr<LayerColor> LayerColor::create()
 
 cc::IntrusivePtr<LayerColor> LayerColor::create(const Color4B& color, float width, float height)
 {
-    cc::IntrusivePtr<LayerColor> layer{new LayerColor()};
+    cc::IntrusivePtr layer{new LayerColor()};
     if (layer->initWithColor(color, width, height))
     {
         return layer;
@@ -84,7 +84,7 @@ cc::IntrusivePtr<LayerColor> LayerColor::create(const Color4B& color, float widt
 
 cc::IntrusivePtr<LayerColor> LayerColor::create(const Color4B& color)
 {
-    cc::IntrusivePtr<LayerColor> layer{new LayerColor()};
+    cc::IntrusivePtr layer{new LayerColor()};
     if (layer->initWithColor(color))
     {
         return layer;
@@ -147,7 +147,7 @@ LayerGradient::~LayerGradient() {}
 
 cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, const Color4B& end)
 {
-    cc::IntrusivePtr<LayerGradient> layer{new LayerGradient()};
+    cc::IntrusivePtr layer{new LayerGradient()};
     if (layer->initWithColor(start, end))
     {
         return layer;
@@ -157,7 +157,7 @@ cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, cons
 
 cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, const Color4B& end, const Vec2& v)
 {
-    cc::IntrusivePtr<LayerGradient> layer{new LayerGradient()};
+    cc::IntrusivePtr layer{new LayerGradient()};
     if (layer->initWithColor(start, end, v))
     {
         return layer;
@@ -167,7 +167,7 @@ cc::IntrusivePtr<LayerGradient> LayerGradient::create(const Color4B& start, cons
 
 cc::IntrusivePtr<LayerGradient> LayerGradient::create()
 {
-    cc::IntrusivePtr<LayerGradient> ret{new LayerGradient()};
+    cc::IntrusivePtr ret{new LayerGradient()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -335,7 +335,7 @@ cc::IntrusivePtr<LayerRadialGradient> LayerRadialGradient::create(const Color4B&
                                                  const Vec2& center,
                                                  float expand)
 {
-    cc::IntrusivePtr<LayerRadialGradient> layerGradient{new LayerRadialGradient()};
+    cc::IntrusivePtr layerGradient{new LayerRadialGradient()};
     if (layerGradient && layerGradient->initWithColor(startColor, endColor, radius, center, expand))
     {
         return layerGradient;
@@ -346,7 +346,7 @@ cc::IntrusivePtr<LayerRadialGradient> LayerRadialGradient::create(const Color4B&
 
 cc::IntrusivePtr<LayerRadialGradient> LayerRadialGradient::create()
 {
-    cc::IntrusivePtr<LayerRadialGradient> layerGradient{new LayerRadialGradient()};
+    cc::IntrusivePtr layerGradient{new LayerRadialGradient()};
     if (layerGradient && layerGradient->initWithColor(Color4B::BLACK, Color4B::BLACK, 0, Vec2(0, 0), 0))
     {
         return layerGradient;
@@ -360,7 +360,7 @@ LayerRadialGradient::LayerRadialGradient()
     auto& pipelinePS = _customCommand.getPipelineDescriptor().programState;
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::LAYER_RADIA_GRADIENT);
     //!!! LayerRadialGradient private programState don't want affect by Node::_programState, so store at _customCommand
-    pipelinePS          = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    pipelinePS          = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     _mvpMatrixLocation  = pipelinePS->getUniformLocation("u_MVPMatrix");
     _startColorLocation = pipelinePS->getUniformLocation("u_startColor");
     _endColorLocation   = pipelinePS->getUniformLocation("u_endColor");
@@ -569,7 +569,7 @@ cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::createWithLayer(Node* layer)
 
 cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::create()
 {
-    cc::IntrusivePtr<LayerMultiplex> ret{new LayerMultiplex()};
+    cc::IntrusivePtr ret{new LayerMultiplex()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -579,7 +579,7 @@ cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::create()
 
 cc::IntrusivePtr<LayerMultiplex> LayerMultiplex::createWithArray(const Vector<Node*>& arrayOfLayers)
 {
-    cc::IntrusivePtr<LayerMultiplex> ret{new LayerMultiplex()};
+    cc::IntrusivePtr ret{new LayerMultiplex()};
     if (!(ret->initWithArray(arrayOfLayers)))
     {
         return nullptr;

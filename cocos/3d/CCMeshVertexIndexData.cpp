@@ -54,7 +54,7 @@ cc::IntrusivePtr<MeshIndexData> MeshIndexData::create(std::string_view id,
                                      backend::Buffer* indexbuffer,
                                      const AABB& aabb)
 {
-    cc::IntrusivePtr<MeshIndexData> meshindex{new MeshIndexData()};
+    cc::IntrusivePtr meshindex{new MeshIndexData()};
 
     meshindex->_id          = id;
     meshindex->_indexBuffer = indexbuffer;
@@ -110,7 +110,7 @@ void MeshVertexData::setVertexData(const std::vector<float>& vertexData)
 
 cc::IntrusivePtr<MeshVertexData> MeshVertexData::create(const MeshData& meshdata, CustomCommand::IndexFormat format)
 {
-    cc::IntrusivePtr<MeshVertexData> vertexdata{new MeshVertexData()};
+    cc::IntrusivePtr vertexdata{new MeshVertexData()};
     vertexdata->_vertexBuffer = backend::Device::getInstance()->newBuffer(
         meshdata.vertex.size() * sizeof(meshdata.vertex[0]), meshdata.getPerVertexSize(), backend::BufferType::VERTEX, backend::BufferUsage::STATIC);
     // CC_SAFE_RETAIN(vertexdata->_vertexBuffer);

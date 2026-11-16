@@ -92,7 +92,7 @@ void PUParticleFollower::firstParticleUpdate(PUParticle3D* /*particle*/, float /
 
 cc::IntrusivePtr<PUParticleFollower> PUParticleFollower::create()
 {
-    cc::IntrusivePtr<PUParticleFollower> ppf{new PUParticleFollower()};
+    cc::IntrusivePtr ppf{new PUParticleFollower()};
     return ppf;
 }
 

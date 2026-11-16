@@ -47,7 +47,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret && ret->initWithRect(viewName, rect, frameZoomFactor, resizable))
     {
         return ret;
@@ -57,7 +57,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewNam
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret && ret->initWithFullScreen(viewName))
     {
         return ret;
@@ -67,7 +67,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
+    cc::IntrusivePtr ret{new GLViewImpl()};
     if (ret && ret->initWithFullScreen(viewName))
     {
         return ret;

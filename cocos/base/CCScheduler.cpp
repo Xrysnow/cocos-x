@@ -338,7 +338,7 @@ void Scheduler::schedule(const ccSchedulerFunc& callback,
         ccArrayEnsureExtraCapacity(element->timers, 1);
     }
 
-    cc::IntrusivePtr<TimerTargetCallback> timer{new TimerTargetCallback()};
+    cc::IntrusivePtr timer{new TimerTargetCallback()};
     timer->initWithCallback(this, callback, target, key, interval, repeat, delay);
     ccArrayAppendObject(element->timers, timer.get());
 }
@@ -1006,7 +1006,7 @@ void Scheduler::schedule(SEL_SCHEDULE selector,
         ccArrayEnsureExtraCapacity(element->timers, 1);
     }
 
-    cc::IntrusivePtr<TimerTargetSelector> timer{new TimerTargetSelector()};
+    cc::IntrusivePtr timer{new TimerTargetSelector()};
     timer->initWithSelector(this, selector, target, interval, repeat, delay);
     ccArrayAppendObject(element->timers, timer.get());
 }

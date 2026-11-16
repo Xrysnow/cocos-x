@@ -43,7 +43,7 @@ cc::IntrusivePtr<MeshSkin> MeshSkin::create(Skeleton3D* skeleton,
                            const std::vector<std::string>& boneNames,
                            const std::vector<Mat4>& invBindPose)
 {
-    cc::IntrusivePtr<MeshSkin> skin{new MeshSkin()};
+    cc::IntrusivePtr skin{new MeshSkin()};
     skin->_skeleton = skeleton;
     skeleton->retain();
 

@@ -35,7 +35,7 @@ const float PUJetAffector::DEFAULT_ACCELERATION = 1.0f;
 //-----------------------------------------------------------------------
 PUJetAffector::PUJetAffector() : PUAffector(), _scaled(0.0f)
 {
-    _dynAcceleration = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynAcceleration = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynAcceleration))->setValue(DEFAULT_ACCELERATION);
 }
 //-----------------------------------------------------------------------
@@ -76,7 +76,7 @@ void PUJetAffector::updatePUAffector(PUParticle3D* particle, float deltaTime)
 
 cc::IntrusivePtr<PUJetAffector> PUJetAffector::create()
 {
-    cc::IntrusivePtr<PUJetAffector> pja{new PUJetAffector()};
+    cc::IntrusivePtr pja{new PUJetAffector()};
     return pja;
 }
 

@@ -77,7 +77,7 @@ void PUAlignAffector::firstParticleUpdate(PUParticle3D* particle, float /*deltaT
 
 cc::IntrusivePtr<PUAlignAffector> PUAlignAffector::create()
 {
-    cc::IntrusivePtr<PUAlignAffector> paa{new PUAlignAffector()};
+    cc::IntrusivePtr paa{new PUAlignAffector()};
     return paa;
 }
 

@@ -47,7 +47,7 @@ NS_CC_BEGIN;
 
 cc::IntrusivePtr<PointArray> PointArray::create(ssize_t capacity)
 {
-    cc::IntrusivePtr<PointArray> pointArray{new PointArray()};
+    cc::IntrusivePtr pointArray{new PointArray()};
     if (pointArray->initWithCapacity(capacity))
     {
         return pointArray;
@@ -67,7 +67,7 @@ cc::IntrusivePtr<PointArray> PointArray::clone() const
 {
     vector<Vec2> newArray = _controlPoints;
 
-    cc::IntrusivePtr<PointArray> points{new PointArray()};
+    cc::IntrusivePtr points{new PointArray()};
     points->initWithCapacity(10);
     points->setControlPoints(std::move(newArray));
 
@@ -79,7 +79,7 @@ PointArray::~PointArray()
     CCLOGINFO("deallocing PointArray: %p", this);
 }
 
-PointArray::PointArray() {}
+PointArray::PointArray() = default;
 
 const std::vector<Vec2>& PointArray::getControlPoints() const
 {
@@ -187,7 +187,7 @@ Vec2 ccCardinalSplineAt(const Vec2& p0, const Vec2& p1, const Vec2& p2, const Ve
 
 cc::IntrusivePtr<CardinalSplineTo> CardinalSplineTo::create(float duration, PointArray* points, float tension)
 {
-    cc::IntrusivePtr<CardinalSplineTo> ret{new CardinalSplineTo()};
+    cc::IntrusivePtr ret{new CardinalSplineTo()};
     if (!(ret->initWithDuration(duration, points, tension)))
     {
         return nullptr;
@@ -234,7 +234,7 @@ void CardinalSplineTo::startWithTarget(Node* target)
 cc::IntrusivePtr<Action> CardinalSplineTo::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CardinalSplineTo> a{new CardinalSplineTo()};
+    cc::IntrusivePtr a{new CardinalSplineTo()};
     a->initWithDuration(this->_duration, this->_points->clone().get(), this->_tension);
     return a;
 }
@@ -299,7 +299,7 @@ cc::IntrusivePtr<Action> CardinalSplineTo::reverse() const
 
 cc::IntrusivePtr<CardinalSplineBy> CardinalSplineBy::create(float duration, PointArray* points, float tension)
 {
-    cc::IntrusivePtr<CardinalSplineBy> ret{new CardinalSplineBy()};
+    cc::IntrusivePtr ret{new CardinalSplineBy()};
     if (!(ret->initWithDuration(duration, points, tension)))
     {
         return nullptr;
@@ -368,7 +368,7 @@ void CardinalSplineBy::startWithTarget(Node* target)
 cc::IntrusivePtr<Action> CardinalSplineBy::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CardinalSplineBy> a{new CardinalSplineBy()};
+    cc::IntrusivePtr a{new CardinalSplineBy()};
     a->initWithDuration(this->_duration, this->_points->clone().get(), this->_tension);
     return a;
 }
@@ -378,7 +378,7 @@ cc::IntrusivePtr<Action> CardinalSplineBy::clone() const
 
 cc::IntrusivePtr<CatmullRomTo> CatmullRomTo::create(float dt, PointArray* points)
 {
-    cc::IntrusivePtr<CatmullRomTo> ret{new CatmullRomTo()};
+    cc::IntrusivePtr ret{new CatmullRomTo()};
     if (!(ret->initWithDuration(dt, points)))
     {
         return nullptr;
@@ -400,7 +400,7 @@ bool CatmullRomTo::initWithDuration(float dt, PointArray* points)
 cc::IntrusivePtr<Action> CatmullRomTo::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CatmullRomTo> a{new CatmullRomTo()};
+    cc::IntrusivePtr a{new CatmullRomTo()};
     a->initWithDuration(this->_duration, this->_points->clone().get());
     return a;
 }
@@ -416,7 +416,7 @@ cc::IntrusivePtr<Action> CatmullRomTo::reverse() const
 
 cc::IntrusivePtr<CatmullRomBy> CatmullRomBy::create(float dt, PointArray* points)
 {
-    cc::IntrusivePtr<CatmullRomBy> ret{new CatmullRomBy()};
+    cc::IntrusivePtr ret{new CatmullRomBy()};
     if (!(ret->initWithDuration(dt, points)))
     {
         return nullptr;
@@ -437,7 +437,7 @@ bool CatmullRomBy::initWithDuration(float dt, PointArray* points)
 cc::IntrusivePtr<Action> CatmullRomBy::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CatmullRomBy> a{new CatmullRomBy()};
+    cc::IntrusivePtr a{new CatmullRomBy()};
     a->initWithDuration(this->_duration, this->_points->clone().get());
     return a;
 }

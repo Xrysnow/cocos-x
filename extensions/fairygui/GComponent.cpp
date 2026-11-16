@@ -1052,7 +1052,7 @@ void GComponent::setupOverflow(OverflowType overflow)
 
 void GComponent::setupScroll(ByteBuffer* buffer)
 {
-    _scrollPane = cc::IntrusivePtr<ScrollPane>{new ScrollPane(this)}.detach();
+    _scrollPane = cc::IntrusivePtr{new ScrollPane(this)}.detach();
     _scrollPane->setup(buffer);
 }
 
@@ -1198,7 +1198,7 @@ void GComponent::constructFromResource(std::vector<GObject*>* objectPool, int po
         int nextPos = buffer->readUshort();
         nextPos += buffer->getPos();
 
-        cc::IntrusivePtr<GController> controller{new GController()};
+        cc::IntrusivePtr controller{new GController()};
         _controllers.pushBack(controller.get());
         controller->setParent(this);
         controller->setup(buffer);
@@ -1319,7 +1319,7 @@ void GComponent::constructFromResource(std::vector<GObject*>* objectPool, int po
         int nextPos = buffer->readUshort();
         nextPos += buffer->getPos();
 
-        cc::IntrusivePtr<Transition> trans{new Transition(this)};
+        cc::IntrusivePtr trans{new Transition(this)};
         trans->setup(buffer);
         _transitions.pushBack(trans.get());
 

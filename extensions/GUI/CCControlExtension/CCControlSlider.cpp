@@ -91,7 +91,7 @@ cc::IntrusivePtr<ControlSlider> ControlSlider::create(const char* bgFile,
 
 cc::IntrusivePtr<ControlSlider> ControlSlider::create(Sprite* backgroundSprite, Sprite* pogressSprite, Sprite* thumbSprite)
 {
-    cc::IntrusivePtr<ControlSlider> pRet{new ControlSlider()};
+    cc::IntrusivePtr pRet{new ControlSlider()};
     pRet->initWithSprites(backgroundSprite, pogressSprite, thumbSprite);
     return pRet;
 }
@@ -101,7 +101,7 @@ cc::IntrusivePtr<ControlSlider> ControlSlider::create(Sprite* backgroundSprite,
                                      Sprite* thumbSprite,
                                      Sprite* selectedThumbSprite)
 {
-    cc::IntrusivePtr<ControlSlider> pRet{new ControlSlider()};
+    cc::IntrusivePtr pRet{new ControlSlider()};
     pRet->initWithSprites(backgroundSprite, pogressSprite, thumbSprite, selectedThumbSprite);
     return pRet;
 }

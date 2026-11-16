@@ -61,7 +61,7 @@ Configuration::Configuration()
     , _maxSpotLightInShader(1)
     , _animate3DQuality(Animate3DQuality::QUALITY_LOW)
 {
-    _loadedEvent = cc::IntrusivePtr<EventCustom>{new EventCustom(CONFIG_FILE_LOADED)}.detach();
+    _loadedEvent = cc::IntrusivePtr{new EventCustom(CONFIG_FILE_LOADED)}.detach();
 }
 
 bool Configuration::init()
@@ -173,7 +173,7 @@ Configuration* Configuration::getInstance()
 {
     if (!s_sharedConfiguration)
     {
-        s_sharedConfiguration = cc::IntrusivePtr<Configuration>{new Configuration()}.detach();
+        s_sharedConfiguration = cc::IntrusivePtr{new Configuration()}.detach();
         s_sharedConfiguration->init();
     }
 

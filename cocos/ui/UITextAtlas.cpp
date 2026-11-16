@@ -49,7 +49,7 @@ TextAtlas::~TextAtlas() {}
 
 cc::IntrusivePtr<TextAtlas> TextAtlas::create()
 {
-    cc::IntrusivePtr<TextAtlas> widget{new TextAtlas()};
+    cc::IntrusivePtr widget{new TextAtlas()};
     if (widget->init())
     {
         return widget;
@@ -71,7 +71,7 @@ cc::IntrusivePtr<TextAtlas> TextAtlas::create(std::string_view stringValue,
                              int itemHeight,
                              std::string_view startCharMap)
 {
-    cc::IntrusivePtr<TextAtlas> widget{new TextAtlas()};
+    cc::IntrusivePtr widget{new TextAtlas()};
     if (widget->init())
     {
 

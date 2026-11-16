@@ -39,7 +39,7 @@ AnimationCache* AnimationCache::getInstance()
 {
     if (!s_sharedAnimationCache)
     {
-        s_sharedAnimationCache = cc::IntrusivePtr<AnimationCache>{new AnimationCache()}.detach();
+        s_sharedAnimationCache = cc::IntrusivePtr{new AnimationCache()}.detach();
         s_sharedAnimationCache->init();
     }
 
@@ -56,7 +56,7 @@ bool AnimationCache::init()
     return true;
 }
 
-AnimationCache::AnimationCache() {}
+AnimationCache::AnimationCache() = default;
 
 AnimationCache::~AnimationCache()
 {

@@ -56,7 +56,7 @@ static unsigned char cc_2x2_white_image[] = {
 
 cc::IntrusivePtr<Terrain> Terrain::create(TerrainData& parameter, CrackFixedType fixedType)
 {
-    cc::IntrusivePtr<Terrain> terrain{new Terrain()};
+    cc::IntrusivePtr terrain{new Terrain()};
     if (terrain->initWithTerrainData(parameter, fixedType))
     {
         return terrain;
@@ -85,9 +85,9 @@ bool Terrain::initWithTerrainData(TerrainData& parameter, CrackFixedType fixedTy
 void cocos2d::Terrain::setLightMap(std::string_view fileName)
 {
     CC_SAFE_RELEASE(_lightMap);
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     image->initWithImageFile(fileName);
-    _lightMap = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+    _lightMap = cc::IntrusivePtr{new Texture2D()}.detach();
     _lightMap->initWithImage(image);
 
     Texture2D::TexParams tRepeatParams;  // set texture parameters
@@ -105,7 +105,7 @@ void cocos2d::Terrain::setLightDir(const Vec3& lightDir)
 bool Terrain::initProperties()
 {
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::TERRAIN_3D);
-    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
 
     _stateBlock.depthWrite = true;
     _stateBlock.depthTest  = true;
@@ -209,7 +209,7 @@ void Terrain::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, 
 
 bool Terrain::initHeightMap(std::string_view heightMap)
 {
-    _heightMapImage = cc::IntrusivePtr<Image>{new Image()}.detach();
+    _heightMapImage = cc::IntrusivePtr{new Image()}.detach();
     if (!_heightMapImage->initWithImageFile(heightMap)) return false;
     _data        = _heightMapImage->getData();
     _imageWidth  = _heightMapImage->getWidth();
@@ -287,10 +287,10 @@ Terrain::Terrain()
     _director->getEventDispatcher()->addEventListenerWithFixedPriority(_backToForegroundListener, 1);
 #endif
 #ifdef CC_USE_METAL
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     bool CC_UNUSED isOK = image->initWithRawData(cc_2x2_white_image, sizeof(cc_2x2_white_image), 2, 2, 8);
     CCASSERT(isOK, "The 2x2 empty texture was created unsuccessfully.");
-    _dummyTexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+    _dummyTexture = cc::IntrusivePtr{new Texture2D()}.detach();
     _dummyTexture->initWithImage(image.get());
 #endif
 }
@@ -716,8 +716,8 @@ void Terrain::setDetailMap(unsigned int index, DetailMap detailMap)
 
         _detailMapTextures[index]->release();
     }
-    _detailMapTextures[index] = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
-    cc::IntrusivePtr<Image> textImage{new Image()};
+    _detailMapTextures[index] = cc::IntrusivePtr{new Texture2D()}.detach();
+    cc::IntrusivePtr textImage{new Image()};
     textImage->initWithImageFile(detailMap._detailMapSrc);
     _detailMapTextures[index]->initWithImage(textImage.get());
 }
@@ -856,12 +856,12 @@ bool Terrain::initTextures()
     texParam.tAddressMode = backend::SamplerAddressMode::REPEAT;
     if (_terrainData._alphaMapSrc.empty())
     {
-        cc::IntrusivePtr<Image> textImage{new Image()};
+        cc::IntrusivePtr textImage{new Image()};
         if (!textImage->initWithImageFile(_terrainData._detailMaps[0]._detailMapSrc))
         {
             return false;
         }
-        cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+        cc::IntrusivePtr texture{new Texture2D()};
         texture->initWithImage(textImage.get());
         texture->generateMipmap();
         texParam.minFilter    = backend::SamplerFilter::LINEAR;
@@ -873,12 +873,12 @@ bool Terrain::initTextures()
     {
         {
             // alpha map
-            cc::IntrusivePtr<Image> image{new Image()};
+            cc::IntrusivePtr image{new Image()};
             if (!image->initWithImageFile(_terrainData._alphaMapSrc))
             {
                 return false;
             }
-            _alphaMap = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+            _alphaMap = cc::IntrusivePtr{new Texture2D()}.detach();
             _alphaMap->initWithImage(image.get());
             texParam.sAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
             texParam.tAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
@@ -890,12 +890,12 @@ bool Terrain::initTextures()
 
         for (int i = 0; i < _terrainData._detailMapAmount; ++i)
         {
-            cc::IntrusivePtr<Image> textImage{new Image()};
+            cc::IntrusivePtr textImage{new Image()};
             if (!textImage->initWithImageFile(_terrainData._detailMaps[i]._detailMapSrc))
             {
                 return false;
             }
-            cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+            cc::IntrusivePtr texture{new Texture2D()};
             texture->initWithImage(textImage.get());
             texture->generateMipmap();
 

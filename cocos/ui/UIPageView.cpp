@@ -49,7 +49,7 @@ PageView::~PageView() {}
 
 cc::IntrusivePtr<PageView> PageView::create()
 {
-    cc::IntrusivePtr<PageView> widget{new PageView()};
+    cc::IntrusivePtr widget{new PageView()};
     if (widget->init())
     {
         return widget;

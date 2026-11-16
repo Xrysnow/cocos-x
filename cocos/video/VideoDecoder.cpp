@@ -26,7 +26,7 @@ struct Decoder::FFmpegState
 
 cc::IntrusivePtr<Decoder> Decoder::create(const std::string& path)
 {
-	cc::IntrusivePtr<Decoder> ret{new (std::nothrow) Decoder()};
+	cc::IntrusivePtr ret{new (std::nothrow) Decoder()};
 	if (ret&&ret->open(path))
 	{
 		return ret;
@@ -51,7 +51,7 @@ bool Decoder::open(const std::string& path)
 
 cc::IntrusivePtr<Decoder> Decoder::createFromStream(io::StreamPtr source)
 {
-	cc::IntrusivePtr<Decoder> ret{new (std::nothrow) Decoder()};
+	cc::IntrusivePtr ret{new (std::nothrow) Decoder()};
 	if (ret && ret->openStream(std::move(source)))
 	{
 		return ret;

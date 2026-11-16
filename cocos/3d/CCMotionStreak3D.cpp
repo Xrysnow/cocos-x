@@ -63,7 +63,7 @@ cc::IntrusivePtr<MotionStreak3D> MotionStreak3D::create(float fade,
                                        const Color3B& color,
                                        std::string_view path)
 {
-    cc::IntrusivePtr<MotionStreak3D> ret{new MotionStreak3D()};
+    cc::IntrusivePtr ret{new MotionStreak3D()};
     if (ret && ret->initWithFade(fade, minSeg, stroke, color, path))
     {
         return ret;
@@ -74,7 +74,7 @@ cc::IntrusivePtr<MotionStreak3D> MotionStreak3D::create(float fade,
 
 cc::IntrusivePtr<MotionStreak3D> MotionStreak3D::create(float fade, float minSeg, float stroke, const Color3B& color, Texture2D* texture)
 {
-    cc::IntrusivePtr<MotionStreak3D> ret{new MotionStreak3D()};
+    cc::IntrusivePtr ret{new MotionStreak3D()};
     if (ret && ret->initWithFade(fade, minSeg, stroke, color, texture))
     {
         return ret;
@@ -118,7 +118,7 @@ bool MotionStreak3D::initWithFade(float fade, float minSeg, float stroke, const 
 
     // shader state
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
 
     _customCommand.getPipelineDescriptor().programState = _programState;
 

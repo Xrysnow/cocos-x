@@ -37,14 +37,14 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<SpriteFrame> SpriteFrame::create(std::string_view filename, const Rect& rect)
 {
-    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
+    cc::IntrusivePtr spriteFrame{new SpriteFrame()};
     spriteFrame->initWithTextureFilename(filename, rect);
     return spriteFrame;
 }
 
 cc::IntrusivePtr<SpriteFrame> SpriteFrame::createWithTexture(Texture2D* texture, const Rect& rect)
 {
-    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
+    cc::IntrusivePtr spriteFrame{new SpriteFrame()};
     spriteFrame->initWithTexture(texture, rect);
     return spriteFrame;
 }
@@ -55,7 +55,7 @@ cc::IntrusivePtr<SpriteFrame> SpriteFrame::createWithTexture(Texture2D* texture,
                                             const Vec2& offset,
                                             const Vec2& originalSize)
 {
-    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
+    cc::IntrusivePtr spriteFrame{new SpriteFrame()};
     if (spriteFrame->initWithTexture(texture, rect, rotated, offset, originalSize))
     {
         return spriteFrame;
@@ -70,7 +70,7 @@ cc::IntrusivePtr<SpriteFrame> SpriteFrame::create(std::string_view filename,
                                  const Vec2& offset,
                                  const Vec2& originalSize)
 {
-    cc::IntrusivePtr<SpriteFrame> spriteFrame{new SpriteFrame()};
+    cc::IntrusivePtr spriteFrame{new SpriteFrame()};
     if (spriteFrame->initWithTextureFilename(filename, rect, rotated, offset, originalSize))
     {
         return spriteFrame;
@@ -151,7 +151,7 @@ SpriteFrame::~SpriteFrame()
 cc::IntrusivePtr<SpriteFrame> SpriteFrame::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<SpriteFrame> copy{new SpriteFrame()};
+    cc::IntrusivePtr copy{new SpriteFrame()};
     copy->initWithTexture(_texture, _rectInPixels, _rotated, _offsetInPixels, _originalSizeInPixels);
     copy->setPolygonInfo(_polygonInfo);
     return copy;

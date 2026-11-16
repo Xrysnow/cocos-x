@@ -42,7 +42,7 @@ PhysicsSprite::PhysicsSprite()
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create()
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->init()))
     {
         return nullptr;
@@ -53,7 +53,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create()
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTexture)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithTexture(pTexture)))
     {
         return nullptr;
@@ -64,7 +64,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTex
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTexture, const Rect& rect)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithTexture(pTexture, rect)))
     {
         return nullptr;
@@ -75,7 +75,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithTexture(Texture2D* pTex
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithSpriteFrame(pSpriteFrame)))
     {
         return nullptr;
@@ -86,7 +86,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrame(SpriteFrame
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrameName(const char* pszSpriteFrameName)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithSpriteFrameName(pszSpriteFrameName)))
     {
         return nullptr;
@@ -97,7 +97,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::createWithSpriteFrameName(const c
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create(const char* pszFileName)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithFile(pszFileName)))
     {
         return nullptr;
@@ -108,7 +108,7 @@ cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create(const char* pszFileName)
 
 cc::IntrusivePtr<PhysicsSprite> PhysicsSprite::create(const char* pszFileName, const Rect& rect)
 {
-    cc::IntrusivePtr<PhysicsSprite> pRet{new PhysicsSprite()};
+    cc::IntrusivePtr pRet{new PhysicsSprite()};
     if (!(pRet->initWithFile(pszFileName, rect)))
     {
         return nullptr;

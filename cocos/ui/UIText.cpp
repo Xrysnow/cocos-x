@@ -52,7 +52,7 @@ Text::~Text() {}
 
 cc::IntrusivePtr<Text> Text::create()
 {
-    cc::IntrusivePtr<Text> widget{new Text()};
+    cc::IntrusivePtr widget{new Text()};
     if (widget->init())
     {
         return widget;
@@ -71,7 +71,7 @@ bool Text::init()
 
 cc::IntrusivePtr<Text> Text::create(std::string_view textContent, std::string_view fontName, float fontSize)
 {
-    cc::IntrusivePtr<Text> text{new Text()};
+    cc::IntrusivePtr text{new Text()};
     if (text->init(textContent, fontName, fontSize))
     {
         return text;

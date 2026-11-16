@@ -150,7 +150,7 @@ cc::IntrusivePtr<AudioStream> AudioStream::createFromLocalFile(const std::string
 		return nullptr;
 	if (position != 0 && (file->seek(0, SEEK_SET) != 0 || file->tell() != 0))
 		return nullptr;
-	cc::IntrusivePtr<AudioFileStream> result{new (std::nothrow) AudioFileStream(std::move(file))};
+	cc::IntrusivePtr result{new (std::nothrow) AudioFileStream(std::move(file))};
 	if (!result)
 		return nullptr;
 	return result;

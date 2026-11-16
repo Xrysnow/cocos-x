@@ -59,7 +59,7 @@ const int FastTMXLayer::FAST_TMX_ORIENTATION_ISO   = 2;
 // FastTMXLayer - init & alloc & dealloc
 cc::IntrusivePtr<FastTMXLayer> FastTMXLayer::create(TMXTilesetInfo* tilesetInfo, TMXLayerInfo* layerInfo, TMXMapInfo* mapInfo)
 {
-    cc::IntrusivePtr<FastTMXLayer> ret{new FastTMXLayer()};
+    cc::IntrusivePtr ret{new FastTMXLayer()};
     if (ret->initWithTilesetInfo(tilesetInfo, layerInfo, mapInfo))
     {
         return ret;
@@ -375,7 +375,7 @@ void FastTMXLayer::setupTiles()
 
         if (hasTileAnimation())
         {
-            _tileAnimManager = cc::IntrusivePtr<TMXTileAnimManager>{new TMXTileAnimManager(this)}.detach();
+            _tileAnimManager = cc::IntrusivePtr{new TMXTileAnimManager(this)}.detach();
         }
     }
 }
@@ -444,7 +444,7 @@ void FastTMXLayer::updatePrimitives()
                 CC_SAFE_RELEASE(pipelineDescriptor.programState);
                 auto* program =
                     backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
-                cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+                cc::IntrusivePtr programState{new backend::ProgramState(program)};
                 pipelineDescriptor.programState = programState.detach();
                 _alphaValueLocation             = pipelineDescriptor.programState->getUniformLocation("u_alpha_value");
                 pipelineDescriptor.programState->setUniform(_alphaValueLocation, &_alphaFuncValue,
@@ -454,7 +454,7 @@ void FastTMXLayer::updatePrimitives()
             {
                 CC_SAFE_RELEASE(pipelineDescriptor.programState);
                 auto* program     = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-                cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+                cc::IntrusivePtr programState{new backend::ProgramState(program)};
                 pipelineDescriptor.programState = programState.detach();
             }
 
@@ -963,7 +963,7 @@ TMXTileAnimManager::TMXTileAnimManager(FastTMXLayer* layer)
 
 cc::IntrusivePtr<TMXTileAnimManager> TMXTileAnimManager::create(FastTMXLayer* layer)
 {
-    cc::IntrusivePtr<TMXTileAnimManager> ret{new TMXTileAnimManager(layer)};
+    cc::IntrusivePtr ret{new TMXTileAnimManager(layer)};
     return ret;
 }
 
@@ -1027,7 +1027,7 @@ void TMXTileAnimTask::setCurrFrame()
 
 cc::IntrusivePtr<TMXTileAnimTask> TMXTileAnimTask::create(FastTMXLayer* layer, TMXTileAnimInfo* animation, const Vec2& tilePos)
 {
-    cc::IntrusivePtr<TMXTileAnimTask> ret{new TMXTileAnimTask(layer, animation, tilePos)};
+    cc::IntrusivePtr ret{new TMXTileAnimTask(layer, animation, tilePos)};
     return ret;
 }
 

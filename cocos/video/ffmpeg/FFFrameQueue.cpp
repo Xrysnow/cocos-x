@@ -79,10 +79,10 @@ ffmpeg::frame_ptr ffmpeg::FrameQueue::pop()
 
 cc::IntrusivePtr<ffmpeg::AudioFrameQueue> ffmpeg::AudioFrameQueue::create()
 {
-	return cc::IntrusivePtr<AudioFrameQueue>{new (std::nothrow) AudioFrameQueue()};
+	return cc::IntrusivePtr{new (std::nothrow) AudioFrameQueue()};
 }
 
 cc::IntrusivePtr<ffmpeg::VideoFrameQueue> ffmpeg::VideoFrameQueue::create()
 {
-	return cc::IntrusivePtr<VideoFrameQueue>{new (std::nothrow) VideoFrameQueue()};
+	return cc::IntrusivePtr{new (std::nothrow) VideoFrameQueue()};
 }

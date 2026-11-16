@@ -230,7 +230,7 @@ PhysicsDebugNode::PhysicsDebugNode() : _spacePtr(nullptr) {}
 
 cc::IntrusivePtr<PhysicsDebugNode> PhysicsDebugNode::create(cpSpace* space)
 {
-    cc::IntrusivePtr<PhysicsDebugNode> node{new PhysicsDebugNode()};
+    cc::IntrusivePtr node{new PhysicsDebugNode()};
     node->init();
     node->_spacePtr = space;
     return node;

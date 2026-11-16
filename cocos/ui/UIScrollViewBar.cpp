@@ -72,7 +72,7 @@ ScrollViewBar::~ScrollViewBar() {}
 
 cc::IntrusivePtr<ScrollViewBar> ScrollViewBar::create(ScrollView* parent, ScrollView::Direction direction)
 {
-    cc::IntrusivePtr<ScrollViewBar> node{new ScrollViewBar(parent, direction)};
+    cc::IntrusivePtr node{new ScrollViewBar(parent, direction)};
     if (node->init())
     {
         return node;

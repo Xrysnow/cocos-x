@@ -44,7 +44,7 @@ ProtectedNode::~ProtectedNode()
 
 cc::IntrusivePtr<ProtectedNode> ProtectedNode::create()
 {
-    cc::IntrusivePtr<ProtectedNode> ret{new ProtectedNode()};
+    cc::IntrusivePtr ret{new ProtectedNode()};
     if (!(ret->init()))
     {
         return nullptr;

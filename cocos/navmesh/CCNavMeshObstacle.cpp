@@ -35,7 +35,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<NavMeshObstacle> NavMeshObstacle::create(float radius, float height)
 {
-    cc::IntrusivePtr<NavMeshObstacle> ref{new NavMeshObstacle()};
+    cc::IntrusivePtr ref{new NavMeshObstacle()};
     if (ref->initWith(radius, height))
     {
         return ref;

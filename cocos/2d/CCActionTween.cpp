@@ -31,7 +31,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<ActionTween> ActionTween::create(float duration, std::string_view key, float from, float to)
 {
-    cc::IntrusivePtr<ActionTween> ret{new ActionTween()};
+    cc::IntrusivePtr ret{new ActionTween()};
     if (ret->initWithDuration(duration, key, from, to))
     {
         return ret;

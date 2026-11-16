@@ -69,7 +69,7 @@ bool EventListenerTouchOneByOne::isSwallowTouches()
 
 cc::IntrusivePtr<EventListenerTouchOneByOne> EventListenerTouchOneByOne::create()
 {
-    cc::IntrusivePtr<EventListenerTouchOneByOne> ret{new EventListenerTouchOneByOne()};
+    cc::IntrusivePtr ret{new EventListenerTouchOneByOne()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -92,7 +92,7 @@ bool EventListenerTouchOneByOne::checkAvailable()
 
 cc::IntrusivePtr<EventListener> EventListenerTouchOneByOne::clone()
 {
-    cc::IntrusivePtr<EventListenerTouchOneByOne> ret{new EventListenerTouchOneByOne()};
+    cc::IntrusivePtr ret{new EventListenerTouchOneByOne()};
     if (ret->init())
     {
 
@@ -137,7 +137,7 @@ bool EventListenerTouchAllAtOnce::init()
 
 cc::IntrusivePtr<EventListenerTouchAllAtOnce> EventListenerTouchAllAtOnce::create()
 {
-    cc::IntrusivePtr<EventListenerTouchAllAtOnce> ret{new EventListenerTouchAllAtOnce()};
+    cc::IntrusivePtr ret{new EventListenerTouchAllAtOnce()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -159,7 +159,7 @@ bool EventListenerTouchAllAtOnce::checkAvailable()
 
 cc::IntrusivePtr<EventListener> EventListenerTouchAllAtOnce::clone()
 {
-    cc::IntrusivePtr<EventListenerTouchAllAtOnce> ret{new EventListenerTouchAllAtOnce()};
+    cc::IntrusivePtr ret{new EventListenerTouchAllAtOnce()};
     if (ret->init())
     {
 

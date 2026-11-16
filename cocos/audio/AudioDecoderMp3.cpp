@@ -216,7 +216,7 @@ bool AudioDecoderMp3::init(AudioStream* src)
 
 cc::IntrusivePtr<AudioDecoderMp3> AudioDecoderMp3::create(AudioStream* src, size_t bufferSize)
 {
-	cc::IntrusivePtr<AudioDecoderMp3> ret{new (std::nothrow) AudioDecoderMp3(bufferSize)};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioDecoderMp3(bufferSize)};
 	if (ret&&ret->init(src))
 	{
 		return ret;

@@ -93,7 +93,7 @@ Rect TMXTilesetInfo::getRectForGID(uint32_t gid)
 
 cc::IntrusivePtr<TMXMapInfo> TMXMapInfo::create(std::string_view tmxFile)
 {
-    cc::IntrusivePtr<TMXMapInfo> ret{new TMXMapInfo()};
+    cc::IntrusivePtr ret{new TMXMapInfo()};
     if (ret->initWithTMXFile(tmxFile))
     {
         return ret;
@@ -103,7 +103,7 @@ cc::IntrusivePtr<TMXMapInfo> TMXMapInfo::create(std::string_view tmxFile)
 
 cc::IntrusivePtr<TMXMapInfo> TMXMapInfo::createWithXML(std::string_view tmxString, std::string_view resourcePath)
 {
-    cc::IntrusivePtr<TMXMapInfo> ret{new TMXMapInfo()};
+    cc::IntrusivePtr ret{new TMXMapInfo()};
     if (ret->initWithXML(tmxString, resourcePath))
     {
         return ret;
@@ -306,7 +306,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         }
         else
         {
-            cc::IntrusivePtr<TMXTilesetInfo> tileset{new TMXTilesetInfo()};
+            cc::IntrusivePtr tileset{new TMXTilesetInfo()};
             tileset->_name          = attributeDict["name"].asString();
 
             if (_recordFirstGID)
@@ -359,7 +359,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
     }
     else if (elementName == "layer")
     {
-        cc::IntrusivePtr<TMXLayerInfo> layer{new TMXLayerInfo()};
+        cc::IntrusivePtr layer{new TMXLayerInfo()};
         layer->_name        = attributeDict["name"].asString();
 
         Vec2 s;
@@ -384,7 +384,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
     }
     else if (elementName == "objectgroup")
     {
-        cc::IntrusivePtr<TMXObjectGroup> objectGroup{new TMXObjectGroup()};
+        cc::IntrusivePtr objectGroup{new TMXObjectGroup()};
         objectGroup->setGroupName(attributeDict["name"].asString());
         Vec2 positionOffset;
         positionOffset.x = attributeDict["x"].asFloat() * tmxMapInfo->getTileSize().width;
@@ -815,7 +815,7 @@ TMXTileAnimInfo::TMXTileAnimInfo(uint32_t tileID) : _tileID(tileID) {}
 
 cc::IntrusivePtr<TMXTileAnimInfo> TMXTileAnimInfo::create(uint32_t tileID)
 {
-    cc::IntrusivePtr<TMXTileAnimInfo> ret{new TMXTileAnimInfo(tileID)};
+    cc::IntrusivePtr ret{new TMXTileAnimInfo(tileID)};
     return ret;
 }
 

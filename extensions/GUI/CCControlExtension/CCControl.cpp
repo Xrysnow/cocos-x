@@ -50,7 +50,7 @@ Control::Control()
 
 cc::IntrusivePtr<Control> Control::create()
 {
-    cc::IntrusivePtr<Control> pRet{new Control()};
+    cc::IntrusivePtr pRet{new Control()};
     if (pRet->init())
     {
         return pRet;

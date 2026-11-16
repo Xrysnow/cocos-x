@@ -183,7 +183,7 @@ void PUSphereCollider::preUpdateAffector(float /*deltaTime*/)
 
 cc::IntrusivePtr<PUSphereCollider> PUSphereCollider::create()
 {
-    cc::IntrusivePtr<PUSphereCollider> psc{new PUSphereCollider()};
+    cc::IntrusivePtr psc{new PUSphereCollider()};
     return psc;
 }
 

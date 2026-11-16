@@ -33,7 +33,7 @@ cc::IntrusivePtr<GTweener> TweenManager::createTween()
         _tweenerPool.pop_back();
     }
     else
-        tweener = cc::IntrusivePtr<GTweener>{new GTweener()}.detach();
+        tweener = cc::IntrusivePtr{new GTweener()}.detach();
     tweener->_init();
     _activeTweens[_totalActiveTweens++] = tweener;
 

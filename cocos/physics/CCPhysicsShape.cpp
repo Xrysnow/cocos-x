@@ -282,7 +282,7 @@ cc::IntrusivePtr<PhysicsShapeCircle> PhysicsShapeCircle::create(float radius,
                                                const PhysicsMaterial& material /* = MaterialDefault*/,
                                                const Vec2& offset /* = Vec2(0, 0)*/)
 {
-    cc::IntrusivePtr<PhysicsShapeCircle> shape{new PhysicsShapeCircle()};
+    cc::IntrusivePtr shape{new PhysicsShapeCircle()};
     if (shape->init(radius, material, offset))
     {
         return shape;
@@ -372,7 +372,7 @@ cc::IntrusivePtr<PhysicsShapeEdgeSegment> PhysicsShapeEdgeSegment::create(const 
                                                          const PhysicsMaterial& material /* = MaterialDefault*/,
                                                          float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsShapeEdgeSegment> shape{new PhysicsShapeEdgeSegment()};
+    cc::IntrusivePtr shape{new PhysicsShapeEdgeSegment()};
     if (shape->init(a, b, material, border))
     {
         return shape;
@@ -447,7 +447,7 @@ cc::IntrusivePtr<PhysicsShapeBox> PhysicsShapeBox::create(const Vec2& size,
                                          const Vec2& offset /* = Vec2(0, 0)*/,
                                          float radius /* = 0.0f*/)
 {
-    cc::IntrusivePtr<PhysicsShapeBox> shape{new PhysicsShapeBox()};
+    cc::IntrusivePtr shape{new PhysicsShapeBox()};
     if (shape->init(size, material, offset, radius))
     {
         return shape;
@@ -505,7 +505,7 @@ cc::IntrusivePtr<PhysicsShapePolygon> PhysicsShapePolygon::create(const Vec2* po
                                                  const Vec2& offset /* = Vec2(0, 0)*/,
                                                  float radius /* = 0.0f*/)
 {
-    cc::IntrusivePtr<PhysicsShapePolygon> shape{new PhysicsShapePolygon()};
+    cc::IntrusivePtr shape{new PhysicsShapePolygon()};
     if (shape->init(points, count, material, offset, radius))
     {
         return shape;
@@ -678,7 +678,7 @@ cc::IntrusivePtr<PhysicsShapeEdgeBox> PhysicsShapeEdgeBox::create(const Vec2& si
                                                  float border /* = 1*/,
                                                  const Vec2& offset /* = Vec2(0, 0)*/)
 {
-    cc::IntrusivePtr<PhysicsShapeEdgeBox> shape{new PhysicsShapeEdgeBox()};
+    cc::IntrusivePtr shape{new PhysicsShapeEdgeBox()};
     if (shape->init(size, material, border, offset))
     {
         return shape;
@@ -729,7 +729,7 @@ cc::IntrusivePtr<PhysicsShapeEdgePolygon> PhysicsShapeEdgePolygon::create(const 
                                                          const PhysicsMaterial& material /* = MaterialDefault*/,
                                                          float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsShapeEdgePolygon> shape{new PhysicsShapeEdgePolygon()};
+    cc::IntrusivePtr shape{new PhysicsShapeEdgePolygon()};
     if (shape->init(points, count, material, border))
     {
         return shape;
@@ -814,7 +814,7 @@ cc::IntrusivePtr<PhysicsShapeEdgeChain> PhysicsShapeEdgeChain::create(const Vec2
                                                      const PhysicsMaterial& material /* = MaterialDefault*/,
                                                      float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsShapeEdgeChain> shape{new PhysicsShapeEdgeChain()};
+    cc::IntrusivePtr shape{new PhysicsShapeEdgeChain()};
     if (shape->init(points, count, material, border))
     {
         return shape;

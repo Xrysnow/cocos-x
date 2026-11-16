@@ -54,7 +54,7 @@ cc::IntrusivePtr<Physics3DComponent> Physics3DComponent::create(Physics3DObject*
                                                const cocos2d::Vec3& translateInPhysics,
                                                const cocos2d::Quaternion& rotInPhsyics)
 {
-    cc::IntrusivePtr<Physics3DComponent> ret{new Physics3DComponent()};
+    cc::IntrusivePtr ret{new Physics3DComponent()};
     if (ret->init())
     {
         ret->setPhysics3DObject(physicsObj);

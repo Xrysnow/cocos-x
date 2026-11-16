@@ -48,7 +48,7 @@ bool WebView::init()
 
 cc::IntrusivePtr<WebView> WebView::create()
 {
-    cc::IntrusivePtr<WebView> webView{new WebView()};
+    cc::IntrusivePtr webView{new WebView()};
     if (webView->init())
     {
         return webView;

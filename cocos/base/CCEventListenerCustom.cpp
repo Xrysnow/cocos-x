@@ -33,7 +33,7 @@ EventListenerCustom::EventListenerCustom() : _onCustomEvent(nullptr) {}
 cc::IntrusivePtr<EventListenerCustom> EventListenerCustom::create(std::string_view eventName,
                                                  const std::function<void(EventCustom*)>& callback)
 {
-    cc::IntrusivePtr<EventListenerCustom> ret{new EventListenerCustom()};
+    cc::IntrusivePtr ret{new EventListenerCustom()};
     if (!(ret->init(eventName, callback)))
     {
         return nullptr;
@@ -63,7 +63,7 @@ bool EventListenerCustom::init(std::string_view listenerId, const std::function<
 
 cc::IntrusivePtr<EventListener> EventListenerCustom::clone()
 {
-    cc::IntrusivePtr<EventListenerCustom> ret{new EventListenerCustom()};
+    cc::IntrusivePtr ret{new EventListenerCustom()};
     if (!(ret->init(_listenerID, _onCustomEvent)))
     {
         return nullptr;

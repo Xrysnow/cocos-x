@@ -51,7 +51,7 @@ const PUBillboardChain::TexCoordDirection PUBeamRender::DEFAULT_TEXTURE_DIRECTIO
 
 cc::IntrusivePtr<PUBeamRender> PUBeamRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<PUBeamRender> br{new PUBeamRender()};
+    cc::IntrusivePtr br{new PUBeamRender()};
 
     br->_texFile = texFile;
     return br;
@@ -272,7 +272,7 @@ void PUBeamRender::prepare()
             _billboardChain->addChainElement(i, element);
         }
 
-        cc::IntrusivePtr<PUParticle3DBeamVisualData> visualData{new PUParticle3DBeamVisualData(i, _billboardChain)};
+        cc::IntrusivePtr visualData{new PUParticle3DBeamVisualData(i, _billboardChain)};
         for (size_t numDev = 0; numDev < _numberOfSegments; ++numDev)
         {
             // Initialise the positions

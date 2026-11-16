@@ -40,7 +40,7 @@ EventListenerAcceleration::~EventListenerAcceleration()
 
 cc::IntrusivePtr<EventListenerAcceleration> EventListenerAcceleration::create(const std::function<void(Acceleration*, Event*)>& callback)
 {
-    cc::IntrusivePtr<EventListenerAcceleration> ret{new EventListenerAcceleration()};
+    cc::IntrusivePtr ret{new EventListenerAcceleration()};
     if (!(ret->init(callback)))
     {
         return nullptr;
@@ -67,7 +67,7 @@ bool EventListenerAcceleration::init(const std::function<void(Acceleration*, Eve
 
 cc::IntrusivePtr<EventListener> EventListenerAcceleration::clone()
 {
-    cc::IntrusivePtr<EventListenerAcceleration> ret{new EventListenerAcceleration()};
+    cc::IntrusivePtr ret{new EventListenerAcceleration()};
 
     if (!(ret->init(onAccelerationEvent)))
     {

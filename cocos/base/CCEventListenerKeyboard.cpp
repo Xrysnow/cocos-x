@@ -44,7 +44,7 @@ bool EventListenerKeyboard::checkAvailable()
 
 cc::IntrusivePtr<EventListenerKeyboard> EventListenerKeyboard::create()
 {
-    cc::IntrusivePtr<EventListenerKeyboard> ret{new EventListenerKeyboard()};
+    cc::IntrusivePtr ret{new EventListenerKeyboard()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -54,7 +54,7 @@ cc::IntrusivePtr<EventListenerKeyboard> EventListenerKeyboard::create()
 
 cc::IntrusivePtr<EventListener> EventListenerKeyboard::clone()
 {
-    cc::IntrusivePtr<EventListenerKeyboard> ret{new EventListenerKeyboard()};
+    cc::IntrusivePtr ret{new EventListenerKeyboard()};
     if (ret->init())
     {
 

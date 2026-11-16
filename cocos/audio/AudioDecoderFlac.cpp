@@ -94,7 +94,7 @@ bool AudioDecoderFlac::init(AudioStream* src)
 
 cc::IntrusivePtr<AudioDecoderFlac> AudioDecoderFlac::create(AudioStream* src, size_t bufferSize)
 {
-	cc::IntrusivePtr<AudioDecoderFlac> ret{new (std::nothrow) AudioDecoderFlac(bufferSize)};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioDecoderFlac(bufferSize)};
 	if (ret&&ret->init(src))
 	{
 		return ret;

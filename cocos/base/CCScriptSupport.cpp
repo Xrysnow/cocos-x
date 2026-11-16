@@ -49,7 +49,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<ScriptHandlerEntry> ScriptHandlerEntry::create(int handler)
 {
-    cc::IntrusivePtr<ScriptHandlerEntry> entry{new ScriptHandlerEntry(handler)};
+    cc::IntrusivePtr entry{new ScriptHandlerEntry(handler)};
     return entry;
 }
 
@@ -71,14 +71,14 @@ ScriptHandlerEntry::~ScriptHandlerEntry()
 
 cc::IntrusivePtr<SchedulerScriptHandlerEntry> SchedulerScriptHandlerEntry::create(int handler, float interval, bool paused)
 {
-    cc::IntrusivePtr<SchedulerScriptHandlerEntry> entry{new SchedulerScriptHandlerEntry(handler)};
+    cc::IntrusivePtr entry{new SchedulerScriptHandlerEntry(handler)};
     entry->init(interval, paused);
     return entry;
 }
 
 bool SchedulerScriptHandlerEntry::init(float interval, bool paused)
 {
-    _timer = cc::IntrusivePtr<TimerScriptHandler>{new TimerScriptHandler()}.detach();
+    _timer = cc::IntrusivePtr{new TimerScriptHandler()}.detach();
     _timer->initWithScriptHandler(_handler, interval);
     _paused = paused;
     LUALOG("[LUA] ADD script schedule: %d, entryID: %d", _handler, _entryId);
@@ -99,7 +99,7 @@ cc::IntrusivePtr<TouchScriptHandlerEntry> TouchScriptHandlerEntry::create(int ha
                                                          int priority,
                                                          bool swallowsTouches)
 {
-    cc::IntrusivePtr<TouchScriptHandlerEntry> entry{new TouchScriptHandlerEntry(handler)};
+    cc::IntrusivePtr entry{new TouchScriptHandlerEntry(handler)};
     entry->init(isMultiTouches, priority, swallowsTouches);
     return entry;
 }

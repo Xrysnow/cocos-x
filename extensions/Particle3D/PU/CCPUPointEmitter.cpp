@@ -35,7 +35,7 @@ PUPointEmitter::~PUPointEmitter(void) {}
 
 cc::IntrusivePtr<PUPointEmitter> PUPointEmitter::create()
 {
-    cc::IntrusivePtr<PUPointEmitter> pe{new PUPointEmitter()};
+    cc::IntrusivePtr pe{new PUPointEmitter()};
     return pe;
 }
 

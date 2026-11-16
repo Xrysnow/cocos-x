@@ -59,42 +59,42 @@ Physics3DShape::~Physics3DShape()
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createBox(const cocos2d::Vec3& extent)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initBox(extent);
     return shape;
 }
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createSphere(float radius)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initSphere(radius);
     return shape;
 }
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCylinder(float radius, float height)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initCylinder(radius, height);
     return shape;
 }
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCapsule(float radius, float height)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initCapsule(radius, height);
     return shape;
 }
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createConvexHull(const cocos2d::Vec3* points, int numPoints)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initConvexHull(points, numPoints);
     return shape;
 }
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createMesh(const cocos2d::Vec3* triangles, int numTriangles)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initMesh(triangles, numTriangles);
     return shape;
 }
@@ -109,7 +109,7 @@ cc::IntrusivePtr<Physics3DShape> Physics3DShape::createHeightfield(int heightSti
                                                   bool flipQuadEdges,
                                                   bool useDiamondSubdivision)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initHeightfield(heightStickWidth, heightStickLength, heightfieldData, heightScale, minHeight, maxHeight,
                            useFloatDatam, flipQuadEdges, useDiamondSubdivision);
     return shape;
@@ -117,7 +117,7 @@ cc::IntrusivePtr<Physics3DShape> Physics3DShape::createHeightfield(int heightSti
 
 cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCompoundShape(const std::vector<std::pair<Physics3DShape*, Mat4>>& shapes)
 {
-    cc::IntrusivePtr<Physics3DShape> shape{new Physics3DShape()};
+    cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initCompoundShape(shapes);
     return shape;
 }

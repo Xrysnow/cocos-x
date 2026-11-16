@@ -73,7 +73,7 @@ bool PUGeometryRotatorTranslator::translateChildProperty(PUScriptCompiler* compi
             float val = 0.0f;
             if (getFloat(*prop->values.front(), &val))
             {
-                cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                 dynamicAttributeFixed->setValue(val);
                 affector->setRotationSpeed(dynamicAttributeFixed.detach());
                 return true;
@@ -88,7 +88,7 @@ bool PUGeometryRotatorTranslator::translateChildProperty(PUScriptCompiler* compi
             float val = 0.0f;
             if (getFloat(*prop->values.front(), &val))
             {
-                cc::IntrusivePtr<PUDynamicAttributeFixed> dynamicAttributeFixed{new PUDynamicAttributeFixed()};
+                cc::IntrusivePtr dynamicAttributeFixed{new PUDynamicAttributeFixed()};
                 dynamicAttributeFixed->setValue(val);
                 affector->setRotationSpeed(dynamicAttributeFixed.detach());
                 return true;

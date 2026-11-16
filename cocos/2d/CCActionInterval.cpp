@@ -55,7 +55,7 @@ public:
 
 cc::IntrusivePtr<ExtraAction> ExtraAction::create()
 {
-    cc::IntrusivePtr<ExtraAction> ret{new ExtraAction()};
+    cc::IntrusivePtr ret{new ExtraAction()};
     return ret;
 }
 
@@ -150,7 +150,7 @@ void ActionInterval::startWithTarget(Node* target)
 
 cc::IntrusivePtr<Sequence> Sequence::createWithTwoActions(FiniteTimeAction* actionOne, FiniteTimeAction* actionTwo)
 {
-    cc::IntrusivePtr<Sequence> sequence{new Sequence()};
+    cc::IntrusivePtr sequence{new Sequence()};
     if (sequence->initWithTwoActions(actionOne, actionTwo))
     {
         return sequence;
@@ -191,7 +191,7 @@ cc::IntrusivePtr<Sequence> Sequence::createWithVariableList(FiniteTimeAction* ac
 
 cc::IntrusivePtr<Sequence> Sequence::create(const Vector<FiniteTimeAction*>& arrayOfActions)
 {
-    cc::IntrusivePtr<Sequence> seq{new Sequence};
+    cc::IntrusivePtr seq{new Sequence};
 
     if (seq->init(arrayOfActions))
     {
@@ -391,7 +391,7 @@ cc::IntrusivePtr<Action> Sequence::reverse() const
 
 cc::IntrusivePtr<Repeat> Repeat::create(FiniteTimeAction* action, unsigned int times)
 {
-    cc::IntrusivePtr<Repeat> repeat{new Repeat()};
+    cc::IntrusivePtr repeat{new Repeat()};
     if (repeat->initWithAction(action, times))
     {
         return repeat;
@@ -520,7 +520,7 @@ RepeatForever::~RepeatForever()
 
 cc::IntrusivePtr<RepeatForever> RepeatForever::create(ActionInterval* action)
 {
-    cc::IntrusivePtr<RepeatForever> ret{new RepeatForever()};
+    cc::IntrusivePtr ret{new RepeatForever()};
     if (ret->initWithAction(action))
     {
         return ret;
@@ -618,7 +618,7 @@ cc::IntrusivePtr<Spawn> Spawn::createWithVariableList(FiniteTimeAction* action1,
 
 cc::IntrusivePtr<Spawn> Spawn::create(const Vector<FiniteTimeAction*>& arrayOfActions)
 {
-    cc::IntrusivePtr<Spawn> ret{new Spawn};
+    cc::IntrusivePtr ret{new Spawn};
 
     if (ret->init(arrayOfActions))
     {
@@ -630,7 +630,7 @@ cc::IntrusivePtr<Spawn> Spawn::create(const Vector<FiniteTimeAction*>& arrayOfAc
 
 cc::IntrusivePtr<Spawn> Spawn::createWithTwoActions(FiniteTimeAction* action1, FiniteTimeAction* action2)
 {
-    cc::IntrusivePtr<Spawn> spawn{new Spawn()};
+    cc::IntrusivePtr spawn{new Spawn()};
     if (spawn->initWithTwoActions(action1, action2))
     {
         return spawn;
@@ -772,7 +772,7 @@ cc::IntrusivePtr<Action> Spawn::reverse() const
 
 cc::IntrusivePtr<RotateTo> RotateTo::create(float duration, float dstAngle)
 {
-    cc::IntrusivePtr<RotateTo> rotateTo{new RotateTo()};
+    cc::IntrusivePtr rotateTo{new RotateTo()};
     if (rotateTo->initWithDuration(duration, dstAngle, dstAngle))
     {
         return rotateTo;
@@ -783,7 +783,7 @@ cc::IntrusivePtr<RotateTo> RotateTo::create(float duration, float dstAngle)
 
 cc::IntrusivePtr<RotateTo> RotateTo::create(float duration, float dstAngleX, float dstAngleY)
 {
-    cc::IntrusivePtr<RotateTo> rotateTo{new RotateTo()};
+    cc::IntrusivePtr rotateTo{new RotateTo()};
     if (rotateTo->initWithDuration(duration, dstAngleX, dstAngleY))
     {
         return rotateTo;
@@ -794,7 +794,7 @@ cc::IntrusivePtr<RotateTo> RotateTo::create(float duration, float dstAngleX, flo
 
 cc::IntrusivePtr<RotateTo> RotateTo::create(float duration, const Vec3& dstAngle3D)
 {
-    cc::IntrusivePtr<RotateTo> rotateTo{new RotateTo()};
+    cc::IntrusivePtr rotateTo{new RotateTo()};
     if (rotateTo->initWithDuration(duration, dstAngle3D))
     {
         return rotateTo;
@@ -834,7 +834,7 @@ bool RotateTo::initWithDuration(float duration, const Vec3& dstAngle3D)
 cc::IntrusivePtr<Action> RotateTo::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<RotateTo> a{new RotateTo()};
+    cc::IntrusivePtr a{new RotateTo()};
     if (_is3D)
         a->initWithDuration(_duration, _dstAngle);
     else
@@ -924,7 +924,7 @@ cc::IntrusivePtr<Action> RotateTo::reverse() const
 
 cc::IntrusivePtr<RotateBy> RotateBy::create(float duration, float deltaAngle)
 {
-    cc::IntrusivePtr<RotateBy> rotateBy{new RotateBy()};
+    cc::IntrusivePtr rotateBy{new RotateBy()};
     if (rotateBy->initWithDuration(duration, deltaAngle))
     {
         return rotateBy;
@@ -935,7 +935,7 @@ cc::IntrusivePtr<RotateBy> RotateBy::create(float duration, float deltaAngle)
 
 cc::IntrusivePtr<RotateBy> RotateBy::create(float duration, float deltaAngleX, float deltaAngleY)
 {
-    cc::IntrusivePtr<RotateBy> rotateBy{new RotateBy()};
+    cc::IntrusivePtr rotateBy{new RotateBy()};
     if (rotateBy->initWithDuration(duration, deltaAngleX, deltaAngleY))
     {
         return rotateBy;
@@ -946,7 +946,7 @@ cc::IntrusivePtr<RotateBy> RotateBy::create(float duration, float deltaAngleX, f
 
 cc::IntrusivePtr<RotateBy> RotateBy::create(float duration, const Vec3& deltaAngle3D)
 {
-    cc::IntrusivePtr<RotateBy> rotateBy{new RotateBy()};
+    cc::IntrusivePtr rotateBy{new RotateBy()};
     if (rotateBy->initWithDuration(duration, deltaAngle3D))
     {
         return rotateBy;
@@ -995,7 +995,7 @@ bool RotateBy::initWithDuration(float duration, const Vec3& deltaAngle3D)
 cc::IntrusivePtr<Action> RotateBy::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<RotateBy> a{new RotateBy()};
+    cc::IntrusivePtr a{new RotateBy()};
     if (_is3D)
         a->initWithDuration(_duration, _deltaAngle);
     else
@@ -1077,7 +1077,7 @@ cc::IntrusivePtr<MoveBy> MoveBy::create(float duration, const Vec2& deltaPositio
 
 cc::IntrusivePtr<MoveBy> MoveBy::create(float duration, const Vec3& deltaPosition)
 {
-    cc::IntrusivePtr<MoveBy> ret{new MoveBy()};
+    cc::IntrusivePtr ret{new MoveBy()};
 
     if (ret->initWithDuration(duration, deltaPosition))
     {
@@ -1151,7 +1151,7 @@ cc::IntrusivePtr<MoveTo> MoveTo::create(float duration, const Vec2& position)
 
 cc::IntrusivePtr<MoveTo> MoveTo::create(float duration, const Vec3& position)
 {
-    cc::IntrusivePtr<MoveTo> ret{new MoveTo()};
+    cc::IntrusivePtr ret{new MoveTo()};
 
     if (ret->initWithDuration(duration, position))
     {
@@ -1202,7 +1202,7 @@ cc::IntrusivePtr<Action> MoveTo::reverse() const
 //
 cc::IntrusivePtr<SkewTo> SkewTo::create(float t, float sx, float sy)
 {
-    cc::IntrusivePtr<SkewTo> skewTo{new SkewTo()};
+    cc::IntrusivePtr skewTo{new SkewTo()};
     if (skewTo->initWithDuration(t, sx, sy))
     {
         return skewTo;
@@ -1309,7 +1309,7 @@ SkewTo::SkewTo()
 //
 cc::IntrusivePtr<SkewBy> SkewBy::create(float t, float sx, float sy)
 {
-    cc::IntrusivePtr<SkewBy> skewBy{new SkewBy()};
+    cc::IntrusivePtr skewBy{new SkewBy()};
     if (skewBy->initWithDuration(t, sx, sy))
     {
         return skewBy;
@@ -1355,7 +1355,7 @@ cc::IntrusivePtr<Action> SkewBy::reverse() const
 
 cc::IntrusivePtr<ResizeTo> ResizeTo::create(float duration, const Vec2& final_size)
 {
-    cc::IntrusivePtr<ResizeTo> ret{new ResizeTo()};
+    cc::IntrusivePtr ret{new ResizeTo()};
 
     if (!(ret->initWithDuration(duration, final_size)))
     {
@@ -1369,7 +1369,7 @@ cc::IntrusivePtr<ResizeTo> ResizeTo::create(float duration, const Vec2& final_si
 cc::IntrusivePtr<Action> ResizeTo::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<ResizeTo> a{new ResizeTo()};
+    cc::IntrusivePtr a{new ResizeTo()};
     a->initWithDuration(_duration, _finalSize);
     return a;
 }
@@ -1407,7 +1407,7 @@ bool ResizeTo::initWithDuration(float duration, const Vec2& final_size)
 
 cc::IntrusivePtr<ResizeBy> ResizeBy::create(float duration, const Vec2& deltaSize)
 {
-    cc::IntrusivePtr<ResizeBy> ret{new ResizeBy()};
+    cc::IntrusivePtr ret{new ResizeBy()};
 
     if (!(ret->initWithDuration(duration, deltaSize)))
     {
@@ -1421,7 +1421,7 @@ cc::IntrusivePtr<ResizeBy> ResizeBy::create(float duration, const Vec2& deltaSiz
 cc::IntrusivePtr<Action> ResizeBy::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<ResizeBy> a{new ResizeBy()};
+    cc::IntrusivePtr a{new ResizeBy()};
     a->initWithDuration(_duration, _sizeDelta);
     return a;
 }
@@ -1465,7 +1465,7 @@ bool ResizeBy::initWithDuration(float duration, const Vec2& deltaSize)
 
 cc::IntrusivePtr<JumpBy> JumpBy::create(float duration, const Vec2& position, float height, int jumps)
 {
-    cc::IntrusivePtr<JumpBy> jumpBy{new JumpBy()};
+    cc::IntrusivePtr jumpBy{new JumpBy()};
     if (jumpBy->initWithDuration(duration, position, height, jumps))
     {
         return jumpBy;
@@ -1544,7 +1544,7 @@ cc::IntrusivePtr<Action> JumpBy::reverse() const
 
 cc::IntrusivePtr<JumpTo> JumpTo::create(float duration, const Vec2& position, float height, int jumps)
 {
-    cc::IntrusivePtr<JumpTo> jumpTo{new JumpTo()};
+    cc::IntrusivePtr jumpTo{new JumpTo()};
     if (jumpTo->initWithDuration(duration, position, height, jumps))
     {
         return jumpTo;
@@ -1607,7 +1607,7 @@ static inline float bezierat(float a, float b, float c, float d, float t)
 
 cc::IntrusivePtr<BezierBy> BezierBy::create(float t, const ccBezierConfig& c)
 {
-    cc::IntrusivePtr<BezierBy> bezierBy{new BezierBy()};
+    cc::IntrusivePtr bezierBy{new BezierBy()};
     if (bezierBy->initWithDuration(t, c))
     {
         return bezierBy;
@@ -1689,7 +1689,7 @@ cc::IntrusivePtr<Action> BezierBy::reverse() const
 
 cc::IntrusivePtr<BezierTo> BezierTo::create(float t, const ccBezierConfig& c)
 {
-    cc::IntrusivePtr<BezierTo> bezierTo{new BezierTo()};
+    cc::IntrusivePtr bezierTo{new BezierTo()};
     if (bezierTo->initWithDuration(t, c))
     {
         return bezierTo;
@@ -1734,7 +1734,7 @@ cc::IntrusivePtr<Action> BezierTo::reverse() const
 //
 cc::IntrusivePtr<ScaleTo> ScaleTo::create(float duration, float s)
 {
-    cc::IntrusivePtr<ScaleTo> scaleTo{new ScaleTo()};
+    cc::IntrusivePtr scaleTo{new ScaleTo()};
     if (scaleTo->initWithDuration(duration, s))
     {
         return scaleTo;
@@ -1745,7 +1745,7 @@ cc::IntrusivePtr<ScaleTo> ScaleTo::create(float duration, float s)
 
 cc::IntrusivePtr<ScaleTo> ScaleTo::create(float duration, float sx, float sy)
 {
-    cc::IntrusivePtr<ScaleTo> scaleTo{new ScaleTo()};
+    cc::IntrusivePtr scaleTo{new ScaleTo()};
     if (scaleTo->initWithDuration(duration, sx, sy))
     {
         return scaleTo;
@@ -1756,7 +1756,7 @@ cc::IntrusivePtr<ScaleTo> ScaleTo::create(float duration, float sx, float sy)
 
 cc::IntrusivePtr<ScaleTo> ScaleTo::create(float duration, float sx, float sy, float sz)
 {
-    cc::IntrusivePtr<ScaleTo> scaleTo{new ScaleTo()};
+    cc::IntrusivePtr scaleTo{new ScaleTo()};
     if (scaleTo->initWithDuration(duration, sx, sy, sz))
     {
         return scaleTo;
@@ -1846,7 +1846,7 @@ void ScaleTo::update(float time)
 
 cc::IntrusivePtr<ScaleBy> ScaleBy::create(float duration, float s)
 {
-    cc::IntrusivePtr<ScaleBy> scaleBy{new ScaleBy()};
+    cc::IntrusivePtr scaleBy{new ScaleBy()};
     if (scaleBy->initWithDuration(duration, s))
     {
         return scaleBy;
@@ -1857,7 +1857,7 @@ cc::IntrusivePtr<ScaleBy> ScaleBy::create(float duration, float s)
 
 cc::IntrusivePtr<ScaleBy> ScaleBy::create(float duration, float sx, float sy)
 {
-    cc::IntrusivePtr<ScaleBy> scaleBy{new ScaleBy()};
+    cc::IntrusivePtr scaleBy{new ScaleBy()};
     if (scaleBy->initWithDuration(duration, sx, sy, 1.f))
     {
         return scaleBy;
@@ -1868,7 +1868,7 @@ cc::IntrusivePtr<ScaleBy> ScaleBy::create(float duration, float sx, float sy)
 
 cc::IntrusivePtr<ScaleBy> ScaleBy::create(float duration, float sx, float sy, float sz)
 {
-    cc::IntrusivePtr<ScaleBy> scaleBy{new ScaleBy()};
+    cc::IntrusivePtr scaleBy{new ScaleBy()};
     if (scaleBy->initWithDuration(duration, sx, sy, sz))
     {
         return scaleBy;
@@ -1902,7 +1902,7 @@ cc::IntrusivePtr<Action> ScaleBy::reverse() const
 
 cc::IntrusivePtr<Blink> Blink::create(float duration, int blinks)
 {
-    cc::IntrusivePtr<Blink> blink{new Blink()};
+    cc::IntrusivePtr blink{new Blink()};
     if (blink->initWithDuration(duration, blinks))
     {
         return blink;
@@ -1969,7 +1969,7 @@ cc::IntrusivePtr<Action> Blink::reverse() const
 
 cc::IntrusivePtr<FadeIn> FadeIn::create(float d)
 {
-    cc::IntrusivePtr<FadeIn> action{new FadeIn()};
+    cc::IntrusivePtr action{new FadeIn()};
     if (action->initWithDuration(d, 255))
     {
         return action;
@@ -2015,7 +2015,7 @@ void FadeIn::startWithTarget(cocos2d::Node* target)
 
 cc::IntrusivePtr<FadeOut> FadeOut::create(float d)
 {
-    cc::IntrusivePtr<FadeOut> action{new FadeOut()};
+    cc::IntrusivePtr action{new FadeOut()};
     if (action->initWithDuration(d, 0))
     {
         return action;
@@ -2061,7 +2061,7 @@ cc::IntrusivePtr<Action> FadeOut::reverse() const
 
 cc::IntrusivePtr<FadeTo> FadeTo::create(float duration, uint8_t opacity)
 {
-    cc::IntrusivePtr<FadeTo> fadeTo{new FadeTo()};
+    cc::IntrusivePtr fadeTo{new FadeTo()};
     if (fadeTo->initWithDuration(duration, opacity))
     {
         return fadeTo;
@@ -2116,7 +2116,7 @@ void FadeTo::update(float time)
 //
 cc::IntrusivePtr<TintTo> TintTo::create(float duration, uint8_t red, uint8_t green, uint8_t blue)
 {
-    cc::IntrusivePtr<TintTo> tintTo{new TintTo()};
+    cc::IntrusivePtr tintTo{new TintTo()};
     if (tintTo->initWithDuration(duration, red, green, blue))
     {
         return tintTo;
@@ -2178,7 +2178,7 @@ void TintTo::update(float time)
 
 cc::IntrusivePtr<TintBy> TintBy::create(float duration, int16_t deltaRed, int16_t deltaGreen, int16_t deltaBlue)
 {
-    cc::IntrusivePtr<TintBy> tintBy{new TintBy()};
+    cc::IntrusivePtr tintBy{new TintBy()};
     if (tintBy->initWithDuration(duration, deltaRed, deltaGreen, deltaBlue))
     {
         return tintBy;
@@ -2239,7 +2239,7 @@ cc::IntrusivePtr<Action> TintBy::reverse() const
 //
 cc::IntrusivePtr<DelayTime> DelayTime::create(float d)
 {
-    cc::IntrusivePtr<DelayTime> action{new DelayTime()};
+    cc::IntrusivePtr action{new DelayTime()};
     if (action->initWithDuration(d))
     {
         return action;
@@ -2271,7 +2271,7 @@ cc::IntrusivePtr<Action> DelayTime::reverse() const
 cc::IntrusivePtr<ReverseTime> ReverseTime::create(FiniteTimeAction* action)
 {
     // casting to prevent warnings
-    cc::IntrusivePtr<ReverseTime> reverseTime{new ReverseTime()};
+    cc::IntrusivePtr reverseTime{new ReverseTime()};
     if (reverseTime->initWithAction(cc::static_pointer_cast<FiniteTimeAction>(action->clone()).get()))
     {
         return reverseTime;
@@ -2348,7 +2348,7 @@ cc::IntrusivePtr<Action> ReverseTime::reverse() const
 //
 cc::IntrusivePtr<Animate> Animate::create(Animation* animation)
 {
-    cc::IntrusivePtr<Animate> animate{new Animate()};
+    cc::IntrusivePtr animate{new Animate()};
     if (animate->initWithAnimation(animation))
     {
         return animate;
@@ -2486,7 +2486,7 @@ void Animate::update(float t)
             if (!dict.empty())
             {
                 if (_frameDisplayedEvent == nullptr)
-                    _frameDisplayedEvent = cc::IntrusivePtr<EventCustom>{new EventCustom(AnimationFrameDisplayedNotification)}.detach();
+                    _frameDisplayedEvent = cc::IntrusivePtr{new EventCustom(AnimationFrameDisplayedNotification)}.detach();
 
                 _frameDisplayedEventInfo.target   = _target;
                 _frameDisplayedEventInfo.userInfo = &dict;
@@ -2539,7 +2539,7 @@ TargetedAction::~TargetedAction()
 
 cc::IntrusivePtr<TargetedAction> TargetedAction::create(Node* target, FiniteTimeAction* action)
 {
-    cc::IntrusivePtr<TargetedAction> p{new TargetedAction()};
+    cc::IntrusivePtr p{new TargetedAction()};
     if (p->initWithTarget(target, action))
     {
         return p;
@@ -2571,7 +2571,7 @@ cc::IntrusivePtr<Action> TargetedAction::clone() const
 cc::IntrusivePtr<Action> TargetedAction::reverse() const
 {
     // just reverse the internal action
-    cc::IntrusivePtr<TargetedAction> a{new TargetedAction()};
+    cc::IntrusivePtr a{new TargetedAction()};
     a->initWithTarget(_forcedTarget, cc::static_pointer_cast<FiniteTimeAction>(_action->reverse()).get());
     return a;
 }
@@ -2607,7 +2607,7 @@ void TargetedAction::setForcedTarget(Node* forcedTarget)
 
 cc::IntrusivePtr<ActionFloat> ActionFloat::create(float duration, float from, float to, ActionFloatCallback callback)
 {
-    cc::IntrusivePtr<ActionFloat> ref{new ActionFloat()};
+    cc::IntrusivePtr ref{new ActionFloat()};
     if (ref->initWithDuration(duration, from, to, callback))
     {
         return ref;

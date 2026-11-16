@@ -83,7 +83,7 @@ bool ControlSaturationBrightnessPicker::initWithTargetAndPos(Node* target, Vec2 
 
 cc::IntrusivePtr<ControlSaturationBrightnessPicker> ControlSaturationBrightnessPicker::create(Node* target, Vec2 pos)
 {
-    cc::IntrusivePtr<ControlSaturationBrightnessPicker> pRet{new ControlSaturationBrightnessPicker()};
+    cc::IntrusivePtr pRet{new ControlSaturationBrightnessPicker()};
     pRet->initWithTargetAndPos(target, pos);
     return pRet;
 }

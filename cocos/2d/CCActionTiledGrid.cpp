@@ -43,7 +43,7 @@ struct Tile
 
 cc::IntrusivePtr<ShakyTiles3D> ShakyTiles3D::create(float duration, const Vec2& gridSize, int range, bool shakeZ)
 {
-    cc::IntrusivePtr<ShakyTiles3D> action{new ShakyTiles3D()};
+    cc::IntrusivePtr action{new ShakyTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, range, shakeZ))
     {
@@ -112,7 +112,7 @@ void ShakyTiles3D::update(float /*time*/)
 
 cc::IntrusivePtr<ShatteredTiles3D> ShatteredTiles3D::create(float duration, const Vec2& gridSize, int range, bool shatterZ)
 {
-    cc::IntrusivePtr<ShatteredTiles3D> action{new ShatteredTiles3D()};
+    cc::IntrusivePtr action{new ShatteredTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, range, shatterZ))
     {
@@ -187,7 +187,7 @@ void ShatteredTiles3D::update(float /*time*/)
 
 cc::IntrusivePtr<ShuffleTiles> ShuffleTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
 {
-    cc::IntrusivePtr<ShuffleTiles> action{new ShuffleTiles()};
+    cc::IntrusivePtr action{new ShuffleTiles()};
 
     if (action->initWithDuration(duration, gridSize, seed))
     {
@@ -321,7 +321,7 @@ void ShuffleTiles::update(float time)
 
 cc::IntrusivePtr<FadeOutTRTiles> FadeOutTRTiles::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<FadeOutTRTiles> action{new FadeOutTRTiles()};
+    cc::IntrusivePtr action{new FadeOutTRTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
@@ -408,7 +408,7 @@ void FadeOutTRTiles::update(float time)
 
 cc::IntrusivePtr<FadeOutBLTiles> FadeOutBLTiles::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<FadeOutBLTiles> action{new FadeOutBLTiles()};
+    cc::IntrusivePtr action{new FadeOutBLTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
@@ -439,7 +439,7 @@ float FadeOutBLTiles::testFunc(const Vec2& pos, float time)
 
 cc::IntrusivePtr<FadeOutUpTiles> FadeOutUpTiles::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<FadeOutUpTiles> action{new FadeOutUpTiles()};
+    cc::IntrusivePtr action{new FadeOutUpTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
@@ -483,7 +483,7 @@ void FadeOutUpTiles::transformTile(const Vec2& pos, float distance)
 
 cc::IntrusivePtr<FadeOutDownTiles> FadeOutDownTiles::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<FadeOutDownTiles> action{new FadeOutDownTiles()};
+    cc::IntrusivePtr action{new FadeOutDownTiles()};
 
     if (action->initWithDuration(duration, gridSize))
     {
@@ -509,7 +509,7 @@ float FadeOutDownTiles::testFunc(const Vec2& pos, float time)
 
 cc::IntrusivePtr<TurnOffTiles> TurnOffTiles::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<TurnOffTiles> action{new TurnOffTiles()};
+    cc::IntrusivePtr action{new TurnOffTiles()};
     if (action->initWithDuration(duration, gridSize, 0))
     {
         return action;
@@ -520,7 +520,7 @@ cc::IntrusivePtr<TurnOffTiles> TurnOffTiles::create(float duration, const Vec2& 
 
 cc::IntrusivePtr<TurnOffTiles> TurnOffTiles::create(float duration, const Vec2& gridSize, unsigned int seed)
 {
-    cc::IntrusivePtr<TurnOffTiles> action{new TurnOffTiles()};
+    cc::IntrusivePtr action{new TurnOffTiles()};
 
     if (action->initWithDuration(duration, gridSize, seed))
     {
@@ -625,7 +625,7 @@ void TurnOffTiles::update(float time)
 
 cc::IntrusivePtr<WavesTiles3D> WavesTiles3D::create(float duration, const Vec2& gridSize, unsigned int waves, float amplitude)
 {
-    cc::IntrusivePtr<WavesTiles3D> action{new WavesTiles3D()};
+    cc::IntrusivePtr action{new WavesTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, waves, amplitude))
     {
@@ -679,7 +679,7 @@ void WavesTiles3D::update(float time)
 
 cc::IntrusivePtr<JumpTiles3D> JumpTiles3D::create(float duration, const Vec2& gridSize, unsigned int numberOfJumps, float amplitude)
 {
-    cc::IntrusivePtr<JumpTiles3D> action{new JumpTiles3D()};
+    cc::IntrusivePtr action{new JumpTiles3D()};
 
     if (action->initWithDuration(duration, gridSize, numberOfJumps, amplitude))
     {
@@ -745,7 +745,7 @@ void JumpTiles3D::update(float time)
 
 cc::IntrusivePtr<SplitRows> SplitRows::create(float duration, unsigned int nRows)
 {
-    cc::IntrusivePtr<SplitRows> action{new SplitRows()};
+    cc::IntrusivePtr action{new SplitRows()};
 
     if (action->initWithDuration(duration, nRows))
     {
@@ -800,7 +800,7 @@ void SplitRows::update(float time)
 
 cc::IntrusivePtr<SplitCols> SplitCols::create(float duration, unsigned int cols)
 {
-    cc::IntrusivePtr<SplitCols> action{new SplitCols()};
+    cc::IntrusivePtr action{new SplitCols()};
 
     if (action->initWithDuration(duration, cols))
     {

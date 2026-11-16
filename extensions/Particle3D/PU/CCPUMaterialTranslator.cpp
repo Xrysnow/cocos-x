@@ -112,7 +112,7 @@ void CCPUMaterialTranslator::translate(PUScriptCompiler* compiler, PUAbstractNod
     PUObjectAbstractNode* obj = reinterpret_cast<PUObjectAbstractNode*>(node);
     // PUObjectAbstractNode* parent = obj->parent ? reinterpret_cast<PUObjectAbstractNode*>(obj->parent) : 0;
 
-    cc::IntrusivePtr<PUMaterial> material{new PUMaterial()};
+    cc::IntrusivePtr material{new PUMaterial()};
     _material = material.get();
     _material->fileName = obj->file;
     _material->name     = obj->name;

@@ -36,7 +36,7 @@ HBox::~HBox() {}
 
 cc::IntrusivePtr<HBox> HBox::create()
 {
-    cc::IntrusivePtr<HBox> widget{new HBox()};
+    cc::IntrusivePtr widget{new HBox()};
     if (widget->init())
     {
         return widget;
@@ -46,7 +46,7 @@ cc::IntrusivePtr<HBox> HBox::create()
 
 cc::IntrusivePtr<HBox> HBox::create(const Vec2& size)
 {
-    cc::IntrusivePtr<HBox> widget{new HBox()};
+    cc::IntrusivePtr widget{new HBox()};
     if (widget->initWithSize(size))
     {
         return widget;

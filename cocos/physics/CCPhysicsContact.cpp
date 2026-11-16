@@ -56,7 +56,7 @@ PhysicsContact::~PhysicsContact()
 
 PhysicsContact* PhysicsContact::construct(PhysicsShape* a, PhysicsShape* b)
 {
-    cc::IntrusivePtr<PhysicsContact> contact{new PhysicsContact()};
+    cc::IntrusivePtr contact{new PhysicsContact()};
     if (contact->init(a, b))
     {
         return contact.detach();
@@ -244,7 +244,7 @@ EventListenerPhysicsContact::~EventListenerPhysicsContact() {}
 
 cc::IntrusivePtr<EventListenerPhysicsContact> EventListenerPhysicsContact::create()
 {
-    cc::IntrusivePtr<EventListenerPhysicsContact> obj{new EventListenerPhysicsContact()};
+    cc::IntrusivePtr obj{new EventListenerPhysicsContact()};
 
     if (obj->init())
     {
@@ -291,7 +291,7 @@ cc::IntrusivePtr<EventListener> EventListenerPhysicsContact::clone()
 cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> EventListenerPhysicsContactWithBodies::create(PhysicsBody* bodyA,
                                                                                      PhysicsBody* bodyB)
 {
-    cc::IntrusivePtr<EventListenerPhysicsContactWithBodies> obj{new EventListenerPhysicsContactWithBodies()};
+    cc::IntrusivePtr obj{new EventListenerPhysicsContactWithBodies()};
 
     if (obj->init())
     {
@@ -341,7 +341,7 @@ EventListenerPhysicsContactWithShapes::~EventListenerPhysicsContactWithShapes() 
 cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> EventListenerPhysicsContactWithShapes::create(PhysicsShape* shapeA,
                                                                                      PhysicsShape* shapeB)
 {
-    cc::IntrusivePtr<EventListenerPhysicsContactWithShapes> obj{new EventListenerPhysicsContactWithShapes()};
+    cc::IntrusivePtr obj{new EventListenerPhysicsContactWithShapes()};
 
     if (obj->init())
     {
@@ -386,7 +386,7 @@ EventListenerPhysicsContactWithGroup::~EventListenerPhysicsContactWithGroup() {}
 
 cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> EventListenerPhysicsContactWithGroup::create(int group)
 {
-    cc::IntrusivePtr<EventListenerPhysicsContactWithGroup> obj{new EventListenerPhysicsContactWithGroup()};
+    cc::IntrusivePtr obj{new EventListenerPhysicsContactWithGroup()};
 
     if (obj->init())
     {

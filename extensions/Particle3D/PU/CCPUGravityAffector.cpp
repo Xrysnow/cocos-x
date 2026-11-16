@@ -77,7 +77,7 @@ void PUGravityAffector::preUpdateAffector(float /*deltaTime*/)
 
 cc::IntrusivePtr<PUGravityAffector> PUGravityAffector::create()
 {
-    cc::IntrusivePtr<PUGravityAffector> pga{new PUGravityAffector()};
+    cc::IntrusivePtr pga{new PUGravityAffector()};
     return pga;
 }
 

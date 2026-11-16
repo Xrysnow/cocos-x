@@ -37,7 +37,7 @@ bool EventListenerMouse::checkAvailable()
 
 cc::IntrusivePtr<EventListenerMouse> EventListenerMouse::create()
 {
-    cc::IntrusivePtr<EventListenerMouse> ret{new EventListenerMouse()};
+    cc::IntrusivePtr ret{new EventListenerMouse()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -47,7 +47,7 @@ cc::IntrusivePtr<EventListenerMouse> EventListenerMouse::create()
 
 cc::IntrusivePtr<EventListener> EventListenerMouse::clone()
 {
-    cc::IntrusivePtr<EventListenerMouse> ret{new EventListenerMouse()};
+    cc::IntrusivePtr ret{new EventListenerMouse()};
     if (ret->init())
     {
 

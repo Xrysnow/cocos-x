@@ -72,7 +72,7 @@ BaseLight::~BaseLight() {}
 ////////////////////////////////////////////////////////////////////
 cc::IntrusivePtr<DirectionLight> DirectionLight::create(const Vec3& direction, const Color3B& color)
 {
-    cc::IntrusivePtr<DirectionLight> light{new DirectionLight()};
+    cc::IntrusivePtr light{new DirectionLight()};
     light->setRotationFromDirection(direction);
     light->setColor(color);
     return light;
@@ -98,7 +98,7 @@ DirectionLight::~DirectionLight() {}
 //////////////////////////////////////////////////////////////////
 cc::IntrusivePtr<PointLight> PointLight::create(const Vec3& position, const Color3B& color, float range)
 {
-    cc::IntrusivePtr<PointLight> light{new PointLight()};
+    cc::IntrusivePtr light{new PointLight()};
     light->setPosition3D(position);
     light->setColor(color);
     light->_range = range;
@@ -116,7 +116,7 @@ cc::IntrusivePtr<SpotLight> SpotLight::create(const Vec3& direction,
                              float outerAngle,
                              float range)
 {
-    cc::IntrusivePtr<SpotLight> light{new SpotLight()};
+    cc::IntrusivePtr light{new SpotLight()};
     light->setRotationFromDirection(direction);
     light->setPosition3D(position);
     light->setColor(color);
@@ -163,7 +163,7 @@ SpotLight::~SpotLight() {}
 
 cc::IntrusivePtr<AmbientLight> AmbientLight::create(const Color3B& color)
 {
-    cc::IntrusivePtr<AmbientLight> light{new AmbientLight()};
+    cc::IntrusivePtr light{new AmbientLight()};
     light->setColor(color);
     return light;
 }

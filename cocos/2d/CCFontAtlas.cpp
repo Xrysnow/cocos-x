@@ -301,7 +301,7 @@ void FontAtlas::updateTextureContent(backend::PixelFormat format, int startY)
 
 void FontAtlas::addNewPage()
 {
-    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    cc::IntrusivePtr texture{new Texture2D()};
 
     memset(_currentPageData, 0, _currentPageDataSize);
 

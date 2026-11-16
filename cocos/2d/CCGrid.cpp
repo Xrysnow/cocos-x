@@ -54,7 +54,7 @@ bool GridBase::initWithSize(const Vec2& gridSize, const cocos2d::Rect& rect)
     auto POTWide = ccNextPOT((unsigned int)s.width);
     auto POTHigh = ccNextPOT((unsigned int)s.height);
 
-    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    cc::IntrusivePtr texture{new Texture2D()};
 
     backend::TextureDescriptor descriptor;
     descriptor.width         = POTWide;
@@ -105,7 +105,7 @@ bool GridBase::initWithSize(const Vec2& gridSize, Texture2D* texture, bool flipp
     auto& pipelineDescriptor = _drawCommand.getPipelineDescriptor();
     CC_SAFE_RELEASE(_programState);
     auto* program                   = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE);
-    _programState                   = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _programState                   = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     pipelineDescriptor.programState = _programState;
     _mvpMatrixLocation              = pipelineDescriptor.programState->getUniformLocation("u_MVPMatrix");
     _textureLocation                = pipelineDescriptor.programState->getUniformLocation("u_tex0");
@@ -274,7 +274,7 @@ void GridBase::afterDraw(cocos2d::Node* /*target*/)
 
 cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize)
 {
-    cc::IntrusivePtr<Grid3D> ret{new Grid3D()};
+    cc::IntrusivePtr ret{new Grid3D()};
     if (!(ret->initWithSize(gridSize)))
     {
         return nullptr;
@@ -285,7 +285,7 @@ cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize)
 
 cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize, const Rect& rect)
 {
-    cc::IntrusivePtr<Grid3D> ret{new Grid3D()};
+    cc::IntrusivePtr ret{new Grid3D()};
 
     if (!(ret->initWithSize(gridSize, rect)))
     {
@@ -298,7 +298,7 @@ cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize, const Rect& rect)
 
 cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize, Texture2D* texture, bool flipped)
 {
-    cc::IntrusivePtr<Grid3D> ret{new Grid3D()};
+    cc::IntrusivePtr ret{new Grid3D()};
 
     if (!(ret->initWithSize(gridSize, texture, flipped)))
     {
@@ -311,7 +311,7 @@ cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize, Texture2D* texture
 
 cc::IntrusivePtr<Grid3D> Grid3D::create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect)
 {
-    cc::IntrusivePtr<Grid3D> ret{new Grid3D()};
+    cc::IntrusivePtr ret{new Grid3D()};
 
     if (!(ret->initWithSize(gridSize, texture, flipped, rect)))
     {
@@ -542,7 +542,7 @@ TiledGrid3D::~TiledGrid3D()
 
 cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize)
 {
-    cc::IntrusivePtr<TiledGrid3D> ret{new TiledGrid3D()};
+    cc::IntrusivePtr ret{new TiledGrid3D()};
 
     if (!(ret->initWithSize(gridSize)))
     {
@@ -555,7 +555,7 @@ cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize)
 
 cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize, const Rect& rect)
 {
-    cc::IntrusivePtr<TiledGrid3D> ret{new TiledGrid3D()};
+    cc::IntrusivePtr ret{new TiledGrid3D()};
 
     if (!(ret->initWithSize(gridSize, rect)))
     {
@@ -568,7 +568,7 @@ cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize, const Re
 
 cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize, Texture2D* texture, bool flipped, const Rect& rect)
 {
-    cc::IntrusivePtr<TiledGrid3D> ret{new TiledGrid3D()};
+    cc::IntrusivePtr ret{new TiledGrid3D()};
 
     if (!(ret->initWithSize(gridSize, texture, flipped, rect)))
     {
@@ -581,7 +581,7 @@ cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize, Texture2
 
 cc::IntrusivePtr<TiledGrid3D> TiledGrid3D::create(const Vec2& gridSize, Texture2D* texture, bool flipped)
 {
-    cc::IntrusivePtr<TiledGrid3D> ret{new TiledGrid3D()};
+    cc::IntrusivePtr ret{new TiledGrid3D()};
 
     if (!(ret->initWithSize(gridSize, texture, flipped)))
     {

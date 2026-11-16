@@ -63,7 +63,7 @@ Physics3DWorld::~Physics3DWorld()
 
 cc::IntrusivePtr<Physics3DWorld> Physics3DWorld::create(Physics3DWorldDes* info)
 {
-    cc::IntrusivePtr<Physics3DWorld> world{new Physics3DWorld()};
+    cc::IntrusivePtr world{new Physics3DWorld()};
     world->init(info);
     return world;
 }

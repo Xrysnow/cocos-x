@@ -32,7 +32,7 @@ NS_CC_EXT_BEGIN
 
 cc::IntrusivePtr<Invocation> Invocation::create(Ref* target, Control::Handler action, Control::EventType controlEvent)
 {
-    cc::IntrusivePtr<Invocation> pRet{new Invocation(target, action, controlEvent)};
+    cc::IntrusivePtr pRet{new Invocation(target, action, controlEvent)};
     return pRet;
 }
 

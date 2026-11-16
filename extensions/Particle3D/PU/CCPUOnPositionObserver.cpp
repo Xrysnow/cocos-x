@@ -87,7 +87,7 @@ bool PUOnPositionObserver::observe(PUParticle3D* particle, float /*timeElapsed*/
 
 cc::IntrusivePtr<PUOnPositionObserver> PUOnPositionObserver::create()
 {
-    cc::IntrusivePtr<PUOnPositionObserver> ppo{new PUOnPositionObserver()};
+    cc::IntrusivePtr ppo{new PUOnPositionObserver()};
     return ppo;
 }
 

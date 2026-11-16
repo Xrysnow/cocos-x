@@ -45,7 +45,7 @@
 
 NS_CC_BEGIN
 
-CameraBackgroundBrush::CameraBackgroundBrush() {}
+CameraBackgroundBrush::CameraBackgroundBrush() = default;
 
 CameraBackgroundBrush::~CameraBackgroundBrush()
 {
@@ -54,7 +54,7 @@ CameraBackgroundBrush::~CameraBackgroundBrush()
 
 cc::IntrusivePtr<CameraBackgroundBrush> CameraBackgroundBrush::createNoneBrush()
 {
-    cc::IntrusivePtr<CameraBackgroundBrush> ret{new CameraBackgroundBrush()};
+    cc::IntrusivePtr ret{new CameraBackgroundBrush()};
     ret->init();
 
     return ret;
@@ -105,7 +105,7 @@ CameraBackgroundDepthBrush::~CameraBackgroundDepthBrush()
 
 cc::IntrusivePtr<CameraBackgroundDepthBrush> CameraBackgroundDepthBrush::create(float depth)
 {
-    cc::IntrusivePtr<CameraBackgroundDepthBrush> ret{new CameraBackgroundDepthBrush()};
+    cc::IntrusivePtr ret{new CameraBackgroundDepthBrush()};
 
     if (ret->init())
     {
@@ -124,7 +124,7 @@ bool CameraBackgroundDepthBrush::init()
 {
     CC_SAFE_RELEASE_NULL(_programState);
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::CAMERA_CLEAR);
-    _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
 
     _locDepth = _programState->getUniformLocation("dpeth");
 
@@ -241,7 +241,7 @@ void CameraBackgroundColorBrush::setColor(const Color4F& color)
 
 cc::IntrusivePtr<CameraBackgroundColorBrush> CameraBackgroundColorBrush::create(const Color4F& color, float depth)
 {
-    cc::IntrusivePtr<CameraBackgroundColorBrush> ret{new CameraBackgroundColorBrush()};
+    cc::IntrusivePtr ret{new CameraBackgroundColorBrush()};
 
     if (ret->init())
     {
@@ -303,7 +303,7 @@ cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundSkyBoxBrush::creat
         tRepeatParams.tAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
         texture->setTexParameters(tRepeatParams);
 
-        ret = cc::IntrusivePtr<CameraBackgroundSkyBoxBrush>{new CameraBackgroundSkyBoxBrush};
+        ret = cc::IntrusivePtr{new CameraBackgroundSkyBoxBrush};
 
         if (ret->init())
         {
@@ -320,7 +320,7 @@ cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundSkyBoxBrush::creat
 
 cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> CameraBackgroundSkyBoxBrush::create()
 {
-    cc::IntrusivePtr<CameraBackgroundSkyBoxBrush> ret{new CameraBackgroundSkyBoxBrush()};
+    cc::IntrusivePtr ret{new CameraBackgroundSkyBoxBrush()};
 
     if (!(ret->init()))
     {
@@ -371,7 +371,7 @@ bool CameraBackgroundSkyBoxBrush::init()
 
     CC_SAFE_RELEASE_NULL(_programState);
     auto* program        = backend::Program::getBuiltinProgram(backend::ProgramType::SKYBOX_3D);
-    _programState        = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+    _programState        = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     _uniformColorLoc     = _programState->getUniformLocation("u_color");
     _uniformCameraRotLoc = _programState->getUniformLocation("u_cameraRot");
     _uniformEnvLoc       = _programState->getUniformLocation("u_Env");

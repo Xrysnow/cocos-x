@@ -56,7 +56,7 @@ bool PUOnRandomObserver::observe(PUParticle3D* /*particle*/, float /*timeElapsed
 
 cc::IntrusivePtr<PUOnRandomObserver> PUOnRandomObserver::create()
 {
-    cc::IntrusivePtr<PUOnRandomObserver> pro{new PUOnRandomObserver()};
+    cc::IntrusivePtr pro{new PUOnRandomObserver()};
     return pro;
 }
 

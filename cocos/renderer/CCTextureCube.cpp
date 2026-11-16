@@ -135,7 +135,7 @@ cc::IntrusivePtr<Image> createImage(std::string_view path)
     }
 
     // all images are handled by UIImage except PVR extension that is handled by our own handler
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     if (image->initWithImageFile(fullpath))
         return image;
 
@@ -159,7 +159,7 @@ cc::IntrusivePtr<TextureCube> TextureCube::create(std::string_view positive_x,
                                  std::string_view positive_z,
                                  std::string_view negative_z)
 {
-    cc::IntrusivePtr<TextureCube> ret{new TextureCube()};
+    cc::IntrusivePtr ret{new TextureCube()};
     if (ret->init(positive_x, negative_x, positive_y, negative_y, positive_z, negative_z))
     {
         return ret;

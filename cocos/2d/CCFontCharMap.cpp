@@ -54,7 +54,7 @@ cc::IntrusivePtr<FontCharMap> FontCharMap::create(std::string_view plistFile)
         return nullptr;
     }
 
-    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(tempTexture, width, height, startChar)};
+    cc::IntrusivePtr tempFont{new FontCharMap(tempTexture, width, height, startChar)};
 
     if (!tempFont)
     {
@@ -72,7 +72,7 @@ cc::IntrusivePtr<FontCharMap> FontCharMap::create(std::string_view charMapFile, 
         return nullptr;
     }
 
-    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(tempTexture, itemWidth, itemHeight, startCharMap)};
+    cc::IntrusivePtr tempFont{new FontCharMap(tempTexture, itemWidth, itemHeight, startCharMap)};
 
     if (!tempFont)
     {
@@ -83,7 +83,7 @@ cc::IntrusivePtr<FontCharMap> FontCharMap::create(std::string_view charMapFile, 
 
 cc::IntrusivePtr<FontCharMap> FontCharMap::create(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
 {
-    cc::IntrusivePtr<FontCharMap> tempFont{new FontCharMap(texture, itemWidth, itemHeight, startCharMap)};
+    cc::IntrusivePtr tempFont{new FontCharMap(texture, itemWidth, itemHeight, startCharMap)};
 
     if (!tempFont)
     {
@@ -101,7 +101,7 @@ int* FontCharMap::getHorizontalKerningForTextUTF32(const std::u32string& /*text*
 
 FontAtlas* FontCharMap::newFontAtlas()
 {
-    cc::IntrusivePtr<FontAtlas> tempAtlas{new FontAtlas(this)};
+    cc::IntrusivePtr tempAtlas{new FontAtlas(this)};
 
     Vec2 s             = _texture->getContentSizeInPixels();
     int itemsPerColumn = (int)(s.height / _itemHeight);

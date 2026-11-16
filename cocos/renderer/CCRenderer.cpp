@@ -384,7 +384,7 @@ static const int DEFAULT_RENDER_QUEUE = 0;
 //
 Renderer::Renderer()
 {
-    _groupCommandManager = cc::IntrusivePtr<GroupCommandManager>{new GroupCommandManager()}.detach();
+    _groupCommandManager = cc::IntrusivePtr{new GroupCommandManager()}.detach();
 
     _commandGroupStack.push(DEFAULT_RENDER_QUEUE);
 

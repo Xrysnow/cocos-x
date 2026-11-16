@@ -7,7 +7,7 @@ USING_NS_CC;
 
 cc::IntrusivePtr<GTreeNode> GTreeNode::create(bool isFolder, const std::string& resURL)
 {
-    cc::IntrusivePtr<GTreeNode> pRet{new GTreeNode()};
+    cc::IntrusivePtr pRet{new GTreeNode()};
 
     if (!(pRet->init(isFolder, resURL)))
     {

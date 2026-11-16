@@ -35,7 +35,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<ProgressTo> ProgressTo::create(float duration, float percent)
 {
-    cc::IntrusivePtr<ProgressTo> progressTo{new ProgressTo()};
+    cc::IntrusivePtr progressTo{new ProgressTo()};
     if (progressTo->initWithDuration(duration, percent))
     {
         return progressTo;
@@ -83,7 +83,7 @@ void ProgressTo::update(float time)
 
 cc::IntrusivePtr<ProgressFromTo> ProgressFromTo::create(float duration, float fromPercentage, float toPercentage)
 {
-    cc::IntrusivePtr<ProgressFromTo> progressFromTo{new ProgressFromTo()};
+    cc::IntrusivePtr progressFromTo{new ProgressFromTo()};
     if (progressFromTo->initWithDuration(duration, fromPercentage, toPercentage))
     {
         return progressFromTo;

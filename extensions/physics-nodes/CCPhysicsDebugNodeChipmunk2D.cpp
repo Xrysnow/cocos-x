@@ -232,7 +232,7 @@ PhysicsDebugNodeChipmunk2D::PhysicsDebugNodeChipmunk2D() : _spacePtr(nullptr) {}
 
 cc::IntrusivePtr<PhysicsDebugNodeChipmunk2D> PhysicsDebugNodeChipmunk2D::create(cpSpace* space)
 {
-    cc::IntrusivePtr<PhysicsDebugNodeChipmunk2D> node{new PhysicsDebugNodeChipmunk2D()};
+    cc::IntrusivePtr node{new PhysicsDebugNodeChipmunk2D()};
     node->init();
     node->_spacePtr = space;
     return node;

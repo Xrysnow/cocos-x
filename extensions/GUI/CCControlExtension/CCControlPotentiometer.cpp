@@ -45,7 +45,7 @@ cc::IntrusivePtr<ControlPotentiometer> ControlPotentiometer::create(const char* 
                                                    const char* progressFile,
                                                    const char* thumbFile)
 {
-    cc::IntrusivePtr<ControlPotentiometer> pRet{new ControlPotentiometer()};
+    cc::IntrusivePtr pRet{new ControlPotentiometer()};
     // Prepare track for potentiometer
     cc::IntrusivePtr<Sprite> backgroundSprite = Sprite::create(backgroundFile);
 

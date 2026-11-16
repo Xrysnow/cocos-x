@@ -46,7 +46,7 @@ cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string,
                                int itemHeight,
                                int startCharMap)
 {
-    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
+    cc::IntrusivePtr ret{new LabelAtlas()};
     if (ret->initWithString(string, charMapFile, itemWidth, itemHeight, startCharMap))
     {
         return ret;
@@ -81,7 +81,7 @@ bool LabelAtlas::initWithString(std::string_view string,
 
 cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string, std::string_view fntFile)
 {
-    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
+    cc::IntrusivePtr ret{new LabelAtlas()};
 
     if (!(ret->initWithString(string, fntFile)))
     {
@@ -97,7 +97,7 @@ cc::IntrusivePtr<LabelAtlas> LabelAtlas::create(std::string_view string,
                                int itemHeight,
                                int startCharMap)
 {
-    cc::IntrusivePtr<LabelAtlas> ret{new LabelAtlas()};
+    cc::IntrusivePtr ret{new LabelAtlas()};
 
     if (!(ret->initWithString(string, texture, itemWidth, itemHeight, startCharMap)))
     {

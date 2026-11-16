@@ -44,7 +44,7 @@ PUGeometryRotator::PUGeometryRotator()
     _rotationAxis(DEFAULT_ROTATION_AXIS)
     , _rotationAxisSet(false)
 {
-    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynRotationSpeed = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 };
 //-----------------------------------------------------------------------
@@ -67,7 +67,7 @@ void PUGeometryRotator::setRotationAxis(const Vec3& rotationAxis)
 //-----------------------------------------------------------------------
 void PUGeometryRotator::resetRotationAxis()
 {
-    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynRotationSpeed = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
     _rotationAxisSet = false;
 }
@@ -167,7 +167,7 @@ void PUGeometryRotator::updatePUAffector(PUParticle3D* particle, float deltaTime
 
 cc::IntrusivePtr<PUGeometryRotator> PUGeometryRotator::create()
 {
-    cc::IntrusivePtr<PUGeometryRotator> pgr{new PUGeometryRotator()};
+    cc::IntrusivePtr pgr{new PUGeometryRotator()};
     return pgr;
 }
 

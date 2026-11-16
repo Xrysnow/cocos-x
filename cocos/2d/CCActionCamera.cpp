@@ -42,7 +42,7 @@ void ActionCamera::startWithTarget(Node* target)
 
 cc::IntrusivePtr<Action> ActionCamera::clone() const
 {
-    cc::IntrusivePtr<ActionCamera> action{new ActionCamera()};
+    cc::IntrusivePtr action{new ActionCamera()};
     return action;
 }
 
@@ -144,7 +144,7 @@ cc::IntrusivePtr<OrbitCamera> OrbitCamera::create(float t,
                                  float angleX,
                                  float deltaAngleX)
 {
-    cc::IntrusivePtr<OrbitCamera> obitCamera{new OrbitCamera()};
+    cc::IntrusivePtr obitCamera{new OrbitCamera()};
     if (obitCamera->initWithDuration(t, radius, deltaRadius, angleZ, deltaAngleZ, angleX, deltaAngleX))
     {
         return obitCamera;

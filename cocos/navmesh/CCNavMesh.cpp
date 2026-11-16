@@ -92,7 +92,7 @@ static const int MAX_AGENTS           = 128;
 
 cc::IntrusivePtr<NavMesh> NavMesh::create(std::string_view navFilePath, std::string_view geomFilePath)
 {
-    cc::IntrusivePtr<NavMesh> ref{new NavMesh()};
+    cc::IntrusivePtr ref{new NavMesh()};
     if (ref->initWithFilePath(navFilePath, geomFilePath))
     {
         return ref;

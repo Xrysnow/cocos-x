@@ -81,31 +81,31 @@ namespace spine {
 	//
 
 	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithData(SkeletonData *skeletonData, bool ownsSkeletonData) {
-		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
+		cc::IntrusivePtr node{new SkeletonAnimation()};
 		node->initWithData(skeletonData, ownsSkeletonData);
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, Atlas *atlas, float scale) {
-		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
+		cc::IntrusivePtr node{new SkeletonAnimation()};
 		node->initWithJsonFile(skeletonJsonFile, atlas, scale);
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithJsonFile(const std::string &skeletonJsonFile, const std::string &atlasFile, float scale) {
-		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
+		cc::IntrusivePtr node{new SkeletonAnimation()};
 		node->initWithJsonFile(skeletonJsonFile, atlasFile, scale);
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, Atlas *atlas, float scale) {
-		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
+		cc::IntrusivePtr node{new SkeletonAnimation()};
 		node->initWithBinaryFile(skeletonBinaryFile, atlas, scale);
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonAnimation> SkeletonAnimation::createWithBinaryFile(const std::string &skeletonBinaryFile, const std::string &atlasFile, float scale) {
-		cc::IntrusivePtr<SkeletonAnimation> node{new SkeletonAnimation()};
+		cc::IntrusivePtr node{new SkeletonAnimation()};
 		node->initWithBinaryFile(skeletonBinaryFile, atlasFile, scale);
 		return node;
 	}

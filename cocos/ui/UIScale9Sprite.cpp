@@ -43,7 +43,7 @@ using namespace cocos2d::ui;
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create()
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->init())
     {
         return ret;
@@ -53,7 +53,7 @@ cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create()
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view filename, const Rect& rect, const Rect& capInsets)
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->initWithFile(filename, rect, capInsets))
     {
         return ret;
@@ -68,7 +68,7 @@ cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view filename, c
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(const Rect& capInsets, std::string_view file)
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->initWithFile(capInsets, file))
     {
         return ret;
@@ -83,7 +83,7 @@ cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create(std::string_view fileaname)
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame, const Rect& capInsets)
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrame(spriteFrame, capInsets))
     {
         return ret;
@@ -98,7 +98,7 @@ cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrame(SpriteFrame* 
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName, const Rect& capInsets)
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrameName(spriteFrameName, capInsets))
     {
         return ret;
@@ -108,7 +108,7 @@ cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrameName(std::stri
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::createWithSpriteFrameName(std::string_view spriteFrameName)
 {
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->initWithSpriteFrameName(spriteFrameName, Rect::ZERO))
     {
         return ret;
@@ -270,7 +270,7 @@ bool Scale9Sprite::updateWithSprite(Sprite* sprite,
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::resizableSpriteWithCapInsets(const Rect& capInsets) const
 {
     // FIXME: there are no test cases for this method
-    cc::IntrusivePtr<Scale9Sprite> ret{new Scale9Sprite()};
+    cc::IntrusivePtr ret{new Scale9Sprite()};
     if (ret->init(const_cast<Scale9Sprite*>(this), _rect, _rectRotated, Vec2::ZERO, _originalContentSize, capInsets))
     {
         return ret;

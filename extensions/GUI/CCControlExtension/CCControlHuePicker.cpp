@@ -46,7 +46,7 @@ ControlHuePicker::~ControlHuePicker()
 
 cc::IntrusivePtr<ControlHuePicker> ControlHuePicker::create(Node* target, Vec2 pos)
 {
-    cc::IntrusivePtr<ControlHuePicker> pRet{new ControlHuePicker()};
+    cc::IntrusivePtr pRet{new ControlHuePicker()};
     pRet->initWithTargetAndPos(target, pos);
     return pRet;
 }

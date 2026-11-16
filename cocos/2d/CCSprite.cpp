@@ -51,7 +51,7 @@ NS_CC_BEGIN
 // MARK: create, init, dealloc
 cc::IntrusivePtr<Sprite> Sprite::createWithTexture(Texture2D* texture)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->initWithTexture(texture))
     {
         return sprite;
@@ -61,7 +61,7 @@ cc::IntrusivePtr<Sprite> Sprite::createWithTexture(Texture2D* texture)
 
 cc::IntrusivePtr<Sprite> Sprite::createWithTexture(Texture2D* texture, const Rect& rect, bool rotated)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->initWithTexture(texture, rect, rotated))
     {
         return sprite;
@@ -76,7 +76,7 @@ cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename)
 
 cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, PixelFormat format)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->initWithFile(filename, format))
     {
         return sprite;
@@ -86,7 +86,7 @@ cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, PixelFormat f
 
 cc::IntrusivePtr<Sprite> Sprite::create(const PolygonInfo& info)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->initWithPolygon(info))
     {
         return sprite;
@@ -96,7 +96,7 @@ cc::IntrusivePtr<Sprite> Sprite::create(const PolygonInfo& info)
 
 cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, const Rect& rect)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->initWithFile(filename, rect))
     {
         return sprite;
@@ -106,7 +106,7 @@ cc::IntrusivePtr<Sprite> Sprite::create(std::string_view filename, const Rect& r
 
 cc::IntrusivePtr<Sprite> Sprite::createWithSpriteFrame(SpriteFrame* spriteFrame)
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (spriteFrame && sprite->initWithSpriteFrame(spriteFrame))
     {
         return sprite;
@@ -129,7 +129,7 @@ cc::IntrusivePtr<Sprite> Sprite::createWithSpriteFrameName(std::string_view spri
 
 cc::IntrusivePtr<Sprite> Sprite::create()
 {
-    cc::IntrusivePtr<Sprite> sprite{new Sprite()};
+    cc::IntrusivePtr sprite{new Sprite()};
     if (sprite->init())
     {
         return sprite;
@@ -386,7 +386,7 @@ void Sprite::setTexture(Texture2D* texture)
         // If texture wasn't in cache, create it from RAW data.
         if (texture == nullptr)
         {
-            cc::IntrusivePtr<Image> image{new Image()};
+            cc::IntrusivePtr image{new Image()};
             bool CC_UNUSED isOK = image->initWithRawData(cc_2x2_white_image, sizeof(cc_2x2_white_image), 2, 2, 8);
             CCASSERT(isOK, "The 2x2 empty texture was created unsuccessfully.");
 

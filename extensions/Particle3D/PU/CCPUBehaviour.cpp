@@ -41,7 +41,7 @@ void PUBehaviour::initParticleForExpiration(PUParticle3D* /*particle*/, float /*
 
 cc::IntrusivePtr<PUBehaviour> PUBehaviour::clone()
 {
-    cc::IntrusivePtr<PUBehaviour> pb{new PUBehaviour};
+    cc::IntrusivePtr pb{new PUBehaviour};
 
     copyAttributesTo(pb.get());
     return pb;

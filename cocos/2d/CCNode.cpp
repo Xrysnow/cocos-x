@@ -141,7 +141,7 @@ Node::Node()
 
 cc::IntrusivePtr<Node> Node::create()
 {
-    cc::IntrusivePtr<Node> ret{new Node()};
+    cc::IntrusivePtr ret{new Node()};
     if (!ret->init())
         return {};
     return ret;

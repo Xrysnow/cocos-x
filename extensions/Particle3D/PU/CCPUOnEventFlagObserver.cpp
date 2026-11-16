@@ -45,7 +45,7 @@ bool PUOnEventFlagObserver::observe(PUParticle3D* particle, float /*timeElapsed*
 
 cc::IntrusivePtr<PUOnEventFlagObserver> PUOnEventFlagObserver::create()
 {
-    cc::IntrusivePtr<PUOnEventFlagObserver> peo{new PUOnEventFlagObserver()};
+    cc::IntrusivePtr peo{new PUOnEventFlagObserver()};
     return peo;
 }
 

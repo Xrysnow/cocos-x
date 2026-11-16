@@ -45,7 +45,7 @@ int GLViewImpl::_multisamplingCount = 0;
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithEAGLView(void* eaglView)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret->initWithEAGLView(eaglView))
     {
         return ret;
@@ -55,7 +55,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithEAGLView(void* eaglView)
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret->initWithFullScreen(viewName))
     {
         return ret;
@@ -65,7 +65,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret->initWithRect(viewName, rect, frameZoomFactor))
     {
         return ret;
@@ -75,7 +75,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewNam
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
+    cc::IntrusivePtr ret{new GLViewImpl()};
     if (ret->initWithFullScreen(viewName))
     {
         return ret;

@@ -299,7 +299,7 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
         {
             if (image == nullptr)
             {
-                image = cc::IntrusivePtr<Image>{new Image()}.detach();
+                image = cc::IntrusivePtr{new Image()}.detach();
                 image->initWithImageFile(textureFileName);
             }
             parser.setSpriteFrameInfo(image, spriteFrame->getRectInPixels(), spriteFrame->isRotated());

@@ -75,7 +75,7 @@ template <int componentSize>
 cc::IntrusivePtr<AnimationCurve<componentSize>> AnimationCurve<componentSize>::create(float* keytime, float* value, int count)
 {
     int floatSize = sizeof(float);
-    cc::IntrusivePtr<AnimationCurve> curve{new AnimationCurve()};
+    cc::IntrusivePtr curve{new AnimationCurve()};
     curve->_keytime = new float[count];
     memcpy(curve->_keytime, keytime, count * floatSize);
     

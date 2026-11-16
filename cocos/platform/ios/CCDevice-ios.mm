@@ -220,7 +220,7 @@ static CCAccelerometerDispatcher* s_pAccelerometerDispatcher;
 {
     if ((self = [super init]))
     {
-        _acceleration                              = cc::IntrusivePtr<cocos2d::Acceleration>{new cocos2d::Acceleration()}.detach();
+        _acceleration                              = cc::IntrusivePtr{new cocos2d::Acceleration()}.detach();
         _motionManager                             = [[CMMotionManager alloc] init];
         _motionManager.accelerometerUpdateInterval = SENSOR_DELAY_GAME;
     }

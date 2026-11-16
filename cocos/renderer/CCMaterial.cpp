@@ -77,7 +77,7 @@ cc::IntrusivePtr<Material> Material::createWithFilename(std::string_view filepat
     auto validfilename = FileUtils::getInstance()->fullPathForFilename(filepath);
     if (!validfilename.empty())
     {
-        cc::IntrusivePtr<Material> mat{new Material()};
+        cc::IntrusivePtr mat{new Material()};
         if (mat->initWithFile(validfilename))
         {
             return mat;
@@ -89,7 +89,7 @@ cc::IntrusivePtr<Material> Material::createWithFilename(std::string_view filepat
 
 cc::IntrusivePtr<Material> Material::createWithProperties(Properties* materialProperties)
 {
-    cc::IntrusivePtr<Material> mat{new Material()};
+    cc::IntrusivePtr mat{new Material()};
     if (mat->initWithProperties(materialProperties))
     {
         return mat;
@@ -101,7 +101,7 @@ cc::IntrusivePtr<Material> Material::createWithProgramState(backend::ProgramStat
 {
     CCASSERT(programState, "Invalid Program State");
 
-    cc::IntrusivePtr<Material> mat{new Material()};
+    cc::IntrusivePtr mat{new Material()};
     if (mat->initWithProgramState(programState))
     {
         return mat;
@@ -377,7 +377,7 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         fragShaderSrc = defs + "\n" + fragShaderSrc;
 
         auto* program     = backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
-        cc::IntrusivePtr<backend::ProgramState> programState{new backend::ProgramState(program)};
+        cc::IntrusivePtr programState{new backend::ProgramState(program)};
         pass->setProgramState(programState.get());
 
         // Parse uniforms only if the GLProgramState was created
@@ -517,7 +517,7 @@ Material::~Material() {}
 
 cc::IntrusivePtr<Material> Material::clone() const
 {
-    cc::IntrusivePtr<Material> material{new Material()};
+    cc::IntrusivePtr material{new Material()};
     // RenderState::cloneInto(material);
     material->_renderState.copyFrom(_renderState);
 

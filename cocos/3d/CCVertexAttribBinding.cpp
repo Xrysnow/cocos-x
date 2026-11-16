@@ -64,7 +64,7 @@ cc::IntrusivePtr<VertexAttribBinding> VertexAttribBinding::create(MeshIndexData*
         }
     }
 
-    cc::IntrusivePtr<VertexAttribBinding> binding{new VertexAttribBinding()};
+    cc::IntrusivePtr binding{new VertexAttribBinding()};
     if (!binding->init(meshIndexData, pass, command))
         return {};
     __vertexAttribBindingCache.emplace_back(binding.get()); // Weak cache; destructor removes it.

@@ -36,7 +36,7 @@ PhysicsSpriteBox2D::PhysicsSpriteBox2D()
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create()
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->init()))
     {
         return nullptr;
@@ -47,7 +47,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create()
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithTexture(pTexture)))
     {
         return nullptr;
@@ -58,7 +58,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Textu
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Texture2D* pTexture, const Rect& rect)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithTexture(pTexture, rect)))
     {
         return nullptr;
@@ -69,7 +69,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithTexture(Textu
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrame(SpriteFrame* pSpriteFrame)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithSpriteFrame(pSpriteFrame)))
     {
         return nullptr;
@@ -80,7 +80,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrame(S
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrameName(const char* pszSpriteFrameName)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithSpriteFrameName(pszSpriteFrameName)))
     {
         return nullptr;
@@ -91,7 +91,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::createWithSpriteFrameNa
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create(const char* pszFileName)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithFile(pszFileName)))
     {
         return nullptr;
@@ -102,7 +102,7 @@ cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create(const char* pszF
 
 cc::IntrusivePtr<PhysicsSpriteBox2D> PhysicsSpriteBox2D::create(const char* pszFileName, const Rect& rect)
 {
-    cc::IntrusivePtr<PhysicsSpriteBox2D> pRet{new PhysicsSpriteBox2D()};
+    cc::IntrusivePtr pRet{new PhysicsSpriteBox2D()};
     if (!(pRet->initWithFile(pszFileName, rect)))
     {
         return nullptr;

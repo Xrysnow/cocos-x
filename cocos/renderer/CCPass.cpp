@@ -64,7 +64,7 @@ static const char* s_ambientLightUniformColorName = "u_AmbientLightSourceColor";
 
 cc::IntrusivePtr<Pass> Pass::create(Technique* technique)
 {
-    cc::IntrusivePtr<Pass> pass{new Pass()};
+    cc::IntrusivePtr pass{new Pass()};
     if (pass->init(technique))
     {
         return pass;
@@ -74,7 +74,7 @@ cc::IntrusivePtr<Pass> Pass::create(Technique* technique)
 
 cc::IntrusivePtr<Pass> Pass::createWithProgramState(Technique* technique, backend::ProgramState* programState)
 {
-    cc::IntrusivePtr<Pass> pass{new Pass()};
+    cc::IntrusivePtr pass{new Pass()};
     if (pass->initWithProgramState(technique, programState))
     {
         return pass;
@@ -95,7 +95,7 @@ bool Pass::initWithProgramState(Technique* technique, backend::ProgramState* pro
     return true;
 }
 
-Pass::Pass() {}
+Pass::Pass() = default;
 
 Pass::~Pass()
 {
@@ -105,7 +105,7 @@ Pass::~Pass()
 
 cc::IntrusivePtr<Pass> Pass::clone() const
 {
-    cc::IntrusivePtr<Pass> pass{new Pass()};
+    cc::IntrusivePtr pass{new Pass()};
     pass->_renderState.copyFrom(_renderState);
 
     auto state = _programState->clone();

@@ -33,7 +33,7 @@ cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std:
 cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
 	const PlaybackOptions& options)
 {
-	cc::IntrusivePtr<Player> player{new (std::nothrow) Player()};
+	cc::IntrusivePtr player{new (std::nothrow) Player()};
 	if (!player)
 		return nullptr;
 	player->playback = VideoPlayback::createAsync(std::move(source), std::move(cancel), options);
@@ -51,7 +51,7 @@ cc::IntrusivePtr<Player> Player::createWithDecoder(Decoder* source)
 {
 	if (!source)
 		return nullptr;
-	cc::IntrusivePtr<Player> ret{new (std::nothrow) Player()};
+	cc::IntrusivePtr ret{new (std::nothrow) Player()};
 	if (ret && ret->initPlayback(source))
 	{
 		return ret;
@@ -96,7 +96,7 @@ bool Player::initPlayback(Decoder* source)
 
 bool Player::initVideoTexture(const cocos2d::Size& size, bool replace)
 {
-	cc::IntrusivePtr<cocos2d::Texture2D> texture{new (std::nothrow) cocos2d::Texture2D()};
+	cc::IntrusivePtr texture{new (std::nothrow) cocos2d::Texture2D()};
 	if (!texture)
 		return false;
 	cocos2d::backend::TextureDescriptor desc;

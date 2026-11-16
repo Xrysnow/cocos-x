@@ -407,7 +407,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName)
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName, bool resizable)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret->initWithRect(viewName, Rect(0, 0, 960, 640), 1.0f, resizable))
     {
         return ret;
@@ -417,7 +417,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::create(std::string_view viewName, bool 
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, Rect rect, float frameZoomFactor, bool resizable)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl};
+    cc::IntrusivePtr ret{new GLViewImpl};
     if (ret->initWithRect(viewName, rect, frameZoomFactor, resizable))
     {
         return ret;
@@ -427,7 +427,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewNam
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view viewName)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
+    cc::IntrusivePtr ret{new GLViewImpl()};
     if (ret->initWithFullScreen(viewName))
     {
         return ret;
@@ -439,7 +439,7 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view v
                                              const GLFWvidmode& videoMode,
                                              GLFWmonitor* monitor)
 {
-    cc::IntrusivePtr<GLViewImpl> ret{new GLViewImpl()};
+    cc::IntrusivePtr ret{new GLViewImpl()};
     if (ret->initWithFullscreen(viewName, videoMode, monitor))
     {
         return ret;
@@ -855,7 +855,7 @@ void GLViewImpl::setIcon(const std::vector<std::string_view>& filelist) const
     std::vector<cc::IntrusivePtr<Image>> icons;
     for (auto const& filename : filelist)
     {
-        cc::IntrusivePtr<Image> icon{new Image()};
+        cc::IntrusivePtr icon{new Image()};
         if (icon->initWithImageFile(filename))
         {
             icons.emplace_back(std::move(icon));

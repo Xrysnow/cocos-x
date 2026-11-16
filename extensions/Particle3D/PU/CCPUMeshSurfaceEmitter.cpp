@@ -578,7 +578,7 @@ void PUMeshSurfaceEmitter::build()
 
 cc::IntrusivePtr<PUMeshSurfaceEmitter> PUMeshSurfaceEmitter::create()
 {
-    cc::IntrusivePtr<PUMeshSurfaceEmitter> pe{new PUMeshSurfaceEmitter()};
+    cc::IntrusivePtr pe{new PUMeshSurfaceEmitter()};
     return pe;
 }
 

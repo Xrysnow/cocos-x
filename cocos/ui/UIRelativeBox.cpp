@@ -36,7 +36,7 @@ RelativeBox::~RelativeBox() {}
 
 cc::IntrusivePtr<RelativeBox> RelativeBox::create()
 {
-    cc::IntrusivePtr<RelativeBox> widget{new RelativeBox()};
+    cc::IntrusivePtr widget{new RelativeBox()};
     if (widget->init())
     {
         return widget;
@@ -46,7 +46,7 @@ cc::IntrusivePtr<RelativeBox> RelativeBox::create()
 
 cc::IntrusivePtr<RelativeBox> RelativeBox::create(const Vec2& size)
 {
-    cc::IntrusivePtr<RelativeBox> widget{new RelativeBox()};
+    cc::IntrusivePtr widget{new RelativeBox()};
     if (widget->initWithSize(size))
     {
         return widget;

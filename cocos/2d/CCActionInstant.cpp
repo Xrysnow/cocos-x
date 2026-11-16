@@ -62,7 +62,7 @@ void ActionInstant::update(float /*time*/)
 
 cc::IntrusivePtr<Show> Show::create()
 {
-    cc::IntrusivePtr<Show> ret{new Show()};
+    cc::IntrusivePtr ret{new Show()};
     return ret;
 }
 
@@ -88,7 +88,7 @@ cc::IntrusivePtr<Action> Show::clone() const
 //
 cc::IntrusivePtr<Hide> Hide::create()
 {
-    cc::IntrusivePtr<Hide> ret{new Hide()};
+    cc::IntrusivePtr ret{new Hide()};
 
     return ret;
 }
@@ -115,7 +115,7 @@ cc::IntrusivePtr<Action> Hide::clone() const
 //
 cc::IntrusivePtr<ToggleVisibility> ToggleVisibility::create()
 {
-    cc::IntrusivePtr<ToggleVisibility> ret{new ToggleVisibility()};
+    cc::IntrusivePtr ret{new ToggleVisibility()};
     return ret;
 }
 
@@ -141,7 +141,7 @@ cc::IntrusivePtr<Action> ToggleVisibility::clone() const
 //
 cc::IntrusivePtr<RemoveSelf> RemoveSelf::create(bool isNeedCleanUp /*= true*/)
 {
-    cc::IntrusivePtr<RemoveSelf> ret{new RemoveSelf()};
+    cc::IntrusivePtr ret{new RemoveSelf()};
 
     if (!ret->init(isNeedCleanUp))
         return nullptr;
@@ -176,7 +176,7 @@ cc::IntrusivePtr<Action> RemoveSelf::clone() const
 
 cc::IntrusivePtr<FlipX> FlipX::create(bool x)
 {
-    cc::IntrusivePtr<FlipX> ret{new FlipX()};
+    cc::IntrusivePtr ret{new FlipX()};
 
     if (ret->initWithFlipX(x))
     {
@@ -214,7 +214,7 @@ cc::IntrusivePtr<Action> FlipX::clone() const
 
 cc::IntrusivePtr<FlipY> FlipY::create(bool y)
 {
-    cc::IntrusivePtr<FlipY> ret{new FlipY()};
+    cc::IntrusivePtr ret{new FlipY()};
 
     if (ret->initWithFlipY(y))
     {
@@ -253,7 +253,7 @@ cc::IntrusivePtr<Action> FlipY::clone() const
 
 cc::IntrusivePtr<Place> Place::create(const Vec2& pos)
 {
-    cc::IntrusivePtr<Place> ret{new Place()};
+    cc::IntrusivePtr ret{new Place()};
 
     if (ret->initWithPosition(pos))
     {
@@ -293,7 +293,7 @@ void Place::update(float time)
 
 cc::IntrusivePtr<CallFunc> CallFunc::create(const std::function<void()>& func)
 {
-    cc::IntrusivePtr<CallFunc> ret{new CallFunc()};
+    cc::IntrusivePtr ret{new CallFunc()};
 
     if (ret->initWithFunction(func))
     {
@@ -312,7 +312,7 @@ bool CallFunc::initWithFunction(const std::function<void()>& func)
 cc::IntrusivePtr<Action> CallFunc::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CallFunc> a{new CallFunc()};
+    cc::IntrusivePtr a{new CallFunc()};
     if (_function)
         a->initWithFunction(_function);
 
@@ -345,7 +345,7 @@ void CallFunc::execute()
 
 cc::IntrusivePtr<CallFuncN> CallFuncN::create(const std::function<void(Node*)>& func)
 {
-    cc::IntrusivePtr<CallFuncN> ret{new CallFuncN()};
+    cc::IntrusivePtr ret{new CallFuncN()};
 
     if (ret->initWithFunction(func))
     {
@@ -372,7 +372,7 @@ bool CallFuncN::initWithFunction(const std::function<void(Node*)>& func)
 cc::IntrusivePtr<Action> CallFuncN::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<CallFuncN> a{new CallFuncN()};
+    cc::IntrusivePtr a{new CallFuncN()};
     if (_functionN)
         a->initWithFunction(_functionN);
 

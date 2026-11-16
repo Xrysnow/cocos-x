@@ -117,7 +117,7 @@ bool ControlStepper::initWithMinusSpriteAndPlusSprite(Sprite* minusSprite, Sprit
 
 cc::IntrusivePtr<ControlStepper> ControlStepper::create(Sprite* minusSprite, Sprite* plusSprite)
 {
-    cc::IntrusivePtr<ControlStepper> pRet{new ControlStepper()};
+    cc::IntrusivePtr pRet{new ControlStepper()};
     if (!(pRet->initWithMinusSpriteAndPlusSprite(minusSprite, plusSprite)))
     {
         return nullptr;

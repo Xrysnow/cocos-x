@@ -175,7 +175,7 @@ AutoPolygon::AutoPolygon(std::string_view filename)
     : _image(nullptr), _data(nullptr), _filename(""), _width(0), _height(0), _scaleFactor(0)
 {
     _filename = filename;
-    _image    = cc::IntrusivePtr<Image>{new Image()}.detach();
+    _image    = cc::IntrusivePtr{new Image()}.detach();
     _image->initWithImageFile(filename);
     CCASSERT(_image->getPixelFormat() == backend::PixelFormat::RGBA8,
              "unsupported format, currently only supports rgba8888");

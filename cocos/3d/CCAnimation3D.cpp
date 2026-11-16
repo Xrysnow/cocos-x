@@ -39,7 +39,7 @@ cc::IntrusivePtr<Animation3D> Animation3D::create(std::string_view fileName, std
     if (animation != nullptr)
         return animation;
 
-    animation = cc::IntrusivePtr<Animation3D>{new Animation3D()};
+    animation = cc::IntrusivePtr{new Animation3D()};
     if (!animation->initWithFile(fileName, animationName))
         return {};
 

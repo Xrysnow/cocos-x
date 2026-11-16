@@ -78,7 +78,7 @@ void PUDoScaleEventHandler::handle(PUParticleSystem3D* /*particleSystem*/, PUPar
 
 cc::IntrusivePtr<PUDoScaleEventHandler> PUDoScaleEventHandler::create()
 {
-    cc::IntrusivePtr<PUDoScaleEventHandler> peh{new PUDoScaleEventHandler()};
+    cc::IntrusivePtr peh{new PUDoScaleEventHandler()};
     return peh;
 }
 

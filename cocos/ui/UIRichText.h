@@ -64,7 +64,7 @@ public:
      * @js ctor
      * @lua new
      */
-    RichElement(){};
+    RichElement() = default;
 
     /**
      * @brief Default destructor.

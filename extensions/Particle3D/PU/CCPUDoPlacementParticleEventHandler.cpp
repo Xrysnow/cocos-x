@@ -265,7 +265,7 @@ void PUDoPlacementParticleEventHandler::removeAsListener()
 
 cc::IntrusivePtr<PUDoPlacementParticleEventHandler> PUDoPlacementParticleEventHandler::create()
 {
-    cc::IntrusivePtr<PUDoPlacementParticleEventHandler> peh{new PUDoPlacementParticleEventHandler()};
+    cc::IntrusivePtr peh{new PUDoPlacementParticleEventHandler()};
     return peh;
 }
 

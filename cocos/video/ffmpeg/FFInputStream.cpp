@@ -5,9 +5,7 @@
 using namespace std;
 using namespace ffmpeg;
 
-InputStream::InputStream()
-{
-}
+InputStream::InputStream() = default;
 
 InputStream::~InputStream()
 {
@@ -234,7 +232,7 @@ VideoInputStream::~VideoInputStream()
 cc::IntrusivePtr<VideoInputStream> VideoInputStream::create(
 	VideoDecoder* decoder, AVFormatContext* format, AVStream* stream, bool useHardware)
 {
-	cc::IntrusivePtr<VideoInputStream> ret{new (std::nothrow) VideoInputStream()};
+	cc::IntrusivePtr ret{new (std::nothrow) VideoInputStream()};
 	if (ret && ret->init(decoder, format, stream, useHardware))
 	{
 		if (!decoder->isHardware() || (ret->frameSW = av_frame_alloc()))
@@ -308,7 +306,7 @@ void VideoInputStream::clean()
 cc::IntrusivePtr<AudioInputStream> AudioInputStream::create(
 	AudioDecoder* decoder, AVFormatContext* format, AVStream* stream)
 {
-	cc::IntrusivePtr<AudioInputStream> ret{new (std::nothrow) AudioInputStream()};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioInputStream()};
 	if (ret && ret->init(decoder, format, stream))
 		return ret;
 	return nullptr;

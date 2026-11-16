@@ -30,7 +30,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<AttachNode> AttachNode::create(Bone3D* attachBone)
 {
-    cc::IntrusivePtr<AttachNode> attachnode{new AttachNode()};
+    cc::IntrusivePtr attachnode{new AttachNode()};
     attachnode->_attachBone = attachBone;
     return attachnode;
 }

@@ -306,7 +306,7 @@ void PUForceFieldAffector::prepare()
 
 cc::IntrusivePtr<PUForceFieldAffector> PUForceFieldAffector::create()
 {
-    cc::IntrusivePtr<PUForceFieldAffector> pffa{new PUForceFieldAffector()};
+    cc::IntrusivePtr pffa{new PUForceFieldAffector()};
     return pffa;
 }
 

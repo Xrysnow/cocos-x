@@ -122,7 +122,7 @@ void Layout::setGlobalZOrder(float globalZOrder)
 
 cc::IntrusivePtr<Layout> Layout::create()
 {
-    cc::IntrusivePtr<Layout> layout{new Layout()};
+    cc::IntrusivePtr layout{new Layout()};
     if (layout->init())
     {
         return layout;

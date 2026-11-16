@@ -122,7 +122,7 @@ void PUPositionEmitter::initParticlePosition(PUParticle3D* particle)
 
 cc::IntrusivePtr<PUPositionEmitter> PUPositionEmitter::create()
 {
-    cc::IntrusivePtr<PUPositionEmitter> pe{new PUPositionEmitter()};
+    cc::IntrusivePtr pe{new PUPositionEmitter()};
     return pe;
 }
 

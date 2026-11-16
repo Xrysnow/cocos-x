@@ -108,7 +108,7 @@ void RenderTexture::listenToForeground(EventCustom* /*event*/)
 
 cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::PixelFormat eFormat, bool sharedRenderTarget)
 {
-    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
+    cc::IntrusivePtr ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, eFormat, sharedRenderTarget))
     {
@@ -119,7 +119,7 @@ cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::Pix
 
 cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::PixelFormat eFormat, PixelFormat uDepthStencilFormat, bool sharedRenderTarget)
 {
-    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
+    cc::IntrusivePtr ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, eFormat, uDepthStencilFormat, sharedRenderTarget))
     {
@@ -130,7 +130,7 @@ cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, backend::Pix
 
 cc::IntrusivePtr<RenderTexture> RenderTexture::create(int w, int h, bool sharedRenderTarget)
 {
-    cc::IntrusivePtr<RenderTexture> ret{new RenderTexture()};
+    cc::IntrusivePtr ret{new RenderTexture()};
 
     if (ret->initWithWidthAndHeight(w, h, backend::PixelFormat::RGBA8, PixelFormat::NONE, sharedRenderTarget))
     {
@@ -180,7 +180,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
         descriptor.height        = powH;
         descriptor.textureUsage  = TextureUsage::RENDER_TARGET;
         descriptor.textureFormat = PixelFormat::RGBA8;
-        _texture2D               = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+        _texture2D               = cc::IntrusivePtr{new Texture2D()}.detach();
         _texture2D->updateTextureDescriptor(descriptor, !!CC_ENABLE_PREMULTIPLIED_ALPHA);
         _renderTargetFlags = RenderTargetFlag::COLOR;
 
@@ -189,7 +189,7 @@ bool RenderTexture::initWithWidthAndHeight(int w,
             _renderTargetFlags       = RenderTargetFlag::COLOR | RenderTargetFlag::DEPTH_AND_STENCIL;
             descriptor.textureFormat = PixelFormat::D24S8;
 
-            _depthStencilTexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+            _depthStencilTexture = cc::IntrusivePtr{new Texture2D()}.detach();
             _depthStencilTexture->updateTextureDescriptor(descriptor);
         }
 

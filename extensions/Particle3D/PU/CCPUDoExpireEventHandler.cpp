@@ -43,7 +43,7 @@ void PUDoExpireEventHandler::handle(PUParticleSystem3D* /*particleSystem*/,
 
 cc::IntrusivePtr<PUDoExpireEventHandler> PUDoExpireEventHandler::create()
 {
-    cc::IntrusivePtr<PUDoExpireEventHandler> peh{new PUDoExpireEventHandler()};
+    cc::IntrusivePtr peh{new PUDoExpireEventHandler()};
     return peh;
 }
 

@@ -115,7 +115,7 @@ cc::IntrusivePtr<TextFieldTTF> TextFieldTTF::textFieldWithPlaceHolder(std::strin
                                                      std::string_view fontName,
                                                      float fontSize)
 {
-    cc::IntrusivePtr<TextFieldTTF> ret{new TextFieldTTF()};
+    cc::IntrusivePtr ret{new TextFieldTTF()};
     if (ret->initWithPlaceHolder("", dimensions, alignment, fontName, fontSize))
     {
 
@@ -132,7 +132,7 @@ cc::IntrusivePtr<TextFieldTTF> TextFieldTTF::textFieldWithPlaceHolder(std::strin
                                                      std::string_view fontName,
                                                      float fontSize)
 {
-    cc::IntrusivePtr<TextFieldTTF> ret{new TextFieldTTF()};
+    cc::IntrusivePtr ret{new TextFieldTTF()};
     if (ret->initWithPlaceHolder("", fontName, fontSize))
     {
 

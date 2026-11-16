@@ -5,7 +5,7 @@ DRAGONBONES_NAMESPACE_BEGIN
 
 cc::IntrusivePtr<CCArmatureDisplay> CCArmatureDisplay::create()
 {
-    cc::IntrusivePtr<CCArmatureDisplay> displayContainer{new CCArmatureDisplay()};
+    cc::IntrusivePtr displayContainer{new CCArmatureDisplay()};
     if (!(displayContainer->init()))
     {
         return nullptr;
@@ -112,7 +112,7 @@ cocos2d::Rect CCArmatureDisplay::getBoundingBox() const
 
 cc::IntrusivePtr<DBCCSprite> DBCCSprite::create()
 {
-    cc::IntrusivePtr<DBCCSprite> sprite{new DBCCSprite()};
+    cc::IntrusivePtr sprite{new DBCCSprite()};
 
     if (!(sprite->init()))
     {

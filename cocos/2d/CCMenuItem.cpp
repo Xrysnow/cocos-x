@@ -53,7 +53,7 @@ cc::IntrusivePtr<MenuItem> MenuItem::create()
 
 cc::IntrusivePtr<MenuItem> MenuItem::create(const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItem> ret{new MenuItem()};
+    cc::IntrusivePtr ret{new MenuItem()};
     ret->initWithCallback(callback);
     return ret;
 }
@@ -149,14 +149,14 @@ void MenuItemLabel::setLabel(Node* var)
 
 cc::IntrusivePtr<MenuItemLabel> MenuItemLabel::create(Node* label, const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItemLabel> ret{new MenuItemLabel()};
+    cc::IntrusivePtr ret{new MenuItemLabel()};
     ret->initWithLabel(label, callback);
     return ret;
 }
 
 cc::IntrusivePtr<MenuItemLabel> MenuItemLabel::create(Node* label)
 {
-    cc::IntrusivePtr<MenuItemLabel> ret{new MenuItemLabel()};
+    cc::IntrusivePtr ret{new MenuItemLabel()};
     ret->initWithLabel(label, (const ccMenuCallback&)nullptr);
     return ret;
 }
@@ -273,7 +273,7 @@ cc::IntrusivePtr<MenuItemAtlasFont> MenuItemAtlasFont::create(std::string_view v
                                              char startCharMap,
                                              const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItemAtlasFont> ret{new MenuItemAtlasFont()};
+    cc::IntrusivePtr ret{new MenuItemAtlasFont()};
     ret->initWithString(value, charMapFile, itemWidth, itemHeight, startCharMap, callback);
     return ret;
 }
@@ -325,14 +325,14 @@ std::string_view MenuItemFont::getFontName()
 
 cc::IntrusivePtr<MenuItemFont> MenuItemFont::create(std::string_view value, const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItemFont> ret{new MenuItemFont()};
+    cc::IntrusivePtr ret{new MenuItemFont()};
     ret->initWithString(value, callback);
     return ret;
 }
 
 cc::IntrusivePtr<MenuItemFont> MenuItemFont::create(std::string_view value)
 {
-    cc::IntrusivePtr<MenuItemFont> ret{new MenuItemFont()};
+    cc::IntrusivePtr ret{new MenuItemFont()};
     ret->initWithString(value, (const ccMenuCallback&)nullptr);
     return ret;
 }
@@ -470,7 +470,7 @@ cc::IntrusivePtr<MenuItemSprite> MenuItemSprite::create(Node* normalSprite,
                                        Node* disabledSprite,
                                        const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItemSprite> ret{new MenuItemSprite()};
+    cc::IntrusivePtr ret{new MenuItemSprite()};
     ret->initWithNormalSprite(normalSprite, selectedSprite, disabledSprite, callback);
     return ret;
 }
@@ -578,7 +578,7 @@ void MenuItemSprite::updateImagesVisibility()
 
 cc::IntrusivePtr<MenuItemImage> MenuItemImage::create()
 {
-    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
+    cc::IntrusivePtr ret{new MenuItemImage()};
     if (ret->init())
     {
         return ret;
@@ -608,7 +608,7 @@ cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalIma
                                      std::string_view disabledImage,
                                      const ccMenuCallback& callback)
 {
-    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
+    cc::IntrusivePtr ret{new MenuItemImage()};
     if (ret->initWithNormalImage(normalImage, selectedImage, disabledImage, callback))
     {
         return ret;
@@ -620,7 +620,7 @@ cc::IntrusivePtr<MenuItemImage> MenuItemImage::create(std::string_view normalIma
                                      std::string_view selectedImage,
                                      std::string_view disabledImage)
 {
-    cc::IntrusivePtr<MenuItemImage> ret{new MenuItemImage()};
+    cc::IntrusivePtr ret{new MenuItemImage()};
     if (ret->initWithNormalImage(normalImage, selectedImage, disabledImage, (const ccMenuCallback&)nullptr))
     {
         return ret;
@@ -678,7 +678,7 @@ void MenuItemImage::setDisabledSpriteFrame(SpriteFrame* frame)
 
 cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::createWithCallback(const ccMenuCallback& callback, const Vector<MenuItem*>& menuItems)
 {
-    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
+    cc::IntrusivePtr ret{new MenuItemToggle()};
     ret->MenuItem::initWithCallback(callback);
 
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
@@ -704,7 +704,7 @@ cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::createWithCallback(const ccMenu
 
 cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::create()
 {
-    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
+    cc::IntrusivePtr ret{new MenuItemToggle()};
     ret->initWithItem(nullptr);
     return ret;
 }
@@ -739,7 +739,7 @@ bool MenuItemToggle::initWithCallback(const ccMenuCallback& callback, MenuItem* 
 
 cc::IntrusivePtr<MenuItemToggle> MenuItemToggle::create(MenuItem* item)
 {
-    cc::IntrusivePtr<MenuItemToggle> ret{new MenuItemToggle()};
+    cc::IntrusivePtr ret{new MenuItemToggle()};
     ret->initWithItem(item);
     return ret;
 }

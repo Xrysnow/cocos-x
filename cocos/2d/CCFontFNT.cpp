@@ -86,7 +86,7 @@ BMFontConfiguration* FNTConfigLoadFile(std::string_view fntFile)
 
 cc::IntrusivePtr<BMFontConfiguration> BMFontConfiguration::create(std::string_view FNTfile)
 {
-    cc::IntrusivePtr<BMFontConfiguration> ret{new BMFontConfiguration()};
+    cc::IntrusivePtr ret{new BMFontConfiguration()};
     if (ret->initWithFNTfile(FNTfile))
     {
         return ret;
@@ -532,7 +532,7 @@ cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Re
     if (!newConf)
         return nullptr;
 
-    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf, imageRect, imageRotated)};
+    cc::IntrusivePtr tempFont{new FontFNT(newConf, imageRect, imageRotated)};
 
     if (!tempFont)
     {
@@ -553,7 +553,7 @@ cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, std::str
     {
         return nullptr;
     }
-    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf, frame->getRectInPixels(), frame->isRotated())};
+    cc::IntrusivePtr tempFont{new FontFNT(newConf, frame->getRectInPixels(), frame->isRotated())};
 
     if (!tempFont)
     {
@@ -575,7 +575,7 @@ cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath)
     {
         return nullptr;
     }
-    cc::IntrusivePtr<FontFNT> tempFont{new FontFNT(newConf)};
+    cc::IntrusivePtr tempFont{new FontFNT(newConf)};
 
     tempFont->setFontSize((float)newConf->_fontSize);
     if (!tempFont)
@@ -671,7 +671,7 @@ FontAtlas* FontFNT::newFontAtlas()
     if (_configuration->_commonHeight == 0)
         return nullptr;
 
-    cc::IntrusivePtr<FontAtlas> tempAtlas{new FontAtlas(this)};
+    cc::IntrusivePtr tempAtlas{new FontAtlas(this)};
 
     // common height
     int originalFontSize     = _configuration->_fontSize;

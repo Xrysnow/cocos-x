@@ -36,7 +36,7 @@ VBox::~VBox() {}
 
 cc::IntrusivePtr<VBox> VBox::create()
 {
-    cc::IntrusivePtr<VBox> widget{new VBox()};
+    cc::IntrusivePtr widget{new VBox()};
     if (widget->init())
     {
         return widget;
@@ -46,7 +46,7 @@ cc::IntrusivePtr<VBox> VBox::create()
 
 cc::IntrusivePtr<VBox> VBox::create(const Vec2& size)
 {
-    cc::IntrusivePtr<VBox> widget{new VBox()};
+    cc::IntrusivePtr widget{new VBox()};
     if (widget->initWithSize(size))
     {
         return widget;

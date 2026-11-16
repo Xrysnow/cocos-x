@@ -40,7 +40,7 @@ bool PUOnExpireObserver::observe(PUParticle3D* particle, float /*timeElapsed*/)
 
 cc::IntrusivePtr<PUOnExpireObserver> PUOnExpireObserver::create()
 {
-    cc::IntrusivePtr<PUOnExpireObserver> peo{new PUOnExpireObserver()};
+    cc::IntrusivePtr peo{new PUOnExpireObserver()};
     return peo;
 }
 

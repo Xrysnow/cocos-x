@@ -105,7 +105,7 @@ void CCPUBoxEmitter::initParticlePosition(PUParticle3D* particle)
 
 cc::IntrusivePtr<CCPUBoxEmitter> CCPUBoxEmitter::create()
 {
-    cc::IntrusivePtr<CCPUBoxEmitter> pe{new CCPUBoxEmitter()};
+    cc::IntrusivePtr pe{new CCPUBoxEmitter()};
     return pe;
 }
 

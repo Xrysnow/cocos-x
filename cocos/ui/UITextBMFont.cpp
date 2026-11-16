@@ -43,7 +43,7 @@ TextBMFont::~TextBMFont() {}
 
 cc::IntrusivePtr<TextBMFont> TextBMFont::create()
 {
-    cc::IntrusivePtr<TextBMFont> widget{new TextBMFont()};
+    cc::IntrusivePtr widget{new TextBMFont()};
     if (widget->init())
     {
         return widget;
@@ -53,7 +53,7 @@ cc::IntrusivePtr<TextBMFont> TextBMFont::create()
 
 cc::IntrusivePtr<TextBMFont> TextBMFont::create(std::string_view text, std::string_view filename)
 {
-    cc::IntrusivePtr<TextBMFont> widget{new TextBMFont()};
+    cc::IntrusivePtr widget{new TextBMFont()};
     if (widget->init())
     {
         widget->setFntFile(filename);

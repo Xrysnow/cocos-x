@@ -34,7 +34,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<AnimationFrame> AnimationFrame::create(SpriteFrame* spriteFrame, float delayUnits, const ValueMap& userInfo)
 {
-    cc::IntrusivePtr<AnimationFrame> ret{new AnimationFrame()};
+    cc::IntrusivePtr ret{new AnimationFrame()};
     if (!(ret->initWithSpriteFrame(spriteFrame, delayUnits, userInfo)))
     {
         return nullptr;
@@ -63,7 +63,7 @@ AnimationFrame::~AnimationFrame()
 cc::IntrusivePtr<AnimationFrame> AnimationFrame::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<AnimationFrame> frame{new AnimationFrame()};
+    cc::IntrusivePtr frame{new AnimationFrame()};
     frame->initWithSpriteFrame(_spriteFrame->clone().get(), _delayUnits, _userInfo);
 
     return frame;
@@ -73,7 +73,7 @@ cc::IntrusivePtr<AnimationFrame> AnimationFrame::clone() const
 
 cc::IntrusivePtr<Animation> Animation::create()
 {
-    cc::IntrusivePtr<Animation> animation{new Animation()};
+    cc::IntrusivePtr animation{new Animation()};
     animation->init();
     return animation;
 }
@@ -82,7 +82,7 @@ cc::IntrusivePtr<Animation> Animation::createWithSpriteFrames(const Vector<Sprit
                                              float delay /* = 0.0f*/,
                                              unsigned int loops /* = 1*/)
 {
-    cc::IntrusivePtr<Animation> animation{new Animation()};
+    cc::IntrusivePtr animation{new Animation()};
     animation->initWithSpriteFrames(frames, delay, loops);
     return animation;
 }
@@ -91,7 +91,7 @@ cc::IntrusivePtr<Animation> Animation::create(const Vector<AnimationFrame*>& arr
                              float delayPerUnit,
                              unsigned int loops /* = 1 */)
 {
-    cc::IntrusivePtr<Animation> animation{new Animation()};
+    cc::IntrusivePtr animation{new Animation()};
     animation->initWithAnimationFrames(arrayOfAnimationFrameNames, delayPerUnit, loops);
     return animation;
 }
@@ -178,7 +178,7 @@ float Animation::getDuration() const
 cc::IntrusivePtr<Animation> Animation::clone() const
 {
     // no copy constructor
-    cc::IntrusivePtr<Animation> a{new Animation()};
+    cc::IntrusivePtr a{new Animation()};
     a->initWithAnimationFrames(_frames, _delayPerUnit, _loops);
     a->setRestoreOriginalFrame(_restoreOriginalFrame);
     return a;

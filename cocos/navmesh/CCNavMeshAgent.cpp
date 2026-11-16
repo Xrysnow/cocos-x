@@ -50,7 +50,7 @@ NavMeshAgentParam::NavMeshAgentParam()
 
 cc::IntrusivePtr<NavMeshAgent> NavMeshAgent::create(const NavMeshAgentParam& param)
 {
-    cc::IntrusivePtr<NavMeshAgent> ref{new NavMeshAgent()};
+    cc::IntrusivePtr ref{new NavMeshAgent()};
     if (ref->initWith(param))
     {
         return ref;

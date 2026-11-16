@@ -22,7 +22,7 @@ CC_BACKEND_BEGIN
 Device* Device::getInstance()
 {
     if (!DeviceGFXInstance)
-        DeviceGFXInstance = cc::IntrusivePtr<DeviceGFX>{new DeviceGFX()}.detach();
+        DeviceGFXInstance = cc::IntrusivePtr{new DeviceGFX()}.detach();
     return DeviceGFXInstance;
 }
 
@@ -185,12 +185,12 @@ DeviceGFX::~DeviceGFX()
 
 CommandBuffer* DeviceGFX::newCommandBuffer()
 {
-    return cc::IntrusivePtr<CommandBufferGFX>{new CommandBufferGFX()}.detach();
+    return cc::IntrusivePtr{new CommandBufferGFX()}.detach();
 }
 
 Buffer* DeviceGFX::newBuffer(std::size_t size, BufferType type, BufferUsage usage)
 {
-    return cc::IntrusivePtr<BufferGFX>{new BufferGFX(size, type, usage)}.detach();
+    return cc::IntrusivePtr{new BufferGFX(size, type, usage)}.detach();
 }
 
 Buffer* DeviceGFX::newBuffer(size_t size, size_t stride, BufferType type, BufferUsage usage)
@@ -210,7 +210,7 @@ Buffer* DeviceGFX::newBuffer(size_t size, size_t stride, BufferType type, Buffer
     info.size     = (uint32_t)size;
     info.stride   = (uint32_t)stride;
     //info.flags    = cc::gfx::BufferFlags::ENABLE_STAGING_WRITE;
-    return cc::IntrusivePtr<BufferGFX>{new BufferGFX(info)}.detach();
+    return cc::IntrusivePtr{new BufferGFX(info)}.detach();
 }
 
 TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
@@ -218,9 +218,9 @@ TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
     switch (descriptor.textureType)
     {
     case TextureType::TEXTURE_2D:
-        return cc::IntrusivePtr<Texture2DGFX>{new Texture2DGFX(descriptor)}.detach();
+        return cc::IntrusivePtr{new Texture2DGFX(descriptor)}.detach();
     case TextureType::TEXTURE_CUBE:
-        return cc::IntrusivePtr<TextureCubeGFX>{new TextureCubeGFX(descriptor)}.detach();
+        return cc::IntrusivePtr{new TextureCubeGFX(descriptor)}.detach();
     default:
         return nullptr;
     }
@@ -228,7 +228,7 @@ TextureBackend* DeviceGFX::newTexture(const TextureDescriptor& descriptor)
 
 RenderTarget* DeviceGFX::newDefaultRenderTarget(TargetBufferFlags rtf)
 {
-    cc::IntrusivePtr<RenderTargetGFX> rt{new RenderTargetGFX(true)};
+    cc::IntrusivePtr rt{new RenderTargetGFX(true)};
     rt->setTargetFlags(rtf);
     return rt.detach();
 }
@@ -239,7 +239,7 @@ RenderTarget* DeviceGFX::newRenderTarget(
     TextureBackend* depthAttachment,
     TextureBackend* stencilAttachhment)
 {
-    cc::IntrusivePtr<RenderTargetGFX> rt{new RenderTargetGFX(false)};
+    cc::IntrusivePtr rt{new RenderTargetGFX(false)};
     rt->setTargetFlags(rtf);
     RenderTarget::ColorAttachment colors{{colorAttachment, 0}};
     rt->setColorAttachment(colors);
@@ -250,17 +250,17 @@ RenderTarget* DeviceGFX::newRenderTarget(
 
 ShaderModule* DeviceGFX::newShaderModule(backend::ShaderStage stage, std::string_view source)
 {
-    return cc::IntrusivePtr<ShaderModuleGFX>{new ShaderModuleGFX(stage, source)}.detach();
+    return cc::IntrusivePtr{new ShaderModuleGFX(stage, source)}.detach();
 }
 
 DepthStencilState* DeviceGFX::newDepthStencilState()
 {
-    return cc::IntrusivePtr<DepthStencilStateGFX>{new DepthStencilStateGFX()}.detach();
+    return cc::IntrusivePtr{new DepthStencilStateGFX()}.detach();
 }
 
 RenderPipeline* DeviceGFX::newRenderPipeline()
 {
-    return cc::IntrusivePtr<RenderPipelineGFX>{new RenderPipelineGFX()}.detach();
+    return cc::IntrusivePtr{new RenderPipelineGFX()}.detach();
 }
 
 Program* DeviceGFX::newProgram(const ShaderInfo& info)
@@ -322,7 +322,7 @@ Program* DeviceGFX::newProgram(const ShaderInfo& info)
         st.count   = s.count;
         inf.samplerTextures.push_back(st);
     }
-    cc::IntrusivePtr<ProgramGFX> p{new ProgramGFX(inf)};
+    cc::IntrusivePtr p{new ProgramGFX(inf)};
     if (p && !p->isValid())
     {
         return nullptr;
@@ -395,7 +395,7 @@ Program* DeviceGFX::newProgram(std::string_view vertexShader, std::string_view f
         if (BuiltinShaderNames.count(fragKey))
             info.name += " " + BuiltinShaderNames.at(fragKey);
     }
-    cc::IntrusivePtr<ProgramGFX> ret{new ProgramGFX(info)};
+    cc::IntrusivePtr ret{new ProgramGFX(info)};
     if (!ret->isValid())
     {
         return nullptr;

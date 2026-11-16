@@ -52,7 +52,7 @@ ParticleSystemQuad::ParticleSystemQuad()
     auto* program    = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
 
     //!!! support etc1 with alpha?
-    pipelinePS = (cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach());
+    pipelinePS = (cc::IntrusivePtr{new backend::ProgramState(program)}.detach());
 
     _mvpMatrixLocaiton = pipelinePS->getUniformLocation("u_MVPMatrix");
     _textureLocation   = pipelinePS->getUniformLocation("u_tex0");
@@ -73,7 +73,7 @@ ParticleSystemQuad::~ParticleSystemQuad()
 
 cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create(std::string_view filename)
 {
-    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
+    cc::IntrusivePtr ret{new ParticleSystemQuad()};
     if (ret->initWithFile(filename))
     {
         return ret;
@@ -87,7 +87,7 @@ cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::createWithTotalParticle
              "Adding more than 10000 particles will crash the renderer, the mesh generated has an index format of "
              "U_SHORT (uint16_t)");
 
-    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
+    cc::IntrusivePtr ret{new ParticleSystemQuad()};
     if (ret->initWithTotalParticles(numberOfParticles))
     {
         return ret;
@@ -97,7 +97,7 @@ cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::createWithTotalParticle
 
 cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create(ValueMap& dictionary)
 {
-    cc::IntrusivePtr<ParticleSystemQuad> ret{new ParticleSystemQuad()};
+    cc::IntrusivePtr ret{new ParticleSystemQuad()};
     if (ret->initWithDictionary(dictionary))
     {
         return ret;
@@ -837,7 +837,7 @@ void ParticleSystemQuad::setBatchNode(ParticleBatchNode* batchNode)
 
 cc::IntrusivePtr<ParticleSystemQuad> ParticleSystemQuad::create()
 {
-    cc::IntrusivePtr<ParticleSystemQuad> particleSystemQuad{new ParticleSystemQuad()};
+    cc::IntrusivePtr particleSystemQuad{new ParticleSystemQuad()};
     if (particleSystemQuad->init())
     {
         return particleSystemQuad;

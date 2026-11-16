@@ -82,7 +82,7 @@ Button::~Button() {}
 
 cc::IntrusivePtr<Button> Button::create()
 {
-    cc::IntrusivePtr<Button> widget{new Button()};
+    cc::IntrusivePtr widget{new Button()};
     if (widget->init())
     {
         return widget;
@@ -95,7 +95,7 @@ cc::IntrusivePtr<Button> Button::create(std::string_view normalImage,
                        std::string_view disableImage,
                        TextureResType texType)
 {
-    cc::IntrusivePtr<Button> btn{new Button};
+    cc::IntrusivePtr btn{new Button};
     if (btn->init(normalImage, selectedImage, disableImage, texType))
     {
         return btn;

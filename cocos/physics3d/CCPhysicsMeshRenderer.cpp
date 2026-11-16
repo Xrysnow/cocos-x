@@ -37,7 +37,7 @@ cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::create(std::string_vi
                                          const cocos2d::Vec3& translateInPhysics,
                                          const cocos2d::Quaternion& rotInPhsyics)
 {
-    cc::IntrusivePtr<PhysicsMeshRenderer> ret{new PhysicsMeshRenderer()};
+    cc::IntrusivePtr ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))
     {
         ret->setModelTexture(modelPath, hlookup::empty_sv);
@@ -56,7 +56,7 @@ cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::createWithCollider(st
                                                      const cocos2d::Vec3& translateInPhysics,
                                                      const cocos2d::Quaternion& rotInPhsyics)
 {
-    cc::IntrusivePtr<PhysicsMeshRenderer> ret{new PhysicsMeshRenderer()};
+    cc::IntrusivePtr ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))
     {
         ret->setModelTexture(modelPath, hlookup::empty_sv);

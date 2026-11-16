@@ -100,7 +100,7 @@ static Texture2D* getDummyTexture()
 #else
         unsigned char data[] = {255, 0, 0, 255};  // 1*1 red picture
 #endif
-        cc::IntrusivePtr<Image> image{new Image()};
+        cc::IntrusivePtr image{new Image()};
         image->initWithRawData(data, sizeof(data), 1, 1, sizeof(unsigned char));
         texture = Director::getInstance()->getTextureCache()->addImage(image.get(), "/dummyTexture");
     }
@@ -237,7 +237,7 @@ cc::IntrusivePtr<Mesh> Mesh::create(const std::vector<float>& vertices,
 
 cc::IntrusivePtr<Mesh> Mesh::create(std::string_view name, MeshIndexData* indexData, MeshSkin* skin)
 {
-    cc::IntrusivePtr<Mesh> state{new Mesh()};
+    cc::IntrusivePtr state{new Mesh()};
 
     state->bindMeshCommand();
     state->_name = name;

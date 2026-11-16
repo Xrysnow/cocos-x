@@ -36,7 +36,7 @@ const float PUVortexAffector::DEFAULT_ROTATION_SPEED = 1.0f;
 //-----------------------------------------------------------------------
 PUVortexAffector::PUVortexAffector() : PUAffector(), _rotationVector(DEFAULT_ROTATION_VECTOR)
 {
-    _dynRotationSpeed = cc::IntrusivePtr<PUDynamicAttributeFixed>{new PUDynamicAttributeFixed()}.detach();
+    _dynRotationSpeed = cc::IntrusivePtr{new PUDynamicAttributeFixed()}.detach();
     (static_cast<PUDynamicAttributeFixed*>(_dynRotationSpeed))->setValue(DEFAULT_ROTATION_SPEED);
 }
 //-----------------------------------------------------------------------
@@ -118,7 +118,7 @@ void PUVortexAffector::preUpdateAffector(float deltaTime)
 
 cc::IntrusivePtr<PUVortexAffector> PUVortexAffector::create()
 {
-    cc::IntrusivePtr<PUVortexAffector> pvf{new PUVortexAffector()};
+    cc::IntrusivePtr pvf{new PUVortexAffector()};
     return pvf;
 }
 

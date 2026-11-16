@@ -91,7 +91,7 @@ bool AudioDecoderVorbisStb::init(AudioStream* src)
 
 cc::IntrusivePtr<AudioDecoderVorbisStb> AudioDecoderVorbisStb::create(AudioStream* src, size_t bufferSize)
 {
-	cc::IntrusivePtr<AudioDecoderVorbisStb> ret{new (std::nothrow) AudioDecoderVorbisStb(bufferSize)};
+	cc::IntrusivePtr ret{new (std::nothrow) AudioDecoderVorbisStb(bufferSize)};
 	if (ret && ret->init(src))
 	{
 		return ret;

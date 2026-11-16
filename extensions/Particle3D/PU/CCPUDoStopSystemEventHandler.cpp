@@ -40,7 +40,7 @@ void PUDoStopSystemEventHandler::handle(PUParticleSystem3D* particleSystem,
 
 cc::IntrusivePtr<PUDoStopSystemEventHandler> PUDoStopSystemEventHandler::create()
 {
-    cc::IntrusivePtr<PUDoStopSystemEventHandler> peh{new PUDoStopSystemEventHandler()};
+    cc::IntrusivePtr peh{new PUDoStopSystemEventHandler()};
     return peh;
 }
 

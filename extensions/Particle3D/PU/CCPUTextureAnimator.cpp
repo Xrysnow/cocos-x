@@ -251,7 +251,7 @@ void PUTextureAnimator::updatePUAffector(PUParticle3D* particle, float deltaTime
 
 cc::IntrusivePtr<PUTextureAnimator> PUTextureAnimator::create()
 {
-    cc::IntrusivePtr<PUTextureAnimator> pta{new PUTextureAnimator()};
+    cc::IntrusivePtr pta{new PUTextureAnimator()};
     return pta;
 }
 

@@ -188,7 +188,7 @@ void PUCircleEmitter::initParticleDirection(PUParticle3D* particle)
 
 cc::IntrusivePtr<PUCircleEmitter> PUCircleEmitter::create()
 {
-    cc::IntrusivePtr<PUCircleEmitter> pe{new PUCircleEmitter()};
+    cc::IntrusivePtr pe{new PUCircleEmitter()};
     return pe;
 }
 

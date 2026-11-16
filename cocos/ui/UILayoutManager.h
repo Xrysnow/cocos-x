@@ -51,7 +51,7 @@ class CC_GUI_DLL LayoutManager : public Ref
 {
 public:
     virtual ~LayoutManager(){}
-    LayoutManager(){}
+    LayoutManager() = default;
 
     /**
      * The interface does the actual layout work.

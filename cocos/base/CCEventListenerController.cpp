@@ -35,7 +35,7 @@ const std::string EventListenerController::LISTENER_ID = "__cc_controller";
 
 cc::IntrusivePtr<EventListenerController> EventListenerController::create()
 {
-    cc::IntrusivePtr<EventListenerController> ret{new EventListenerController()};
+    cc::IntrusivePtr ret{new EventListenerController()};
     if (!(ret->init()))
     {
         return nullptr;
@@ -108,7 +108,7 @@ bool EventListenerController::checkAvailable()
 
 cc::IntrusivePtr<EventListener> EventListenerController::clone()
 {
-    cc::IntrusivePtr<EventListenerController> ret{new EventListenerController()};
+    cc::IntrusivePtr ret{new EventListenerController()};
     if (ret->init())
     {
 

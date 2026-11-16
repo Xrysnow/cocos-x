@@ -63,22 +63,22 @@ namespace spine {
 #endif
 
 	cc::IntrusivePtr<SkeletonRenderer> SkeletonRenderer::createWithSkeleton(Skeleton *skeleton, bool ownsSkeleton, bool ownsSkeletonData) {
-		cc::IntrusivePtr<SkeletonRenderer> node{new SkeletonRenderer(skeleton, ownsSkeleton, ownsSkeletonData)};
+		cc::IntrusivePtr node{new SkeletonRenderer(skeleton, ownsSkeleton, ownsSkeletonData)};
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonRenderer> SkeletonRenderer::createWithData(SkeletonData *skeletonData, bool ownsSkeletonData) {
-		cc::IntrusivePtr<SkeletonRenderer> node{new SkeletonRenderer(skeletonData, ownsSkeletonData)};
+		cc::IntrusivePtr node{new SkeletonRenderer(skeletonData, ownsSkeletonData)};
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonRenderer> SkeletonRenderer::createWithFile(const std::string &skeletonDataFile, Atlas *atlas, float scale) {
-		cc::IntrusivePtr<SkeletonRenderer> node{new SkeletonRenderer(skeletonDataFile, atlas, scale)};
+		cc::IntrusivePtr node{new SkeletonRenderer(skeletonDataFile, atlas, scale)};
 		return node;
 	}
 
 	cc::IntrusivePtr<SkeletonRenderer> SkeletonRenderer::createWithFile(const std::string &skeletonDataFile, const std::string &atlasFile, float scale) {
-		cc::IntrusivePtr<SkeletonRenderer> node{new SkeletonRenderer(skeletonDataFile, atlasFile, scale)};
+		cc::IntrusivePtr node{new SkeletonRenderer(skeletonDataFile, atlasFile, scale)};
 		return node;
 	}
 

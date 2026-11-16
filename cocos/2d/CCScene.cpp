@@ -124,7 +124,7 @@ void Scene::initDefaultCamera()
 
 cc::IntrusivePtr<Scene> Scene::create()
 {
-    cc::IntrusivePtr<Scene> ret{new Scene()};
+    cc::IntrusivePtr ret{new Scene()};
     if (ret->init())
     {
         return ret;
@@ -137,7 +137,7 @@ cc::IntrusivePtr<Scene> Scene::create()
 
 cc::IntrusivePtr<Scene> Scene::createWithSize(const Vec2& size)
 {
-    cc::IntrusivePtr<Scene> ret{new Scene()};
+    cc::IntrusivePtr ret{new Scene()};
     if (ret->initWithSize(size))
     {
         return ret;
@@ -292,7 +292,7 @@ void Scene::setNavMeshDebugCamera(Camera* camera)
 
 cc::IntrusivePtr<Scene> Scene::createWithPhysics()
 {
-    cc::IntrusivePtr<Scene> ret{new Scene()};
+    cc::IntrusivePtr ret{new Scene()};
     if (ret->initWithPhysics())
     {
         return ret;

@@ -58,7 +58,7 @@ void PURender::copyAttributesTo(PURender* render)
 
 cc::IntrusivePtr<PUParticle3DQuadRender> PUParticle3DQuadRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<PUParticle3DQuadRender> ret{new PUParticle3DQuadRender()};
+    cc::IntrusivePtr ret{new PUParticle3DQuadRender()};
     if (ret->initRender(texFile))
     {
         ret->_texFile = texFile;
@@ -490,7 +490,7 @@ cc::IntrusivePtr<PURender> PUParticle3DQuadRender::clone()
 
 cc::IntrusivePtr<PUParticle3DModelRender> PUParticle3DModelRender::create(std::string_view modelFile, std::string_view texFile /*= ""*/)
 {
-    cc::IntrusivePtr<PUParticle3DModelRender> ret{new PUParticle3DModelRender()};
+    cc::IntrusivePtr ret{new PUParticle3DModelRender()};
     ret->_modelFile = modelFile;
     ret->_texFile   = texFile;
     return ret;
@@ -623,14 +623,14 @@ bool PUParticle3DEntityRender::initRender(std::string_view texFile)
         {
             _texture      = tex;
             auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_TEXTURE_3D);
-            _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+            _programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
         }
     }
 
     if (!_programState)
     {
         auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::PARTICLE_COLOR_3D);
-        _programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+        _programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
     }
 
     auto& pipelineDescriptor        = _meshCommand.getPipelineDescriptor();
@@ -673,7 +673,7 @@ PUParticle3DBoxRender::~PUParticle3DBoxRender() {}
 
 cc::IntrusivePtr<PUParticle3DBoxRender> PUParticle3DBoxRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<PUParticle3DBoxRender> ret{new PUParticle3DBoxRender()};
+    cc::IntrusivePtr ret{new PUParticle3DBoxRender()};
     if (!(ret->initRender(texFile)))
     {
         return nullptr;
@@ -859,7 +859,7 @@ cc::IntrusivePtr<PURender> PUParticle3DBoxRender::clone()
 
 cc::IntrusivePtr<PUSphereRender> PUSphereRender::create(std::string_view texFile)
 {
-    cc::IntrusivePtr<PUSphereRender> ret{new PUSphereRender()};
+    cc::IntrusivePtr ret{new PUSphereRender()};
     if (!(ret->initRender(texFile)))
     {
         return nullptr;

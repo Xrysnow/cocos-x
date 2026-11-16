@@ -30,7 +30,7 @@
 
 NS_CC_BEGIN
 //-----------------------------------------------------------------------
-PUDynamicAttribute::PUDynamicAttribute() {}
+PUDynamicAttribute::PUDynamicAttribute() = default;
 //-----------------------------------------------------------------------
 PUDynamicAttribute::~PUDynamicAttribute() {}
 //-----------------------------------------------------------------------
@@ -79,7 +79,7 @@ void PUDynamicAttributeFixed::copyAttributesTo(PUDynamicAttribute* dynamicAttrib
 
 cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeFixed::clone()
 {
-    cc::IntrusivePtr<PUDynamicAttributeFixed> af{new PUDynamicAttributeFixed()};
+    cc::IntrusivePtr af{new PUDynamicAttributeFixed()};
     this->copyAttributesTo(af.get());
     return af;
 }
@@ -142,7 +142,7 @@ void PUDynamicAttributeRandom::copyAttributesTo(PUDynamicAttribute* dynamicAttri
 
 cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeRandom::clone()
 {
-    cc::IntrusivePtr<PUDynamicAttributeRandom> ar{new PUDynamicAttributeRandom()};
+    cc::IntrusivePtr ar{new PUDynamicAttributeRandom()};
     this->copyAttributesTo(ar.get());
     return ar;
 }
@@ -321,7 +321,7 @@ void PUDynamicAttributeCurved::copyAttributesTo(PUDynamicAttribute* dynamicAttri
 
 cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeCurved::clone()
 {
-    cc::IntrusivePtr<PUDynamicAttributeCurved> ac{new PUDynamicAttributeCurved()};
+    cc::IntrusivePtr ac{new PUDynamicAttributeCurved()};
     this->copyAttributesTo(ac.get());
     return ac;
 }
@@ -432,7 +432,7 @@ void PUDynamicAttributeOscillate::copyAttributesTo(PUDynamicAttribute* dynamicAt
 
 cc::IntrusivePtr<PUDynamicAttribute> PUDynamicAttributeOscillate::clone()
 {
-    cc::IntrusivePtr<PUDynamicAttributeOscillate> ao{new PUDynamicAttributeOscillate()};
+    cc::IntrusivePtr ao{new PUDynamicAttributeOscillate()};
     this->copyAttributesTo(ao.get());
     return ao;
 }

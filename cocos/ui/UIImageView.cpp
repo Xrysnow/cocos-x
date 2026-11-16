@@ -52,7 +52,7 @@ ImageView::~ImageView() {}
 
 cc::IntrusivePtr<ImageView> ImageView::create(std::string_view imageFileName, TextureResType texType)
 {
-    cc::IntrusivePtr<ImageView> widget{new ImageView()};
+    cc::IntrusivePtr widget{new ImageView()};
     if (widget->init(imageFileName, texType))
     {
         return widget;
@@ -62,7 +62,7 @@ cc::IntrusivePtr<ImageView> ImageView::create(std::string_view imageFileName, Te
 
 cc::IntrusivePtr<ImageView> ImageView::create()
 {
-    cc::IntrusivePtr<ImageView> widget{new ImageView()};
+    cc::IntrusivePtr widget{new ImageView()};
     if (widget->init())
     {
         return widget;

@@ -254,13 +254,13 @@ PUParticleSystem3D::~PUParticleSystem3D()
 
 cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create()
 {
-    cc::IntrusivePtr<PUParticleSystem3D> pups{new PUParticleSystem3D()};
+    cc::IntrusivePtr pups{new PUParticleSystem3D()};
     return pups;
 }
 
 cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create(std::string_view filePath, std::string_view materialPath)
 {
-    cc::IntrusivePtr<PUParticleSystem3D> ret{new PUParticleSystem3D()};
+    cc::IntrusivePtr ret{new PUParticleSystem3D()};
     if (ret->initWithFilePathAndMaterialPath(filePath, materialPath))
     {
         return ret;
@@ -273,7 +273,7 @@ cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create(std::string_view
 
 cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::create(std::string_view filePath)
 {
-    cc::IntrusivePtr<PUParticleSystem3D> ret{new PUParticleSystem3D()};
+    cc::IntrusivePtr ret{new PUParticleSystem3D()};
     if (ret->initWithFilePath(filePath))
     {
         return ret;

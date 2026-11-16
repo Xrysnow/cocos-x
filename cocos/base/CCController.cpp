@@ -74,9 +74,9 @@ void Controller::init()
     }
 
     _eventDispatcher = Director::getInstance()->getEventDispatcher();
-    _connectEvent    = cc::IntrusivePtr<EventController>{new EventController(EventController::ControllerEventType::CONNECTION, this, false)}.detach();
-    _keyEvent        = cc::IntrusivePtr<EventController>{new EventController(EventController::ControllerEventType::BUTTON_STATUS_CHANGED, this, 0)}.detach();
-    _axisEvent       = cc::IntrusivePtr<EventController>{new EventController(EventController::ControllerEventType::AXIS_STATUS_CHANGED, this, 0)}.detach();
+    _connectEvent    = cc::IntrusivePtr{new EventController(EventController::ControllerEventType::CONNECTION, this, false)}.detach();
+    _keyEvent        = cc::IntrusivePtr{new EventController(EventController::ControllerEventType::BUTTON_STATUS_CHANGED, this, 0)}.detach();
+    _axisEvent       = cc::IntrusivePtr{new EventController(EventController::ControllerEventType::AXIS_STATUS_CHANGED, this, 0)}.detach();
 }
 
 const Controller::KeyStatus& Controller::getKeyStatus(int keyCode)

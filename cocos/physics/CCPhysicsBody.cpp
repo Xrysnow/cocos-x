@@ -130,7 +130,7 @@ PhysicsBody::~PhysicsBody()
 
 cc::IntrusivePtr<PhysicsBody> PhysicsBody::create()
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         return body;
@@ -141,7 +141,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::create()
 
 cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body)
     {
         body->_mass        = mass;
@@ -157,7 +157,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass)
 
 cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass, float moment)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body)
     {
         body->_mass          = mass;
@@ -175,7 +175,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::create(float mass, float moment)
 
 cc::IntrusivePtr<PhysicsBody> PhysicsBody::createCircle(float radius, const PhysicsMaterial& material, const Vec2& offset)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeCircle::create(radius, material, offset).get());
@@ -187,7 +187,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createCircle(float radius, const Phys
 
 cc::IntrusivePtr<PhysicsBody> PhysicsBody::createBox(const Vec2& size, const PhysicsMaterial& material, const Vec2& offset)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeBox::create(size, material, offset).get());
@@ -202,7 +202,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createPolygon(const Vec2* points,
                                         const PhysicsMaterial& material,
                                         const Vec2& offset)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapePolygon::create(points, count, material, offset).get());
@@ -217,7 +217,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeSegment(const Vec2& a,
                                             const PhysicsMaterial& material,
                                             float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeEdgeSegment::create(a, b, material, border).get());
@@ -233,7 +233,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeBox(const Vec2& size,
                                         float border /* = 1*/,
                                         const Vec2& offset)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeEdgeBox::create(size, material, border, offset).get());
@@ -250,7 +250,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgePolygon(const Vec2* points,
                                             const PhysicsMaterial& material,
                                             float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeEdgePolygon::create(points, count, material, border).get());
@@ -267,7 +267,7 @@ cc::IntrusivePtr<PhysicsBody> PhysicsBody::createEdgeChain(const Vec2* points,
                                           const PhysicsMaterial& material,
                                           float border /* = 1*/)
 {
-    cc::IntrusivePtr<PhysicsBody> body{new PhysicsBody()};
+    cc::IntrusivePtr body{new PhysicsBody()};
     if (body->init())
     {
         body->addShape(PhysicsShapeEdgeChain::create(points, count, material, border).get());

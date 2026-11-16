@@ -328,7 +328,7 @@ cc::IntrusivePtr<Sprite> createSpriteFromBase64Cached(const char* base64String, 
         unsigned char* decoded;
         int length = base64Decode((const unsigned char*)base64String, (unsigned int)strlen(base64String), &decoded);
 
-        cc::IntrusivePtr<Image> image{new Image()};
+        cc::IntrusivePtr image{new Image()};
         bool imageResult = image->initWithImageData(decoded, length, true);
         CCASSERT(imageResult, "Failed to create image from base64!");
 
@@ -350,7 +350,7 @@ cc::IntrusivePtr<Sprite> createSpriteFromBase64(const char* base64String)
     unsigned char* decoded;
     int length = base64Decode((const unsigned char*)base64String, (unsigned int)strlen(base64String), &decoded);
 
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     bool imageResult = image->initWithImageData(decoded, length, decoded);
     CCASSERT(imageResult, "Failed to create image from base64!");
 
@@ -359,7 +359,7 @@ cc::IntrusivePtr<Sprite> createSpriteFromBase64(const char* base64String)
         return nullptr;
     }
 
-    cc::IntrusivePtr<Texture2D> texture{new Texture2D()};
+    cc::IntrusivePtr texture{new Texture2D()};
     texture->initWithImage(image.get());
     texture->setAliasTexParameters();
 

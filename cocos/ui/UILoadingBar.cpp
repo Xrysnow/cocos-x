@@ -61,7 +61,7 @@ LoadingBar::~LoadingBar() {}
 
 cc::IntrusivePtr<LoadingBar> LoadingBar::create()
 {
-    cc::IntrusivePtr<LoadingBar> widget{new LoadingBar()};
+    cc::IntrusivePtr widget{new LoadingBar()};
     if (widget->init())
     {
         return widget;
@@ -76,7 +76,7 @@ cc::IntrusivePtr<LoadingBar> LoadingBar::create(std::string_view textureName, fl
 
 cc::IntrusivePtr<LoadingBar> LoadingBar::create(std::string_view textureName, TextureResType texType, float percentage)
 {
-    cc::IntrusivePtr<LoadingBar> widget{new LoadingBar};
+    cc::IntrusivePtr widget{new LoadingBar};
     if (widget->init())
     {
 

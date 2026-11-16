@@ -48,7 +48,7 @@ cc::IntrusivePtr<Skybox> Skybox::create(std::string_view positive_x,
                        std::string_view positive_z,
                        std::string_view negative_z)
 {
-    cc::IntrusivePtr<Skybox> ret{new Skybox()};
+    cc::IntrusivePtr ret{new Skybox()};
     ret->init(positive_x, negative_x, positive_y, negative_y, positive_z, negative_z);
 
     return ret;
@@ -64,7 +64,7 @@ bool Skybox::init()
 
     // create and set our custom shader
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::SKYBOX_3D);
-    setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
 
     auto& pipelineDescriptor = _customCommand.getPipelineDescriptor();
 

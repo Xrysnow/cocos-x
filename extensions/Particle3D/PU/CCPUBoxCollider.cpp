@@ -264,7 +264,7 @@ void PUBoxCollider::preUpdateAffector(float deltaTime)
 
 cc::IntrusivePtr<PUBoxCollider> PUBoxCollider::create()
 {
-    cc::IntrusivePtr<PUBoxCollider> pbc{new PUBoxCollider()};
+    cc::IntrusivePtr pbc{new PUBoxCollider()};
     return pbc;
 }
 

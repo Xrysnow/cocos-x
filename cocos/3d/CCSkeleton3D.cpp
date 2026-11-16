@@ -138,7 +138,7 @@ void Bone3D::clearBoneBlendState()
  */
 cc::IntrusivePtr<Bone3D> Bone3D::create(std::string_view id)
 {
-    cc::IntrusivePtr<Bone3D> bone{new Bone3D(id)};
+    cc::IntrusivePtr bone{new Bone3D(id)};
     return bone;
 }
 
@@ -245,7 +245,7 @@ void Bone3D::updateLocalMat()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Skeleton3D::Skeleton3D() {}
+Skeleton3D::Skeleton3D() = default;
 
 Skeleton3D::~Skeleton3D()
 {
@@ -254,7 +254,7 @@ Skeleton3D::~Skeleton3D()
 
 cc::IntrusivePtr<Skeleton3D> Skeleton3D::create(const std::vector<NodeData*>& skeletondata)
 {
-    cc::IntrusivePtr<Skeleton3D> skeleton{new Skeleton3D()};
+    cc::IntrusivePtr skeleton{new Skeleton3D()};
     for (const auto& it : skeletondata)
     {
         auto bone = skeleton->createBone3D(*it);

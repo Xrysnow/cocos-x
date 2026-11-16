@@ -31,7 +31,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<ClippingRectangleNode> ClippingRectangleNode::create(const Rect& clippingRegion)
 {
-    cc::IntrusivePtr<ClippingRectangleNode> node{new ClippingRectangleNode()};
+    cc::IntrusivePtr node{new ClippingRectangleNode()};
     if (node->init())
     {
         node->setClippingRegion(clippingRegion);
@@ -43,7 +43,7 @@ cc::IntrusivePtr<ClippingRectangleNode> ClippingRectangleNode::create(const Rect
 
 cc::IntrusivePtr<ClippingRectangleNode> ClippingRectangleNode::create()
 {
-    cc::IntrusivePtr<ClippingRectangleNode> node{new ClippingRectangleNode()};
+    cc::IntrusivePtr node{new ClippingRectangleNode()};
     if (!node->init())
         return nullptr;
 }

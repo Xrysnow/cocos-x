@@ -86,7 +86,7 @@ Speed::~Speed()
 
 cc::IntrusivePtr<Speed> Speed::create(ActionInterval* action, float speed)
 {
-    cc::IntrusivePtr<Speed> ret{new Speed()};
+    cc::IntrusivePtr ret{new Speed()};
     if (ret->initWithAction(action, speed))
     {
         return ret;
@@ -181,7 +181,7 @@ cc::IntrusivePtr<Follow> Follow::create(Node* followedNode, const Rect& rect /* 
 cc::IntrusivePtr<Follow> Follow::createWithOffset(Node* followedNode, float xOffset, float yOffset, const Rect& rect /*= Rect::ZERO*/)
 {
 
-    cc::IntrusivePtr<Follow> follow{new Follow()};
+    cc::IntrusivePtr follow{new Follow()};
 
     bool valid = follow->initWithTargetAndOffset(followedNode, xOffset, yOffset, rect);
 
