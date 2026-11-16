@@ -198,7 +198,7 @@ void Widget::cleanupWidget()
 
 cc::IntrusivePtr<Widget> Widget::create()
 {
-    cc::IntrusivePtr<Widget> widget{new Widget()};
+    cc::IntrusivePtr widget{new Widget()};
     if (widget->init())
     {
         return widget;
@@ -731,7 +731,7 @@ bool Widget::isSwallowTouches() const
 
 bool Widget::onTouchBegan(Touch* touch, Event* /*unusedEvent*/)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     _hitted = false;
     if (isVisible() && isEnabled() && isAncestorsEnabled() && isAncestorsVisible(this))
     {
@@ -768,9 +768,9 @@ void Widget::propagateTouchEvent(cocos2d::ui::Widget::TouchEventType event,
                                  cocos2d::ui::Widget* sender,
                                  cocos2d::Touch* touch)
 {
-    auto keepAlive = makeRef(this);
-    auto senderAlive = makeRef(sender);
-    auto widgetParent = makeRef(getWidgetParent());
+    auto keepAlive = cc::IntrusivePtr{this};
+    auto senderAlive = cc::IntrusivePtr{sender};
+    auto widgetParent = cc::IntrusivePtr{getWidgetParent()};
     if (widgetParent)
     {
         widgetParent->_hittedByCamera = _hittedByCamera;
@@ -781,7 +781,7 @@ void Widget::propagateTouchEvent(cocos2d::ui::Widget::TouchEventType event,
 
 void Widget::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     _touchMovePosition = touch->getLocation();
 
     setHighlighted(hitTest(_touchMovePosition, _hittedByCamera, nullptr));
@@ -799,7 +799,7 @@ void Widget::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 
 void Widget::onTouchEnded(Touch* touch, Event* /*unusedEvent*/)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     _touchEndPosition = touch->getLocation();
 
     /*
@@ -825,7 +825,7 @@ void Widget::onTouchEnded(Touch* touch, Event* /*unusedEvent*/)
 
 void Widget::onTouchCancelled(Touch* touch, Event* /*unusedEvent*/)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     /*
      * Propagate touch events to its parents
      */
@@ -1343,15 +1343,15 @@ Widget* Widget::findNextFocusedWidget(FocusDirection direction, Widget* current)
 
 void Widget::dispatchFocusEvent(cocos2d::ui::Widget* widgetLoseFocus, cocos2d::ui::Widget* widgetGetFocus)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     // if the widgetLoseFocus doesn't get focus, it will use the previous focused widget instead
     if (widgetLoseFocus && !widgetLoseFocus->isFocused())
     {
         widgetLoseFocus = _focusedWidget;
     }
 
-    auto loseFocusAlive = makeRef(widgetLoseFocus);
-    auto getFocusAlive = makeRef(widgetGetFocus);
+    auto loseFocusAlive = cc::IntrusivePtr{widgetLoseFocus};
+    auto getFocusAlive = cc::IntrusivePtr{widgetGetFocus};
     if (widgetGetFocus != widgetLoseFocus)
     {
 

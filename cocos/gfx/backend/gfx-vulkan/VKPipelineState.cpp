@@ -41,7 +41,7 @@ CCVKPipelineState::~CCVKPipelineState() {
 }
 
 void CCVKPipelineState::doInit(const PipelineStateInfo & /*info*/) {
-    _gpuPipelineState = ccnew CCVKGPUPipelineState;
+    _gpuPipelineState = cc::IntrusivePtr{ccnew CCVKGPUPipelineState};
     _gpuPipelineState->bindPoint = _bindPoint;
     _gpuPipelineState->primitive = _primitive;
     _gpuPipelineState->gpuShader = static_cast<CCVKShader *>(_shader)->gpuShader();

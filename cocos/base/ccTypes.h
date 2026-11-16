@@ -650,6 +650,9 @@ struct CC_DLL FontDefinition
 class CC_DLL Acceleration : public Ref
 {
 public:
+    Acceleration() = default;
+
+public:
     double x = 0;
     double y = 0;
     double z = 0;

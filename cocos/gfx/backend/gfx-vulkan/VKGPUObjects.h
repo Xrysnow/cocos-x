@@ -939,14 +939,14 @@ public:
         if (!buffer) {
             _pool.resize(bufferCount + 1);
             buffer = &_pool.back();
-            buffer->gpuBuffer = new CCVKGPUBuffer();
+            buffer->gpuBuffer = cc::IntrusivePtr{new CCVKGPUBuffer()};
             buffer->gpuBuffer->size = CHUNK_SIZE;
             buffer->gpuBuffer->usage = BufferUsage::TRANSFER_SRC | BufferUsage::TRANSFER_DST;
             buffer->gpuBuffer->memUsage = MemoryUsage::HOST;
             buffer->gpuBuffer->init();
             offset = 0U;
         }
-        auto *bufferView = new CCVKGPUBufferView;
+        auto bufferView = cc::IntrusivePtr{new CCVKGPUBufferView};
         bufferView->gpuBuffer = buffer->gpuBuffer;
         bufferView->offset = offset;
         buffer->curOffset = offset + size;

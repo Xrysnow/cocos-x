@@ -53,6 +53,9 @@ class ProfilingTimer;
 class CC_DLL Profiler : public Ref
 {
 public:
+    Profiler() = default;
+
+public:
     /**
      * @js NA
      * @lua NA

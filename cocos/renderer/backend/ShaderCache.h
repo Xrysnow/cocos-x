@@ -43,6 +43,9 @@ CC_BACKEND_BEGIN
 class CC_DLL ShaderCache : public Ref
 {
 public:
+    ShaderCache() = default;
+
+public:
     /** returns the shared instance */
     static ShaderCache* getInstance();
 

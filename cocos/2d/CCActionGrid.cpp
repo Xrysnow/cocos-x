@@ -131,7 +131,7 @@ Rect Grid3DAction::getGridRect() const
 // implementation of TiledGrid3DAction
 cc::IntrusivePtr<TiledGrid3DAction> TiledGrid3DAction::create(float duration, const Vec2& gridSize)
 {
-    cc::IntrusivePtr<TiledGrid3DAction> ret{new TiledGrid3DAction()};
+    cc::IntrusivePtr ret{new TiledGrid3DAction()};
     if (ret->initWithDuration(duration, gridSize))
     {
         return ret;
@@ -167,7 +167,7 @@ void TiledGrid3DAction::setTile(const Vec2& pos, const Quad3& coords)
 
 cc::IntrusivePtr<AccelDeccelAmplitude> AccelDeccelAmplitude::create(Action* action, float duration)
 {
-    cc::IntrusivePtr<AccelDeccelAmplitude> ret{new AccelDeccelAmplitude()};
+    cc::IntrusivePtr ret{new AccelDeccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
         return ret;
@@ -235,7 +235,7 @@ cc::IntrusivePtr<Action> AccelDeccelAmplitude::reverse() const
 
 cc::IntrusivePtr<AccelAmplitude> AccelAmplitude::create(Action* action, float duration)
 {
-    cc::IntrusivePtr<AccelAmplitude> ret{new AccelAmplitude()};
+    cc::IntrusivePtr ret{new AccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
         return ret;
@@ -269,7 +269,7 @@ cc::IntrusivePtr<Action> AccelAmplitude::clone() const
 
 AccelAmplitude::~AccelAmplitude()
 {
-    CC_SAFE_DELETE(_other);
+    CC_SAFE_RELEASE(_other);
 }
 
 void AccelAmplitude::startWithTarget(Node* target)
@@ -296,7 +296,7 @@ cc::IntrusivePtr<Action> AccelAmplitude::reverse() const
 
 cc::IntrusivePtr<DeccelAmplitude> DeccelAmplitude::create(Action* action, float duration)
 {
-    cc::IntrusivePtr<DeccelAmplitude> ret{new DeccelAmplitude()};
+    cc::IntrusivePtr ret{new DeccelAmplitude()};
     if (ret->initWithAction(action, duration))
     {
         return ret;
@@ -371,7 +371,7 @@ void StopGrid::cacheTargetAsGridNode()
 
 cc::IntrusivePtr<StopGrid> StopGrid::create()
 {
-    cc::IntrusivePtr<StopGrid> action{new StopGrid()};
+    cc::IntrusivePtr action{new StopGrid()};
     return action;
 }
 
@@ -390,7 +390,7 @@ cc::IntrusivePtr<Action> StopGrid::reverse() const
 
 cc::IntrusivePtr<ReuseGrid> ReuseGrid::create(int times)
 {
-    cc::IntrusivePtr<ReuseGrid> action{new ReuseGrid()};
+    cc::IntrusivePtr action{new ReuseGrid()};
     if (action->initWithTimes(times))
     {
         return action;

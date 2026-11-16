@@ -38,7 +38,7 @@ CCVKRenderPass::~CCVKRenderPass() {
 }
 
 void CCVKRenderPass::doInit(const RenderPassInfo & /*info*/) {
-    _gpuRenderPass = ccnew CCVKGPURenderPass;
+    _gpuRenderPass = cc::IntrusivePtr{ccnew CCVKGPURenderPass};
     _gpuRenderPass->colorAttachments = _colorAttachments;
     _gpuRenderPass->depthStencilAttachment = _depthStencilAttachment;
     _gpuRenderPass->depthStencilResolveAttachment = _depthStencilResolveAttachment;

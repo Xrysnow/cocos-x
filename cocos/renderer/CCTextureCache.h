@@ -211,7 +211,6 @@ private:
     void loadImage();
     void parseNinePatchImage(Image* image, Texture2D* texture, std::string_view path);
 
-public:
 protected:
     struct AsyncStruct;
 

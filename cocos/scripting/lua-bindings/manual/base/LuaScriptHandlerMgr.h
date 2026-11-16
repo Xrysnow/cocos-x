@@ -243,6 +243,7 @@ public:
      * @js NA
      */
     static ScriptHandlerMgr* getInstance(void);
+    static ScriptHandlerMgr* getInstanceIfExists() noexcept { return _scriptHandlerMgr; }
 
     /**
      * Destroy the instance of the ScriptHandlerMgr.

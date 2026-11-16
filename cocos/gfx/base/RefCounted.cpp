@@ -27,60 +27,82 @@
 #include "base/RefCounted.h"
 #include "Log.h"
 #include <new>
-
-#if CC_REF_LEAK_DETECTION
-    #include <algorithm> // std::find
-    #include "base/Log.h"
-    #include "base/std/container/list.h"
-#endif
+#include <stdexcept>
+#include <mutex>
+#include <vector>
+#include <algorithm>
 
 namespace cc {
-
+namespace {
+std::atomic<const RefServices*> services{nullptr};
+std::atomic<unsigned long long> liveObjects{0};
+std::atomic<unsigned int> scriptSequence{0};
 #if CC_REF_LEAK_DETECTION
-static void trackRef(RefCounted *ref);
-static void untrackRef(RefCounted *ref);
+std::mutex leakMutex;
+std::vector<RefCounted*> leakObjects;
 #endif
+}
 
+void installRefServices(const RefServices* value) {
+    if (!value || !value->enqueue || !value->finalRelease || !value->identity || !value->destroyIdentity)
+        throw std::invalid_argument("Incomplete Ref host service table");
+    const RefServices* expected = nullptr;
+    if (!services.compare_exchange_strong(expected,value,std::memory_order_acq_rel,std::memory_order_acquire) && expected != value)
+        throw std::logic_error("Ref host services already installed by another core");
+}
+bool removeRefServices(const RefServices* value) noexcept {
+    if(!value) return false;
+    if(services.load(std::memory_order_acquire) != value) return false;
+    if (liveObjects.load(std::memory_order_acquire) != 0) return false;
+    if(value->canRemove && !value->canRemove()) return false;
+    return services.compare_exchange_strong(value,nullptr,std::memory_order_acq_rel);
+}
+const RefServices* getRefServices() noexcept { return services.load(std::memory_order_acquire); }
+unsigned long long liveRefCountedObjects() noexcept { return liveObjects.load(std::memory_order_acquire); }
+
+RefCounted::RefCounted(RefConstructionToken token) : RefCounted(token._threading) {}
 RefCounted::RefCounted(RefThreading threading)
-: _threading(threading), _counter(0) {
-    if (_threading == RefThreading::Atomic) {
-        new (&_counter.atomic) std::atomic<unsigned int>(0);
+: _threading(threading),
+  _scriptObjectID(scriptSequence.fetch_add(1,std::memory_order_relaxed)+1), _counter(0) {
+    if (_threading == RefThreading::Atomic) new (&_counter.atomic) std::atomic<unsigned int>(0);
+#if CC_REF_LEAK_DETECTION
+    std::lock_guard<std::mutex> lock(leakMutex);
+    leakObjects.push_back(this);
+#endif
+    liveObjects.fetch_add(1,std::memory_order_relaxed);
+}
+RefCounted::~RefCounted() {
+    if (_scriptIdentity) {
+        // Host code is retained until objects finish; a VM may already be closed.
+        if (const auto* host=getRefServices()) host->destroyIdentity(*this,*_scriptIdentity);
+        delete _scriptIdentity;
     }
 #if CC_REF_LEAK_DETECTION
-    trackRef(this);
+    std::lock_guard<std::mutex> lock(leakMutex);
+    auto it=std::find(leakObjects.begin(),leakObjects.end(),this);
+    if(it!=leakObjects.end()) leakObjects.erase(it);
 #endif
+    liveObjects.fetch_sub(1,std::memory_order_release);
 }
-
-RefCounted::~RefCounted() { // NOLINT(modernize-use-equals-default)
-#if CC_REF_LEAK_DETECTION
-    untrackRef(this);
-#endif
-}
-
-void RefCounted::addRef() {
-    if (_threading == RefThreading::Atomic) {
-        _counter.atomic.fetch_add(1, std::memory_order_relaxed);
-    } else {
-        ++_counter.local;
-    }
+void RefCounted::addRef() noexcept {
+    if (_threading == RefThreading::Atomic) _counter.atomic.fetch_add(1,std::memory_order_relaxed);
+    else ++_counter.local;
 }
 
 void RefCounted::release() {
-    // A caller must own a live share. Never reload after decrement: another
-    // Atomic owner may already have performed the final release and deletion.
     const auto previous = _threading == RefThreading::Atomic
-                              ? _counter.atomic.fetch_sub(1, std::memory_order_acq_rel)
-                              : _counter.local--;
+        ? _counter.atomic.fetch_sub(1,std::memory_order_acq_rel) : _counter.local--;
     if (previous == 0) {
-        CC_LOG_ERROR("RefCounted::release: invalid reference count in %s", typeid(*this).name());
-        CC_ASSERT_GT(previous, 0);
-        // Keep an invalid release from turning zero into a seemingly live count.
-        if (_threading == RefThreading::Atomic) _counter.atomic.fetch_add(1, std::memory_order_relaxed);
+        CC_LOG_ERROR("RefCounted::release: invalid reference count in %s",typeid(*this).name());
+        CC_ASSERT_GT(previous,0);
+        if (_threading == RefThreading::Atomic) _counter.atomic.fetch_add(1,std::memory_order_relaxed);
         else ++_counter.local;
         return;
     }
 
     if (previous == 1) {
+        if (_threading == RefThreading::Local)
+            if(const auto* host=getRefServices()) host->finalRelease(*this);
         onFinalRelease();
         delete this;
     }
@@ -89,43 +111,26 @@ void RefCounted::release() {
 unsigned int RefCounted::getRefCount() const {
     return _threading == RefThreading::Atomic ? _counter.atomic.load(std::memory_order_relaxed) : _counter.local;
 }
-
+unsigned int RefCounted::getScriptObjectID() const {
+    return _scriptObjectID;
+}
+RefScriptIdentity& RefCounted::getScriptIdentity() {
+    const auto* host=getRefServices();
+    if (!host) throw std::logic_error("Cocos Ref services are not initialized");
+    return host->identity(*this,_scriptIdentity);
+}
+RefCounted* RefCounted::autorelease() {
+    const auto* host=getRefServices();
+    if (!host) throw std::logic_error("Cocos Ref pool services are not initialized");
+    host->enqueue(*this);
+    return this;
+}
 #if CC_REF_LEAK_DETECTION
-
-static ccstd::list<RefCounted *> __refAllocationList;
-
 void RefCounted::printLeaks() {
-    // Dump Ref object memory leaks
-    if (__refAllocationList.empty()) {
-        CC_LOG_INFO("[memory] All Ref objects successfully cleaned up (no leaks detected).\n");
-    } else {
-        CC_LOG_INFO("[memory] WARNING: %d Ref objects still active in memory.\n", (int)__refAllocationList.size());
-
-        for (const auto &ref : __refAllocationList) {
-            CC_ASSERT(ref);
-            const char *type = typeid(*ref).name();
-            CC_LOG_INFO("[memory] LEAK: Ref object '%s' still active with reference count %d.\n", (type ? type : ""), ref->getRefCount());
-        }
-    }
+    std::lock_guard<std::mutex> lock(leakMutex);
+    for(auto* object:leakObjects)
+        CC_LOG_INFO("[memory] LEAK: %s count %u",typeid(*object).name(),object->getRefCount());
+    if(leakObjects.empty()) CC_LOG_INFO("[memory] All Ref objects successfully cleaned up (no leaks detected).");
 }
-
-static void trackRef(RefCounted *ref) {
-    CC_ASSERT(ref);
-
-    // Create memory allocation record.
-    __refAllocationList.push_back(ref);
-}
-
-static void untrackRef(RefCounted *ref) {
-    auto iter = std::find(__refAllocationList.begin(), __refAllocationList.end(), ref);
-    if (iter == __refAllocationList.end()) {
-        CC_LOG_INFO("[memory] CORRUPTION: Attempting to free (%s) with invalid ref tracking record.\n", typeid(*ref).name());
-        return;
-    }
-
-    __refAllocationList.erase(iter);
-}
-
-#endif // #if CC_REF_LEAK_DETECTION
-
+#endif
 } // namespace cc

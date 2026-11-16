@@ -37,7 +37,7 @@ namespace ui
 
 cc::IntrusivePtr<UICCTextField> UICCTextField::create()
 {
-    cc::IntrusivePtr<UICCTextField> ret{new UICCTextField()};
+    cc::IntrusivePtr ret{new UICCTextField()};
     return ret;
 }
 
@@ -54,7 +54,7 @@ UICCTextField::~UICCTextField() {}
 
 cc::IntrusivePtr<UICCTextField> UICCTextField::create(std::string_view placeholder, std::string_view fontName, float fontSize)
 {
-    cc::IntrusivePtr<UICCTextField> pRet{new UICCTextField()};
+    cc::IntrusivePtr pRet{new UICCTextField()};
 
     if (pRet->initWithPlaceHolder("", fontName, fontSize))
     {
@@ -281,7 +281,7 @@ TextField::~TextField()
 
 cc::IntrusivePtr<TextField> TextField::create()
 {
-    cc::IntrusivePtr<TextField> widget{new TextField()};
+    cc::IntrusivePtr widget{new TextField()};
     if (widget->init())
     {
         return widget;
@@ -291,7 +291,7 @@ cc::IntrusivePtr<TextField> TextField::create()
 
 cc::IntrusivePtr<TextField> TextField::create(std::string_view placeholder, std::string_view fontName, int fontSize)
 {
-    cc::IntrusivePtr<TextField> widget{new TextField()};
+    cc::IntrusivePtr widget{new TextField()};
     if (widget->init())
     {
         widget->setFontName(fontName);
@@ -501,7 +501,7 @@ int TextField::getStringLength() const
 
 bool TextField::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     bool pass = Widget::onTouchBegan(touch, unusedEvent);
     if (_hitted)
     {
@@ -565,7 +565,7 @@ std::string_view TextField::getPasswordStyleText() const
 
 void TextField::update(float /*dt*/)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (getDetachWithIME())
     {
         detachWithIMEEvent();

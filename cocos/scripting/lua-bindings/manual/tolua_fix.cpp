@@ -26,13 +26,48 @@
 #include "base/CCRef.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include <stdlib.h>
+#include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
+#include <stdexcept>
 
 USING_NS_CC;
 
+bool cocos2d::isRefScriptContext(lua_State* L) noexcept {
+    auto* active=static_cast<lua_State*>(getRefScriptContext());
+    if (!L || !active) return false;
+    return L==active || lua_topointer(L,LUA_REGISTRYINDEX)==lua_topointer(active,LUA_REGISTRYINDEX);
+}
+
 static int s_function_ref_id = 0;
+
+namespace {
+void removeCocosObject(void* context, Ref* object, int id) noexcept {
+    toluafix_remove_ccobject_by_refid(static_cast<lua_State*>(context),id);
+    if(auto* handlers=ScriptHandlerMgr::getInstanceIfExists()) handlers->removeObjectAllHandlers(object);
+}
+int closeCocosContext(lua_State* L) {
+    closeCocosScriptContext(*static_cast<void**>(lua_touserdata(L,1)));
+    return 0;
+}
+}
 
 TOLUA_API void toluafix_open(lua_State* L)
 {
+    openCocosScriptContext(L,removeCocosObject);
+    // Managed LuaStack closes explicitly; this guard covers raw lua_close users.
+    lua_getfield(L,LUA_REGISTRYINDEX,"cc.RefContextLifetime");
+    if(lua_isnil(L,-1)) {
+        lua_pop(L,1);
+        auto** context=static_cast<void**>(lua_newuserdata(L,sizeof(void*)));
+        *context=L;
+        if(luaL_newmetatable(L,"cc.RefContextLifetime")) {
+            lua_pushcfunction(L,closeCocosContext);
+            lua_setfield(L,-2,"__gc");
+        }
+        lua_setmetatable(L,-2);
+        lua_setfield(L,LUA_REGISTRYINDEX,"cc.RefContextLifetime");
+    } else {
+        lua_pop(L,1);
+    }
     lua_pushstring(L, TOLUA_REFID_PTR_MAPPING);
     lua_newtable(L);
     lua_rawset(L, LUA_REGISTRYINDEX);
@@ -48,6 +83,9 @@ TOLUA_API void toluafix_open(lua_State* L)
 
 TOLUA_API int toluafix_pushusertype_ccobject(lua_State* L, int refid, int* p_refid, void* ptr, const char* type)
 {
+    if (!L) return -1;
+    if (!isRefScriptContext(L))
+        throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
     if (ptr == NULL || p_refid == NULL)
     {
         lua_pushnil(L);
@@ -55,7 +93,16 @@ TOLUA_API int toluafix_pushusertype_ccobject(lua_State* L, int refid, int* p_ref
     }
 
     Ref* vPtr         = static_cast<Ref*>(ptr);
+    if (refid != static_cast<int>(vPtr->getScriptObjectID()) || p_refid != &vPtr->getScriptIdentity().luaID)
+        throw std::logic_error("Ref conversion requires the object's canonical script identity");
     const char* vType = getLuaTypeName(vPtr, type);
+    if (!vType || !*vType)
+        throw std::logic_error("Ref conversion requires a registered Lua type");
+    luaL_getmetatable(L, vType);
+    const bool registered = lua_istable(L, -1);
+    lua_pop(L, 1);
+    if (!registered)
+        throw std::logic_error("Ref conversion requires a registered Lua type");
 
     if (*p_refid == 0)
     {

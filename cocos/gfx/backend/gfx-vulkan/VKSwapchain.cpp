@@ -97,7 +97,7 @@ CCVKSwapchain::~CCVKSwapchain() {
 void CCVKSwapchain::doInit(const SwapchainInfo &info) {
     auto *gpuDevice = CCVKDevice::getInstance()->gpuDevice();
     const auto *gpuContext = CCVKDevice::getInstance()->gpuContext();
-    _gpuSwapchain = ccnew CCVKGPUSwapchain;
+    _gpuSwapchain = cc::IntrusivePtr{ccnew CCVKGPUSwapchain};
     gpuDevice->swapchains.insert(_gpuSwapchain);
 
     _surfaceStatus = SurfaceStatus::FAILED;

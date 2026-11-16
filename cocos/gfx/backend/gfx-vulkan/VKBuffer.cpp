@@ -53,7 +53,7 @@ void CCVKBuffer::doInit(const BufferViewInfo &info) {
 }
 
 void CCVKBuffer::createBuffer(uint32_t size, uint32_t count) {
-    _gpuBuffer = ccnew CCVKGPUBuffer;
+    _gpuBuffer = cc::IntrusivePtr{ccnew CCVKGPUBuffer};
     _gpuBuffer->size = size;
     _gpuBuffer->count = count;
 
@@ -64,7 +64,7 @@ void CCVKBuffer::createBuffer(uint32_t size, uint32_t count) {
 }
 
 void CCVKBuffer::createBufferView(uint32_t range) {
-    _gpuBufferView = ccnew CCVKGPUBufferView;
+    _gpuBufferView = cc::IntrusivePtr{ccnew CCVKGPUBufferView};
     _gpuBufferView->range = range;
 
     _gpuBufferView->gpuBuffer = _gpuBuffer;

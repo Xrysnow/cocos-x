@@ -39,7 +39,7 @@ CCVKPipelineLayout::~CCVKPipelineLayout() {
 }
 
 void CCVKPipelineLayout::doInit(const PipelineLayoutInfo & /*info*/) {
-    _gpuPipelineLayout = ccnew CCVKGPUPipelineLayout;
+    _gpuPipelineLayout = cc::IntrusivePtr{ccnew CCVKGPUPipelineLayout};
 
     uint32_t offset = 0U;
     for (auto *setLayout : _setLayouts) {

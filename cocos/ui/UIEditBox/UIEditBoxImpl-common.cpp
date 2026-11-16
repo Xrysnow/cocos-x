@@ -359,7 +359,7 @@ void EditBoxImplCommon::onEndEditing(std::string_view /*text*/)
 
 void EditBoxImplCommon::editBoxEditingDidBegin()
 {
-    auto keepAlive = makeRef(_editBox);
+    auto keepAlive = cc::IntrusivePtr{_editBox};
     // LOGD("textFieldShouldBeginEditing...");
     cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
 
@@ -382,7 +382,7 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
 
 void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDelegate::EditBoxEndAction action)
 {
-    auto keepAlive = makeRef(_editBox);
+    auto keepAlive = cc::IntrusivePtr{_editBox};
     // LOGD("textFieldShouldEndEditing...");
     _text = text;
 
@@ -417,7 +417,7 @@ void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDeleg
 
 void EditBoxImplCommon::editBoxEditingChanged(std::string_view text)
 {
-    auto keepAlive = makeRef(_editBox);
+    auto keepAlive = cc::IntrusivePtr{_editBox};
     // LOGD("editBoxTextChanged...");
     cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
     _text                                   = text;

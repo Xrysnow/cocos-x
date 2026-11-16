@@ -1,26 +1,10 @@
 #pragma once
 
-#include <atomic>
+#include "gfx/base/RefCounted.h"
 
 namespace cocos2d
 {
-class ConcurrentRefCountedBase
-{
-public:
-    ConcurrentRefCountedBase() : _refCount(1) {}
-    virtual ~ConcurrentRefCountedBase() {}
-
-    void retain() { ++_refCount; }
-
-    void release()
-    {
-        if (--_refCount == 0)
-            delete this;
-    }
-
-    int getReferenceCount() const { return _refCount; }
-
-protected:
-    std::atomic_int _refCount;
-};
+// Compatibility name only. Network roots explicitly select Atomic and acquire
+// the legacy owned-raw first reference; this alias adds no counter or Lua state.
+using ConcurrentRefCountedBase = cc::RefCounted;
 }  // namespace cocos2d

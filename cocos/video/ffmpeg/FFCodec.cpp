@@ -72,9 +72,7 @@ std::vector<const AVCodec*> Codec::getDecoders(AVMediaType type, AVCodecID id, b
 	return ret;
 }
 
-Codec::Codec()
-{
-}
+Codec::Codec() = default;
 
 Codec::~Codec()
 {
@@ -99,7 +97,7 @@ bool Codec::init(const AVCodec* codec_)
 
 cc::IntrusivePtr<Codec> Codec::create(const AVCodec* codec)
 {
-	cc::IntrusivePtr<Codec> ret{new (nothrow) Codec()};
+	auto ret = cc::IntrusivePtr{new (nothrow) Codec()};
 	if (ret&&ret->init(codec))
 	{
 		return ret;
@@ -186,7 +184,7 @@ bool AudioDecoder::init(const AVCodec* codec_)
 
 cc::IntrusivePtr<AudioDecoder> AudioDecoder::createByName(const char* name)
 {
-	cc::IntrusivePtr<AudioDecoder> ret{new (nothrow) AudioDecoder()};
+	auto ret = cc::IntrusivePtr{new (nothrow) AudioDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder_by_name(name)))
 	{
 		return ret;
@@ -196,7 +194,7 @@ cc::IntrusivePtr<AudioDecoder> AudioDecoder::createByName(const char* name)
 
 cc::IntrusivePtr<AudioDecoder> AudioDecoder::createById(AVCodecID id)
 {
-	cc::IntrusivePtr<AudioDecoder> ret{new (nothrow) AudioDecoder()};
+	auto ret = cc::IntrusivePtr{new (nothrow) AudioDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
 		return ret;
@@ -211,7 +209,7 @@ bool VideoDecoder::init(const AVCodec* codec_)
 
 cc::IntrusivePtr<VideoDecoder> VideoDecoder::createByName(const char* name)
 {
-	cc::IntrusivePtr<VideoDecoder> ret{new (nothrow) VideoDecoder()};
+	auto ret = cc::IntrusivePtr{new (nothrow) VideoDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder_by_name(name)))
 	{
 		return ret;
@@ -221,7 +219,7 @@ cc::IntrusivePtr<VideoDecoder> VideoDecoder::createByName(const char* name)
 
 cc::IntrusivePtr<VideoDecoder> VideoDecoder::createById(AVCodecID id)
 {
-	cc::IntrusivePtr<VideoDecoder> ret{new (nothrow) VideoDecoder()};
+	auto ret = cc::IntrusivePtr{new (nothrow) VideoDecoder()};
 	if (ret&&ret->init(avcodec_find_decoder(id)))
 	{
 		return ret;

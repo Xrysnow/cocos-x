@@ -62,7 +62,7 @@ ListView::~ListView()
 
 cc::IntrusivePtr<ListView> ListView::create()
 {
-    cc::IntrusivePtr<ListView> widget{new ListView()};
+    cc::IntrusivePtr widget{new ListView()};
     if (widget->init())
     {
         return widget;
@@ -94,7 +94,7 @@ void ListView::setItemModel(Widget* model)
 
 void ListView::handleReleaseLogic(Touch* touch)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     ScrollView::handleReleaseLogic(touch);
 
     if (!_autoScrolling)
@@ -610,7 +610,7 @@ void ListView::selectedItemEvent(TouchEventType event)
 
 void ListView::interceptTouchEvent(TouchEventType event, Widget* sender, Touch* touch)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     ScrollView::interceptTouchEvent(event, sender, touch);
     if (!_touchEnabled)
     {

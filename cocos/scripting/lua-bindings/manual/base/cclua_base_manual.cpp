@@ -113,9 +113,9 @@ static int tolua_Cocos2d_LuaNode_create00(lua_State* tolua_S)
     else
     #endif
     {
-        cc::IntrusivePtr<LuaNode> luaNode{new LuaNode()};
-        int nID     = (int)luaNode->_ID;
-        int* pLuaID = &luaNode->_luaID;
+        auto luaNode = cc::IntrusivePtr{new LuaNode()};
+        int nID     = (int)luaNode->getScriptObjectID();
+        int* pLuaID = &luaNode->getScriptIdentity().luaID;
         auto* raw = cocos2d::transferToAutoreleasePool(std::move(luaNode));
         toluafix_pushusertype_ccobject(tolua_S, nID, pLuaID, (void*)raw, "cc.LuaNode");
     }
@@ -2142,7 +2142,7 @@ static void extendFileUtils(lua_State* tolua_S)
 NS_CC_BEGIN
 cc::IntrusivePtr<EventListenerAcceleration> LuaEventListenerAcceleration::create()
 {
-    cc::IntrusivePtr<EventListenerAcceleration> eventAcceleration{new EventListenerAcceleration()};
+    auto eventAcceleration = cc::IntrusivePtr{new EventListenerAcceleration()};
     if (!(eventAcceleration->init([listener = eventAcceleration.get()](Acceleration* acc, Event* event) {
             LuaEventAccelerationData listenerData((void*)acc, event);
             BasicScriptData data(listener, (void*)&listenerData);
@@ -2182,8 +2182,8 @@ static int tocclua_LuaEventListenerAcceleration_create(lua_State* tolua_S)
         cc::IntrusivePtr<cocos2d::EventListenerAcceleration> tolua_ret = cocos2d::LuaEventListenerAcceleration::create();
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)tolua_ret, handler,
                                                           ScriptHandlerMgr::HandlerType::EVENT_ACC);
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
+        int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
+        int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerAcceleration");
 
         return 1;
@@ -2284,8 +2284,8 @@ static int tocclua_EventListenerKeyboard_clone(lua_State* tolua_S)
         cloneKeyboardHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_PRESSED);
         cloneKeyboardHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_KEYBOARD_RELEASED);
 
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
+        int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
+        int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerKeyboard");
 
         return 1;
@@ -2487,8 +2487,8 @@ static int tocclua_EventListenerTouchOneByOne_clone(lua_State* tolua_S)
         cloneTouchOneByOneHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_TOUCH_CANCELLED);
         tolua_ret->setSwallowTouches(self->isSwallowTouches());
 
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
+        int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
+        int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchOneByOne");
 
         return 1;
@@ -2713,8 +2713,8 @@ static int tocclua_EventListenerTouchAllAtOnce_clone(lua_State* tolua_S)
         cloneTouchAllAtOnceHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_ENDED);
         cloneTouchAllAtOnceHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_TOUCHES_CANCELLED);
 
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
+        int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
+        int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchAllAtOnce");
 
         return 1;
@@ -2938,8 +2938,8 @@ static int tocclua_EventListenerMouse_clone(lua_State* tolua_S)
         cloneMouseHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_MOUSE_SCROLL);
         cloneMouseHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_MOUSE_UP);
 
-        int ID     = (tolua_ret) ? (int)tolua_ret->_ID : -1;
-        int* luaID = (tolua_ret) ? &tolua_ret->_luaID : NULL;
+        int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
+        int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerMouse");
 
         return 1;

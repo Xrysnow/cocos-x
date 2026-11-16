@@ -92,7 +92,12 @@ public:
          new/retain/release still works, which means you need to release it manually
          Please refer to HttpRequestTest.cpp to find its usage.
      */
-    HttpRequest() : _requestType(Type::UNKNOWN), _pCallback(nullptr), _pUserData(nullptr) {}
+    HttpRequest()
+        : ConcurrentRefCountedBase(cc::RefThreading::Atomic),
+          _requestType(Type::UNKNOWN), _pCallback(nullptr), _pUserData(nullptr)
+    {
+        retain(); // Preserve the existing new HttpRequest() owned-raw contract.
+    }
 
     /** Destructor. */
     virtual ~HttpRequest() {}

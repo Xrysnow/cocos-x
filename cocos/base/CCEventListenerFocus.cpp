@@ -43,7 +43,7 @@ EventListenerFocus::~EventListenerFocus()
 
 cc::IntrusivePtr<EventListenerFocus> EventListenerFocus::create()
 {
-    cc::IntrusivePtr<EventListenerFocus> ret{new EventListenerFocus};
+    cc::IntrusivePtr ret{new EventListenerFocus};
     if (ret->init())
     {
         return ret;
@@ -53,7 +53,7 @@ cc::IntrusivePtr<EventListenerFocus> EventListenerFocus::create()
 
 cc::IntrusivePtr<EventListener> EventListenerFocus::clone()
 {
-    cc::IntrusivePtr<EventListenerFocus> ret{new EventListenerFocus};
+    cc::IntrusivePtr ret{new EventListenerFocus};
     if (ret->init())
     {
 
@@ -73,9 +73,9 @@ bool EventListenerFocus::init()
         auto focusEvent = static_cast<EventFocus*>(event);
         // Clearing or replacing the slot from inside Lua must not destroy the
         // callable or either focus widget while this dispatch is active.
-        auto keepAlive = makeRef(this);
-        auto loseFocus = makeRef(focusEvent->_widgetLoseFocus);
-        auto getFocus = makeRef(focusEvent->_widgetGetFocus);
+        auto keepAlive = cc::IntrusivePtr{this};
+        auto loseFocus = cc::IntrusivePtr{focusEvent->_widgetLoseFocus};
+        auto getFocus = cc::IntrusivePtr{focusEvent->_widgetGetFocus};
         if (auto callback = onFocusChanged)
         {
             callback(loseFocus.get(), getFocus.get());

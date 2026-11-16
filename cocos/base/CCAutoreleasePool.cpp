@@ -67,6 +67,7 @@ AutoreleasePool::~AutoreleasePool()
 
 void AutoreleasePool::addObject(Ref* object)
 {
+    requireRefHostThread();
     if (!object || object->getReferenceCount() == 0)
         throw std::logic_error("AutoreleasePool requires an existing reference");
 #if defined(CC_DEBUG) && (CC_DEBUG > 0)
@@ -82,6 +83,7 @@ void AutoreleasePool::addObject(Ref* object)
 
 void AutoreleasePool::clear()
 {
+    requireRefHostThread();
     if (_isClearing)
     {
         std::fprintf(stderr, "AutoreleasePool '%s': recursive clear deferred\n", _name.c_str());
@@ -137,6 +139,7 @@ PoolManager* PoolManager::s_singleInstance = nullptr;
 
 PoolManager* PoolManager::getInstance()
 {
+    initializeCocosRefServices();
     if (s_singleInstance == nullptr)
     {
         s_singleInstance = new PoolManager();

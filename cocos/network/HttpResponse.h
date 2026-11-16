@@ -63,8 +63,10 @@ public:
      * Constructor, it's used by HttpClient internal, users don't need to create HttpResponse manually.
      * @param request the corresponding HttpRequest which leads to this response.
      */
-    HttpResponse(HttpRequest* request) : _pHttpRequest(request)
+    HttpResponse(HttpRequest* request)
+        : ConcurrentRefCountedBase(cc::RefThreading::Atomic), _pHttpRequest(request)
     {
+        retain(); // Preserve HttpClient's owned-raw response handoff.
         if (_pHttpRequest)
         {
             _pHttpRequest->retain();

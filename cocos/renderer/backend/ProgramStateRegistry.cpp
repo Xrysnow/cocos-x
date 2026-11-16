@@ -9,10 +9,10 @@ ProgramStateRegistry* ProgramStateRegistry::getInstance()
     if (_sharedStateRegistry)
         return _sharedStateRegistry;
 
-    _sharedStateRegistry = cc::IntrusivePtr<ProgramStateRegistry>{new ProgramStateRegistry()}.detach();
+    _sharedStateRegistry = cc::IntrusivePtr{new ProgramStateRegistry()}.detach();
     if (!_sharedStateRegistry->init())
     {
-        CC_SAFE_DELETE(_sharedStateRegistry);
+        CC_SAFE_RELEASE_NULL(_sharedStateRegistry);
     }
 
     return _sharedStateRegistry;
@@ -52,10 +52,10 @@ ProgramState* ProgramStateRegistry::newProgramState(uint32_t programType, int te
     {
         auto fallback = it->second;
         if (fallback)
-            return cc::IntrusivePtr<ProgramState>{new ProgramState(fallback)}.detach();
+            return cc::IntrusivePtr{new ProgramState(fallback)}.detach();
     }
 
-    return cc::IntrusivePtr<ProgramState>{new ProgramState(Program::getBuiltinProgram(programType))}.detach();
+    return cc::IntrusivePtr{new ProgramState(Program::getBuiltinProgram(programType))}.detach();
 }
 
 uint32_t ProgramStateRegistry::getProgramType(uint32_t programType, int textureSamplerFlags)

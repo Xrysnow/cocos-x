@@ -39,7 +39,7 @@ CheckBox::~CheckBox() {}
 
 cc::IntrusivePtr<CheckBox> CheckBox::create()
 {
-    cc::IntrusivePtr<CheckBox> widget{new CheckBox()};
+    cc::IntrusivePtr widget{new CheckBox()};
     if (widget->init())
     {
         return widget;
@@ -54,7 +54,7 @@ cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround,
                            std::string_view frontCrossDisabled,
                            TextureResType texType)
 {
-    cc::IntrusivePtr<CheckBox> pWidget{new CheckBox};
+    cc::IntrusivePtr pWidget{new CheckBox};
     if (pWidget->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
         return pWidget;
@@ -64,7 +64,7 @@ cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround,
 
 cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround, std::string_view cross, TextureResType texType)
 {
-    cc::IntrusivePtr<CheckBox> pWidget{new CheckBox};
+    cc::IntrusivePtr pWidget{new CheckBox};
     if (pWidget->init(backGround, "", cross, "", "", texType))
     {
         return pWidget;
@@ -74,7 +74,7 @@ cc::IntrusivePtr<CheckBox> CheckBox::create(std::string_view backGround, std::st
 
 void CheckBox::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     bool highlight = _highlight;
 
     AbstractCheckButton::onTouchEnded(touch, unusedEvent);

@@ -34,6 +34,7 @@ Copyright (c) 2021 Bytedance Inc.
 #include "base/ccConfig.h"
 #include "platform/CCPlatformConfig.h"
 #include "platform/CCPlatformDefine.h"
+#include "gfx/base/Ptr.h"
 
 #ifndef CC_DEBUG
     #define CC_DEBUG 0
@@ -48,7 +49,7 @@ Copyright (c) 2021 Bytedance Inc.
 #define CREATE_FUNC(__TYPE__)                                      \
     static cc::IntrusivePtr<__TYPE__> create()                                      \
     {                                                              \
-        cc::IntrusivePtr<__TYPE__> owner{new __TYPE__()};            \
+        cc::IntrusivePtr owner{new __TYPE__()}; \
         if (!owner->init())                                       \
             return nullptr;                                        \
         return owner; \
@@ -63,7 +64,7 @@ Copyright (c) 2021 Bytedance Inc.
 #define NODE_FUNC(__TYPE__)                                         \
     CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<__TYPE__> node()                 \
     {                                                               \
-        cc::IntrusivePtr<__TYPE__> owner{new __TYPE__()};             \
+        cc::IntrusivePtr owner{new __TYPE__()}; \
         if (!owner->init())                                        \
             return nullptr;                                         \
         return owner;  \

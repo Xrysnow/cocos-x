@@ -40,7 +40,7 @@ CCVKQueryPool::~CCVKQueryPool() {
 
 void CCVKQueryPool::doInit(const QueryPoolInfo & /*info*/) {
     CCVKDevice *device = CCVKDevice::getInstance();
-    _gpuQueryPool = ccnew CCVKGPUQueryPool;
+    _gpuQueryPool = cc::IntrusivePtr{ccnew CCVKGPUQueryPool};
     _gpuQueryPool->type = _type;
     _gpuQueryPool->maxQueryObjects = _maxQueryObjects;
     _gpuQueryPool->forceWait = _forceWait;

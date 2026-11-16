@@ -54,7 +54,7 @@ void CCVKTexture::doInit(const TextureViewInfo &info) {
 }
 
 void CCVKTexture::createTexture(uint32_t width, uint32_t height, uint32_t size, bool initGPUTexture) {
-    _gpuTexture = ccnew CCVKGPUTexture;
+    _gpuTexture = cc::IntrusivePtr{ccnew CCVKGPUTexture};
     _gpuTexture->width = width;
     _gpuTexture->height = height;
     _gpuTexture->size = size;
@@ -84,7 +84,7 @@ void CCVKTexture::createTexture(uint32_t width, uint32_t height, uint32_t size, 
 }
 
 void CCVKTexture::createTextureView(bool initGPUTextureView) {
-    _gpuTextureView = ccnew CCVKGPUTextureView;
+    _gpuTextureView = cc::IntrusivePtr{ccnew CCVKGPUTextureView};
     _gpuTextureView->gpuTexture = _gpuTexture;
     _gpuTextureView->type = _viewInfo.type;
     _gpuTextureView->format = _viewInfo.format;

@@ -27,94 +27,110 @@
 #pragma once
 
 #include "RefCountedExport.h"
+#include "Ptr.h"
 #include <atomic>
+#include <cstdint>
 
+#ifndef CC_REF_LEAK_DETECTION
 #define CC_REF_LEAK_DETECTION 0
+#endif
 
 namespace cc {
 
-// Fixed at construction. Atomic synchronizes ownership, not object state.
+// The counting policy is immutable; host adaptation is checked at its boundary.
 enum class RefThreading { Local, Atomic };
 
 class RefCounted;
+template<class T, RefThreading Threading, class... Args>
+IntrusivePtr<T> makeRef(Args&&... args);
 
-/**
-  * Interface that defines how to clone an Ref.
-  */
+class RefConstructionToken final {
+public:
+    RefConstructionToken(const RefConstructionToken&) noexcept = default;
+private:
+    explicit constexpr RefConstructionToken(RefThreading threading) noexcept : _threading(threading) {}
+    const RefThreading _threading;
+    friend class RefCounted;
+    template<class T, RefThreading Threading, class... Args>
+    friend IntrusivePtr<T> makeRef(Args&&... args);
+};
+
+// Opaque to ordinary counting. Allocated only when host adaptation needs it.
+// The definition never depends on CC_ENABLE_SCRIPT_BINDING or a Lua header.
+struct RefScriptIdentity {
+    int luaID = 0;
+    bool rooted = false;
+    void* scriptObject = nullptr;
+    std::uint64_t vmEpoch = 0;
+};
+
+struct RefServices {
+    void (*enqueue)(RefCounted&);
+    void (*finalRelease)(RefCounted&) noexcept;
+    RefScriptIdentity& (*identity)(RefCounted&, RefScriptIdentity*&);
+    void (*destroyIdentity)(RefCounted&, RefScriptIdentity&) noexcept;
+    // A host may also have live non-Ref clients (for example a raw Lua VM).
+    bool (*canRemove)() noexcept = nullptr;
+};
+
+// One implementation in the common core, including shared consumers.
+CC_REF_API void installRefServices(const RefServices* services);
+// Requires host quiescence: no concurrent constructors or calls into the core.
+// Refuses removal while any object can still call the service code.
+CC_REF_API bool removeRefServices(const RefServices* services) noexcept;
+CC_REF_API const RefServices* getRefServices() noexcept;
+CC_REF_API unsigned long long liveRefCountedObjects() noexcept;
+
 class CC_REF_API Clonable {
 public:
-    /** Returns a copy of the Ref. */
-    virtual Clonable *clone() const = 0;
-
+    virtual Clonable* clone() const = 0;
     virtual ~Clonable() = default;
 };
 
-/**
- * Ref is used for reference count management. If a class inherits from Ref,
- * then it is easy to be shared in different places.
- */
 class CC_REF_API RefCounted {
 public:
-    RefCounted(const RefCounted &) = delete;
-    RefCounted(RefCounted &&) = delete;
-    RefCounted &operator=(const RefCounted &) = delete;
-    RefCounted &operator=(RefCounted &&) = delete;
+    RefCounted(const RefCounted&) = delete;
+    RefCounted(RefCounted&&) = delete;
+    RefCounted& operator=(const RefCounted&) = delete;
+    RefCounted& operator=(RefCounted&&) = delete;
     virtual ~RefCounted();
 
-    /**
-     * Retains the ownership.
-     *
-     * This increases the Ref's reference count.
-     *
-     * @see release, autorelease
-     */
-    void addRef();
-
-    /**
-     * Releases the ownership immediately.
-     *
-     * This decrements the Ref's reference count.
-     *
-     * If the reference count reaches 0 after the decrement, this Ref is
-     * destructed.
-     *
-     * @see retain, autorelease
-     */
+    void addRef() noexcept;
+    void retain() { addRef(); }
     void release();
-
-    /**
-     * Returns the Ref's current reference count.
-     *
-     * @returns The Ref's reference count.
-     */
     unsigned int getRefCount() const;
-
+    unsigned int getReferenceCount() const { return getRefCount(); }
     RefThreading getReferenceThreading() const noexcept { return _threading; }
 
-protected:
-    /**
-     * Constructor
-     *
-     * A newly constructed object has no owner (reference count 0).
-     * addRef() establishes its first share after construction completes.
-     */
-    explicit RefCounted(RefThreading threading = RefThreading::Local);
+    /** @lua NA */
+    unsigned int getScriptObjectID() const;
+    /** @lua NA */
+    RefScriptIdentity& getScriptIdentity();
+    /** @lua NA */
+    const RefScriptIdentity* getScriptIdentityIfExists() const noexcept { return _scriptIdentity; }
+    /** @lua NA */
+    RefCounted* autorelease();
 
-    // Always dispatched by the common release(), including calls through a
-    // RefCounted*. The object is still alive, with count 0, during this hook.
+protected:
+    // Neither constructor initializes a pool, VM or script identity.
+    explicit RefCounted(RefThreading threading = RefThreading::Local);
+    explicit RefCounted(RefConstructionToken token);
+    // Compatibility extension hook; host checks/cleanup cannot be bypassed by it.
     virtual void onFinalRelease() noexcept {}
 
 private:
     const RefThreading _threading;
+    const unsigned int _scriptObjectID;
     union Counter {
         explicit Counter(unsigned int count) : local(count) {}
         ~Counter() {}
         unsigned int local;
         std::atomic<unsigned int> atomic;
     } _counter;
+    RefScriptIdentity* _scriptIdentity = nullptr;
 
-
-    // Memory leak diagnostic data (only included when CC_REF_LEAK_DETECTION is defined and its value isn't zero)
+    template<class T, RefThreading Threading, class... Args>
+    friend IntrusivePtr<T> makeRef(Args&&... args);
 #if CC_REF_LEAK_DETECTION
 public:
     static void printLeaks();

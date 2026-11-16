@@ -94,7 +94,7 @@ Slider::~Slider()
 
 cc::IntrusivePtr<Slider> Slider::create()
 {
-    cc::IntrusivePtr<Slider> widget{new Slider()};
+    cc::IntrusivePtr widget{new Slider()};
     if (widget->init())
     {
         return widget;
@@ -104,7 +104,7 @@ cc::IntrusivePtr<Slider> Slider::create()
 
 cc::IntrusivePtr<Slider> Slider::create(std::string_view barTextureName, std::string_view normalBallTextureName, TextureResType resType)
 {
-    cc::IntrusivePtr<Slider> widget{new Slider()};
+    cc::IntrusivePtr widget{new Slider()};
     if (widget->init())
     {
         widget->loadBarTexture(barTextureName, resType);
@@ -505,7 +505,7 @@ bool Slider::hitTest(const cocos2d::Vec2& pt, const Camera* camera, Vec3* /*p*/)
 
 bool Slider::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     bool pass = Widget::onTouchBegan(touch, unusedEvent);
     if (_hitted)
     {
@@ -523,14 +523,14 @@ void Slider::onTouchMoved(Touch* touch, Event* /*unusedEvent*/)
 
 void Slider::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Widget::onTouchEnded(touch, unusedEvent);
     percentChangedEvent(EventType::ON_SLIDEBALL_UP);
 }
 
 void Slider::onTouchCancelled(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Widget::onTouchCancelled(touch, unusedEvent);
     percentChangedEvent(EventType::ON_SLIDEBALL_CANCEL);
 }

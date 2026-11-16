@@ -43,7 +43,7 @@ RadioButton::~RadioButton()
 
 cc::IntrusivePtr<RadioButton> RadioButton::create()
 {
-    cc::IntrusivePtr<RadioButton> widget{new RadioButton()};
+    cc::IntrusivePtr widget{new RadioButton()};
     if (widget->init())
     {
         return widget;
@@ -58,7 +58,7 @@ cc::IntrusivePtr<RadioButton> RadioButton::create(std::string_view backGround,
                                  std::string_view frontCrossDisabled,
                                  TextureResType texType)
 {
-    cc::IntrusivePtr<RadioButton> pWidget{new RadioButton()};
+    cc::IntrusivePtr pWidget{new RadioButton()};
     if (pWidget->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
         return pWidget;
@@ -68,7 +68,7 @@ cc::IntrusivePtr<RadioButton> RadioButton::create(std::string_view backGround,
 
 cc::IntrusivePtr<RadioButton> RadioButton::create(std::string_view backGround, std::string_view cross, TextureResType texType)
 {
-    cc::IntrusivePtr<RadioButton> pWidget{new RadioButton()};
+    cc::IntrusivePtr pWidget{new RadioButton()};
     if (pWidget->init(backGround, "", cross, "", "", texType))
     {
         return pWidget;
@@ -99,7 +99,7 @@ void RadioButton::addEventListener(const ccRadioButtonCallback& callback)
 
 void RadioButton::releaseUpEvent()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Widget::releaseUpEvent();
 
     if (!_isSelected)
@@ -149,7 +149,7 @@ RadioButtonGroup::~RadioButtonGroup()
 
 cc::IntrusivePtr<RadioButtonGroup> RadioButtonGroup::create()
 {
-    cc::IntrusivePtr<RadioButtonGroup> widget{new RadioButtonGroup()};
+    cc::IntrusivePtr widget{new RadioButtonGroup()};
     if (widget->init())
     {
         return widget;
@@ -179,7 +179,7 @@ void RadioButtonGroup::addRadioButton(RadioButton* radioButton)
 
 void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     ssize_t index = _radioButtons.getIndex(radioButton);
     if (index == CC_INVALID_INDEX)
     {
@@ -189,7 +189,7 @@ void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 
     if (radioButton != nullptr)
     {
-        auto buttonAlive = makeRef(radioButton);
+        auto buttonAlive = cc::IntrusivePtr{radioButton};
         radioButton->_group = nullptr;
         // Erase before notifying: the callback may mutate the group again.
         _radioButtons.erase(index);
@@ -207,7 +207,7 @@ void RadioButtonGroup::removeRadioButton(RadioButton* radioButton)
 
 void RadioButtonGroup::removeAllRadioButtons()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     while (!_radioButtons.empty())
     {
         removeRadioButton(_radioButtons.at(0));
@@ -231,8 +231,8 @@ RadioButton* RadioButtonGroup::getRadioButtonByIndex(int index) const
 
 void RadioButtonGroup::deselect()
 {
-    auto keepAlive = makeRef(this);
-    auto selected = makeRef(_selectedRadioButton);
+    auto keepAlive = cc::IntrusivePtr{this};
+    auto selected = cc::IntrusivePtr{_selectedRadioButton};
     // Publish the empty selection before a callback can select/deselect again.
     _selectedRadioButton = nullptr;
     if (selected)
@@ -255,7 +255,7 @@ void RadioButtonGroup::setSelectedButton(int index)
 
 void RadioButtonGroup::setSelectedButton(RadioButton* radioButton)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     setSelectedButtonWithoutEvent(radioButton);
     onChangedRadioButtonSelect(_selectedRadioButton);
 }
@@ -267,7 +267,7 @@ void RadioButtonGroup::setSelectedButtonWithoutEvent(int index)
 
 void RadioButtonGroup::setSelectedButtonWithoutEvent(RadioButton* radioButton)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (!_allowedNoSelection && radioButton == nullptr)
     {
         return;
@@ -282,7 +282,7 @@ void RadioButtonGroup::setSelectedButtonWithoutEvent(RadioButton* radioButton)
         return;
     }
 
-    auto buttonAlive = makeRef(radioButton);
+    auto buttonAlive = cc::IntrusivePtr{radioButton};
     deselect();
     // A deselection callback can select another button or remove the requested one.
     if (_selectedRadioButton != nullptr || (radioButton && !_radioButtons.contains(radioButton)))
@@ -340,8 +340,8 @@ void RadioButtonGroup::copySpecialProperties(Widget* widget)
 
 void RadioButtonGroup::onChangedRadioButtonSelect(RadioButton* radioButton)
 {
-    auto keepAlive = makeRef(this);
-    auto buttonAlive = makeRef(radioButton);
+    auto keepAlive = cc::IntrusivePtr{this};
+    auto buttonAlive = cc::IntrusivePtr{radioButton};
     if (radioButton && !_radioButtons.contains(radioButton))
         return;
     if (_selectedRadioButton != radioButton)
@@ -356,7 +356,7 @@ void RadioButtonGroup::onChangedRadioButtonSelect(RadioButton* radioButton)
     if (auto callback = _radioButtonGroupEventCallback)
     {
         int index = (int)_radioButtons.getIndex(radioButton);
-        auto selectedAlive = makeRef(_selectedRadioButton);
+        auto selectedAlive = cc::IntrusivePtr{_selectedRadioButton};
         callback(selectedAlive.get(), index, EventType::SELECT_CHANGED);
     }
     this->release();

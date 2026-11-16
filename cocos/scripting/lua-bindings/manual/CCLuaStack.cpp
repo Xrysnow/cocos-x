@@ -112,20 +112,21 @@ LuaStack::~LuaStack()
 {
     if (nullptr != _state)
     {
+        closeCocosScriptContext(_state);
         lua_close(_state);
     }
 }
 
 cc::IntrusivePtr<LuaStack> LuaStack::create()
 {
-    cc::IntrusivePtr<LuaStack> stack{new LuaStack()};
+    auto stack = cc::IntrusivePtr{new LuaStack()};
     if (!stack->init()) { return nullptr; }
     return stack;
 }
 
 cc::IntrusivePtr<LuaStack> LuaStack::attach(lua_State* L)
 {
-    cc::IntrusivePtr<LuaStack> stack{new LuaStack()};
+    auto stack = cc::IntrusivePtr{new LuaStack()};
     if (!stack->initWithLuaState(L)) { return nullptr; }
     return stack;
 }
@@ -223,7 +224,7 @@ void LuaStack::addLuaLoader(lua_CFunction func)
 
 void LuaStack::removeScriptObjectByObject(Ref* pObj)
 {
-    toluafix_remove_ccobject_by_refid(_state, pObj->_luaID);
+    toluafix_remove_ccobject_by_refid(_state, pObj->getScriptIdentity().luaID);
 }
 
 void LuaStack::removeScriptHandler(int nHandler)
@@ -357,7 +358,7 @@ void LuaStack::pushNil()
 
 void LuaStack::pushObject(Ref* objectValue, const char* typeName)
 {
-    toluafix_pushusertype_ccobject(_state, objectValue->_ID, &objectValue->_luaID, objectValue, typeName);
+    toluafix_pushusertype_ccobject(_state, objectValue->getScriptObjectID(), &objectValue->getScriptIdentity().luaID, objectValue, typeName);
 }
 
 void LuaStack::pushLuaValue(const LuaValue& value)

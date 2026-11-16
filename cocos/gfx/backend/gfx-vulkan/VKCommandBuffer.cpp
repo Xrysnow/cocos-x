@@ -52,7 +52,7 @@ CCVKCommandBuffer::~CCVKCommandBuffer() {
 }
 
 void CCVKCommandBuffer::doInit(const CommandBufferInfo & /*info*/) {
-    _gpuCommandBuffer = ccnew CCVKGPUCommandBuffer;
+    _gpuCommandBuffer = cc::IntrusivePtr{ccnew CCVKGPUCommandBuffer};
     _gpuCommandBuffer->level = mapVkCommandBufferLevel(_type);
     _gpuCommandBuffer->queueFamilyIndex = static_cast<CCVKQueue *>(_queue)->gpuQueue()->queueFamilyIndex;
 

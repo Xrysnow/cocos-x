@@ -27,6 +27,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <stdexcept>
 
 #include <stdint.h>
 
@@ -515,15 +516,20 @@ const char* getLuaTypeName(T* ret, const char* defaultTypeName)
 template <class T>
 void object_to_luaval(lua_State* L, const char* type, T* ret)
 {
+    static_assert(!std::is_base_of_v<cc::RefCounted,T> || std::is_convertible_v<T*, const cc::RefCounted*>,
+                  "Ref conversion requires a public, unambiguous RefCounted base");
+    if (!L) return;
+    if constexpr (std::is_convertible_v<T*, const cc::RefCounted*>)
+        if (!cocos2d::isRefScriptContext(L))
+            throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
     if (nullptr != ret)
     {
-        if (std::is_base_of<cocos2d::Ref, T>::value)
+        if constexpr (std::is_convertible_v<T*, const cc::RefCounted*>)
         {
-            // use c style cast, T may not polymorphic
-            cocos2d::Ref* dynObject = (cocos2d::Ref*)(ret);
-            int ID                  = (int)(dynObject->_ID);
-            int* luaID              = &(dynObject->_luaID);
-            toluafix_pushusertype_ccobject(L, ID, luaID, (void*)ret, type);
+            auto* dynObject = const_cast<cc::RefCounted*>(static_cast<const cc::RefCounted*>(ret));
+            int ID                  = (int)(dynObject->getScriptObjectID());
+            int* luaID              = &(dynObject->getScriptIdentity().luaID);
+            toluafix_pushusertype_ccobject(L, ID, luaID, (void*)dynObject, type);
         }
         else
         {

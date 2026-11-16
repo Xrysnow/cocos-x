@@ -439,17 +439,17 @@ bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
     _gpuBarrierManager = std::make_unique<CCVKGPUBarrierManager>(_gpuDevice.get());
     _gpuDescriptorSetHub = std::make_unique<CCVKGPUDescriptorSetHub>(_gpuDevice.get());
 
-    _gpuDevice->defaultSampler = ccnew CCVKGPUSampler();
+    _gpuDevice->defaultSampler = cc::IntrusivePtr{ccnew CCVKGPUSampler()};
     _gpuDevice->defaultSampler->init();
 
-    _gpuDevice->defaultTexture = ccnew CCVKGPUTexture();
+    _gpuDevice->defaultTexture = cc::IntrusivePtr{ccnew CCVKGPUTexture()};
     _gpuDevice->defaultTexture->format = Format::RGBA8;
     _gpuDevice->defaultTexture->usage = TextureUsageBit::SAMPLED | TextureUsage::STORAGE;
     _gpuDevice->defaultTexture->width = _gpuDevice->defaultTexture->height = 1U;
     _gpuDevice->defaultTexture->size = formatSize(Format::RGBA8, 1U, 1U, 1U);
     _gpuDevice->defaultTexture->init();
 
-    _gpuDevice->defaultTextureView = ccnew CCVKGPUTextureView();
+    _gpuDevice->defaultTextureView = cc::IntrusivePtr{ccnew CCVKGPUTextureView()};
     _gpuDevice->defaultTextureView->gpuTexture = _gpuDevice->defaultTexture;
     _gpuDevice->defaultTextureView->format = Format::RGBA8;
     _gpuDevice->defaultTextureView->init();
@@ -469,7 +469,7 @@ bool CCVKDevice::doInit(const DeviceInfo & /*info*/) {
         },
         true);
 
-    _gpuDevice->defaultBuffer = ccnew CCVKGPUBuffer();
+    _gpuDevice->defaultBuffer = cc::IntrusivePtr{ccnew CCVKGPUBuffer()};
     _gpuDevice->defaultBuffer->usage = BufferUsage::UNIFORM | BufferUsage::STORAGE;
     _gpuDevice->defaultBuffer->memUsage = MemoryUsage::HOST | MemoryUsage::DEVICE;
     _gpuDevice->defaultBuffer->size = _gpuDevice->defaultBuffer->stride = 16U;
@@ -1048,15 +1048,15 @@ void CCVKDevice::copyTextureToBuffers(Texture *srcTexture, uint8_t *const *buffe
     // Vulkan handles after the frame's device wait).
     IntrusivePtr<CCVKGPUBufferView> stagingBuffer;
     if (totalSize > CCVKGPUStagingBufferPool::CHUNK_SIZE) {
-        auto *readbackBuffer = ccnew CCVKGPUBuffer;
+        auto readbackBuffer = cc::IntrusivePtr{ccnew CCVKGPUBuffer};
         readbackBuffer->size = totalSize;
         readbackBuffer->usage = BufferUsage::TRANSFER_SRC | BufferUsage::TRANSFER_DST;
         readbackBuffer->memUsage = MemoryUsage::HOST;
         readbackBuffer->init();
-        auto *bufferView = ccnew CCVKGPUBufferView;
-        bufferView->gpuBuffer = readbackBuffer;
+        auto bufferView = cc::IntrusivePtr{ccnew CCVKGPUBufferView};
+        bufferView->gpuBuffer = std::move(readbackBuffer);
         bufferView->range = totalSize;
-        stagingBuffer = bufferView;
+        stagingBuffer = std::move(bufferView);
     } else {
         stagingBuffer = gpuStagingBufferPool()->alloc(totalSize, texelSize);
     }

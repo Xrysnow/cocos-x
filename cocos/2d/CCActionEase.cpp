@@ -108,7 +108,7 @@ cc::IntrusivePtr<EaseRateAction> EaseRateAction::create(ActionInterval* action, 
 {
     CCASSERT(action != nullptr, "action cannot be nullptr!");
 
-    cc::IntrusivePtr<EaseRateAction> easeRateAction{new EaseRateAction()};
+    auto easeRateAction = cc::IntrusivePtr{new EaseRateAction()};
     if (easeRateAction->initWithAction(action, rate))
     {
         return easeRateAction;
@@ -135,7 +135,7 @@ bool EaseRateAction::initWithAction(ActionInterval* action, float rate)
 #define EASE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)         \
     cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action)            \
     {                                                                        \
-        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                   \
+        auto ease = cc::IntrusivePtr{new CLASSNAME()};                                   \
         if (ease->initWithAction(action))                                    \
             return ease;                                             \
         return nullptr;                                                         \
@@ -184,7 +184,7 @@ EASE_TEMPLATE_IMPL(EaseCubicActionInOut, tweenfunc::cubicEaseInOut, EaseCubicAct
 #define EASERATE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC)                               \
     cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float rate)       \
     {                                                                               \
-        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                          \
+        auto ease = cc::IntrusivePtr{new CLASSNAME()};                                          \
         if (ease->initWithAction(action, rate))                                     \
             return ease;                                                    \
         return nullptr;                                                                \
@@ -225,7 +225,7 @@ bool EaseElastic::initWithAction(ActionInterval* action, float period /* = 0.3f*
 #define EASEELASTIC_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)                 \
     cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float period /* = 0.3f*/) \
     {                                                                                       \
-        cc::IntrusivePtr<CLASSNAME> ease{new CLASSNAME()};                                                  \
+        auto ease = cc::IntrusivePtr{new CLASSNAME()};                                                  \
         if (ease->initWithAction(action, period))                                           \
             return ease;                                                            \
         return nullptr;                                                                        \
@@ -249,7 +249,7 @@ EASEELASTIC_TEMPLATE_IMPL(EaseElasticInOut, tweenfunc::elasticEaseInOut, EaseEla
 
 cc::IntrusivePtr<EaseBezierAction> EaseBezierAction::create(cocos2d::ActionInterval* action)
 {
-    cc::IntrusivePtr<EaseBezierAction> ret{new EaseBezierAction()};
+    auto ret = cc::IntrusivePtr{new EaseBezierAction()};
     if (ret->initWithAction(action))
     {
         return ret;

@@ -33,9 +33,12 @@ NS_CC_BEGIN
 class PointObject : public Ref
 {
 public:
+    PointObject() = default;
+
+public:
     static cc::IntrusivePtr<PointObject> create(Vec2 ratio, Vec2 offset)
     {
-        cc::IntrusivePtr<PointObject> ret{new PointObject()};
+        cc::IntrusivePtr ret{new PointObject()};
         ret->initWithPoint(ratio, offset);
         return ret;
     }
@@ -80,7 +83,7 @@ ParallaxNode::~ParallaxNode()
 
 cc::IntrusivePtr<ParallaxNode> ParallaxNode::create()
 {
-    cc::IntrusivePtr<ParallaxNode> ret{new ParallaxNode()};
+    cc::IntrusivePtr ret{new ParallaxNode()};
     return ret;
 }
 

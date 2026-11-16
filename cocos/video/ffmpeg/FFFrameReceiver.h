@@ -8,6 +8,9 @@ namespace ffmpeg
 	class FrameReceiver : public cocos2d::Ref
 	{
 	public:
+	    FrameReceiver() = default;
+
+	public:
 		virtual ~FrameReceiver() = default;
 		// Provide storage for the next received frame. Null indicates allocation failure.
 		virtual AVFrame* alloc() = 0;

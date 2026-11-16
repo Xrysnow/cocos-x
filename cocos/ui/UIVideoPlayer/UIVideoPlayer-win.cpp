@@ -340,7 +340,7 @@ VideoPlayer::VideoPlayer()
         cocos2d::log("Create VideoPlayer backend failed, hr=%d", (int)hr);
         return;
     }
-    pvd->_vrender = cc::IntrusivePtr<Sprite>{new Sprite()}.detach();
+    pvd->_vrender = cc::IntrusivePtr{new Sprite()}.detach();
     addProtectedChild(pvd->_vrender);
     pvd->resetSamples();
     auto scheduler = pvd->_scheduler;
@@ -465,7 +465,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
             bool needsInit = !pvd->_vtexture;
             if (!pvd->_vtexture)
             {
-                pvd->_vtexture = cc::IntrusivePtr<Texture2D>{new Texture2D()}.detach();
+                pvd->_vtexture = cc::IntrusivePtr{new Texture2D()}.detach();
 
                 auto programManager = ProgramManager::getInstance();
 
@@ -488,7 +488,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
                         std::string{pvd->_sampleFormat == VideoSampleFormat::NV12 ? NV12_FRAG : YUY2_FRAG},
                         VertexLayoutHelper::setupSprite);
                     auto program = programManager->getCustomProgram(VIDEO_PROGRAM_ID);
-                    pvd->_vrender->setProgramState(cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach(), false);
+                    pvd->_vrender->setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
                     break;
                 }
                 default:;

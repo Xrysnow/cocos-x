@@ -131,8 +131,8 @@ static int tocclua_EventListenerController_clone(lua_State* tolua_S)
         cloneEventListenerControllerHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_CONTROLLER_KEYREPEAT);
         cloneEventListenerControllerHandler(self, tolua_ret, ScriptHandlerMgr::HandlerType::EVENT_CONTROLLER_AXIS);
 
-        int ID     = (int)tolua_ret->_ID;
-        int* luaID = &tolua_ret->_luaID;
+        int ID     = (int)tolua_ret->getScriptObjectID();
+        int* luaID = &tolua_ret->getScriptIdentity().luaID;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerController");
 
         return 1;
@@ -199,8 +199,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 2);
 
@@ -217,8 +217,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 auto* callbackStack = LuaEngine::getInstance()->getLuaStack();
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 2);
 
@@ -237,8 +237,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
                     tolua_pushnumber(Ls, (lua_Number)keyCode);
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 3);
 
@@ -256,8 +256,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
                     tolua_pushnumber(Ls, (lua_Number)keyCode);
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 3);
 
@@ -275,8 +275,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
                     tolua_pushnumber(Ls, (lua_Number)keyCode);
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 3);
 
@@ -294,8 +294,8 @@ static int tocclua_EventListenerController_registerScriptHandler(lua_State* tolu
                 callbackStack->executeCallback([=]() mutable -> int {
                     tolua_pushusertype(Ls, (void*)controller, "cc.Controller");
                     tolua_pushnumber(Ls, (lua_Number)keyCode);
-                    int ID     = (event) ? (int)event->_ID : -1;
-                    int* luaID = (event) ? &event->_luaID : NULL;
+                    int ID     = (event) ? (int)event->getScriptObjectID() : -1;
+                    int* luaID = (event) ? &event->getScriptIdentity().luaID : NULL;
                     toluafix_pushusertype_ccobject(Ls, ID, luaID, (void*)event, "cc.event");
                     stack->executeFunctionByHandler(handler, 3);
 

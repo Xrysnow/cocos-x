@@ -119,7 +119,7 @@ bool GLES3PipelineCache::loadCache() {
             continue;
         }
 
-        auto *binary = ccnew GLES3GPUProgramBinary();
+        auto binary = cc::IntrusivePtr{ccnew GLES3GPUProgramBinary()};
         binary->format = format;
         binary->name.resize(nameLength, 0);
         binary->data.resize(dataLength, 0);
@@ -133,7 +133,7 @@ bool GLES3PipelineCache::loadCache() {
         // data
         loadResult &= archive.load(binary->data.data(), dataLength);
 
-        _programCaches.emplace(binary->name, binary);
+        _programCaches.emplace(binary->name, std::move(binary));
     }
 
     // If the number of cached items does not equal the number of loaded items, it may be necessary to update the cache.

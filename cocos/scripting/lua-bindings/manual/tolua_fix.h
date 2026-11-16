@@ -29,6 +29,11 @@
 
 #include <string>
 
+namespace cocos2d {
+// Coroutines share the active VM's registry; this check does not allocate or push.
+TOLUA_API bool isRefScriptContext(lua_State* L) noexcept;
+}
+
 #define TOLUA_REFID_PTR_MAPPING "toluafix_refid_ptr_mapping"
 #define TOLUA_REFID_TYPE_MAPPING "toluafix_refid_type_mapping"
 #define TOLUA_REFID_FUNCTION_MAPPING "toluafix_refid_function_mapping"
@@ -68,7 +73,7 @@ TOLUA_API int toluafix_pushusertype_ccobject(lua_State* L, int uid, int* p_refid
  * automatically.
  *
  * @param L the current lua_State.
- * @param refid the value of the _luaID of a Ref object.
+ * @param refid the value of getScriptIdentity().luaID of a Ref object.
  * @return -1,if refid equals to 0 , type name found by refid equals to nil or corresponding userdata pointer equal to
  * nullptr; return -2, if the Ref object pointer found by refid is nullptr; return 3, if the value corresponding to the
  * Ref object pointer in the tolua_ubox is nil; otherwise return 0.

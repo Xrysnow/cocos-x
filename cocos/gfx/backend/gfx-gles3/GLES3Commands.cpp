@@ -1130,7 +1130,7 @@ bool cmdFuncGLES3CreateProgramBySource(GLES3Device *device, GLES3GPUShader *gpuS
         GLint binaryLength = 0;
         GL_CHECK(glGetProgramiv(gpuShader->glProgram, GL_PROGRAM_BINARY_LENGTH, &binaryLength));
         GLsizei length = 0;
-        IntrusivePtr<GLES3GPUProgramBinary> binary = ccnew GLES3GPUProgramBinary();
+        auto binary = cc::IntrusivePtr{ccnew GLES3GPUProgramBinary()};
         binary->name = gpuShader->name;
         binary->hash = gpuShader->hash;
         ccstd::hash_combine(binary->hash, pipelineLayout->hash);

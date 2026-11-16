@@ -66,6 +66,9 @@ struct DepthStencilDescriptor;
 class CC_DLL CommandBuffer : public cocos2d::Ref
 {
 public:
+    CommandBuffer() = default;
+
+public:
     /**
      * Set depthStencil status once
      * @param depthStencilState Specifies the depth and stencil status

@@ -135,12 +135,12 @@ void main() {
 			return;
 		}
 		auto program = backend::Device::getInstance()->newProgram(TWO_COLOR_TINT_VERTEX_SHADER, TWO_COLOR_TINT_FRAGMENT_SHADER);
-		auto *programState = cc::IntrusivePtr<backend::ProgramState>{new backend::ProgramState(program)}.detach();
+		auto *programState = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
 		program->release();
 
 		updateProgramStateLayout(programState);
 
-		__twoColorProgramState = std::shared_ptr<backend::ProgramState>(programState);
+		__twoColorProgramState = std::shared_ptr<backend::ProgramState>(programState, [](backend::ProgramState* state) { state->release(); });
 	}
 
 }// namespace

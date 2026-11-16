@@ -93,7 +93,7 @@ ScrollView::~ScrollView()
 
 cc::IntrusivePtr<ScrollView> ScrollView::create()
 {
-    cc::IntrusivePtr<ScrollView> widget{new ScrollView()};
+    cc::IntrusivePtr widget{new ScrollView()};
     if (widget->init())
     {
         return widget;
@@ -235,7 +235,7 @@ const Vec2& ScrollView::getInnerContainerSize() const
 
 void ScrollView::setInnerContainerPosition(const Vec2& position)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (position == _innerContainer->getPosition())
     {
         return;
@@ -554,7 +554,7 @@ void ScrollView::stopAutoScroll()
 
 void ScrollView::stopOverallScroll()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     stopScroll();
     stopAutoScroll();
 }
@@ -596,7 +596,7 @@ bool ScrollView::fltEqualZero(const Vec2& point) const
 
 void ScrollView::processAutoScrolling(float deltaTime)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     // Make auto scroll shorter if it needs to deaccelerate.
     float brakingFactor = (isNecessaryAutoScrollBrake() ? OUT_OF_BOUNDARY_BREAKING_FACTOR : 1);
 
@@ -1038,7 +1038,7 @@ void ScrollView::handleReleaseLogic(Touch* touch)
 
 bool ScrollView::onTouchBegan(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     bool pass = Layout::onTouchBegan(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1052,7 +1052,7 @@ bool ScrollView::onTouchBegan(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchMoved(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Layout::onTouchMoved(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1062,7 +1062,7 @@ void ScrollView::onTouchMoved(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchEnded(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Layout::onTouchEnded(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1073,7 +1073,7 @@ void ScrollView::onTouchEnded(Touch* touch, Event* unusedEvent)
 
 void ScrollView::onTouchCancelled(Touch* touch, Event* unusedEvent)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Layout::onTouchCancelled(touch, unusedEvent);
     if (!_isInterceptTouch)
     {
@@ -1084,7 +1084,7 @@ void ScrollView::onTouchCancelled(Touch* touch, Event* unusedEvent)
 
 void ScrollView::update(float dt)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (_autoScrolling)
     {
         processAutoScrolling(dt);
@@ -1093,7 +1093,7 @@ void ScrollView::update(float dt)
 
 void ScrollView::interceptTouchEvent(Widget::TouchEventType event, Widget* sender, Touch* touch)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (!_touchEnabled)
     {
         Layout::interceptTouchEvent(event, sender, touch);
@@ -1185,7 +1185,7 @@ void ScrollView::processScrollEvent(MoveDirection dir, bool bounce)
 
 void ScrollView::processScrollingEvent()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (!_scrolling)
     {
         _scrolling = true;

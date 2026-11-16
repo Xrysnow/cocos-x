@@ -151,6 +151,8 @@ This information is obtained from the TMX file.
 */
 struct CC_DLL TMXTileAnimInfo : public Ref
 {
+public:
+
     static cc::IntrusivePtr<TMXTileAnimInfo> create(uint32_t tileID);
     explicit TMXTileAnimInfo(uint32_t tileID);
     uint32_t _tileID = 0;

@@ -27,145 +27,106 @@ THE SOFTWARE.
 #include "base/CCRef.h"
 #include "base/CCAutoreleasePool.h"
 #include "base/ccMacros.h"
-#include "base/CCScriptSupport.h"
-
-#if CC_REF_LEAK_DETECTION
-    #include <algorithm>  // std::find
-    #include <thread>
-    #include <mutex>
-    #include <vector>
-#endif
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <stdexcept>
+#include <cstdio>
+#include <exception>
 
 NS_CC_BEGIN
-
-#if CC_REF_LEAK_DETECTION
-static void trackRef(Ref* ref);
-static void untrackRef(Ref* ref);
-#endif
-
-Ref::Ref()
-    : Ref(RefConstructionToken(RefThreading::Local))
-{}
-
-Ref::Ref(RefConstructionToken token)
-    : cc::RefCounted(token._threading)
-#if CC_ENABLE_SCRIPT_BINDING
-    , _luaID(0)
-    , _rooted(false)
-    , _scriptObject(nullptr)
-#endif
-{
-#if CC_ENABLE_SCRIPT_BINDING
-    static std::atomic<unsigned int> uObjectCount{0};
-    _ID = uObjectCount.fetch_add(1, std::memory_order_relaxed) + 1;
-#endif
-
-#if CC_REF_LEAK_DETECTION
-    trackRef(this);
+namespace {
+struct HostState {
+    std::thread::id thread;
+    std::atomic<void*> context{nullptr};
+    std::atomic<ScriptObjectCleanup> cleanup{nullptr};
+    std::atomic<std::uint64_t> epoch{0};
+};
+HostState& state() { static HostState value; return value; }
+void requireHostThread() {
+    if(state().thread != std::this_thread::get_id())
+        throw std::logic_error("Cocos script identity/pool access requires its host thread");
+}
+void enqueue(cc::RefCounted& ref) {
+    requireHostThread();
+    auto* manager=PoolManager::getInstanceIfExists();
+    auto* pool=manager ? manager->getCurrentPoolIfExists() : nullptr;
+    if(!pool) throw std::logic_error("Cocos autorelease pool is not initialized or has closed");
+    pool->addObject(&ref);
+}
+void finalRelease(cc::RefCounted& ref) noexcept {
+#if defined(CC_DEBUG) && CC_DEBUG > 0
+    // A serially owned Local object may be worker-local; host pools are not.
+    if(state().thread != std::this_thread::get_id()) return;
+    auto* manager=PoolManager::getInstanceIfExists();
+    if(manager && manager->isObjectInPools(&ref))
+        CCASSERT(false,"The reference shouldn't be 0 because it is still in autorelease pool.");
 #endif
 }
-
-Ref::~Ref()
-{
-#if CC_ENABLE_SCRIPT_BINDING
-    // Unbound objects may be destroyed on a worker without touching the script singleton.
-    // Lua-bound objects still require destruction on the scripting thread.
-    if (_luaID)
-    {
-        auto* manager = ScriptEngineManager::getInstanceIfExists();
-        ScriptEngineProtocol* pEngine = manager ? manager->getScriptEngine() : nullptr;
-        if (pEngine != nullptr)
-        {
-            // if the object is referenced by Lua engine, remove it
-            pEngine->removeScriptObjectByObject(this);
-        }
+cc::RefScriptIdentity& identity(cc::RefCounted&, cc::RefScriptIdentity*& slot) {
+    requireHostThread();
+    if(!slot) slot=new cc::RefScriptIdentity;
+    auto& host=state();
+    if(slot->vmEpoch != host.epoch) {
+        slot->luaID=0;
+        slot->rooted=false;
+        slot->vmEpoch=host.epoch;
     }
-#endif  // CC_ENABLE_SCRIPT_BINDING
-
-#if CC_REF_LEAK_DETECTION
-    untrackRef(this);
-#endif
+    return *slot;
 }
-
-void Ref::retain()
-{
-    addRef();
-}
-
-void Ref::onFinalRelease() noexcept
-{
-#if defined(CC_DEBUG) && (CC_DEBUG > 0)
-    // This hook also runs when the last owner holds a cc::RefCounted*.
-    // Atomic owners must never query the thread-confined pool manager.
-    if (getReferenceThreading() == RefThreading::Local)
-    {
-        auto* manager = PoolManager::getInstanceIfExists();
-        if (manager && manager->isObjectInPools(this))
-            CCASSERT(false, "The reference shouldn't be 0 because it is still in autorelease pool.");
+void destroyIdentity(cc::RefCounted& ref, cc::RefScriptIdentity& script) noexcept {
+    if(!script.luaID) return;
+    auto& host=state();
+    if(script.vmEpoch != host.epoch || !host.context) return;
+    if(host.thread != std::this_thread::get_id()) {
+        std::fputs("Cocos Lua-bound object destroyed outside scripting thread\n",stderr);
+        std::terminate();
     }
-#endif
+    const int id=script.luaID;
+    script.luaID=0;
+    const auto context=host.context.load(std::memory_order_acquire);
+    const auto cleanup=host.cleanup.load(std::memory_order_acquire);
+    if(cleanup) cleanup(context,&ref,id);
 }
-
-Ref* Ref::autorelease()
-{
-    PoolManager::getInstance()->getCurrentPool()->addObject(this);
-    return this;
+bool canRemove() noexcept { return state().context.load(std::memory_order_acquire)==nullptr; }
+const cc::RefServices services{enqueue,finalRelease,identity,destroyIdentity,canRemove};
 }
-
-unsigned int Ref::getReferenceCount() const
-{
-    return getRefCount();
+void initializeCocosRefServices() {
+    // Initialization is explicit and thread-confined, like PoolManager and Lua.
+    if(!cc::getRefServices()) state().thread=std::this_thread::get_id();
+    cc::installRefServices(&services);
+    requireHostThread();
 }
-
-#if CC_REF_LEAK_DETECTION
-
-static std::vector<Ref*> __refAllocationList;
-static std::mutex __refMutex;
-
-void Ref::printLeaks()
-{
-    std::lock_guard<std::mutex> refLockGuard(__refMutex);
-    // Dump Ref object memory leaks
-    if (__refAllocationList.empty())
-    {
-        log("[memory] All Ref objects successfully cleaned up (no leaks detected).\n");
-    }
-    else
-    {
-        log("[memory] WARNING: %d Ref objects still active in memory.\n", (int)__refAllocationList.size());
-
-        for (const auto& ref : __refAllocationList)
-        {
-            CC_ASSERT(ref);
-            const char* type = typeid(*ref).name();
-            log("[memory] LEAK: Ref object '%s' still active with reference count %d.\n", (type ? type : ""),
-                ref->getReferenceCount());
-        }
+void requireRefHostThread() {
+    if (!cc::getRefServices()) throw std::logic_error("Ref host services are not initialized");
+    requireHostThread();
+}
+bool isRefScriptContext(void* context) noexcept {
+    return context && getRefScriptContext()==context;
+}
+void* getRefScriptContext() noexcept {
+    const auto& host=state();
+    return host.thread==std::this_thread::get_id() ? host.context.load(std::memory_order_acquire) : nullptr;
+}
+void openCocosScriptContext(void* context, ScriptObjectCleanup cleanup) {
+    if(!context || !cleanup) throw std::invalid_argument("Script context and cleanup callback are required");
+    initializeCocosRefServices();
+    requireHostThread();
+    auto& host=state();
+    if(host.context && host.context != context)
+        throw std::logic_error("Only one cocos script context can be active per core");
+    if(host.context != context) ++host.epoch;
+    host.context=context;
+    host.cleanup=cleanup;
+}
+void closeCocosScriptContext(void* context) noexcept {
+    if(!context) return;
+    auto& host=state();
+    if(host.context == context) {
+        if(host.thread != std::this_thread::get_id()) std::terminate();
+        host.context=nullptr;
+        host.cleanup=nullptr;
+        ++host.epoch;
     }
 }
-
-static void trackRef(Ref* ref)
-{
-    std::lock_guard<std::mutex> refLockGuard(__refMutex);
-    CCASSERT(ref, "Invalid parameter, ref should not be null!");
-
-    // Create memory allocation record.
-    __refAllocationList.emplace_back(ref);
-}
-
-static void untrackRef(Ref* ref)
-{
-    std::lock_guard<std::mutex> refLockGuard(__refMutex);
-    auto iter = std::find(__refAllocationList.begin(), __refAllocationList.end(), ref);
-    if (iter == __refAllocationList.end())
-    {
-        log("[memory] CORRUPTION: Attempting to free (%s) with invalid ref tracking record.\n", typeid(*ref).name());
-        return;
-    }
-
-    __refAllocationList.erase(iter);
-}
-
-#endif  // #if CC_REF_LEAK_DETECTION
-
 NS_CC_END

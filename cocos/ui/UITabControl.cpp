@@ -88,7 +88,7 @@ void TabControl::insertTab(int index, TabHeader* header, Layout* container)
 
 void TabControl::initAfterInsert(int index)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     auto cellSize   = _tabItems.size();
     auto tabItem    = _tabItems.at(index);
     auto headerCell = tabItem->header;
@@ -314,7 +314,7 @@ Layout* TabControl::getTabContainer(int index) const
 
 void TabControl::dispatchSelectedTabChanged(int tabIndex, TabHeader::EventType eventType)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (eventType == TabHeader::EventType::SELECTED)
     {
         if (tabIndex <= -1 || tabIndex >= (int)_tabItems.size())
@@ -370,7 +370,7 @@ int TabControl::indexOfTabHeader(const TabHeader* tabCell) const
 
 cc::IntrusivePtr<TabControl> TabControl::create()
 {
-    cc::IntrusivePtr<TabControl> tabview{new TabControl()};
+    cc::IntrusivePtr tabview{new TabControl()};
     if (tabview->init())
     {
         return tabview;
@@ -483,7 +483,7 @@ TabHeader::~TabHeader()
 
 cc::IntrusivePtr<TabHeader> TabHeader::create()
 {
-    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader()};
+    cc::IntrusivePtr tabcell{new TabHeader()};
     if (tabcell->init())
     {
         tabcell->_frontCrossRenderer->setVisible(false);  // _isSelected == false
@@ -498,7 +498,7 @@ cc::IntrusivePtr<TabHeader> TabHeader::create(std::string_view titleStr,
                              std::string_view cross,
                              TextureResType texType)
 {
-    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader};
+    cc::IntrusivePtr tabcell{new TabHeader};
     if (tabcell->init(backGround, "", cross, "", "", texType))
     {
         tabcell->_frontCrossRenderer->setVisible(false);
@@ -517,7 +517,7 @@ cc::IntrusivePtr<TabHeader> TabHeader::create(std::string_view titleStr,
                              std::string_view frontCrossDisabled,
                              TextureResType texType /*= TextureResType::LOCAL*/)
 {
-    cc::IntrusivePtr<TabHeader> tabcell{new TabHeader};
+    cc::IntrusivePtr tabcell{new TabHeader};
     if (tabcell->init(backGround, backGroundSelected, cross, backGroundDisabled, frontCrossDisabled, texType))
     {
         tabcell->_frontCrossRenderer->setVisible(false);
@@ -680,7 +680,7 @@ void TabHeader::onSizeChanged()
 
 void TabHeader::releaseUpEvent()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Widget::releaseUpEvent();
 
     if (!_isSelected)
@@ -692,10 +692,10 @@ void TabHeader::releaseUpEvent()
 
 void TabHeader::dispatchSelectChangedEvent(bool select)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (_tabView == nullptr)
         return;
-    auto tabViewAlive = makeRef(_tabView);
+    auto tabViewAlive = cc::IntrusivePtr{_tabView};
 
     EventType eventType = (select ? EventType::SELECTED : EventType::UNSELECTED);
 

@@ -56,6 +56,8 @@ class RenderTarget;
 class CC_DLL GridBase : public Ref
 {
 public:
+    GridBase() = default;
+
     /**
     Destructor.
      * @js NA

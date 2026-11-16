@@ -48,7 +48,7 @@ void CCVKDescriptorSet::doInit(const DescriptorSetInfo & /*info*/) {
     uint32_t bindingCount = utils::toUint(gpuDescriptorSetLayout->bindings.size());
     uint32_t descriptorCount = gpuDescriptorSetLayout->descriptorCount;
 
-    _gpuDescriptorSet = ccnew CCVKGPUDescriptorSet;
+    _gpuDescriptorSet = cc::IntrusivePtr{ccnew CCVKGPUDescriptorSet};
     _gpuDescriptorSet->gpuDescriptors.resize(descriptorCount, {});
     _gpuDescriptorSet->layoutID = gpuDescriptorSetLayout->id;
 

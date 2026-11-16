@@ -242,6 +242,9 @@ public:
 class CC_DLL ParticleEmissionMaskCache : public cocos2d::Ref
 {
 public:
+    ParticleEmissionMaskCache() = default;
+
+public:
     static ParticleEmissionMaskCache* getInstance();
 
     /** Bakes a particle emission mask from texture data on cpu and stores it in memory by it's name.

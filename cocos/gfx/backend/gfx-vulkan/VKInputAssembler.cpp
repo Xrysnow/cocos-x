@@ -41,7 +41,7 @@ CCVKInputAssembler::~CCVKInputAssembler() {
 void CCVKInputAssembler::doInit(const InputAssemblerInfo &info) {
     size_t vbCount = _vertexBuffers.size();
 
-    _gpuInputAssembler = ccnew CCVKGPUInputAssembler;
+    _gpuInputAssembler = cc::IntrusivePtr{ccnew CCVKGPUInputAssembler};
     _gpuInputAssembler->attributes = _attributes;
     _gpuInputAssembler->gpuVertexBuffers.resize(vbCount);
 

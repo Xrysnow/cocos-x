@@ -10,6 +10,9 @@ NS_FGUI_BEGIN
 class IUISource : public cocos2d::Ref
 {
 public:
+    IUISource() = default;
+
+public:
     virtual const std::string& getFileName() = 0;
     virtual void setFileName(const std::string& value) = 0;
     virtual bool isLoaded() = 0;

@@ -95,7 +95,7 @@ Director* Director::getInstance()
 {
     if (!s_SharedDirector)
     {
-        s_SharedDirector = cc::IntrusivePtr<Director>{new Director}.detach();
+        s_SharedDirector = cc::IntrusivePtr{new Director}.detach();
         CCASSERT(s_SharedDirector, "FATAL: Not enough memory");
         s_SharedDirector->init();
     }
@@ -103,10 +103,11 @@ Director* Director::getInstance()
     return s_SharedDirector;
 }
 
-Director::Director() {}
+Director::Director() = default;
 
 bool Director::init()
 {
+    PoolManager::getInstance();
     setDefaultValues();
 
     _scenesStack.reserve(15);
@@ -114,33 +115,33 @@ bool Director::init()
     // FPS
     _lastUpdate = std::chrono::steady_clock::now();
 
-    _console = cc::IntrusivePtr<Console>{new Console}.detach();
+    _console = cc::IntrusivePtr{new Console}.detach();
 
     // scheduler
-    _scheduler = cc::IntrusivePtr<Scheduler>{new Scheduler()}.detach();
+    _scheduler = cc::IntrusivePtr{new Scheduler()}.detach();
     // action manager
-    _actionManager = cc::IntrusivePtr<ActionManager>{new ActionManager()}.detach();
+    _actionManager = cc::IntrusivePtr{new ActionManager()}.detach();
     _scheduler->scheduleUpdate(_actionManager, Scheduler::PRIORITY_SYSTEM, false);
 
-    _eventDispatcher = cc::IntrusivePtr<EventDispatcher>{new EventDispatcher()}.detach();
+    _eventDispatcher = cc::IntrusivePtr{new EventDispatcher()}.detach();
 
-    _beforeSetNextScene = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_SET_NEXT_SCENE)}.detach();
+    _beforeSetNextScene = cc::IntrusivePtr{new EventCustom(EVENT_BEFORE_SET_NEXT_SCENE)}.detach();
     _beforeSetNextScene->setUserData(this);
-    _afterSetNextScene = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_SET_NEXT_SCENE)}.detach();
+    _afterSetNextScene = cc::IntrusivePtr{new EventCustom(EVENT_AFTER_SET_NEXT_SCENE)}.detach();
     _afterSetNextScene->setUserData(this);
-    _eventAfterDraw = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_DRAW)}.detach();
+    _eventAfterDraw = cc::IntrusivePtr{new EventCustom(EVENT_AFTER_DRAW)}.detach();
     _eventAfterDraw->setUserData(this);
-    _eventBeforeDraw = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_DRAW)}.detach();
+    _eventBeforeDraw = cc::IntrusivePtr{new EventCustom(EVENT_BEFORE_DRAW)}.detach();
     _eventBeforeDraw->setUserData(this);
-    _eventAfterVisit = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_VISIT)}.detach();
+    _eventAfterVisit = cc::IntrusivePtr{new EventCustom(EVENT_AFTER_VISIT)}.detach();
     _eventAfterVisit->setUserData(this);
-    _eventBeforeUpdate = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_BEFORE_UPDATE)}.detach();
+    _eventBeforeUpdate = cc::IntrusivePtr{new EventCustom(EVENT_BEFORE_UPDATE)}.detach();
     _eventBeforeUpdate->setUserData(this);
-    _eventAfterUpdate = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_AFTER_UPDATE)}.detach();
+    _eventAfterUpdate = cc::IntrusivePtr{new EventCustom(EVENT_AFTER_UPDATE)}.detach();
     _eventAfterUpdate->setUserData(this);
-    _eventProjectionChanged = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_PROJECTION_CHANGED)}.detach();
+    _eventProjectionChanged = cc::IntrusivePtr{new EventCustom(EVENT_PROJECTION_CHANGED)}.detach();
     _eventProjectionChanged->setUserData(this);
-    _eventResetDirector = cc::IntrusivePtr<EventCustom>{new EventCustom(EVENT_RESET)}.detach();
+    _eventResetDirector = cc::IntrusivePtr{new EventCustom(EVENT_RESET)}.detach();
     // init TextureCache
     initTextureCache();
     initMatrixStack();
@@ -427,7 +428,7 @@ TextureCache* Director::getTextureCache() const
 
 void Director::initTextureCache()
 {
-    _textureCache = cc::IntrusivePtr<TextureCache>{new TextureCache()}.detach();
+    _textureCache = cc::IntrusivePtr{new TextureCache()}.detach();
 }
 
 void Director::destroyTextureCache()
@@ -1299,7 +1300,7 @@ void Director::createStatsLabel()
     ssize_t dataLength  = 0;
     getFPSImageData(&data, &dataLength);
 
-    cc::IntrusivePtr<Image> image{new Image()};
+    cc::IntrusivePtr image{new Image()};
     bool isOK    = image->initWithImageData(data, dataLength, false);
     if (!isOK)
     {

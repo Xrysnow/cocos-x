@@ -43,6 +43,9 @@ class RenderTarget;
 class CC_DLL RenderPipeline : public cocos2d::Ref
 {
 public:
+    RenderPipeline() = default;
+
+public:
     virtual void update(const RenderTarget*, const PipelineDescriptor& pipelineDescirptor) = 0;
 
 protected:

@@ -59,6 +59,9 @@ class Program;
 class CC_DLL Device : public cocos2d::Ref
 {
 public:
+    Device() = default;
+
+public:
     friend class ProgramManager;
     friend class ShaderCache;
 

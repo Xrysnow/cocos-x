@@ -56,7 +56,7 @@ public:
                                      std::string_view url,
                                      const RichText::OpenUrlHandler handleOpenUrl = nullptr)
     {
-        cc::IntrusivePtr<ListenerComponent> component{new ListenerComponent(parent, url, std::move(handleOpenUrl))};
+        cc::IntrusivePtr component{new ListenerComponent(parent, url, std::move(handleOpenUrl))};
         return component;
     }
 
@@ -80,8 +80,8 @@ public:
     void onTouchesEnded(const std::vector<Touch*>& touches, Event* /*event*/)
     {
         // Rebuilding RichText in a link handler removes this component and label.
-        auto keepAlive = makeRef(this);
-        auto parentAlive = makeRef(_parent);
+        auto keepAlive = cc::IntrusivePtr{this};
+        auto parentAlive = cc::IntrusivePtr{_parent};
         RichText* richText = nullptr;
         for (auto* node = _parent->getParent(); node && !richText; node = node->getParent())
             richText = dynamic_cast<RichText*>(node);
@@ -89,7 +89,7 @@ public:
         // bound raw pointer; retain the live owner for the whole touch batch.
         if (!richText)
             return;
-        auto richTextAlive = makeRef(richText);
+        auto richTextAlive = cc::IntrusivePtr{richText};
         for (const auto& touch : touches)
         {
             // FIXME: Node::getBoundBox() doesn't return it in local coordinates... so create one manually.
@@ -147,7 +147,7 @@ cc::IntrusivePtr<RichElementText> RichElementText::create(int tag,
                                          int shadowBlurRadius,
                                          const Color3B& glowColor)
 {
-    cc::IntrusivePtr<RichElementText> element{new RichElementText()};
+    cc::IntrusivePtr element{new RichElementText()};
     if (element->init(tag, color, opacity, text, fontName, fontSize, flags, url, outlineColor, outlineSize, shadowColor,
                       shadowOffset, shadowBlurRadius, glowColor))
     {
@@ -196,7 +196,7 @@ cc::IntrusivePtr<RichElementImage> RichElementImage::create(int tag,
                                            std::string_view url,
                                            Widget::TextureResType texType)
 {
-    cc::IntrusivePtr<RichElementImage> element{new RichElementImage()};
+    cc::IntrusivePtr element{new RichElementImage()};
     if (element->init(tag, color, opacity, filePath, url, texType))
     {
         return element;
@@ -243,7 +243,7 @@ cc::IntrusivePtr<RichElementCustomNode> RichElementCustomNode::create(int tag,
                                                      uint8_t opacity,
                                                      cocos2d::Node* customNode)
 {
-    cc::IntrusivePtr<RichElementCustomNode> element{new RichElementCustomNode()};
+    cc::IntrusivePtr element{new RichElementCustomNode()};
     if (element->init(tag, color, opacity, customNode))
     {
         return element;
@@ -264,7 +264,7 @@ bool RichElementCustomNode::init(int tag, const Color3B& color, uint8_t opacity,
 
 cc::IntrusivePtr<RichElementNewLine> RichElementNewLine::create(int tag, const Color3B& color, uint8_t opacity)
 {
-    cc::IntrusivePtr<RichElementNewLine> element{new RichElementNewLine()};
+    cc::IntrusivePtr element{new RichElementNewLine()};
     if (element->init(tag, color, opacity))
     {
         return element;
@@ -1048,7 +1048,7 @@ RichText::~RichText()
 
 cc::IntrusivePtr<RichText> RichText::create()
 {
-    cc::IntrusivePtr<RichText> widget{new RichText()};
+    cc::IntrusivePtr widget{new RichText()};
     if (widget->init())
     {
         return widget;
@@ -1058,7 +1058,7 @@ cc::IntrusivePtr<RichText> RichText::create()
 
 cc::IntrusivePtr<RichText> RichText::createWithXML(std::string_view xml, const ValueMap& defaults, const OpenUrlHandler& handleOpenUrl)
 {
-    cc::IntrusivePtr<RichText> widget{new RichText()};
+    cc::IntrusivePtr widget{new RichText()};
     if (widget->initWithXML(xml, defaults, handleOpenUrl))
     {
         return widget;
@@ -1502,7 +1502,7 @@ void RichText::removeTagDescription(std::string_view tag)
 
 void RichText::openUrl(std::string_view url)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (auto callback = _handleOpenUrl)
     {
         callback(url);

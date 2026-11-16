@@ -74,7 +74,7 @@ cc::IntrusivePtr<ComponentLua> ComponentLua::create(std::string_view scriptFileN
 
     std::string holder;
     adjustScriptFileName(scriptFileName, holder);
-    cc::IntrusivePtr<ComponentLua> componentLua{new ComponentLua(scriptFileName)};
+    auto componentLua = cc::IntrusivePtr{new ComponentLua(scriptFileName)};
     if (componentLua)
     {
 

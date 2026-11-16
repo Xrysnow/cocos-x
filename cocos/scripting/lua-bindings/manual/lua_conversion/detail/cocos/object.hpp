@@ -5,11 +5,14 @@
 #include <string>
 #include <type_traits>
 #include <typeinfo>
+#include <stdexcept>
 
 namespace lua
 {
 	inline void ref_type_to_luaval(lua_State* L, cocos2d::Ref* ref, const char* typeID)
     {
+        if (!cocos2d::isRefScriptContext(L))
+            throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
         if (ref)
         {
             const char* typeName = typeID ? typeID : typeid(*ref).name();
@@ -21,7 +24,7 @@ namespace lua
             if (g_luaType.end() != iter)
 				luatype = iter->second;
             toluafix_pushusertype_ccobject(
-                L, (int)ref->_ID, &ref->_luaID, (void*)ref, luatype.c_str());
+                L, (int)ref->getScriptObjectID(), &ref->getScriptIdentity().luaID, (void*)ref, luatype.c_str());
         }
         else
         {
@@ -30,10 +33,10 @@ namespace lua
     }
 
 	template<typename T>
-	struct to_native<T*, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, T>>> {
+	struct to_native<T*, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
-			if (!L || !outValue)
+			if (!outValue || !cocos2d::isRefScriptContext(L))
 				return false;
 			LUA_CHECK_TO_NATIVE;
 			if (lo < 0 && lo > LUA_REGISTRYINDEX) {
@@ -48,7 +51,9 @@ namespace lua
 			const auto* className = _getClassNameByType<T>();
 			if (!*className || !isusertype(L, lo, className))
 				return false;
-			const auto p = static_cast<T*>(*static_cast<void**>(lua_touserdata(L, lo)));
+			// Ref userdata stores the canonical base address. Recover the complete
+			// T address, including non-first or virtual public Ref bases.
+			const auto p = dynamic_cast<T*>(static_cast<cocos2d::Ref*>(*static_cast<void**>(lua_touserdata(L, lo))));
 			if (!p)
 				return false;
 			*outValue = p;
@@ -57,15 +62,15 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_lua<T*, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, T>>> {
+	struct to_lua<T*, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		static void F(lua_State* L, T* inValue) {
 			if (!L) return;
-			ref_type_to_luaval(L, (cocos2d::Ref*)inValue, typeid(T).name());
+			ref_type_to_luaval(L, const_cast<cc::RefCounted*>(static_cast<const cc::RefCounted*>(inValue)), typeid(T).name());
 		}
 	};
 
 	template<typename T>
-	struct to_native<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T> && !is_value_type_v<T>>> {
+	struct to_native<T*, std::enable_if_t<!std::is_base_of_v<cc::RefCounted, T> && !is_value_type_v<T>>> {
 		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
 			if (!L || !outValue)
@@ -92,7 +97,7 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_lua<T*, std::enable_if_t<!std::is_base_of_v<cocos2d::Ref, T> && !is_value_type_v<T>>> {
+	struct to_lua<T*, std::enable_if_t<!std::is_base_of_v<cc::RefCounted, T> && !is_value_type_v<T>>> {
 		static void F(lua_State* L, T* inValue) {
 			if (!L) return;
 			if(!inValue) { lua_pushnil(L); return; }
@@ -112,12 +117,16 @@ namespace lua
 	struct binding_read<T*, std::void_t<typename to_native<T*>::binding_pointer>> {
 		template<bool Checked>
 		static bool F(lua_State* L, int lo, T** outValue) {
+			if constexpr (std::is_convertible_v<T*, const cc::RefCounted*>)
+				if (!outValue || !cocos2d::isRefScriptContext(L)) return false;
 			if (lua_istable(L, lo)) {
 				lua_pushliteral(L, ".c_instance");
 				lua_gettable(L, lo);
 				lo = lua_gettop(L);
 			}
-			if constexpr (Checked)
+			// Ref userdata must retain its registration/canonical-address checks
+			// even when optional argument validation is disabled.
+			if constexpr (Checked || std::is_convertible_v<T*, const cc::RefCounted*>)
 				return to_native<T*>::F(L, lo, outValue);
 			else {
 				if (lua_isnil(L, lo)) *outValue = nullptr;
@@ -129,7 +138,7 @@ namespace lua
 
 	// Transparent RefPtr ownership and conversion contract: see ../../README.md (RefPtr conversion).
 	template<typename T>
-	struct to_native<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
+	struct to_native<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		static bool F(lua_State* L, int lo, cc::IntrusivePtr<T>* outValue, const char* fName = "") {
 			if (!L || !outValue) return false;
 			T* value = nullptr;
@@ -140,9 +149,11 @@ namespace lua
 	};
 
 	template<typename T>
-	struct to_lua<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
+	struct to_lua<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		static void F(lua_State* L, cc::IntrusivePtr<T>&& inValue) {
 			if (!L) return;
+			if (!cocos2d::isRefScriptContext(L))
+				throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
 			// Owned factory results transfer their share before Lua can raise an
 			// allocation error. L0 userdata borrows it until the pool is cleared.
 			auto* value = cocos2d::transferToAutoreleasePool(std::move(inValue));
@@ -150,6 +161,8 @@ namespace lua
 		}
 		static void F(lua_State* L, const cc::IntrusivePtr<T>& inValue) {
 			if (!L) return;
+			if (!cocos2d::isRefScriptContext(L))
+				throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
 			auto* value = inValue.get();
 			if (value) {
 				auto* ref = const_cast<cocos2d::Ref*>(static_cast<const cocos2d::Ref*>(value));
@@ -162,9 +175,10 @@ namespace lua
 	};
 
 	template<typename T>
-	struct binding_read<cc::IntrusivePtr<T>, std::enable_if_t<std::is_base_of_v<cocos2d::Ref, std::remove_const_t<T>>>> {
+	struct binding_read<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		template<bool Checked>
 		static bool F(lua_State* L, int lo, cc::IntrusivePtr<T>* outValue) {
+			if (!outValue || !cocos2d::isRefScriptContext(L)) return false;
 			LUA_CHECK_TO_NATIVE;
 			const bool wrapper = lua_istable(L, lo);
 			T* value = nullptr;
@@ -178,7 +192,7 @@ namespace lua
 	};
 
 	template<typename T> struct is_ref_ptr : std::false_type {};
-	template<typename T> struct is_ref_ptr<cc::IntrusivePtr<T>> : std::is_base_of<cocos2d::Ref, std::remove_const_t<T>> {};
+	template<typename T> struct is_ref_ptr<cc::IntrusivePtr<T>> : std::bool_constant<std::is_convertible_v<T*, const cc::RefCounted*>> {};
 
 	template<typename Targ>
 	struct binding_argument<Targ, std::enable_if_t<is_ref_ptr<std::remove_cv_t<std::remove_reference_t<Targ>>>::value>> {

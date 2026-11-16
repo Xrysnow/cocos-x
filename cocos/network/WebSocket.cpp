@@ -398,7 +398,7 @@ int WebSocket::on_frame_end(websocket_parser* parser)
         case WS_OP_TEXT:
         case WS_OP_BINARY:
             {
-                cc::IntrusivePtr<MessageEvent> pending{new MessageEvent{std::move(ws->_receivedData), ws->_opcode == WS_OP_BINARY}};
+                auto pending = cc::IntrusivePtr{new MessageEvent{std::move(ws->_receivedData), ws->_opcode == WS_OP_BINARY}};
                 ws->_eventQueue.emplace_back(pending.get());
                 pending.detach();
             }
@@ -583,7 +583,7 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
                     timerForRead.cancel();
                     _transport = event->transport();
                     {
-                        cc::IntrusivePtr<WsOpenEvent> pending{new WsOpenEvent()};
+                        cc::IntrusivePtr pending{new WsOpenEvent()};
                         _eventQueue.emplace_back(pending.get());
                         pending.detach();
                     }
@@ -611,7 +611,7 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
                     //_state = State::CLOSING;
                     _service->close(channelIndex);
                     {
-                        cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(error)};
+                        cc::IntrusivePtr pending{new ErrorEvent(error)};
                         _eventQueue.emplace_back(pending.get());
                         pending.detach();
                     }
@@ -686,7 +686,7 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
             timerForRead.expires_from_now(std::chrono::seconds(30));
             timerForRead.async_wait_once([this, channelIndex](io_service& s) {
                 {
-                    cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(ErrorCode::TIME_OUT)};
+                    cc::IntrusivePtr pending{new ErrorEvent(ErrorCode::TIME_OUT)};
                     _eventQueue.emplace_back(pending.get());
                     pending.detach();
                 }
@@ -699,7 +699,7 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
         {
             _state = State::CLOSED;
             {
-                cc::IntrusivePtr<ErrorEvent> pending{new ErrorEvent(ErrorCode::CONNECTION_FAILURE)};
+                cc::IntrusivePtr pending{new ErrorEvent(ErrorCode::CONNECTION_FAILURE)};
                 _eventQueue.emplace_back(pending.get());
                 pending.detach();
             }
@@ -717,7 +717,7 @@ void WebSocket::handleNetworkEvent(yasio::io_event* event)
         {
             _state = State::CLOSED;
             {
-                cc::IntrusivePtr<CloseEvent> pending{new CloseEvent()};
+                cc::IntrusivePtr pending{new CloseEvent()};
                 _eventQueue.emplace_back(pending.get());
                 pending.detach();
             }

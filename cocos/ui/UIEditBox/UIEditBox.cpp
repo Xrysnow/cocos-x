@@ -75,7 +75,7 @@ cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
                          std::string_view disabledImage /* = "" */,
                          TextureResType texType /* = TextureResType::LOCAL */)
 {
-    cc::IntrusivePtr<EditBox> pRet{new EditBox()};
+    cc::IntrusivePtr pRet{new EditBox()};
     if (!(pRet->initWithSizeAndTexture(size, normalImage, pressedImage, disabledImage, texType)))
     {
         return nullptr;
@@ -89,7 +89,7 @@ cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
                          ui::Scale9Sprite* pressedSprite,
                          Scale9Sprite* disabledSprite)
 {
-    cc::IntrusivePtr<EditBox> pRet{new EditBox()};
+    cc::IntrusivePtr pRet{new EditBox()};
     if (!(pRet->initWithSizeAndBackgroundSprite(size, normalSprite, pressedSprite, disabledSprite)))
     {
         return nullptr;
@@ -412,7 +412,7 @@ void EditBox::onPressStateChangedToDisabled()
 
 void EditBox::releaseUpEvent()
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     Widget::releaseUpEvent();
     openKeyboard();
 }
@@ -889,7 +889,7 @@ void EditBox::setScriptEditBoxCallback(const ScriptEditBoxCallback& callback)
 
 void EditBox::dispatchScriptEditBoxEvent(std::string_view eventName)
 {
-    auto keepAlive = makeRef(this);
+    auto keepAlive = cc::IntrusivePtr{this};
     if (auto callback = _scriptEditBoxCallback)
     {
         callback(eventName, this);

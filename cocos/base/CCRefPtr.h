@@ -35,7 +35,7 @@
 #include <type_traits>
 #include <utility>
 
-NS_CC_BEGIN
+namespace cc {
 
 // RefPtr is the pure alias declared in CCRef.h. Ownership lives in gfx/base/Ptr.h.
 using cc::static_pointer_cast;
@@ -64,7 +64,8 @@ inline cc::IntrusivePtr<T> makeRef(T* ptr)
  *
  * Existing classes without such a constructor are intentionally not supported:
  * wrapping an existing pointer cannot change its policy. A private constructor
- * can grant friendship to this factory template, as Ref itself does.
+ * grants friendship to this policy factory. Callers choose the
+ * business factory when they also require its init() work.
  * This policy does not make object state, Lua access, autorelease pools, or
  * thread-affine destructors safe to use on arbitrary threads.
  */
@@ -73,16 +74,22 @@ cc::IntrusivePtr<T> makeRef(Args&&... args)
 {
     static_assert(Threading == RefThreading::Local || Threading == RefThreading::Atomic,
                   "Invalid reference-count threading policy");
-    static_assert(std::is_convertible<T*, Ref*>::value, "T must publicly and unambiguously derive from Ref");
+    static_assert(std::is_convertible_v<T*,RefCounted*>, "T must publicly and unambiguously derive from RefCounted");
 
-    cc::IntrusivePtr<T> result{new T(RefConstructionToken(Threading), std::forward<Args>(args)...)};
+    cc::IntrusivePtr result{new T(RefConstructionToken(Threading), std::forward<Args>(args)...)};
     // A constructor can accidentally accept the token but omit forwarding it.
     // Reject that mistake in release builds too, before publishing the object.
-    if (static_cast<const Ref*>(result.get())->getReferenceThreading() != Threading)
+    if (static_cast<const RefCounted*>(result.get())->getReferenceThreading() != Threading)
         throw std::logic_error("Ref constructor did not forward its RefConstructionToken");
     return result;
 }
 
+} // namespace cc
+
+NS_CC_BEGIN
+using cc::makeRef;
+using cc::static_pointer_cast;
+using cc::dynamic_pointer_cast;
 /** A strong reference whose non-null target always uses RefThreading::Atomic.
  * The private IntrusivePtr stores the same intrusive ownership as an ordinary IntrusivePtr;
  * this wrapper adds no counter and never changes an object's policy.
@@ -187,7 +194,7 @@ private:
 
     cc::IntrusivePtr<T> _ptr;
 
-    static_assert(std::is_convertible<T*, const Ref*>::value,
+    static_assert(std::is_convertible_v<T*,const Ref*>,
                   "T must publicly and unambiguously derive from Ref (optionally const)");
 
     template <class U>

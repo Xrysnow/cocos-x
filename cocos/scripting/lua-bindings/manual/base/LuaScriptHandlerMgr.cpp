@@ -37,7 +37,7 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<ScheduleHandlerDelegate> ScheduleHandlerDelegate::create()
 {
-    cc::IntrusivePtr<ScheduleHandlerDelegate> ret{new ScheduleHandlerDelegate()};
+    auto ret = cc::IntrusivePtr{new ScheduleHandlerDelegate()};
     return ret;
 }
 
@@ -47,7 +47,7 @@ void ScheduleHandlerDelegate::update(float elapse) {}
 
 cc::IntrusivePtr<LuaCallFunc> LuaCallFunc::create(const std::function<void(Node*)>& func)
 {
-    cc::IntrusivePtr<LuaCallFunc> ret{new LuaCallFunc()};
+    auto ret = cc::IntrusivePtr{new LuaCallFunc()};
 
     if (ret->initWithFunction(func))
     {
@@ -177,7 +177,8 @@ void ScriptHandlerMgr::removeObjectAllHandlers(void* object)
         if (!iter->second.empty())
         {
             for (auto& handlerPair : iter->second)
-                LuaEngine::getInstance()->removeScriptHandler(handlerPair.second);
+                if (auto* manager=ScriptEngineManager::getInstanceIfExists())
+                    if (auto* engine=manager->getScriptEngine()) engine->removeScriptHandler(handlerPair.second);
 
             (iter->second).clear();
         }

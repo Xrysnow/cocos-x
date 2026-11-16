@@ -18,6 +18,9 @@ CC_BACKEND_BEGIN
 class CC_DLL ProgramStateRegistry : public Ref
 {
 public:
+    ProgramStateRegistry() = default;
+
+public:
     /** returns the shared instance */
     static ProgramStateRegistry* getInstance();
 

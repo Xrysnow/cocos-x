@@ -34,10 +34,10 @@ ShaderCache* ShaderCache::getInstance()
 {
     if (!_sharedShaderCache)
     {
-        _sharedShaderCache = cc::IntrusivePtr<ShaderCache>{new ShaderCache()}.detach();
+        _sharedShaderCache = cc::IntrusivePtr{new ShaderCache()}.detach();
         if (!_sharedShaderCache->init())
         {
-            CC_SAFE_DELETE(_sharedShaderCache);
+            CC_SAFE_RELEASE_NULL(_sharedShaderCache);
         }
     }
     return _sharedShaderCache;

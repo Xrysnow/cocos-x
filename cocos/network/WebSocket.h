@@ -115,6 +115,9 @@ public:
     class Event : public cocos2d::Ref
     {
     public:
+        Event() = default;
+
+    public:
         enum class Type
         {
             ON_OPEN,

@@ -32,7 +32,7 @@ namespace gfx {
 CCVKSampler::CCVKSampler(const SamplerInfo &info) : Sampler(info) {
     _typedID = generateObjectID<decltype(this)>();
 
-    _gpuSampler = ccnew CCVKGPUSampler;
+    _gpuSampler = cc::IntrusivePtr{ccnew CCVKGPUSampler};
     _gpuSampler->minFilter = _info.minFilter;
     _gpuSampler->magFilter = _info.magFilter;
     _gpuSampler->mipFilter = _info.mipFilter;
