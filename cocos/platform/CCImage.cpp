@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include <string>
 #include <ctype.h>
 
-#include "base/axstd.h"
+#include "base/ccstd.h"
 #include "base/ccConfig.h"  // CC_USE_JPEG, CC_USE_WEBP
 
 #define STBI_NO_JPEG
@@ -2010,7 +2010,7 @@ bool Image::initWithS3TCData(uint8_t* data, ssize_t dataLen, bool ownData)
             int bytePerPixel    = 4;
             unsigned int stride = width * bytePerPixel;
 
-            auto decodeImageData = axstd::make_unique_for_overwrite<uint8_t[]>(stride * height);
+            auto decodeImageData = ccstd::make_unique_for_overwrite<uint8_t[]>(stride * height);
             if (FOURCC_DXT1 == header->ddsd.DUMMYUNIONNAMEN4.ddpfPixelFormat.fourCC)
             {
                 s3tc_decode(pixelData + encodeOffset, &decodeImageData[0], width, height, S3TCDecodeFlag::DXT1);

@@ -31,7 +31,7 @@ THE SOFTWARE.
 #include "2d/CCAutoPolygon.h"
 #include "poly2tri/poly2tri.h"
 #include "base/CCDirector.h"
-#include "base/axstd.h"
+#include "base/ccstd.h"
 #include "renderer/CCTextureCache.h"
 #include "clipper2/clipper.h"
 #include <algorithm>
@@ -597,8 +597,8 @@ TrianglesCommand::Triangles AutoPolygon::triangulate(const std::vector<Vec2>& po
     cdt.Triangulate();
     std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
 
-    axstd::pod_vector<unsigned short> indices(tris.size() * 3); 
-    axstd::pod_vector<V3F_C4B_T2F> verts;
+    ccstd::pod_vector<unsigned short> indices(tris.size() * 3);
+    ccstd::pod_vector<V3F_C4B_T2F> verts;
     verts.reserve(indices.size() / 2);  // we won't know the size of verts until we process all of the triangles!
 
     unsigned short idx = 0;

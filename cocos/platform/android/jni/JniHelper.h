@@ -38,7 +38,7 @@ THE SOFTWARE.
 #include "platform/CCPlatformMacros.h"
 #include "math/Vec3.h"
 #include "jni/jni.hpp"
-#include "base/axstd.h"
+#include "base/ccstd.h"
 
 namespace jni
 {
@@ -268,10 +268,10 @@ public:
 
     /**
     @brief Call of Java static float* method
-    @return axstd::pod_vector
+    @return ccstd::pod_vector
     */
     template <typename... Ts>
-    static axstd::pod_vector<float> callStaticFloatArrayMethod(const char* className, const char* methodName, Ts&&... xs)
+    static ccstd::pod_vector<float> callStaticFloatArrayMethod(const char* className, const char* methodName, Ts&&... xs)
     {
         cc::JniMethodInfo t;
         const char* signature = jni::TypeSignature<jni::Array<jfloat>(std::decay_t<Ts>...)>{}();
@@ -289,7 +289,7 @@ public:
             }
 
             jsize len = t.env->GetArrayLength(array);
-            axstd::pod_vector<float> result(len);
+            ccstd::pod_vector<float> result(len);
             jfloat* elems = t.env->GetFloatArrayElements(array, 0);
             if (elems)
             {
@@ -309,10 +309,10 @@ public:
 
     /**
     @brief Call of Java static int* method
-    @return axstd::pod_vector
+    @return ccstd::pod_vector
     */
     template <typename... Ts>
-    static axstd::pod_vector<int32_t> callStaticIntArrayMethod(const char* className, const char* methodName, Ts&&... xs)
+    static ccstd::pod_vector<int32_t> callStaticIntArrayMethod(const char* className, const char* methodName, Ts&&... xs)
     {
         cc::JniMethodInfo t;
         const char* signature = jni::TypeSignature<jni::Array<jint>(std::decay_t<Ts>...)>{}();
@@ -330,7 +330,7 @@ public:
             }
 
             jsize len = t.env->GetArrayLength(array);
-            axstd::pod_vector<int32_t> result(len);
+            ccstd::pod_vector<int32_t> result(len);
             jint* elems = t.env->GetIntArrayElements(array, 0);
             if (elems)
             {

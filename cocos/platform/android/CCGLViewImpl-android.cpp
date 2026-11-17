@@ -148,7 +148,7 @@ Rect GLViewImpl::getSafeAreaRect() const
     float insetLeft = 0.0f;
     float insetRight = 0.0f;
 
-    const axstd::pod_vector<int32_t> cornerRadii =
+    const ccstd::pod_vector<int32_t> cornerRadii =
             JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getDeviceCornerRadii");
 
     if (isScreenRound)
@@ -238,7 +238,7 @@ Rect GLViewImpl::getSafeAreaRect() const
     if (isCutoutEnabled)
     {
         // screen with enabled cutout area (ex. Google Pixel 3 XL, Huawei P20, Asus ZenFone 5, etc)
-        const axstd::pod_vector<int32_t> safeInsets =
+        const ccstd::pod_vector<int32_t> safeInsets =
                 JniHelper::callStaticIntArrayMethod("org/cocos/lib/CocosEngine", "getSafeInsets");
 
         if (safeInsets.size() >= 4)

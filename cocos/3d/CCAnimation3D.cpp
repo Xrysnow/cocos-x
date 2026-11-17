@@ -27,7 +27,7 @@
 #include "3d/CCAnimation3D.h"
 #include "3d/CCBundle3D.h"
 #include "platform/CCFileUtils.h"
-#include "base/axstd.h"
+#include "base/ccstd.h"
 
 NS_CC_BEGIN
 
@@ -99,8 +99,8 @@ bool Animation3D::init(const Animation3DData& data)
     _duration = data._totalTime;
 
     {
-        axstd::pod_vector<float> keys;
-        axstd::pod_vector<Vec3> values;
+        ccstd::pod_vector<float> keys;
+        ccstd::pod_vector<Vec3> values;
         for (const auto& iter : data._translationKeys)
         {
             Curve* curve = _boneCurves[iter.first];
@@ -114,9 +114,9 @@ bool Animation3D::init(const Animation3DData& data)
                 continue;
 
 
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
                                         [](const auto& keyIter) { return keyIter._time; });
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
             curve->translateCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size()).detach();
@@ -124,8 +124,8 @@ bool Animation3D::init(const Animation3DData& data)
     }
 
     {
-        axstd::pod_vector<float> keys;
-        axstd::pod_vector<Quaternion> values;
+        ccstd::pod_vector<float> keys;
+        ccstd::pod_vector<Quaternion> values;
         for (const auto& iter : data._rotationKeys)
         {
             Curve* curve = _boneCurves[iter.first];
@@ -138,9 +138,9 @@ bool Animation3D::init(const Animation3DData& data)
             if (iter.second.empty())
                 continue;
 
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
                                         [](const auto& keyIter) { return keyIter._time; });
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
             curve->rotCurve = Curve::AnimationCurveQuat::create(&keys[0], &values[0].x, (int)keys.size()).detach();
@@ -148,8 +148,8 @@ bool Animation3D::init(const Animation3DData& data)
     }
 
     {
-        axstd::pod_vector<float> keys;
-        axstd::pod_vector<Vec3> values;
+        ccstd::pod_vector<float> keys;
+        ccstd::pod_vector<Vec3> values;
         for (const auto& iter : data._scaleKeys)
         {
             Curve* curve = _boneCurves[iter.first];
@@ -162,9 +162,9 @@ bool Animation3D::init(const Animation3DData& data)
             if (iter.second.empty())
                 continue;
 
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), keys,
                                         [](const auto& keyIter) { return keyIter._time; });
-            axstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
+            ccstd::resize_and_transform(iter.second.begin(), iter.second.end(), values,
                                         [](const auto& keyIter) { return keyIter._key; });
 
             curve->scaleCurve = Curve::AnimationCurveVec3::create(&keys[0], &values[0].x, (int)keys.size()).detach();

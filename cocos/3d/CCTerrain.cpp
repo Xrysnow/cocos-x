@@ -37,7 +37,7 @@ USING_NS_CC;
 #include "renderer/backend/Buffer.h"
 #include "base/CCDirector.h"
 #include "base/ccTypes.h"
-#include "base/axstd.h"
+#include "base/ccstd.h"
 #include "base/CCEventType.h"
 #include "2d/CCCamera.h"
 #include "platform/CCImage.h"
@@ -1347,7 +1347,7 @@ void Terrain::Chunk::updateIndicesLOD()
 
 void Terrain::Chunk::calculateAABB()
 {
-    auto pos = axstd::pod_vector_from<Vec3>(_originalVertices.begin(), _originalVertices.end(),
+    auto pos = ccstd::pod_vector_from<Vec3>(_originalVertices.begin(), _originalVertices.end(),
                    [](const auto& it) { return it._position; });
     _aabb.updateMinMax(&pos[0], pos.size());
 }

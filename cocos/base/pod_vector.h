@@ -38,7 +38,7 @@ Copy of https://github.com/microsoft/STL/blob/main/stl/inc/vector but for pod ty
 #include <limits>
 #include <stdint.h>
 
-namespace axstd
+namespace ccstd
 {
 template <typename _Ty, bool /*_use_crt_alloc*/ = false>
 struct pod_allocator
@@ -237,4 +237,4 @@ private:
     pointer _Mylast  = nullptr;
     pointer _Myend   = nullptr;
 };
-}  // namespace axstd
+}  // namespace ccstd
