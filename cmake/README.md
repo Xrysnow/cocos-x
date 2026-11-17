@@ -1,9 +1,5 @@
 # Standalone Windows x64 libraries
 
-The common `cc::RefCounted` / `cocos2d::Ref` identity and its rebuild, ownership
-and host-lifetime requirements are documented in
-[`docs/REF_LIFETIME.md`](../docs/REF_LIFETIME.md).
-
 To include the cross-platform Lua application, configure the cocos-x root with
 `-DCC_BUILD_DEMO=ON -DBUILD_LUA_LIBS=ON` and build the `cocos_demo` target.
 The option defaults to `OFF` and works with both static and supported shared-core
