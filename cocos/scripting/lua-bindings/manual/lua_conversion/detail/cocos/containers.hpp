@@ -37,10 +37,10 @@ namespace lua
 	LUA_TO_LUA_VECTOR(cc::RefVector);
 
 	// StringMap uses transparent hash/equality parameters. Match the complete
-	// Map type instead of assuming its default std::hash specialization.
+	// RefMap type instead of assuming its default std::hash specialization.
 	template<typename K, typename V, typename Hash, typename Equal>
-	struct to_lua<cc::Map<K, V, Hash, Equal>> {
-		static void F(lua_State* L, const cc::Map<K, V, Hash, Equal>& inValue) {
+	struct to_lua<cc::RefMap<K, V, Hash, Equal>> {
+		static void F(lua_State* L, const cc::RefMap<K, V, Hash, Equal>& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, static_cast<int>(inValue.size()));
 			const int table = lua_gettop(L);

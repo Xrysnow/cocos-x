@@ -53,7 +53,7 @@ cc::IntrusivePtr<ProfilingTimer> Profiler::createAndAddTimerWithName(const char*
 {
     cc::IntrusivePtr t{new ProfilingTimer()};
     t->initWithName(timerName);
-    _activeTimers.insert(timerName, t.get());
+    _activeTimers.insert(timerName, t);
     return t; // The timer map retains its own share.
 }
 

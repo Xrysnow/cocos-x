@@ -781,7 +781,7 @@ bool ProgramGFX::generateState(const ProgramState* state)
     if (getState(state))
         return true;
     cc::IntrusivePtr stateGFX{new ProgramStateGFX(this)};
-    _states.insert((void*)state, stateGFX.get());
+    _states.insert((void*)state, std::move(stateGFX));
     return true;
 }
 
@@ -884,7 +884,7 @@ ShaderModuleGFX* ProgramGFX::getShaderModule(const cc::gfx::ShaderStage& stage)
     else
     {
         cc::IntrusivePtr m{new ShaderModuleGFX(stage)};
-        cachedModules.insert(hash, m.get());
+        cachedModules.insert(hash, m);
         return m.get(); // cachedModules owns this borrow.
     }
 }

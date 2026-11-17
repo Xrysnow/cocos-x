@@ -155,6 +155,7 @@ set(COCOS_BASE_STANDALONE_HEADER
     base/Random.h
     base/RefCounted.h
     base/RefCountedExport.h
+    base/StringHash.h
     base/RefMap.h
     base/RefVector.h
     base/StringHandle.h
