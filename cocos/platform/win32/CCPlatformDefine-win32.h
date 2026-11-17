@@ -46,7 +46,10 @@ THE SOFTWARE.
 #else
     #define CC_ASSERT(cond) assert(cond)
 #endif
-#define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
+// Compatibility for direct platform-header consumers (including C).
+#ifndef CC_UNUSED_PARAM
+    #define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
+#endif
 
 /* Define NULL pointer value */
 #ifndef NULL

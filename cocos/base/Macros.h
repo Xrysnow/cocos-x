@@ -35,19 +35,23 @@
 
 #include "platform/CCNamespace.h"
 #include "base/ccConfig.h"
+// Define the common helper before loading platform compatibility fallbacks.
+#ifndef CC_UNUSED_PARAM
+    #define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
+#endif
+
 #include "platform/CCPlatformDefine.h"
 
 // Retain the foundation header contract for targets without a platform adapter.
 #ifndef CC_DLL
     #define CC_DLL
 #endif
-#ifndef CC_UNUSED_PARAM
-    #define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
-#endif
 
 #ifndef CC_DEBUG
     #define CC_DEBUG 0
 #endif
+
+#define COCOS2D_DEBUG CC_DEBUG
 
 #include <algorithm>
 #include <cfloat>
@@ -226,11 +230,215 @@ It should work same as apples CFSwapInt32LittleToHost(..)
     #define CC_FORMAT_PRINTF(formatPos, argPos)
 #endif
 
+#if defined(_MSC_VER)
+    #define CC_FORMAT_PRINTF_SIZE_T "%08lX"
+#else
+    #define CC_FORMAT_PRINTF_SIZE_T "%08zX"
+#endif
+
+/** @def CC_REQUIRES_NULL_TERMINATION
+ *
+ */
+#if !defined(CC_REQUIRES_NULL_TERMINATION)
+    #if defined(__APPLE_CC__) && (__APPLE_CC__ >= 5549)
+        #define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel(0, 1)))
+    #elif defined(__GNUC__)
+        #define CC_REQUIRES_NULL_TERMINATION __attribute__((sentinel))
+    #else
+        #define CC_REQUIRES_NULL_TERMINATION
+    #endif
+#endif
+
 // Lightweight logging entry points; the Console class is not needed here.
 namespace cc {
 void CC_DLL print(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
 void CC_DLL log(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
+void CC_DLL printWithFunction(const char* function, const char* format, ...) CC_FORMAT_PRINTF(2, 3);
 }
+
+#define __CCLOGWITHFUNCTION(...) \
+    ::cc::printWithFunction(__FUNCTION__, __VA_ARGS__)
+
+/// @name Cocos2d debug
+/// @{
+#if !defined(CC_DEBUG) || CC_DEBUG == 0
+    #define CCLOG(...)       do {} while (0)
+    #define CCLOGINFO(...)   do {} while (0)
+    #define CCLOGERROR(...)  do {} while (0)
+    #define CCLOGWARN(...)   do {} while (0)
+
+#elif CC_DEBUG == 1
+    #define CCLOG(format, ...)      cc::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cc::print(format, ##__VA_ARGS__)
+    #define CCLOGINFO(format,...)   do {} while (0)
+    #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
+
+#elif CC_DEBUG > 1
+    #define CCLOG(format, ...)      cc::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cc::print(format, ##__VA_ARGS__)
+    #define CCLOGINFO(format,...)   cc::print(format, ##__VA_ARGS__)
+    #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
+#endif // CC_DEBUG
+
+/** Lua engine debug */
+#if !defined(CC_DEBUG) || CC_DEBUG == 0 || CC_LUA_ENGINE_DEBUG == 0
+    #define LUALOG(...)
+#else
+    #define LUALOG(format, ...) cc::print(format, ##__VA_ARGS__)
+#endif  // Lua engine debug
+
+//  end of debug group
+/// @}
+
+// Factory macro expansion requires base/Ptr.h; the legacy platform header supplies it.
+/** @def CREATE_FUNC(__TYPE__)
+ * Define a create function for a specific type, such as Layer.
+ *
+ * @param __TYPE__  class type to add create(), such as Layer.
+ */
+#define CREATE_FUNC(__TYPE__)                                      \
+    static cc::IntrusivePtr<__TYPE__> create()                                      \
+    {                                                              \
+        cc::IntrusivePtr owner{new __TYPE__()}; \
+        if (!owner->init())                                       \
+            return nullptr;                                        \
+        return owner; \
+    }
+
+/** @def NODE_FUNC(__TYPE__)
+ * Define a node function for a specific type, such as Layer.
+ *
+ * @param __TYPE__  class type to add node(), such as Layer.
+ * @deprecated  This interface will be deprecated sooner or later.
+ */
+#define NODE_FUNC(__TYPE__)                                         \
+    CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<__TYPE__> node()                 \
+    {                                                               \
+        cc::IntrusivePtr owner{new __TYPE__()}; \
+        if (!owner->init())                                        \
+            return nullptr;                                         \
+        return owner;  \
+    }
+
+/** @def CC_PROPERTY_READONLY
+ * It is used to declare a protected variable. We can use getter to read the variable.
+ *
+ * @param varType     the type of variable.
+ * @param varName     variable name.
+ * @param funName     "get + funName" will be the name of the getter.
+ * @warning   The getter is a public virtual function, you should rewrite it first.
+ *            The variables and methods declared after CC_PROPERTY_READONLY are all public.
+ *            If you need protected or private, please declare.
+ */
+#define CC_PROPERTY_READONLY(varType, varName, funName) \
+protected:                                              \
+    varType varName;                                    \
+                                                        \
+public:                                                 \
+    virtual varType get##funName() const;
+
+#define CC_PROPERTY_READONLY_PASS_BY_REF(varType, varName, funName) \
+protected:                                                          \
+    varType varName;                                                \
+                                                                    \
+public:                                                             \
+    virtual const varType& get##funName() const;
+
+/** @def CC_PROPERTY
+ * It is used to declare a protected variable.
+ * We can use getter to read the variable, and use the setter to change the variable.
+ *
+ * @param varType     The type of variable.
+ * @param varName     Variable name.
+ * @param funName     "get + funName" will be the name of the getter.
+ *                    "set + funName" will be the name of the setter.
+ * @warning   The getter and setter are public virtual functions, you should rewrite them first.
+ *            The variables and methods declared after CC_PROPERTY are all public.
+ *            If you need protected or private, please declare.
+ */
+#define CC_PROPERTY(varType, varName, funName) \
+protected:                                     \
+    varType varName;                           \
+                                               \
+public:                                        \
+    virtual varType get##funName() const;      \
+    virtual void set##funName(varType var);
+
+#define CC_PROPERTY_PASS_BY_REF(varType, varName, funName) \
+protected:                                                 \
+    varType varName;                                       \
+                                                           \
+public:                                                    \
+    virtual const varType& get##funName() const;           \
+    virtual void set##funName(const varType& var);
+
+/** @def CC_SYNTHESIZE_READONLY
+ * It is used to declare a protected variable. We can use getter to read the variable.
+ *
+ * @param varType     The type of variable.
+ * @param varName     Variable name.
+ * @param funName     "get + funName" will be the name of the getter.
+ * @warning   The getter is a public inline function.
+ *            The variables and methods declared after CC_SYNTHESIZE_READONLY are all public.
+ *            If you need protected or private, please declare.
+ */
+#define CC_SYNTHESIZE_READONLY(varType, varName, funName) \
+protected:                                                \
+    varType varName;                                      \
+                                                          \
+public:                                                   \
+    virtual inline varType get##funName() const { return varName; }
+
+#define CC_SYNTHESIZE_READONLY_PASS_BY_REF(varType, varName, funName) \
+protected:                                                            \
+    varType varName;                                                  \
+                                                                      \
+public:                                                               \
+    virtual inline const varType& get##funName() const { return varName; }
+
+/** @def CC_SYNTHESIZE
+ * It is used to declare a protected variable.
+ * We can use getter to read the variable, and use the setter to change the variable.
+ *
+ * @param varType     The type of variable.
+ * @param varName     Variable name.
+ * @param funName     "get + funName" will be the name of the getter.
+ *                    "set + funName" will be the name of the setter.
+ * @warning   The getter and setter are public inline functions.
+ *            The variables and methods declared after CC_SYNTHESIZE are all public.
+ *            If you need protected or private, please declare.
+ */
+#define CC_SYNTHESIZE(varType, varName, funName)                    \
+protected:                                                          \
+    varType varName;                                                \
+                                                                    \
+public:                                                             \
+    virtual inline varType get##funName() const { return varName; } \
+    virtual inline void set##funName(varType var) { varName = var; }
+
+#define CC_SYNTHESIZE_PASS_BY_REF(varType, varName, funName)               \
+protected:                                                                 \
+    varType varName;                                                       \
+                                                                           \
+public:                                                                    \
+    virtual inline const varType& get##funName() const { return varName; } \
+    virtual inline void set##funName(const varType& var) { varName = var; }
+
+#define CC_SYNTHESIZE_RETAIN(varType, varName, funName)             \
+private:                                                            \
+    varType varName;                                                \
+                                                                    \
+public:                                                             \
+    virtual inline varType get##funName() const { return varName; } \
+    virtual inline void set##funName(varType var)                   \
+    {                                                               \
+        if (varName != var)                                         \
+        {                                                           \
+            CC_SAFE_RETAIN(var);                                    \
+            CC_SAFE_RELEASE(varName);                               \
+            varName = var;                                          \
+        }                                                           \
+    }
 
 #ifndef CCASSERT
     #if CC_DEBUG > 0
@@ -404,6 +612,33 @@ extern bool CC_DLL cc_assert_script_compatible(const char* msg);
         _Pragma("clang diagnostic pop")
 #endif
 
+/** @def CC_DISALLOW_COPY_AND_ASSIGN(TypeName)
+ * A macro to disallow the copy constructor and operator= functions.
+ * This should be used in the private: declarations for a class
+ */
+#if defined(__GNUC__) && ((__GNUC__ >= 5) || ((__GNUG__ == 4) && (__GNUC_MINOR__ >= 4))) || \
+    (defined(__clang__) && (__clang_major__ >= 3)) || (_MSC_VER >= 1800)
+    #define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+        TypeName(const TypeName&) = delete;       \
+        TypeName& operator=(const TypeName&) = delete;
+#else
+    #define CC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+        TypeName(const TypeName&);                \
+        TypeName& operator=(const TypeName&);
+#endif
+
+/** @def CC_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName)
+ * A macro to disallow all the implicit constructors, namely the
+ * default constructor, copy constructor and operator= functions.
+ *
+ * This should be used in the private: declarations for a class
+ * that wants to prevent anyone from instantiating it. This is
+ * especially useful for classes containing only static methods.
+ */
+#define CC_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
+    TypeName();                                     \
+    CC_DISALLOW_COPY_AND_ASSIGN(TypeName)
+
 #define CC_DISALLOW_ASSIGN(TypeName)                \
     TypeName &operator=(const TypeName &) = delete; \
     TypeName &operator=(TypeName &&) = delete;
@@ -560,6 +795,30 @@ extern bool CC_DLL cc_assert_script_compatible(const char* msg);
 #else
     #define CC_PREDICT_TRUE(x)  (x)
     #define CC_PREDICT_FALSE(x) (x)
+#endif
+
+// compatibility with non-clang compilers...
+#ifndef __has_attribute
+    #define __has_attribute(x) 0
+#endif
+#ifndef __has_builtin
+    #define __has_builtin(x) 0
+#endif
+
+/*
+ * helps the compiler's optimizer predicting branches
+ */
+#if __has_builtin(__builtin_expect)
+    #ifdef __cplusplus
+        #define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), true))
+        #define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
+    #else
+        #define UTILS_LIKELY(exp) (__builtin_expect(!!(exp), 1))
+        #define UTILS_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
+    #endif
+#else
+    #define UTILS_LIKELY(exp) (!!(exp))
+    #define UTILS_UNLIKELY(exp) (!!(exp))
 #endif
 
 #if defined(_MSC_VER)

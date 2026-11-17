@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <functional>
 #include <cctype>
+#include <cstdarg>
 #include <locale>
 #include <sstream>
 #include <stdio.h>
@@ -56,7 +57,6 @@
 #include "platform/CCFileUtilsDirectory.h"
 #include "renderer/CCTextureCache.h"
 #include "base/ccUtils.h"
-#include "base/ccUTF8.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
     #include <android/log.h>
@@ -86,6 +86,68 @@ static const size_t SEND_BUFSIZ = 512;
 /** private functions */
 namespace
 {
+// Keep printf formatting private to logging, including legacy failure behavior.
+std::string formatLogMessage(const char* format, va_list ap)
+{
+    std::string buf(CC_VSNPRINTF_BUFFER_LENGTH, '\0');
+
+    va_list args;
+    va_copy(args, ap);
+    int nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
+    va_end(args);
+
+    if (nret >= 0)
+    {
+        if ((unsigned int)nret < buf.length())
+        {
+            buf.resize(nret);
+        }
+        else if ((unsigned int)nret > buf.length())
+        {  // handle return required length when buffer insufficient
+            buf.resize(nret);
+
+            va_copy(args, ap);
+            nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
+            va_end(args);
+        }
+        // else equals, do nothing.
+    }
+    else
+    {   // handle return -1 when buffer insufficient
+        /*
+        vs2013/older & glibc <= 2.0.6, they would return -1 when the output was truncated.
+        see: http://man7.org/linux/man-pages/man3/vsnprintf.3.html
+        */
+#if (defined(__linux__) && ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1)))) || \
+    (defined(_MSC_VER) && _MSC_VER < 1900)
+        enum : size_t
+        {
+            enlarge_limits = (1 << 20),  // limits the buffer cost memory less than 2MB
+        };
+        do
+        {
+            buf.resize(buf.length() << 1);
+
+            va_copy(args, ap);
+            nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
+            va_end(args);
+
+        } while (nret < 0 && buf.size() <= enlarge_limits);
+        if (nret > 0)
+            buf.resize(nret);
+        else
+            buf = "strfmt: an error is encountered!";
+#else
+        /* other standard implementation
+        see: http://www.cplusplus.com/reference/cstdio/vsnprintf/
+        */
+        buf = "strfmt: an error is encountered!";
+#endif
+    }
+
+    return buf;
+}
+
 #if defined(__MINGW32__)
 // inet
 const char* inet_ntop(int af, const void* src, char* dst, int cnt)
@@ -172,7 +234,7 @@ void print(const char* format, ...)
     va_list args;
 
     va_start(args, format);
-    auto buf = StringUtils::vformat(format, args);
+    auto buf = formatLogMessage(format, args);
     va_end(args);
 
     print_impl(buf);
@@ -183,9 +245,23 @@ void log(const char* format, ...)
     va_list args;
 
     va_start(args, format);
-    auto buf = StringUtils::vformat(format, args);
+    auto buf = formatLogMessage(format, args);
     va_end(args);
 
+    print_impl(buf);
+}
+
+void printWithFunction(const char* function, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    auto message = formatLogMessage(format, args);
+    va_end(args);
+
+    std::string buf(function);
+    buf += " : ";
+    // Preserve the old "%s : %s" behavior for an embedded NUL in the message.
+    buf += message.c_str();
     print_impl(buf);
 }
 
