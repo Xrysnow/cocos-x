@@ -1387,8 +1387,8 @@ void Console::commandTouchSubCommandTap(socket_native_type fd, std::string_view 
     if ((argv.size() == 3) && (Console::Utility::isFloat(argv[1]) && Console::Utility::isFloat(argv[2])))
     {
 
-        float x = (float)utils::atof(argv[1].c_str());
-        float y = (float)utils::atof(argv[2].c_str());
+        float x = (float)cc::utils::atof(argv[1].c_str());
+        float y = (float)cc::utils::atof(argv[2].c_str());
 
         std::srand((unsigned)time(nullptr));
         _touchId         = rand();
@@ -1413,10 +1413,10 @@ void Console::commandTouchSubCommandSwipe(socket_native_type fd, std::string_vie
         (Console::Utility::isFloat(argv[3])) && (Console::Utility::isFloat(argv[4])))
     {
 
-        float x1 = (float)utils::atof(argv[1].c_str());
-        float y1 = (float)utils::atof(argv[2].c_str());
-        float x2 = (float)utils::atof(argv[3].c_str());
-        float y2 = (float)utils::atof(argv[4].c_str());
+        float x1 = (float)cc::utils::atof(argv[1].c_str());
+        float y1 = (float)cc::utils::atof(argv[2].c_str());
+        float x2 = (float)cc::utils::atof(argv[3].c_str());
+        float y2 = (float)cc::utils::atof(argv[4].c_str());
 
         std::srand((unsigned)time(nullptr));
         _touchId = rand();

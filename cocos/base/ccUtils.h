@@ -41,6 +41,11 @@ THE SOFTWARE.
 Misc free functions
 */
 
+namespace cc::utils
+{
+CC_DLL double atof(const char* str);
+}
+
 NS_CC_BEGIN
 /*
 ccNextPOT function is licensed under the same license that is used in Texture2D.m.
@@ -112,7 +117,7 @@ CC_DLL std::vector<Node*> findChildren(const Node& node, std::string_view name);
  * @param str The string be to converted to double.
  * @return Returns converted value of a string.
  */
-CC_DLL double atof(const char* str);
+using cc::utils::atof;
 
 /** Get current exact time, accurate to nanoseconds.
  * @return Returns the time in seconds since the Epoch.

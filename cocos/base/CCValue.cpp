@@ -630,7 +630,7 @@ float Value::asFloat(float defaultValue) const
         return _field.floatVal;
 
     case Type::STRING:
-        return static_cast<float>(utils::atof(_field.strVal->c_str()));
+        return static_cast<float>(cc::utils::atof(_field.strVal->c_str()));
 
     case Type::INT_I32:
         return static_cast<float>(_field.intVal);
@@ -662,7 +662,7 @@ double Value::asDouble(double defaultValue) const
         return _field.doubleVal;
 
     case Type::STRING:
-        return static_cast<double>(utils::atof(_field.strVal->c_str()));
+        return static_cast<double>(cc::utils::atof(_field.strVal->c_str()));
 
     case Type::INT_I32:
         return static_cast<double>(_field.intVal);

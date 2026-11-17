@@ -51,7 +51,8 @@ double atof(const char *str) {
     }
 
     char buf[MAX_ITOA_BUFFER_SIZE];
-    strncpy(buf, str, MAX_ITOA_BUFFER_SIZE);
+    strncpy(buf, str, MAX_ITOA_BUFFER_SIZE - 1);
+    buf[MAX_ITOA_BUFFER_SIZE - 1] = '\0';
 
     // strip string, only remain 7 numbers after '.'
     char *dot = strchr(buf, '.');

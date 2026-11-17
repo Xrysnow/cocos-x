@@ -262,7 +262,7 @@ static inline float parseFloat(const char*& token)
 {
     token += strspn(token, " \t");
 #ifdef TINY_OBJ_LOADER_OLD_FLOAT_PARSER
-    float f = (float)utils::atof(token);
+    float f = (float)cc::utils::atof(token);
     token += strcspn(token, " \t\r");
 #else
     const char* end = token + strcspn(token, " \t\r");

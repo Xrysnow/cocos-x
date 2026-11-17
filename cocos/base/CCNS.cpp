@@ -136,10 +136,10 @@ Rect RectFromString(std::string_view str)
         strArray sizeInfo;
         CC_BREAK_IF(!splitWithForm(sizeStr, sizeInfo));
 
-        float x      = (float)utils::atof(pointInfo[0].c_str());
-        float y      = (float)utils::atof(pointInfo[1].c_str());
-        float width  = (float)utils::atof(sizeInfo[0].c_str());
-        float height = (float)utils::atof(sizeInfo[1].c_str());
+        float x      = (float)cc::utils::atof(pointInfo[0].c_str());
+        float y      = (float)cc::utils::atof(pointInfo[1].c_str());
+        float width  = (float)cc::utils::atof(sizeInfo[0].c_str());
+        float height = (float)cc::utils::atof(sizeInfo[1].c_str());
 
         result = Rect(x, y, width, height);
     } while (0);
@@ -156,8 +156,8 @@ Vec2 PointFromString(std::string_view str)
         strArray strs;
         CC_BREAK_IF(!splitWithForm(str, strs));
 
-        float x = (float)utils::atof(strs[0].c_str());
-        float y = (float)utils::atof(strs[1].c_str());
+        float x = (float)cc::utils::atof(strs[0].c_str());
+        float y = (float)cc::utils::atof(strs[1].c_str());
 
         ret.set(x, y);
     } while (0);
@@ -174,8 +174,8 @@ Vec2 SizeFromString(std::string_view pszContent)
         strArray strs;
         CC_BREAK_IF(!splitWithForm(pszContent, strs));
 
-        float width  = (float)utils::atof(strs[0].c_str());
-        float height = (float)utils::atof(strs[1].c_str());
+        float width  = (float)cc::utils::atof(strs[0].c_str());
+        float height = (float)cc::utils::atof(strs[1].c_str());
 
         ret = Vec2(width, height);
     } while (0);

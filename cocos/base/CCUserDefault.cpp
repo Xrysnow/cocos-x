@@ -205,7 +205,7 @@ double UserDefault::getDoubleForKey(const char* pKey, double defaultValue)
 {
     auto pValue = getValueForKey(pKey);
     if (pValue)
-        return utils::atof(pValue->c_str());
+        return cc::utils::atof(pValue->c_str());
 
     return defaultValue;
 }
