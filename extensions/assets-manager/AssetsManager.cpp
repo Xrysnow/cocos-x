@@ -43,7 +43,7 @@ NS_CC_EXT_BEGIN
 
 using namespace std;
 USING_NS_CC;
-using namespace cocos2d::network;
+using namespace cc::network;
 
 #define KEY_OF_VERSION "current-version-code"
 #define KEY_OF_DOWNLOADED_VERSION "downloaded-version-code"

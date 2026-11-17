@@ -8,14 +8,14 @@
 #include "base/CCDirector.h"
 
 /// cocos2d singleton objects
-#define CCDIRECTOR cocos2d::Director::getInstance()
+#define CCDIRECTOR cc::Director::getInstance()
 #define CCRUNONGL CCDIRECTOR->getScheduler()->performFunctionInCocosThread
 #define CCEVENTMGR CCDIRECTOR->getEventDispatcher()
 #define CCSCHTASKS CCDIRECTOR->getScheduler()
 #define CCACTIONMGR CCDIRECTOR->getActionManager()
-#define CCFILEUTILS cocos2d::FileUtils::getInstance()
-#define CCAUDIO cocos2d::SimpleAudioEngine::getInstance()
-#define CCAPP cocos2d::CCApplication::getInstance()
+#define CCFILEUTILS cc::FileUtils::getInstance()
+#define CCAUDIO cc::SimpleAudioEngine::getInstance()
+#define CCAPP cc::CCApplication::getInstance()
 
 NS_CC_BEGIN
 
@@ -51,15 +51,15 @@ static bool engine_inj_checkVisibility(Node* theNode)
     return visible;
 }
 
-static bool engine_inj_containsTouchPoint(cocos2d::Node* target, cocos2d::Touch* touch)
+static bool engine_inj_containsTouchPoint(cc::Node* target, cc::Touch* touch)
 {
     assert(target != nullptr);
 
-    cocos2d::Point pt = target->convertTouchToNodeSpace(touch);
+    cc::Point pt = target->convertTouchToNodeSpace(touch);
 
     const Vec2& size = target->getContentSize();
 
-    cocos2d::Rect rc(0, 0, size.width, size.height);
+    cc::Rect rc(0, 0, size.width, size.height);
 
     bool contains = (rc.containsPoint(pt));
 
@@ -67,13 +67,13 @@ static bool engine_inj_containsTouchPoint(cocos2d::Node* target, cocos2d::Touch*
     return contains;
 }
 
-static bool engine_inj_containsPoint(cocos2d::Node* target, const cocos2d::Vec2& worldPoint)
+static bool engine_inj_containsPoint(cc::Node* target, const cc::Vec2& worldPoint)
 {
-    cocos2d::Point pt = target->convertToNodeSpace(worldPoint);
+    cc::Point pt = target->convertToNodeSpace(worldPoint);
 
     const Vec2& size = target->getContentSize();
 
-    cocos2d::Rect rc(0, 0, size.width, size.height);
+    cc::Rect rc(0, 0, size.width, size.height);
 
     bool contains = (rc.containsPoint(pt));
 
@@ -908,7 +908,7 @@ void TextFieldEx::__initCursor(int height, int width, const Color4B& color)
     this->addChild(this->cursor);
 
     this->cursor->setPosition(Point(0, this->getContentSize().height / 2));
-    // nodes_layout::setNodeLB(this->cursor, cocos2d::Point::ZERO);
+    // nodes_layout::setNodeLB(this->cursor, cc::Point::ZERO);
 
     /*CCAction* blink = CCRepeatForever::create(
         (CCActionInterval *)CCSequence::create(CCFadeOut::create(0.25f),

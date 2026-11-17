@@ -55,13 +55,13 @@ EditBoxImplMac::~EditBoxImplMac()
     [_sysEdit release];
 }
 
-void EditBoxImplMac::createNativeControl(const cocos2d::Rect& frame)
+void EditBoxImplMac::createNativeControl(const cc::Rect& frame)
 {
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     Size size   = frame.size;
     NSRect rect = NSMakeRect(0, 0, size.width * glView->getScaleX(), size.height * glView->getScaleY());
 
-    float factor = cocos2d::Director::getInstance()->getContentScaleFactor();
+    float factor = cc::Director::getInstance()->getContentScaleFactor();
 
     rect.size.width /= factor;
     rect.size.height /= factor;
@@ -75,7 +75,7 @@ NSFont* EditBoxImplMac::constructFont(const char* fontName, int fontSize)
     NSString* fntName  = [NSString stringWithUTF8String:fontName];
     fntName            = [[fntName lastPathComponent] stringByDeletingPathExtension];
     float retinaFactor = _inRetinaMode ? 2.0f : 1.0f;
-    auto glView        = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView        = cc::Director::getInstance()->getOpenGLView();
     float scaleFactor  = glView->getScaleX();
 
     if (fontSize == -1)
@@ -123,7 +123,7 @@ void EditBoxImplMac::setNativePlaceholderFont(const char* pFontName, int fontSiz
     [_sysEdit setPlaceholderFont:textFont];
 }
 
-void EditBoxImplMac::setNativeFontColor(const cocos2d::Color4B& color)
+void EditBoxImplMac::setNativeFontColor(const cc::Color4B& color)
 {
     NSColor* newColor = [NSColor colorWithCalibratedRed:color.r / 255.0f
                                                   green:color.g / 255.0f
@@ -133,7 +133,7 @@ void EditBoxImplMac::setNativeFontColor(const cocos2d::Color4B& color)
     [_sysEdit setTextColor:newColor];
 }
 
-void EditBoxImplMac::setNativePlaceholderFontColor(const cocos2d::Color4B& color)
+void EditBoxImplMac::setNativePlaceholderFontColor(const cc::Color4B& color)
 {
     NSColor* newColor = [NSColor colorWithCalibratedRed:color.r / 255.f
                                                   green:color.g / 255.f
@@ -165,7 +165,7 @@ void EditBoxImplMac::setNativeReturnType(EditBox::KeyboardReturnType returnType)
     [_sysEdit setReturnType:returnType];
 }
 
-void EditBoxImplMac::setNativeTextHorizontalAlignment(cocos2d::TextHAlignment alignment)
+void EditBoxImplMac::setNativeTextHorizontalAlignment(cc::TextHAlignment alignment)
 {
     [_sysEdit setTextHorizontalAlignment:alignment];
 }
@@ -191,7 +191,7 @@ void EditBoxImplMac::setNativeVisible(bool visible)
     [_sysEdit setVisible:visible];
 }
 
-void EditBoxImplMac::updateNativeFrame(const cocos2d::Rect& rect)
+void EditBoxImplMac::updateNativeFrame(const cc::Rect& rect)
 {
     GLView* eglView = Director::getInstance()->getOpenGLView();
     auto frameSize  = eglView->getFrameSize();

@@ -5,7 +5,7 @@
 NS_FGUI_BEGIN
 USING_NS_CC;
 
-static void drawVertRect(cocos2d::DrawNode* shape, float x, float y, float width, float height, const cocos2d::Color4F& color)
+static void drawVertRect(cc::DrawNode* shape, float x, float y, float width, float height, const cc::Color4F& color)
 {
     float mx = x + width;
     float my = y + height;
@@ -34,14 +34,14 @@ GGraph::~GGraph()
 
 void GGraph::handleInit()
 {
-    cc::IntrusivePtr<cocos2d::DrawNode> shape;
+    cc::IntrusivePtr<cc::DrawNode> shape;
     _shape = (shape = DrawNode::create()).get();
     _shape->retain();
 
     _displayObject = _shape;
 }
 
-void GGraph::drawRect(float aWidth, float aHeight, int lineSize, const cocos2d::Color4F& lineColor, const cocos2d::Color4F& fillColor)
+void GGraph::drawRect(float aWidth, float aHeight, int lineSize, const cc::Color4F& lineColor, const cc::Color4F& fillColor)
 {
     _type = 0; //avoid updateshape call in handleSizeChange
     setSize(aWidth, aHeight);
@@ -52,7 +52,7 @@ void GGraph::drawRect(float aWidth, float aHeight, int lineSize, const cocos2d::
     updateShape();
 }
 
-void GGraph::drawEllipse(float aWidth, float aHeight, int lineSize, const cocos2d::Color4F& lineColor, const cocos2d::Color4F& fillColor)
+void GGraph::drawEllipse(float aWidth, float aHeight, int lineSize, const cc::Color4F& lineColor, const cc::Color4F& fillColor)
 {
     _type = 0; //avoid updateshape call in handleSizeChange
     setSize(aWidth, aHeight);
@@ -63,7 +63,7 @@ void GGraph::drawEllipse(float aWidth, float aHeight, int lineSize, const cocos2
     updateShape();
 }
 
-void GGraph::drawPolygon(int lineSize, const cocos2d::Color4F& lineColor, const cocos2d::Color4F& fillColor, const cocos2d::Vec2* points, int count)
+void GGraph::drawPolygon(int lineSize, const cc::Color4F& lineColor, const cc::Color4F& fillColor, const cc::Vec2* points, int count)
 {
     _type = 3;
     _lineSize = lineSize;
@@ -84,7 +84,7 @@ void GGraph::drawPolygon(int lineSize, const cocos2d::Color4F& lineColor, const 
     updateShape();
 }
 
-void GGraph::drawRegularPolygon(int lineSize, const cocos2d::Color4F& lineColor, const cocos2d::Color4F& fillColor,
+void GGraph::drawRegularPolygon(int lineSize, const cc::Color4F& lineColor, const cc::Color4F& fillColor,
                                 int sides, float startAngle, const float* distances, int count)
 {
     _type = 4;
@@ -184,18 +184,18 @@ void GGraph::updateShape()
     }
 }
 
-cocos2d::Color3B GGraph::getColor() const
+cc::Color3B GGraph::getColor() const
 {
     return (Color3B)_fillColor;
 }
 
-void GGraph::setColor(const cocos2d::Color3B& value)
+void GGraph::setColor(const cc::Color3B& value)
 {
     _fillColor = Color4F(value, _fillColor.a);
     updateShape();
 }
 
-cocos2d::Value GGraph::getProp(ObjectPropID propId)
+cc::Value GGraph::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -206,7 +206,7 @@ cocos2d::Value GGraph::getProp(ObjectPropID propId)
     }
 }
 
-void GGraph::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GGraph::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {

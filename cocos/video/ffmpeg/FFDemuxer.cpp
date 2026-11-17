@@ -26,7 +26,7 @@ Demuxer::~Demuxer()
 	clean();
 }
 
-bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
+bool Demuxer::init(cc::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
 	input = AvioInput::create(std::move(source), stop);
 	if (!input)
@@ -67,7 +67,7 @@ bool Demuxer::init(cocos2d::io::StreamPtr source, const char* name, const std::a
 	return true;
 }
 
-cc::IntrusivePtr<Demuxer> Demuxer::create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
+cc::IntrusivePtr<Demuxer> Demuxer::create(cc::io::StreamPtr source, const char* name, const std::atomic<bool>* stop)
 {
 	cc::IntrusivePtr ret{new (std::nothrow) Demuxer()};
 	if (ret && ret->init(std::move(source), name, stop))

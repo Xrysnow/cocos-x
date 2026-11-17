@@ -835,7 +835,7 @@ void DownloaderCURL::startTask(std::shared_ptr<DownloadTask>& task)
     }
     else
     {
-        cocos2d::log("DownloaderCURL startTask fail, error: %d, detail: %s", context->_errCode,
+        cc::log("DownloaderCURL startTask fail, error: %d, detail: %s", context->_errCode,
                      context->_errDescription.c_str());
         task.reset();
     }
@@ -1013,4 +1013,4 @@ void DownloaderCURL::_onDownloadFinished(DownloadTask& task)
 }
 
 }  // namespace network
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

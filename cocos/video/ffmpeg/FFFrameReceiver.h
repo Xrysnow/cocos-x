@@ -5,7 +5,7 @@
 
 namespace ffmpeg
 {
-	class FrameReceiver : public cocos2d::Ref
+	class FrameReceiver : public cc::Ref
 	{
 	public:
 	    FrameReceiver() = default;

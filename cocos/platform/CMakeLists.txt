@@ -150,6 +150,7 @@ set(COCOS_PLATFORM_HEADER
     platform/CCImage.h
     platform/CCPlatformConfig.h
     platform/CCPlatformDefine.h
+    platform/CCNamespace.h
     platform/CCPlatformMacros.h
     platform/CCPosixFileStream.h
     platform/CCSAXParser.h

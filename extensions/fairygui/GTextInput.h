@@ -8,7 +8,7 @@
 
 NS_FGUI_BEGIN
 
-class GTextInput : public GTextField, cocos2d::ui::EditBoxDelegate
+class GTextInput : public GTextField, cc::ui::EditBoxDelegate
 {
 public:
     GTextInput();
@@ -35,8 +35,8 @@ protected:
 
     virtual void setTextFieldText() override;
 
-    virtual void editBoxReturn(cocos2d::ui::EditBox* editBox) override;
-    virtual void editBoxTextChanged(cocos2d::ui::EditBox* editBox, std::string_view text) override;
+    virtual void editBoxReturn(cc::ui::EditBox* editBox) override;
+    virtual void editBoxTextChanged(cc::ui::EditBox* editBox, std::string_view text) override;
 
 private:
     FUIInput* _input;

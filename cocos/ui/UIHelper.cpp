@@ -144,7 +144,7 @@ void Helper::changeLayoutSystemActiveState(bool bActive)
 {
     _activeLayout = bActive;
 }
-void Helper::doLayout(cocos2d::Node* rootNode)
+void Helper::doLayout(cc::Node* rootNode)
 {
     if (!_activeLayout)
     {
@@ -164,7 +164,7 @@ void Helper::doLayout(cocos2d::Node* rootNode)
     }
 }
 
-Rect Helper::restrictCapInsetRect(const cocos2d::Rect& capInsets, const Vec2& textureSize)
+Rect Helper::restrictCapInsetRect(const cc::Rect& capInsets, const Vec2& textureSize)
 {
     float x      = capInsets.origin.x;
     float y      = capInsets.origin.y;

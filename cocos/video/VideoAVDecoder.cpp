@@ -127,7 +127,7 @@ struct VideoAVDecoder::Impl
 		return true;
 	}
 
-	bool open(cocos2d::io::StreamPtr source, const std::atomic<bool>* cancellation)
+	bool open(cc::io::StreamPtr source, const std::atomic<bool>* cancellation)
 	{
 		stop = cancellation;
 		input = ffmpeg::AvioInput::create(std::move(source), stop);
@@ -776,7 +776,7 @@ struct VideoAVDecoder::Impl
 
 VideoAVDecoder::VideoAVDecoder() : impl(std::make_unique<Impl>()) {}
 VideoAVDecoder::~VideoAVDecoder() = default;
-bool VideoAVDecoder::open(cocos2d::io::StreamPtr source, const std::atomic<bool>* stop) { return impl->open(std::move(source), stop); }
+bool VideoAVDecoder::open(cc::io::StreamPtr source, const std::atomic<bool>* stop) { return impl->open(std::move(source), stop); }
 bool VideoAVDecoder::seek(double seconds, bool audioEnabled) { return impl->seek(seconds, audioEnabled); }
 VideoAVDecoder::Step VideoAVDecoder::step(bool video, bool audio) { return impl->step(video, audio); }
 const VideoAVDecoder::Info& VideoAVDecoder::info() const { return impl->metadata; }

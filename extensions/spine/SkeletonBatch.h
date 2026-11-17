@@ -37,9 +37,9 @@
 #include <vector>
 
 namespace spine {
-	struct SkeletonCommand : public cocos2d::TrianglesCommand {
-		cocos2d::backend::UniformLocation _locMVP;
-		cocos2d::backend::UniformLocation _locTexture;
+	struct SkeletonCommand : public cc::TrianglesCommand {
+		cc::backend::UniformLocation _locMVP;
+		cc::backend::UniformLocation _locTexture;
 	};
 	class SP_API SkeletonBatch {
 	public:
@@ -49,13 +49,13 @@ namespace spine {
 
 		void update(float delta);
 
-		cocos2d::V3F_C4B_T2F *allocateVertices(uint32_t numVertices);
+		cc::V3F_C4B_T2F *allocateVertices(uint32_t numVertices);
 		void deallocateVertices(uint32_t numVertices);
 		unsigned short *allocateIndices(uint32_t numIndices);
 		void deallocateIndices(uint32_t numVertices);
-		cocos2d::TrianglesCommand *addCommand(cocos2d::Renderer *renderer, float globalOrder, cocos2d::Texture2D *texture, cocos2d::backend::ProgramState *programState, cocos2d::BlendFunc blendType, const cocos2d::TrianglesCommand::Triangles &triangles, const cocos2d::Mat4 &mv, uint32_t flags);
+		cc::TrianglesCommand *addCommand(cc::Renderer *renderer, float globalOrder, cc::Texture2D *texture, cc::backend::ProgramState *programState, cc::BlendFunc blendType, const cc::TrianglesCommand::Triangles &triangles, const cc::Mat4 &mv, uint32_t flags);
 
-		cocos2d::backend::ProgramState* updateCommandPipelinePS(SkeletonCommand* command, cocos2d::backend::ProgramState* programState);
+		cc::backend::ProgramState* updateCommandPipelinePS(SkeletonCommand* command, cc::backend::ProgramState* programState);
 
 	protected:
 		SkeletonBatch();
@@ -67,16 +67,16 @@ namespace spine {
 
 		SkeletonCommand* newCommand();
 
-		cocos2d::backend::ProgramState*                     _programState; // The default program state
-		cocos2d::EventListenerCustom *_afterDrawListener = nullptr;
-		cocos2d::EventListenerCustom *_resetListener = nullptr;
+		cc::backend::ProgramState*                     _programState; // The default program state
+		cc::EventListenerCustom *_afterDrawListener = nullptr;
+		cc::EventListenerCustom *_resetListener = nullptr;
 
 		// pool of commands
 		std::vector<SkeletonCommand *> _commandsPool;
 		uint32_t _nextFreeCommand;
 
 		// pool of vertices
-		std::vector<cocos2d::V3F_C4B_T2F> _vertices;
+		std::vector<cc::V3F_C4B_T2F> _vertices;
 		uint32_t _numVertices;
 
 		// pool of indices

@@ -53,12 +53,12 @@ public:
     void DrawPoint(const b2Vec2& p, float size, const b2Color& color) override;
 
     // axis stuffs
-    cocos2d::DrawNode* GetDrawNode();
-    void SetDrawNode(cocos2d::DrawNode* drawNode);
-    cocos2d::Vec2& GetDebugNodeOffset();
+    cc::DrawNode* GetDrawNode();
+    void SetDrawNode(cc::DrawNode* drawNode);
+    cc::Vec2& GetDebugNodeOffset();
 
-    cc::IntrusivePtr<cocos2d::DrawNode> drawBP;  // axis "interface"!
-    cocos2d::Vec2 debugNodeOffset;
+    cc::IntrusivePtr<cc::DrawNode> drawBP;  // axis "interface"!
+    cc::Vec2 debugNodeOffset;
     float mRatio;
 
 private:

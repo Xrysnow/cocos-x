@@ -759,7 +759,7 @@ void MeshRenderer::removeAllAttachNode()
     _attachments.clear();
 }
 
-void MeshRenderer::visit(cocos2d::Renderer* renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags)
+void MeshRenderer::visit(cc::Renderer* renderer, const cc::Mat4& parentTransform, uint32_t parentFlags)
 {
     // quick return if not visible. children won't be drawn.
     if (!_visible)

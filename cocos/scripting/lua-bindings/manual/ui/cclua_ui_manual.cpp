@@ -41,7 +41,7 @@ struct HitTestOutput
 {
     lua_State* state = nullptr;
     int index = 0;
-    void write(const cocos2d::Vec3& value) const
+    void write(const cc::Vec3& value) const
     {
         lua::native_to_luaval_field(state, index, "x", value.x);
         lua::native_to_luaval_field(state, index, "y", value.y);
@@ -69,11 +69,11 @@ namespace
 int widgetHitTest(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("ccui.Widget", "ccui.Widget:hitTest");
-    const auto plain = [](const cocos2d::ui::Widget* self, const cocos2d::Vec2& point,
-                          const cocos2d::Camera* camera) { return self->hitTest(point, camera, nullptr); };
-    const auto output = [](const cocos2d::ui::Widget* self, const cocos2d::Vec2& point,
-                           const cocos2d::Camera* camera, ui_binding::HitTestOutput out) {
-        cocos2d::Vec3 intersection;
+    const auto plain = [](const cc::ui::Widget* self, const cc::Vec2& point,
+                          const cc::Camera* camera) { return self->hitTest(point, camera, nullptr); };
+    const auto output = [](const cc::ui::Widget* self, const cc::Vec2& point,
+                           const cc::Camera* camera, ui_binding::HitTestOutput out) {
+        cc::Vec3 intersection;
         const bool hit = self->hitTest(point, camera, &intersection);
         out.write(intersection);
         return hit;
@@ -86,7 +86,7 @@ int widgetHitTest(lua_State* lua_S)
 int textFieldSetCursorChar(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:setCursorChar");
-    const auto narrow = [](cocos2d::ui::TextField* self, int value) {
+    const auto narrow = [](cc::ui::TextField* self, int value) {
         self->setCursorChar(static_cast<char>(value));
     };
     LUA_TRY_INVOKE(1, narrow);
@@ -96,7 +96,7 @@ int textFieldSetCursorChar(lua_State* lua_S)
 int editBoxUnregister(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("ccui.EditBox", "ccui.EditBox:unregisterScriptEditBoxHandler");
-    const auto clear = [](cocos2d::ui::EditBox* self) { self->setScriptEditBoxCallback(nullptr); };
+    const auto clear = [](cc::ui::EditBox* self) { self->setScriptEditBoxCallback(nullptr); };
     LUA_TRY_INVOKE(0, clear);
     LUA_INVOKE_FOOTER("0");
 }
@@ -104,8 +104,8 @@ int editBoxUnregister(lua_State* lua_S)
 int focusRegister(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.EventListenerFocus", "cc.EventListenerFocus:registerScriptHandler");
-    const auto assign = [](cocos2d::EventListenerFocus* self,
-                           std::function<void(cocos2d::ui::Widget*, cocos2d::ui::Widget*)> callback) {
+    const auto assign = [](cc::EventListenerFocus* self,
+                           std::function<void(cc::ui::Widget*, cc::ui::Widget*)> callback) {
         self->onFocusChanged = std::move(callback);
     };
     LUA_TRY_INVOKE(1, assign);

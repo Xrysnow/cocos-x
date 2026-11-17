@@ -14,9 +14,9 @@ namespace AudioInternal
 }
 NS_CC_END
 
-#define AINFO(_str, ...) cocos2d::AudioInternal::logging("[AINFO] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
-#define AWARN(_str,...) cocos2d::AudioInternal::logging("[AWARN] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
-#define AERRO(_str, ...) cocos2d::AudioInternal::logging("[AERRO] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
+#define AINFO(_str, ...) cc::AudioInternal::logging("[AINFO] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
+#define AWARN(_str,...) cc::AudioInternal::logging("[AWARN] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
+#define AERRO(_str, ...) cc::AudioInternal::logging("[AERRO] [%s] " _str, __FUNCTION__, ##__VA_ARGS__)
 
 #include "AL/al.h"
 #include "AL/alc.h"

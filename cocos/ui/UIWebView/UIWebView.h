@@ -25,6 +25,8 @@
  ****************************************************************************/
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include "ui/UIWidget.h"
 #include "ui/GUIExport.h"
 #include "base/CCData.h"
@@ -50,7 +52,7 @@ class WebViewImpl;
  * It's mean WebView displays web pages above all graphical elements of cocos2d-x.
  * @js NA
  */
-class CC_GUI_DLL WebView : public cocos2d::ui::Widget
+class CC_GUI_DLL WebView : public cc::ui::Widget
 {
 public:
     /**
@@ -76,7 +78,7 @@ public:
      * @param encoding The encoding of the data.
      * @param baseURL The base URL for the content.
      */
-    void loadData(const cocos2d::Data& data,
+    void loadData(const cc::Data& data,
                   std::string_view MIMEType,
                   std::string_view encoding,
                   std::string_view baseURL);
@@ -211,7 +213,7 @@ public:
      */
     void setBounces(bool bounce);
 
-    virtual void draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags) override;
+    virtual void draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags) override;
 
     /**
      * Toggle visibility of WebView.
@@ -241,7 +243,7 @@ public:
     virtual ~WebView();
 
 protected:
-    virtual cc::IntrusivePtr<cocos2d::ui::Widget> createCloneInstance() override;
+    virtual cc::IntrusivePtr<cc::ui::Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     std::function<bool(WebView* sender, std::string_view url)> _onShouldStartLoading = nullptr;
@@ -265,7 +267,7 @@ private:
 };
 
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 #endif
 

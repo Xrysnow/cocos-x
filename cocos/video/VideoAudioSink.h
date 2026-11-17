@@ -1,4 +1,6 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -6,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace cocos2d { class AudioSource; }
+namespace cc { class AudioSource; }
 
 namespace video
 {
@@ -62,7 +64,7 @@ namespace video
 		bool createSourceLocked();
 		void failLocked(const std::string& message, int code = 0);
 		std::mutex mutex;
-		cocos2d::AudioSource* source = nullptr; // owns the initial Ref reference
+		cc::AudioSource* source = nullptr; // owns the initial Ref reference
 		Snapshot state;
 		uint64_t queueGeneration = 0;
 		double anchorSeconds = 0.0;

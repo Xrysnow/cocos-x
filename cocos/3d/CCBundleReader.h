@@ -45,7 +45,7 @@ NS_CC_BEGIN
  * @js NA
  * @lua NA
  */
-class BundleReader : public cocos2d::Ref
+class BundleReader : public cc::Ref
 {
 public:
     /**

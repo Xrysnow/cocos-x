@@ -13,17 +13,17 @@ namespace ffmpeg
 {
 	class AvioInput;
 
-	class Demuxer : public cocos2d::Ref
+	class Demuxer : public cc::Ref
 	{
 	public:
 		static std::vector<const AVInputFormat*> getInputFormats();
 	protected:
 		Demuxer();
 		virtual ~Demuxer();
-		bool init(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
+		bool init(cc::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 	public:
 		// Returns an owned reference.
-		static cc::IntrusivePtr<Demuxer> create(cocos2d::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
+		static cc::IntrusivePtr<Demuxer> create(cc::io::StreamPtr source, const char* name, const std::atomic<bool>* stop);
 
 		bool setAudioReceiver(FrameReceiver* receiver, int streamIndex = -1);
 		bool setVideoReceiver(FrameReceiver* receiver, int streamIndex = -1);
@@ -52,6 +52,6 @@ namespace ffmpeg
 		AVFormatContext* containerContext = nullptr;
 		int bestAudioStream = -1;
 		int bestVideoStream = -1;
-		cocos2d::Map<int, InputStream*> inputStreams;
+		cc::Map<int, InputStream*> inputStreams;
 	};
 }

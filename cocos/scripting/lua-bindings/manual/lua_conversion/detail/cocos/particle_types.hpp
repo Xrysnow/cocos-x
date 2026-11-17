@@ -5,11 +5,11 @@
 namespace lua
 {
 	template<>
-	struct to_native<cocos2d::EmissionShape> {
-		static bool F(lua_State* L, int lo, cocos2d::EmissionShape* outValue, const char* fName = "") {
+	struct to_native<cc::EmissionShape> {
+		static bool F(lua_State* L, int lo, cc::EmissionShape* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::EmissionShape value{};
+			cc::EmissionShape value{};
 			const bool ok = luaval_field_to_native(L, lo, "type", &value.type, fName) &&
 				luaval_field_to_native(L, lo, "x", &value.x, fName) &&
 				luaval_field_to_native(L, lo, "y", &value.y, fName) &&
@@ -29,8 +29,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::EmissionShape> {
-		static void F(lua_State* L, const cocos2d::EmissionShape& inValue) {
+	struct to_lua<cc::EmissionShape> {
+		static void F(lua_State* L, const cc::EmissionShape& inValue) {
 			if (!L) return;
 			const auto value = inValue;
 			lua_createtable(L, 0, 13);
@@ -50,11 +50,11 @@ namespace lua
 		}
 	};
 
-	LUA_TO_NATIVE_STRUCT2(cocos2d::ParticleEmissionMaskDescriptor, size, points);
+	LUA_TO_NATIVE_STRUCT2(cc::ParticleEmissionMaskDescriptor, size, points);
 
 	template<>
-	struct to_lua<cocos2d::ParticleEmissionMaskDescriptor> {
-		static void F(lua_State* L, const cocos2d::ParticleEmissionMaskDescriptor& inValue) {
+	struct to_lua<cc::ParticleEmissionMaskDescriptor> {
+		static void F(lua_State* L, const cc::ParticleEmissionMaskDescriptor& inValue) {
 			if (!L) return;
 			// The cache can be cleared by Lua GC during table allocation.
 			const auto value = inValue;

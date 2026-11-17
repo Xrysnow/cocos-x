@@ -33,7 +33,7 @@
 #import "platform/ios/CCEAGLView-ios.h"
 #include "base/CCDirector.h"
 
-#define getEditBoxImplIOS() ((cocos2d::ui::EditBoxImplIOS*)_editBox)
+#define getEditBoxImplIOS() ((cc::ui::EditBoxImplIOS*)_editBox)
 
 @implementation UIEditBoxImplIOS_objc
 
@@ -58,8 +58,8 @@
         _editState              = NO;
         self.frameRect          = frameRect;
         self.editBox            = editBox;
-        self.dataInputMode      = cocos2d::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS;
-        self.keyboardReturnType = cocos2d::ui::EditBox::KeyboardReturnType::DEFAULT;
+        self.dataInputMode      = cc::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS;
+        self.keyboardReturnType = cc::ui::EditBox::KeyboardReturnType::DEFAULT;
 
         [self createMultiLineTextField];
     }
@@ -149,10 +149,10 @@
     self.textInput.ccui_placeholderTextColor = color;
 }
 
-- (void)setInputMode:(cocos2d::ui::EditBox::InputMode)inputMode
+- (void)setInputMode:(cc::ui::EditBox::InputMode)inputMode
 {
     // multiline input
-    if (inputMode == cocos2d::ui::EditBox::InputMode::ANY)
+    if (inputMode == cc::ui::EditBox::InputMode::ANY)
     {
         if (![self.textInput isKindOfClass:[UITextView class]])
         {
@@ -169,22 +169,22 @@
 
     switch (inputMode)
     {
-    case cocos2d::ui::EditBox::InputMode::EMAIL_ADDRESS:
+    case cc::ui::EditBox::InputMode::EMAIL_ADDRESS:
         self.keyboardType = UIKeyboardTypeEmailAddress;
         break;
-    case cocos2d::ui::EditBox::InputMode::NUMERIC:
+    case cc::ui::EditBox::InputMode::NUMERIC:
         self.keyboardType = UIKeyboardTypeDecimalPad;
         break;
-    case cocos2d::ui::EditBox::InputMode::PHONE_NUMBER:
+    case cc::ui::EditBox::InputMode::PHONE_NUMBER:
         self.keyboardType = UIKeyboardTypePhonePad;
         break;
-    case cocos2d::ui::EditBox::InputMode::URL:
+    case cc::ui::EditBox::InputMode::URL:
         self.keyboardType = UIKeyboardTypeURL;
         break;
-    case cocos2d::ui::EditBox::InputMode::DECIMAL:
+    case cc::ui::EditBox::InputMode::DECIMAL:
         self.keyboardType = UIKeyboardTypeDecimalPad;
         break;
-    case cocos2d::ui::EditBox::InputMode::SINGLE_LINE:
+    case cc::ui::EditBox::InputMode::SINGLE_LINE:
         self.keyboardType = UIKeyboardTypeDefault;
         break;
     default:
@@ -198,33 +198,33 @@
     self.textInput.keyboardType = type;
 }
 
-- (void)setInputFlag:(cocos2d::ui::EditBox::InputFlag)flag
+- (void)setInputFlag:(cc::ui::EditBox::InputFlag)flag
 {
     self.dataInputMode = flag;
     switch (flag)
     {
-    case cocos2d::ui::EditBox::InputFlag::PASSWORD:
+    case cc::ui::EditBox::InputFlag::PASSWORD:
         // textView can't be used for input password
         self.textInput.ccui_secureTextEntry = YES;
         break;
 
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_WORD:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_WORD:
         self.textInput.autocapitalizationType = UITextAutocapitalizationTypeWords;
         break;
 
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_SENTENCE:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_SENTENCE:
         self.textInput.autocapitalizationType = UITextAutocapitalizationTypeSentences;
         break;
 
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_ALL_CHARACTERS:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_ALL_CHARACTERS:
         self.textInput.autocapitalizationType = UITextAutocapitalizationTypeAllCharacters;
         break;
 
-    case cocos2d::ui::EditBox::InputFlag::SENSITIVE:
+    case cc::ui::EditBox::InputFlag::SENSITIVE:
         self.textInput.autocorrectionType = UITextAutocorrectionTypeNo;
         break;
 
-    case cocos2d::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS:
+    case cc::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS:
         self.textInput.autocapitalizationType = UITextAutocapitalizationTypeNone;
         break;
 
@@ -233,32 +233,32 @@
     }
 }
 
-- (void)setReturnType:(cocos2d::ui::EditBox::KeyboardReturnType)returnType
+- (void)setReturnType:(cc::ui::EditBox::KeyboardReturnType)returnType
 {
     self.keyboardReturnType = returnType;
     switch (returnType)
     {
-    case cocos2d::ui::EditBox::KeyboardReturnType::DEFAULT:
+    case cc::ui::EditBox::KeyboardReturnType::DEFAULT:
         self.textInput.returnKeyType = UIReturnKeyDefault;
         break;
 
-    case cocos2d::ui::EditBox::KeyboardReturnType::DONE:
+    case cc::ui::EditBox::KeyboardReturnType::DONE:
         self.textInput.returnKeyType = UIReturnKeyDone;
         break;
 
-    case cocos2d::ui::EditBox::KeyboardReturnType::SEND:
+    case cc::ui::EditBox::KeyboardReturnType::SEND:
         self.textInput.returnKeyType = UIReturnKeySend;
         break;
 
-    case cocos2d::ui::EditBox::KeyboardReturnType::SEARCH:
+    case cc::ui::EditBox::KeyboardReturnType::SEARCH:
         self.textInput.returnKeyType = UIReturnKeySearch;
         break;
 
-    case cocos2d::ui::EditBox::KeyboardReturnType::GO:
+    case cc::ui::EditBox::KeyboardReturnType::GO:
         self.textInput.returnKeyType = UIReturnKeyGo;
         break;
 
-    case cocos2d::ui::EditBox::KeyboardReturnType::NEXT:
+    case cc::ui::EditBox::KeyboardReturnType::NEXT:
         self.textInput.returnKeyType = UIReturnKeyNext;
         break;
 
@@ -268,7 +268,7 @@
     }
 }
 
-- (void)setTextHorizontalAlignment:(cocos2d::TextHAlignment)alignment
+- (void)setTextHorizontalAlignment:(cc::TextHAlignment)alignment
 {
     self.textInput.ccui_alignment = static_cast<NSTextAlignment>(alignment);
 }
@@ -293,20 +293,20 @@
     return self.textInput.ccui_font.fontName ?: @"";
 }
 
-- (cocos2d::ui::EditBoxDelegate::EditBoxEndAction)getEndAction
+- (cc::ui::EditBoxDelegate::EditBoxEndAction)getEndAction
 {
-    cocos2d::ui::EditBoxDelegate::EditBoxEndAction action = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::UNKNOWN;
+    cc::ui::EditBoxDelegate::EditBoxEndAction action = cc::ui::EditBoxDelegate::EditBoxEndAction::UNKNOWN;
     if (self.returnPressed)
     {
-        if (self.keyboardReturnType == cocos2d::ui::EditBox::KeyboardReturnType::NEXT)
+        if (self.keyboardReturnType == cc::ui::EditBox::KeyboardReturnType::NEXT)
         {
-            action = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_NEXT;
+            action = cc::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_NEXT;
         }
-        else if (self.keyboardReturnType == cocos2d::ui::EditBox::KeyboardReturnType::GO ||
-                 self.keyboardReturnType == cocos2d::ui::EditBox::KeyboardReturnType::SEND ||
-                 self.keyboardReturnType == cocos2d::ui::EditBox::KeyboardReturnType::SEARCH)
+        else if (self.keyboardReturnType == cc::ui::EditBox::KeyboardReturnType::GO ||
+                 self.keyboardReturnType == cc::ui::EditBox::KeyboardReturnType::SEND ||
+                 self.keyboardReturnType == cc::ui::EditBox::KeyboardReturnType::SEARCH)
         {
-            action = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::RETURN;
+            action = cc::ui::EditBoxDelegate::EditBoxEndAction::RETURN;
         }
     }
     return action;
@@ -319,7 +319,7 @@
 
 - (void)doAnimationWhenKeyboardMoveWithDuration:(float)duration distance:(float)distance
 {
-    auto view            = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view            = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)view->getEAGLView();
 
     [eaglView doAnimationWhenKeyboardMoveWithDuration:duration distance:distance];
@@ -336,7 +336,7 @@
 
 - (void)openKeyboard
 {
-    auto view            = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view            = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)view->getEAGLView();
 
     [eaglView addSubview:self.textInput];
@@ -361,7 +361,7 @@
 
 - (void)animationSelector
 {
-    auto view            = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view            = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)view->getEAGLView();
 
     [eaglView doAnimationWhenAnotherEditBeClicked];
@@ -375,7 +375,7 @@
     _editState     = YES;
     _returnPressed = NO;
 
-    auto view            = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view            = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)view->getEAGLView();
 
     if ([eaglView isKeyboardShown])
@@ -401,7 +401,7 @@
 
 - (BOOL)textView:(UITextView*)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString*)text
 {
-    if (self.keyboardReturnType == cocos2d::ui::EditBox::KeyboardReturnType::DONE && [text isEqualToString:@"\n"])
+    if (self.keyboardReturnType == cc::ui::EditBox::KeyboardReturnType::DONE && [text isEqualToString:@"\n"])
     {
         [self closeKeyboard];
     }
@@ -468,7 +468,7 @@
     _editState     = YES;
     _returnPressed = NO;
 
-    auto view            = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view            = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)view->getEAGLView();
 
     if ([eaglView isKeyboardShown])

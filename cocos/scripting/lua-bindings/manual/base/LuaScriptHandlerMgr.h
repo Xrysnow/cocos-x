@@ -43,9 +43,9 @@ class ScheduleHandlerDelegate;
 
 /// @cond
 typedef std::vector<ScheduleHandlerDelegate*> VecShedule;
-typedef std::map<cocos2d::Node*, VecShedule> MapNodeSchedules;
+typedef std::map<cc::Node*, VecShedule> MapNodeSchedules;
 
-class ScheduleHandlerDelegate : public cocos2d::Ref
+class ScheduleHandlerDelegate : public cc::Ref
 {
 public:
     ScheduleHandlerDelegate() : _isUpdateSchedule(false) {}
@@ -72,7 +72,7 @@ private:
  * @lua NA
  * @js NA
  */
-class LuaCallFunc : public cocos2d::CallFuncN
+class LuaCallFunc : public cc::CallFuncN
 {
 public:
     /**

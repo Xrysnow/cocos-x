@@ -284,7 +284,7 @@ bool luaval_to_std_string(lua_State* L, int lo, std::string* outValue, const cha
     return ok;
 }
 
-bool luaval_to_vec2(lua_State* L, int lo, cocos2d::Vec2* outValue, const char* funcName)
+bool luaval_to_vec2(lua_State* L, int lo, cc::Vec2* outValue, const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
         return false;
@@ -333,7 +333,7 @@ bool luaval_to_vec2(lua_State* L, int lo, cocos2d::Vec2* outValue, const char* f
     return ok;
 }
 
-bool luaval_to_vec3(lua_State* L, int lo, cocos2d::Vec3* outValue, const char* funcName)
+bool luaval_to_vec3(lua_State* L, int lo, cc::Vec3* outValue, const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
         return false;
@@ -369,7 +369,7 @@ bool luaval_to_vec3(lua_State* L, int lo, cocos2d::Vec3* outValue, const char* f
     return ok;
 }
 
-bool luaval_to_vec4(lua_State* L, int lo, cocos2d::Vec4* outValue, const char* funcName)
+bool luaval_to_vec4(lua_State* L, int lo, cc::Vec4* outValue, const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
         return false;
@@ -476,7 +476,7 @@ bool luaval_to_color4b(lua_State* L, int lo, Color4B* outValue, const char* func
     return ok;
 }
 
-bool luaval_to_mat4(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* funcName)
+bool luaval_to_mat4(lua_State* L, int lo, cc::Mat4* outValue, const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
         return false;
@@ -522,7 +522,7 @@ bool luaval_to_mat4(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* f
     return ok;
 }
 
-bool luavals_variadic_to_ccvaluevector(lua_State* L, int argc, cocos2d::ValueVector* ret)
+bool luavals_variadic_to_ccvaluevector(lua_State* L, int argc, cc::ValueVector* ret)
 {
     if (nullptr == L || argc == 0)
         return false;
@@ -581,7 +581,7 @@ bool luavals_variadic_to_ccvaluevector(lua_State* L, int argc, cocos2d::ValueVec
     return true;
 }
 
-bool luaval_to_ccvaluemap(lua_State* L, int lo, cocos2d::ValueMap* ret, const char* funcName)
+bool luaval_to_ccvaluemap(lua_State* L, int lo, cc::ValueMap* ret, const char* funcName)
 {
     if (nullptr == L || nullptr == ret)
         return false;
@@ -668,7 +668,7 @@ bool luaval_to_ccvaluemap(lua_State* L, int lo, cocos2d::ValueMap* ret, const ch
 
     return ok;
 }
-bool luaval_to_ccvaluevector(lua_State* L, int lo, cocos2d::ValueVector* ret, const char* funcName)
+bool luaval_to_ccvaluevector(lua_State* L, int lo, cc::ValueVector* ret, const char* funcName)
 {
     if (nullptr == L || nullptr == ret)
         return false;
@@ -907,7 +907,7 @@ bool luaval_to_std_vector_ushort(lua_State* L, int lo, std::vector<unsigned shor
     return ok;
 }
 
-bool luaval_to_quaternion(lua_State* L, int lo, cocos2d::Quaternion* outValue, const char* funcName)
+bool luaval_to_quaternion(lua_State* L, int lo, cc::Quaternion* outValue, const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
         return false;
@@ -948,7 +948,7 @@ bool luaval_to_quaternion(lua_State* L, int lo, cocos2d::Quaternion* outValue, c
     return ok;
 }
 
-bool luaval_to_std_vector_vec2(lua_State* L, int lo, std::vector<cocos2d::Vec2>* ret, const char* funcName)
+bool luaval_to_std_vector_vec2(lua_State* L, int lo, std::vector<cc::Vec2>* ret, const char* funcName)
 {
     if (nullptr == L || nullptr == ret || lua_gettop(L) < lo)
         return false;
@@ -967,7 +967,7 @@ bool luaval_to_std_vector_vec2(lua_State* L, int lo, std::vector<cocos2d::Vec2>*
     if (ok)
     {
         size_t len = lua_objlen(L, lo);
-        cocos2d::Vec2 value;
+        cc::Vec2 value;
         for (size_t i = 0; i < len; i++)
         {
             lua_pushnumber(L, i + 1);
@@ -991,7 +991,7 @@ bool luaval_to_std_vector_vec2(lua_State* L, int lo, std::vector<cocos2d::Vec2>*
     return ok;
 }
 
-bool luaval_to_std_vector_vec3(lua_State* L, int lo, std::vector<cocos2d::Vec3>* ret, const char* funcName)
+bool luaval_to_std_vector_vec3(lua_State* L, int lo, std::vector<cc::Vec3>* ret, const char* funcName)
 {
     if (nullptr == L || nullptr == ret || lua_gettop(L) < lo)
         return false;
@@ -1010,7 +1010,7 @@ bool luaval_to_std_vector_vec3(lua_State* L, int lo, std::vector<cocos2d::Vec3>*
     if (ok)
     {
         size_t len = lua_objlen(L, lo);
-        cocos2d::Vec3 value;
+        cc::Vec3 value;
         for (size_t i = 0; i < len; i++)
         {
             lua_pushnumber(L, i + 1);
@@ -1075,7 +1075,7 @@ static int vec2_newindex(lua_State* L)
     return 0;
 }
 
-int vec2_to_luaval(lua_State* L, const cocos2d::Vec2& vec2)
+int vec2_to_luaval(lua_State* L, const cc::Vec2& vec2)
 {
     lua_createtable(L, 2, 0);              /* L: table */
     lua_pushnumber(L, (lua_Number)vec2.x); /* L: table key value*/
@@ -1119,7 +1119,7 @@ static int vec3_newindex(lua_State* L)
     return 0;
 }
 
-int vec3_to_luaval(lua_State* L, const cocos2d::Vec3& vec3)
+int vec3_to_luaval(lua_State* L, const cc::Vec3& vec3)
 {
     lua_createtable(L, 3, 0);              /* L: table */
     lua_pushnumber(L, (lua_Number)vec3.x); /* L: table key value*/
@@ -1165,7 +1165,7 @@ static int vec4_newindex(lua_State* L)
     return 0;
 }
 
-int vec4_to_luaval(lua_State* L, const cocos2d::Vec4& vec4)
+int vec4_to_luaval(lua_State* L, const cc::Vec4& vec4)
 {
     lua_createtable(L, 4, 0);              /* L: table */
     lua_pushnumber(L, (lua_Number)vec4.x); /* L: table key value*/
@@ -1194,7 +1194,7 @@ int vec4_to_luaval(lua_State* L, const cocos2d::Vec4& vec4)
 }
 
 
-void mat4_to_luaval(lua_State* L, const cocos2d::Mat4& mat)
+void mat4_to_luaval(lua_State* L, const cc::Mat4& mat)
 {
     if (nullptr == L)
         return;
@@ -1245,7 +1245,7 @@ void ccvector_float_to_luaval(lua_State* L, const std::vector<float>& inValue)
     }
 }
 
-void quaternion_to_luaval(lua_State* L, const cocos2d::Quaternion& inValue)
+void quaternion_to_luaval(lua_State* L, const cc::Quaternion& inValue)
 {
     if (NULL == L)
         return;

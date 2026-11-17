@@ -109,12 +109,12 @@ struct LuaEventMouseData
     }
 };
 
-class LuaNode :public cocos2d::Node
+class LuaNode :public cc::Node
 {
 public:
     virtual ~LuaNode() {}
 
-    virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
+    virtual void draw(cc::Renderer *renderer, const cc::Mat4& transform, uint32_t flags) override;
 };
 
 TOLUA_API int tolua_luanode_open(lua_State* tolua_S);

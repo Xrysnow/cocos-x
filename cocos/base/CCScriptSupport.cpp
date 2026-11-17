@@ -33,8 +33,8 @@
 
 bool CC_DLL cc_assert_script_compatible(const char* msg)
 {
-    auto* manager = cocos2d::ScriptEngineManager::getInstanceIfExists();
-    cocos2d::ScriptEngineProtocol* engine = manager ? manager->getScriptEngine() : nullptr;
+    auto* manager = cc::ScriptEngineManager::getInstanceIfExists();
+    cc::ScriptEngineProtocol* engine = manager ? manager->getScriptEngine() : nullptr;
     if (engine && engine->handleAssert(msg))
     {
         return true;

@@ -247,7 +247,7 @@ public:
     /**
      * @js NA
      */
-    virtual void visit(cocos2d::Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
+    virtual void visit(cc::Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
 
     /**
      * Set a callback to touch event listener.

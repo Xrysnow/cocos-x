@@ -1112,7 +1112,7 @@ float Layout::calculateNearestDistance(Widget* baseWidget)
     return distance;
 }
 
-float Layout::calculateFarthestDistance(cocos2d::ui::Widget* baseWidget)
+float Layout::calculateFarthestDistance(cc::ui::Widget* baseWidget)
 {
     float distance = -FLT_MAX;
 
@@ -1212,7 +1212,7 @@ int Layout::findNearestChildWidgetIndex(FocusDirection direction, Widget* baseWi
     return 0;
 }
 
-int Layout::findFarthestChildWidgetIndex(FocusDirection direction, cocos2d::ui::Widget* baseWidget)
+int Layout::findFarthestChildWidgetIndex(FocusDirection direction, cc::ui::Widget* baseWidget)
 {
     if (baseWidget == nullptr || baseWidget == this)
     {
@@ -1365,7 +1365,7 @@ void Layout::findProperSearchingFunctor(FocusDirection dir, Widget* baseWidget)
     }
 }
 
-Widget* Layout::passFocusToChild(FocusDirection dir, cocos2d::ui::Widget* current)
+Widget* Layout::passFocusToChild(FocusDirection dir, cc::ui::Widget* current)
 {
     if (checkFocusEnabledChild())
     {

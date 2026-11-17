@@ -97,37 +97,37 @@ void Physics3DRigidBody::setActive(bool active)
     }
 }
 
-void Physics3DRigidBody::applyForce(const cocos2d::Vec3& force, const cocos2d::Vec3& rel_pos)
+void Physics3DRigidBody::applyForce(const cc::Vec3& force, const cc::Vec3& rel_pos)
 {
     _btRigidBody->applyForce(convertVec3TobtVector3(force), convertVec3TobtVector3(rel_pos));
 }
 
-void Physics3DRigidBody::setLinearVelocity(const cocos2d::Vec3& lin_vel)
+void Physics3DRigidBody::setLinearVelocity(const cc::Vec3& lin_vel)
 {
     _btRigidBody->setLinearVelocity(convertVec3TobtVector3(lin_vel));
 }
 
-void Physics3DRigidBody::applyCentralForce(const cocos2d::Vec3& force)
+void Physics3DRigidBody::applyCentralForce(const cc::Vec3& force)
 {
     _btRigidBody->applyCentralForce(convertVec3TobtVector3(force));
 }
 
-void Physics3DRigidBody::applyCentralImpulse(const cocos2d::Vec3& impulse)
+void Physics3DRigidBody::applyCentralImpulse(const cc::Vec3& impulse)
 {
     _btRigidBody->applyCentralImpulse(convertVec3TobtVector3(impulse));
 }
 
-void Physics3DRigidBody::applyTorque(const cocos2d::Vec3& torque)
+void Physics3DRigidBody::applyTorque(const cc::Vec3& torque)
 {
     _btRigidBody->applyTorque(convertVec3TobtVector3(torque));
 }
 
-void Physics3DRigidBody::applyTorqueImpulse(const cocos2d::Vec3& torque)
+void Physics3DRigidBody::applyTorqueImpulse(const cc::Vec3& torque)
 {
     _btRigidBody->applyTorqueImpulse(convertVec3TobtVector3(torque));
 }
 
-void Physics3DRigidBody::applyImpulse(const cocos2d::Vec3& impulse, const cocos2d::Vec3& rel_pos)
+void Physics3DRigidBody::applyImpulse(const cc::Vec3& impulse, const cc::Vec3& rel_pos)
 {
     _btRigidBody->applyImpulse(convertVec3TobtVector3(impulse), convertVec3TobtVector3(rel_pos));
 }
@@ -137,22 +137,22 @@ void Physics3DRigidBody::applyDamping(float timeStep)
     _btRigidBody->applyDamping(timeStep);
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getLinearVelocity() const
+cc::Vec3 Physics3DRigidBody::getLinearVelocity() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getLinearVelocity());
 }
 
-void Physics3DRigidBody::setLinearFactor(const cocos2d::Vec3& linearFactor)
+void Physics3DRigidBody::setLinearFactor(const cc::Vec3& linearFactor)
 {
     _btRigidBody->setLinearFactor(convertVec3TobtVector3(linearFactor));
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getLinearFactor() const
+cc::Vec3 Physics3DRigidBody::getLinearFactor() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getLinearFactor());
 }
 
-void Physics3DRigidBody::setAngularFactor(const cocos2d::Vec3& angFac)
+void Physics3DRigidBody::setAngularFactor(const cc::Vec3& angFac)
 {
     _btRigidBody->setAngularFactor(convertVec3TobtVector3(angFac));
 }
@@ -162,27 +162,27 @@ void Physics3DRigidBody::setAngularFactor(float angFac)
     _btRigidBody->setAngularFactor(angFac);
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getAngularFactor() const
+cc::Vec3 Physics3DRigidBody::getAngularFactor() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getAngularFactor());
 }
 
-void Physics3DRigidBody::setAngularVelocity(const cocos2d::Vec3& ang_vel)
+void Physics3DRigidBody::setAngularVelocity(const cc::Vec3& ang_vel)
 {
     _btRigidBody->setAngularVelocity(convertVec3TobtVector3(ang_vel));
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getAngularVelocity() const
+cc::Vec3 Physics3DRigidBody::getAngularVelocity() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getAngularVelocity());
 }
 
-void Physics3DRigidBody::setCenterOfMassTransform(const cocos2d::Mat4& xform)
+void Physics3DRigidBody::setCenterOfMassTransform(const cc::Mat4& xform)
 {
     _btRigidBody->setCenterOfMassTransform(convertMat4TobtTransform(xform));
 }
 
-cocos2d::Mat4 Physics3DRigidBody::getCenterOfMassTransform() const
+cc::Mat4 Physics3DRigidBody::getCenterOfMassTransform() const
 {
     return convertbtTransformToMat4(_btRigidBody->getCenterOfMassTransform());
 }
@@ -202,27 +202,27 @@ float Physics3DRigidBody::getAngularDamping() const
     return _btRigidBody->getAngularDamping();
 }
 
-void Physics3DRigidBody::setGravity(const cocos2d::Vec3& acceleration)
+void Physics3DRigidBody::setGravity(const cc::Vec3& acceleration)
 {
     _btRigidBody->setGravity(convertVec3TobtVector3(acceleration));
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getGravity() const
+cc::Vec3 Physics3DRigidBody::getGravity() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getGravity());
 }
 
-void Physics3DRigidBody::setInvInertiaDiagLocal(const cocos2d::Vec3& diagInvInertia)
+void Physics3DRigidBody::setInvInertiaDiagLocal(const cc::Vec3& diagInvInertia)
 {
     _btRigidBody->setInvInertiaDiagLocal(convertVec3TobtVector3(diagInvInertia));
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getInvInertiaDiagLocal() const
+cc::Vec3 Physics3DRigidBody::getInvInertiaDiagLocal() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getInvInertiaDiagLocal());
 }
 
-void Physics3DRigidBody::setMassProps(float mass, const cocos2d::Vec3& inertia)
+void Physics3DRigidBody::setMassProps(float mass, const cc::Vec3& inertia)
 {
     _btRigidBody->setMassProps(mass, convertVec3TobtVector3(inertia));
 }
@@ -232,12 +232,12 @@ float Physics3DRigidBody::getInvMass() const
     return _btRigidBody->getInvMass();
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getTotalForce() const
+cc::Vec3 Physics3DRigidBody::getTotalForce() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getTotalForce());
 }
 
-cocos2d::Vec3 Physics3DRigidBody::getTotalTorque() const
+cc::Vec3 Physics3DRigidBody::getTotalTorque() const
 {
     return convertbtVector3ToVec3(_btRigidBody->getTotalTorque());
 }
@@ -339,7 +339,7 @@ unsigned int Physics3DRigidBody::getConstraintCount() const
     return (unsigned int)_constraintList.size();
 }
 
-cocos2d::Mat4 Physics3DRigidBody::getWorldTransform() const
+cc::Mat4 Physics3DRigidBody::getWorldTransform() const
 {
     const auto& transform = _btRigidBody->getWorldTransform();
     return convertbtTransformToMat4(transform);
@@ -540,7 +540,7 @@ bool Physics3DCollider::init(Physics3DColliderDes* info)
     return true;
 }
 
-cocos2d::Mat4 Physics3DCollider::getWorldTransform() const
+cc::Mat4 Physics3DCollider::getWorldTransform() const
 {
     return convertbtTransformToMat4(_btGhostObject->getWorldTransform());
 }

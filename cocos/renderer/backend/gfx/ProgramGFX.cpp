@@ -37,7 +37,7 @@ cc::gfx::AttributeList ProgramGFX::builtinAttributes                  = {};
 cc::gfx::UniformBlockList ProgramGFX::builtinUniforms                 = {};
 cc::gfx::UniformSamplerTextureList ProgramGFX::builtinSamplerTextures = {};
 
-cocos2d::Map<size_t, ShaderModuleGFX*> ProgramGFX::cachedModules;
+cc::Map<size_t, ShaderModuleGFX*> ProgramGFX::cachedModules;
 std::unordered_map<size_t, ProgramGFX*> ProgramGFX::cachedPrograms;
 
 ProgramGFX::ProgramGFX(const cc::gfx::ShaderInfo& shaderInfo) : Program("", "")
@@ -1059,7 +1059,7 @@ std::size_t ProgramGFX::getUniformBlockSize(const std::string& blockName) const
 
 //
 
-ProgramStateGFX::ProgramStateGFX(ProgramGFX* program_, const cocos2d::Map<std::string, BufferGFX*>& buffers_)
+ProgramStateGFX::ProgramStateGFX(ProgramGFX* program_, const cc::Map<std::string, BufferGFX*>& buffers_)
 {
     CC_ASSERT(program_);
     program = program_;

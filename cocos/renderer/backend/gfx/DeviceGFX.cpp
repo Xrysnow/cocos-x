@@ -14,8 +14,8 @@
 #include "gfx/backend/gfx-base/GFXUtil.h"
 #include <algorithm>
 
-static cocos2d::backend::DeviceGFX* DeviceGFXInstance = nullptr;
-static std::vector<cocos2d::backend::CommandBufferGFX*> SurfaceCommandBuffers;
+static cc::backend::DeviceGFX* DeviceGFXInstance = nullptr;
+static std::vector<cc::backend::CommandBufferGFX*> SurfaceCommandBuffers;
 
 CC_BACKEND_BEGIN
 

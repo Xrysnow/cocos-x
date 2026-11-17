@@ -1,12 +1,14 @@
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <utility>
 
-namespace cocos2d { namespace ui { namespace detail {
+namespace cc { namespace ui { namespace detail {
 
 // The owner, lifecycle operations and task delivery belong to the cocos thread.
 // Producers may post from any thread. A task owns its callback snapshot, never
@@ -115,4 +117,4 @@ private:
     bool _closed = false;
 };
 
-}}} // namespace cocos2d::ui::detail
+}}} // namespace cc::ui::detail

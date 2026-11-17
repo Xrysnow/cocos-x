@@ -1647,11 +1647,11 @@ void mu::clearRenderArea(CCMTLDevice *device, id<MTLRenderCommandEncoder> render
     float rcpHeight = 1.0f / halfHeight;
     float width = renderArea.x + renderArea.width;
     float height = renderArea.height + renderArea.y;
-    cocos2d::Vec2 leftTop{(renderArea.x - halfWidth) * rcpWidth, (halfHeight - renderArea.y) * rcpHeight};
-    cocos2d::Vec2 rightTop{(width - halfWidth) * rcpWidth, (halfHeight - renderArea.y) * rcpHeight};
-    cocos2d::Vec2 rightBottom{(width - halfWidth) * rcpWidth, (halfHeight - height) * rcpHeight};
-    cocos2d::Vec2 leftBottom{(renderArea.x - halfWidth) * rcpWidth, (halfHeight - height) * rcpHeight};
-    cocos2d::Vec2 vertexes[] = {leftTop, leftBottom, rightBottom, leftTop, rightBottom, rightTop};
+    cc::Vec2 leftTop{(renderArea.x - halfWidth) * rcpWidth, (halfHeight - renderArea.y) * rcpHeight};
+    cc::Vec2 rightTop{(width - halfWidth) * rcpWidth, (halfHeight - renderArea.y) * rcpHeight};
+    cc::Vec2 rightBottom{(width - halfWidth) * rcpWidth, (halfHeight - height) * rcpHeight};
+    cc::Vec2 leftBottom{(renderArea.x - halfWidth) * rcpWidth, (halfHeight - height) * rcpHeight};
+    cc::Vec2 vertexes[] = {leftTop, leftBottom, rightBottom, leftTop, rightBottom, rightTop};
 
     const auto &colorAttachments = renderPass->getColorAttachments();
     const auto &depthStencilAttachment = renderPass->getDepthStencilAttachment();
@@ -1677,7 +1677,7 @@ void mu::clearRenderArea(CCMTLDevice *device, id<MTLRenderCommandEncoder> render
                              length:sizeof(colors[slot])
                             atIndex:0];
 
-    uint32_t count = sizeof(vertexes) / sizeof(cocos2d::Vec2);
+    uint32_t count = sizeof(vertexes) / sizeof(cc::Vec2);
     [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                       vertexStart:0
                       vertexCount:count];

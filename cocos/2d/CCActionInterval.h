@@ -763,7 +763,7 @@ public:
     // Overrides
     //
     virtual cc::IntrusivePtr<Action> clone() const override;
-    void startWithTarget(cocos2d::Node* target) override;
+    void startWithTarget(cc::Node* target) override;
     void update(float time) override;
 
     ResizeTo() {}

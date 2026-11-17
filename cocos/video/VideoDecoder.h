@@ -13,19 +13,19 @@
 namespace video
 {
 	class VideoDecodeWorker;
-	class CC_DLL Decoder : public cocos2d::Ref
+	class CC_DLL Decoder : public cc::Ref
 	{
 	public:
 		static cc::IntrusivePtr<Decoder> create(const std::string& path);
-		static cc::IntrusivePtr<Decoder> createFromStream(cocos2d::io::StreamPtr source);
+		static cc::IntrusivePtr<Decoder> createFromStream(cc::io::StreamPtr source);
 
 		bool open(const std::string& path);
 		// Supply a synchronous readable stream at offset zero. The decoder must
 		// have sole use of its cursor until close, including during probing.
-		bool openStream(cocos2d::io::StreamPtr source);
+		bool openStream(cc::io::StreamPtr source);
 
 		bool setup();
-		bool setup(const cocos2d::Size& target_size);
+		bool setup(const cc::Size& target_size);
 
 		bool isOpened() const;
 		void close();
@@ -55,7 +55,7 @@ namespace video
 	public:
 		ffmpeg::ContainerInfo getInfo() const { return videoInfo; }
 		/** video size after convert */
-		cocos2d::Size getVideoTargetSize() const { return targetSize; }
+		cc::Size getVideoTargetSize() const { return targetSize; }
 
 		// video stream info
 
@@ -65,7 +65,7 @@ namespace video
 		int64_t getVideoBitRate(int index = -1) const;
 		AVPixelFormat getVideoFormat(int index = -1) const;
 		std::string getVideoFormatName(int index = -1) const;
-		cocos2d::Size getVideoSize(int index = -1) const;
+		cc::Size getVideoSize(int index = -1) const;
 
 		// audio stream info
 
@@ -109,7 +109,7 @@ namespace video
 
 		uint32_t rawWidth = 0;
 		uint32_t rawHeight = 0;
-		cocos2d::Size targetSize;
+		cc::Size targetSize;
 
 		AVRational timeBaseV{};
 		int idxVideo = -1;
@@ -123,7 +123,7 @@ namespace video
 
 	private:
 		friend class VideoDecodeWorker;
-		bool openInput(cocos2d::io::StreamPtr source, const char* name,
+		bool openInput(cc::io::StreamPtr source, const char* name,
 			bool decodeAudio = true, const std::atomic<bool>* stop = nullptr);
 		ReadResult fillPendingFrame();
 		ReadResult outputPendingFrame(uint8_t** vbuf);

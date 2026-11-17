@@ -1,11 +1,13 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "platform/CCPlatformMacros.h"
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <utility>
 
-namespace cocos2d::io
+namespace cc::io
 {
 enum class SeekOrigin { Begin, Current, End };
 enum class Capability : uint32_t

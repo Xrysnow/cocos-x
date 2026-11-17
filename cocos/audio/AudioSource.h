@@ -27,7 +27,7 @@ NS_CC_BEGIN
 	class CC_DLL AudioDecoder;
 
 	// Basically just a reference-counted non-streaming OpenAL buffer object.
-	class CC_DLL AudioStaticDataBuffer : public cocos2d::Ref
+	class CC_DLL AudioStaticDataBuffer : public cc::Ref
 	{
 	public:
 		AudioStaticDataBuffer(ALenum format, const ALvoid *data, ALsizei size, ALsizei freq);
@@ -75,7 +75,7 @@ NS_CC_BEGIN
 	 * an empty owner while the engine is stopped. Keep the returned owner for
 	 * the entire playback lifetime (AudioPool does not retain sources).
 	 */
-	class CC_DLL AudioSource : public cocos2d::Ref
+	class CC_DLL AudioSource : public cc::Ref
 	{
 		friend class AudioPool;
 		friend class AudioEngine;
@@ -220,35 +220,35 @@ NS_CC_BEGIN
 		 * @note This only works for mono (i.e. non-stereo) sound files.
 		 * @param v The position of the AudioSource.
 		 */
-		virtual void setPosition(const cocos2d::Vec3& v);
+		virtual void setPosition(const cc::Vec3& v);
 		/**
 		 * Gets the position of the AudioSource.
 		 * @return The position of the AudioSource.
 		 */
-		virtual cocos2d::Vec3 getPosition();
+		virtual cc::Vec3 getPosition();
 		/**
 		 * Sets the velocity of the AudioSource.
 		 * This does not change the position of the AudioSource, but lets the application know
 		 * how it has to calculate the doppler effect.
 		 * @param v The velocity vector.
 		 */
-		virtual void setVelocity(const cocos2d::Vec3& v);
+		virtual void setVelocity(const cc::Vec3& v);
 		/**
 		 * Gets the velocity of the AudioSource.
 		 * @return The velocity vector.
 		 */
-		virtual cocos2d::Vec3 getVelocity();
+		virtual cc::Vec3 getVelocity();
 		/**
 		 * Sets the direction vector of the AudioSource.
 		 * A zero vector makes the source non-directional.
 		 * @param v The direction vector.
 		 */
-		virtual void setDirection(const cocos2d::Vec3& v);
+		virtual void setDirection(const cc::Vec3& v);
 		/**
 		 * Gets the direction of the AudioSource.
 		 * @return The direction vector.
 		 */
-		virtual cocos2d::Vec3 getDirection();
+		virtual cc::Vec3 getDirection();
 		/**
 		 * Sets the AudioSource's directional volume cones. Together with AudioSource:setDirection,
 		 * the cone angles allow for the AudioSource's volume to vary depending on its direction.
@@ -556,9 +556,9 @@ NS_CC_BEGIN
 
 		float pitch = 1.0f;
 		float volume = 1.0f;
-		cocos2d::Vec3 position;
-		cocos2d::Vec3 velocity;
-		cocos2d::Vec3 direction;
+		cc::Vec3 position;
+		cc::Vec3 velocity;
+		cc::Vec3 direction;
 		bool relative = false;
 		bool looping = false;
 		float minVolume = 0.0f;

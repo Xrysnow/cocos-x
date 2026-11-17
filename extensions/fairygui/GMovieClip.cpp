@@ -23,7 +23,7 @@ GMovieClip::~GMovieClip()
 
 void GMovieClip::handleInit()
 {
-    cc::IntrusivePtr<cocos2d::Sprite> content;
+    cc::IntrusivePtr<cc::Sprite> content;
     cc::IntrusivePtr<ActionMovieClip> playAction;
     _content = (content = FUISprite::create()).get();
     _content->retain();
@@ -92,7 +92,7 @@ void GMovieClip::setFlip(FlipType value)
     _content->setFlippedY(value == FlipType::VERTICAL || value == FlipType::BOTH);
 }
 
-void GMovieClip::setColor(const cocos2d::Color3B& value)
+void GMovieClip::setColor(const cc::Color3B& value)
 {
     _content->setColor(value);
 }
@@ -104,7 +104,7 @@ void GMovieClip::handleGrayedChanged()
     ((FUISprite*)_content)->setGrayed(_finalGrayed);
 }
 
-cocos2d::Value GMovieClip::getProp(ObjectPropID propId)
+cc::Value GMovieClip::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -121,7 +121,7 @@ cocos2d::Value GMovieClip::getProp(ObjectPropID propId)
     }
 }
 
-void GMovieClip::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GMovieClip::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {
@@ -197,7 +197,7 @@ ActionMovieClip::~ActionMovieClip()
     CC_SAFE_RELEASE(_animation);
 }
 
-cc::IntrusivePtr<ActionMovieClip> ActionMovieClip::create(cocos2d::Animation* animation, float repeatDelay, bool swing)
+cc::IntrusivePtr<ActionMovieClip> ActionMovieClip::create(cc::Animation* animation, float repeatDelay, bool swing)
 {
     cc::IntrusivePtr action{new ActionMovieClip()};
     action->setAnimation(animation, repeatDelay, swing);
@@ -418,7 +418,7 @@ void ActionMovieClip::setPlaySettings(int start, int end, int times, int endAt, 
     setFrame(start);
 }
 
-void ActionMovieClip::setAnimation(cocos2d::Animation* animation, float repeatDelay, bool swing)
+void ActionMovieClip::setAnimation(cc::Animation* animation, float repeatDelay, bool swing)
 {
     if (_animation != animation)
     {

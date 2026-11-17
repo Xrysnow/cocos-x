@@ -1446,12 +1446,12 @@ bool ParticleSystem::addAnimationIndex(unsigned short index, std::string_view fr
     return false;
 }
 
-bool ParticleSystem::addAnimationIndex(cocos2d::SpriteFrame* frame)
+bool ParticleSystem::addAnimationIndex(cc::SpriteFrame* frame)
 {
     return addAnimationIndex(_animIndexCount, frame);
 }
 
-bool ParticleSystem::addAnimationIndex(unsigned short index, cocos2d::SpriteFrame* frame)
+bool ParticleSystem::addAnimationIndex(unsigned short index, cc::SpriteFrame* frame)
 {
     if (frame)
     {
@@ -1463,7 +1463,7 @@ bool ParticleSystem::addAnimationIndex(unsigned short index, cocos2d::SpriteFram
     return false;
 }
 
-bool ParticleSystem::addAnimationIndex(unsigned short index, cocos2d::Rect rect, bool rotated)
+bool ParticleSystem::addAnimationIndex(unsigned short index, cc::Rect rect, bool rotated)
 {
     auto iter = _animationIndices.find(index);
     if (iter == _animationIndices.end())

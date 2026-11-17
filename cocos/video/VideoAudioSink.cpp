@@ -17,7 +17,7 @@ namespace video
 
 	VideoAudioSink::VideoAudioSink()
 	{
-		state.deviceGeneration = cocos2d::AudioEngine::getDeviceGeneration();
+		state.deviceGeneration = cc::AudioEngine::getDeviceGeneration();
 	}
 
 	VideoAudioSink::~VideoAudioSink()
@@ -27,7 +27,7 @@ namespace video
 
 	bool VideoAudioSink::createSourceLocked()
 	{
-		source = cocos2d::AudioSource::create(SampleRate, 16, 2, 10).detach();
+		source = cc::AudioSource::create(SampleRate, 16, 2, 10).detach();
 		if (!source)
 		{
 			failLocked("Could not create the video audio output queue");
@@ -55,7 +55,7 @@ namespace video
 			source->resetQueue();
 			// A device replacement discards all old IDs. Releasing the old owner
 			// cannot address IDs in the new context (AudioSource checks generation).
-			if (state.deviceGeneration != cocos2d::AudioEngine::getDeviceGeneration())
+			if (state.deviceGeneration != cc::AudioEngine::getDeviceGeneration())
 			{
 				source->release();
 				source = nullptr;
@@ -64,7 +64,7 @@ namespace video
 		const auto underruns = state.underruns;
 		state = {};
 		state.generation = generation;
-		state.deviceGeneration = cocos2d::AudioEngine::getDeviceGeneration();
+		state.deviceGeneration = cc::AudioEngine::getDeviceGeneration();
 		state.mediaSeconds = mediaSeconds;
 		state.underruns = underruns;
 		anchorSeconds = mediaSeconds;
@@ -73,8 +73,8 @@ namespace video
 		rebuffering = true;
 		tailActive = false;
 		lastSampleTime = lastLatency = lastValidTime = failureSince = 0.0;
-		frozenSince = (!allowed || cocos2d::AudioEngine::isSuspended()) ? steadySeconds() : 0.0;
-		outputRevision = cocos2d::AudioEngine::getOutputRevision();
+		frozenSince = (!allowed || cc::AudioEngine::isSuspended()) ? steadySeconds() : 0.0;
+		outputRevision = cc::AudioEngine::getOutputRevision();
 		if (!source && !createSourceLocked())
 			return false;
 		queueGeneration = source->getQueuePlaybackSnapshot().generation;
@@ -130,7 +130,7 @@ namespace video
 			return SubmitResult::Error;
 		if (frames > BudgetFrames - std::min(state.bufferedFrames, BudgetFrames))
 			return SubmitResult::Full;
-		using Result = cocos2d::AudioSource::QueueSubmitResult;
+		using Result = cc::AudioSource::QueueSubmitResult;
 		const auto result = source->submitQueueData(stereo, frames * 4, queueGeneration, state.deviceGeneration);
 		switch (result)
 		{
@@ -208,7 +208,7 @@ namespace video
 		updateFreezeLocked(!allowed || sample.suspended, now);
 		state.suspended = sample.suspended;
 		if (state.deviceGeneration != sample.deviceGeneration ||
-			sample.stopReason == cocos2d::AudioSource::QueueStopReason::DeviceChanged)
+			sample.stopReason == cc::AudioSource::QueueStopReason::DeviceChanged)
 		{
 			// Keep the last valid media position as the worker's recovery target.
 			state.deviceChanged = true;
@@ -255,7 +255,7 @@ namespace video
 		state.consumedFrames = uint64_t(consumed);
 		state.bufferedFrames = sample.submittedFrames - state.consumedFrames;
 		const bool natural = sample.state == AL_STOPPED &&
-			sample.stopReason == cocos2d::AudioSource::QueueStopReason::Natural;
+			sample.stopReason == cc::AudioSource::QueueStopReason::Natural;
 		state.playing = sample.state == AL_PLAYING;
 		const double endpoint = anchorSeconds + double(sample.submittedFrames) / SampleRate;
 		state.latencyValid = sample.latencyValid;
@@ -334,9 +334,9 @@ namespace video
 			if (!source->play())
 			{
 				// Suspension/rebuild can win the pool lock after this snapshot.
-				if (cocos2d::AudioEngine::isSuspended())
+				if (cc::AudioEngine::isSuspended())
 					state.suspended = true;
-				else if (cocos2d::AudioEngine::getDeviceGeneration() != state.deviceGeneration)
+				else if (cc::AudioEngine::getDeviceGeneration() != state.deviceGeneration)
 					state.deviceChanged = true;
 				else
 					failLocked("Could not start the video audio queue");

@@ -33,13 +33,13 @@
 
 #include "base/ccUTF8.h"
 
-using namespace cocos2d;
+using namespace cc;
 
 extern "C" {
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeRender(JNIEnv*, jclass)
 {
-    cocos2d::Director::getInstance()->mainLoop();
+    cc::Director::getInstance()->mainLoop();
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnPause(JNIEnv*, jclass)
@@ -47,8 +47,8 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnPause(JNIEnv*, j
     if (Director::getInstance()->getOpenGLView())
     {
         Application::getInstance()->applicationDidEnterBackground();
-        cocos2d::EventCustom backgroundEvent(EVENT_COME_TO_BACKGROUND);
-        cocos2d::Director::getInstance()->getEventDispatcher()->dispatchEvent(&backgroundEvent);
+        cc::EventCustom backgroundEvent(EVENT_COME_TO_BACKGROUND);
+        cc::Director::getInstance()->getEventDispatcher()->dispatchEvent(&backgroundEvent);
     }
 }
 
@@ -57,34 +57,34 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnResume(JNIEnv*, 
     if (Director::getInstance()->getOpenGLView())
     {
         Application::getInstance()->applicationWillEnterForeground();
-        cocos2d::EventCustom foregroundEvent(EVENT_COME_TO_FOREGROUND);
-        cocos2d::Director::getInstance()->getEventDispatcher()->dispatchEvent(&foregroundEvent);
+        cc::EventCustom foregroundEvent(EVENT_COME_TO_FOREGROUND);
+        cc::Director::getInstance()->getEventDispatcher()->dispatchEvent(&foregroundEvent);
     }
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeInsertText(JNIEnv* env, jclass, jstring text)
 {
-    std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(env, text);
+    std::string strValue = cc::StringUtils::getStringUTFCharsJNI(env, text);
     const char* pszText  = strValue.c_str();
-    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
+    cc::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeDeleteBackward(JNIEnv*, jclass, jint numChars)
 {
     // Java counts Unicode code points, matching the native delegates' deletion unit.
     for (jint i = 0; i < numChars; ++i)
-        cocos2d::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
+        cc::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeIMEClosed(JNIEnv*, jclass)
 {
-    cocos2d::IMEKeyboardNotificationInfo info{};
-    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidHide(info);
+    cc::IMEKeyboardNotificationInfo info{};
+    cc::IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidHide(info);
 }
 
 JNIEXPORT jstring JNICALL Java_org_cocos_lib_CocosRenderer_nativeGetContentText(JNIEnv* env, jclass)
 {
-    auto pszText = cocos2d::IMEDispatcher::sharedDispatcher()->getContentText();
-    return cocos2d::StringUtils::newStringUTFJNI(env, pszText);
+    auto pszText = cc::IMEDispatcher::sharedDispatcher()->getContentText();
+    return cc::StringUtils::newStringUTFJNI(env, pszText);
 }
 }

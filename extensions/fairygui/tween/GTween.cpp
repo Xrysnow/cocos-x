@@ -9,22 +9,22 @@ GTweener* GTween::to(float startValue, float endValue, float duration)
     return TweenManager::createTween()->_to(startValue, endValue, duration);
 }
 
-GTweener* GTween::to(const cocos2d::Vec2& startValue, const cocos2d::Vec2 & endValue, float duration)
+GTweener* GTween::to(const cc::Vec2& startValue, const cc::Vec2 & endValue, float duration)
 {
     return TweenManager::createTween()->_to(startValue, endValue, duration);
 }
 
-GTweener* GTween::to(const cocos2d::Vec3& startValue, const cocos2d::Vec3 & endValue, float duration)
+GTweener* GTween::to(const cc::Vec3& startValue, const cc::Vec3 & endValue, float duration)
 {
     return TweenManager::createTween()->_to(startValue, endValue, duration);
 }
 
-GTweener* GTween::to(const cocos2d::Vec4& startValue, const cocos2d::Vec4 & endValue, float duration)
+GTweener* GTween::to(const cc::Vec4& startValue, const cc::Vec4 & endValue, float duration)
 {
     return TweenManager::createTween()->_to(startValue, endValue, duration);
 }
 
-GTweener* GTween::to(const cocos2d::Color4B& startValue, const cocos2d::Color4B & endValue, float duration)
+GTweener* GTween::to(const cc::Color4B& startValue, const cc::Color4B & endValue, float duration)
 {
     return TweenManager::createTween()->_to(startValue, endValue, duration);
 }
@@ -39,42 +39,42 @@ GTweener* GTween::delayedCall(float delay)
     return TweenManager::createTween()->setDelay(delay);
 }
 
-GTweener* GTween::shake(const cocos2d::Vec2& startValue, float amplitude, float duration)
+GTweener* GTween::shake(const cc::Vec2& startValue, float amplitude, float duration)
 {
     return TweenManager::createTween()->_shake(startValue, amplitude, duration);
 }
 
-bool GTween::isTweening(cocos2d::Ref * target)
+bool GTween::isTweening(cc::Ref * target)
 {
     return TweenManager::isTweening(target, TweenPropType::None);
 }
 
-bool GTween::isTweening(cocos2d::Ref * target, TweenPropType propType)
+bool GTween::isTweening(cc::Ref * target, TweenPropType propType)
 {
     return TweenManager::isTweening(target, propType);
 }
 
-void GTween::kill(cocos2d::Ref * target)
+void GTween::kill(cc::Ref * target)
 {
     TweenManager::killTweens(target, TweenPropType::None, false);
 }
 
-void GTween::kill(cocos2d::Ref * target, bool complete)
+void GTween::kill(cc::Ref * target, bool complete)
 {
     TweenManager::killTweens(target, TweenPropType::None, complete);
 }
 
-void GTween::kill(cocos2d::Ref * target, TweenPropType propType, bool complete)
+void GTween::kill(cc::Ref * target, TweenPropType propType, bool complete)
 {
     TweenManager::killTweens(target, propType, complete);
 }
 
-GTweener* GTween::getTween(cocos2d::Ref * target)
+GTweener* GTween::getTween(cc::Ref * target)
 {
     return TweenManager::getTween(target, TweenPropType::None);
 }
 
-GTweener* GTween::getTween(cocos2d::Ref * target, TweenPropType propType)
+GTweener* GTween::getTween(cc::Ref * target, TweenPropType propType)
 {
     return TweenManager::getTween(target, propType);
 }

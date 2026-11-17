@@ -26,16 +26,16 @@ public:
     virtual const std::string& getIcon() const override;
     virtual void setIcon(const std::string& value) override;
 
-    cocos2d::Color3B getTitleColor() const;
-    void setTitleColor(const cocos2d::Color3B& value);
+    cc::Color3B getTitleColor() const;
+    void setTitleColor(const cc::Color3B& value);
 
     int getTitleFontSize() const;
     void setTitleFontSize(int value);
 
     GTextField* getTextField() const;
 
-    virtual cocos2d::Value getProp(ObjectPropID propId) override;
-    virtual void setProp(ObjectPropID propId, const cocos2d::Value& value) override;
+    virtual cc::Value getProp(ObjectPropID propId) override;
+    virtual void setProp(ObjectPropID propId, const cc::Value& value) override;
 
 protected:
     virtual void constructExtension(ByteBuffer* buffer) override;

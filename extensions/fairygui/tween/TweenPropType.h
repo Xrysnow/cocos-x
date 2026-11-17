@@ -30,7 +30,7 @@ class TweenPropTypeUtils
 {
 public:
     static void setProps(GObject* target, TweenPropType propType, const TweenValue& value);
-    static void setProps(cocos2d::Node* target, TweenPropType propType, const TweenValue& value);
+    static void setProps(cc::Node* target, TweenPropType propType, const TweenValue& value);
 };
 
 

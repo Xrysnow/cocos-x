@@ -279,10 +279,10 @@ private:
     Type _type;
 };
 
-inline const cocos2d::Value& optValue(const ValueMap& dictionary, std::string_view key)
+inline const cc::Value& optValue(const ValueMap& dictionary, std::string_view key)
 {
     auto iter = dictionary.find(key);
-    return iter != dictionary.cend() ? iter->second : cocos2d::Value::Null;
+    return iter != dictionary.cend() ? iter->second : cc::Value::Null;
 }
 
 /** @} */

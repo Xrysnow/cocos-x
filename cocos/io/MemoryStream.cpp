@@ -4,7 +4,7 @@
 #include <new>
 #include <stdexcept>
 
-namespace cocos2d::io
+namespace cc::io
 {
 Result<ThreadSafeRefPtr<MemoryStream>> MemoryStream::fromOwned(
     ThreadSafeRefPtr<MemoryBuffer> buffer, bool writable, size_t maxCapacity)

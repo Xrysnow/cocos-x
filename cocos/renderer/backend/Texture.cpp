@@ -31,7 +31,7 @@ CC_BACKEND_BEGIN
 
 TextureBackend::~TextureBackend() {}
 
-void TextureBackend::updateTextureDescriptor(const cocos2d::backend::TextureDescriptor& descriptor, int /*index*/)
+void TextureBackend::updateTextureDescriptor(const cc::backend::TextureDescriptor& descriptor, int /*index*/)
 {
     _bitsPerPixel  = PixelFormatUtils::getBitsPerPixel(descriptor.textureFormat);
     _textureType   = descriptor.textureType;

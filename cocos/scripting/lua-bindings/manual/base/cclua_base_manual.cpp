@@ -66,7 +66,7 @@
 #include "renderer/CCTextureCache.h"
 #include "renderer/ccShaders.h"
 
-void LuaNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void LuaNode::draw(cc::Renderer* renderer, const cc::Mat4& transform, uint32_t flags)
 {
     LuaEngine::getInstance()->getLuaStack()->executeCallback([&]() -> int {
         int handler =
@@ -116,7 +116,7 @@ static int tolua_Cocos2d_LuaNode_create00(lua_State* tolua_S)
         auto luaNode = cc::IntrusivePtr{new LuaNode()};
         int nID     = (int)luaNode->getScriptObjectID();
         int* pLuaID = &luaNode->getScriptIdentity().luaID;
-        auto* raw = cocos2d::transferToAutoreleasePool(std::move(luaNode));
+        auto* raw = cc::transferToAutoreleasePool(std::move(luaNode));
         toluafix_pushusertype_ccobject(tolua_S, nID, pLuaID, (void*)raw, "cc.LuaNode");
     }
     return 1;
@@ -223,12 +223,12 @@ static void pack_factory_arguments(lua_State* L, int argc)
 static int tolua_cocos2d_Menu_create(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.Menu", "cc.Menu:create");
-    LUA_TRY_INVOKE_R(0, []() { return cocos2d::Menu::create(); });
+    LUA_TRY_INVOKE_R(0, []() { return cc::Menu::create(); });
     if (argc > 0)
     {
         pack_factory_arguments(lua_S, argc);
-        LUA_TRY_INVOKE_R(argc, [](const cocos2d::Vector<cocos2d::MenuItem*>& items) {
-            return cocos2d::Menu::createWithArray(items);
+        LUA_TRY_INVOKE_R(argc, [](const cc::Vector<cc::MenuItem*>& items) {
+            return cc::Menu::createWithArray(items);
         });
     }
     LUA_SINVOKE_FOOTER("at least 1");
@@ -335,8 +335,8 @@ static int tolua_cocos2d_MenuItemToggle_create(lua_State* lua_S)
     if (argc > 0)
     {
         pack_factory_arguments(lua_S, argc);
-        LUA_TRY_INVOKE_R(argc, [](const cocos2d::Vector<cocos2d::MenuItem*>& items) {
-            auto menu = cocos2d::MenuItemToggle::create();
+        LUA_TRY_INVOKE_R(argc, [](const cc::Vector<cc::MenuItem*>& items) {
+            auto menu = cc::MenuItemToggle::create();
             for (auto* item : items)
                 menu->addSubItem(item);
             menu->setSelectedIndex(0);
@@ -358,7 +358,7 @@ static int tolua_cocos2d_MenuItem_registerScriptTapHandler(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S, 1, "cc.MenuItem", 0, &tolua_err))
         goto tolua_lerror;
 #endif
-    cobj = static_cast<cocos2d::MenuItemImage*>(tolua_tousertype(tolua_S, 1, 0));
+    cobj = static_cast<cc::MenuItemImage*>(tolua_tousertype(tolua_S, 1, 0));
 #if CC_DEBUG >= 1
     if (nullptr == cobj)
     {
@@ -406,7 +406,7 @@ static int tolua_cocos2d_MenuItem_unregisterScriptTapHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    cobj = static_cast<cocos2d::MenuItemImage*>(tolua_tousertype(tolua_S, 1, 0));
+    cobj = static_cast<cc::MenuItemImage*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == cobj)
@@ -480,7 +480,7 @@ static int cclua_Layer_setTouchEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -528,7 +528,7 @@ static int cclua_Layer_isTouchEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -569,7 +569,7 @@ static int cclua_Layer_setTouchMode(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -618,7 +618,7 @@ static int cclua_Layer_getTouchMode(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -661,7 +661,7 @@ static int cclua_Layer_setSwallowsTouches(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -709,7 +709,7 @@ static int cclua_Layer_isSwallowsTouches(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -750,7 +750,7 @@ static int cclua_Layer_setKeyboardEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -796,7 +796,7 @@ static int cclua_Layer_isKeyboardEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -837,7 +837,7 @@ static int cclua_Layer_setAccelerometerEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -884,7 +884,7 @@ static int cclua_Layer_isAccelerometerEnabled(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -926,7 +926,7 @@ static int cclua_Layer_setAccelerometerInterval(lua_State* L)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(L, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(L, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -973,7 +973,7 @@ static int tolua_cocos2d_Layer_registerScriptTouchHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1066,7 +1066,7 @@ static int tolua_cocos2d_Layer_unregisterScriptTouchHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1110,7 +1110,7 @@ static int tolua_cocos2d_Layer_registerScriptKeypadHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1160,7 +1160,7 @@ static int tolua_cocos2d_Layer_unregisterScriptKeypadHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1204,7 +1204,7 @@ static int tolua_cocos2d_Layer_registerScriptAccelerateHandler(lua_State* tolua_
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1255,7 +1255,7 @@ static int tolua_cocos2d_Layer_unregisterScriptAccelerateHandler(lua_State* tolu
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Layer*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Layer*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1301,7 +1301,7 @@ static int tolua_cocos2d_Scheduler_scheduleScriptFunc(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Scheduler*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Scheduler*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1354,7 +1354,7 @@ static int tolua_cocos2d_Scheduler_unscheduleScriptEntry(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Scheduler*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Scheduler*>(tolua_tousertype(tolua_S, 1, 0));
 
 #if CC_DEBUG >= 1
     if (nullptr == self)
@@ -1397,8 +1397,8 @@ static int tolua_cocos2d_Sequence_create(lua_State* lua_S)
     {
         if (!(argc == 1 && lua_istable(lua_S, 2)))
             pack_factory_arguments(lua_S, argc);
-        LUA_TRY_INVOKE_R(argc, [](const cocos2d::Vector<cocos2d::FiniteTimeAction*>& items) {
-            return cocos2d::Sequence::create(items);
+        LUA_TRY_INVOKE_R(argc, [](const cc::Vector<cc::FiniteTimeAction*>& items) {
+            return cc::Sequence::create(items);
         });
     }
     LUA_SINVOKE_FOOTER("at least 1");
@@ -1434,11 +1434,11 @@ static int tolua_cocos2d_CallFunc_create(lua_State* lua_S)
                 lua_replace(lua_S, 2);
                 lua_settop(lua_S, 2);
             }
-            LUA_TRY_INVOKE_R(1, [](std::function<void(cocos2d::Node*)> callback) -> cc::IntrusivePtr<cocos2d::CallFunc> {
-                return cocos2d::LuaCallFunc::create(callback);
+            LUA_TRY_INVOKE_R(1, [](std::function<void(cc::Node*)> callback) -> cc::IntrusivePtr<cc::CallFunc> {
+                return cc::LuaCallFunc::create(callback);
             });
-            LUA_TRY_INVOKE_R(2, [](std::function<void(cocos2d::Node*)> callback) -> cc::IntrusivePtr<cocos2d::CallFunc> {
-                return cocos2d::LuaCallFunc::create(callback);
+            LUA_TRY_INVOKE_R(2, [](std::function<void(cc::Node*)> callback) -> cc::IntrusivePtr<cc::CallFunc> {
+                return cc::LuaCallFunc::create(callback);
             });
         }
     }
@@ -1459,7 +1459,7 @@ static int tolua_cocos2d_Node_registerScriptHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Node*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Node*>(tolua_tousertype(tolua_S, 1, 0));
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -1508,7 +1508,7 @@ static int tolua_cocos2d_Node_unregisterScriptHandler(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Node*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Node*>(tolua_tousertype(tolua_S, 1, 0));
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -1550,7 +1550,7 @@ static int tolua_Cocos2d_Node_scheduleUpdateWithPriorityLua(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Node*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Node*>(tolua_tousertype(tolua_S, 1, 0));
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -1602,7 +1602,7 @@ static int tolua_cocos2d_Node_unscheduleUpdate(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = static_cast<cocos2d::Node*>(tolua_tousertype(tolua_S, 1, 0));
+    self = static_cast<cc::Node*>(tolua_tousertype(tolua_S, 1, 0));
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -1638,17 +1638,17 @@ static int tolua_cocos2d_Spawn_create(lua_State* lua_S)
     {
         if (!(argc == 1 && lua_istable(lua_S, 2)))
             pack_factory_arguments(lua_S, argc);
-        LUA_TRY_INVOKE_R(argc, [](const cocos2d::Vector<cocos2d::FiniteTimeAction*>& items) {
-            return cocos2d::Spawn::create(items);
+        LUA_TRY_INVOKE_R(argc, [](const cc::Vector<cc::FiniteTimeAction*>& items) {
+            return cc::Spawn::create(items);
         });
     }
     LUA_SINVOKE_FOOTER("at least 1");
 }
 
 // Native spline factories consume a PointArray; Lua keeps its array input.
-static cocos2d::PointArray* make_control_points(const std::vector<cocos2d::Vec2>& values)
+static cc::PointArray* make_control_points(const std::vector<cc::Vec2>& values)
 {
-    auto points = cocos2d::PointArray::create(values.size());
+    auto points = cc::PointArray::create(values.size());
     if (points)
         for (const auto& value : values)
             points->addControlPoint(value);
@@ -1662,8 +1662,8 @@ static int lua_cocos2d_CardinalSplineBy_create(lua_State* lua_S)
         arg_cur = 2;
     else
     {
-        LUA_TRY_INVOKE_R(3, [](float duration, const std::vector<cocos2d::Vec2>& values, float tension) {
-            return cocos2d::CardinalSplineBy::create(duration, make_control_points(values), tension);
+        LUA_TRY_INVOKE_R(3, [](float duration, const std::vector<cc::Vec2>& values, float tension) {
+            return cc::CardinalSplineBy::create(duration, make_control_points(values), tension);
         });
     }
     LUA_SINVOKE_FOOTER("3");
@@ -1676,8 +1676,8 @@ static int tolua_cocos2d_CatmullRomBy_create(lua_State* lua_S)
         arg_cur = 2;
     else
     {
-        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cocos2d::Vec2>& values) {
-            return cocos2d::CatmullRomBy::create(duration, make_control_points(values));
+        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cc::Vec2>& values) {
+            return cc::CatmullRomBy::create(duration, make_control_points(values));
         });
     }
     LUA_SINVOKE_FOOTER("2");
@@ -1690,8 +1690,8 @@ static int tolua_cocos2d_CatmullRomTo_create(lua_State* lua_S)
         arg_cur = 2;
     else
     {
-        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cocos2d::Vec2>& values) {
-            return cocos2d::CatmullRomTo::create(duration, make_control_points(values));
+        LUA_TRY_INVOKE_R(2, [](float duration, const std::vector<cc::Vec2>& values) {
+            return cc::CatmullRomTo::create(duration, make_control_points(values));
         });
     }
     LUA_SINVOKE_FOOTER("2");
@@ -1705,8 +1705,8 @@ static int tocclua_DrawNode_drawPolygon(lua_State* lua_S)
         bool bounds = false;
         int results = 0;
         ok = lua::invoke_binding<false, true>(lua_S, arg_cur,
-            [&](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& points,
-                int count, const cocos2d::Color4F& fill, float border, const cocos2d::Color4F& color) {
+            [&](cc::DrawNode* node, const std::vector<cc::Vec2>& points,
+                int count, const cc::Color4F& fill, float border, const cc::Color4F& color) {
                 bounds = count > 0 && static_cast<size_t>(count) <= points.size();
                 if (bounds) node->drawPolygon(points.data(), count, fill, border, color);
             }, results);
@@ -1724,8 +1724,8 @@ static int tocclua_DrawNode_drawSolidPoly(lua_State* lua_S)
         bool bounds = false;
         int results = 0;
         ok = lua::invoke_binding<false, true>(lua_S, arg_cur,
-            [&](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& points,
-                unsigned int count, const cocos2d::Color4F& color) {
+            [&](cc::DrawNode* node, const std::vector<cc::Vec2>& points,
+                unsigned int count, const cc::Color4F& color) {
                 bounds = count > 0 && static_cast<size_t>(count) <= points.size();
                 if (bounds) node->drawSolidPoly(points.data(), count, color);
             }, results);
@@ -1743,8 +1743,8 @@ static int tocclua_DrawNode_drawPoly(lua_State* lua_S)
         bool bounds = false;
         int results = 0;
         ok = lua::invoke_binding<false, true>(lua_S, arg_cur,
-            [&](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& points,
-                unsigned int count, bool close, const cocos2d::Color4F& color) {
+            [&](cc::DrawNode* node, const std::vector<cc::Vec2>& points,
+                unsigned int count, bool close, const cc::Color4F& color) {
                 bounds = count > 0 && static_cast<size_t>(count) <= points.size();
                 if (bounds) node->drawPoly(points.data(), count, close, color);
             }, results);
@@ -1761,7 +1761,7 @@ static int tocclua_DrawNode_drawCardinalSpline(lua_State* lua_S)
         arg_cur = 1;
     else
     {
-        LUA_TRY_INVOKE(4, [](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& values, float tension, unsigned int segments, const cocos2d::Color4F& color) {
+        LUA_TRY_INVOKE(4, [](cc::DrawNode* node, const std::vector<cc::Vec2>& values, float tension, unsigned int segments, const cc::Color4F& color) {
             node->drawCardinalSpline(make_control_points(values), tension, segments, color);
         });
     }
@@ -1775,7 +1775,7 @@ static int tocclua_DrawNode_drawCatmullRom(lua_State* lua_S)
         arg_cur = 1;
     else
     {
-        LUA_TRY_INVOKE(3, [](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& values, unsigned int segments, const cocos2d::Color4F& color) {
+        LUA_TRY_INVOKE(3, [](cc::DrawNode* node, const std::vector<cc::Vec2>& values, unsigned int segments, const cc::Color4F& color) {
             node->drawCatmullRom(make_control_points(values), segments, color);
         });
     }
@@ -1789,15 +1789,15 @@ static int tocclua_DrawNode_drawPoints(lua_State* lua_S)
     int results = 0;
     if (argc == 3)
         ok = lua::invoke_binding<false, true>(lua_S, arg_cur,
-            [&](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& points,
-                unsigned int count, const cocos2d::Color4F& color) {
+            [&](cc::DrawNode* node, const std::vector<cc::Vec2>& points,
+                unsigned int count, const cc::Color4F& color) {
                 bounds = count > 0 && count <= points.size();
                 if (bounds) node->drawPoints(points.data(), count, color);
             }, results);
     else if (argc == 4)
         ok = lua::invoke_binding<false, true>(lua_S, arg_cur,
-            [&](cocos2d::DrawNode* node, const std::vector<cocos2d::Vec2>& points,
-                unsigned int count, float size, const cocos2d::Color4F& color) {
+            [&](cc::DrawNode* node, const std::vector<cc::Vec2>& points,
+                unsigned int count, float size, const cc::Color4F& color) {
                 bounds = count > 0 && count <= points.size();
                 if (bounds) node->drawPoints(points.data(), count, size, color);
             }, results);
@@ -1812,8 +1812,8 @@ static int tocclua_LayerMultiplex_create(lua_State* lua_S)
     if (argc > 0)
     {
         pack_factory_arguments(lua_S, argc);
-        LUA_TRY_INVOKE_R(argc, [](const cocos2d::Vector<cocos2d::Node*>& items) {
-            return cocos2d::LayerMultiplex::createWithArray(items);
+        LUA_TRY_INVOKE_R(argc, [](const cc::Vector<cc::Node*>& items) {
+            return cc::LayerMultiplex::createWithArray(items);
         });
     }
     LUA_SINVOKE_FOOTER("at least 1");
@@ -2179,12 +2179,12 @@ static int tocclua_LuaEventListenerAcceleration_create(lua_State* tolua_S)
         }
 #endif
         LUA_FUNCTION handler                          = toluafix_ref_function(tolua_S, 2, 0);
-        cc::IntrusivePtr<cocos2d::EventListenerAcceleration> tolua_ret = cocos2d::LuaEventListenerAcceleration::create();
+        cc::IntrusivePtr<cc::EventListenerAcceleration> tolua_ret = cc::LuaEventListenerAcceleration::create();
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)tolua_ret, handler,
                                                           ScriptHandlerMgr::HandlerType::EVENT_ACC);
         int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
         int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerAcceleration");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cc::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerAcceleration");
 
         return 1;
     }
@@ -2222,7 +2222,7 @@ static void cloneKeyboardHandler(const EventListenerKeyboard* src,
     if (0 != handler)
     {
         int newscriptHandler =
-            cocos2d::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
+            cc::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
 
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)dst, newscriptHandler, type);
         switch (type)
@@ -2277,7 +2277,7 @@ static int tocclua_EventListenerKeyboard_clone(lua_State* tolua_S)
 
     if (argc == 0)
     {
-        cc::IntrusivePtr<cocos2d::EventListenerKeyboard> tolua_ret = cocos2d::EventListenerKeyboard::create();
+        cc::IntrusivePtr<cc::EventListenerKeyboard> tolua_ret = cc::EventListenerKeyboard::create();
         if (nullptr == tolua_ret)
             return 0;
 
@@ -2286,7 +2286,7 @@ static int tocclua_EventListenerKeyboard_clone(lua_State* tolua_S)
 
         int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
         int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerKeyboard");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cc::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerKeyboard");
 
         return 1;
     }
@@ -2404,7 +2404,7 @@ static void cloneTouchOneByOneHandler(const EventListenerTouchOneByOne* src,
     if (0 != handler)
     {
         int newscriptHandler =
-            cocos2d::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
+            cc::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
 
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)dst, newscriptHandler, type);
         switch (type)
@@ -2477,7 +2477,7 @@ static int tocclua_EventListenerTouchOneByOne_clone(lua_State* tolua_S)
 
     if (argc == 0)
     {
-        cc::IntrusivePtr<cocos2d::EventListenerTouchOneByOne> tolua_ret = cocos2d::EventListenerTouchOneByOne::create();
+        cc::IntrusivePtr<cc::EventListenerTouchOneByOne> tolua_ret = cc::EventListenerTouchOneByOne::create();
         if (nullptr == tolua_ret)
             return 0;
 
@@ -2489,7 +2489,7 @@ static int tocclua_EventListenerTouchOneByOne_clone(lua_State* tolua_S)
 
         int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
         int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchOneByOne");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cc::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchOneByOne");
 
         return 1;
     }
@@ -2630,7 +2630,7 @@ static void cloneTouchAllAtOnceHandler(const EventListenerTouchAllAtOnce* src,
     if (0 != handler)
     {
         int newscriptHandler =
-            cocos2d::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
+            cc::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
 
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)dst, newscriptHandler, type);
         switch (type)
@@ -2704,7 +2704,7 @@ static int tocclua_EventListenerTouchAllAtOnce_clone(lua_State* tolua_S)
 
     if (argc == 0)
     {
-        cc::IntrusivePtr<cocos2d::EventListenerTouchAllAtOnce> tolua_ret = cocos2d::EventListenerTouchAllAtOnce::create();
+        cc::IntrusivePtr<cc::EventListenerTouchAllAtOnce> tolua_ret = cc::EventListenerTouchAllAtOnce::create();
         if (nullptr == tolua_ret)
             return 0;
 
@@ -2715,7 +2715,7 @@ static int tocclua_EventListenerTouchAllAtOnce_clone(lua_State* tolua_S)
 
         int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
         int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchAllAtOnce");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cc::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerTouchAllAtOnce");
 
         return 1;
     }
@@ -2856,7 +2856,7 @@ static void cloneMouseHandler(const EventListenerMouse* src,
     if (0 != handler)
     {
         int newscriptHandler =
-            cocos2d::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
+            cc::ScriptEngineManager::getInstance()->getScriptEngine()->reallocateScriptHandler(handler);
 
         ScriptHandlerMgr::getInstance()->addObjectHandler((void*)dst, newscriptHandler, type);
         switch (type)
@@ -2929,7 +2929,7 @@ static int tocclua_EventListenerMouse_clone(lua_State* tolua_S)
 
     if (argc == 0)
     {
-        cc::IntrusivePtr<cocos2d::EventListenerMouse> tolua_ret = cocos2d::EventListenerMouse::create();
+        cc::IntrusivePtr<cc::EventListenerMouse> tolua_ret = cc::EventListenerMouse::create();
         if (nullptr == tolua_ret)
             return 0;
 
@@ -2940,7 +2940,7 @@ static int tocclua_EventListenerMouse_clone(lua_State* tolua_S)
 
         int ID     = (tolua_ret) ? (int)tolua_ret->getScriptObjectID() : -1;
         int* luaID = (tolua_ret) ? &tolua_ret->getScriptIdentity().luaID : NULL;
-        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cocos2d::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerMouse");
+        toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cc::transferToAutoreleasePool(std::move(tolua_ret)), "cc.EventListenerMouse");
 
         return 1;
     }
@@ -3071,7 +3071,7 @@ static void extendEventListenerMouse(lua_State* tolua_S)
 static int cclua_Console_send(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Console", "cc.Console:send");
-    LUA_TRY_INVOKE(2, [](cocos2d::Console*, int descriptor, const std::string& data) {
+    LUA_TRY_INVOKE(2, [](cc::Console*, int descriptor, const std::string& data) {
         ::send(descriptor, data.data(), data.size(), 0);
     });
     LUA_INVOKE_FOOTER("2");
@@ -3080,7 +3080,7 @@ static int cclua_Console_send(lua_State* lua_S)
 static int cclua_Console_wait(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Console", "cc.Console:wait");
-    LUA_TRY_INVOKE(1, [](cocos2d::Console*, int seconds) {
+    LUA_TRY_INVOKE(1, [](cc::Console*, int seconds) {
         std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(seconds) * 1000));
     });
     LUA_INVOKE_FOOTER("1");
@@ -3093,11 +3093,11 @@ static int cclua_Console_addCommand(lua_State* lua_S)
         arg_cur = 2;
     else
     {
-        LUA_TRY_INVOKE(2, ([](cocos2d::Console* console, const cocos2d::ValueMap& metadata,
+        LUA_TRY_INVOKE(2, ([](cc::Console* console, const cc::ValueMap& metadata,
             std::function<void(int, std::string_view)> callback) {
             const auto name = metadata.find("name");
             const auto help = metadata.find("help");
-            cocos2d::Console::Command command = {
+            cc::Console::Command command = {
                 name != metadata.end() ? name->second.asString() : std::string(),
                 help != metadata.end() ? help->second.asString() : std::string(),
                 std::move(callback)};
@@ -3123,7 +3123,7 @@ static void extendConsole(lua_State* tolua_S)
 static int cclua_OrbitCamera_sphericalRadius(lua_State* tolua_S)
 {
     int argc                   = 0;
-    cocos2d::OrbitCamera* self = nullptr;
+    cc::OrbitCamera* self = nullptr;
 
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -3134,7 +3134,7 @@ static int cclua_OrbitCamera_sphericalRadius(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = (cocos2d::OrbitCamera*)tolua_tousertype(tolua_S, 1, 0);
+    self = (cc::OrbitCamera*)tolua_tousertype(tolua_S, 1, 0);
 
 #if CC_DEBUG >= 1
     if (!self)
@@ -3193,7 +3193,7 @@ static void extendOrbitCamera(lua_State* tolua_S)
 int cclua_TMXLayer_getTileGIDAt(lua_State* tolua_S)
 {
     int argc                = 0;
-    cocos2d::TMXLayer* cobj = nullptr;
+    cc::TMXLayer* cobj = nullptr;
     bool ok                 = true;
 
 #if CC_DEBUG >= 1
@@ -3205,7 +3205,7 @@ int cclua_TMXLayer_getTileGIDAt(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::TMXLayer*)tolua_tousertype(tolua_S, 1, 0);
+    cobj = (cc::TMXLayer*)tolua_tousertype(tolua_S, 1, 0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -3218,7 +3218,7 @@ int cclua_TMXLayer_getTileGIDAt(lua_State* tolua_S)
     argc = lua_gettop(tolua_S) - 1;
     if (argc == 1)
     {
-        cocos2d::Vec2 arg0;
+        cc::Vec2 arg0;
 
         ok &= lua::luaval_to_native(tolua_S, 2, &arg0, "cc.TMXLayer:getTileGIDAt");
         if (!ok)
@@ -3230,7 +3230,7 @@ int cclua_TMXLayer_getTileGIDAt(lua_State* tolua_S)
     }
     if (argc == 2)
     {
-        cocos2d::Vec2 arg0;
+        cc::Vec2 arg0;
         int arg1;
 
         ok &= lua::luaval_to_native(tolua_S, 2, &arg0, "cc.TMXLayer:getTileGIDAt");
@@ -3239,7 +3239,7 @@ int cclua_TMXLayer_getTileGIDAt(lua_State* tolua_S)
         if (!ok)
             return 0;
 
-        unsigned int ret = cobj->getTileGIDAt(arg0, (cocos2d::TMXTileFlags*)&arg1);
+        unsigned int ret = cobj->getTileGIDAt(arg0, (cc::TMXTileFlags*)&arg1);
         tolua_pushnumber(tolua_S, (lua_Number)ret);
         tolua_pushnumber(tolua_S, (lua_Number)arg1);
         return 2;
@@ -3259,7 +3259,7 @@ tolua_lerror:
 int cclua_TMXLayer_setTiles(lua_State* tolua_S)
 {
     int argc                = 0;
-    cocos2d::TMXLayer* cobj = nullptr;
+    cc::TMXLayer* cobj = nullptr;
 
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -3270,7 +3270,7 @@ int cclua_TMXLayer_setTiles(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::TMXLayer*)tolua_tousertype(tolua_S, 1, 0);
+    cobj = (cc::TMXLayer*)tolua_tousertype(tolua_S, 1, 0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -3333,7 +3333,7 @@ static void extendTMXLayer(lua_State* tolua_S)
 static int cclua_FastTMXLayer_getTileGIDAt(lua_State* tolua_S)
 {
     int argc                    = 0;
-    cocos2d::FastTMXLayer* cobj = nullptr;
+    cc::FastTMXLayer* cobj = nullptr;
     bool ok                     = true;
 
 #if CC_DEBUG >= 1
@@ -3345,7 +3345,7 @@ static int cclua_FastTMXLayer_getTileGIDAt(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::FastTMXLayer*)tolua_tousertype(tolua_S, 1, 0);
+    cobj = (cc::FastTMXLayer*)tolua_tousertype(tolua_S, 1, 0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -3358,7 +3358,7 @@ static int cclua_FastTMXLayer_getTileGIDAt(lua_State* tolua_S)
     argc = lua_gettop(tolua_S) - 1;
     if (argc == 1)
     {
-        cocos2d::Vec2 arg0;
+        cc::Vec2 arg0;
 
         ok &= lua::luaval_to_native(tolua_S, 2, &arg0, "cc.FastTMXLayer:getTileGIDAt");
         if (!ok)
@@ -3370,7 +3370,7 @@ static int cclua_FastTMXLayer_getTileGIDAt(lua_State* tolua_S)
     }
     if (argc == 2)
     {
-        cocos2d::Vec2 arg0;
+        cc::Vec2 arg0;
         int arg1 = 0;
 
         ok &= lua::luaval_to_native(tolua_S, 2, &arg0, "cc.FastTMXLayer:getTileGIDAt");
@@ -3379,7 +3379,7 @@ static int cclua_FastTMXLayer_getTileGIDAt(lua_State* tolua_S)
         if (!ok)
             return 0;
 
-        unsigned int ret = cobj->getTileGIDAt(arg0, (cocos2d::TMXTileFlags*)&arg1);
+        unsigned int ret = cobj->getTileGIDAt(arg0, (cc::TMXTileFlags*)&arg1);
         tolua_pushnumber(tolua_S, (lua_Number)ret);
         tolua_pushnumber(tolua_S, (lua_Number)arg1);
         return 2;
@@ -3410,9 +3410,9 @@ static void extendFastTMXLayer(lua_State* tolua_S)
 int cclua_Application_isIOS64bit(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Application", "cc.Application:isIOS64bit");
-    const auto platformCheck = [](cocos2d::Application* application) {
+    const auto platformCheck = [](cc::Application* application) {
 #if defined(__LP64__)
-        return application->getTargetPlatform() == cocos2d::Application::Platform::iOS;
+        return application->getTargetPlatform() == cc::Application::Platform::iOS;
 #else
         return false;
 #endif
@@ -3424,10 +3424,10 @@ int cclua_Application_isIOS64bit(lua_State* lua_S)
 int cclua_Application_is64BitMobileDevice(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Application", "cc.Application:is64BitMobileDevice");
-    const auto platformCheck = [](cocos2d::Application* application) {
+    const auto platformCheck = [](cc::Application* application) {
 #if defined(__arm64__) || defined(__aarch64__)
         const auto platform = application->getTargetPlatform();
-        return platform == cocos2d::Application::Platform::iOS || platform == cocos2d::Application::Platform::Android;
+        return platform == cc::Application::Platform::iOS || platform == cc::Application::Platform::Android;
 #else
         return false;
 #endif
@@ -3451,11 +3451,11 @@ static void extendApplication(lua_State* tolua_S)
 int cclua_Camera_unproject(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Camera", "cc.Camera:unproject");
-    LUA_TRY_INVOKE_R(1, [](cocos2d::Camera* camera, const cocos2d::Vec3& point) {
+    LUA_TRY_INVOKE_R(1, [](cc::Camera* camera, const cc::Vec3& point) {
         return camera->unproject(point);
     });
-    LUA_TRY_INVOKE_R(3, [](cocos2d::Camera* camera, const cocos2d::Size& viewport,
-        cocos2d::Vec3 point, cocos2d::Vec3 result) {
+    LUA_TRY_INVOKE_R(3, [](cc::Camera* camera, const cc::Size& viewport,
+        cc::Vec3 point, cc::Vec3 result) {
         camera->unproject(viewport, &point, &result);
         return result;
     });
@@ -3475,7 +3475,7 @@ static void extendCamera(lua_State* tolua_S)
 
 int cclua_get_PipelineDescriptor_programState(lua_State* tolua_S)
 {
-    cocos2d::PipelineDescriptor* cobj = nullptr;
+    cc::PipelineDescriptor* cobj = nullptr;
 
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -3483,7 +3483,7 @@ int cclua_get_PipelineDescriptor_programState(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::PipelineDescriptor*)tolua_tousertype(tolua_S, 1, 0);
+    cobj = (cc::PipelineDescriptor*)tolua_tousertype(tolua_S, 1, 0);
 #if CC_DEBUG >= 1
     if (nullptr == cobj)
     {
@@ -3505,7 +3505,7 @@ tolua_lerror:
 int cclua_set_PipelineDescriptor_programState(lua_State* tolua_S)
 {
     int argc                          = 0;
-    cocos2d::PipelineDescriptor* self = nullptr;
+    cc::PipelineDescriptor* self = nullptr;
 
 #if CC_DEBUG >= 1
     tolua_Error tolua_err;
@@ -3513,7 +3513,7 @@ int cclua_set_PipelineDescriptor_programState(lua_State* tolua_S)
         goto tolua_lerror;
 #endif
 
-    self = (cocos2d::PipelineDescriptor*)tolua_tousertype(tolua_S, 1, 0);
+    self = (cc::PipelineDescriptor*)tolua_tousertype(tolua_S, 1, 0);
 #if CC_DEBUG >= 1
     if (nullptr == self)
     {
@@ -3527,8 +3527,8 @@ int cclua_set_PipelineDescriptor_programState(lua_State* tolua_S)
 
     if (1 == argc)
     {
-        cocos2d::backend::ProgramState* programState = nullptr;
-        luaval_to_object<cocos2d::backend::ProgramState>(tolua_S, 2, "ccb.ProgramState", &programState,
+        cc::backend::ProgramState* programState = nullptr;
+        luaval_to_object<cc::backend::ProgramState>(tolua_S, 2, "ccb.ProgramState", &programState,
                                                          "cclua_set_PipelineDescriptor_programState");
         self->programState = programState;
         return 0;
@@ -3612,10 +3612,10 @@ static int tolua_cocos2d_utils_captureNode(lua_State* lua_S)
         arg_cur = 2;
     else
     {
-        LUA_TRY_INVOKE(2, [](cocos2d::Node* node, std::function<void(cc::IntrusivePtr<cocos2d::Image>)> callback) {
-            cocos2d::utils::captureNode(node, std::move(callback));
+        LUA_TRY_INVOKE(2, [](cc::Node* node, std::function<void(cc::IntrusivePtr<cc::Image>)> callback) {
+            cc::utils::captureNode(node, std::move(callback));
         });
-        LUA_TRY_INVOKE(3, &cocos2d::utils::captureNode);
+        LUA_TRY_INVOKE(3, &cc::utils::captureNode);
     }
     LUA_SINVOKE_FOOTER("2,3");
 }
@@ -3627,7 +3627,7 @@ static int tolua_cocos2d_utils_captureScreen(lua_State* lua_S)
         arg_cur = 1;
     else
     {
-        LUA_TRY_INVOKE(2, static_cast<void(*)(std::function<void(bool, std::string_view)>, std::string_view)>(&cocos2d::utils::captureScreen));
+        LUA_TRY_INVOKE(2, static_cast<void(*)(std::function<void(bool, std::string_view)>, std::string_view)>(&cc::utils::captureScreen));
     }
     LUA_SINVOKE_FOOTER("2");
 }
@@ -3635,8 +3635,8 @@ static int tolua_cocos2d_utils_captureScreen(lua_State* lua_S)
 static int tolua_cocos2d_utils_findChildren(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.utils", "cc.utils:findChildren");
-    LUA_TRY_INVOKE_R(2, [](cocos2d::Node* node, std::string_view name) {
-        return cocos2d::utils::findChildren(*node, name);
+    LUA_TRY_INVOKE_R(2, [](cc::Node* node, std::string_view name) {
+        return cc::utils::findChildren(*node, name);
     });
     LUA_SINVOKE_FOOTER("2");
 }
@@ -3644,7 +3644,7 @@ static int tolua_cocos2d_utils_findChildren(lua_State* lua_S)
 static int tolua_cocos2d_utils_findChild(lua_State* lua_S)
 {
     LUA_GINVOKE_HEADER("cc.utils", "cc.utils.findChild");
-    LUA_TRY_INVOKE_R(2, static_cast<cocos2d::Node*(*)(cocos2d::Node*, std::string_view)>(&cocos2d::utils::findChild));
+    LUA_TRY_INVOKE_R(2, static_cast<cc::Node*(*)(cc::Node*, std::string_view)>(&cc::utils::findChild));
     LUA_GINVOKE_FOOTER("2");
 }
 
@@ -3677,7 +3677,7 @@ static int tolua_cocos2d_Mat4_getInversed(lua_State* tolua_S)
     else
 #endif
     {
-        cocos2d::Mat4 mat;
+        cc::Mat4 mat;
         bool ok = lua::luaval_to_native(tolua_S, 1, &mat);
         if (ok)
         {
@@ -3710,9 +3710,9 @@ static int tolua_cocos2d_Mat4_transformVector(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 mat;
-            cocos2d::Vec4 vector;
-            cocos2d::Vec4 dst;
+            cc::Mat4 mat;
+            cc::Vec4 vector;
+            cc::Vec4 dst;
             ok &= lua::luaval_to_native(tolua_S, 1, &mat);
             if (!ok)
                 return 0;
@@ -3739,9 +3739,9 @@ static int tolua_cocos2d_Mat4_transformVector(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 mat;
+            cc::Mat4 mat;
             float x, y, z, w;
-            cocos2d::Vec3 dst;
+            cc::Vec3 dst;
             ok &= lua::luaval_to_native(tolua_S, 1, &mat);
             if (!ok)
                 return 0;
@@ -3778,10 +3778,10 @@ static int tolua_cocos2d_Mat4_decompose(lua_State* tolua_S)
     else
 #endif
     {
-        cocos2d::Mat4 mat;
-        cocos2d::Vec3 scale;
-        cocos2d::Quaternion rotation;
-        cocos2d::Vec3 translation;
+        cc::Mat4 mat;
+        cc::Vec3 scale;
+        cc::Quaternion rotation;
+        cc::Vec3 translation;
         bool ok = true;
 
         ok &= lua::luaval_to_native(tolua_S, 1, &mat);
@@ -4007,8 +4007,8 @@ static int tolua_cocos2d_Vec3_cross(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Vec3 cobj;
-            cocos2d::Vec3 v;
+            cc::Vec3 cobj;
+            cc::Vec3 v;
 
             bool ok = true;
 
@@ -4035,9 +4035,9 @@ static int tolua_cocos2d_Vec3_cross(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Vec3 v1;
-            cocos2d::Vec3 v2;
-            cocos2d::Vec3 dst;
+            cc::Vec3 v1;
+            cc::Vec3 v2;
+            cc::Vec3 dst;
             bool ok = true;
 
             ok &= lua::luaval_to_native(tolua_S, 1, &v1);
@@ -4052,7 +4052,7 @@ static int tolua_cocos2d_Vec3_cross(lua_State* tolua_S)
             if (!ok)
                 return 0;
 
-            cocos2d::Vec3::cross(v1, v2, &dst);
+            cc::Vec3::cross(v1, v2, &dst);
 
             lua::native_to_luaval(tolua_S, dst);
             return 1;
@@ -4075,17 +4075,17 @@ static int tolua_cocos2d_Mat4_multiply(lua_State* tolua_S)
     else
 #endif
     {
-        cocos2d::Mat4 mat1;
+        cc::Mat4 mat1;
         bool ok = lua::luaval_to_native(tolua_S, 1, &mat1);
         if (!ok)
             return 0;
 
-        cocos2d::Mat4 mat2;
+        cc::Mat4 mat2;
         ok = lua::luaval_to_native(tolua_S, 2, &mat2);
         if (!ok)
             return 0;
 
-        cocos2d::Mat4 ret = mat1 * mat2;
+        cc::Mat4 ret = mat1 * mat2;
         lua::native_to_luaval(tolua_S, ret);
         return 1;
     }
@@ -4114,8 +4114,8 @@ int tolua_cocos2d_Mat4_translate(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 mat;
-            cocos2d::Vec3 vec3;
+            cc::Mat4 mat;
+            cc::Vec3 vec3;
             ok &= lua::luaval_to_native(tolua_S, 1, &mat);
             if (!ok)
                 return 0;
@@ -4155,13 +4155,13 @@ int tolua_cocos2d_Mat4_createRotationZ(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 mat;
+            cc::Mat4 mat;
             float angle;
             ok &= lua::luaval_to_native(tolua_S, 1, &mat);
             if (!ok)
                 return 0;
             angle = (float)lua_tonumber(tolua_S, 2);
-            cocos2d::Mat4::createRotationZ(angle, &mat);
+            cc::Mat4::createRotationZ(angle, &mat);
             lua::native_to_luaval(tolua_S, mat);
             return 1;
         }
@@ -4192,7 +4192,7 @@ int tolua_cocos2d_Mat4_setIdentity(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 mat;
+            cc::Mat4 mat;
             ok &= lua::luaval_to_native(tolua_S, 1, &mat);
             if (!ok)
                 return 0;
@@ -4228,12 +4228,12 @@ int tolua_cocos2d_Mat4_createTranslation(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Mat4 dst;
+            cc::Mat4 dst;
             float xTranslation = (float)lua_tonumber(tolua_S, 1);
             float yTranslation = (float)lua_tonumber(tolua_S, 2);
             float zTranslation = (float)lua_tonumber(tolua_S, 3);
 
-            cocos2d::Mat4::createTranslation(xTranslation, yTranslation, zTranslation, &dst);
+            cc::Mat4::createTranslation(xTranslation, yTranslation, zTranslation, &dst);
             lua::native_to_luaval(tolua_S, dst);
             return 1;
         }
@@ -4246,14 +4246,14 @@ int tolua_cocos2d_Mat4_createTranslation(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Vec3 translation;
-            cocos2d::Mat4 dst;
+            cc::Vec3 translation;
+            cc::Mat4 dst;
 
             ok &= lua::luaval_to_native(tolua_S, 1, &translation, "cc.Mat4.createTranslation");
             if (!ok)
                 return 0;
 
-            cocos2d::Mat4::createTranslation(translation, &dst);
+            cc::Mat4::createTranslation(translation, &dst);
             lua::native_to_luaval(tolua_S, dst);
             return 1;
         }
@@ -4284,14 +4284,14 @@ int tolua_cocos2d_Mat4_createRotation(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Quaternion quat;
-            cocos2d::Mat4 dst;
+            cc::Quaternion quat;
+            cc::Mat4 dst;
 
             ok &= lua::luaval_to_native(tolua_S, 1, &quat, "cc.Mat4.createRotation");
             if (!ok)
                 return 0;
 
-            cocos2d::Mat4::createRotation(quat, &dst);
+            cc::Mat4::createRotation(quat, &dst);
             lua::native_to_luaval(tolua_S, dst);
             return 1;
         }
@@ -4305,8 +4305,8 @@ int tolua_cocos2d_Mat4_createRotation(lua_State* tolua_S)
         else
 #endif
         {
-            cocos2d::Vec3 axis;
-            cocos2d::Mat4 dst;
+            cc::Vec3 axis;
+            cc::Mat4 dst;
 
             ok &= lua::luaval_to_native(tolua_S, 1, &axis, "cc.Mat4.createRotation");
             if (!ok)
@@ -4314,7 +4314,7 @@ int tolua_cocos2d_Mat4_createRotation(lua_State* tolua_S)
 
             float angle = (float)tolua_tonumber(tolua_S, 2, 0);
 
-            cocos2d::Mat4::createRotation(axis, angle, &dst);
+            cc::Mat4::createRotation(axis, angle, &dst);
             lua::native_to_luaval(tolua_S, dst);
             return 1;
         }
@@ -4447,7 +4447,7 @@ static int tolua_cocos2d_bytearray_vec2(lua_State* L)
         else
 #endif
         {
-            cocos2d::Vec2 arg;
+            cc::Vec2 arg;
             ok &= lua::luaval_to_native(L, 1, &arg, "tolua_cocos2d_bytearray_template");
             if (!ok)
                 return 0;
@@ -4488,7 +4488,7 @@ static int tolua_cocos2d_bytearray_vec3(lua_State* L)
         else
 #endif
         {
-            cocos2d::Vec3 arg;
+            cc::Vec3 arg;
             ok &= lua::luaval_to_native(L, 1, &arg, "tolua_cocos2d_bytearray_template");
             if (!ok)
                 return 0;
@@ -4529,7 +4529,7 @@ static int tolua_cocos2d_bytearray_vec4(lua_State* L)
         else
 #endif
         {
-            cocos2d::Vec4 arg;
+            cc::Vec4 arg;
             ok &= lua::luaval_to_native(L, 1, &arg, "tolua_cocos2d_bytearray_template");
             if (!ok)
                 return 0;
@@ -4570,7 +4570,7 @@ static int tolua_cocos2d_bytearray_mat4(lua_State* L)
         else
 #endif
         {
-            cocos2d::Mat4 arg;
+            cc::Mat4 arg;
             ok &= lua::luaval_to_native(L, 1, &arg, "tolua_cocos2d_bytearray_template");
             if (!ok)
                 return 0;

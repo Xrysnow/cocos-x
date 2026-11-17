@@ -13,15 +13,15 @@ class TweenManager
 {
 public:
     static cc::IntrusivePtr<GTweener> createTween();
-    static bool isTweening(cocos2d::Ref* target, TweenPropType propType);
-    static bool killTweens(cocos2d::Ref* target, TweenPropType propType, bool completed);
-    static GTweener* getTween(cocos2d::Ref* target, TweenPropType propType);
+    static bool isTweening(cc::Ref* target, TweenPropType propType);
+    static bool killTweens(cc::Ref* target, TweenPropType propType, bool completed);
+    static GTweener* getTween(cc::Ref* target, TweenPropType propType);
     static void update(float dt);
     static void clean();
     static void init();
 
 private:
-    static void reset(cocos2d::EventCustom*);
+    static void reset(cc::EventCustom*);
 
     static GTweener** _activeTweens;
     static std::vector<GTweener*> _tweenerPool;

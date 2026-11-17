@@ -27,6 +27,8 @@
 #ifndef __UIEditBoxIMPL_H__
 #define __UIEditBoxIMPL_H__
 
+#include "platform/CCNamespace.h"
+
 #include "ui/UIEditBox/UIEditBox.h"
 
 NS_CC_BEGIN
@@ -98,7 +100,7 @@ public:
      * @js NA
      * @lua NA
      */
-    virtual void draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags) = 0;
+    virtual void draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags) = 0;
     /**
      * @js NA
      * @lua NA
@@ -118,6 +120,6 @@ protected:
 extern EditBoxImpl* __createSystemEditBox(EditBox* pEditBox);
 
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 #endif /* __UIEditBoxIMPL_H__ */

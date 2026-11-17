@@ -694,7 +694,7 @@ void Label::updateShaderProgram()
     {
         switch (_currLabelEffect)
         {
-        case cocos2d::LabelEffect::NORMAL:
+        case cc::LabelEffect::NORMAL:
             if (_useDistanceField)
             {
                 programType = backend::ProgramType::LABEL_DISTANCE_NORMAL;
@@ -713,12 +713,12 @@ void Label::updateShaderProgram()
                 }
             }
             break;
-        case cocos2d::LabelEffect::OUTLINE:
+        case cc::LabelEffect::OUTLINE:
         {
             programType = backend::ProgramType::LABLE_OUTLINE;
         }
         break;
-        case cocos2d::LabelEffect::GLOW:
+        case cc::LabelEffect::GLOW:
             if (_useDistanceField)
             {
                 programType = backend::ProgramType::LABLE_DISTANCEFIELD_GLOW;
@@ -1490,9 +1490,9 @@ void Label::disableEffect(LabelEffect effect)
 {
     switch (effect)
     {
-    case cocos2d::LabelEffect::NORMAL:
+    case cc::LabelEffect::NORMAL:
         break;
-    case cocos2d::LabelEffect::OUTLINE:
+    case cc::LabelEffect::OUTLINE:
         if (_currLabelEffect == LabelEffect::OUTLINE)
         {
             if (_currentLabelType == LabelType::TTF)
@@ -1504,7 +1504,7 @@ void Label::disableEffect(LabelEffect effect)
             _contentDirty    = true;
         }
         break;
-    case cocos2d::LabelEffect::SHADOW:
+    case cc::LabelEffect::SHADOW:
         if (_shadowEnabled)
         {
             _shadowEnabled = false;
@@ -1512,17 +1512,17 @@ void Label::disableEffect(LabelEffect effect)
             updateShaderProgram();
         }
         break;
-    case cocos2d::LabelEffect::GLOW:
+    case cc::LabelEffect::GLOW:
         if (_currLabelEffect == LabelEffect::GLOW)
         {
             _currLabelEffect = LabelEffect::NORMAL;
             updateShaderProgram();
         }
         break;
-    case cocos2d::LabelEffect::ITALICS:
+    case cc::LabelEffect::ITALICS:
         setRotationSkewX(0);
         break;
-    case cocos2d::LabelEffect::BOLD:
+    case cc::LabelEffect::BOLD:
         if (_boldEnabled)
         {
             _boldEnabled = false;
@@ -1530,14 +1530,14 @@ void Label::disableEffect(LabelEffect effect)
             disableEffect(LabelEffect::SHADOW);
         }
         break;
-    case cocos2d::LabelEffect::UNDERLINE:
+    case cc::LabelEffect::UNDERLINE:
         if (_underlineNode)
         {
             removeChild(_underlineNode);
             _underlineNode = nullptr;
         }
         break;
-    case cocos2d::LabelEffect::STRIKETHROUGH:
+    case cc::LabelEffect::STRIKETHROUGH:
         _strikethroughEnabled = false;
         // since it is based on underline, disable it as well
         disableEffect(LabelEffect::UNDERLINE);
@@ -1895,7 +1895,7 @@ void Label::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
     if (_insideBounds)
 #endif
     {
-        cocos2d::Mat4 matrixProjection = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+        cc::Mat4 matrixProjection = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
         if (!_shadowEnabled && (_currentLabelType == LabelType::BMFONT || _currentLabelType == LabelType::CHARMAP))
         {
             updateBlendState();
@@ -1918,7 +1918,7 @@ void Label::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
         }
         else
         {
-            cocos2d::Mat4 matrixMVP = matrixProjection * transform;
+            cc::Mat4 matrixMVP = matrixProjection * transform;
 
             for (auto&& it : _letters)
             {
@@ -2348,7 +2348,7 @@ void Label::updateColor()
         color4.b *= _displayedOpacity / 255.0f;
     }
 
-    cocos2d::TextureAtlas* textureAtlas;
+    cc::TextureAtlas* textureAtlas;
     V3F_C4B_T2F_Quad* quads;
     for (auto&& batchNode : _batchNodes)
     {

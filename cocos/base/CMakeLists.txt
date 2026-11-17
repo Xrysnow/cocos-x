@@ -139,3 +139,107 @@ set(COCOS_BASE_SRC
     ${COCOS_BASE_SPECIFIC_SRC}
 
     )
+
+# Standalone foundations share the core target, but keep their original macro/PCH boundary.
+set(COCOS_BASE_STANDALONE_HEADER
+    base/Agent.h
+    base/Assertf.h
+    base/BinaryArchive.h
+    base/CachedArray.h
+    base/CoreStd.h
+    base/IndexHandle.h
+    base/Log.h
+    base/Macros.h
+    base/Object.h
+    base/Ptr.h
+    base/Random.h
+    base/RefCounted.h
+    base/RefCountedExport.h
+    base/RefMap.h
+    base/RefVector.h
+    base/StringHandle.h
+    base/StringPool.h
+    base/StringUtil.h
+    base/ThreadPool.h
+    base/Timer.h
+    base/TypeDef.h
+    base/Utils.h
+    base/job-system/JobSystem.h
+    base/memory/CallStack.h
+    base/memory/Memory.h
+    base/memory/MemoryHook.h
+    base/std/any.h
+    base/std/container/array.h
+    base/std/container/deque.h
+    base/std/container/list.h
+    base/std/container/map.h
+    base/std/container/queue.h
+    base/std/container/set.h
+    base/std/container/string.h
+    base/std/container/unordered_map.h
+    base/std/container/unordered_set.h
+    base/std/container/vector.h
+    base/std/hash/hash.h
+    base/std/optional.h
+    base/std/variant.h
+    base/threading/ConditionVariable.h
+    base/threading/MessageQueue.h
+    base/threading/ReadWriteLock.h
+    base/threading/Semaphore.h
+    base/threading/SyncEvent.h
+    base/threading/ThreadPool.h
+    base/threading/ThreadSafeCounter.h
+    base/threading/ThreadSafeLinearAllocator.h
+    )
+set(COCOS_BASE_STANDALONE_SRC
+    base/BinaryArchive.cpp
+    base/Log.cpp
+    base/Random.cpp
+    base/RefCounted.cpp
+    base/StringHandle.cpp
+    base/StringUtil.cpp
+    base/ThreadPool.cpp
+    base/Timer.cpp
+    base/Utils.cpp
+    base/memory/CallStack.cpp
+    base/memory/MemoryHook.cpp
+    base/threading/ConditionVariable.cpp
+    base/threading/MessageQueue.cpp
+    base/threading/Semaphore.cpp
+    base/threading/ThreadPool.cpp
+    base/threading/ThreadSafeLinearAllocator.cpp
+    )
+list(APPEND COCOS_BASE_HEADER ${COCOS_BASE_STANDALONE_HEADER})
+list(APPEND COCOS_BASE_SRC ${COCOS_BASE_STANDALONE_SRC})
+
+# Called after the target and external dependencies have been configured.
+function(cocos_configure_base target)
+    set(base_src_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
+    set(base_use_taskflow 0)
+    set(base_use_tbb 0)
+    if(USE_JOB_SYSTEM_TASKFLOW)
+        set(base_job_backend job-system-taskflow)
+        set(base_use_taskflow 1)
+        target_include_directories(${target} PUBLIC
+            ${COCOS2DX_ROOT_PATH}/external/taskflow)
+    elseif(USE_JOB_SYSTEM_TBB)
+        set(base_job_backend job-system-tbb)
+        set(base_use_tbb 1)
+        target_include_directories(${target} PUBLIC
+            ${COCOS2DX_ROOT_PATH}/external/tbb/include)
+    else()
+        set(base_job_backend job-system-dummy)
+    endif()
+    file(GLOB base_job_src
+        "${base_src_dir}/job-system/${base_job_backend}/*.cpp"
+        "${base_src_dir}/job-system/${base_job_backend}/*.h"
+    )
+    target_sources(${target} PRIVATE ${base_job_src})
+    target_compile_definitions(${target} PUBLIC
+        CC_USE_JOB_SYSTEM_TASKFLOW=${base_use_taskflow}
+        CC_USE_JOB_SYSTEM_TBB=${base_use_tbb}
+    )
+    # These files must not import cocos2d.h's host/platform macros through the PCH.
+    set_source_files_properties(${COCOS_BASE_STANDALONE_SRC} ${base_job_src}
+        TARGET_DIRECTORY ${target} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endfunction()

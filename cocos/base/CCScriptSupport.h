@@ -644,7 +644,7 @@ public:
     /**
      * Release all native refs for the given owner in script scope
      */
-    virtual void releaseAllNativeRefs(cocos2d::Ref* /*owner*/) {}
+    virtual void releaseAllNativeRefs(cc::Ref* /*owner*/) {}
 
     /**
      * Remove script object,The specific meaning should refer to the ScriptType.

@@ -8,35 +8,35 @@ TweenValue::TweenValue():x(0),y(0),z(0),w(0),d(0)
 {
 }
 
-cocos2d::Vec2 TweenValue::getVec2() const
+cc::Vec2 TweenValue::getVec2() const
 {
-    return cocos2d::Vec2(x, y);
+    return cc::Vec2(x, y);
 }
 
-void TweenValue::setVec2(const cocos2d::Vec2 & value)
+void TweenValue::setVec2(const cc::Vec2 & value)
 {
     x = value.x;
     y = value.y;
 }
 
-cocos2d::Vec3 TweenValue::getVec3() const
+cc::Vec3 TweenValue::getVec3() const
 {
-    return cocos2d::Vec3(x, y, z);
+    return cc::Vec3(x, y, z);
 }
 
-void TweenValue::setVec3(const cocos2d::Vec3 & value)
+void TweenValue::setVec3(const cc::Vec3 & value)
 {
     x = value.x;
     y = value.y;
     z = value.z;
 }
 
-cocos2d::Vec4 TweenValue::getVec4() const
+cc::Vec4 TweenValue::getVec4() const
 {
-    return cocos2d::Vec4(x, y, z, w);
+    return cc::Vec4(x, y, z, w);
 }
 
-void TweenValue::setVec4(const cocos2d::Vec4 & value)
+void TweenValue::setVec4(const cc::Vec4 & value)
 {
     x = value.x;
     y = value.y;
@@ -44,12 +44,12 @@ void TweenValue::setVec4(const cocos2d::Vec4 & value)
     w = value.w;
 }
 
-cocos2d::Color4B TweenValue::getColor() const
+cc::Color4B TweenValue::getColor() const
 {
-    return cocos2d::Color4B(x, y, z, w);
+    return cc::Color4B(x, y, z, w);
 }
 
-void TweenValue::setColor(const cocos2d::Color4B & value)
+void TweenValue::setColor(const cc::Color4B & value)
 {
     x = value.r;
     y = value.g;

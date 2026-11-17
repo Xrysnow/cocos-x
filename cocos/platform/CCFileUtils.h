@@ -189,7 +189,7 @@ public:
      *      - does not truncate the string when '\0' is found (returned string of getContents may have '\0' in the
      * middle.).
      *
-     *  The template version of can accept cocos2d::Data, std::basic_string and std::vector.
+     *  The template version of can accept cc::Data, std::basic_string and std::vector.
      *
      *  @code
      *  std::string sbuf;

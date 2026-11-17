@@ -64,7 +64,7 @@ std::string_view NavMeshAgent::getNavMeshAgentComponentName()
     return comName;
 }
 
-cocos2d::NavMeshAgent::NavMeshAgent()
+cc::NavMeshAgent::NavMeshAgent()
     : _syncFlag(NODE_AND_NODE)
     , _rotRefAxes(Vec3::UNIT_Z)
     , _state(DT_CROWDAGENT_STATE_WALKING)
@@ -78,7 +78,7 @@ cocos2d::NavMeshAgent::NavMeshAgent()
     , _navMeshQuery(nullptr)
 {}
 
-cocos2d::NavMeshAgent::~NavMeshAgent() {}
+cc::NavMeshAgent::~NavMeshAgent() {}
 
 bool NavMeshAgent::initWith(const NavMeshAgentParam& param)
 {
@@ -87,19 +87,19 @@ bool NavMeshAgent::initWith(const NavMeshAgentParam& param)
     return true;
 }
 
-void cocos2d::NavMeshAgent::setNavMeshQuery(dtNavMeshQuery* query)
+void cc::NavMeshAgent::setNavMeshQuery(dtNavMeshQuery* query)
 {
     _navMeshQuery = query;
 }
 
-void cocos2d::NavMeshAgent::removeFrom(dtCrowd* crowed)
+void cc::NavMeshAgent::removeFrom(dtCrowd* crowed)
 {
     crowed->removeAgent(_agentID);
     _crowd   = nullptr;
     _agentID = -1;
 }
 
-void cocos2d::NavMeshAgent::addTo(dtCrowd* crowed)
+void cc::NavMeshAgent::addTo(dtCrowd* crowed)
 {
     _crowd = crowed;
     dtCrowdAgentParams ap;
@@ -108,7 +108,7 @@ void cocos2d::NavMeshAgent::addTo(dtCrowd* crowed)
     _agentID = _crowd->addAgent(&mat.m[12], &ap);
 }
 
-void cocos2d::NavMeshAgent::convertTodtAgentParam(const NavMeshAgentParam& inParam, dtCrowdAgentParams& outParam)
+void cc::NavMeshAgent::convertTodtAgentParam(const NavMeshAgentParam& inParam, dtCrowdAgentParams& outParam)
 {
     memset(&outParam, 0, sizeof(outParam));
     outParam.collisionQueryRange   = inParam.collisionQueryRange;
@@ -123,7 +123,7 @@ void cocos2d::NavMeshAgent::convertTodtAgentParam(const NavMeshAgentParam& inPar
     outParam.updateFlags           = inParam.updateFlags;
 }
 
-void cocos2d::NavMeshAgent::onExit()
+void cc::NavMeshAgent::onExit()
 {
     if (_agentID == -1)
         return;
@@ -136,7 +136,7 @@ void cocos2d::NavMeshAgent::onExit()
     }
 }
 
-void cocos2d::NavMeshAgent::onEnter()
+void cc::NavMeshAgent::onEnter()
 {
     if (_agentID != -1)
         return;
@@ -164,7 +164,7 @@ float NavMeshAgent::getSeparationWeight() const
     return _param.separationWeight;
 }
 
-void cocos2d::NavMeshAgent::setObstacleAvoidanceType(unsigned char type)
+void cc::NavMeshAgent::setObstacleAvoidanceType(unsigned char type)
 {
     _param.obstacleAvoidanceType = type;
     _needUpdateAgent             = true;
@@ -258,7 +258,7 @@ bool NavMeshAgent::isOnOffMeshLink()
     return _state == DT_CROWDAGENT_STATE_OFFMESH;
 }
 
-void cocos2d::NavMeshAgent::completeOffMeshLink()
+void cc::NavMeshAgent::completeOffMeshLink()
 {
     if (_crowd && isOnOffMeshLink())
     {
@@ -292,7 +292,7 @@ void NavMeshAgent::setOrientationRefAxes(const Vec3& rotRefAxes)
     _rotRefAxes = rotRefAxes;
 }
 
-void cocos2d::NavMeshAgent::setAutoOrientation(bool isAuto)
+void cc::NavMeshAgent::setAutoOrientation(bool isAuto)
 {
     _needAutoOrientation = isAuto;
 }

@@ -15,16 +15,16 @@ namespace video
 	class VideoPlayback;
 	enum class PlaybackUpdate;
 
-	class CC_DLL Player : public cocos2d::Sprite
+	class CC_DLL Player : public cc::Sprite
 	{
 	public:
 		static cc::IntrusivePtr<Player> create(const std::string& path);
 		// The input must support seeking and have a dedicated cursor at offset zero.
-		static cc::IntrusivePtr<Player> createFromStream(cocos2d::io::StreamPtr source);
+		static cc::IntrusivePtr<Player> createFromStream(cc::io::StreamPtr source);
 		// Shutdown cooperatively waits for the current stream operation to return.
 		// An optional prompt, thread-safe cancel hook can unblock that operation.
-		static cc::IntrusivePtr<Player> createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel = {});
-		static cc::IntrusivePtr<Player> createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+		static cc::IntrusivePtr<Player> createAsync(cc::io::StreamPtr source, std::function<void()> cancel = {});
+		static cc::IntrusivePtr<Player> createAsync(cc::io::StreamPtr source, std::function<void()> cancel,
 			const PlaybackOptions& options);
 		std::optional<AsyncVideoSnapshot> getAsyncSnapshot() const;
 		void closeAsync();
@@ -70,8 +70,8 @@ namespace video
 	private:
 		static cc::IntrusivePtr<Player> createWithDecoder(Decoder* source);
 		bool initPlayback(Decoder* source);
-		bool initVideoTexture(const cocos2d::Size& size, bool replace);
-		cocos2d::Size getFrameSize() const;
+		bool initVideoTexture(const cc::Size& size, bool replace);
+		cc::Size getFrameSize() const;
 		void applyPlaybackUpdate(PlaybackUpdate update);
 		void syncPlaybackSchedule();
 		bool presentFrame(const uint8_t* pixels);

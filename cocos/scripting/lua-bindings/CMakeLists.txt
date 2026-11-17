@@ -94,7 +94,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto04.cpp
     auto/cclua_base_auto05.cpp
     auto/cclua_base_auto06.cpp
-    auto/cclua_base_auto07.cpp
     auto/cclua_base_retained.cpp
     auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp

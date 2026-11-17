@@ -15,7 +15,7 @@ std::string HtmlObject::selectResource;
 bool HtmlObject::usePool = true;
 
 GObjectPool HtmlObject::objectPool;
-cocos2d::Vector<GObject*> HtmlObject::loaderPool;
+cc::Vector<GObject*> HtmlObject::loaderPool;
 
 HtmlObject::HtmlObject() :_ui(nullptr), _hidden(false)
 {

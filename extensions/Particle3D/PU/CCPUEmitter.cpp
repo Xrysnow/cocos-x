@@ -785,21 +785,21 @@ void PUEmitter::initParticleColor(PUParticle3D* particle)
     if (_particleColorRangeSet)
     {
         if (_particleColorRangeStart.x < _particleColorRangeEnd.x)
-            particle->color.x = cocos2d::random(_particleColorRangeStart.x, _particleColorRangeEnd.x);
+            particle->color.x = cc::random(_particleColorRangeStart.x, _particleColorRangeEnd.x);
         else
-            particle->color.x = cocos2d::random(_particleColorRangeEnd.x, _particleColorRangeStart.x);
+            particle->color.x = cc::random(_particleColorRangeEnd.x, _particleColorRangeStart.x);
         if (_particleColorRangeStart.y < _particleColorRangeEnd.y)
-            particle->color.y = cocos2d::random(_particleColorRangeStart.y, _particleColorRangeEnd.y);
+            particle->color.y = cc::random(_particleColorRangeStart.y, _particleColorRangeEnd.y);
         else
-            particle->color.y = cocos2d::random(_particleColorRangeEnd.y, _particleColorRangeStart.y);
+            particle->color.y = cc::random(_particleColorRangeEnd.y, _particleColorRangeStart.y);
         if (_particleColorRangeStart.z < _particleColorRangeEnd.z)
-            particle->color.z = cocos2d::random(_particleColorRangeStart.z, _particleColorRangeEnd.z);
+            particle->color.z = cc::random(_particleColorRangeStart.z, _particleColorRangeEnd.z);
         else
-            particle->color.z = cocos2d::random(_particleColorRangeEnd.z, _particleColorRangeStart.z);
+            particle->color.z = cc::random(_particleColorRangeEnd.z, _particleColorRangeStart.z);
         if (_particleColorRangeStart.w < _particleColorRangeEnd.w)
-            particle->color.w = cocos2d::random(_particleColorRangeStart.w, _particleColorRangeEnd.w);
+            particle->color.w = cc::random(_particleColorRangeStart.w, _particleColorRangeEnd.w);
         else
-            particle->color.w = cocos2d::random(_particleColorRangeEnd.w, _particleColorRangeStart.w);
+            particle->color.w = cc::random(_particleColorRangeEnd.w, _particleColorRangeStart.w);
     }
     else
     {
@@ -814,7 +814,7 @@ void PUEmitter::initParticleTextureCoords(PUParticle3D* particle)
 {
     if (_particleTextureCoordsRangeSet)
     {
-        particle->textureCoordsCurrent = (unsigned short)cocos2d::random(
+        particle->textureCoordsCurrent = (unsigned short)cc::random(
             (float)_particleTextureCoordsRangeStart, (float)_particleTextureCoordsRangeEnd + 0.999f);
     }
     else

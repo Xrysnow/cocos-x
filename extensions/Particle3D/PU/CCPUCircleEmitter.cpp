@@ -122,7 +122,7 @@ void PUCircleEmitter::initParticlePosition(PUParticle3D* particle)
     if (_random)
     {
         // Choose a random position on the circle.
-        angle = cocos2d::random(0.0, M_PI * 2.0);
+        angle = cc::random(0.0, M_PI * 2.0);
     }
     else
     {
@@ -192,7 +192,7 @@ cc::IntrusivePtr<PUCircleEmitter> PUCircleEmitter::create()
     return pe;
 }
 
-cocos2d::Quaternion PUCircleEmitter::getRotationTo(const Vec3& src,
+cc::Quaternion PUCircleEmitter::getRotationTo(const Vec3& src,
                                                    const Vec3& dest,
                                                    const Vec3& fallbackAxis /*= Vec3::ZERO*/) const
 {

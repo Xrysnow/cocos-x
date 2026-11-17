@@ -124,7 +124,7 @@ protected:
     cc::gfx::Shader* _program = nullptr;
     cc::gfx::ShaderInfo _info;
     size_t hash = 0;
-    cocos2d::Vector<ShaderModuleGFX*> modules;
+    cc::Vector<ShaderModuleGFX*> modules;
     size_t totalUniformSize = 0;
     cc::gfx::DescriptorSetLayoutBindingList uniformLayoutBindings;
     cc::gfx::DescriptorSetLayout* defaultDescriptorSetLayout = nullptr;
@@ -135,12 +135,12 @@ protected:
     std::unordered_map<std::string, BlockInfoEx> blockInfoEx;
     std::unordered_map<std::string, cc::gfx::UniformSamplerTexture> samplers;
     // for ProgramState
-    cocos2d::Map<void*, ProgramStateGFX*> _states;
+    cc::Map<void*, ProgramStateGFX*> _states;
 
     static cc::gfx::AttributeList builtinAttributes;
     static cc::gfx::UniformBlockList builtinUniforms;
     static cc::gfx::UniformSamplerTextureList builtinSamplerTextures;
-    static cocos2d::Map<size_t, ShaderModuleGFX*> cachedModules;
+    static cc::Map<size_t, ShaderModuleGFX*> cachedModules;
     static std::unordered_map<size_t, ProgramGFX*> cachedPrograms;
 
     friend class ProgramState;
@@ -150,7 +150,7 @@ protected:
 class ProgramStateGFX : public Ref
 {
 public:
-    ProgramStateGFX(ProgramGFX* program_, const cocos2d::Map<std::string, BufferGFX*>& buffers_ = {});
+    ProgramStateGFX(ProgramGFX* program_, const cc::Map<std::string, BufferGFX*>& buffers_ = {});
     ~ProgramStateGFX() override;
 
     bool setBuffer(const std::string& blockName, BufferGFX* buffer);
@@ -178,9 +178,9 @@ protected:
     ProgramGFX* program                   = nullptr;
     cc::gfx::DescriptorSet* descriptorSet = nullptr;
     // { bname: buffer }
-    cocos2d::Map<std::string, BufferGFX*> buffers;
+    cc::Map<std::string, BufferGFX*> buffers;
     // { uname: { index: texture } }
-    std::unordered_map<std::string, cocos2d::Map<uint32_t, TextureBackend*>> textures;
+    std::unordered_map<std::string, cc::Map<uint32_t, TextureBackend*>> textures;
     std::vector<uint32_t> allBufferOffsets;
     std::map<uint32_t, std::vector<std::string>> blocksByBinding;
     std::map<uint32_t, std::vector<std::string>> sbuffersByBinding;

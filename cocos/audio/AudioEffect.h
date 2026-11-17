@@ -8,7 +8,7 @@
 #endif
 
 NS_CC_BEGIN
-	class CC_DLL AudioEffect : public cocos2d::Ref
+	class CC_DLL AudioEffect : public cc::Ref
 	{
 	public:
 		enum class Type

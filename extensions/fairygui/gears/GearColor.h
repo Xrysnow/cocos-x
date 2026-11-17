@@ -30,11 +30,11 @@ private:
     class GearColorValue
     {
     public:
-        cocos2d::Color3B color;
-        cocos2d::Color3B outlineColor;
+        cc::Color3B color;
+        cc::Color3B outlineColor;
 
         GearColorValue();
-        GearColorValue(const cocos2d::Color3B& color, const cocos2d::Color3B& outlineColor);
+        GearColorValue(const cc::Color3B& color, const cc::Color3B& outlineColor);
     };
 
     std::unordered_map<std::string, GearColorValue> _storage;

@@ -1,8 +1,10 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "io/MemoryBuffer.h"
 #include "io/Stream.h"
 
-namespace cocos2d::io
+namespace cc::io
 {
 class CC_DLL MemoryStream final : public Stream
 {

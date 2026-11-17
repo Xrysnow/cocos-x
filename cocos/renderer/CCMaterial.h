@@ -147,13 +147,13 @@ public:
      * Set material primitive draw type
      * @param primitive Primitive draw type
      */
-    void setPrimitiveType(cocos2d::backend::PrimitiveType primitive) { _drawPrimitive = primitive; }
+    void setPrimitiveType(cc::backend::PrimitiveType primitive) { _drawPrimitive = primitive; }
 
     /**
      * Get material primitive draw type
      * @return Primitive draw type
      */
-    cocos2d::backend::PrimitiveType getPrimitiveType() const { return _drawPrimitive; }
+    cc::backend::PrimitiveType getPrimitiveType() const { return _drawPrimitive; }
 
     /**
      * Enable material transparent rendering.
@@ -213,8 +213,8 @@ protected:
     bool _isTransparent = false;  // is this mesh transparent.
     bool _force2DQueue = false;   // render meshes using this material in 2D render queue.
 
-    cocos2d::backend::PrimitiveType _drawPrimitive =
-        cocos2d::backend::PrimitiveType::TRIANGLE;  // primitive draw type for meshes
+    cc::backend::PrimitiveType _drawPrimitive =
+        cc::backend::PrimitiveType::TRIANGLE;  // primitive draw type for meshes
 };
 
 NS_CC_END

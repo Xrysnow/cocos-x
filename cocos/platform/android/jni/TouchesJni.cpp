@@ -37,14 +37,14 @@ JNIEXPORT void JNICALL
 Java_org_cocos_lib_CocosRenderer_nativeTouchesBegin(JNIEnv*, jclass, jint id, jfloat x, jfloat y)
 {
     intptr_t idlong = id;
-    cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesBegin(1, &idlong, &x, &y);
+    cc::Director::getInstance()->getOpenGLView()->handleTouchesBegin(1, &idlong, &x, &y);
 }
 
 JNIEXPORT void JNICALL
 Java_org_cocos_lib_CocosRenderer_nativeTouchesEnd(JNIEnv*, jclass, jint id, jfloat x, jfloat y)
 {
     intptr_t idlong = id;
-    cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesEnd(1, &idlong, &x, &y);
+    cc::Director::getInstance()->getOpenGLView()->handleTouchesEnd(1, &idlong, &x, &y);
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeTouchesMove(JNIEnv* env,
@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeTouchesMove(JNIEnv
     for (int i = 0; i < size; i++)
         idlong[i] = id[i];
 
-    cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesMove(size, idlong, x, y);
+    cc::Director::getInstance()->getOpenGLView()->handleTouchesMove(size, idlong, x, y);
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeTouchesCancel(JNIEnv* env,
@@ -88,10 +88,10 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeTouchesCancel(JNIE
     for (int i = 0; i < size; i++)
         idlong[i] = id[i];
 
-    cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesCancel(size, idlong, x, y);
+    cc::Director::getInstance()->getOpenGLView()->handleTouchesCancel(size, idlong, x, y);
 }
 
-static std::unordered_map<int, cocos2d::EventKeyboard::KeyCode> g_keyCodeMap = {
+static std::unordered_map<int, cc::EventKeyboard::KeyCode> g_keyCodeMap = {
     { 4, EventKeyboard::KeyCode::KEY_BACK }, // KEY_BACK == KEY_ESCAPE
     // 0-9
     { 7,  static_cast<EventKeyboard::KeyCode>(76) },
@@ -298,9 +298,9 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosRenderer_nativeKeyEvent(JNIEn
         return JNI_FALSE;
     }
 
-    cocos2d::EventKeyboard::KeyCode cocos2dKey = g_keyCodeMap.at(keyCode);
-    cocos2d::EventKeyboard event(cocos2dKey, isPressed);
-    cocos2d::Director::getInstance()->getEventDispatcher()->dispatchEvent(&event);
+    cc::EventKeyboard::KeyCode cocos2dKey = g_keyCodeMap.at(keyCode);
+    cc::EventKeyboard event(cocos2dKey, isPressed);
+    cc::Director::getInstance()->getEventDispatcher()->dispatchEvent(&event);
     return JNI_TRUE;
 }
 }

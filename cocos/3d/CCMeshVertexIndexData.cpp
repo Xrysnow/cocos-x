@@ -81,7 +81,7 @@ MeshIndexData::MeshIndexData()
 #endif
 }
 
-void MeshIndexData::setIndexData(const cocos2d::MeshData::IndexArray& indexdata)
+void MeshIndexData::setIndexData(const cc::MeshData::IndexArray& indexdata)
 {
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     if (!_indexData.empty())

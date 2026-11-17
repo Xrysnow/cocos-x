@@ -70,7 +70,7 @@ public:
      * create box shape
      * @param extent The extent of sphere.
      */
-    static cc::IntrusivePtr<Physics3DShape> createBox(const cocos2d::Vec3& extent);
+    static cc::IntrusivePtr<Physics3DShape> createBox(const cc::Vec3& extent);
 
     /**
      * create sphere shape
@@ -97,14 +97,14 @@ public:
      * @param points The vertices of convex hull
      * @param numPoints The number of vertices.
      */
-    static cc::IntrusivePtr<Physics3DShape> createConvexHull(const cocos2d::Vec3* points, int numPoints);
+    static cc::IntrusivePtr<Physics3DShape> createConvexHull(const cc::Vec3* points, int numPoints);
 
     /**
      * create mesh
      * @param triangles The pointer of triangle list
      * @param numTriangles The number of triangles.
      */
-    static cc::IntrusivePtr<Physics3DShape> createMesh(const cocos2d::Vec3* triangles, int numTriangles);
+    static cc::IntrusivePtr<Physics3DShape> createMesh(const cc::Vec3* triangles, int numTriangles);
 
     /**
      * create heightfield
@@ -138,12 +138,12 @@ public:
     Physics3DShape();
     ~Physics3DShape();
 
-    bool initBox(const cocos2d::Vec3& ext);
+    bool initBox(const cc::Vec3& ext);
     bool initSphere(float radius);
     bool initCylinder(float radius, float height);
     bool initCapsule(float radius, float height);
-    bool initConvexHull(const cocos2d::Vec3* points, int numPoints);
-    bool initMesh(const cocos2d::Vec3* triangles, int numTriangles);
+    bool initConvexHull(const cc::Vec3* points, int numPoints);
+    bool initMesh(const cc::Vec3* triangles, int numTriangles);
     bool initHeightfield(int heightStickWidth,
                          int heightStickLength,
                          const void* heightfieldData,

@@ -9,7 +9,7 @@ NS_CC_BEGIN
 	/**
 	 * Represents an audio input device capable of recording sounds.
 	 */
-	class CC_DLL AudioRecordingDevice : public cocos2d::Ref
+	class CC_DLL AudioRecordingDevice : public cc::Ref
 	{
 	public:
 

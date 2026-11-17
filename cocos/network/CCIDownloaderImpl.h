@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <string>
 #include <string_view>
 #include <functional>
@@ -39,7 +41,7 @@
 
 // #define CC_DOWNLOADER_DEBUG
 #if defined(CC_DOWNLOADER_DEBUG) || defined(_DEBUG)
-#    define DLLOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
+#    define DLLOG(format, ...) cc::log(format, ##__VA_ARGS__)
 #else
 #    define DLLOG(...) \
         do             \
@@ -81,4 +83,4 @@ public:
 };
 
 }  // namespace network
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

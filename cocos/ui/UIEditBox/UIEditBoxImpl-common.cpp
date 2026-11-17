@@ -216,7 +216,7 @@ void EditBoxImplCommon::setMaxLength(int maxLength)
     this->setNativeMaxLength(maxLength);
 }
 
-void EditBoxImplCommon::setTextHorizontalAlignment(cocos2d::TextHAlignment alignment)
+void EditBoxImplCommon::setTextHorizontalAlignment(cc::TextHAlignment alignment)
 {
     _alignment = alignment;
     this->setNativeTextHorizontalAlignment(alignment);
@@ -361,7 +361,7 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
 {
     auto keepAlive = cc::IntrusivePtr{_editBox};
     // LOGD("textFieldShouldBeginEditing...");
-    cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
+    cc::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
 
     if (pDelegate != nullptr)
     {
@@ -373,9 +373,9 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
 #if CC_ENABLE_SCRIPT_BINDING
     if (NULL != _editBox && 0 != _editBox->getScriptEditBoxHandler())
     {
-        cocos2d::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "began", _editBox);
-        cocos2d::ScriptEvent event(cocos2d::kCommonEvent, (void*)&data);
-        cocos2d::ScriptEngineManager::sendEventToLua(event);
+        cc::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "began", _editBox);
+        cc::ScriptEvent event(cc::kCommonEvent, (void*)&data);
+        cc::ScriptEngineManager::sendEventToLua(event);
     }
 #endif
 }
@@ -386,7 +386,7 @@ void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDeleg
     // LOGD("textFieldShouldEndEditing...");
     _text = text;
 
-    cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
+    cc::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
     if (pDelegate != nullptr)
     {
         pDelegate->editBoxEditingDidEndWithAction(_editBox, action);
@@ -399,13 +399,13 @@ void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDeleg
 #if CC_ENABLE_SCRIPT_BINDING
     if (_editBox != nullptr && 0 != _editBox->getScriptEditBoxHandler())
     {
-        cocos2d::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "ended", _editBox);
-        cocos2d::ScriptEvent event(cocos2d::kCommonEvent, (void*)&data);
-        cocos2d::ScriptEngineManager::sendEventToLua(event);
+        cc::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "ended", _editBox);
+        cc::ScriptEvent event(cc::kCommonEvent, (void*)&data);
+        cc::ScriptEngineManager::sendEventToLua(event);
         memset(data.eventName, 0, sizeof(data.eventName));
         strncpy(data.eventName, "return", sizeof(data.eventName));
         event.data = (void*)&data;
-        cocos2d::ScriptEngineManager::sendEventToLua(event);
+        cc::ScriptEngineManager::sendEventToLua(event);
     }
 #endif
 
@@ -419,7 +419,7 @@ void EditBoxImplCommon::editBoxEditingChanged(std::string_view text)
 {
     auto keepAlive = cc::IntrusivePtr{_editBox};
     // LOGD("editBoxTextChanged...");
-    cocos2d::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
+    cc::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
     _text                                   = text;
     if (pDelegate != nullptr)
     {
@@ -431,9 +431,9 @@ void EditBoxImplCommon::editBoxEditingChanged(std::string_view text)
 #if CC_ENABLE_SCRIPT_BINDING
     if (NULL != _editBox && 0 != _editBox->getScriptEditBoxHandler())
     {
-        cocos2d::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "changed", _editBox);
-        cocos2d::ScriptEvent event(cocos2d::kCommonEvent, (void*)&data);
-        cocos2d::ScriptEngineManager::sendEventToLua(event);
+        cc::CommonScriptData data(_editBox->getScriptEditBoxHandler(), "changed", _editBox);
+        cc::ScriptEvent event(cc::kCommonEvent, (void*)&data);
+        cc::ScriptEngineManager::sendEventToLua(event);
     }
 #endif
 }

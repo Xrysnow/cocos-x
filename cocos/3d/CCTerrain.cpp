@@ -82,7 +82,7 @@ bool Terrain::initWithTerrainData(TerrainData& parameter, CrackFixedType fixedTy
     return initHeightMap(parameter._heightMapSrc) && initTextures() && initProperties();
 }
 
-void cocos2d::Terrain::setLightMap(std::string_view fileName)
+void cc::Terrain::setLightMap(std::string_view fileName)
 {
     CC_SAFE_RELEASE(_lightMap);
     cc::IntrusivePtr image{new Image()};
@@ -97,7 +97,7 @@ void cocos2d::Terrain::setLightMap(std::string_view fileName)
     _lightMap->setTexParameters(tRepeatParams);
 }
 
-void cocos2d::Terrain::setLightDir(const Vec3& lightDir)
+void cc::Terrain::setLightDir(const Vec3& lightDir)
 {
     _lightDir = lightDir;
 }
@@ -117,7 +117,7 @@ bool Terrain::initProperties()
     return true;
 }
 
-void Terrain::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void Terrain::draw(cc::Renderer* renderer, const cc::Mat4& transform, uint32_t flags)
 {
     auto modelMatrix = getNodeToWorldTransform();
     if (memcmp(&modelMatrix, &_terrainModelMatrix, sizeof(Mat4)) != 0)
@@ -515,7 +515,7 @@ Terrain::~Terrain()
 #endif
 }
 
-cocos2d::Vec3 Terrain::getNormal(int pixel_x, int pixel_y) const
+cc::Vec3 Terrain::getNormal(int pixel_x, int pixel_y) const
 {
     float a = getImageHeight(pixel_x, pixel_y) * getScaleY();
     float b = getImageHeight(pixel_x, pixel_y + 1) * getScaleY();
@@ -529,7 +529,7 @@ cocos2d::Vec3 Terrain::getNormal(int pixel_x, int pixel_y) const
     return normal;
 }
 
-cocos2d::Vec3 Terrain::getIntersectionPoint(const Ray& ray) const
+cc::Vec3 Terrain::getIntersectionPoint(const Ray& ray) const
 {
     Vec3 collisionPoint;
     if (getIntersectionPoint(ray, collisionPoint))
@@ -612,7 +612,7 @@ void Terrain::setMaxDetailMapAmount(int max_value)
     _maxDetailMapValue = std::clamp(max_value, 0, 4);
 }
 
-cocos2d::Vec2 Terrain::convertToTerrainSpace(const Vec2& worldSpaceXZ) const
+cc::Vec2 Terrain::convertToTerrainSpace(const Vec2& worldSpaceXZ) const
 {
     Vec2 pos(worldSpaceXZ.x, worldSpaceXZ.y);
 
@@ -665,7 +665,7 @@ float Terrain::getMaxHeight()
     return _maxHeight;
 }
 
-cocos2d::AABB Terrain::getAABB()
+cc::AABB Terrain::getAABB()
 {
     return _quadRoot->_worldSpaceAABB;
 }
@@ -690,14 +690,14 @@ std::vector<float> Terrain::getHeightData() const
     return data;
 }
 
-Terrain::Chunk* cocos2d::Terrain::getChunkByIndex(int x, int y) const
+Terrain::Chunk* cc::Terrain::getChunkByIndex(int x, int y) const
 {
     if (x < 0 || y < 0 || x >= MAX_CHUNKES || y >= MAX_CHUNKES)
         return nullptr;
     return _chunkesArray[y][x];
 }
 
-void Terrain::setAlphaMap(cocos2d::Texture2D* newAlphaMapTexture)
+void Terrain::setAlphaMap(cc::Texture2D* newAlphaMapTexture)
 {
     CC_SAFE_RETAIN(newAlphaMapTexture);
     CC_SAFE_RELEASE(_alphaMap);
@@ -1749,7 +1749,7 @@ Terrain::Triangle::Triangle(const Vec3& p1, const Vec3& p2, const Vec3& p3)
     _p3 = p3;
 }
 
-void Terrain::Triangle::transform(const cocos2d::Mat4& matrix)
+void Terrain::Triangle::transform(const cc::Mat4& matrix)
 {
     matrix.transformPoint(&_p1);
     matrix.transformPoint(&_p2);

@@ -231,7 +231,7 @@ bool Sprite::initWithSpriteFrame(SpriteFrame* spriteFrame)
     return ret;
 }
 
-bool Sprite::initWithPolygon(const cocos2d::PolygonInfo& info)
+bool Sprite::initWithPolygon(const cc::PolygonInfo& info)
 {
     bool ret = false;
 
@@ -676,7 +676,7 @@ void Sprite::updatePoly()
     }
 }
 
-void Sprite::setCenterRectNormalized(const cocos2d::Rect& rectTopLeft)
+void Sprite::setCenterRectNormalized(const cc::Rect& rectTopLeft)
 {
     if (_renderMode != RenderMode::QUAD && _renderMode != RenderMode::SLICE9)
     {
@@ -732,7 +732,7 @@ void Sprite::setCenterRectNormalized(const cocos2d::Rect& rectTopLeft)
     }
 }
 
-void Sprite::setCenterRect(const cocos2d::Rect& rectInPoints)
+void Sprite::setCenterRect(const cc::Rect& rectInPoints)
 {
     if (_renderMode != RenderMode::QUAD && _renderMode != RenderMode::SLICE9)
     {

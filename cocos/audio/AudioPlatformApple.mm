@@ -117,7 +117,7 @@
     }
     // Source pause/resume and optional OpenAL device suspension share the
     // engine's app/session gate; UIKit events never replace its saved Sources.
-    cocos2d::AudioEngine::onAudioSessionInterruption(suspended);
+    cc::AudioEngine::onAudioSessionInterruption(suspended);
 }
 
 - (void)stop

@@ -467,7 +467,7 @@ Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
     return texture;
 }
 
-void TextureCache::parseNinePatchImage(cocos2d::Image* image, cocos2d::Texture2D* texture, std::string_view path)
+void TextureCache::parseNinePatchImage(cc::Image* image, cc::Texture2D* texture, std::string_view path)
 {
     if (NinePatchImageParser::isNinePatchImage(path))
     {
@@ -639,7 +639,7 @@ Texture2D* TextureCache::getTextureForKey(std::string_view textureKeyName) const
     return nullptr;
 }
 
-std::string TextureCache::getTextureFilePath(cocos2d::Texture2D* texture) const
+std::string TextureCache::getTextureFilePath(cc::Texture2D* texture) const
 {
     for (auto&& item : _textures)
     {

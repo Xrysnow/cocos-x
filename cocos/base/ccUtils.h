@@ -41,11 +41,6 @@ THE SOFTWARE.
 Misc free functions
 */
 
-namespace cc::utils
-{
-CC_DLL double atof(const char* str);
-}
-
 NS_CC_BEGIN
 /*
 ccNextPOT function is licensed under the same license that is used in Texture2D.m.
@@ -81,7 +76,7 @@ namespace utils
 CC_DLL void captureScreen(std::function<void(cc::IntrusivePtr<Image>)> imageCallback);
 
 /** Capture a specific Node.
- * @param startNode specify the snapshot Node. It should be cocos2d::Scene
+ * @param startNode specify the snapshot Node. It should be cc::Scene
  * @param scale
  * @returns: return a Image, then can call saveToFile to save the image as "xxx.png or xxx.jpg".
  * @since v4.0 with axmol
@@ -117,7 +112,7 @@ CC_DLL std::vector<Node*> findChildren(const Node& node, std::string_view name);
  * @param str The string be to converted to double.
  * @return Returns converted value of a string.
  */
-using cc::utils::atof;
+CC_DLL double atof(const char* str);
 
 /** Get current exact time, accurate to nanoseconds.
  * @return Returns the time in seconds since the Epoch.
@@ -263,7 +258,7 @@ CC_DLL void killCurrentProcess();
 * Create a Game Object, like CREATE_FUNC, but more powerful
 
 * @return  Returns a cc::IntrusivePtr<T> game object
-* @remark  Auto manage cocos2d::Ref reference count, use cc::IntrusivePtr
+* @remark  Auto manage cc::Ref reference count, use cc::IntrusivePtr
 * @limition  The init function finit must be public
 */
 template <typename T, typename F, typename... Ts>
@@ -280,7 +275,7 @@ static cc::IntrusivePtr<T> makeInstance(F&& memf, Ts&&... args)
 * Create a Game Object with 'bool T::init()', like CREATE_FUNC, but more powerful
 
 * @return  Returns an owned game object
-* @remark  Auto manage cocos2d::Ref reference count, use cc::IntrusivePtr
+* @remark  Auto manage cc::Ref reference count, use cc::IntrusivePtr
 * @limition  The init function finit must be public
 */
 template <typename T>
@@ -363,7 +358,7 @@ CC_DLL std::string base64Decode(std::string_view s);
  *
  * @returns the length of the out buffer
  *
- @since v2.1.4, axmol-1.0.0 move from namespace ax to cocos2d::utils
+ @since v2.1.4, axmol-1.0.0 move from namespace ax to cc::utils
  */
 CC_DLL int base64Encode(const unsigned char* in, unsigned int inLength, char** out);
 
@@ -373,7 +368,7 @@ CC_DLL int base64Encode(const unsigned char* in, unsigned int inLength, char** o
  *
  * @returns the length of the out buffer
  *
- @since v0.8.1, axmol-1.0.0 move from namespace ax to cocos2d::utils
+ @since v0.8.1, axmol-1.0.0 move from namespace ax to cc::utils
  */
 CC_DLL int base64Decode(const unsigned char* in, unsigned int inLength, unsigned char** out);
 

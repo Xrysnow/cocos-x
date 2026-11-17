@@ -58,7 +58,7 @@ void GLoader3D::setURL(const std::string& value)
     updateGear(7);
 }
 
-void GLoader3D::setAlign(cocos2d::TextHAlignment value)
+void GLoader3D::setAlign(cc::TextHAlignment value)
 {
     if (_align != value)
     {
@@ -67,7 +67,7 @@ void GLoader3D::setAlign(cocos2d::TextHAlignment value)
     }
 }
 
-void GLoader3D::setVerticalAlign(cocos2d::TextVAlignment value)
+void GLoader3D::setVerticalAlign(cc::TextVAlignment value)
 {
     if (_verticalAlign != value)
     {
@@ -103,12 +103,12 @@ void GLoader3D::setShrinkOnly(bool value)
     }
 }
 
-cocos2d::Color3B GLoader3D::getColor() const
+cc::Color3B GLoader3D::getColor() const
 {
     return _color;
 }
 
-void GLoader3D::setColor(const cocos2d::Color3B& value)
+void GLoader3D::setColor(const cc::Color3B& value)
 {
     _color = value;
     if (_content != nullptr)
@@ -156,7 +156,7 @@ void GLoader3D::setLoop(bool value)
     onChange();
 }
 
-void GLoader3D::setContent(cocos2d::Node* value)
+void GLoader3D::setContent(cc::Node* value)
 {
     setURL(STD_STRING_EMPTY);
 
@@ -293,11 +293,11 @@ void GLoader3D::loadExternal()
 {
 }
 
-void GLoader3D::freeExternal(cocos2d::SpriteFrame* spriteFrame)
+void GLoader3D::freeExternal(cc::SpriteFrame* spriteFrame)
 {
 }
 
-void GLoader3D::onExternalLoadSuccess(cocos2d::SpriteFrame* spriteFrame)
+void GLoader3D::onExternalLoadSuccess(cc::SpriteFrame* spriteFrame)
 {
 }
 
@@ -423,7 +423,7 @@ void GLoader3D::handleGrayedChanged()
     GObject::handleGrayedChanged();
 }
 
-cocos2d::Value GLoader3D::getProp(ObjectPropID propId)
+cc::Value GLoader3D::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -440,7 +440,7 @@ cocos2d::Value GLoader3D::getProp(ObjectPropID propId)
     }
 }
 
-void GLoader3D::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GLoader3D::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {

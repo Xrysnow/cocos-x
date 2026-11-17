@@ -37,11 +37,11 @@ public:
     int getLineGap() const { return _lineGap; }
     void setLineGap(int value);
 
-    cocos2d::TextHAlignment getAlign() const { return _align; }
-    void setAlign(cocos2d::TextHAlignment value);
+    cc::TextHAlignment getAlign() const { return _align; }
+    void setAlign(cc::TextHAlignment value);
 
-    cocos2d::TextVAlignment getVerticalAlign() const { return _verticalAlign; }
-    void setVerticalAlign(cocos2d::TextVAlignment value);
+    cc::TextVAlignment getVerticalAlign() const { return _verticalAlign; }
+    void setVerticalAlign(cc::TextVAlignment value);
 
     bool getAutoResizeItem() const { return _autoResizeItem; }
     void setAutoResizeItem(bool value);
@@ -50,10 +50,10 @@ public:
     void setSelectionMode(ListSelectionMode value) { _selectionMode = value; }
 
     GObjectPool* getItemPool() const { return _pool; }
-    cc::IntrusivePtr<GObject> getFromPool() { return getFromPool(cocos2d::STD_STRING_EMPTY); }
+    cc::IntrusivePtr<GObject> getFromPool() { return getFromPool(cc::STD_STRING_EMPTY); }
     cc::IntrusivePtr<GObject> getFromPool(const std::string& url);
     void returnToPool(GObject* obj);
-    GObject* addItemFromPool() { return addItemFromPool(cocos2d::STD_STRING_EMPTY); }
+    GObject* addItemFromPool() { return addItemFromPool(cc::STD_STRING_EMPTY); }
     GObject* addItemFromPool(const std::string& url);
 
     GObject* addChildAt(GObject* child, int index) override;
@@ -96,7 +96,7 @@ public:
     int childIndexToItemIndex(int index);
     int itemIndexToChildIndex(int index);
 
-    virtual cocos2d::Vec2 getSnappingPosition(const cocos2d::Vec2& pt) override;
+    virtual cc::Vec2 getSnappingPosition(const cc::Vec2& pt) override;
 
     ListItemRenderer itemRenderer;
     ListItemProvider itemProvider;
@@ -149,8 +149,8 @@ private:
     int _columnCount;
     int _lineGap;
     int _columnGap;
-    cocos2d::TextHAlignment _align;
-    cocos2d::TextVAlignment _verticalAlign;
+    cc::TextHAlignment _align;
+    cc::TextVAlignment _verticalAlign;
     bool _autoResizeItem;
     ListSelectionMode _selectionMode;
     std::string _defaultItem;
@@ -168,14 +168,14 @@ private:
     int _firstIndex;        //the top left index
     int _curLineItemCount;  //item count in one line
     int _curLineItemCount2; //item count in vertical direction,only pagination layout
-    cocos2d::Vec2 _itemSize;
+    cc::Vec2 _itemSize;
     int _virtualListChanged; //1-content changed, 2-size changed
     bool _eventLocked;
     uint32_t _itemInfoVer;
 
     struct ItemInfo
     {
-        cocos2d::Vec2 size;
+        cc::Vec2 size;
         GObject* obj;
         uint32_t updateFlag;
         bool selected;

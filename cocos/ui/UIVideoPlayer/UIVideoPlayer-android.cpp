@@ -39,7 +39,7 @@
 #include <unordered_map>
 
 USING_NS_CC;
-using namespace cocos2d::ui;
+using namespace cc::ui;
 
 namespace
 {

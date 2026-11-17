@@ -12,7 +12,7 @@ class GComponent;
 class GButton;
 class GList;
 
-class PopupMenu : public cocos2d::Ref
+class PopupMenu : public cc::Ref
 {
 public:
     static cc::IntrusivePtr<PopupMenu> create(const std::string& resourceURL);

@@ -29,17 +29,17 @@ PhysicsDebugNodeBox2D::PhysicsDebugNodeBox2D()
 
 PhysicsDebugNodeBox2D::~PhysicsDebugNodeBox2D() {}
 
-cocos2d::DrawNode* PhysicsDebugNodeBox2D::GetDrawNode()
+cc::DrawNode* PhysicsDebugNodeBox2D::GetDrawNode()
 {
     return drawBP;
 }
 
-void PhysicsDebugNodeBox2D::SetDrawNode(cocos2d::DrawNode* drawNode)
+void PhysicsDebugNodeBox2D::SetDrawNode(cc::DrawNode* drawNode)
 {
     drawBP = drawNode;
 }
 
-cocos2d::Vec2& PhysicsDebugNodeBox2D::GetDebugNodeOffset()
+cc::Vec2& PhysicsDebugNodeBox2D::GetDebugNodeOffset()
 {
     return debugNodeOffset;
 }

@@ -5,7 +5,7 @@
 
 namespace ffmpeg
 {
-	class Codec : public cocos2d::Ref
+	class Codec : public cc::Ref
 	{
 		static std::vector<const AVCodec*> allCodecs;
 	public:

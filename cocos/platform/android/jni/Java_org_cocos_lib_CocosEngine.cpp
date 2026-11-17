@@ -43,7 +43,7 @@ static void* s_ctx                         = nullptr;
 
 static std::string g_apkPath;
 
-using namespace cocos2d;
+using namespace cc;
 using namespace std;
 
 extern "C" {

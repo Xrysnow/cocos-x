@@ -22,40 +22,40 @@ TextureAtlasData* CCFactory::_buildTextureAtlasData(TextureAtlasData* textureAtl
         if (textureAtlas != nullptr)
         {
             static_cast<CCTextureAtlasData*>(textureAtlasData)
-                ->setRenderTexture(static_cast<cocos2d::Texture2D*>(textureAtlas));
+                ->setRenderTexture(static_cast<cc::Texture2D*>(textureAtlas));
         }
         else
         {
-            const auto textureCache = cocos2d::Director::getInstance()->getTextureCache();
+            const auto textureCache = cc::Director::getInstance()->getTextureCache();
             auto texture            = textureCache->getTextureForKey(textureAtlasData->imagePath);
             if (texture == nullptr)
             {
-                const auto defaultPixelFormat = cocos2d::Texture2D::getDefaultAlphaPixelFormat();
+                const auto defaultPixelFormat = cc::Texture2D::getDefaultAlphaPixelFormat();
                 auto pixelFormat              = defaultPixelFormat;
                 switch (textureAtlasData->format)
                 {
                 case TextureFormat::RGBA8888:
-                    pixelFormat = cocos2d::backend::PixelFormat::RGBA8;
+                    pixelFormat = cc::backend::PixelFormat::RGBA8;
                     break;
 
                 case TextureFormat::BGRA8888:
-                    pixelFormat = cocos2d::backend::PixelFormat::BGRA8;
+                    pixelFormat = cc::backend::PixelFormat::BGRA8;
                     break;
 
                 case TextureFormat::RGBA4444:
-                    pixelFormat = cocos2d::backend::PixelFormat::RGBA4;
+                    pixelFormat = cc::backend::PixelFormat::RGBA4;
                     break;
 
                 case TextureFormat::RGB888:
-                    pixelFormat = cocos2d::backend::PixelFormat::RGB8;
+                    pixelFormat = cc::backend::PixelFormat::RGB8;
                     break;
 
                 case TextureFormat::RGB565:
-                    pixelFormat = cocos2d::backend::PixelFormat::RGB565;
+                    pixelFormat = cc::backend::PixelFormat::RGB565;
                     break;
 
                 case TextureFormat::RGBA5551:
-                    pixelFormat = cocos2d::backend::PixelFormat::RGB5A1;
+                    pixelFormat = cc::backend::PixelFormat::RGB5A1;
                     break;
 
                 case TextureFormat::DEFAULT:
@@ -98,7 +98,7 @@ Slot* CCFactory::_buildSlot(const BuildArmaturePackage& dataPackage, const SlotD
 
     rawDisplay->setCascadeOpacityEnabled(true);
     rawDisplay->setCascadeColorEnabled(true);
-    rawDisplay->setAnchorPoint(cocos2d::Vec2::ZERO);
+    rawDisplay->setAnchorPoint(cc::Vec2::ZERO);
     rawDisplay->setLocalZOrder(slotData->zOrder);
 
     slot->init(slotData, armature, rawDisplay, rawDisplay);
@@ -117,21 +117,21 @@ DragonBonesData* CCFactory::loadDragonBonesData(std::string_view filePath, std::
         }
     }
 
-    const auto fullpath = cocos2d::FileUtils::getInstance()->fullPathForFilename(filePath);
-    if (cocos2d::FileUtils::getInstance()->isFileExist(filePath))
+    const auto fullpath = cc::FileUtils::getInstance()->fullPathForFilename(filePath);
+    if (cc::FileUtils::getInstance()->isFileExist(filePath))
     {
         const auto pos = fullpath.find(".json");
 
         if (pos != std::string::npos)
         {
-            const auto data = cocos2d::FileUtils::getInstance()->getStringFromFile(filePath);
+            const auto data = cc::FileUtils::getInstance()->getStringFromFile(filePath);
 
             return parseDragonBonesData(data.c_str(), name, scale);
         }
         else
         {
-            cocos2d::Data cocos2dData;
-            cocos2d::FileUtils::getInstance()->getContents(fullpath, &cocos2dData);
+            cc::Data cocos2dData;
+            cc::FileUtils::getInstance()->getContents(fullpath, &cocos2dData);
             const auto binary = (unsigned char*)malloc(sizeof(unsigned char) * cocos2dData.getSize());
             memcpy(binary, cocos2dData.getBytes(), cocos2dData.getSize());
             const auto data = parseDragonBonesData((char*)binary, name, scale);
@@ -145,8 +145,8 @@ DragonBonesData* CCFactory::loadDragonBonesData(std::string_view filePath, std::
 
 TextureAtlasData* CCFactory::loadTextureAtlasData(std::string_view filePath, std::string_view name, float scale)
 {
-    _prevPath       = cocos2d::FileUtils::getInstance()->fullPathForFilename(filePath);
-    const auto data = cocos2d::FileUtils::getInstance()->getStringFromFile(_prevPath);
+    _prevPath       = cc::FileUtils::getInstance()->fullPathForFilename(filePath);
+    const auto data = cc::FileUtils::getInstance()->getStringFromFile(_prevPath);
     if (data.empty())
     {
         return nullptr;
@@ -171,12 +171,12 @@ CCArmatureDisplay* CCFactory::buildArmatureDisplay(std::string_view armatureName
     return nullptr;
 }
 
-cc::IntrusivePtr<cocos2d::Sprite> CCFactory::getTextureDisplay(std::string_view textureName, std::string_view dragonBonesName) const
+cc::IntrusivePtr<cc::Sprite> CCFactory::getTextureDisplay(std::string_view textureName, std::string_view dragonBonesName) const
 {
     const auto textureData = static_cast<CCTextureData*>(_getTextureData(dragonBonesName, textureName));
     if (textureData != nullptr && textureData->spriteFrame != nullptr)
     {
-        const auto display = cocos2d::Sprite::createWithSpriteFrame(textureData->spriteFrame);
+        const auto display = cc::Sprite::createWithSpriteFrame(textureData->spriteFrame);
         return display;
     }
 

@@ -8,7 +8,7 @@
 int lua_cc_physics3d_Physics3DShape_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DShape* cobj = nullptr;
+    cc::Physics3DShape* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -25,8 +25,8 @@ int lua_cc_physics3d_Physics3DShape_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DShape_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DShape()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DShape()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DShape");
@@ -45,7 +45,7 @@ int lua_cc_physics3d_Physics3DShape_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DShape_getbtShape(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DShape* cobj = nullptr;
+    cc::Physics3DShape* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -57,7 +57,7 @@ int lua_cc_physics3d_Physics3DShape_getbtShape(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DShape",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DShape*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DShape*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -107,16 +107,16 @@ int lua_cc_physics3d_Physics3DShape_createConvexHull(lua_State* tolua_S)
 
     if (argc == 2)
     {
-        const cocos2d::Vec3* arg0;
+        const cc::Vec3* arg0;
         int arg1;
-        ok &= luaval_to_object<const cocos2d::Vec3>(tolua_S, 2, "cc.Vec3",&arg0, "cc.Physics3DShape:createConvexHull");
+        ok &= luaval_to_object<const cc::Vec3>(tolua_S, 2, "cc.Vec3",&arg0, "cc.Physics3DShape:createConvexHull");
         ok &= luaval_to_int32(tolua_S, 3,(int *)&arg1, "cc.Physics3DShape:createConvexHull");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DShape_createConvexHull'", nullptr);
             return 0;
         }
-        auto&& ret = cocos2d::Physics3DShape::createConvexHull(arg0, arg1);
+        auto&& ret = cc::Physics3DShape::createConvexHull(arg0, arg1);
         lua::native_to_luaval(tolua_S, std::move(ret));
         return 1;
     }
@@ -132,7 +132,7 @@ int lua_cc_physics3d_Physics3DShape_createConvexHull(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DObject_setUserData(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DObject* cobj = nullptr;
+    cc::Physics3DObject* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -144,7 +144,7 @@ int lua_cc_physics3d_Physics3DObject_setUserData(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DObject",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -184,7 +184,7 @@ int lua_cc_physics3d_Physics3DObject_setUserData(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DObject_getUserData(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DObject* cobj = nullptr;
+    cc::Physics3DObject* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -196,7 +196,7 @@ int lua_cc_physics3d_Physics3DObject_getUserData(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DObject",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -232,7 +232,7 @@ int lua_cc_physics3d_Physics3DObject_getUserData(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DObject_getCollisionCallback(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DObject* cobj = nullptr;
+    cc::Physics3DObject* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -244,7 +244,7 @@ int lua_cc_physics3d_Physics3DObject_getCollisionCallback(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DObject",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DObject*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -280,7 +280,7 @@ int lua_cc_physics3d_Physics3DObject_getCollisionCallback(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DRigidBody_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DRigidBody* cobj = nullptr;
+    cc::Physics3DRigidBody* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -297,8 +297,8 @@ int lua_cc_physics3d_Physics3DRigidBody_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DRigidBody_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DRigidBody()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DRigidBody()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DRigidBody");
@@ -317,7 +317,7 @@ int lua_cc_physics3d_Physics3DRigidBody_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DRigidBody_getRigidBody(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DRigidBody* cobj = nullptr;
+    cc::Physics3DRigidBody* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -329,7 +329,7 @@ int lua_cc_physics3d_Physics3DRigidBody_getRigidBody(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DRigidBody",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DRigidBody*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DRigidBody*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -365,7 +365,7 @@ int lua_cc_physics3d_Physics3DRigidBody_getRigidBody(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DComponent_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DComponent* cobj = nullptr;
+    cc::Physics3DComponent* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -382,8 +382,8 @@ int lua_cc_physics3d_Physics3DComponent_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DComponent_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DComponent()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DComponent()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DComponent");
@@ -402,7 +402,7 @@ int lua_cc_physics3d_Physics3DComponent_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_PhysicsMeshRenderer_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::PhysicsMeshRenderer* cobj = nullptr;
+    cc::PhysicsMeshRenderer* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -419,8 +419,8 @@ int lua_cc_physics3d_PhysicsMeshRenderer_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_PhysicsMeshRenderer_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::PhysicsMeshRenderer()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::PhysicsMeshRenderer()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.PhysicsMeshRenderer");
@@ -439,7 +439,7 @@ int lua_cc_physics3d_PhysicsMeshRenderer_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DWorld_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DWorld* cobj = nullptr;
+    cc::Physics3DWorld* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -456,8 +456,8 @@ int lua_cc_physics3d_Physics3DWorld_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DWorld_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DWorld()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DWorld()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DWorld");
@@ -476,7 +476,7 @@ int lua_cc_physics3d_Physics3DWorld_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DConstraint_getUserData(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DConstraint* cobj = nullptr;
+    cc::Physics3DConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -488,7 +488,7 @@ int lua_cc_physics3d_Physics3DConstraint_getUserData(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DConstraint",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -524,7 +524,7 @@ int lua_cc_physics3d_Physics3DConstraint_getUserData(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DConstraint_setUserData(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DConstraint* cobj = nullptr;
+    cc::Physics3DConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -536,7 +536,7 @@ int lua_cc_physics3d_Physics3DConstraint_setUserData(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DConstraint",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -576,7 +576,7 @@ int lua_cc_physics3d_Physics3DConstraint_setUserData(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DConstraint_getbtContraint(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DConstraint* cobj = nullptr;
+    cc::Physics3DConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -588,7 +588,7 @@ int lua_cc_physics3d_Physics3DConstraint_getbtContraint(lua_State* tolua_S)
     if (!tolua_isusertype(tolua_S,1,"cc.Physics3DConstraint",0,&tolua_err)) goto tolua_lerror;
 #endif
 
-    cobj = (cocos2d::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
+    cobj = (cc::Physics3DConstraint*)tolua_tousertype(tolua_S,1,0);
 
 #if CC_DEBUG >= 1
     if (!cobj)
@@ -624,7 +624,7 @@ int lua_cc_physics3d_Physics3DConstraint_getbtContraint(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DPointToPointConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DPointToPointConstraint* cobj = nullptr;
+    cc::Physics3DPointToPointConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -641,8 +641,8 @@ int lua_cc_physics3d_Physics3DPointToPointConstraint_constructor(lua_State* tolu
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DPointToPointConstraint_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DPointToPointConstraint()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DPointToPointConstraint()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DPointToPointConstraint");
@@ -661,7 +661,7 @@ int lua_cc_physics3d_Physics3DPointToPointConstraint_constructor(lua_State* tolu
 int lua_cc_physics3d_Physics3DHingeConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DHingeConstraint* cobj = nullptr;
+    cc::Physics3DHingeConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -678,8 +678,8 @@ int lua_cc_physics3d_Physics3DHingeConstraint_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DHingeConstraint_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DHingeConstraint()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DHingeConstraint()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DHingeConstraint");
@@ -698,7 +698,7 @@ int lua_cc_physics3d_Physics3DHingeConstraint_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DSliderConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DSliderConstraint* cobj = nullptr;
+    cc::Physics3DSliderConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -715,8 +715,8 @@ int lua_cc_physics3d_Physics3DSliderConstraint_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DSliderConstraint_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DSliderConstraint()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DSliderConstraint()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DSliderConstraint");
@@ -735,7 +735,7 @@ int lua_cc_physics3d_Physics3DSliderConstraint_constructor(lua_State* tolua_S)
 int lua_cc_physics3d_Physics3DConeTwistConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3DConeTwistConstraint* cobj = nullptr;
+    cc::Physics3DConeTwistConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -752,8 +752,8 @@ int lua_cc_physics3d_Physics3DConeTwistConstraint_constructor(lua_State* tolua_S
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3DConeTwistConstraint_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3DConeTwistConstraint()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3DConeTwistConstraint()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3DConeTwistConstraint");
@@ -772,7 +772,7 @@ int lua_cc_physics3d_Physics3DConeTwistConstraint_constructor(lua_State* tolua_S
 int lua_cc_physics3d_Physics3D6DofConstraint_constructor(lua_State* tolua_S)
 {
     int argc = 0;
-    cocos2d::Physics3D6DofConstraint* cobj = nullptr;
+    cc::Physics3D6DofConstraint* cobj = nullptr;
     bool ok  = true;
 
 #if CC_DEBUG >= 1
@@ -789,8 +789,8 @@ int lua_cc_physics3d_Physics3D6DofConstraint_constructor(lua_State* tolua_S)
             tolua_error(tolua_S,"invalid arguments in function 'lua_cc_physics3d_Physics3D6DofConstraint_constructor'", nullptr);
             return 0;
         }
-        auto owner = cc::IntrusivePtr{new cocos2d::Physics3D6DofConstraint()};
-        cobj = cocos2d::transferToAutoreleasePool(std::move(owner));
+        auto owner = cc::IntrusivePtr{new cc::Physics3D6DofConstraint()};
+        cobj = cc::transferToAutoreleasePool(std::move(owner));
         int ID =  (int)cobj->getScriptObjectID() ;
         int* luaID =  &cobj->getScriptIdentity().luaID ;
         toluafix_pushusertype_ccobject(tolua_S, ID, luaID, (void*)cobj,"cc.Physics3D6DofConstraint");

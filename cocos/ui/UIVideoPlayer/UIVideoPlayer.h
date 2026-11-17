@@ -56,7 +56,7 @@ namespace ui
  * It's mean VideoPlayer displays a video file above all graphical elements of cocos2d-x.
  * @js NA
  */
-class VideoPlayer : public cocos2d::ui::Widget
+class VideoPlayer : public cc::ui::Widget
 {
 public:
     /**
@@ -247,7 +247,7 @@ public:
     virtual ~VideoPlayer();
 
 protected:
-    virtual cc::IntrusivePtr<cocos2d::ui::Widget> createCloneInstance() override;
+    virtual cc::IntrusivePtr<cc::ui::Widget> createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
 
     #if CC_VIDEOPLAYER_DEBUG_DRAW

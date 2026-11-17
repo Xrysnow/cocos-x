@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <algorithm>
 #include <map>
 #include <string_view>
@@ -57,7 +59,7 @@
 #include "llhttp.h"
 #include "websocket_parser.h"
 
-namespace cocos2d
+namespace cc
 {
 
 class EventListenerCustom;
@@ -112,7 +114,7 @@ public:
         CLOSED,     /** &lt; value 3 */
     };
 
-    class Event : public cocos2d::Ref
+    class Event : public cc::Ref
     {
     public:
         Event() = default;

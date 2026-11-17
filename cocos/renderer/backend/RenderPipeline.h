@@ -40,7 +40,7 @@ class RenderTarget;
 /**
  * Render pipeline
  */
-class CC_DLL RenderPipeline : public cocos2d::Ref
+class CC_DLL RenderPipeline : public cc::Ref
 {
 public:
     RenderPipeline() = default;

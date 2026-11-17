@@ -50,7 +50,7 @@ class AssetsManagerEx;
  *
  *        dispatcher->removeEventListener(listener);
  */
-class CC_EX_DLL EventListenerAssetsManagerEx : public cocos2d::EventListenerCustom
+class CC_EX_DLL EventListenerAssetsManagerEx : public cc::EventListenerCustom
 {
 public:
     friend class AssetsManagerEx;

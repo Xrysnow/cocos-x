@@ -31,7 +31,7 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 
-#define MAX_LEN (cocos2d::kMaxLogLen + 1)
+#define MAX_LEN (cc::kMaxLogLen + 1)
 
 void ccMessageBox(const char* pszMsg, const char* pszTitle)
 {

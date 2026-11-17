@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <stdint.h>
 #include "network/CCIDownloaderImpl.h"
 
@@ -66,4 +68,4 @@ protected:
 };
 
 }  // namespace network
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

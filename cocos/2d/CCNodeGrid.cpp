@@ -38,7 +38,7 @@ cc::IntrusivePtr<NodeGrid> NodeGrid::create()
     return ret;
 }
 
-cc::IntrusivePtr<NodeGrid> NodeGrid::create(const cocos2d::Rect& rect)
+cc::IntrusivePtr<NodeGrid> NodeGrid::create(const cc::Rect& rect)
 {
     cc::IntrusivePtr<NodeGrid> ret = NodeGrid::create();
     if (ret)

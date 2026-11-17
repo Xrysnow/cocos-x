@@ -107,7 +107,7 @@ bool LuaJavaBridge::CallInfo::execute()
         if (m_env->ExceptionCheck() == JNI_TRUE)
             break;
         bool bValidStr       = true;
-        std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
+        std::string strValue = cc::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
         m_ret.stringValue    = (false == bValidStr) ? nullptr : new string(strValue);
         break;
     }
@@ -155,7 +155,7 @@ bool LuaJavaBridge::CallInfo::executeWithArgs(jvalue* args)
         if (m_env->ExceptionCheck() == JNI_TRUE)
             break;
         bool bValidStr       = true;
-        std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
+        std::string strValue = cc::StringUtils::getStringUTFCharsJNI(m_env, m_retjs, &bValidStr);
         m_ret.stringValue    = (false == bValidStr) ? nullptr : new string(strValue);
         break;
     }
@@ -314,7 +314,7 @@ bool LuaJavaBridge::CallInfo::getMethodInfo()
     m_methodID = nullptr;
     m_env      = nullptr;
 
-    if (!cocos2d::JniHelper::getJavaVM() || !(m_env = cocos2d::JniHelper::getEnv()))
+    if (!cc::JniHelper::getJavaVM() || !(m_env = cc::JniHelper::getEnv()))
     {
         LOGD("Failed to get the JNI environment for %s.%s", m_className.c_str(), m_methodName.c_str());
         m_error = LUAJ_ERR_VM_FAILURE;
@@ -324,7 +324,7 @@ bool LuaJavaBridge::CallInfo::getMethodInfo()
     // ClassLoader.loadClass takes binary names; Lua helpers also accept JNI slash names.
     std::string className = m_className;
     std::replace(className.begin(), className.end(), '/', '.');
-    if (!cocos2d::JniHelper::classloader || !cocos2d::JniHelper::loadclassMethod_methodID)
+    if (!cc::JniHelper::classloader || !cc::JniHelper::loadclassMethod_methodID)
     {
         LOGD("Classloader is not initialized for %s", className.c_str());
         m_error = LUAJ_ERR_VM_FAILURE;
@@ -340,8 +340,8 @@ bool LuaJavaBridge::CallInfo::getMethodInfo()
         m_error = LUAJ_ERR_EXCEPTION_OCCURRED;
         return false;
     }
-    m_classID = static_cast<jclass>(m_env->CallObjectMethod(cocos2d::JniHelper::classloader,
-        cocos2d::JniHelper::loadclassMethod_methodID, classString));
+    m_classID = static_cast<jclass>(m_env->CallObjectMethod(cc::JniHelper::classloader,
+        cc::JniHelper::loadclassMethod_methodID, classString));
     m_env->DeleteLocalRef(classString);
     if (!m_classID || m_env->ExceptionCheck() == JNI_TRUE)
     {

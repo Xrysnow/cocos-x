@@ -742,7 +742,7 @@ double AudioSource::getTotalTime()
 	return (double)getTotalFrames() / sampleRate;
 }
 
-void AudioSource::setPosition(const cocos2d::Vec3& v)
+void AudioSource::setPosition(const cc::Vec3& v)
 {
 	if (channels > 1)
 	{
@@ -756,7 +756,7 @@ void AudioSource::setPosition(const cocos2d::Vec3& v)
 	position = v;
 }
 
-cocos2d::Vec3 AudioSource::getPosition()
+cc::Vec3 AudioSource::getPosition()
 {
 	if (channels > 1)
 	{
@@ -770,7 +770,7 @@ cocos2d::Vec3 AudioSource::getPosition()
 	return v;
 }
 
-void AudioSource::setVelocity(const cocos2d::Vec3& v)
+void AudioSource::setVelocity(const cc::Vec3& v)
 {
 	if (channels > 1)
 	{
@@ -784,7 +784,7 @@ void AudioSource::setVelocity(const cocos2d::Vec3& v)
 	velocity = v;
 }
 
-cocos2d::Vec3 AudioSource::getVelocity()
+cc::Vec3 AudioSource::getVelocity()
 {
 	if (channels > 1)
 	{
@@ -798,7 +798,7 @@ cocos2d::Vec3 AudioSource::getVelocity()
 	return v;
 }
 
-void AudioSource::setDirection(const cocos2d::Vec3& v)
+void AudioSource::setDirection(const cc::Vec3& v)
 {
 	if (channels > 1)
 	{
@@ -812,7 +812,7 @@ void AudioSource::setDirection(const cocos2d::Vec3& v)
 		direction = v;
 }
 
-cocos2d::Vec3 AudioSource::getDirection()
+cc::Vec3 AudioSource::getDirection()
 {
 	if (channels > 1)
 	{

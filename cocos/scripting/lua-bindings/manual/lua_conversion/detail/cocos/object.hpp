@@ -9,9 +9,9 @@
 
 namespace lua
 {
-	inline void ref_type_to_luaval(lua_State* L, cocos2d::Ref* ref, const char* typeID)
+	inline void ref_type_to_luaval(lua_State* L, cc::Ref* ref, const char* typeID)
     {
-        if (!cocos2d::isRefScriptContext(L))
+        if (!cc::isRefScriptContext(L))
             throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
         if (ref)
         {
@@ -36,7 +36,7 @@ namespace lua
 	struct to_native<T*, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		using binding_pointer = void;
 		static bool F(lua_State* L, int lo, T** outValue, const char* fName = "") {
-			if (!outValue || !cocos2d::isRefScriptContext(L))
+			if (!outValue || !cc::isRefScriptContext(L))
 				return false;
 			LUA_CHECK_TO_NATIVE;
 			if (lo < 0 && lo > LUA_REGISTRYINDEX) {
@@ -53,7 +53,7 @@ namespace lua
 				return false;
 			// Ref userdata stores the canonical base address. Recover the complete
 			// T address, including non-first or virtual public Ref bases.
-			const auto p = dynamic_cast<T*>(static_cast<cocos2d::Ref*>(*static_cast<void**>(lua_touserdata(L, lo))));
+			const auto p = dynamic_cast<T*>(static_cast<cc::Ref*>(*static_cast<void**>(lua_touserdata(L, lo))));
 			if (!p)
 				return false;
 			*outValue = p;
@@ -118,7 +118,7 @@ namespace lua
 		template<bool Checked>
 		static bool F(lua_State* L, int lo, T** outValue) {
 			if constexpr (std::is_convertible_v<T*, const cc::RefCounted*>)
-				if (!outValue || !cocos2d::isRefScriptContext(L)) return false;
+				if (!outValue || !cc::isRefScriptContext(L)) return false;
 			if (lua_istable(L, lo)) {
 				lua_pushliteral(L, ".c_instance");
 				lua_gettable(L, lo);
@@ -152,20 +152,20 @@ namespace lua
 	struct to_lua<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		static void F(lua_State* L, cc::IntrusivePtr<T>&& inValue) {
 			if (!L) return;
-			if (!cocos2d::isRefScriptContext(L))
+			if (!cc::isRefScriptContext(L))
 				throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
 			// Owned factory results transfer their share before Lua can raise an
 			// allocation error. L0 userdata borrows it until the pool is cleared.
-			auto* value = cocos2d::transferToAutoreleasePool(std::move(inValue));
+			auto* value = cc::transferToAutoreleasePool(std::move(inValue));
 			to_lua<T*>::F(L, value);
 		}
 		static void F(lua_State* L, const cc::IntrusivePtr<T>& inValue) {
 			if (!L) return;
-			if (!cocos2d::isRefScriptContext(L))
+			if (!cc::isRefScriptContext(L))
 				throw std::logic_error("Ref conversion requires the active Lua context and its host thread");
 			auto* value = inValue.get();
 			if (value) {
-				auto* ref = const_cast<cocos2d::Ref*>(static_cast<const cocos2d::Ref*>(value));
+				auto* ref = const_cast<cc::Ref*>(static_cast<const cc::Ref*>(value));
 				// Queue first: allocation failure must not strand an extra retain.
 				ref->autorelease();
 				ref->retain();
@@ -178,7 +178,7 @@ namespace lua
 	struct binding_read<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
 		template<bool Checked>
 		static bool F(lua_State* L, int lo, cc::IntrusivePtr<T>* outValue) {
-			if (!outValue || !cocos2d::isRefScriptContext(L)) return false;
+			if (!outValue || !cc::isRefScriptContext(L)) return false;
 			LUA_CHECK_TO_NATIVE;
 			const bool wrapper = lua_istable(L, lo);
 			T* value = nullptr;

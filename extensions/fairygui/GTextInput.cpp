@@ -116,14 +116,14 @@ void GTextInput::setTextFieldText()
         _input->setText(_text);
 }
 
-void GTextInput::editBoxReturn(cocos2d::ui::EditBox * editBox)
+void GTextInput::editBoxReturn(cc::ui::EditBox * editBox)
 {
     //found that this will trigger even when focus is lost
     //if (isSingleLine())
     // dispatchEvent(UIEventType::Submit);
 }
 
-void GTextInput::editBoxTextChanged(cocos2d::ui::EditBox* editBox, std::string_view /*text*/)
+void GTextInput::editBoxTextChanged(cc::ui::EditBox* editBox, std::string_view /*text*/)
 {
     _text.clear();
     _text.append(_input->getText());

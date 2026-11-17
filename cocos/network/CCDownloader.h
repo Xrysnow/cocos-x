@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <functional>
 #include <string>
 #include <string_view>
@@ -157,4 +159,4 @@ private:
 };
 
 }  // namespace network
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

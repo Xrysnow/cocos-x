@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include "platform/CCGL.h"
 #include "base/CCRef.h"
 #include "platform/CCCommon.h"
@@ -218,4 +220,4 @@ private:
     CC_DISALLOW_COPY_AND_ASSIGN(GLViewImpl);
 };
 
-NS_CC_END  // end of namespace   cocos2d
+NS_CC_END  // end of namespace cc

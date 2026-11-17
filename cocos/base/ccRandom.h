@@ -28,16 +28,13 @@ THE SOFTWARE.
 #define __ccRandom_H_
 
 #include "platform/CCPlatformMacros.h"
-#include "gfx/base/Random.h"
+#include "base/Random.h"
 
 /**
  * @addtogroup base
  * @{
  */
 NS_CC_BEGIN
-
-using RandomHelper = cc::RandomHelper;
-using cc::random;
 
 /**
  * Returns a random float between -1 and 1.

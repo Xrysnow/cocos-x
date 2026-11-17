@@ -25,9 +25,9 @@ namespace video
 			size_t skipped = 0;
 		};
 
-		static std::unique_ptr<VideoDecodeWorker> create(cocos2d::io::StreamPtr source,
+		static std::unique_ptr<VideoDecodeWorker> create(cc::io::StreamPtr source,
 			std::function<void()> cancel);
-		static std::unique_ptr<VideoDecodeWorker> create(cocos2d::io::StreamPtr source,
+		static std::unique_ptr<VideoDecodeWorker> create(cc::io::StreamPtr source,
 			std::function<void()> cancel, const PlaybackOptions& options);
 		~VideoDecodeWorker();
 
@@ -48,9 +48,9 @@ namespace video
 		struct State;
 		struct Threads;
 		explicit VideoDecodeWorker(std::shared_ptr<State> state);
-		static void run(State& state, cocos2d::io::StreamPtr source);
-		static void runSilent(State& state, cocos2d::io::StreamPtr source);
-		static void runWithAudio(State& state, cocos2d::io::StreamPtr source);
+		static void run(State& state, cc::io::StreamPtr source);
+		static void runSilent(State& state, cc::io::StreamPtr source);
+		static void runWithAudio(State& state, cc::io::StreamPtr source);
 
 		std::shared_ptr<State> state;
 		int presented = -1;

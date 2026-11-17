@@ -26,10 +26,11 @@
 #define __TOLUA_FIX_H_
 
 #include "tolua++.h"
+#include "platform/CCNamespace.h"
 
 #include <string>
 
-namespace cocos2d {
+namespace cc {
 // Coroutines share the active VM's registry; this check does not allocate or push.
 TOLUA_API bool isRefScriptContext(lua_State* L) noexcept;
 }

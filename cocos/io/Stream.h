@@ -1,10 +1,12 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "base/CCRefPtr.h"
 #include "io/StreamTypes.h"
 #include <mutex>
 #include <vector>
 
-namespace cocos2d::io
+namespace cc::io
 {
 class Stream;
 using StreamPtr = ThreadSafeRefPtr<Stream>;

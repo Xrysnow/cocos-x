@@ -65,7 +65,7 @@ static NSAttributedString* __attributedStringWithFontSize(NSMutableAttributedStr
     return [[attributedString copy] autorelease];
 }
 
-static CGFloat _calculateTextDrawStartHeight(cocos2d::Device::TextAlign align, CGSize realDimensions, CGSize dimensions)
+static CGFloat _calculateTextDrawStartHeight(cc::Device::TextAlign align, CGSize realDimensions, CGSize dimensions)
 {
     float startH = 0;
     // vertical alignment
@@ -191,7 +191,7 @@ static CGSize _calculateShrinkedSizeForString(NSAttributedString** str,
 
 #if !defined(CC_TARGET_OS_TVOS)
 @interface CCAccelerometerDispatcher : NSObject {
-    cocos2d::Acceleration* _acceleration;
+    cc::Acceleration* _acceleration;
     CMMotionManager* _motionManager;
 }
 
@@ -220,7 +220,7 @@ static CCAccelerometerDispatcher* s_pAccelerometerDispatcher;
 {
     if ((self = [super init]))
     {
-        _acceleration                              = cc::IntrusivePtr{new cocos2d::Acceleration()}.detach();
+        _acceleration                              = cc::IntrusivePtr{new cc::Acceleration()}.detach();
         _motionManager                             = [[CMMotionManager alloc] init];
         _motionManager.accelerometerUpdateInterval = SENSOR_DELAY_GAME;
     }
@@ -297,8 +297,8 @@ static CCAccelerometerDispatcher* s_pAccelerometerDispatcher;
         NSAssert(false, @"unknown orientation");
     }
 
-    cocos2d::EventAcceleration event(*_acceleration);
-    auto dispatcher = cocos2d::Director::getInstance()->getEventDispatcher();
+    cc::EventAcceleration event(*_acceleration);
+    auto dispatcher = cc::Director::getInstance()->getEventDispatcher();
     dispatcher->dispatchEvent(&event);
 }
 @end
@@ -432,7 +432,7 @@ static id _createSystemFont(const char* fontName, int size)
 }
 
 static bool _initWithString(const char* text,
-                            cocos2d::Device::TextAlign align,
+                            cc::Device::TextAlign align,
                             const char* fontName,
                             int size,
                             tImageInfo* info,

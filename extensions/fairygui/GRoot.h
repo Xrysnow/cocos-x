@@ -22,7 +22,7 @@ public:
     GRoot();
     virtual ~GRoot();
 
-    static cc::IntrusivePtr<GRoot> create(cocos2d::Scene* scene, int zOrder = 1000);
+    static cc::IntrusivePtr<GRoot> create(cc::Scene* scene, int zOrder = 1000);
     static GRoot* getInstance() { return _inst; }
 
     void showWindow(Window* win);
@@ -41,11 +41,11 @@ public:
     bool isModalWaiting();
 
     InputProcessor* getInputProcessor() const { return _inputProcessor; }
-    cocos2d::Vec2 getTouchPosition(int touchId);
+    cc::Vec2 getTouchPosition(int touchId);
     GObject* getTouchTarget();
     
-    cocos2d::Vec2 worldToRoot(const cocos2d::Vec2 &pt);
-    cocos2d::Vec2 rootToWorld(const cocos2d::Vec2 &pt);
+    cc::Vec2 worldToRoot(const cc::Vec2 &pt);
+    cc::Vec2 rootToWorld(const cc::Vec2 &pt);
 
     void showPopup(GObject* popup);
     void showPopup(GObject* popup, GObject* target, PopupDirection dir);
@@ -54,7 +54,7 @@ public:
     void hidePopup();
     void hidePopup(GObject* popup);
     bool hasAnyPopup();
-    cocos2d::Vec2 getPoupPosition(GObject* popup, GObject* target, PopupDirection dir);
+    cc::Vec2 getPoupPosition(GObject* popup, GObject* target, PopupDirection dir);
 
     void showTooltips(const std::string& msg);
     void showTooltipsWin(GObject* tooltipWin);
@@ -75,7 +75,7 @@ protected:
     virtual void onExit() override;
 
 private:
-    bool initWithScene(cocos2d::Scene* scene, int zOrder);
+    bool initWithScene(cc::Scene* scene, int zOrder);
     void onWindowSizeChanged();
     void createModalLayer();
     void adjustModalLayer();
@@ -88,7 +88,7 @@ private:
 
     CALL_LATER_FUNC(GRoot, doShowTooltipsWin);
 
-    cocos2d::EventListener* _windowSizeListener;
+    cc::EventListener* _windowSizeListener;
     InputProcessor* _inputProcessor;
 
     GGraph* _modalLayer;
@@ -99,7 +99,7 @@ private:
     GObject* _defaultTooltipWin;
 
     // AudioPool tracks playback without retaining Sources. Release on the UI thread.
-    cocos2d::Vector<cocos2d::AudioSource*> _soundSources;
+    cc::Vector<cc::AudioSource*> _soundSources;
 
     static bool _soundEnabled;
     static float _soundVolumeScale;

@@ -92,7 +92,7 @@ void FUIInput::continueInit()
     this->addTouchEventListener(CC_CALLBACK_2(FUIInput::_touchDownAction, this));
 }
 
-void FUIInput::_touchDownAction(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType controlEvent)
+void FUIInput::_touchDownAction(cc::Ref *sender, cc::ui::Widget::TouchEventType controlEvent)
 {
     //do nothing
 }

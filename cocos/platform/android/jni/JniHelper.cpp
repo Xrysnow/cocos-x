@@ -44,12 +44,12 @@ jclass _getClassID(const char* className)
         return nullptr;
     }
 
-    JNIEnv* env = cocos2d::JniHelper::getEnv();
+    JNIEnv* env = cc::JniHelper::getEnv();
 
     jstring _jstrClassName = env->NewStringUTF(className);
 
-    jclass _clazz = (jclass)env->CallObjectMethod(cocos2d::JniHelper::classloader,
-                                                  cocos2d::JniHelper::loadclassMethod_methodID, _jstrClassName);
+    jclass _clazz = (jclass)env->CallObjectMethod(cc::JniHelper::classloader,
+                                                  cc::JniHelper::loadclassMethod_methodID, _jstrClassName);
 
     if (nullptr == _clazz)
     {
@@ -64,10 +64,10 @@ jclass _getClassID(const char* className)
 
 void _detachCurrentThread(void* a)
 {
-    cocos2d::JniHelper::getJavaVM()->DetachCurrentThread();
+    cc::JniHelper::getJavaVM()->DetachCurrentThread();
 }
 
-namespace cocos2d
+namespace cc
 {
 
 JavaVM* JniHelper::_psJavaVM                         = nullptr;
@@ -152,7 +152,7 @@ bool JniHelper::setClassLoaderFrom(jobject activityinstance)
         return false;
     }
 
-    jobject _c = cocos2d::JniHelper::getEnv()->CallObjectMethod(activityinstance, _getclassloaderMethod.methodID);
+    jobject _c = cc::JniHelper::getEnv()->CallObjectMethod(activityinstance, _getclassloaderMethod.methodID);
 
     if (nullptr == _c)
     {
@@ -166,9 +166,9 @@ bool JniHelper::setClassLoaderFrom(jobject activityinstance)
         return false;
     }
 
-    JniHelper::classloader              = cocos2d::JniHelper::getEnv()->NewGlobalRef(_c);
+    JniHelper::classloader              = cc::JniHelper::getEnv()->NewGlobalRef(_c);
     JniHelper::loadclassMethod_methodID = _m.methodID;
-    JniHelper::_activity                = cocos2d::JniHelper::getEnv()->NewGlobalRef(activityinstance);
+    JniHelper::_activity                = cc::JniHelper::getEnv()->NewGlobalRef(activityinstance);
     if (JniHelper::classloaderCallback != nullptr)
     {
         JniHelper::classloaderCallback();
@@ -307,24 +307,24 @@ std::string JniHelper::jstring2string(jstring jstr)
         return "";
     }
 
-    std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(env, jstr);
+    std::string strValue = cc::StringUtils::getStringUTFCharsJNI(env, jstr);
 
     return strValue;
 }
 
-jstring JniHelper::convert(LocalRefMapType& localRefs, cocos2d::JniMethodInfo& t, const char* x)
+jstring JniHelper::convert(LocalRefMapType& localRefs, cc::JniMethodInfo& t, const char* x)
 {
-    jstring ret = cocos2d::StringUtils::newStringUTFJNI(t.env, x ? x : "");
+    jstring ret = cc::StringUtils::newStringUTFJNI(t.env, x ? x : "");
     localRefs[t.env].emplace_back(ret);
     return ret;
 }
 
-jstring JniHelper::convert(LocalRefMapType& localRefs, cocos2d::JniMethodInfo& t, std::string_view x)
+jstring JniHelper::convert(LocalRefMapType& localRefs, cc::JniMethodInfo& t, std::string_view x)
 {
     return convert(localRefs, t, x.data());
 }
 
-jstring JniHelper::convert(LocalRefMapType& localRefs, cocos2d::JniMethodInfo& t, const std::string& x)
+jstring JniHelper::convert(LocalRefMapType& localRefs, cc::JniMethodInfo& t, const std::string& x)
 {
     return convert(localRefs, t, x.c_str());
 }
@@ -349,7 +349,7 @@ void JniHelper::reportError(const char* className, const char* methodName, const
          signature);
 }
 
-}  // namespace cocos2d
+}  // namespace cc
 
 #undef LOGE
 #undef LOGD

@@ -31,7 +31,7 @@
 NS_CC_EXT_BEGIN
 
 EventAssetsManagerEx::EventAssetsManagerEx(std::string_view eventName,
-                                           cocos2d::extension::AssetsManagerEx* manager,
+                                           cc::extension::AssetsManagerEx* manager,
                                            const EventCode& code,
                                            float percent /* = 0 */,
                                            float percentByFile /* = 0*/,

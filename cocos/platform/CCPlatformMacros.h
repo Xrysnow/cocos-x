@@ -28,13 +28,15 @@ Copyright (c) 2021 Bytedance Inc.
 #ifndef __CC_PLATFORM_MACROS_H__
 #define __CC_PLATFORM_MACROS_H__
 
+#include "platform/CCNamespace.h"
+
 /**
  * Define some platform specific macros.
  */
 #include "base/ccConfig.h"
 #include "platform/CCPlatformConfig.h"
 #include "platform/CCPlatformDefine.h"
-#include "gfx/base/Ptr.h"
+#include "base/Ptr.h"
 
 #ifndef CC_DEBUG
     #define CC_DEBUG 0
@@ -94,13 +96,13 @@ Copyright (c) 2021 Bytedance Inc.
 
 // Generic macros
 
-/// @name namespace cocos2d
+/// @name namespace cc
 /// @{
 #ifdef __cplusplus
-    #define NS_CC_BEGIN                     namespace cocos2d {
+    #define NS_CC_BEGIN                     namespace cc {
     #define NS_CC_END                       }
-    #define USING_NS_CC                     using namespace cocos2d
-    #define NS_CC                           ::cocos2d
+    #define USING_NS_CC                     using namespace cc
+    #define NS_CC                           ::cc
 #else
     #define NS_CC_BEGIN 
     #define NS_CC_END 
@@ -239,7 +241,7 @@ public:                                                             \
 #define CC_BREAK_IF(cond)           if(cond) break
 
 #define __CCLOGWITHFUNCTION(s, ...) \
-    cocos2d::print("%s : %s", __FUNCTION__, cocos2d::StringUtils::format(s, ##__VA_ARGS__).c_str())
+    cc::print("%s : %s", __FUNCTION__, cc::StringUtils::format(s, ##__VA_ARGS__).c_str())
 
 /// @name Cocos2d debug
 /// @{
@@ -250,15 +252,15 @@ public:                                                             \
     #define CCLOGWARN(...)   do {} while (0)
 
 #elif CC_DEBUG == 1
-    #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
-    #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOG(format, ...)      cc::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cc::print(format, ##__VA_ARGS__)
     #define CCLOGINFO(format,...)   do {} while (0)
     #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
 
 #elif CC_DEBUG > 1
-    #define CCLOG(format, ...)      cocos2d::print(format, ##__VA_ARGS__)
-    #define CCLOGERROR(format,...)  cocos2d::print(format, ##__VA_ARGS__)
-    #define CCLOGINFO(format,...)   cocos2d::print(format, ##__VA_ARGS__)
+    #define CCLOG(format, ...)      cc::print(format, ##__VA_ARGS__)
+    #define CCLOGERROR(format,...)  cc::print(format, ##__VA_ARGS__)
+    #define CCLOGINFO(format,...)   cc::print(format, ##__VA_ARGS__)
     #define CCLOGWARN(...) __CCLOGWITHFUNCTION(__VA_ARGS__)
 #endif // CC_DEBUG
 
@@ -266,7 +268,7 @@ public:                                                             \
 #if !defined(CC_DEBUG) || CC_DEBUG == 0 || CC_LUA_ENGINE_DEBUG == 0
     #define LUALOG(...)
 #else
-    #define LUALOG(format, ...) cocos2d::print(format, ##__VA_ARGS__)
+    #define LUALOG(format, ...) cc::print(format, ##__VA_ARGS__)
 #endif  // Lua engine debug
 
 //  end of debug group

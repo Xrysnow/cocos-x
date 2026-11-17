@@ -5,7 +5,7 @@
 
 namespace lua {
 namespace terrain_detail {
-inline bool chunkSize(lua_State* L, int index, cocos2d::Vec2* value, const char* name) {
+inline bool chunkSize(lua_State* L, int index, cc::Vec2* value, const char* name) {
     lua_getfield(L, index, "_chunkSize");
     bool ok = lua_isnil(L, -1);
     if (!ok && lua_istable(L, -1)) {
@@ -26,11 +26,11 @@ bool optional(lua_State* L, int index, const char* key, T* value, const char* na
 }
 }
 
-template<> struct to_native<cocos2d::Terrain::DetailMap> {
-    static bool F(lua_State* L, int lo, cocos2d::Terrain::DetailMap* out, const char* name = "") {
+template<> struct to_native<cc::Terrain::DetailMap> {
+    static bool F(lua_State* L, int lo, cc::Terrain::DetailMap* out, const char* name = "") {
         if (!L || !out || !lua_istable(L, lo)) return false;
         if (lo < 0) lo = lua_gettop(L) + lo + 1;
-        cocos2d::Terrain::DetailMap value;
+        cc::Terrain::DetailMap value;
         // Preserve the Lua descriptor default, distinct from the native constructor's 35.
         value._detailMapSize = 0;
         if (!terrain_detail::optional(L, lo, "_detailMapSrc", &value._detailMapSrc, name) ||
@@ -40,20 +40,20 @@ template<> struct to_native<cocos2d::Terrain::DetailMap> {
     }
 };
 
-template<> struct to_lua<cocos2d::Terrain::DetailMap> {
-    static void F(lua_State* L, const cocos2d::Terrain::DetailMap& value) {
+template<> struct to_lua<cc::Terrain::DetailMap> {
+    static void F(lua_State* L, const cc::Terrain::DetailMap& value) {
         lua_createtable(L, 0, 2);
         native_to_luaval_field(L, -1, "_detailMapSrc", value._detailMapSrc);
         native_to_luaval_field(L, -1, "_detailMapSize", value._detailMapSize);
     }
 };
 
-template<> struct to_native<cocos2d::Terrain::TerrainData> {
-    static bool F(lua_State* L, int lo, cocos2d::Terrain::TerrainData* out, const char* name = "") {
+template<> struct to_native<cc::Terrain::TerrainData> {
+    static bool F(lua_State* L, int lo, cc::Terrain::TerrainData* out, const char* name = "") {
         if (!L || !out || !lua_istable(L, lo)) return false;
         if (lo < 0) lo = lua_gettop(L) + lo + 1;
-        cocos2d::Terrain::TerrainData value;
-        value._chunkSize = cocos2d::Vec2(32, 32);
+        cc::Terrain::TerrainData value;
+        value._chunkSize = cc::Vec2(32, 32);
         value._mapHeight = 2;
         value._mapScale = 0.1f;
         value._detailMapAmount = 0;
@@ -95,8 +95,8 @@ template<> struct to_native<cocos2d::Terrain::TerrainData> {
     }
 };
 
-template<> struct to_lua<cocos2d::Terrain::TerrainData> {
-    static void F(lua_State* L, const cocos2d::Terrain::TerrainData& value) {
+template<> struct to_lua<cc::Terrain::TerrainData> {
+    static void F(lua_State* L, const cc::Terrain::TerrainData& value) {
         lua_createtable(L, 0, 8);
         native_to_luaval_field(L, -1, "_chunkSize", value._chunkSize);
         native_to_luaval_field(L, -1, "_heightMapSrc", value._heightMapSrc);

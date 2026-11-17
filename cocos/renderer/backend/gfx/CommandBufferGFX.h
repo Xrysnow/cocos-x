@@ -5,7 +5,7 @@
 #include "renderer/backend/gfx/RenderTargetGFX.h"
 #include "base/CCEventListenerCustom.h"
 #include "gfx/backend/GFXDeviceManager.h"
-#include "gfx/base/RefMap.h"
+#include "base/RefMap.h"
 #include "math/CCMath.h"
 #include <vector>
 
@@ -116,7 +116,7 @@ private:
     RenderPipelineGFX* _renderPipeline          = nullptr;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;
-    cocos2d::Vector<TextureBackend*> _tmpTextures;
+    cc::Vector<TextureBackend*> _tmpTextures;
 
     CullMode _cullMode   = CullMode::NONE;
     bool _scissorEnabled = false;

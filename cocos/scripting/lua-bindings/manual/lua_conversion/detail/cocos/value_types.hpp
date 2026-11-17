@@ -9,13 +9,13 @@
 
 namespace lua
 {
-	template<> struct value_type<cocos2d::backend::VertexLayout> : std::true_type {};
+	template<> struct value_type<cc::backend::VertexLayout> : std::true_type {};
 	template<>
-	struct to_native<cocos2d::Vec2> {
-		static bool F(lua_State* L, int lo, cocos2d::Vec2* outValue, const char* fName = "") {
+	struct to_native<cc::Vec2> {
+		static bool F(lua_State* L, int lo, cc::Vec2* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::Vec2 v;
+			cc::Vec2 v;
 			bool ok = true;
 			ok &= luaval_field_to_native(L, lo, "x", &v.x, fName) || luaval_field_to_native(L, lo, "width", &v.x, fName);
 			ok &= luaval_field_to_native(L, lo, "y", &v.y, fName) || luaval_field_to_native(L, lo, "height", &v.y, fName);
@@ -24,26 +24,26 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_STRUCT2(cocos2d::Vec2, x, y);
+	LUA_TO_LUA_STRUCT2(cc::Vec2, x, y);
 
-	LUA_TO_NATIVE_STRUCT3(cocos2d::Vec3, x, y, z);
+	LUA_TO_NATIVE_STRUCT3(cc::Vec3, x, y, z);
 
-	LUA_TO_LUA_STRUCT3(cocos2d::Vec3, x, y, z);
+	LUA_TO_LUA_STRUCT3(cc::Vec3, x, y, z);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::Vec4, x, y, z, w);
+	LUA_TO_NATIVE_STRUCT4(cc::Vec4, x, y, z, w);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Vec4, x, y, z, w);
+	LUA_TO_LUA_STRUCT4(cc::Vec4, x, y, z, w);
 
-	LUA_TO_NATIVE_STRUCT2(cocos2d::BlendFunc, src, dst);
+	LUA_TO_NATIVE_STRUCT2(cc::BlendFunc, src, dst);
 
-	LUA_TO_LUA_STRUCT2(cocos2d::BlendFunc, src, dst);
+	LUA_TO_LUA_STRUCT2(cc::BlendFunc, src, dst);
 
-	LUA_TO_NATIVE_STRUCT3(cocos2d::Color3B, r, g, b);
+	LUA_TO_NATIVE_STRUCT3(cc::Color3B, r, g, b);
 
-	LUA_TO_LUA_STRUCT3(cocos2d::Color3B, r, g, b);
+	LUA_TO_LUA_STRUCT3(cc::Color3B, r, g, b);
 
 	// Per VM; shared by its coroutines.
-	using color4b_userdata_converter = bool (*)(lua_State*, int, cocos2d::Color4B*);
+	using color4b_userdata_converter = bool (*)(lua_State*, int, cc::Color4B*);
 
 	inline void* _color4b_userdata_converter_key() {
 		static char key;
@@ -72,13 +72,13 @@ namespace lua
 	}
 
 	template<>
-	struct to_native<cocos2d::Color4B> {
-		static bool F(lua_State* L, int lo, cocos2d::Color4B* outValue, const char* fName = "") {
+	struct to_native<cc::Color4B> {
+		static bool F(lua_State* L, int lo, cc::Color4B* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (lua_type(L, lo) == LUA_TUSERDATA) {
 				const auto converter = _get_color4b_userdata_converter(L);
 				if (!converter) return false;
-				cocos2d::Color4B value;
+				cc::Color4B value;
 				const bool ok = converter(L, lo, &value);
 				lua_settop(L, top);
 				if (ok) *outValue = value;
@@ -86,7 +86,7 @@ namespace lua
 			}
 			if (!is_indexable(L, lo))
 				return false;
-			cocos2d::Color4B v;
+			cc::Color4B v;
 			bool ok = luaval_field_to_native(L, lo, "r", &v.r, fName) &&
 				luaval_field_to_native(L, lo, "g", &v.g, fName) &&
 				luaval_field_to_native(L, lo, "b", &v.b, fName) &&
@@ -96,22 +96,22 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Color4B, r, g, b, a);
+	LUA_TO_LUA_STRUCT4(cc::Color4B, r, g, b, a);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::Color4F, r, g, b, a);
+	LUA_TO_NATIVE_STRUCT4(cc::Color4F, r, g, b, a);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Color4F, r, g, b, a);
+	LUA_TO_LUA_STRUCT4(cc::Color4F, r, g, b, a);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::HSV, h, s, v, a);
+	LUA_TO_NATIVE_STRUCT4(cc::HSV, h, s, v, a);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::HSV, h, s, v, a);
+	LUA_TO_LUA_STRUCT4(cc::HSV, h, s, v, a);
 
 	template<>
-	struct to_native<cocos2d::ccBezierConfig> {
-		static bool F(lua_State* L, int lo, cocos2d::ccBezierConfig* outValue, const char* fName = "") {
+	struct to_native<cc::ccBezierConfig> {
+		static bool F(lua_State* L, int lo, cc::ccBezierConfig* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::ccBezierConfig value{};
+			cc::ccBezierConfig value{};
 			bool ok;
 			// Match BezierBy/BezierTo::create's {control1, control2, end} convention.
 			if (lua_istable(L, lo) && lua_objlen(L, lo) == 3)
@@ -127,42 +127,42 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_STRUCT3(cocos2d::ccBezierConfig, controlPoint_1, controlPoint_2, endPosition);
+	LUA_TO_LUA_STRUCT3(cc::ccBezierConfig, controlPoint_1, controlPoint_2, endPosition);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::Quaternion, x, y, z, w);
+	LUA_TO_NATIVE_STRUCT4(cc::Quaternion, x, y, z, w);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Quaternion, x, y, z, w);
+	LUA_TO_LUA_STRUCT4(cc::Quaternion, x, y, z, w);
 
-	LUA_TO_NATIVE_STRUCT2(cocos2d::MeshVertexAttrib, type, vertexAttrib);
+	LUA_TO_NATIVE_STRUCT2(cc::MeshVertexAttrib, type, vertexAttrib);
 
-	LUA_TO_LUA_STRUCT2(cocos2d::MeshVertexAttrib, type, vertexAttrib);
+	LUA_TO_LUA_STRUCT2(cc::MeshVertexAttrib, type, vertexAttrib);
 
-	LUA_TO_NATIVE_STRUCT3(cocos2d::V3F_C4B_T2F, vertices, colors, texCoords);
+	LUA_TO_NATIVE_STRUCT3(cc::V3F_C4B_T2F, vertices, colors, texCoords);
 
-	LUA_TO_LUA_STRUCT3(cocos2d::V3F_C4B_T2F, vertices, colors, texCoords);
+	LUA_TO_LUA_STRUCT3(cc::V3F_C4B_T2F, vertices, colors, texCoords);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::V3F_C4B_T2F_Quad, tl, tr, bl, br);
+	LUA_TO_NATIVE_STRUCT4(cc::V3F_C4B_T2F_Quad, tl, tr, bl, br);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::V3F_C4B_T2F_Quad, tl, tr, bl, br);
+	LUA_TO_LUA_STRUCT4(cc::V3F_C4B_T2F_Quad, tl, tr, bl, br);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::Viewport, x, y, w, h);
+	LUA_TO_NATIVE_STRUCT4(cc::Viewport, x, y, w, h);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::Viewport, x, y, w, h);
+	LUA_TO_LUA_STRUCT4(cc::Viewport, x, y, w, h);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::ScissorRect, x, y, width, height);
+	LUA_TO_NATIVE_STRUCT4(cc::ScissorRect, x, y, width, height);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::ScissorRect, x, y, width, height);
+	LUA_TO_LUA_STRUCT4(cc::ScissorRect, x, y, width, height);
 
-	LUA_TO_NATIVE_STRUCT4(cocos2d::backend::AttributeBindInfo, attributeName, location, size, type);
+	LUA_TO_NATIVE_STRUCT4(cc::backend::AttributeBindInfo, attributeName, location, size, type);
 
-	LUA_TO_LUA_STRUCT4(cocos2d::backend::AttributeBindInfo, attributeName, location, size, type);
+	LUA_TO_LUA_STRUCT4(cc::backend::AttributeBindInfo, attributeName, location, size, type);
 
 	template<>
-	struct to_native<cocos2d::Rect> {
-		static bool F(lua_State* L, int lo, cocos2d::Rect* outValue, const char* fName = "") {
+	struct to_native<cc::Rect> {
+		static bool F(lua_State* L, int lo, cc::Rect* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::Rect v;
+			cc::Rect v;
 			bool ok = luaval_field_to_native(L, lo, "x", &v.origin.x, fName) &&
 				luaval_field_to_native(L, lo, "y", &v.origin.y, fName) &&
 				luaval_field_to_native(L, lo, "width", &v.size.width, fName) &&
@@ -173,8 +173,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::Rect> {
-		static void F(lua_State* L, const cocos2d::Rect& inValue) {
+	struct to_lua<cc::Rect> {
+		static void F(lua_State* L, const cc::Rect& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, 4);
 			native_to_luaval_field(L, -1, "x", inValue.origin.x);
@@ -185,11 +185,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::AffineTransform> {
-		static bool F(lua_State* L, int lo, cocos2d::AffineTransform* outValue, const char* fName = "") {
+	struct to_native<cc::AffineTransform> {
+		static bool F(lua_State* L, int lo, cc::AffineTransform* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
-			cocos2d::AffineTransform v{};
+			cc::AffineTransform v{};
 			bool ok = luaval_field_to_native(L, lo, "a", &v.a, fName) &&
 				luaval_field_to_native(L, lo, "b", &v.b, fName) &&
 				luaval_field_to_native(L, lo, "c", &v.c, fName) &&
@@ -201,14 +201,14 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_STRUCT6(cocos2d::AffineTransform, a, b, c, d, tx, ty);
+	LUA_TO_LUA_STRUCT6(cc::AffineTransform, a, b, c, d, tx, ty);
 
 	template<>
-	struct to_native<cocos2d::FontDefinition> {
-		static bool F(lua_State* L, int lo, cocos2d::FontDefinition* outValue, const char* fName = "") {
+	struct to_native<cc::FontDefinition> {
+		static bool F(lua_State* L, int lo, cc::FontDefinition* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
-			cocos2d::FontDefinition v;
+			cc::FontDefinition v;
 			luaval_field_to_native(L, lo, "fontName", &v._fontName, fName);
 			luaval_field_to_native(L, lo, "fontSize", &v._fontSize, fName);
 			luaval_field_to_native(L, lo, "fontAlignmentH", &v._alignment, fName);
@@ -234,8 +234,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::FontDefinition> {
-		static void F(lua_State* L, const cocos2d::FontDefinition& inValue) {
+	struct to_lua<cc::FontDefinition> {
+		static void F(lua_State* L, const cc::FontDefinition& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, 13);
 			native_to_luaval_field(L, -1, "fontName", inValue._fontName);
@@ -255,11 +255,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::TTFConfig> {
-		static bool F(lua_State* L, int lo, cocos2d::TTFConfig* outValue, const char* fName = "") {
+	struct to_native<cc::TTFConfig> {
+		static bool F(lua_State* L, int lo, cc::TTFConfig* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
-			cocos2d::TTFConfig v;
+			cc::TTFConfig v;
 			luaval_field_to_native(L, lo, "fontFilePath", &v.fontFilePath, fName);
 			luaval_field_to_native(L, lo, "fontSize", &v.fontSize, fName);
 			luaval_field_to_native(L, lo, "glyphs", &v.glyphs, fName);
@@ -271,15 +271,15 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_STRUCT6(cocos2d::TTFConfig, fontFilePath, fontSize, glyphs, customGlyphs, distanceFieldEnabled, outlineSize);
+	LUA_TO_LUA_STRUCT6(cc::TTFConfig, fontFilePath, fontSize, glyphs, customGlyphs, distanceFieldEnabled, outlineSize);
 
 	template<>
-	struct to_native<cocos2d::Mat4> {
-		static bool F(lua_State* L, int lo, cocos2d::Mat4* outValue, const char* fName = "") {
+	struct to_native<cc::Mat4> {
+		static bool F(lua_State* L, int lo, cc::Mat4* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
 			if (lua_objlen(L, lo) != 16) return false;
-			cocos2d::Mat4 result;
+			cc::Mat4 result;
 			for (int i = 0; i < 16; ++i)
 			{
 				if (!luaval_field_to_native(L, lo, i + 1, &result.m[i], fName))
@@ -291,26 +291,26 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::Mat4> {
-		static void F(lua_State* L, const cocos2d::Mat4& inValue) {
+	struct to_lua<cc::Mat4> {
+		static void F(lua_State* L, const cc::Mat4& inValue) {
 			if (!L) return;
 			native_array_to_luaval(L, inValue.m, 16);
 		}
 	};
 
 	template<>
-	struct to_native<cocos2d::backend::SamplerDescriptor> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::SamplerDescriptor* outValue, const char* fName = "") {
+	struct to_native<cc::backend::SamplerDescriptor> {
+		static bool F(lua_State* L, int lo, cc::backend::SamplerDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!record_detail::fields(L, lo, {"minFilter", "magFilter", "sAddressMode", "tAddressMode"})) return false;
-			using Filter = cocos2d::backend::SamplerFilter;
-			using Address = cocos2d::backend::SamplerAddressMode;
+			using Filter = cc::backend::SamplerFilter;
+			using Address = cc::backend::SamplerAddressMode;
 			const std::initializer_list<Filter> filters = {Filter::NEAREST, Filter::NEAREST_MIPMAP_NEAREST,
 				Filter::NEAREST_MIPMAP_LINEAR, Filter::LINEAR, Filter::LINEAR_MIPMAP_LINEAR,
 				Filter::LINEAR_MIPMAP_NEAREST, Filter::DONT_CARE};
 			const std::initializer_list<Address> addresses = {Address::REPEAT, Address::MIRROR_REPEAT,
 				Address::CLAMP_TO_EDGE, Address::DONT_CARE};
-			cocos2d::backend::SamplerDescriptor value;
+			cc::backend::SamplerDescriptor value;
 			if (!record_detail::enumeration(L, lo, "minFilter", &value.minFilter, filters, fName) ||
 				!record_detail::enumeration(L, lo, "magFilter", &value.magFilter, filters, fName) ||
 				!record_detail::enumeration(L, lo, "sAddressMode", &value.sAddressMode, addresses, fName) ||
@@ -321,14 +321,14 @@ namespace lua
 	};
 
 	// Texture2D::TexParams is the same native type and uses the same canonical record.
-	LUA_TO_LUA_STRUCT4(cocos2d::backend::SamplerDescriptor, minFilter, magFilter, sAddressMode, tAddressMode);
+	LUA_TO_LUA_STRUCT4(cc::backend::SamplerDescriptor, minFilter, magFilter, sAddressMode, tAddressMode);
 
 	template<>
-	struct to_native<cocos2d::backend::UniformLocation> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::UniformLocation* outValue, const char* fName = "") {
+	struct to_native<cc::backend::UniformLocation> {
+		static bool F(lua_State* L, int lo, cc::backend::UniformLocation* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::backend::UniformLocation v;
+			cc::backend::UniformLocation v;
 			bool ok = luaval_field_to_native(L, lo, "shaderStage", &v.shaderStage, fName);
 			if (ok)
 			{
@@ -343,8 +343,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::backend::UniformLocation> {
-		static void F(lua_State* L, const cocos2d::backend::UniformLocation& inValue) {
+	struct to_lua<cc::backend::UniformLocation> {
+		static void F(lua_State* L, const cc::backend::UniformLocation& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, 2);
 			native_to_luaval_field(L, -1, "shaderStage", inValue.shaderStage);
@@ -355,11 +355,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::backend::BlendDescriptor> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::BlendDescriptor* outValue, const char* fName = "") {
+	struct to_native<cc::backend::BlendDescriptor> {
+		static bool F(lua_State* L, int lo, cc::backend::BlendDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::backend::BlendDescriptor v;
+			cc::backend::BlendDescriptor v;
 			luaval_field_to_native(L, lo, "writeMask", &v.writeMask, fName);
 			luaval_field_to_native(L, lo, "blendEnabled", &v.blendEnabled, fName);
 			luaval_field_to_native(L, lo, "rgbBlendOperation", &v.rgbBlendOperation, fName);
@@ -374,8 +374,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::backend::BlendDescriptor> {
-		static void F(lua_State* L, const cocos2d::backend::BlendDescriptor& inValue) {
+	struct to_lua<cc::backend::BlendDescriptor> {
+		static void F(lua_State* L, const cc::backend::BlendDescriptor& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, 4);
 			native_to_luaval_field(L, -1, "writeMask", inValue.writeMask);

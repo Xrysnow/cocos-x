@@ -21,13 +21,13 @@ public:
 
     void reset();
 
-    cocos2d::Touch* touch;
-    cocos2d::Vec2 pos;
+    cc::Touch* touch;
+    cc::Vec2 pos;
     int touchId;
     int clickCount;
     int mouseWheelDelta;
-    cocos2d::EventMouse::MouseButton button;
-    cocos2d::Vec2 downPos;
+    cc::EventMouse::MouseButton button;
+    cc::Vec2 downPos;
     bool began;
     bool clickCancelled;
     clock_t lastClickTime;
@@ -42,9 +42,9 @@ InputProcessor::InputProcessor(GComponent* owner) :
     _touchListener(nullptr),
     _keyboardListener(nullptr)
 {
-    cc::IntrusivePtr<cocos2d::EventListenerMouse> mouseListener;
-    cc::IntrusivePtr<cocos2d::EventListenerTouchOneByOne> touchListener;
-    cc::IntrusivePtr<cocos2d::EventListenerKeyboard> keyboardListener;
+    cc::IntrusivePtr<cc::EventListenerMouse> mouseListener;
+    cc::IntrusivePtr<cc::EventListenerTouchOneByOne> touchListener;
+    cc::IntrusivePtr<cc::EventListenerKeyboard> keyboardListener;
     _owner = owner;
     _recentInput._inputProcessor = this;
 
@@ -89,7 +89,7 @@ InputProcessor::~InputProcessor()
         delete ti;
 }
 
-cocos2d::Vec2 InputProcessor::getTouchPosition(int touchId)
+cc::Vec2 InputProcessor::getTouchPosition(int touchId)
 {
     for (auto &ti : _touches)
     {
@@ -318,17 +318,17 @@ void InputProcessor::disableDefaultTouchEvent()
     _owner->displayObject()->getEventDispatcher()->removeEventListener(_touchListener);
 }
 
-bool InputProcessor::touchDown(cocos2d::Touch *touch, cocos2d::Event *event)
+bool InputProcessor::touchDown(cc::Touch *touch, cc::Event *event)
 {
     return onTouchBegan(touch, event);
 }
 
-void InputProcessor::touchMove(cocos2d::Touch *touch, cocos2d::Event *event)
+void InputProcessor::touchMove(cc::Touch *touch, cc::Event *event)
 {
     onTouchMoved(touch, event);
 }
 
-void InputProcessor::touchUp(cocos2d::Touch *touch, cocos2d::Event *event)
+void InputProcessor::touchUp(cc::Touch *touch, cc::Event *event)
 {
     onTouchEnded(touch, event);
 }
@@ -526,7 +526,7 @@ void InputProcessor::onTouchCancelled(Touch* touch, Event* /*unusedEvent*/)
     _activeProcessor = nullptr;
 }
 
-void InputProcessor::onMouseDown(cocos2d::EventMouse * event)
+void InputProcessor::onMouseDown(cc::EventMouse * event)
 {
     if (event->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT)
         return;
@@ -556,7 +556,7 @@ void InputProcessor::onMouseDown(cocos2d::EventMouse * event)
     _activeProcessor = nullptr;
 }
 
-void InputProcessor::onMouseUp(cocos2d::EventMouse * event)
+void InputProcessor::onMouseUp(cc::EventMouse * event)
 {
     if (event->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT)
         return;
@@ -620,7 +620,7 @@ void InputProcessor::onMouseUp(cocos2d::EventMouse * event)
     _activeProcessor = nullptr;
 }
 
-void InputProcessor::onMouseMove(cocos2d::EventMouse * event)
+void InputProcessor::onMouseMove(cc::EventMouse * event)
 {
     TouchInfo* ti = getTouch(0);
     Vec2 npos = UIRoot->worldToRoot(Vec2(event->getCursorX(), event->getCursorY()));
@@ -669,7 +669,7 @@ void InputProcessor::onMouseMove(cocos2d::EventMouse * event)
     _activeProcessor = nullptr;
 }
 
-void InputProcessor::onMouseScroll(cocos2d::EventMouse * event)
+void InputProcessor::onMouseScroll(cc::EventMouse * event)
 {
     auto camera = Camera::getVisitingCamera();
     Vec2 pt(event->getCursorX(), event->getCursorY());
@@ -691,7 +691,7 @@ void InputProcessor::onMouseScroll(cocos2d::EventMouse * event)
     _activeProcessor = nullptr;
 }
 
-void InputProcessor::onKeyDown(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event * event)
+void InputProcessor::onKeyDown(cc::EventKeyboard::KeyCode keyCode, cc::Event * event)
 {
     if (keyCode == EventKeyboard::KeyCode::KEY_LEFT_CTRL || keyCode == EventKeyboard::KeyCode::KEY_RIGHT_CTRL)
         _keyModifiers |= 1;
@@ -705,7 +705,7 @@ void InputProcessor::onKeyDown(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d:
     _recentInput._target->dispatchEvent(UIEventType::KeyDown);
 }
 
-void InputProcessor::onKeyUp(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event *)
+void InputProcessor::onKeyUp(cc::EventKeyboard::KeyCode keyCode, cc::Event *)
 {
     if (keyCode == EventKeyboard::KeyCode::KEY_LEFT_CTRL || keyCode == EventKeyboard::KeyCode::KEY_RIGHT_CTRL)
         _keyModifiers &= ~1;

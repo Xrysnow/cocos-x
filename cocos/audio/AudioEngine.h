@@ -112,39 +112,39 @@ NS_CC_BEGIN
 		 * @note Positional audio only works for mono (i.e. non-stereo) sources.
 		 * @return The position of the listener.
 		 */
-		static cocos2d::Vec3 getPosition();
+		static cc::Vec3 getPosition();
 
 		/**
 		 * Sets the position of the listener.
 		 * @param v The position of the listener.
 		 */
-		static void setPosition(const cocos2d::Vec3& v);
+		static void setPosition(const cc::Vec3& v);
 
 		/**
 		 * Gets the orientation of the listener.
 		 * @return A vector array of size 2 containing the forward
 		 * vector and the up vector of the listener orientation.
 		 */
-		static std::array<cocos2d::Vec3, 2> getOrientation();
+		static std::array<cc::Vec3, 2> getOrientation();
 
 		/**
 		 * Sets the orientation of the listener.
 		 * @param forward Forward vector of the listener orientation.
 		 * @param up Up vector of the listener orientation.
 		 */
-		static void setOrientation(const cocos2d::Vec3& forward, const cocos2d::Vec3& up);
+		static void setOrientation(const cc::Vec3& forward, const cc::Vec3& up);
 
 		/**
 		 * Gets the velocity of the listener.
 		 * @return The velocity of the listener.
 		 */
-		static cocos2d::Vec3 getVelocity();
+		static cc::Vec3 getVelocity();
 
 		/**
 		 * Sets the velocity of the listener.
 		 * @param v The velocity of the listener.
 		 */
-		static void setVelocity(const cocos2d::Vec3& v);
+		static void setVelocity(const cc::Vec3& v);
 
 		/**
 		 * Sets a global scale factor for velocity-based doppler effects. The default scale value is 1.
@@ -340,7 +340,7 @@ NS_CC_BEGIN
 		static ALCcontext *context;
 
 		// The OpenAL capture devices.
-		static cocos2d::Vector<AudioRecordingDevice*> capture;
+		static cc::Vector<AudioRecordingDevice*> capture;
 
 		// The OpenAL effects
 		struct EffectMapStorage
@@ -356,7 +356,7 @@ NS_CC_BEGIN
 		// The AudioPool.
 		static AudioPool *pool;
 
-		static cocos2d::Vector<AudioSource*> tempSources;
+		static cc::Vector<AudioSource*> tempSources;
 
 		static DistanceModel distanceModel;
 		//static float metersPerUnit = 1.0;

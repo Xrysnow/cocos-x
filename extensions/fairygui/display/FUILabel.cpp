@@ -189,7 +189,7 @@ void FUILabel::updateBMFontScale()
     }
 }
 
-void FUILabel::setUnderlineColor(const cocos2d::Color3B& value)
+void FUILabel::setUnderlineColor(const cc::Color3B& value)
 {
     //NOT IMPLEMENTED
 }

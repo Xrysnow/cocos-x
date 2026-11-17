@@ -68,8 +68,8 @@ namespace spine {
 
 		virtual void update(float deltaTime) override;
 		using SkeletonRenderer::visit;
-		virtual void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) override;
-		virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) override;
+		virtual void visit(cc::Renderer *renderer, const cc::Mat4 &parentTransform, uint32_t parentFlags) override;
+		virtual void draw(cc::Renderer *renderer, const cc::Mat4 &transform, uint32_t transformFlags) override;
 
 		void setAnimationStateData(AnimationStateData *stateData);
 		void setMix(const std::string &fromAnimation, const std::string &toAnimation, float duration);

@@ -53,7 +53,7 @@ HWND EditBoxImplWin::s_hwndCocos           = 0;
 
 void EditBoxImplWin::lazyInit()
 {
-    s_hwndCocos = cocos2d::Director::getInstance()->getOpenGLView()->getWin32Window();
+    s_hwndCocos = cc::Director::getInstance()->getOpenGLView()->getWin32Window();
     LONG style  = ::GetWindowLongW(s_hwndCocos, GWL_STYLE);
     ::SetWindowLongW(s_hwndCocos, GWL_STYLE, style | WS_CLIPCHILDREN);
     s_isInitialized    = true;
@@ -169,13 +169,13 @@ void EditBoxImplWin::setNativePlaceholderFontColor(const Color4B& color)
 
 void EditBoxImplWin::setNativeInputMode(EditBox::InputMode inputMode)
 {
-    if (_editBoxInputMode == cocos2d::ui::EditBox::InputMode::ANY)
+    if (_editBoxInputMode == cc::ui::EditBox::InputMode::ANY)
     {
         this->createEditCtrl(false);
     }
-    else if (_editBoxInputMode == cocos2d::ui::EditBox::InputMode::NUMERIC ||
-             _editBoxInputMode == cocos2d::ui::EditBox::InputMode::DECIMAL ||
-             _editBoxInputMode == cocos2d::ui::EditBox::InputMode::PHONE_NUMBER)
+    else if (_editBoxInputMode == cc::ui::EditBox::InputMode::NUMERIC ||
+             _editBoxInputMode == cc::ui::EditBox::InputMode::DECIMAL ||
+             _editBoxInputMode == cc::ui::EditBox::InputMode::PHONE_NUMBER)
     {
         this->createEditCtrl(true);
         ::SetWindowLongW(_hwndEdit, GWL_STYLE, ::GetWindowLongW(_hwndEdit, GWL_STYLE) | ES_NUMBER);
@@ -185,7 +185,7 @@ void EditBoxImplWin::setNativeInputMode(EditBox::InputMode inputMode)
         this->createEditCtrl(true);
     }
 
-    if (this->_editBoxInputFlag != cocos2d::ui::EditBox::InputFlag::PASSWORD)
+    if (this->_editBoxInputFlag != cc::ui::EditBox::InputFlag::PASSWORD)
     {
         ::PostMessageW(_hwndEdit, EM_SETPASSWORDCHAR, (WPARAM)0, (LPARAM)0);
     }
@@ -198,7 +198,7 @@ void EditBoxImplWin::setNativeInputFlag(EditBox::InputFlag inputFlag)
     }
     else
     {
-        if (_editBoxInputMode != cocos2d::ui::EditBox::InputMode::ANY)
+        if (_editBoxInputMode != cc::ui::EditBox::InputMode::ANY)
         {
             this->createEditCtrl(true);
 
@@ -239,13 +239,13 @@ void EditBoxImplWin::setNativeText(const char* pText)
 {
     std::u16string utf16Result;
     std::string text(pText);
-    cocos2d::StringUtils::UTF8ToUTF16(text, utf16Result);
+    cc::StringUtils::UTF8ToUTF16(text, utf16Result);
     this->_changedTextManually = true;
     ::SetWindowTextW(_hwndEdit, (LPCWSTR)utf16Result.c_str());
     int textLen = text.size();
     ::SendMessageW(_hwndEdit, EM_SETSEL, textLen, textLen);
 
-    if (_editBoxInputMode == cocos2d::ui::EditBox::InputMode::ANY)
+    if (_editBoxInputMode == cc::ui::EditBox::InputMode::ANY)
     {
         ::SendMessageW(_hwndEdit, EM_SCROLLCARET, 0, 0);
     }
@@ -306,7 +306,7 @@ void EditBoxImplWin::_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     case WM_CHAR:
         if (wParam == VK_RETURN)
         {
-            if (_editBoxInputMode != cocos2d::ui::EditBox::InputMode::ANY)
+            if (_editBoxInputMode != cc::ui::EditBox::InputMode::ANY)
             {
                 if (s_previousFocusWnd != s_hwndCocos)
                 {
@@ -373,7 +373,7 @@ std::string EditBoxImplWin::getText() const
     wstrResult.resize(inputLength);
 
     ::GetWindowTextW(_hwndEdit, (LPWSTR)&wstrResult[0], inputLength + 1);
-    bool conversionResult = cocos2d::StringUtils::UTF16ToUTF8(wstrResult, utf8Result);
+    bool conversionResult = cc::StringUtils::UTF16ToUTF8(wstrResult, utf8Result);
     if (!conversionResult)
     {
         CCLOG("warning, editbox input text conversion error.");

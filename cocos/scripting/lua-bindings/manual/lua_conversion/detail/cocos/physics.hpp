@@ -8,16 +8,16 @@
 namespace lua
 {
 #if CC_USE_PHYSICS
-	LUA_TO_NATIVE_STRUCT3(cocos2d::PhysicsMaterial, density, restitution, friction);
+	LUA_TO_NATIVE_STRUCT3(cc::PhysicsMaterial, density, restitution, friction);
 
-	LUA_TO_LUA_STRUCT3(cocos2d::PhysicsMaterial, density, restitution, friction);
+	LUA_TO_LUA_STRUCT3(cc::PhysicsMaterial, density, restitution, friction);
 
 	template<>
-	struct to_native<cocos2d::PhysicsContactData> {
-		static bool F(lua_State* L, int lo, cocos2d::PhysicsContactData* outValue, const char* fName = "") {
+	struct to_native<cc::PhysicsContactData> {
+		static bool F(lua_State* L, int lo, cc::PhysicsContactData* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::PhysicsContactData v;
+			cc::PhysicsContactData v;
 			bool ok = luaval_field_to_native(L, lo, "normal", &v.normal, fName);
 			if (ok)
 			{
@@ -38,12 +38,12 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::PhysicsContactData> {
-		static void F(lua_State* L, const cocos2d::PhysicsContactData& inValue) {
+	struct to_lua<cc::PhysicsContactData> {
+		static void F(lua_State* L, const cc::PhysicsContactData& inValue) {
 			if (!L) return;
 			if (inValue.count < 0 || inValue.count > inValue.POINT_MAX)
 			{
-				luaL_error(L, "invalid cocos2d::PhysicsContactData count: %d", inValue.count);
+				luaL_error(L, "invalid cc::PhysicsContactData count: %d", inValue.count);
 				return;
 			}
 			lua_createtable(L, 0, 3);
@@ -56,11 +56,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::PhysicsRayCastInfo> {
-		static bool F(lua_State* L, int lo, cocos2d::PhysicsRayCastInfo* outValue, const char* fName = "") {
+	struct to_native<cc::PhysicsRayCastInfo> {
+		static bool F(lua_State* L, int lo, cc::PhysicsRayCastInfo* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::PhysicsRayCastInfo v{};
+			cc::PhysicsRayCastInfo v{};
 			bool ok = luaval_field_to_native(L, lo, "start", &v.start, fName) &&
 				luaval_field_to_native(L, lo, "ended", &v.end, fName) &&
 				luaval_field_to_native(L, lo, "contact", &v.contact, fName) &&
@@ -73,8 +73,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::PhysicsRayCastInfo> {
-		static void F(lua_State* L, const cocos2d::PhysicsRayCastInfo& inValue) {
+	struct to_lua<cc::PhysicsRayCastInfo> {
+		static void F(lua_State* L, const cc::PhysicsRayCastInfo& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, 6);
 			native_to_luaval_field(L, -1, "start", inValue.start);
@@ -89,9 +89,9 @@ namespace lua
 #endif
 
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-	LUA_TO_LUA_STRUCT5(cocos2d::Physics3DCollisionInfo::CollisionPoint,
+	LUA_TO_LUA_STRUCT5(cc::Physics3DCollisionInfo::CollisionPoint,
 		localPositionOnA, worldPositionOnA, localPositionOnB, worldPositionOnB, worldNormalOnB);
 
-	LUA_TO_LUA_STRUCT3(cocos2d::Physics3DCollisionInfo, objA, objB, collisionPointList);
+	LUA_TO_LUA_STRUCT3(cc::Physics3DCollisionInfo, objA, objB, collisionPointList);
 #endif
 }

@@ -122,7 +122,7 @@ void GList::setColumnGap(int value)
     }
 }
 
-void GList::setAlign(cocos2d::TextHAlignment value)
+void GList::setAlign(cc::TextHAlignment value)
 {
     if (_align != value)
     {
@@ -133,7 +133,7 @@ void GList::setAlign(cocos2d::TextHAlignment value)
     }
 }
 
-void GList::setVerticalAlign(cocos2d::TextVAlignment value)
+void GList::setVerticalAlign(cc::TextVAlignment value)
 {
     if (_verticalAlign != value)
     {
@@ -1113,7 +1113,7 @@ void GList::refreshVirtualList()
     setVirtualListChangedFlag(false);
 }
 
-cocos2d::Vec2 GList::getSnappingPosition(const cocos2d::Vec2& pt)
+cc::Vec2 GList::getSnappingPosition(const cc::Vec2& pt)
 {
     if (_virtual)
     {

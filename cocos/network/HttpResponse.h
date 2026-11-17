@@ -26,6 +26,8 @@
  ****************************************************************************/
 
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include <ctype.h>
 #include <algorithm>
 #include <map>
@@ -39,7 +41,7 @@
  * @{
  */
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network
@@ -88,9 +90,9 @@ public:
     /**
      * Override autorelease method to prevent developers from calling it.
      * If this method is called , it would trigger CCASSERT.
-     * @return cocos2d::Ref* always return nullptr.
+     * @return cc::Ref* always return nullptr.
      */
-    cocos2d::Ref* autorelease()
+    cc::Ref* autorelease()
     {
         CCASSERT(false,
                  "HttpResponse is used between network thread and ui thread \
@@ -323,7 +325,7 @@ protected:
 
 }  // namespace network
 
-}  // namespace cocos2d
+}  // namespace cc
 
 // end group
 /// @}

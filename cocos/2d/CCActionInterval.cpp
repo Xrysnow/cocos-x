@@ -1374,7 +1374,7 @@ cc::IntrusivePtr<Action> ResizeTo::clone() const
     return a;
 }
 
-void ResizeTo::startWithTarget(cocos2d::Node* target)
+void ResizeTo::startWithTarget(cc::Node* target)
 {
     ActionInterval::startWithTarget(target);
     _initialSize = target->getContentSize();
@@ -1392,7 +1392,7 @@ void ResizeTo::update(float time)
 
 bool ResizeTo::initWithDuration(float duration, const Vec2& final_size)
 {
-    if (cocos2d::ActionInterval::initWithDuration(duration))
+    if (cc::ActionInterval::initWithDuration(duration))
     {
         _finalSize = final_size;
         return true;
@@ -1984,7 +1984,7 @@ cc::IntrusivePtr<Action> FadeIn::clone() const
     return FadeIn::create(_duration);
 }
 
-void FadeIn::setReverseAction(cocos2d::FadeTo* ac)
+void FadeIn::setReverseAction(cc::FadeTo* ac)
 {
     _reverseAction = ac;
 }
@@ -1996,7 +1996,7 @@ cc::IntrusivePtr<Action> FadeIn::reverse() const
     return action;
 }
 
-void FadeIn::startWithTarget(cocos2d::Node* target)
+void FadeIn::startWithTarget(cc::Node* target)
 {
     ActionInterval::startWithTarget(target);
 
@@ -2030,7 +2030,7 @@ cc::IntrusivePtr<Action> FadeOut::clone() const
     return FadeOut::create(_duration);
 }
 
-void FadeOut::startWithTarget(cocos2d::Node* target)
+void FadeOut::startWithTarget(cc::Node* target)
 {
     ActionInterval::startWithTarget(target);
 
@@ -2043,7 +2043,7 @@ void FadeOut::startWithTarget(cocos2d::Node* target)
         _fromOpacity = target->getOpacity();
 }
 
-void FadeOut::setReverseAction(cocos2d::FadeTo* ac)
+void FadeOut::setReverseAction(cc::FadeTo* ac)
 {
     _reverseAction = ac;
 }
@@ -2403,7 +2403,7 @@ bool Animate::initWithAnimation(Animation* animation)
     return false;
 }
 
-void Animate::setAnimation(cocos2d::Animation* animation)
+void Animate::setAnimation(cc::Animation* animation)
 {
     if (_animation != animation)
     {

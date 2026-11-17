@@ -330,7 +330,7 @@ struct NodeDatas
  */
 struct MeshData
 {
-    using IndexArray = ::cocos2d::IndexArray;
+    using IndexArray = ::cc::IndexArray;
     std::vector<float> vertex;
     int vertexSizeInFloat;
     std::vector<IndexArray> subMeshIndices;

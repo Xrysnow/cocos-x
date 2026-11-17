@@ -60,7 +60,7 @@ public:
             return;
 
         // It's a new controller being connected.
-        auto controller         = new cocos2d::Controller();
+        auto controller         = new cc::Controller();
         controller->_deviceId   = deviceId;
         controller->_deviceName = deviceName;
         Controller::s_allController.emplace_back(controller);
@@ -170,23 +170,23 @@ extern "C" {
     JNIEXPORT void JNICALL Java_org_cocos_lib_GameControllerAdapter_nativeControllerConnected(JNIEnv*  env, jclass, jstring deviceName, jint controllerID)
     {
         CCLOG("controller id: %d connected!", controllerID);
-        cocos2d::ControllerImpl::onConnected(cocos2d::JniHelper::jstring2string(deviceName), controllerID);
+        cc::ControllerImpl::onConnected(cc::JniHelper::jstring2string(deviceName), controllerID);
     }
 
     JNIEXPORT void JNICALL Java_org_cocos_lib_GameControllerAdapter_nativeControllerDisconnected(JNIEnv*  env, jclass, jstring deviceName, jint controllerID)
     {
         CCLOG("controller id: %d disconnected!", controllerID);
-        cocos2d::ControllerImpl::onDisconnected(cocos2d::JniHelper::jstring2string(deviceName), controllerID);
+        cc::ControllerImpl::onDisconnected(cc::JniHelper::jstring2string(deviceName), controllerID);
     }
 
     JNIEXPORT void JNICALL Java_org_cocos_lib_GameControllerAdapter_nativeControllerButtonEvent(JNIEnv*  env, jclass, jstring deviceName, jint controllerID, jint button, jboolean isPressed, jfloat value, jboolean isAnalog)
     {
-        cocos2d::ControllerImpl::onButtonEvent(cocos2d::JniHelper::jstring2string(deviceName), controllerID, button, isPressed, value, isAnalog);
+        cc::ControllerImpl::onButtonEvent(cc::JniHelper::jstring2string(deviceName), controllerID, button, isPressed, value, isAnalog);
     }
 
     JNIEXPORT void JNICALL Java_org_cocos_lib_GameControllerAdapter_nativeControllerAxisEvent(JNIEnv*  env, jclass, jstring deviceName, jint controllerID, jint axis, jfloat value, jboolean isAnalog)
     {
-        cocos2d::ControllerImpl::onAxisEvent(cocos2d::JniHelper::jstring2string(deviceName), controllerID, axis, value, isAnalog);
+        cc::ControllerImpl::onAxisEvent(cc::JniHelper::jstring2string(deviceName), controllerID, axis, value, isAnalog);
     }
 
 }  // extern "C" {

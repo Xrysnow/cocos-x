@@ -44,7 +44,7 @@ AudioDecoder::~AudioDecoder()
 AudioDecoder::DecoderType AudioDecoder::getDecoderTypeFromPath(const std::string& path)
 {
 	// get ext in lower case
-	auto ext = cocos2d::FileUtils::getInstance()->getFileExtension(path);
+	auto ext = cc::FileUtils::getInstance()->getFileExtension(path);
 	// remove dot
 	if (!ext.empty())
 		ext = ext.substr(1);

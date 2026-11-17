@@ -34,8 +34,8 @@ NS_CC_BEGIN
 
 cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::create(std::string_view modelPath,
                                          Physics3DRigidBodyDes* rigidDes,
-                                         const cocos2d::Vec3& translateInPhysics,
-                                         const cocos2d::Quaternion& rotInPhsyics)
+                                         const cc::Vec3& translateInPhysics,
+                                         const cc::Quaternion& rotInPhsyics)
 {
     cc::IntrusivePtr ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))
@@ -53,8 +53,8 @@ cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::create(std::string_vi
 
 cc::IntrusivePtr<PhysicsMeshRenderer> PhysicsMeshRenderer::createWithCollider(std::string_view modelPath,
                                                      Physics3DColliderDes* colliderDes,
-                                                     const cocos2d::Vec3& translateInPhysics,
-                                                     const cocos2d::Quaternion& rotInPhsyics)
+                                                     const cc::Vec3& translateInPhysics,
+                                                     const cc::Quaternion& rotInPhsyics)
 {
     cc::IntrusivePtr ret{new PhysicsMeshRenderer()};
     if (ret->initWithFile(modelPath))

@@ -270,7 +270,7 @@ void ListView::pushBackCustomItem(Widget* item)
     requestDoLayout();
 }
 
-void ListView::addChild(cocos2d::Node* child, int zOrder, int tag)
+void ListView::addChild(cc::Node* child, int zOrder, int tag)
 {
     ScrollView::addChild(child, zOrder, tag);
 
@@ -282,12 +282,12 @@ void ListView::addChild(cocos2d::Node* child, int zOrder, int tag)
     }
 }
 
-void ListView::addChild(cocos2d::Node* child)
+void ListView::addChild(cc::Node* child)
 {
     ListView::addChild(child, child->getLocalZOrder(), child->getName());
 }
 
-void ListView::addChild(cocos2d::Node* child, int zOrder)
+void ListView::addChild(cc::Node* child, int zOrder)
 {
     ListView::addChild(child, zOrder, child->getName());
 }
@@ -304,7 +304,7 @@ void ListView::addChild(Node* child, int zOrder, std::string_view name)
     }
 }
 
-void ListView::removeChild(cocos2d::Node* child, bool cleanup)
+void ListView::removeChild(cc::Node* child, bool cleanup)
 {
     Widget* widget = dynamic_cast<Widget*>(child);
     if (nullptr != widget)
@@ -885,7 +885,7 @@ void ListView::setCurSelectedIndex(int itemIndex)
         return;
     }
     _curSelectedIndex = itemIndex;
-    this->selectedItemEvent(cocos2d::ui::Widget::TouchEventType::ENDED);
+    this->selectedItemEvent(cc::ui::Widget::TouchEventType::ENDED);
 }
 
 void ListView::onSizeChanged()

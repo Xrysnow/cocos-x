@@ -35,7 +35,7 @@
 
 bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
                                         int lo,
-                                        cocos2d::Physics3DWorld::HitResult* outValue,
+                                        cc::Physics3DWorld::HitResult* outValue,
                                         const char* funcName)
 {
     if (nullptr == L || nullptr == outValue)
@@ -58,7 +58,7 @@ bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
         lua_gettable(L, lo);
         if (!lua_istable(L, -1))
         {
-            outValue->hitPosition = cocos2d::Vec3();
+            outValue->hitPosition = cc::Vec3();
         }
         else
         {
@@ -70,7 +70,7 @@ bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
         lua_gettable(L, lo);
         if (!lua_istable(L, -1))
         {
-            outValue->hitNormal = cocos2d::Vec3();
+            outValue->hitNormal = cc::Vec3();
         }
         else
         {
@@ -86,14 +86,14 @@ bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
         }
         else
         {
-            outValue->hitObj = static_cast<cocos2d::Physics3DObject*>(tolua_tousertype(L, lua_gettop(L), nullptr));
+            outValue->hitObj = static_cast<cc::Physics3DObject*>(tolua_tousertype(L, lua_gettop(L), nullptr));
         }
         lua_pop(L, 1);
     }
     return true;
 }
 
-void Physics3DWorld_HitResult_to_luaval(lua_State* L, const cocos2d::Physics3DWorld::HitResult& hitResult)
+void Physics3DWorld_HitResult_to_luaval(lua_State* L, const cc::Physics3DWorld::HitResult& hitResult)
 {
     if (nullptr == L)
         return;
@@ -112,7 +112,7 @@ void Physics3DWorld_HitResult_to_luaval(lua_State* L, const cocos2d::Physics3DWo
     }
     else
     {
-        object_to_luaval<cocos2d::Physics3DObject>(L, "cc.Physics3DObject", hitResult.hitObj);
+        object_to_luaval<cc::Physics3DObject>(L, "cc.Physics3DObject", hitResult.hitObj);
     }
     lua_rawset(L, -3);
 }
@@ -120,7 +120,7 @@ void Physics3DWorld_HitResult_to_luaval(lua_State* L, const cocos2d::Physics3DWo
 int cclua_physics3d_Physics3DWorld_rayCast(lua_State* L)
 {
     int argc                      = 0;
-    cocos2d::Physics3DWorld* cobj = nullptr;
+    cc::Physics3DWorld* cobj = nullptr;
     bool ok                       = true;
 
     #if CC_DEBUG >= 1
@@ -132,7 +132,7 @@ int cclua_physics3d_Physics3DWorld_rayCast(lua_State* L)
         goto tolua_lerror;
     #endif
 
-    cobj = (cocos2d::Physics3DWorld*)tolua_tousertype(L, 1, 0);
+    cobj = (cc::Physics3DWorld*)tolua_tousertype(L, 1, 0);
 
     #if CC_DEBUG >= 1
     if (!cobj)
@@ -145,9 +145,9 @@ int cclua_physics3d_Physics3DWorld_rayCast(lua_State* L)
     argc = lua_gettop(L) - 1;
     if (argc == 3)
     {
-        cocos2d::Vec3 arg0;
-        cocos2d::Vec3 arg1;
-        cocos2d::Physics3DWorld::HitResult arg2;
+        cc::Vec3 arg0;
+        cc::Vec3 arg1;
+        cc::Physics3DWorld::HitResult arg2;
 
         ok &= luaval_to_vec3(L, 2, &arg0, "cc.Physics3DWorld:rayCast");
 
@@ -214,7 +214,7 @@ int cclua_physics3d_Physics3DShape_createMesh(lua_State* L)
             tolua_error(L, "invalid arguments in function 'cclua_physics3d_Physics3DShape_createMesh'", nullptr);
             return 0;
         }
-        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createMesh(&arg0[0], arg1);
+        cc::IntrusivePtr<cc::Physics3DShape> ret = cc::Physics3DShape::createMesh(&arg0[0], arg1);
         lua::native_to_luaval(L, std::move(ret));
         return 1;
     }
@@ -267,7 +267,7 @@ int cclua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
                         nullptr);
             return 0;
         }
-        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createHeightfield(arg0, arg1, &arg2[0], (float)arg3,
+        cc::IntrusivePtr<cc::Physics3DShape> ret = cc::Physics3DShape::createHeightfield(arg0, arg1, &arg2[0], (float)arg3,
                                                                                   (float)arg4, (float)arg5, arg6, arg7);
         lua::native_to_luaval(L, std::move(ret));
         return 1;
@@ -298,7 +298,7 @@ int cclua_physics3d_Physics3DShape_createHeightfield(lua_State* L)
                         nullptr);
             return 0;
         }
-        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createHeightfield(
+        cc::IntrusivePtr<cc::Physics3DShape> ret = cc::Physics3DShape::createHeightfield(
             arg0, arg1, &arg2[0], (float)arg3, (float)arg4, (float)arg5, arg6, arg7, arg8);
         lua::native_to_luaval(L, std::move(ret));
         return 1;
@@ -330,7 +330,7 @@ int cclua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
     if (argc == 1)
     {
 
-        std::vector<std::pair<cocos2d::Physics3DShape*, cocos2d::Mat4>> shapes;
+        std::vector<std::pair<cc::Physics3DShape*, cc::Mat4>> shapes;
         if (!tolua_istable(L, 2, 0, &tolua_err))
         {
     #if CC_DEBUG >= 1
@@ -342,8 +342,8 @@ int cclua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
         if (ok)
         {
             size_t len                     = lua_objlen(L, 2);
-            cocos2d::Physics3DShape* shape = nullptr;
-            cocos2d::Mat4 mat;
+            cc::Physics3DShape* shape = nullptr;
+            cc::Mat4 mat;
             for (size_t i = 0; i < len; i++)
             {
                 lua_pushnumber(L, i + 1);
@@ -366,7 +366,7 @@ int cclua_physics3d_Physics3DShape_createCompoundShape(lua_State* L)
             }
         }
 
-        cc::IntrusivePtr<cocos2d::Physics3DShape> ret = cocos2d::Physics3DShape::createCompoundShape(shapes);
+        cc::IntrusivePtr<cc::Physics3DShape> ret = cc::Physics3DShape::createCompoundShape(shapes);
         lua::native_to_luaval(L, std::move(ret));
         return 1;
     }

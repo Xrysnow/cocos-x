@@ -107,7 +107,7 @@ void CCVKPipelineCache::saveCache() {
     if (!_dirty) {
         return;
     }
-    if (!cocos2d::detail::ensureNativeParentDirectory(_savePath)) {
+    if (!cc::detail::ensureNativeParentDirectory(_savePath)) {
         CC_LOG_INFO("Save pipeline cache directory unavailable.");
         return;
     }

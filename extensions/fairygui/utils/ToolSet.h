@@ -9,11 +9,11 @@ NS_FGUI_BEGIN
 class ToolSet
 {
 public:
-    static cocos2d::Color4B hexToColor(const char* str);
-    static cocos2d::Color3B intToColor(unsigned int rgb);
-    static unsigned int colorToInt(const cocos2d::Color3B& color);
+    static cc::Color4B hexToColor(const char* str);
+    static cc::Color3B intToColor(unsigned int rgb);
+    static unsigned int colorToInt(const cc::Color3B& color);
 
-    static cocos2d::Rect intersection(const cocos2d::Rect& rect1, const cocos2d::Rect& rect2);
+    static cc::Rect intersection(const cc::Rect& rect1, const cc::Rect& rect2);
     static int findInStringArray(const std::vector<std::string>& arr, const std::string& str);
 
     static bool isFileExist(const std::string& fileName);

@@ -30,7 +30,7 @@
 #include "ui/UIEditBox/Mac/CCUIPasswordTextField.h"
 #include "ui/UIEditBox/Mac/CCUIMultilineTextField.h"
 
-#define getEditBoxImplMac() ((cocos2d::ui::EditBoxImplMac*)_editBox)
+#define getEditBoxImplMac() ((cc::ui::EditBoxImplMac*)_editBox)
 
 @implementation UIEditBoxImplMac
 
@@ -45,8 +45,8 @@
         self.frameRect = frameRect;
 
         self.editBox            = editBox;
-        self.dataInputMode      = cocos2d::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS;
-        self.keyboardReturnType = cocos2d::ui::EditBox::KeyboardReturnType::DEFAULT;
+        self.dataInputMode      = cc::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS;
+        self.keyboardReturnType = cc::ui::EditBox::KeyboardReturnType::DEFAULT;
 
         [self createMultiLineTextField];
     }
@@ -131,7 +131,7 @@
 
 - (NSWindow*)window
 {
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     return glView->getCocoaWindow();
 }
 
@@ -150,7 +150,7 @@
 
     auto editbox = getEditBoxImplMac()->getEditBox();
     auto oldPos  = editbox->getPosition();
-    editbox->setPosition(oldPos + cocos2d::Vec2(10, 20));
+    editbox->setPosition(oldPos + cc::Vec2(10, 20));
     editbox->setPosition(oldPos);
 }
 
@@ -201,10 +201,10 @@
     return self.textInput.ccui_font.fontName ?: @"";
 }
 
-- (void)setInputMode:(cocos2d::ui::EditBox::InputMode)inputMode
+- (void)setInputMode:(cc::ui::EditBox::InputMode)inputMode
 {
     // multiline input
-    if (inputMode == cocos2d::ui::EditBox::InputMode::ANY)
+    if (inputMode == cc::ui::EditBox::InputMode::ANY)
     {
         if (![self.textInput isKindOfClass:[NSTextView class]])
         {
@@ -213,7 +213,7 @@
     }
     else
     {
-        if (self.dataInputMode != cocos2d::ui::EditBox::InputFlag::PASSWORD)
+        if (self.dataInputMode != cc::ui::EditBox::InputFlag::PASSWORD)
         {
             if (![self.textInput isKindOfClass:[NSTextField class]])
             {
@@ -223,43 +223,43 @@
     }
 }
 
-- (void)setInputFlag:(cocos2d::ui::EditBox::InputFlag)inputFlag
+- (void)setInputFlag:(cc::ui::EditBox::InputFlag)inputFlag
 {
     if (self.dataInputMode == inputFlag)
     {
         return;
     }
 
-    if (self.dataInputMode == cocos2d::ui::EditBox::InputFlag::PASSWORD &&
-        inputFlag != cocos2d::ui::EditBox::InputFlag::PASSWORD)
+    if (self.dataInputMode == cc::ui::EditBox::InputFlag::PASSWORD &&
+        inputFlag != cc::ui::EditBox::InputFlag::PASSWORD)
     {
         [self createSingleLineTextField];
     }
 
-    if (self.dataInputMode != cocos2d::ui::EditBox::InputFlag::PASSWORD &&
-        inputFlag == cocos2d::ui::EditBox::InputFlag::PASSWORD)
+    if (self.dataInputMode != cc::ui::EditBox::InputFlag::PASSWORD &&
+        inputFlag == cc::ui::EditBox::InputFlag::PASSWORD)
     {
         [self createPasswordTextField];
     }
 
     switch (inputFlag)
     {
-    case cocos2d::ui::EditBox::InputFlag::PASSWORD:
+    case cc::ui::EditBox::InputFlag::PASSWORD:
         self.dataInputMode = inputFlag;
         break;
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_WORD:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_WORD:
         CCLOG("INITIAL_CAPS_WORD not implemented");
         break;
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_SENTENCE:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_SENTENCE:
         CCLOG("INITIAL_CAPS_SENTENCE not implemented");
         break;
-    case cocos2d::ui::EditBox::InputFlag::INITIAL_CAPS_ALL_CHARACTERS:
+    case cc::ui::EditBox::InputFlag::INITIAL_CAPS_ALL_CHARACTERS:
         CCLOG("INITIAL_CAPS_ALL_CHARACTERS not implemented");
         break;
-    case cocos2d::ui::EditBox::InputFlag::SENSITIVE:
+    case cc::ui::EditBox::InputFlag::SENSITIVE:
         CCLOG("SENSITIVE not implemented");
         break;
-    case cocos2d::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS:
+    case cc::ui::EditBox::InputFlag::LOWERCASE_ALL_CHARACTERS:
         CCLOG("LOWERCASE_ALL_CHARACTERS not implemented");
         break;
     default:
@@ -267,18 +267,18 @@
     }
 }
 
-- (void)setReturnType:(cocos2d::ui::EditBox::KeyboardReturnType)returnType
+- (void)setReturnType:(cc::ui::EditBox::KeyboardReturnType)returnType
 {
     CCLOG("setReturnType not implemented");
 }
 
-- (void)setTextHorizontalAlignment:(cocos2d::TextHAlignment)alignment
+- (void)setTextHorizontalAlignment:(cc::TextHAlignment)alignment
 {
     // swizzle center & right, for some reason they're backwards on !TARGET_OS_IPHONE
-    if (alignment == cocos2d::TextHAlignment::CENTER)
-        alignment = cocos2d::TextHAlignment::RIGHT;
-    else if (alignment == cocos2d::TextHAlignment::RIGHT)
-        alignment = cocos2d::TextHAlignment::CENTER;
+    if (alignment == cc::TextHAlignment::CENTER)
+        alignment = cc::TextHAlignment::RIGHT;
+    else if (alignment == cc::TextHAlignment::RIGHT)
+        alignment = cc::TextHAlignment::CENTER;
     self.textInput.ccui_alignment = static_cast<NSTextAlignment>(alignment);
 }
 
@@ -335,21 +335,21 @@
     getEditBoxImplMac()->editBoxEditingDidEnd([self getText], [self getEndAction:notification]);
 }
 
-- (cocos2d::ui::EditBoxDelegate::EditBoxEndAction)getEndAction:(NSNotification*)notification
+- (cc::ui::EditBoxDelegate::EditBoxEndAction)getEndAction:(NSNotification*)notification
 {
-    auto type                  = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::UNKNOWN;
+    auto type                  = cc::ui::EditBoxDelegate::EditBoxEndAction::UNKNOWN;
     NSUInteger reasonForEnding = [[[notification userInfo] objectForKey:@"NSTextMovement"] unsignedIntValue];
     if (reasonForEnding == NSTabTextMovement)
     {
-        type = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_NEXT;
+        type = cc::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_NEXT;
     }
     else if (reasonForEnding == NSBacktabTextMovement)
     {
-        type = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_PREVIOUS;
+        type = cc::ui::EditBoxDelegate::EditBoxEndAction::TAB_TO_PREVIOUS;
     }
     else if (reasonForEnding == NSReturnTextMovement)
     {
-        type = cocos2d::ui::EditBoxDelegate::EditBoxEndAction::RETURN;
+        type = cc::ui::EditBoxDelegate::EditBoxEndAction::RETURN;
     }
     return type;
 }

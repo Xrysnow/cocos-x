@@ -136,7 +136,7 @@ static id s_sharedDirectorCaller;
 {
     if (isAppActive)
     {
-        cocos2d::Director* director = cocos2d::Director::getInstance();
+        cc::Director* director = cc::Director::getInstance();
         CFTimeInterval dt = ((CADisplayLink*)displayLink).timestamp - lastDisplayTime;
         lastDisplayTime   = ((CADisplayLink*)displayLink).timestamp;
         director->mainLoop(dt);

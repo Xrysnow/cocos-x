@@ -55,7 +55,7 @@ public:
     Physics3DDebugDrawer();
     virtual ~Physics3DDebugDrawer();
 
-    void draw(cocos2d::Renderer* renderer);
+    void draw(cc::Renderer* renderer);
 
     // override function
     virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
@@ -79,16 +79,16 @@ protected:
 protected:
     struct V3F_V4F
     {
-        cocos2d::Vec3 vertex;
-        cocos2d::Vec4 color;
+        cc::Vec3 vertex;
+        cc::Vec4 color;
     };
 
     std::vector<V3F_V4F> _buffer;
-    cocos2d::backend::UniformLocation _locMVP;
+    cc::backend::UniformLocation _locMVP;
 
-    cocos2d::BlendFunc _blendFunc = BlendFunc::DISABLE;
-    cocos2d::CustomCommand _customCommand;
-    cocos2d::backend::ProgramState* _programState = nullptr;
+    cc::BlendFunc _blendFunc = BlendFunc::DISABLE;
+    cc::CustomCommand _customCommand;
+    cc::backend::ProgramState* _programState = nullptr;
 
     bool _dirty    = true;
     int _debugMode = DBG_DrawWireframe | DBG_DrawConstraints | DBG_DrawConstraintLimits;

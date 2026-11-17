@@ -194,7 +194,7 @@ private:
 
     std::string _downloadedVersion;
 
-    cocos2d::network::Downloader* _downloader;
+    cc::network::Downloader* _downloader;
 
     unsigned int _connectionTimeout;
 

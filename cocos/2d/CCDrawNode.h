@@ -410,7 +410,7 @@ protected:
     float _lineWidth        = 0.0f;
     float _defaultLineWidth = 0.0f;
 
-    cocos2d::any_buffer _abuf;
+    cc::any_buffer _abuf;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(DrawNode);

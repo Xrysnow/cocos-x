@@ -26,6 +26,8 @@
 #ifndef __CC__UI__WEBVIEWIMPL_WIN32_H_
 #define __CC__UI__WEBVIEWIMPL_WIN32_H_
 
+#include "platform/CCNamespace.h"
+
 #include "platform/CCPlatformMacros.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2
@@ -44,7 +46,7 @@ namespace ui
 class WebView;
 }
 
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 class Win32WebControl;
 
@@ -56,12 +58,12 @@ namespace ui
 class WebViewImpl
 {
 public:
-    WebViewImpl(cocos2d::ui::WebView* webView);
+    WebViewImpl(cc::ui::WebView* webView);
     virtual ~WebViewImpl();
     bool isInitialized() const;
 
     void setJavascriptInterfaceScheme(std::string_view scheme);
-    void loadData(const cocos2d::Data& data,
+    void loadData(const cc::Data& data,
                   std::string_view MIMEType,
                   std::string_view encoding,
                   std::string_view baseURL);
@@ -77,7 +79,7 @@ public:
     void evaluateJS(std::string_view js);
     void setScalesPageToFit(const bool scalesPageToFit);
 
-    virtual void draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags);
+    virtual void draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags);
     virtual void setVisible(bool visible);
 
     void setBounces(bool bounces);
@@ -90,7 +92,7 @@ private:
     WebView* _webView;
 };
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 #endif  // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 

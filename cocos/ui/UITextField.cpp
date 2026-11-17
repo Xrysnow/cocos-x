@@ -399,12 +399,12 @@ const Color4B& TextField::getPlaceHolderColor() const
     return _textFieldRenderer->getColorSpaceHolder();
 }
 
-void TextField::setPlaceHolderColor(const cocos2d::Color3B& color)
+void TextField::setPlaceHolderColor(const cc::Color3B& color)
 {
     _textFieldRenderer->setColorSpaceHolder(color);
 }
 
-void TextField::setPlaceHolderColor(const cocos2d::Color4B& color)
+void TextField::setPlaceHolderColor(const cc::Color4B& color)
 {
     _textFieldRenderer->setColorSpaceHolder(color);
 }
@@ -414,7 +414,7 @@ const Color4B& TextField::getTextColor() const
     return _textFieldRenderer->getTextColor();
 }
 
-void TextField::setTextColor(const cocos2d::Color4B& textColor)
+void TextField::setTextColor(const cc::Color4B& textColor)
 {
     _textFieldRenderer->setTextColor(textColor);
 }

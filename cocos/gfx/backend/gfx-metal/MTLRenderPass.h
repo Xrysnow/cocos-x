@@ -48,7 +48,7 @@ public:
 
     inline MTLRenderPassDescriptor *getMTLRenderPassDescriptor() const { return _mtlRenderPassDescriptor; }
     inline uint32_t getColorRenderTargetNums() const { return _colorRenderTargetNums; }
-    inline const ccstd::vector<cocos2d::Vec2> &getRenderTargetSizes() const { return _renderTargetSizes; }
+    inline const ccstd::vector<cc::Vec2> &getRenderTargetSizes() const { return _renderTargetSizes; }
     inline void nextSubpass() { _currentSubpassIndex++; }
     inline uint32_t getCurrentSubpassIndex() { return _currentSubpassIndex; }
     void reset();
@@ -62,7 +62,7 @@ protected:
     uint32_t _currentSubpassIndex = 0;
     MTLRenderPassDescriptor *_mtlRenderPassDescriptor = nil;
     uint32_t _colorRenderTargetNums = 0;
-    ccstd::vector<cocos2d::Vec2> _renderTargetSizes;
+    ccstd::vector<cc::Vec2> _renderTargetSizes;
     ccstd::vector<BufferList> _drawBuffers;
     ccstd::vector<BufferList> _readBuffers;
     ccstd::vector<uint32_t> _colorIndices; // attachment index to draw buffer index

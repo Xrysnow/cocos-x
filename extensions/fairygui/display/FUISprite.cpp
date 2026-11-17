@@ -476,7 +476,7 @@ Vec2 FUISprite::boundaryTexCoord(char index)
     return Vec2::ZERO;
 }
 
-void FUISprite::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void FUISprite::draw(cc::Renderer* renderer, const cc::Mat4& transform, uint32_t flags)
 {
     if (_texture == _empty)
         return;

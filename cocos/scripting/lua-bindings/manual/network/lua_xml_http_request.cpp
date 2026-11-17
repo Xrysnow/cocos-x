@@ -40,9 +40,9 @@
 #include "yasio/tlx/byte_buffer.hpp"
 
 USING_NS_CC;
-using namespace cocos2d::network;
+using namespace cc::network;
 
-class LuaMinXmlHttpRequest : public cocos2d::Ref
+class LuaMinXmlHttpRequest : public cc::Ref
 {
 public:
 
@@ -78,7 +78,7 @@ public:
     inline void setReadyState(int readyState) { _readyState = readyState; }
     inline int getReadyState() const { return _readyState; }
 
-    inline cocos2d::network::HttpRequest* getHttpRequest() const { return _httpRequest; }
+    inline cc::network::HttpRequest* getHttpRequest() const { return _httpRequest; }
     inline std::string_view getStatusText() const { return _statusText; }
 
     inline void setStatus(int status) { _status = status; }
@@ -209,7 +209,7 @@ void LuaMinXmlHttpRequest::_setHttpRequestHeader()
 void LuaMinXmlHttpRequest::_sendRequest()
 {
     _httpRequest->setResponseCallback(
-        [this](cocos2d::network::HttpClient* sender, cocos2d::network::HttpResponse* response) {
+        [this](cc::network::HttpClient* sender, cc::network::HttpResponse* response) {
             if (_isAborted)
             {
                 release();
@@ -233,15 +233,15 @@ void LuaMinXmlHttpRequest::_sendRequest()
                 _statusText = error == yasio::errc::ssl_handshake_failed ? "SSL handshake failed!"
                                                                        : "Network request failed: " + std::to_string(error);
                 // TODO: call back lua function
-                int handler = cocos2d::ScriptHandlerMgr::getInstance()->getObjectHandler(
-                    (void*)this, cocos2d::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
+                int handler = cc::ScriptHandlerMgr::getInstance()->getObjectHandler(
+                    (void*)this, cc::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
 
                 if (0 != handler)
                 {
                     CCLOG("come in handler, handler is %d", handler);
-                    cocos2d::CommonScriptData data(handler, "");
-                    cocos2d::ScriptEvent event(cocos2d::ScriptEventType::kCommonEvent, (void*)&data);
-                    cocos2d::ScriptEngineManager::sendEventToLua(event);
+                    cc::CommonScriptData data(handler, "");
+                    cc::ScriptEvent event(cc::ScriptEventType::kCommonEvent, (void*)&data);
+                    cc::ScriptEngineManager::sendEventToLua(event);
                 }
                 release();
                 return;
@@ -266,14 +266,14 @@ void LuaMinXmlHttpRequest::_sendRequest()
             }
 
             // TODO: call back lua function
-            int handler = cocos2d::ScriptHandlerMgr::getInstance()->getObjectHandler(
-                (void*)this, cocos2d::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
+            int handler = cc::ScriptHandlerMgr::getInstance()->getObjectHandler(
+                (void*)this, cc::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
 
             if (0 != handler)
             {
-                cocos2d::CommonScriptData data(handler, "");
-                cocos2d::ScriptEvent event(cocos2d::ScriptEventType::kCommonEvent, (void*)&data);
-                cocos2d::ScriptEngineManager::sendEventToLua(event);
+                cc::CommonScriptData data(handler, "");
+                cc::ScriptEvent event(cc::ScriptEventType::kCommonEvent, (void*)&data);
+                cc::ScriptEngineManager::sendEventToLua(event);
             }
             release();
         });
@@ -1123,8 +1123,8 @@ static int cclua_XMLHttpRequest_registerScriptHandler(lua_State* L)
 #endif
 
         int handler = (toluafix_ref_function(L, 2, 0));
-        cocos2d::ScriptHandlerMgr::getInstance()->addObjectHandler(
-            (void*)self, handler, cocos2d::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
+        cc::ScriptHandlerMgr::getInstance()->addObjectHandler(
+            (void*)self, handler, cc::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
         return 0;
     }
 
@@ -1165,8 +1165,8 @@ static int cclua_XMLHttpRequest_unregisterScriptHandler(lua_State* L)
 
     if (0 == argc)
     {
-        cocos2d::ScriptHandlerMgr::getInstance()->removeObjectHandler(
-            (void*)self, cocos2d::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
+        cc::ScriptHandlerMgr::getInstance()->removeObjectHandler(
+            (void*)self, cc::ScriptHandlerMgr::HandlerType::XMLHTTPREQUEST_READY_STATE_CHANGE);
 
         return 0;
     }

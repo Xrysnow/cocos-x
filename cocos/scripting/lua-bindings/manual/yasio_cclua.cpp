@@ -33,7 +33,7 @@ namespace lyasio
 {
 namespace stimer
 {
-YASIO_LUA_API void clear() { cocos2d::stimer::killAll(false); }
+YASIO_LUA_API void clear() { cc::stimer::killAll(false); }
 }
 }
 
@@ -41,12 +41,12 @@ extern "C" YASIO_LUA_API int luaopen_yasio_cclua(lua_State* L)
 {
     int n = luaopen_yasio(L);
     sol::stack_table yasio(L, -1);
-    yasio.set_function("delay", [](float delay, cocos2d::stimer::vcallback_t cb) {
-        return cocos2d::stimer::delay(delay, std::move(cb), false);
+    yasio.set_function("delay", [](float delay, cc::stimer::vcallback_t cb) {
+        return cc::stimer::delay(delay, std::move(cb), false);
     });
-    yasio.set_function("loop", [](unsigned int n, float interval, cocos2d::stimer::vcallback_t cb) {
-        return cocos2d::stimer::loop(n, interval, std::move(cb), false);
+    yasio.set_function("loop", [](unsigned int n, float interval, cc::stimer::vcallback_t cb) {
+        return cc::stimer::loop(n, interval, std::move(cb), false);
     });
-    yasio.set_function("kill", [](cocos2d::stimer::TIMER_ID id) { cocos2d::stimer::kill(id, false); });
+    yasio.set_function("kill", [](cc::stimer::TIMER_ID id) { cc::stimer::kill(id, false); });
     return n;
 }

@@ -37,7 +37,7 @@
 namespace physics_binding {
 // Pointer/count and geometric preconditions only; elements use shared Vec2 conversion.
 template<bool Closed> struct Points {
-    cocos2d::Vec2* data = nullptr;
+    cc::Vec2* data = nullptr;
     int size = 0;
     int count() const { return size; }
 };
@@ -45,11 +45,11 @@ using PolygonPoints = Points<true>;
 using ChainPoints = Points<false>;
 struct ContactSnapshot {
     bool present = false;
-    cocos2d::PhysicsContactData value;
+    cc::PhysicsContactData value;
 };
-using HandlerType = cocos2d::ScriptHandlerMgr::HandlerType;
-using RayCallback = std::function<bool(cocos2d::PhysicsWorld*, const cocos2d::PhysicsRayCastInfo&)>;
-using QueryCallback = std::function<bool(cocos2d::PhysicsWorld*, cocos2d::PhysicsShape*)>;
+using HandlerType = cc::ScriptHandlerMgr::HandlerType;
+using RayCallback = std::function<bool(cc::PhysicsWorld*, const cc::PhysicsRayCastInfo&)>;
+using QueryCallback = std::function<bool(cc::PhysicsWorld*, cc::PhysicsShape*)>;
 }
 
 namespace lua {
@@ -73,12 +73,12 @@ template<bool Closed> struct to_native<physics_binding::Points<Closed>> {
             lua_pop(L, 1);
         }
         if (keys != count) return false;
-        if (count > std::numeric_limits<size_t>::max() / sizeof(cocos2d::Vec2)) return false;
+        if (count > std::numeric_limits<size_t>::max() / sizeof(cc::Vec2)) return false;
         // Lua owns the contiguous scratch buffer. A later point/material/offset metamethod may
         // raise or collect garbage without bypassing a native heap owner's destructor.
-        static_assert(std::is_trivially_destructible_v<cocos2d::Vec2>);
-        auto* values = static_cast<cocos2d::Vec2*>(lua_newuserdata(L, count * sizeof(cocos2d::Vec2)));
-        for (size_t i = 0; i < count; ++i) new (values + i) cocos2d::Vec2();
+        static_assert(std::is_trivially_destructible_v<cc::Vec2>);
+        auto* values = static_cast<cc::Vec2*>(lua_newuserdata(L, count * sizeof(cc::Vec2)));
+        for (size_t i = 0; i < count; ++i) new (values + i) cc::Vec2();
         if (!luaval_to_native_array_inplace(L, lo, values, count, fName)) return false;
         double twiceArea = 0;
         for (size_t i = 0; i < count; ++i) {
@@ -108,14 +108,14 @@ template<> struct to_lua<physics_binding::ContactSnapshot> {
 int cclua_physics_PhysicsBody_createPolygon(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsBody", "cc.PhysicsBody:createPolygon");
-    const auto full = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material, cocos2d::Vec2 offset) {
-        return cocos2d::PhysicsBody::createPolygon(points.data, points.count(), material, offset);
+    const auto full = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material, cc::Vec2 offset) {
+        return cc::PhysicsBody::createPolygon(points.data, points.count(), material, offset);
     };
-    const auto materialOnly = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsBody::createPolygon(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsBody::createPolygon(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsBody::createPolygon(points.data, points.count());
+        return cc::PhysicsBody::createPolygon(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -126,14 +126,14 @@ int cclua_physics_PhysicsBody_createPolygon(lua_State* lua_S)
 int cclua_physics_PhysicsBody_createEdgePolygon(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsBody", "cc.PhysicsBody:createEdgePolygon");
-    const auto full = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material, float border) {
-        return cocos2d::PhysicsBody::createEdgePolygon(points.data, points.count(), material, border);
+    const auto full = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material, float border) {
+        return cc::PhysicsBody::createEdgePolygon(points.data, points.count(), material, border);
     };
-    const auto materialOnly = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsBody::createEdgePolygon(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsBody::createEdgePolygon(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsBody::createEdgePolygon(points.data, points.count());
+        return cc::PhysicsBody::createEdgePolygon(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -144,14 +144,14 @@ int cclua_physics_PhysicsBody_createEdgePolygon(lua_State* lua_S)
 int cclua_physics_PhysicsBody_createEdgeChain(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsBody", "cc.PhysicsBody:createEdgeChain");
-    const auto full = [](physics_binding::ChainPoints points, const cocos2d::PhysicsMaterial& material, float border) {
-        return cocos2d::PhysicsBody::createEdgeChain(points.data, points.count(), material, border);
+    const auto full = [](physics_binding::ChainPoints points, const cc::PhysicsMaterial& material, float border) {
+        return cc::PhysicsBody::createEdgeChain(points.data, points.count(), material, border);
     };
-    const auto materialOnly = [](physics_binding::ChainPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsBody::createEdgeChain(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::ChainPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsBody::createEdgeChain(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::ChainPoints points) {
-        return cocos2d::PhysicsBody::createEdgeChain(points.data, points.count());
+        return cc::PhysicsBody::createEdgeChain(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -162,14 +162,14 @@ int cclua_physics_PhysicsBody_createEdgeChain(lua_State* lua_S)
 int cclua_physics_PhysicsShapePolygon_create(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShapePolygon", "cc.PhysicsShapePolygon:create");
-    const auto full = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material, cocos2d::Vec2 offset) {
-        return cocos2d::PhysicsShapePolygon::create(points.data, points.count(), material, offset);
+    const auto full = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material, cc::Vec2 offset) {
+        return cc::PhysicsShapePolygon::create(points.data, points.count(), material, offset);
     };
-    const auto materialOnly = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsShapePolygon::create(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsShapePolygon::create(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsShapePolygon::create(points.data, points.count());
+        return cc::PhysicsShapePolygon::create(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -180,14 +180,14 @@ int cclua_physics_PhysicsShapePolygon_create(lua_State* lua_S)
 int cclua_physics_PhysicsShapeEdgePolygon_create(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShapeEdgePolygon", "cc.PhysicsShapeEdgePolygon:create");
-    const auto full = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material, float border) {
-        return cocos2d::PhysicsShapeEdgePolygon::create(points.data, points.count(), material, border);
+    const auto full = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material, float border) {
+        return cc::PhysicsShapeEdgePolygon::create(points.data, points.count(), material, border);
     };
-    const auto materialOnly = [](physics_binding::PolygonPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsShapeEdgePolygon::create(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::PolygonPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsShapeEdgePolygon::create(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsShapeEdgePolygon::create(points.data, points.count());
+        return cc::PhysicsShapeEdgePolygon::create(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -198,14 +198,14 @@ int cclua_physics_PhysicsShapeEdgePolygon_create(lua_State* lua_S)
 int cclua_physics_PhysicsShapeEdgeChain_create(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShapeEdgeChain", "cc.PhysicsShapeEdgeChain:create");
-    const auto full = [](physics_binding::ChainPoints points, const cocos2d::PhysicsMaterial& material, float border) {
-        return cocos2d::PhysicsShapeEdgeChain::create(points.data, points.count(), material, border);
+    const auto full = [](physics_binding::ChainPoints points, const cc::PhysicsMaterial& material, float border) {
+        return cc::PhysicsShapeEdgeChain::create(points.data, points.count(), material, border);
     };
-    const auto materialOnly = [](physics_binding::ChainPoints points, const cocos2d::PhysicsMaterial& material) {
-        return cocos2d::PhysicsShapeEdgeChain::create(points.data, points.count(), material);
+    const auto materialOnly = [](physics_binding::ChainPoints points, const cc::PhysicsMaterial& material) {
+        return cc::PhysicsShapeEdgeChain::create(points.data, points.count(), material);
     };
     const auto pointsOnly = [](physics_binding::ChainPoints points) {
-        return cocos2d::PhysicsShapeEdgeChain::create(points.data, points.count());
+        return cc::PhysicsShapeEdgeChain::create(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, full);
     LUA_TRY_INVOKE_R(2, materialOnly);
@@ -216,13 +216,13 @@ int cclua_physics_PhysicsShapeEdgeChain_create(lua_State* lua_S)
 int cclua_physics_PhysicsShape_recenterPoints(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShape", "cc.PhysicsShape:recenterPoints");
-    const auto recenter = [](physics_binding::PolygonPoints points, const cocos2d::Vec2& center) {
-        cocos2d::PhysicsShape::recenterPoints(points.data, points.count(), center);
-        return std::vector<cocos2d::Vec2>(points.data, points.data + points.count());
+    const auto recenter = [](physics_binding::PolygonPoints points, const cc::Vec2& center) {
+        cc::PhysicsShape::recenterPoints(points.data, points.count(), center);
+        return std::vector<cc::Vec2>(points.data, points.data + points.count());
     };
     const auto origin = [](physics_binding::PolygonPoints points) {
-        cocos2d::PhysicsShape::recenterPoints(points.data, points.count());
-        return std::vector<cocos2d::Vec2>(points.data, points.data + points.count());
+        cc::PhysicsShape::recenterPoints(points.data, points.count());
+        return std::vector<cc::Vec2>(points.data, points.data + points.count());
     };
     LUA_TRY_INVOKE_R(2, recenter);
     LUA_TRY_INVOKE_R(1, origin);
@@ -233,7 +233,7 @@ int cclua_physics_PhysicsShape_getPolygonCenter(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShape", "cc.PhysicsShape:getPolygonCenter");
     const auto center = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsShape::getPolygonCenter(points.data, points.count());
+        return cc::PhysicsShape::getPolygonCenter(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(1, center);
     LUA_SINVOKE_FOOTER("1");
@@ -243,7 +243,7 @@ int cclua_physics_PhysicsShapePolygon_calculateArea(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShapePolygon", "cc.PhysicsShapePolygon:calculateArea");
     const auto area = [](physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsShapePolygon::calculateArea(points.data, points.count());
+        return cc::PhysicsShapePolygon::calculateArea(points.data, points.count());
     };
     LUA_TRY_INVOKE_R(1, area);
     LUA_SINVOKE_FOOTER("1");
@@ -252,11 +252,11 @@ int cclua_physics_PhysicsShapePolygon_calculateArea(lua_State* lua_S)
 int cclua_physics_PhysicsShapePolygon_calculateMoment(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.PhysicsShapePolygon", "cc.PhysicsShapePolygon:calculateMoment");
-    const auto offset = [](float mass, physics_binding::PolygonPoints points, const cocos2d::Vec2& offset) {
-        return cocos2d::PhysicsShapePolygon::calculateMoment(mass, points.data, points.count(), offset);
+    const auto offset = [](float mass, physics_binding::PolygonPoints points, const cc::Vec2& offset) {
+        return cc::PhysicsShapePolygon::calculateMoment(mass, points.data, points.count(), offset);
     };
     const auto origin = [](float mass, physics_binding::PolygonPoints points) {
-        return cocos2d::PhysicsShapePolygon::calculateMoment(mass, points.data, points.count());
+        return cc::PhysicsShapePolygon::calculateMoment(mass, points.data, points.count());
     };
     LUA_TRY_INVOKE_R(3, offset);
     LUA_TRY_INVOKE_R(2, origin);
@@ -266,8 +266,8 @@ int cclua_physics_PhysicsShapePolygon_calculateMoment(lua_State* lua_S)
 int cclua_physics_PhysicsShapeBox_getPoints(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsShapeBox", "cc.PhysicsShapeBox:getPoints");
-    const auto points = [](const cocos2d::PhysicsShapeBox* self) {
-        std::vector<cocos2d::Vec2> result(4);
+    const auto points = [](const cc::PhysicsShapeBox* self) {
+        std::vector<cc::Vec2> result(4);
         self->getPoints(result.data());
         return result;
     };
@@ -278,8 +278,8 @@ int cclua_physics_PhysicsShapeBox_getPoints(lua_State* lua_S)
 int cclua_physics_PhysicsShapeEdgeBox_getPoints(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsShapeEdgeBox", "cc.PhysicsShapeEdgeBox:getPoints");
-    const auto points = [](const cocos2d::PhysicsShapeEdgeBox* self) {
-        std::vector<cocos2d::Vec2> result(4);
+    const auto points = [](const cc::PhysicsShapeEdgeBox* self) {
+        std::vector<cc::Vec2> result(4);
         self->getPoints(result.data());
         return result;
     };
@@ -290,8 +290,8 @@ int cclua_physics_PhysicsShapeEdgeBox_getPoints(lua_State* lua_S)
 int cclua_physics_PhysicsShapePolygon_getPoints(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsShapePolygon", "cc.PhysicsShapePolygon:getPoints");
-    const auto points = [](const cocos2d::PhysicsShapePolygon* self) {
-        std::vector<cocos2d::Vec2> result(self->getPointsCount());
+    const auto points = [](const cc::PhysicsShapePolygon* self) {
+        std::vector<cc::Vec2> result(self->getPointsCount());
         self->getPoints(result.data());
         return result;
     };
@@ -302,8 +302,8 @@ int cclua_physics_PhysicsShapePolygon_getPoints(lua_State* lua_S)
 int cclua_physics_PhysicsShapeEdgePolygon_getPoints(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsShapeEdgePolygon", "cc.PhysicsShapeEdgePolygon:getPoints");
-    const auto points = [](const cocos2d::PhysicsShapeEdgePolygon* self) {
-        std::vector<cocos2d::Vec2> result(self->getPointsCount());
+    const auto points = [](const cc::PhysicsShapeEdgePolygon* self) {
+        std::vector<cc::Vec2> result(self->getPointsCount());
         self->getPoints(result.data());
         return result;
     };
@@ -314,8 +314,8 @@ int cclua_physics_PhysicsShapeEdgePolygon_getPoints(lua_State* lua_S)
 int cclua_physics_PhysicsShapeEdgeChain_getPoints(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsShapeEdgeChain", "cc.PhysicsShapeEdgeChain:getPoints");
-    const auto points = [](const cocos2d::PhysicsShapeEdgeChain* self) {
-        std::vector<cocos2d::Vec2> result(self->getPointsCount());
+    const auto points = [](const cc::PhysicsShapeEdgeChain* self) {
+        std::vector<cc::Vec2> result(self->getPointsCount());
         self->getPoints(result.data());
         return result;
     };
@@ -326,7 +326,7 @@ int cclua_physics_PhysicsShapeEdgeChain_getPoints(lua_State* lua_S)
 int cclua_physics_PhysicsContact_getContactData(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsContact", "cc.PhysicsContact:getContactData");
-    const auto snapshot = [](const cocos2d::PhysicsContact* self) {
+    const auto snapshot = [](const cc::PhysicsContact* self) {
         physics_binding::ContactSnapshot result;
         if (const auto* data = self->getContactData()) { result.present = true; result.value = *data; }
         return result;
@@ -338,7 +338,7 @@ int cclua_physics_PhysicsContact_getContactData(lua_State* lua_S)
 int cclua_physics_PhysicsContact_getPreContactData(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsContact", "cc.PhysicsContact:getPreContactData");
-    const auto snapshot = [](const cocos2d::PhysicsContact* self) {
+    const auto snapshot = [](const cc::PhysicsContact* self) {
         physics_binding::ContactSnapshot result;
         if (const auto* data = self->getPreContactData()) { result.present = true; result.value = *data; }
         return result;
@@ -351,7 +351,7 @@ int cclua_physics_PhysicsWorld_getScene(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsWorld", "cc.PhysicsWorld:getScene");
     // Scene is an existing Ref object; do not copy a Scene value from the native reference.
-    const auto scene = [](const cocos2d::PhysicsWorld* self) { return &self->getScene(); };
+    const auto scene = [](const cc::PhysicsWorld* self) { return &self->getScene(); };
     LUA_TRY_INVOKE_R(0, scene);
     LUA_INVOKE_FOOTER("0");
 }
@@ -369,15 +369,15 @@ template<typename T> bool snapshotArgument(lua_State* L, int index, const char* 
 int cclua_physics_PhysicsWorld_rayCast(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsWorld", "cc.PhysicsWorld:rayCast");
-    const auto query = [](cocos2d::PhysicsWorld* self, physics_binding::RayCallback callback,
-                          const cocos2d::Vec2& start, const cocos2d::Vec2& ended) {
-        self->rayCast([callback = std::move(callback)](cocos2d::PhysicsWorld& world,
-            const cocos2d::PhysicsRayCastInfo& info, void*) { return callback(&world, info); }, start, ended, nullptr);
+    const auto query = [](cc::PhysicsWorld* self, physics_binding::RayCallback callback,
+                          const cc::Vec2& start, const cc::Vec2& ended) {
+        self->rayCast([callback = std::move(callback)](cc::PhysicsWorld& world,
+            const cc::PhysicsRayCastInfo& info, void*) { return callback(&world, info); }, start, ended, nullptr);
     };
     if (argc == 3) {
         if (lua_type(lua_S, 2) != LUA_TFUNCTION) arg_cur = 1;
-        else if (!physics_binding::snapshotArgument<cocos2d::Vec2>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
-        else if (!physics_binding::snapshotArgument<cocos2d::Vec2>(lua_S, 4, LUA_FNAME)) arg_cur = 3;
+        else if (!physics_binding::snapshotArgument<cc::Vec2>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
+        else if (!physics_binding::snapshotArgument<cc::Vec2>(lua_S, 4, LUA_FNAME)) arg_cur = 3;
         else { LUA_TRY_INVOKE(3, query); }
     }
     LUA_INVOKE_FOOTER("3");
@@ -386,14 +386,14 @@ int cclua_physics_PhysicsWorld_rayCast(lua_State* lua_S)
 int cclua_physics_PhysicsWorld_queryRect(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsWorld", "cc.PhysicsWorld:queryRect");
-    const auto query = [](cocos2d::PhysicsWorld* self, physics_binding::QueryCallback callback,
-                          const cocos2d::Rect& geometry) {
-        self->queryRect([callback = std::move(callback)](cocos2d::PhysicsWorld& world,
-            cocos2d::PhysicsShape& shape, void*) { return callback(&world, &shape); }, geometry, nullptr);
+    const auto query = [](cc::PhysicsWorld* self, physics_binding::QueryCallback callback,
+                          const cc::Rect& geometry) {
+        self->queryRect([callback = std::move(callback)](cc::PhysicsWorld& world,
+            cc::PhysicsShape& shape, void*) { return callback(&world, &shape); }, geometry, nullptr);
     };
     if (argc == 2) {
         if (lua_type(lua_S, 2) != LUA_TFUNCTION) arg_cur = 1;
-        else if (!physics_binding::snapshotArgument<cocos2d::Rect>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
+        else if (!physics_binding::snapshotArgument<cc::Rect>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
         else { LUA_TRY_INVOKE(2, query); }
     }
     LUA_INVOKE_FOOTER("2");
@@ -402,14 +402,14 @@ int cclua_physics_PhysicsWorld_queryRect(lua_State* lua_S)
 int cclua_physics_PhysicsWorld_queryPoint(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.PhysicsWorld", "cc.PhysicsWorld:queryPoint");
-    const auto query = [](cocos2d::PhysicsWorld* self, physics_binding::QueryCallback callback,
-                          const cocos2d::Vec2& geometry) {
-        self->queryPoint([callback = std::move(callback)](cocos2d::PhysicsWorld& world,
-            cocos2d::PhysicsShape& shape, void*) { return callback(&world, &shape); }, geometry, nullptr);
+    const auto query = [](cc::PhysicsWorld* self, physics_binding::QueryCallback callback,
+                          const cc::Vec2& geometry) {
+        self->queryPoint([callback = std::move(callback)](cc::PhysicsWorld& world,
+            cc::PhysicsShape& shape, void*) { return callback(&world, &shape); }, geometry, nullptr);
     };
     if (argc == 2) {
         if (lua_type(lua_S, 2) != LUA_TFUNCTION) arg_cur = 1;
-        else if (!physics_binding::snapshotArgument<cocos2d::Vec2>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
+        else if (!physics_binding::snapshotArgument<cc::Vec2>(lua_S, 3, LUA_FNAME)) arg_cur = 2;
         else { LUA_TRY_INVOKE(2, query); }
     }
     LUA_INVOKE_FOOTER("2");
@@ -425,10 +425,10 @@ int cclua_physics_EventListenerPhysicsContact_registerScriptHandler(lua_State* l
         if (!lua::luaval_to_native(lua_S, 3, &type)) arg_cur = 2;
         else switch (type) {
         case HandlerType::EVENT_PHYSICS_CONTACT_BEGIN: {
-            const auto assign = [](cocos2d::EventListenerPhysicsContact* self,
-                                  std::function<bool(cocos2d::PhysicsContact*)> callback, HandlerType) {
+            const auto assign = [](cc::EventListenerPhysicsContact* self,
+                                  std::function<bool(cc::PhysicsContact*)> callback, HandlerType) {
                 if (!callback) self->onContactBegin = nullptr;
-                else self->onContactBegin = [callback = std::move(callback)](cocos2d::PhysicsContact& contact) {
+                else self->onContactBegin = [callback = std::move(callback)](cc::PhysicsContact& contact) {
                     return callback(&contact);
                 };
             };
@@ -436,30 +436,30 @@ int cclua_physics_EventListenerPhysicsContact_registerScriptHandler(lua_State* l
             break;
         }
         case HandlerType::EVENT_PHYSICS_CONTACT_PRESOLVE: {
-            const auto assign = [](cocos2d::EventListenerPhysicsContact* self,
-                std::function<bool(cocos2d::PhysicsContact*, cocos2d::PhysicsContactPreSolve*)> callback, HandlerType) {
+            const auto assign = [](cc::EventListenerPhysicsContact* self,
+                std::function<bool(cc::PhysicsContact*, cc::PhysicsContactPreSolve*)> callback, HandlerType) {
                 if (!callback) self->onContactPreSolve = nullptr;
-                else self->onContactPreSolve = [callback = std::move(callback)](cocos2d::PhysicsContact& contact,
-                    cocos2d::PhysicsContactPreSolve& solve) { return callback(&contact, &solve); };
+                else self->onContactPreSolve = [callback = std::move(callback)](cc::PhysicsContact& contact,
+                    cc::PhysicsContactPreSolve& solve) { return callback(&contact, &solve); };
             };
             LUA_TRY_INVOKE(2, assign);
             break;
         }
         case HandlerType::EVENT_PHYSICS_CONTACT_POSTSOLVE: {
-            const auto assign = [](cocos2d::EventListenerPhysicsContact* self,
-                std::function<void(cocos2d::PhysicsContact*, const cocos2d::PhysicsContactPostSolve*)> callback, HandlerType) {
+            const auto assign = [](cc::EventListenerPhysicsContact* self,
+                std::function<void(cc::PhysicsContact*, const cc::PhysicsContactPostSolve*)> callback, HandlerType) {
                 if (!callback) self->onContactPostSolve = nullptr;
-                else self->onContactPostSolve = [callback = std::move(callback)](cocos2d::PhysicsContact& contact,
-                    const cocos2d::PhysicsContactPostSolve& solve) { callback(&contact, &solve); };
+                else self->onContactPostSolve = [callback = std::move(callback)](cc::PhysicsContact& contact,
+                    const cc::PhysicsContactPostSolve& solve) { callback(&contact, &solve); };
             };
             LUA_TRY_INVOKE(2, assign);
             break;
         }
         case HandlerType::EVENT_PHYSICS_CONTACT_SEPARATE: {
-            const auto assign = [](cocos2d::EventListenerPhysicsContact* self,
-                                  std::function<void(cocos2d::PhysicsContact*)> callback, HandlerType) {
+            const auto assign = [](cc::EventListenerPhysicsContact* self,
+                                  std::function<void(cc::PhysicsContact*)> callback, HandlerType) {
                 if (!callback) self->onContactSeparate = nullptr;
-                else self->onContactSeparate = [callback = std::move(callback)](cocos2d::PhysicsContact& contact) {
+                else self->onContactSeparate = [callback = std::move(callback)](cc::PhysicsContact& contact) {
                     callback(&contact);
                 };
             };
@@ -530,11 +530,11 @@ int register_all_cc_physics_manual(lua_State* lua_S)
         tolua_function(lua_S, "rayCast", cclua_physics_PhysicsWorld_rayCast);
         tolua_function(lua_S, "queryRect", cclua_physics_PhysicsWorld_queryRect);
         tolua_function(lua_S, "queryPoint", cclua_physics_PhysicsWorld_queryPoint);
-        tolua_constant(lua_S, "DEBUGDRAW_NONE", cocos2d::PhysicsWorld::DEBUGDRAW_NONE);
-        tolua_constant(lua_S, "DEBUGDRAW_SHAPE", cocos2d::PhysicsWorld::DEBUGDRAW_SHAPE);
-        tolua_constant(lua_S, "DEBUGDRAW_JOINT", cocos2d::PhysicsWorld::DEBUGDRAW_JOINT);
-        tolua_constant(lua_S, "DEBUGDRAW_CONTACT", cocos2d::PhysicsWorld::DEBUGDRAW_CONTACT);
-        tolua_constant(lua_S, "DEBUGDRAW_ALL", cocos2d::PhysicsWorld::DEBUGDRAW_ALL);
+        tolua_constant(lua_S, "DEBUGDRAW_NONE", cc::PhysicsWorld::DEBUGDRAW_NONE);
+        tolua_constant(lua_S, "DEBUGDRAW_SHAPE", cc::PhysicsWorld::DEBUGDRAW_SHAPE);
+        tolua_constant(lua_S, "DEBUGDRAW_JOINT", cc::PhysicsWorld::DEBUGDRAW_JOINT);
+        tolua_constant(lua_S, "DEBUGDRAW_CONTACT", cc::PhysicsWorld::DEBUGDRAW_CONTACT);
+        tolua_constant(lua_S, "DEBUGDRAW_ALL", cc::PhysicsWorld::DEBUGDRAW_ALL);
     }
     lua_pop(lua_S, 1);
     lua_getfield(lua_S, LUA_REGISTRYINDEX, "cc.EventListenerPhysicsContact");
@@ -543,7 +543,7 @@ int register_all_cc_physics_manual(lua_State* lua_S)
     }
     lua_pop(lua_S, 1);
     // LuaStack leaves the global table on the stack, as in the original registration.
-    tolua_constant(lua_S, "PHYSICS_INFINITY", cocos2d::PHYSICS_INFINITY);
+    tolua_constant(lua_S, "PHYSICS_INFINITY", cc::PHYSICS_INFINITY);
     return 0;
 }
 #endif // CC_USE_PHYSICS

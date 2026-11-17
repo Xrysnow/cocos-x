@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include "Macros.h"
 #include "Types.h"
 #include "base/CCRef.h"
@@ -32,7 +34,7 @@ NS_CC_BEGIN
 
 class MeshVertexData;
 class MeshIndexData;
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 CC_BACKEND_BEGIN
 
@@ -44,7 +46,7 @@ CC_BACKEND_BEGIN
 /**
  * @brief Used to store vertex and index data data.
  */
-class CC_DLL Buffer : public cocos2d::Ref
+class CC_DLL Buffer : public cc::Ref
 {
 public:
     /**

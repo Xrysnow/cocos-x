@@ -284,8 +284,8 @@ void Physics3DWorld::debugDraw(Renderer* renderer)
     }
 }
 
-bool Physics3DWorld::rayCast(const cocos2d::Vec3& startPos,
-                             const cocos2d::Vec3& endPos,
+bool Physics3DWorld::rayCast(const cc::Vec3& startPos,
+                             const cc::Vec3& endPos,
                              Physics3DWorld::HitResult* result)
 {
     auto btStart = convertVec3TobtVector3(startPos);
@@ -304,8 +304,8 @@ bool Physics3DWorld::rayCast(const cocos2d::Vec3& startPos,
 }
 
 bool Physics3DWorld::sweepShape(Physics3DShape* shape,
-                                const cocos2d::Mat4& startTransform,
-                                const cocos2d::Mat4& endTransform,
+                                const cc::Mat4& startTransform,
+                                const cc::Mat4& endTransform,
                                 Physics3DWorld::HitResult* result)
 {
     CC_ASSERT(shape->getShapeType() != Physics3DShape::ShapeType::HEIGHT_FIELD &&

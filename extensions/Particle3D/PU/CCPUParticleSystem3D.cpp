@@ -835,7 +835,7 @@ bool PUParticleSystem3D::isExpired(PUParticle3D* particle, float timeElapsed)
     return expired;
 }
 
-cocos2d::Vec3 PUParticleSystem3D::getDerivedPosition()
+cc::Vec3 PUParticleSystem3D::getDerivedPosition()
 {
     // if (_parentParticleSystem && _parentParticleSystem->isKeepLocal()) return Vec3::ZERO;
     // if (_keepLocal) return Vec3::ZERO;
@@ -850,7 +850,7 @@ cocos2d::Vec3 PUParticleSystem3D::getDerivedPosition()
     }
 }
 
-cocos2d::Quaternion PUParticleSystem3D::getDerivedOrientation()
+cc::Quaternion PUParticleSystem3D::getDerivedOrientation()
 {
     // if (_parentParticleSystem && _parentParticleSystem->isKeepLocal()) return Quaternion();
     // if (_keepLocal) return Quaternion();
@@ -867,7 +867,7 @@ cocos2d::Quaternion PUParticleSystem3D::getDerivedOrientation()
     }
 }
 
-cocos2d::Vec3 PUParticleSystem3D::getDerivedScale()
+cc::Vec3 PUParticleSystem3D::getDerivedScale()
 {
     // if (_parentParticleSystem && _parentParticleSystem->isKeepLocal()) return Vec3::ONE;
     // if (_keepLocal) return Vec3::ONE;

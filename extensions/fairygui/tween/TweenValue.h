@@ -17,14 +17,14 @@ public:
 
     TweenValue();
 
-    cocos2d::Vec2 getVec2() const;
-    void setVec2(const cocos2d::Vec2& value);
-    cocos2d::Vec3 getVec3() const;
-    void setVec3(const cocos2d::Vec3& value);
-    cocos2d::Vec4 getVec4() const;
-    void setVec4(const cocos2d::Vec4& value);
-    cocos2d::Color4B getColor() const;
-    void setColor(const cocos2d::Color4B& value);
+    cc::Vec2 getVec2() const;
+    void setVec2(const cc::Vec2& value);
+    cc::Vec3 getVec3() const;
+    void setVec3(const cc::Vec3& value);
+    cc::Vec4 getVec4() const;
+    void setVec4(const cc::Vec4& value);
+    cc::Color4B getColor() const;
+    void setColor(const cc::Color4B& value);
     float operator[] (int index) const;
     float& operator[] (int index);
     void setZero();

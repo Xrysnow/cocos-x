@@ -37,9 +37,7 @@
 
 namespace cc {
 
-// RefPtr is the pure alias declared in CCRef.h. Ownership lives in gfx/base/Ptr.h.
-using cc::static_pointer_cast;
-using cc::dynamic_pointer_cast;
+// RefPtr is the pure alias declared in CCRef.h. Ownership lives in base/Ptr.h.
 
 template <class T>
 inline cc::IntrusivePtr<T> makeRef(T* ptr)
@@ -87,9 +85,6 @@ cc::IntrusivePtr<T> makeRef(Args&&... args)
 } // namespace cc
 
 NS_CC_BEGIN
-using cc::makeRef;
-using cc::static_pointer_cast;
-using cc::dynamic_pointer_cast;
 /** A strong reference whose non-null target always uses RefThreading::Atomic.
  * The private IntrusivePtr stores the same intrusive ownership as an ordinary IntrusivePtr;
  * this wrapper adds no counter and never changes an object's policy.

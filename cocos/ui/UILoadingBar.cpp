@@ -96,7 +96,7 @@ void LoadingBar::initRenderer()
     _barRenderer->setAnchorPoint(Vec2(0.0f, 0.5f));
 }
 
-void LoadingBar::setDirection(cocos2d::ui::LoadingBar::Direction direction)
+void LoadingBar::setDirection(cc::ui::LoadingBar::Direction direction)
 {
     if (_direction == direction)
     {

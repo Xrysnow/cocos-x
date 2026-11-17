@@ -159,13 +159,13 @@ namespace spine {
 		invokeListener(_postUpdateListener, this);
 	}
 
-	void SkeletonAnimation::visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) {
+	void SkeletonAnimation::visit(cc::Renderer *renderer, const cc::Mat4 &parentTransform, uint32_t parentFlags) {
 		// Node::visit continues using this node after draw's initial update(0) callbacks.
 		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		super::visit(renderer, parentTransform, parentFlags);
 	}
 
-	void SkeletonAnimation::draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t transformFlags) {
+	void SkeletonAnimation::draw(cc::Renderer *renderer, const cc::Mat4 &transform, uint32_t transformFlags) {
 		const cc::IntrusivePtr<SkeletonAnimation> keepAlive(this);
 		if (_firstDraw) {
 			_firstDraw = false;

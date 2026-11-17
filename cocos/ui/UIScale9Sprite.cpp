@@ -39,7 +39,7 @@
 #include "renderer/backend/ProgramStateRegistry.h"
 
 USING_NS_CC;
-using namespace cocos2d::ui;
+using namespace cc::ui;
 
 cc::IntrusivePtr<Scale9Sprite> Scale9Sprite::create()
 {
@@ -517,7 +517,7 @@ void Scale9Sprite::setupSlice9(Texture2D* texture, const Rect& capInsets)
     }
 }
 
-void Scale9Sprite::setCapInsets(const cocos2d::Rect& insetsCopy)
+void Scale9Sprite::setCapInsets(const cc::Rect& insetsCopy)
 {
     Rect insets = insetsCopy;
 

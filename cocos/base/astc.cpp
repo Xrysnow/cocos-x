@@ -277,7 +277,7 @@ int astc_decompress_image(const uint8_t* in,
         ~benchmark_printer()
         {
             const auto elapsed = std::chrono::steady_clock::now() - _start;
-            cocos2d::log(_fmt, _w, _h, std::chrono::duration<double, std::milli>(elapsed).count());
+            cc::log(_fmt, _w, _h, std::chrono::duration<double, std::milli>(elapsed).count());
         }
         const char* _fmt;
         int _w, _h;

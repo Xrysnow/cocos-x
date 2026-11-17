@@ -9,7 +9,7 @@ extern "C" {
 #include <libavutil/mem.h>
 }
 
-using namespace cocos2d::io;
+using namespace cc::io;
 using namespace ffmpeg;
 
 namespace

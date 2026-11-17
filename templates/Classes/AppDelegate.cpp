@@ -1,7 +1,7 @@
 #include "AppDelegate.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 
-using namespace cocos2d;
+using namespace cc;
 
 void AppDelegate::initGLContextAttrs()
 {

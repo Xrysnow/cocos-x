@@ -53,8 +53,8 @@ class TValue_Shake : public TValueBase
 public:
     float amplitude;
     float duration;
-    cocos2d::Vec2 lastOffset;
-    cocos2d::Vec2 offset;
+    cc::Vec2 lastOffset;
+    cc::Vec2 offset;
 };
 
 class TValue_Text : public TValueBase
@@ -75,12 +75,12 @@ public:
     bool b3;
 
     TValue();
-    cocos2d::Vec2 getVec2() const;
-    void setVec2(const cocos2d::Vec2& value);
-    cocos2d::Vec4 getVec4() const;
-    void setVec4(const cocos2d::Vec4& value);
-    cocos2d::Color4B getColor() const;
-    void setColor(const cocos2d::Color4B& value);
+    cc::Vec2 getVec2() const;
+    void setVec2(const cc::Vec2& value);
+    cc::Vec4 getVec4() const;
+    void setVec4(const cc::Vec4& value);
+    cc::Color4B getColor() const;
+    void setColor(const cc::Color4B& value);
 };
 
 TValue::TValue()
@@ -90,23 +90,23 @@ TValue::TValue()
     b3 = false;
 }
 
-cocos2d::Vec2 TValue::getVec2() const
+cc::Vec2 TValue::getVec2() const
 {
-    return cocos2d::Vec2(f1, f2);
+    return cc::Vec2(f1, f2);
 }
 
-void TValue::setVec2(const cocos2d::Vec2& value)
+void TValue::setVec2(const cc::Vec2& value)
 {
     f1 = value.x;
     f2 = value.y;
 }
 
-cocos2d::Vec4 TValue::getVec4() const
+cc::Vec4 TValue::getVec4() const
 {
-    return cocos2d::Vec4(f1, f2, f3, f4);
+    return cc::Vec4(f1, f2, f3, f4);
 }
 
-void TValue::setVec4(const cocos2d::Vec4& value)
+void TValue::setVec4(const cc::Vec4& value)
 {
     f1 = value.x;
     f2 = value.y;
@@ -114,12 +114,12 @@ void TValue::setVec4(const cocos2d::Vec4& value)
     f4 = value.w;
 }
 
-cocos2d::Color4B TValue::getColor() const
+cc::Color4B TValue::getColor() const
 {
-    return cocos2d::Color4B(f1, f2, f3, f4);
+    return cc::Color4B(f1, f2, f3, f4);
 }
 
-void TValue::setColor(const cocos2d::Color4B& value)
+void TValue::setColor(const cc::Color4B& value)
 {
     f1 = value.r;
     f2 = value.g;

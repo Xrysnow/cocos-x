@@ -2,7 +2,7 @@
 
 #include "cocos2d.h"
 
-class AppDelegate final : public cocos2d::Application
+class AppDelegate final : public cc::Application
 {
 public:
     void initGLContextAttrs() override;

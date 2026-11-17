@@ -1,27 +1,29 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "io/Stream.h"
 #include "platform/CCFileStream.h"
 #include <memory>
 #include <string_view>
 
-namespace cocos2d::io
+namespace cc::io
 {
-using FileAccess = cocos2d::FileStream::Access;
-using FileCreation = cocos2d::FileStream::Creation;
-using FileOpenOptions = cocos2d::FileStream::OpenOptions;
+using FileAccess = cc::FileStream::Access;
+using FileCreation = cc::FileStream::Creation;
+using FileOpenOptions = cc::FileStream::OpenOptions;
 
 // Raw file I/O; compose with BufferedStream for configurable user-space caching.
 // All factories retain FileUtils::openFileStream's virtual backend hook.
 class CC_DLL FileStream final : public Stream
 {
 public:
-    FileStream(RefConstructionToken token, std::unique_ptr<cocos2d::FileStream> backend,
+    FileStream(RefConstructionToken token, std::unique_ptr<cc::FileStream> backend,
                FileOpenOptions options);
     ~FileStream() override;
 
     static Result<ThreadSafeRefPtr<FileStream>> open(std::string_view path, FileOpenOptions options = {});
     // Takes exclusive ownership, including on validation failure.
-    static Result<ThreadSafeRefPtr<FileStream>> fromBackend(std::unique_ptr<cocos2d::FileStream> backend,
+    static Result<ThreadSafeRefPtr<FileStream>> fromBackend(std::unique_ptr<cc::FileStream> backend,
                                                           FileOpenOptions options = {});
 
     Capability capabilities() const noexcept override;
@@ -38,7 +40,7 @@ public:
 
 private:
     StreamError stateError() const;
-    std::unique_ptr<cocos2d::FileStream> _backend;
+    std::unique_ptr<cc::FileStream> _backend;
     FileOpenOptions _options;
     mutable StreamError _fault{};
     Status _closeResult{};

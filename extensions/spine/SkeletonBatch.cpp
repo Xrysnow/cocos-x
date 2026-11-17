@@ -115,11 +115,11 @@ namespace spine {
 		reset();
 	}
 
-	cocos2d::V3F_C4B_T2F *SkeletonBatch::allocateVertices(uint32_t numVertices) {
+	cc::V3F_C4B_T2F *SkeletonBatch::allocateVertices(uint32_t numVertices) {
 		if (_vertices.size() - _numVertices < numVertices) {
-			cocos2d::V3F_C4B_T2F *oldData = _vertices.data();
+			cc::V3F_C4B_T2F *oldData = _vertices.data();
 			_vertices.resize((_vertices.size() + numVertices) * 2 + 1);
-			cocos2d::V3F_C4B_T2F *newData = _vertices.data();
+			cc::V3F_C4B_T2F *newData = _vertices.data();
 			for (uint32_t i = 0; i < this->_nextFreeCommand; i++) {
 				SkeletonCommand *command = _commandsPool[i];
 				SkeletonCommand::Triangles &triangles = (SkeletonCommand::Triangles &) command->getTriangles();
@@ -127,7 +127,7 @@ namespace spine {
 			}
 		}
 
-		cocos2d::V3F_C4B_T2F *vertices = _vertices.data() + _numVertices;
+		cc::V3F_C4B_T2F *vertices = _vertices.data() + _numVertices;
 		_numVertices += numVertices;
 		return vertices;
 	}
@@ -162,9 +162,9 @@ namespace spine {
 	}
 
 
-	cocos2d::TrianglesCommand *SkeletonBatch::addCommand(cocos2d::Renderer *renderer, float globalOrder, cocos2d::Texture2D *texture, backend::ProgramState *programState, cocos2d::BlendFunc blendType, const cocos2d::TrianglesCommand::Triangles &triangles, const cocos2d::Mat4 &mv, uint32_t flags) {
+	cc::TrianglesCommand *SkeletonBatch::addCommand(cc::Renderer *renderer, float globalOrder, cc::Texture2D *texture, backend::ProgramState *programState, cc::BlendFunc blendType, const cc::TrianglesCommand::Triangles &triangles, const cc::Mat4 &mv, uint32_t flags) {
 		SkeletonCommand *command = nextFreeCommand();
-		const cocos2d::Mat4 &projectionMat = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+		const cc::Mat4 &projectionMat = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
 
 		if (programState == nullptr)
 			programState = _programState;

@@ -90,14 +90,14 @@ public:
     /** Default constructor */
     Map() : _data()
     {
-        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cocos2d::Map<K, V>!");
+        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cc::Map<K, V>!");
         CCLOGINFO("In the default constructor of Map!");
     }
 
     /** Constructor with capacity. */
     explicit Map(ssize_t capacity) : _data()
     {
-        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cocos2d::Map<K, V>!");
+        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cc::Map<K, V>!");
         CCLOGINFO("In the constructor with capacity of Map!");
         _data.reserve(capacity);
     }
@@ -105,7 +105,7 @@ public:
     /** Copy constructor. */
     Map(const Map& other)
     {
-        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cocos2d::Map<K, V>!");
+        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cc::Map<K, V>!");
         CCLOGINFO("In the copy constructor of Map!");
         _data = other._data;
         addRefForAllObjects();
@@ -114,7 +114,7 @@ public:
     /** Move constructor. */
     Map(Map&& other)
     {
-        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cocos2d::Map<K, V>!");
+        static_assert(std::is_convertible<V, Ref*>::value, "Invalid Type for cc::Map<K, V>!");
         CCLOGINFO("In the move constructor of Map!");
         _data = std::move(other._data);
     }

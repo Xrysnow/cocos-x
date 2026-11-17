@@ -1,7 +1,9 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "io/Stream.h"
 
-namespace cocos2d::io
+namespace cc::io
 {
 // Owns cursor access to source for its lifetime. Do not access source directly
 // while wrapped. Append streams always write through; writeCapacity is retained

@@ -26,9 +26,9 @@ namespace video
 		enum class State { Stopped, Playing, Paused, Ended, Failed };
 
 		static std::unique_ptr<VideoPlayback> create(Decoder* source);
-		static std::unique_ptr<VideoPlayback> createAsync(cocos2d::io::StreamPtr source,
+		static std::unique_ptr<VideoPlayback> createAsync(cc::io::StreamPtr source,
 			std::function<void()> cancel);
-		static std::unique_ptr<VideoPlayback> createAsync(cocos2d::io::StreamPtr source,
+		static std::unique_ptr<VideoPlayback> createAsync(cc::io::StreamPtr source,
 			std::function<void()> cancel, const PlaybackOptions& options);
 		~VideoPlayback();
 

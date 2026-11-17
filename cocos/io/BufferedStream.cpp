@@ -5,7 +5,7 @@
 #include <new>
 #include <stdexcept>
 
-namespace cocos2d::io
+namespace cc::io
 {
 namespace
 {

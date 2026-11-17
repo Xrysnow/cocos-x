@@ -35,7 +35,7 @@ NS_CC_EXT_BEGIN
 
 class AssetsManagerEx;
 
-class CC_EX_DLL EventAssetsManagerEx : public cocos2d::EventCustom
+class CC_EX_DLL EventAssetsManagerEx : public cc::EventCustom
 {
 public:
     friend class AssetsManagerEx;
@@ -66,7 +66,7 @@ public:
 
     std::string getAssetId() const { return _assetId; }
 
-    cocos2d::extension::AssetsManagerEx* getAssetsManagerEx() const { return _manager; }
+    cc::extension::AssetsManagerEx* getAssetsManagerEx() const { return _manager; }
 
     float getPercent() const { return _percent; }
 
@@ -74,7 +74,7 @@ public:
 
     /** Constructor */
     EventAssetsManagerEx(std::string_view eventName,
-                         cocos2d::extension::AssetsManagerEx* manager,
+                         cc::extension::AssetsManagerEx* manager,
                          const EventCode& code,
                          float percent            = 0,
                          float percentByFile      = 0,
@@ -86,7 +86,7 @@ public:
 private:
     EventCode _code;
 
-    cocos2d::extension::AssetsManagerEx* _manager;
+    cc::extension::AssetsManagerEx* _manager;
 
     std::string _message;
 

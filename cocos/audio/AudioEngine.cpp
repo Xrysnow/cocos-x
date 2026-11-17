@@ -133,8 +133,8 @@ std::atomic<bool> AudioEngine::valid{ false };
 ALCdevice* AudioEngine::device = nullptr;
 ALCcontext* AudioEngine::context = nullptr;
 AudioPool* AudioEngine::pool = nullptr;
-cocos2d::Vector<AudioRecordingDevice*> AudioEngine::capture{};
-cocos2d::Vector<AudioSource*> AudioEngine::tempSources{};
+cc::Vector<AudioRecordingDevice*> AudioEngine::capture{};
+cc::Vector<AudioSource*> AudioEngine::tempSources{};
 AudioEngine::DistanceModel AudioEngine::distanceModel = DistanceModel::INVERSE_CLAMPED;
 
 std::map<std::string, struct AudioEngine::EffectMapStorage> AudioEngine::effectmap{};
@@ -235,39 +235,39 @@ float AudioEngine::getVolume()
 	return volume;
 }
 
-cocos2d::Vec3 AudioEngine::getPosition()
+cc::Vec3 AudioEngine::getPosition()
 {
-	cocos2d::Vec3 v;
+	cc::Vec3 v;
 	alGetListenerfv(AL_POSITION, (float*)&v);
 	return v;
 }
 
-void AudioEngine::setPosition(const cocos2d::Vec3& v)
+void AudioEngine::setPosition(const cc::Vec3& v)
 {
 	alListenerfv(AL_POSITION, (float*)&v);
 }
 
-std::array<cocos2d::Vec3, 2> AudioEngine::getOrientation()
+std::array<cc::Vec3, 2> AudioEngine::getOrientation()
 {
-	std::array<cocos2d::Vec3, 2> v;
+	std::array<cc::Vec3, 2> v;
 	alGetListenerfv(AL_ORIENTATION, (float*)v.data());
 	return v;
 }
 
-void AudioEngine::setOrientation(const cocos2d::Vec3& forward, const cocos2d::Vec3& up)
+void AudioEngine::setOrientation(const cc::Vec3& forward, const cc::Vec3& up)
 {
-	cocos2d::Vec3 v[2] = { forward, up };
+	cc::Vec3 v[2] = { forward, up };
 	alListenerfv(AL_ORIENTATION, (float*)v);
 }
 
-cocos2d::Vec3 AudioEngine::getVelocity()
+cc::Vec3 AudioEngine::getVelocity()
 {
-	cocos2d::Vec3 v;
+	cc::Vec3 v;
 	alGetListenerfv(AL_VELOCITY, (float*)&v);
 	return v;
 }
 
-void AudioEngine::setVelocity(const cocos2d::Vec3& v)
+void AudioEngine::setVelocity(const cc::Vec3& v)
 {
 	alListenerfv(AL_VELOCITY, (float*)&v);
 }
@@ -349,7 +349,7 @@ std::vector<AudioRecordingDevice*> AudioEngine::getRecordingDevices()
 		return {};
 
 	std::vector<std::string> devnames;
-	cocos2d::Vector<AudioRecordingDevice*> devices;
+	cc::Vector<AudioRecordingDevice*> devices;
 
 	auto _defaultname = alcGetString(NULL, ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
 	std::string defaultname;

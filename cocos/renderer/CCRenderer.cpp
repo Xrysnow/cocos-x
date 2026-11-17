@@ -53,8 +53,8 @@
 #include "renderer/backend/gfx/DeviceGFX.h"
 #include "backend/gfx/BufferGFX.h"
 
-using DepthStencilFlags = cocos2d::backend::DepthStencilFlags;
-using TargetBufferFlags = cocos2d::backend::TargetBufferFlags;
+using DepthStencilFlags = cc::backend::DepthStencilFlags;
+using TargetBufferFlags = cc::backend::TargetBufferFlags;
 
 NS_CC_BEGIN
 

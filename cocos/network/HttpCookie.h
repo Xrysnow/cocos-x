@@ -25,6 +25,8 @@
  ****************************************************************************/
 
 #pragma once
+
+#include "platform/CCNamespace.h"
 /// @cond DO_NOT_SHOW
 
 #include "platform/CCPlatformMacros.h"
@@ -33,7 +35,7 @@
 #include <string>
 #include <vector>
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network

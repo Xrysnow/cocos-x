@@ -57,7 +57,7 @@ Physics3DShape::~Physics3DShape()
         #endif
 }
 
-cc::IntrusivePtr<Physics3DShape> Physics3DShape::createBox(const cocos2d::Vec3& extent)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createBox(const cc::Vec3& extent)
 {
     cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initBox(extent);
@@ -85,14 +85,14 @@ cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCapsule(float radius, flo
     return shape;
 }
 
-cc::IntrusivePtr<Physics3DShape> Physics3DShape::createConvexHull(const cocos2d::Vec3* points, int numPoints)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createConvexHull(const cc::Vec3* points, int numPoints)
 {
     cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initConvexHull(points, numPoints);
     return shape;
 }
 
-cc::IntrusivePtr<Physics3DShape> Physics3DShape::createMesh(const cocos2d::Vec3* triangles, int numTriangles)
+cc::IntrusivePtr<Physics3DShape> Physics3DShape::createMesh(const cc::Vec3* triangles, int numTriangles)
 {
     cc::IntrusivePtr shape{new Physics3DShape()};
     shape->initMesh(triangles, numTriangles);
@@ -122,7 +122,7 @@ cc::IntrusivePtr<Physics3DShape> Physics3DShape::createCompoundShape(const std::
     return shape;
 }
 
-bool Physics3DShape::initBox(const cocos2d::Vec3& ext)
+bool Physics3DShape::initBox(const cc::Vec3& ext)
 {
     _shapeType = ShapeType::BOX;
     _btShape   = new btBoxShape(convertVec3TobtVector3(ext * 0.5f));
@@ -137,7 +137,7 @@ bool Physics3DShape::initSphere(float radius)
 bool Physics3DShape::initCylinder(float radius, float height)
 {
     _shapeType = ShapeType::CYLINDER;
-    _btShape   = new btCylinderShape(convertVec3TobtVector3(cocos2d::Vec3(radius, height, radius) * 0.5f));
+    _btShape   = new btCylinderShape(convertVec3TobtVector3(cc::Vec3(radius, height, radius) * 0.5f));
     return true;
 }
 bool Physics3DShape::initCapsule(float radius, float height)
@@ -147,14 +147,14 @@ bool Physics3DShape::initCapsule(float radius, float height)
     return true;
 }
 
-bool Physics3DShape::initConvexHull(const cocos2d::Vec3* points, int numPoints)
+bool Physics3DShape::initConvexHull(const cc::Vec3* points, int numPoints)
 {
     _shapeType = ShapeType::CONVEX;
-    _btShape   = new btConvexHullShape((btScalar*)points, numPoints, sizeof(cocos2d::Vec3));
+    _btShape   = new btConvexHullShape((btScalar*)points, numPoints, sizeof(cc::Vec3));
     return true;
 }
 
-bool Physics3DShape::initMesh(const cocos2d::Vec3* triangles, int numTriangles)
+bool Physics3DShape::initMesh(const cc::Vec3* triangles, int numTriangles)
 {
     _shapeType = ShapeType::MESH;
     auto mesh  = new btTriangleMesh(false);

@@ -27,7 +27,7 @@ class InternalManager;
 	\~Japanese
 	1.41以降、autoreleaseにより自動的に解放されます。
 */
-class Effect : public cocos2d::Ref
+class Effect : public cc::Ref
 {
 private:
 	::Effekseer::EffectRef effect = nullptr;
@@ -63,7 +63,7 @@ public:
 	\~Japanese
 	1.41以降、autoreleaseにより自動的に解放されます。
 */
-class EffectEmitter : public cocos2d::Node
+class EffectEmitter : public cc::Node
 {
 	friend class EffectManager;
 
@@ -75,9 +75,9 @@ private:
 	//! whether this effect is played once at least
 	bool isPlayedAtLeastOnce = false;
 
-	cocos2d::Vec3 targetPosition_;
+	cc::Vec3 targetPosition_;
 	float speed_ = 1.0f;
-	cocos2d::Color4B color_ = cocos2d::Color4B(255, 255, 255, 255);
+	cc::Color4B color_ = cc::Color4B(255, 255, 255, 255);
 	std::array<float, 4> dynamicInputs_;
 
 	EffectManager* manager = nullptr;
@@ -240,7 +240,7 @@ public:
 		\~English	Set the color which affects whole particles.
 		\~Japanese	全てのパーティクルに影響する色を設定する。
 	*/
-	void setColor(cocos2d::Color4B color);
+	void setColor(cc::Color4B color);
 
 	/**
 	@brief
@@ -261,7 +261,7 @@ public:
 	\~English	Set the position of target to gather
 	\~Japanese	エフェクトが集まる位置を設定する。
 	*/
-	void setTargetPosition(cocos2d::Vec3 position);
+	void setTargetPosition(cc::Vec3 position);
 
 	/**
 		@brief
@@ -304,10 +304,10 @@ public:
 
 	void update(float delta) override;
 
-	void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags) override;
+	void draw(cc::Renderer* renderer, const cc::Mat4& parentTransform, uint32_t parentFlags) override;
 };
 
-class EffectManager : public cocos2d::Ref
+class EffectManager : public cc::Ref
 {
 	friend class EffectEmitter;
 
@@ -324,15 +324,15 @@ private:
 	float time_ = 0.0f;
 	InternalManager* internalManager_ = nullptr;
 
-	cocos2d::CustomCommand distortionCommand;
-	cocos2d::CustomCommand beginCommand;
-	cocos2d::CustomCommand endCommand;
+	cc::CustomCommand distortionCommand;
+	cc::CustomCommand beginCommand;
+	cc::CustomCommand endCommand;
 
 	::Effekseer::Handle play(Effect* effect, float x, float y, float z);
 
 	::Effekseer::Handle play(Effect* effect, float x, float y, float z, int startTime);
 
-	void setMatrix(::Effekseer::Handle handle, const cocos2d::Mat4& mat);
+	void setMatrix(::Effekseer::Handle handle, const cc::Mat4& mat);
 
 	void setPotation(::Effekseer::Handle handle, float x, float y, float z);
 
@@ -340,7 +340,7 @@ private:
 
 	void setScale(::Effekseer::Handle handle, float x, float y, float z);
 
-	bool Initialize(cocos2d::Size visibleSize);
+	bool Initialize(cc::Size visibleSize);
 
     void CreateRenderer(int32_t spriteSize);
 	void onDestructor();
@@ -355,7 +355,7 @@ public:
 		\~English	Instance
 		\~Japanese	インスタンス
 	*/
-	static cc::IntrusivePtr<EffectManager> create(cocos2d::Size visibleSize);
+	static cc::IntrusivePtr<EffectManager> create(cc::Size visibleSize);
 
 	/**
 		@brief
@@ -383,14 +383,14 @@ public:
 		\~English	Inherit visit and add a process before drawing the layer.
 		\~Japanese	visitを継承してレイヤーの描画を行う前に実行する。
 	*/
-	void begin(cocos2d::Renderer* renderer, float globalZOrder);
+	void begin(cc::Renderer* renderer, float globalZOrder);
 
 	/**
 		@brief
 		\~English	Inherit visit and add a process after drawing the layer.
 		\~Japanese	visitを継承してレイヤーの描画を行った後に実行する。
 	*/
-	void end(cocos2d::Renderer* renderer, float globalZOrder);
+	void end(cc::Renderer* renderer, float globalZOrder);
 
     /**
         @brief
@@ -429,13 +429,13 @@ public:
 	*/
 	::EffekseerRenderer::RendererRef getInternalRenderer() { return renderer2d; }
 
-	void setCameraMatrix(const cocos2d::Mat4& mat);
-	void setProjectionMatrix(const cocos2d::Mat4& mat);
+	void setCameraMatrix(const cc::Mat4& mat);
+	void setProjectionMatrix(const cc::Mat4& mat);
     
     Effekseer::RefPtr<::EffekseerRenderer::CommandList> getInternalCommandList() { return commandList_; }
 };
 
-class NetworkServer : public cocos2d::Ref
+class NetworkServer : public cc::Ref
 {
 private:
 	InternalManager* internalManager_ = nullptr;

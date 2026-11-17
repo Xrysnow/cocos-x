@@ -13,15 +13,15 @@ class RectClippingSupport
 public:
     RectClippingSupport();
 
-    cocos2d::Rect _clippingRegion;
+    cc::Rect _clippingRegion;
     bool _clippingEnabled;
     bool _scissorOldState;
-    cocos2d::Rect _clippingOldRect;
-    cocos2d::Rect _clippingRect;
+    cc::Rect _clippingOldRect;
+    cc::Rect _clippingRect;
     bool _clippingRectDirty;
 
 #if !defined(CC_VERSION)
-    cocos2d::GroupCommand _groupCommand;
+    cc::GroupCommand _groupCommand;
 #endif
     //cocos2d::CallbackCommand _beforeVisitCmdScissor;
     //cocos2d::CallbackCommand _afterVisitCmdScissor;
@@ -32,18 +32,18 @@ class StencilClippingSupport
 public:
     StencilClippingSupport();
 
-    cocos2d::Node* _stencil;
-    cocos2d::StencilStateManager* _stencilStateManager;
+    cc::Node* _stencil;
+    cc::StencilStateManager* _stencilStateManager;
 #if !defined(CC_VERSION) 
-    cocos2d::GroupCommand _groupCommand;
+    cc::GroupCommand _groupCommand;
 #endif
-    cocos2d::backend::ProgramState* _originStencilProgram;
+    cc::backend::ProgramState* _originStencilProgram;
     //cocos2d::CallbackCommand _beforeVisitCmd;
     //cocos2d::CallbackCommand _afterDrawStencilCmd;
     //cocos2d::CallbackCommand _afterVisitCmd;
 };
 
-class FUIContainer : public cocos2d::Node
+class FUIContainer : public cc::Node
 {
 public:
     FUIContainer();
@@ -53,11 +53,11 @@ public:
 
     bool isClippingEnabled() const;
     void setClippingEnabled(bool value);
-    const cocos2d::Rect& getClippingRegion() const;
-    void setClippingRegion(const cocos2d::Rect& clippingRegion);
+    const cc::Rect& getClippingRegion() const;
+    void setClippingRegion(const cc::Rect& clippingRegion);
 
-    cocos2d::Node* getStencil() const;
-    void setStencil(cocos2d::Node* stencil);
+    cc::Node* getStencil() const;
+    void setStencil(cc::Node* stencil);
     float getAlphaThreshold() const;
     void setAlphaThreshold(float alphaThreshold);
     bool isInverted() const;
@@ -67,7 +67,7 @@ public:
     void onEnterTransitionDidFinish() override;
     void onExitTransitionDidStart() override;
     void onExit() override;
-    void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4 &parentTransform, uint32_t parentFlags) override;
+    void visit(cc::Renderer *renderer, const cc::Mat4 &parentTransform, uint32_t parentFlags) override;
     void setCameraMask(unsigned short mask, bool applyChildren = true) override;
     void setGlobalZOrder(float globalZOrder) override;
 
@@ -75,25 +75,25 @@ public:
 private:
     void onBeforeVisitScissor();
     void onAfterVisitScissor();
-    const cocos2d::Rect& getClippingRect();
+    const cc::Rect& getClippingRect();
 
     RectClippingSupport* _rectClippingSupport;
     StencilClippingSupport* _stencilClippingSupport;
     
-    void setProgramStateRecursively(Node* node, cocos2d::backend::ProgramState* programState);
+    void setProgramStateRecursively(Node* node, cc::backend::ProgramState* programState);
     void restoreAllProgramStates();
     
-    std::unordered_map<Node*, cocos2d::backend::ProgramState*> _originalStencilProgramState;
+    std::unordered_map<Node*, cc::backend::ProgramState*> _originalStencilProgramState;
 };
 
 //internal use
-class FUIInnerContainer : public cocos2d::Node
+class FUIInnerContainer : public cc::Node
 {
 public:
     CREATE_FUNC(FUIInnerContainer);
 
-    void setPosition2(const cocos2d::Vec2 &position) { setPosition(position.x, _parent->getContentSize().height - position.y); }
-    cocos2d::Vec2 getPosition2() { return cocos2d::Vec2(_position.x, _parent->getContentSize().height - _position.y); }
+    void setPosition2(const cc::Vec2 &position) { setPosition(position.x, _parent->getContentSize().height - position.y); }
+    cc::Vec2 getPosition2() { return cc::Vec2(_position.x, _parent->getContentSize().height - _position.y); }
     void setPosition2(float x, float y) { setPosition(x, _parent->getContentSize().height - y); }
     void  setPositionY2(float y) { setPositionY(_parent->getContentSize().height - y); }
     float getPositionY2(void) const { return  _parent->getContentSize().height - _position.y; }

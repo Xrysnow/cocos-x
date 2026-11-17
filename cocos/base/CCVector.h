@@ -110,7 +110,7 @@ public:
     /** Constructor. */
     Vector() : _data()
     {
-        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cocos2d::Vector!");
+        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cc::Vector!");
     }
 
     /**
@@ -119,7 +119,7 @@ public:
      */
     explicit Vector(ssize_t capacity) : _data()
     {
-        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cocos2d::Vector!");
+        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cc::Vector!");
         CCLOGINFO("In the default constructor with capacity of Vector.");
         reserve(capacity);
     }
@@ -143,7 +143,7 @@ public:
     /** Copy constructor. */
     Vector(const Vector& other)
     {
-        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cocos2d::Vector!");
+        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cc::Vector!");
         CCLOGINFO("In the copy constructor!");
         _data = other._data;
         addRefForAllObjects();
@@ -152,7 +152,7 @@ public:
     /** Constructor with std::move semantic. */
     Vector(Vector&& other)
     {
-        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cocos2d::Vector!");
+        static_assert(std::is_convertible<T, Ref*>::value, "Invalid Type for cc::Vector!");
         CCLOGINFO("In the move constructor of Vector!");
         _data = std::move(other._data);
     }

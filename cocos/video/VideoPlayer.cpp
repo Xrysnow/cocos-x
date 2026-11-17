@@ -17,20 +17,20 @@ cc::IntrusivePtr<Player> Player::create(const std::string& path)
 	return createWithDecoder(Decoder::create(path).get());
 }
 
-cc::IntrusivePtr<Player> Player::createFromStream(cocos2d::io::StreamPtr source)
+cc::IntrusivePtr<Player> Player::createFromStream(cc::io::StreamPtr source)
 {
-	using namespace cocos2d::io;
+	using namespace cc::io;
 	if (!source || !hasCapability(source->capabilities(), Capability::Seek))
 		return nullptr;
 	return createWithDecoder(Decoder::createFromStream(std::move(source)).get());
 }
 
-cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel)
+cc::IntrusivePtr<Player> Player::createAsync(cc::io::StreamPtr source, std::function<void()> cancel)
 {
 	return createAsync(std::move(source), std::move(cancel), PlaybackOptions{});
 }
 
-cc::IntrusivePtr<Player> Player::createAsync(cocos2d::io::StreamPtr source, std::function<void()> cancel,
+cc::IntrusivePtr<Player> Player::createAsync(cc::io::StreamPtr source, std::function<void()> cancel,
 	const PlaybackOptions& options)
 {
 	cc::IntrusivePtr player{new (std::nothrow) Player()};
@@ -94,26 +94,26 @@ bool Player::initPlayback(Decoder* source)
 	return true;
 }
 
-bool Player::initVideoTexture(const cocos2d::Size& size, bool replace)
+bool Player::initVideoTexture(const cc::Size& size, bool replace)
 {
-	cc::IntrusivePtr texture{new (std::nothrow) cocos2d::Texture2D()};
+	cc::IntrusivePtr texture{new (std::nothrow) cc::Texture2D()};
 	if (!texture)
 		return false;
-	cocos2d::backend::TextureDescriptor desc;
+	cc::backend::TextureDescriptor desc;
 	desc.width = size.width;
 	desc.height = size.height;
-	desc.textureUsage = cocos2d::TextureUsage::WRITE;
-	desc.textureFormat = cocos2d::backend::PixelFormat::RGBA8888;
+	desc.textureUsage = cc::TextureUsage::WRITE;
+	desc.textureFormat = cc::backend::PixelFormat::RGBA8888;
 #ifdef CC_VERSION
 	texture->updateTextureDescriptor(desc);
 #else
-	cc::IntrusivePtr<cocos2d::backend::TextureBackend> tex{cocos2d::backend::Device::getInstance()->newTexture(desc), cc::adopt_ref};
+	cc::IntrusivePtr<cc::backend::TextureBackend> tex{cc::backend::Device::getInstance()->newTexture(desc), cc::adopt_ref};
 	texture->initWithBackendTexture(tex);
 #endif // CC_VERSION
 	if (replace)
 	{
 		setTexture(texture.get());
-		setTextureRect(cocos2d::Rect(cocos2d::Vec2::ZERO, texture->getContentSize()));
+		setTextureRect(cc::Rect(cc::Vec2::ZERO, texture->getContentSize()));
 	}
 	else if (!initWithTexture(texture.get()))
 		return false;
@@ -205,7 +205,7 @@ void Player::setStep(double seconds)
 
 void Player::cleanup()
 {
-	cocos2d::Sprite::cleanup();
+	cc::Sprite::cleanup();
 	if (playback)
 	{
 		if (getDecoder())
@@ -217,7 +217,7 @@ void Player::cleanup()
 
 void Player::onEnter()
 {
-	cocos2d::Sprite::onEnter();
+	cc::Sprite::onEnter();
 	if (playback)
 	{
 		playback->setSceneActive(true);
@@ -229,7 +229,7 @@ void Player::onExit()
 {
 	if (playback)
 		playback->setSceneActive(false);
-	cocos2d::Sprite::onExit();
+	cc::Sprite::onExit();
 }
 
 void Player::syncPlaybackSchedule()
@@ -284,7 +284,7 @@ void Player::finishPlayback()
 	}
 }
 
-cocos2d::Size Player::getFrameSize() const
+cc::Size Player::getFrameSize() const
 {
 	if (const auto decoder = getDecoder())
 		return decoder->getVideoTargetSize();
@@ -312,8 +312,8 @@ bool Player::presentFrame(const uint8_t* pixels)
 	const auto rgba = !decoder || decoder->getReadFormat() == AV_PIX_FMT_RGBA;
 	const size_t dataSize = static_cast<size_t>(width) * height * (rgba ? 4 : 3);
 	return _texture->updateWithData(pixels, dataSize,
-		rgba ? cocos2d::PixelFormat::RGBA8 : cocos2d::PixelFormat::RGB8,
-		cocos2d::PixelFormat::RGBA8888, width, height, false);
+		rgba ? cc::PixelFormat::RGBA8 : cc::PixelFormat::RGB8,
+		cc::PixelFormat::RGBA8888, width, height, false);
 #else
 	_texture->updateWithData(const_cast<uint8_t*>(pixels), 0, 0, width, height);
 	return true;
@@ -348,7 +348,7 @@ void Player::saveCurrentFrame(const std::string& path)
 		}
 		buf = buffer.data();
 	}
-	cocos2d::Image image;
+	cc::Image image;
 	if (image.initWithRawData(buf, dataSize, size.width, size.height, 32))
 		image.saveToFile(path);
 }

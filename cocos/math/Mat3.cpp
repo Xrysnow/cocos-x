@@ -61,9 +61,9 @@ float Mat3::get(int i, int j)
     // throw new JmeException("Invalid indices into matrix.");
 }
 
-cocos2d::Vec3 Mat3::getColumn(int i)
+cc::Vec3 Mat3::getColumn(int i)
 {
-    cocos2d::Vec3 store;
+    cc::Vec3 store;
     switch (i)
     {
     case 0:
@@ -88,9 +88,9 @@ cocos2d::Vec3 Mat3::getColumn(int i)
     return store;
 }
 
-cocos2d::Vec3 Mat3::getRow(int i)
+cc::Vec3 Mat3::getRow(int i)
 {
-    cocos2d::Vec3 store;
+    cc::Vec3 store;
     switch (i)
     {
     case 0:
@@ -119,7 +119,7 @@ std::string Mat3::toString()
     return "";
 }
 
-void Mat3::setColumn(int i, const cocos2d::Vec3& column)
+void Mat3::setColumn(int i, const cc::Vec3& column)
 {
 
     switch (i)
@@ -145,7 +145,7 @@ void Mat3::setColumn(int i, const cocos2d::Vec3& column)
     }
 }
 
-void Mat3::setRow(int i, const cocos2d::Vec3& row)
+void Mat3::setRow(int i, const cc::Vec3& row)
 {
     switch (i)
     {
@@ -236,7 +236,7 @@ void Mat3::set(float matrix[3][3])
     m[8] = matrix[2][2];
 }
 
-void Mat3::set(const cocos2d::Vec3& uAxis, const cocos2d::Vec3& vAxis, const cocos2d::Vec3& wAxis)
+void Mat3::set(const cc::Vec3& uAxis, const cc::Vec3& vAxis, const cc::Vec3& wAxis)
 {
     m[0] = uAxis.x;
     m[3] = uAxis.y;
@@ -330,7 +330,7 @@ void Mat3::rotateZ(float s, float c)
     mult(temp);
 }
 
-void Mat3::createRotation(const cocos2d::Vec3& axis, float fSin, float fCos)
+void Mat3::createRotation(const cc::Vec3& axis, float fSin, float fCos)
 {
     float x = axis.x;
     float y = axis.y;
@@ -426,10 +426,10 @@ Mat3& Mat3::mult(const Mat3& mat, Mat3& product) const
     return product;
 }
 
-cocos2d::Vec3 Mat3::mult(const cocos2d::Vec3& vec) const
+cc::Vec3 Mat3::mult(const cc::Vec3& vec) const
 {
 
-    cocos2d::Vec3 product;
+    cc::Vec3 product;
 
     float x = vec.x;
     float y = vec.y;
@@ -572,20 +572,20 @@ bool Mat3::equals(const Mat3& o) const
     return memcmp(&o, this, sizeof(o)) == 0;
 }
 
-void Mat3::fromStartEndVectors(cocos2d::Vec3 start, cocos2d::Vec3 end)
+void Mat3::fromStartEndVectors(cc::Vec3 start, cc::Vec3 end)
 {
-    cocos2d::Vec3 v;
+    cc::Vec3 v;
     float e, h, f;
 
-    cocos2d::Vec3::cross(start, end, &v);
+    cc::Vec3::cross(start, end, &v);
     e = start.dot(end);
     f = (e < 0) ? -e : e;
 
     // if "from" and "to" vectors are nearly parallel
     if (f > 1.0f - FLT_EPSILON)
     {
-        cocos2d::Vec3 u;
-        cocos2d::Vec3 x;
+        cc::Vec3 u;
+        cc::Vec3 x;
         float c1, c2, c3; /* coefficients for later use */
         int i, j;
 
@@ -666,7 +666,7 @@ void Mat3::fromStartEndVectors(cocos2d::Vec3 start, cocos2d::Vec3 end)
     }
 }
 
-void Mat3::scale(const cocos2d::Vec3& scale)
+void Mat3::scale(const cc::Vec3& scale)
 {
     m[0] *= scale.x;
     m[3] *= scale.x;

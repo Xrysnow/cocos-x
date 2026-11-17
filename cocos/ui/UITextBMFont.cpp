@@ -66,7 +66,7 @@ cc::IntrusivePtr<TextBMFont> TextBMFont::create(std::string_view text, std::stri
 void TextBMFont::initRenderer()
 {
     cc::IntrusivePtr<Label> labelBMFontRenderer;
-    _labelBMFontRenderer = (labelBMFontRenderer = cocos2d::Label::create()).get();
+    _labelBMFontRenderer = (labelBMFontRenderer = cc::Label::create()).get();
     addProtectedChild(_labelBMFontRenderer, LABELBMFONT_RENDERER_Z, -1);
 }
 

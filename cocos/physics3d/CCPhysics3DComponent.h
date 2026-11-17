@@ -47,7 +47,7 @@ class Physics3DWorld;
 
 /** @brief Physics3DComponent: A component with 3D physics, you can add a rigid body to it, and then add this component
  * to a node, the node will move and rotate with this rigid body */
-class CC_DLL Physics3DComponent : public cocos2d::Component
+class CC_DLL Physics3DComponent : public cc::Component
 {
     friend class Physics3DWorld;
 
@@ -74,8 +74,8 @@ public:
      * @return created Physics3DComponent
      */
     static cc::IntrusivePtr<Physics3DComponent> create(Physics3DObject* physicsObj,
-                                      const cocos2d::Vec3& translateInPhysics = cocos2d::Vec3::ZERO,
-                                      const cocos2d::Quaternion& rotInPhsyics = cocos2d::Quaternion::ZERO);
+                                      const cc::Vec3& translateInPhysics = cc::Vec3::ZERO,
+                                      const cc::Quaternion& rotInPhsyics = cc::Quaternion::ZERO);
 
     /**
      * set Physics object to the component
@@ -108,7 +108,7 @@ public:
     /**
      * The node's transform in physics object space
      */
-    void setTransformInPhysics(const cocos2d::Vec3& translateInPhysics, const cocos2d::Quaternion& rotInPhsyics);
+    void setTransformInPhysics(const cc::Vec3& translateInPhysics, const cc::Quaternion& rotInPhsyics);
 
     /**
      * synchronization between node and physics is time consuming, you can skip some synchronization using this function
@@ -132,8 +132,8 @@ protected:
 
     void postSimulate();
 
-    cocos2d::Mat4 _transformInPhysics;  // transform in physics space
-    cocos2d::Mat4 _invTransformInPhysics;
+    cc::Mat4 _transformInPhysics;  // transform in physics space
+    cc::Mat4 _invTransformInPhysics;
 
     Physics3DObject* _physics3DObj;
     PhysicsSyncFlag _syncFlag;

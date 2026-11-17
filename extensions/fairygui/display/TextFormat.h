@@ -24,22 +24,22 @@ public:
 
     std::string face;
     float fontSize;
-    cocos2d::Color3B color;
+    cc::Color3B color;
     bool bold;
     bool italics;
     bool underline;
     int lineSpacing;
     int letterSpacing;
-    cocos2d::TextHAlignment align;
-    cocos2d::TextVAlignment verticalAlign;
+    cc::TextHAlignment align;
+    cc::TextVAlignment verticalAlign;
 
     int effect;
-    cocos2d::Color3B outlineColor;
+    cc::Color3B outlineColor;
     int outlineSize;
-    cocos2d::Color3B shadowColor;
-    cocos2d::Size shadowOffset;
+    cc::Color3B shadowColor;
+    cc::Size shadowOffset;
     int shadowBlurRadius;
-    cocos2d::Color3B glowColor;
+    cc::Color3B glowColor;
 
     //internal use
     bool _hasColor;

@@ -3,7 +3,7 @@
 #include <new>
 #include <stdexcept>
 
-namespace cocos2d::io
+namespace cc::io
 {
 MemoryBuffer::MemoryBuffer(RefConstructionToken token) : Ref(token)
 {

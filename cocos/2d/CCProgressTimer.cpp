@@ -45,7 +45,7 @@ const char kProgressTextureCoords = 0x4b;
 
 namespace
 {
-backend::ProgramState* initPipelineDescriptor(cocos2d::CustomCommand& command,
+backend::ProgramState* initPipelineDescriptor(cc::CustomCommand& command,
                                               bool ridal,
                                               backend::UniformLocation& locMVP,
                                               backend::UniformLocation& locTexture)
@@ -602,7 +602,7 @@ void ProgressTimer::draw(Renderer* renderer, const Mat4& transform, uint32_t fla
     if (_vertexData.empty() || !_sprite)
         return;
 
-    const cocos2d::Mat4& projectionMat = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+    const cc::Mat4& projectionMat = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
     Mat4 finalMat                      = projectionMat * transform;
     _programState->setUniform(_locMVP1, finalMat.m, sizeof(finalMat.m));
     _programState->setTexture(_locTex1, 0, _sprite->getTexture()->getBackendTexture());

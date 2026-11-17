@@ -68,7 +68,7 @@ void GButton::setSelectedIcon(const std::string& value)
         _iconObject->setIcon((_selected && _selectedIcon.length() > 0) ? _selectedIcon : _icon);
 }
 
-cocos2d::Color3B GButton::getTitleColor() const
+cc::Color3B GButton::getTitleColor() const
 {
     GTextField* tf = getTextField();
     if (tf)
@@ -77,7 +77,7 @@ cocos2d::Color3B GButton::getTitleColor() const
         return Color3B::BLACK;
 }
 
-void GButton::setTitleColor(const cocos2d::Color3B& value)
+void GButton::setTitleColor(const cc::Color3B& value)
 {
     GTextField* tf = getTextField();
     if (tf)
@@ -217,7 +217,7 @@ GTextField* GButton::getTextField() const
         return nullptr;
 }
 
-cocos2d::Value GButton::getProp(ObjectPropID propId)
+cc::Value GButton::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -240,7 +240,7 @@ cocos2d::Value GButton::getProp(ObjectPropID propId)
     }
 }
 
-void GButton::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GButton::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {

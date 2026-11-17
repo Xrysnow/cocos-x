@@ -1,4 +1,6 @@
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include "io/Stream.h"
 #include <chrono>
 #include <memory>
@@ -6,7 +8,7 @@
 #include <string_view>
 #include <thread>
 
-namespace cocos2d::io
+namespace cc::io
 {
 struct HttpStreamOptions
 {

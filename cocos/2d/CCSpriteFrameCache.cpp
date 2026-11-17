@@ -207,7 +207,7 @@ void SpriteFrameCache::removeSpriteFramesFromFileContent(std::string_view plist_
 
 void SpriteFrameCache::removeSpriteFramesFromDictionary(ValueMap& dictionary)
 {
-    if (dictionary["frames"].getType() != cocos2d::Value::Type::MAP)
+    if (dictionary["frames"].getType() != cc::Value::Type::MAP)
         return;
 
     const auto& framesDict = dictionary["frames"].asValueMap();

@@ -37,7 +37,7 @@ THE SOFTWARE.
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 
 USING_NS_CC;
-using namespace cocos2d::network;
+using namespace cc::network;
 
 struct LuaDownloaderState
 {
@@ -462,7 +462,7 @@ static int lua_downloader_tostring(lua_State* L)
 
 static const struct luaL_Reg downloaderStaticFns[] = {{"new", lua_downloader_new},
                                                       /*
-                                                       * cocos2d::Downloader is not a subclass of cocos2d::Ref,
+                                                       * cc::Downloader is not a subclass of cc::Ref,
                                                        * `create()` is not provided.
                                                        */
                                                       //{ "create", lua_downloader_new },

@@ -24,6 +24,8 @@
  ****************************************************************************/
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 /// @cond DO_NOT_SHOW
 
 #include <iosfwd>
@@ -43,7 +45,7 @@ namespace ui
 {
 class WebView;
 }
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 NS_CC_BEGIN
 
@@ -53,7 +55,7 @@ namespace ui
 class WebViewImpl
 {
 public:
-    WebViewImpl(cocos2d::ui::WebView* webView);
+    WebViewImpl(cc::ui::WebView* webView);
 
     virtual ~WebViewImpl();
 
@@ -61,7 +63,7 @@ public:
 
     void setJavascriptInterfaceScheme(std::string_view scheme);
 
-    void loadData(const cocos2d::Data& data,
+    void loadData(const cc::Data& data,
                   std::string_view MIMEType,
                   std::string_view encoding,
                   std::string_view baseURL);
@@ -89,7 +91,7 @@ public:
 
     void setScalesPageToFit(const bool scalesPageToFit);
 
-    virtual void draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags);
+    virtual void draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags);
 
     virtual void setVisible(bool visible);
 
@@ -112,6 +114,6 @@ private:
 };
 
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc
 
 /// @endcond

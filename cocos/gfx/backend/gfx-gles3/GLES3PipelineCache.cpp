@@ -143,7 +143,7 @@ bool GLES3PipelineCache::loadCache() {
 }
 
 void GLES3PipelineCache::saveCacheIncremental(GLES3GPUProgramBinary *binary) {
-    if (!cocos2d::detail::ensureNativeParentDirectory(_savePath)) {
+    if (!cc::detail::ensureNativeParentDirectory(_savePath)) {
         CC_LOG_INFO("Save program cache directory unavailable.");
         return;
     }
@@ -160,7 +160,7 @@ void GLES3PipelineCache::saveCacheFull() {
     if (!_dirty) {
         return;
     }
-    if (!cocos2d::detail::ensureNativeParentDirectory(_savePath)) {
+    if (!cc::detail::ensureNativeParentDirectory(_savePath)) {
         CC_LOG_INFO("Save program cache directory unavailable.");
         return;
     }
@@ -189,7 +189,7 @@ void GLES3PipelineCache::init() {
     bool success = loadCache();
     if (!success) {
         // discard cache content.
-        if (!cocos2d::detail::ensureNativeParentDirectory(_savePath))
+        if (!cc::detail::ensureNativeParentDirectory(_savePath))
             return;
         std::ofstream stream(stdfs::u8path(_savePath).c_str(), std::ios::binary | std::ios::trunc);
 #ifdef PIPELINE_CACHE_INCREMENTAL

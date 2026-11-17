@@ -140,9 +140,9 @@ Effekseer::ModelLoaderRef CreateModelLoader(Effekseer::FileInterfaceRef effectFi
 	return Effekseer::MakeRefPtr<::EffekseerRendererGL::MaterialLoader>(EffekseerGraphicsDevice::create().DownCast<::EffekseerRendererGL::Backend::GraphicsDevice>(), effectFile);
 }
 
-void UpdateTextureData(::Effekseer::TextureRef textureData, cocos2d::Texture2D* texture)
+void UpdateTextureData(::Effekseer::TextureRef textureData, cc::Texture2D* texture)
 {
-	auto textureGL = static_cast<cocos2d::backend::Texture2DGL*>(texture->getBackendTexture());
+	auto textureGL = static_cast<cc::backend::Texture2DGL*>(texture->getBackendTexture());
 
 	auto device = EffekseerGraphicsDevice::create().DownCast<::EffekseerRendererGL::Backend::GraphicsDevice>();
 

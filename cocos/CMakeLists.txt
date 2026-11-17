@@ -212,6 +212,8 @@ target_include_directories(${COCOS_CORE_LIB}
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/platform/${PLATFORM_FOLDER}
 )
 
+cocos_configure_base(${COCOS_CORE_LIB})
+
 # Append gfx's original include roots after the core's existing roots.
 # gfx sources share the core library/export contract and skip its PCH.
 include(gfx/CMakeLists.txt)

@@ -87,7 +87,7 @@ private:
     GObject* _owner;
     WeakPtr _target;
     std::vector<RelationDef> _defs;
-    cocos2d::Vec4 _targetData;
+    cc::Vec4 _targetData;
 };
 
 NS_FGUI_END

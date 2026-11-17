@@ -218,10 +218,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 {
     // Touching Director constructs it, but the renderer's DeviceGFX asserts unless
     // GLViewImpl has created the gfx device first (before setOpenGLView).
-    if (!cocos2d::backend::DeviceGFX::isAvailable())
+    if (!cc::backend::DeviceGFX::isAvailable())
         return;
 
-    auto director = cocos2d::Director::getInstance();
+    auto director = cc::Director::getInstance();
     if (!director->isValid())
         return;
 
@@ -234,7 +234,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     {
         // Feed the real pixel size to GLViewImpl; it updates the frame size and
         // notifies the gfx renderer, which resizes its swapchain at beginFrame.
-        static_cast<cocos2d::GLViewImpl*>(glview)->updateLayoutSize(size_.width, size_.height);
+        static_cast<cc::GLViewImpl*>(glview)->updateLayoutSize(size_.width, size_.height);
     }
 
     // Avoid flicker. Issue #350
@@ -296,7 +296,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         ++i;
     }
 
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     glView->handleTouchesBegin(i, (intptr_t*)ids, xs, ys);
 }
 
@@ -331,7 +331,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         ++i;
     }
 
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     glView->handleTouchesMove(i, (intptr_t*)ids, xs, ys, fs, ms);
 }
 
@@ -356,7 +356,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         ++i;
     }
 
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     glView->handleTouchesEnd(i, (intptr_t*)ids, xs, ys);
 }
 
@@ -381,7 +381,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         ++i;
     }
 
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     glView->handleTouchesCancel(i, (intptr_t*)ids, xs, ys);
 }
 
@@ -404,12 +404,12 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     [UIView setAnimationDuration:duration];
     [UIView setAnimationBeginsFromCurrentState:YES];
 
-    // NSLog(@"[animation] dis = %f, scale = %f \n", dis, cocos2d::GLView::getInstance()->getScaleY());
+    // NSLog(@"[animation] dis = %f, scale = %f \n", dis, cc::GLView::getInstance()->getScaleY());
 
     if (dis < 0.0f)
         dis = 0.0f;
 
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
     dis *= glView->getScaleY();
 
     dis /= self.contentScaleFactor;
@@ -551,7 +551,7 @@ UIInterfaceOrientation getFixedOrientation(UIInterfaceOrientation statusBarOrien
         break;
     }
 
-    auto glView  = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView  = cc::Director::getInstance()->getOpenGLView();
     float scaleX = glView->getScaleX();
     float scaleY = glView->getScaleY();
 
@@ -575,12 +575,12 @@ UIInterfaceOrientation getFixedOrientation(UIInterfaceOrientation statusBarOrien
     end   = CGRectApplyAffineTransform(end,
                                        CGAffineTransformScale(CGAffineTransformIdentity, 1.0f / scaleX, 1.0f / scaleY));
 
-    cocos2d::IMEKeyboardNotificationInfo notiInfo;
-    notiInfo.begin    = cocos2d::Rect(begin.origin.x, begin.origin.y, begin.size.width, begin.size.height);
-    notiInfo.end      = cocos2d::Rect(end.origin.x, end.origin.y, end.size.width, end.size.height);
+    cc::IMEKeyboardNotificationInfo notiInfo;
+    notiInfo.begin    = cc::Rect(begin.origin.x, begin.origin.y, begin.size.width, begin.size.height);
+    notiInfo.end      = cc::Rect(end.origin.x, end.origin.y, end.size.width, end.size.height);
     notiInfo.duration = (float)aniDuration;
 
-    cocos2d::IMEDispatcher* dispatcher = cocos2d::IMEDispatcher::sharedDispatcher();
+    cc::IMEDispatcher* dispatcher = cc::IMEDispatcher::sharedDispatcher();
     if (UIKeyboardWillShowNotification == type)
     {
         dispatcher->dispatchKeyboardWillShow(notiInfo);

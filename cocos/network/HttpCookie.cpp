@@ -40,7 +40,7 @@
 
 #include "yasio/tlx/split.hpp"
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network

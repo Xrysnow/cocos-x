@@ -516,7 +516,7 @@ EASEELASTIC_TEMPLATE_DECL_CLASS(EaseElasticInOut);
  @brief Ease Bezier
  @ingroup Actions
  */
-class CC_DLL EaseBezierAction : public cocos2d::ActionEase
+class CC_DLL EaseBezierAction : public cc::ActionEase
 {
 public:
     /**
@@ -524,7 +524,7 @@ public:
      @param action The pointer of the inner action.
      @return A pointer of EaseBezierAction action. If creation failed, return nil.
     */
-    static cc::IntrusivePtr<EaseBezierAction> create(cocos2d::ActionInterval* action);
+    static cc::IntrusivePtr<EaseBezierAction> create(cc::ActionInterval* action);
 
     virtual void update(float time) override;
     virtual cc::IntrusivePtr<Action> clone() const override;

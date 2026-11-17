@@ -240,7 +240,7 @@ Implementation: [callback_from_lua.hpp](detail/callback_from_lua.hpp) and
 
 ## IntrusivePtr conversion
 
-`cocos2d::RefPtr<T>` remains only a compatibility alias of `cc::IntrusivePtr<T>`.
+`cc::RefPtr<T>` remains only a compatibility alias of `cc::IntrusivePtr<T>`.
 New declarations and implementations use `cc::IntrusivePtr` directly.
 
 `cc::IntrusivePtr<T>` uses the same Lua userdata, inheritance checks and identity
@@ -248,9 +248,9 @@ cache as `T*`. There is no Lua IntrusivePtr class. Include `lua_conversion.hpp` 
 other cocos conversions.
 
 ```cpp
-void setTexture(cc::IntrusivePtr<cocos2d::Texture2D> texture);
-bool acceptsTexture(const cc::IntrusivePtr<cocos2d::Texture2D>& texture);
-cc::IntrusivePtr<cocos2d::Texture2D> getTexture();
+void setTexture(cc::IntrusivePtr<cc::Texture2D> texture);
+bool acceptsTexture(const cc::IntrusivePtr<cc::Texture2D>& texture);
+cc::IntrusivePtr<cc::Texture2D> getTexture();
 ```
 
 - Lua `nil` converts to an empty IntrusivePtr, and an empty IntrusivePtr returns `nil`.

@@ -85,7 +85,7 @@ cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
 }
 
 cc::IntrusivePtr<EditBox> EditBox::create(const Vec2& size,
-                         cocos2d::ui::Scale9Sprite* normalSprite,
+                         cc::ui::Scale9Sprite* normalSprite,
                          ui::Scale9Sprite* pressedSprite,
                          Scale9Sprite* disabledSprite)
 {

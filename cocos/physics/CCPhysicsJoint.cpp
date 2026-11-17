@@ -145,7 +145,7 @@ PhysicsJoint::~PhysicsJoint()
     delete _writeCache;
 }
 
-bool PhysicsJoint::init(cocos2d::PhysicsBody* a, cocos2d::PhysicsBody* b)
+bool PhysicsJoint::init(cc::PhysicsBody* a, cc::PhysicsBody* b)
 {
     do
     {

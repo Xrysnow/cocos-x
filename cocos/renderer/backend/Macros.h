@@ -25,7 +25,9 @@
 
 #pragma once
 
-#define CC_BACKEND_BEGIN  namespace cocos2d{ namespace backend{
+#include "platform/CCNamespace.h"
+
+#define CC_BACKEND_BEGIN  namespace cc{ namespace backend{
 #define CC_BACKEND_END    }}
 
 #define MAX_COLOR_ATTCHMENT 4

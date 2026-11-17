@@ -38,7 +38,7 @@ using namespace yasio;
 
 #define WS_MAX_PAYLOAD_LENGTH (1 << 24)  // 16M
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network
@@ -178,7 +178,7 @@ struct WebSocketProtocol
         int flags = (int)opcode;
 
         // role == WS_CLIENT
-        uint32_t key = cocos2d::random();
+        uint32_t key = cc::random();
         char mask[4];
         mask[0] = (key >> 0) & 0xff;
         mask[1] = (key >> 8) & 0xff;
@@ -537,7 +537,7 @@ void WebSocket::generateHandshakeSecKey()
     char rand_key[16] = {0};
     int* p            = reinterpret_cast<int*>(rand_key);
     for (int i = 0; i < 4; ++i, ++p)
-        *p = cocos2d::random();
+        *p = cc::random();
     _handshakeSecKey = utils::base64Encode(std::string_view{rand_key, sizeof(rand_key)});
 
     auto signContent = _handshakeSecKey;

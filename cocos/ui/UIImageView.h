@@ -43,7 +43,7 @@ class Scale9Sprite;
 /**
  * @brief A widget to display images.
  */
-class CC_GUI_DLL ImageView : public Widget, public cocos2d::BlendProtocol
+class CC_GUI_DLL ImageView : public Widget, public cc::BlendProtocol
 {
 
     DECLARE_CLASS_GUI_INFO

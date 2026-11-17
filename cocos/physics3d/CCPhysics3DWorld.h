@@ -62,11 +62,11 @@ class Renderer;
 struct CC_DLL Physics3DWorldDes
 {
     bool isDebugDrawEnabled;  // using physics debug draw?, false by default
-    cocos2d::Vec3 gravity;    // gravity, (0, -9.8, 0)
+    cc::Vec3 gravity;    // gravity, (0, -9.8, 0)
     Physics3DWorldDes()
     {
         isDebugDrawEnabled = false;
-        gravity            = cocos2d::Vec3(0.f, -9.8f, 0.f);
+        gravity            = cc::Vec3(0.f, -9.8f, 0.f);
     }
 };
 
@@ -81,8 +81,8 @@ class CC_DLL Physics3DWorld : public Ref
 public:
     struct HitResult
     {
-        cocos2d::Vec3 hitPosition;
-        cocos2d::Vec3 hitNormal;
+        cc::Vec3 hitPosition;
+        cc::Vec3 hitNormal;
         Physics3DObject* hitObj;
     };
 
@@ -127,7 +127,7 @@ public:
     bool isDebugDrawEnabled() const;
 
     /** Internal method, the updater of debug drawing, need called each frame. */
-    void debugDraw(cocos2d::Renderer* renderer);
+    void debugDraw(cc::Renderer* renderer);
 
     /** Get the list of Physics3DObjects. */
     const std::vector<Physics3DObject*>& getPhysicsObjects() const { return _objects; }
@@ -138,12 +138,12 @@ public:
      * @param endPos The end position of ray.
      * @param result the result of ray cast.
      */
-    bool rayCast(const cocos2d::Vec3& startPos, const cocos2d::Vec3& endPos, HitResult* result);
+    bool rayCast(const cc::Vec3& startPos, const cc::Vec3& endPos, HitResult* result);
 
     /** Performs a swept shape cast on all objects in the Physics3DWorld. */
     bool sweepShape(Physics3DShape* shape,
-                    const cocos2d::Mat4& startTransform,
-                    const cocos2d::Mat4& endTransform,
+                    const cc::Mat4& startTransform,
+                    const cc::Mat4& endTransform,
                     HitResult* result);
 
     Physics3DWorld();

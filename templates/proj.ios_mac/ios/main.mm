@@ -9,8 +9,8 @@
 - (void)loadView
 {
     self.view = [CCEAGLView viewWithFrame:UIScreen.mainScreen.bounds
-                            pixelFormat:(__bridge NSString*)cocos2d::GLViewImpl::_pixelFormat
-                            depthFormat:cocos2d::GLViewImpl::_depthFormat
+                            pixelFormat:(__bridge NSString*)cc::GLViewImpl::_pixelFormat
+                            depthFormat:cc::GLViewImpl::_depthFormat
                      preserveBackbuffer:NO sharegroup:nil multiSampling:NO numberOfSamples:0];
     self.view.multipleTouchEnabled = YES;
 }
@@ -29,14 +29,14 @@
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)options
 {
     _app.initGLContextAttrs();
-    cocos2d::GLViewImpl::convertAttrs();
+    cc::GLViewImpl::convertAttrs();
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     self.window.rootViewController = [[DemoViewController alloc] init];
     [self.window makeKeyAndVisible];
-    auto view = cocos2d::GLViewImpl::createWithEAGLView((__bridge void*)self.window.rootViewController.view);
+    auto view = cc::GLViewImpl::createWithEAGLView((__bridge void*)self.window.rootViewController.view);
     if (!view)
         return NO;
-    cocos2d::Director::getInstance()->setOpenGLView(view);
+    cc::Director::getInstance()->setOpenGLView(view);
     _app.run();
     return YES;
 }

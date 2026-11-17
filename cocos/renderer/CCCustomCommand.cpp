@@ -117,7 +117,7 @@ void CustomCommand::assign(CustomCommand&& rhs)
     #pragma GCC diagnostic pop
 #endif
 
-void CustomCommand::init(float depth, const cocos2d::Mat4& modelViewTransform, unsigned int flags)
+void CustomCommand::init(float depth, const cc::Mat4& modelViewTransform, unsigned int flags)
 {
     RenderCommand::init(depth, modelViewTransform, flags);
 }

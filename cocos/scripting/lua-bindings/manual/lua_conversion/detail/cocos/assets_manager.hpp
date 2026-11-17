@@ -6,9 +6,9 @@
 namespace lua
 {
     template<>
-    struct to_lua<cocos2d::extension::ManifestAsset>
+    struct to_lua<cc::extension::ManifestAsset>
     {
-        static void F(lua_State* L, const cocos2d::extension::ManifestAsset& inValue)
+        static void F(lua_State* L, const cc::extension::ManifestAsset& inValue)
         {
             if (!L)
                 return;

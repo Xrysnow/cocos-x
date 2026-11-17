@@ -37,7 +37,7 @@ EventListenerAssetsManagerEx::EventListenerAssetsManagerEx()
 {}
 
 cc::IntrusivePtr<EventListenerAssetsManagerEx> EventListenerAssetsManagerEx::create(
-    cocos2d::extension::AssetsManagerEx* AssetsManagerEx,
+    cc::extension::AssetsManagerEx* AssetsManagerEx,
     const std::function<void(EventAssetsManagerEx*)>& callback)
 {
     cc::IntrusivePtr ret{new EventListenerAssetsManagerEx()};

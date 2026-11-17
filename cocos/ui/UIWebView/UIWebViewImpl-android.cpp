@@ -95,7 +95,7 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_WebViewHelper_shouldStartLoading(J
     auto charUrl    = env->GetStringUTFChars(jurl, NULL);
     std::string url = charUrl;
     env->ReleaseStringUTFChars(jurl, charUrl);
-    return cocos2d::ui::WebViewImpl::shouldStartLoading(index, url);
+    return cc::ui::WebViewImpl::shouldStartLoading(index, url);
 }
 
 /*
@@ -112,7 +112,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_WebViewHelper_didFinishLoading(JNIEnv*
     auto charUrl    = env->GetStringUTFChars(jurl, NULL);
     std::string url = charUrl;
     env->ReleaseStringUTFChars(jurl, charUrl);
-    cocos2d::ui::WebViewImpl::didFinishLoading(index, url);
+    cc::ui::WebViewImpl::didFinishLoading(index, url);
 }
 
 /*
@@ -129,7 +129,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_WebViewHelper_didFailLoading(JNIEnv* e
     auto charUrl    = env->GetStringUTFChars(jurl, NULL);
     std::string url = charUrl;
     env->ReleaseStringUTFChars(jurl, charUrl);
-    cocos2d::ui::WebViewImpl::didFailLoading(index, url);
+    cc::ui::WebViewImpl::didFailLoading(index, url);
 }
 
 /*
@@ -146,7 +146,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_WebViewHelper_onJsCallback(JNIEnv* env
     auto charMessage    = env->GetStringUTFChars(jmessage, NULL);
     std::string message = charMessage;
     env->ReleaseStringUTFChars(jmessage, charMessage);
-    cocos2d::ui::WebViewImpl::onJsCallback(index, message);
+    cc::ui::WebViewImpl::onJsCallback(index, message);
 }
 }
 
@@ -155,8 +155,8 @@ namespace
 
 int createWebViewJNI()
 {
-    cocos2d::JniMethodInfo t;
-    if (cocos2d::JniHelper::getStaticMethodInfo(t, className, "createWebView", "()I"))
+    cc::JniMethodInfo t;
+    if (cc::JniHelper::getStaticMethodInfo(t, className, "createWebView", "()I"))
     {
         // LOGD("error: %s,%d",__func__,__LINE__);
         jint viewTag = t.env->CallStaticIntMethod(t.classID, t.methodID);
@@ -169,7 +169,7 @@ int createWebViewJNI()
 std::string getUrlStringByFileName(std::string_view fileName)
 {
     // LOGD("error: %s,%d",__func__,__LINE__);
-    std::string urlString = cocos2d::FileUtils::getInstance()->fullPathForFilename(fileName);
+    std::string urlString = cc::FileUtils::getInstance()->fullPathForFilename(fileName);
     if (urlString.empty())
         return urlString;
 
@@ -189,7 +189,7 @@ NS_CC_BEGIN
 namespace ui
 {
 
-static std::unordered_map<int, cocos2d::ui::WebViewImpl*> s_WebViewImpls;
+static std::unordered_map<int, cc::ui::WebViewImpl*> s_WebViewImpls;
 
 WebViewImpl::WebViewImpl(WebView* webView) : _viewTag(-1), _webView(webView)
 {
@@ -330,11 +330,11 @@ void WebViewImpl::onJsCallback(const int viewTag, std::string_view message)
     }
 }
 
-void WebViewImpl::draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags)
+void WebViewImpl::draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags)
 {
-    if (flags & cocos2d::Node::FLAGS_TRANSFORM_DIRTY)
+    if (flags & cc::Node::FLAGS_TRANSFORM_DIRTY)
     {
-        auto uiRect = cocos2d::ui::Helper::convertBoundingBoxToScreen(_webView);
+        auto uiRect = cc::ui::Helper::convertBoundingBoxToScreen(_webView);
         JniHelper::callStaticVoidMethod(className, "setWebViewRect", _viewTag, (int)uiRect.origin.x,
                                         (int)uiRect.origin.y, (int)uiRect.size.width, (int)uiRect.size.height);
     }
@@ -365,4 +365,4 @@ void WebViewImpl::setBounces(bool bounces)
     // empty function as this was mainly a fix for iOS
 }
 }  // namespace ui
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

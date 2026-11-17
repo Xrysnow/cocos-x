@@ -170,7 +170,7 @@ Rect NinePatchImageParser::parseCapInset() const
     return capInsets;
 }
 
-void NinePatchImageParser::setSpriteFrameInfo(Image* image, const cocos2d::Rect& frameRect, bool rotated)
+void NinePatchImageParser::setSpriteFrameInfo(Image* image, const cc::Rect& frameRect, bool rotated)
 {
     this->_image = image;
     CCASSERT(image->getPixelFormat() == backend::PixelFormat::RGBA8,

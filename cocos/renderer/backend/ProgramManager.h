@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include "Macros.h"
 #include "base/CCRef.h"
 #include "platform/CCPlatformMacros.h"
@@ -129,16 +131,16 @@ using ProgramCache = ProgramManager; // for compatible
 CC_BACKEND_END
 
 /**
-* @alias some feq use types to namespace cocos2d
+* @alias some feq use types to namespace cc
 */
 
 NS_CC_BEGIN
 
-using ProgramType = ::cocos2d::backend::ProgramType;
-using Program = ::cocos2d::backend::Program;
-using VertexLayout = ::cocos2d::backend::VertexLayout;
-using VertexLayoutHelper = ::cocos2d::backend::VertexLayoutHelper;
-using ProgramManager = ::cocos2d::backend::ProgramManager;
-using ProgramRegistry = ::cocos2d::backend::ProgramStateRegistry;
+using ProgramType = ::cc::backend::ProgramType;
+using Program = ::cc::backend::Program;
+using VertexLayout = ::cc::backend::VertexLayout;
+using VertexLayoutHelper = ::cc::backend::VertexLayoutHelper;
+using ProgramManager = ::cc::backend::ProgramManager;
+using ProgramRegistry = ::cc::backend::ProgramStateRegistry;
 
 NS_CC_END

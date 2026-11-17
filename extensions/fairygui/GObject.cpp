@@ -426,7 +426,7 @@ void GObject::setDraggable(bool value)
     }
 }
 
-void GObject::setDragBounds(const cocos2d::Rect& value)
+void GObject::setDragBounds(const cc::Rect& value)
 {
     if (_dragBounds == nullptr)
         _dragBounds = new Rect();
@@ -464,7 +464,7 @@ Vec2 GObject::localToGlobal(const Vec2& pt)
     return UIRoot->worldToRoot(pt2);
 }
 
-cocos2d::Rect GObject::localToGlobal(const cocos2d::Rect& rect)
+cc::Rect GObject::localToGlobal(const cc::Rect& rect)
 {
     Rect ret;
     Vec2 v = localToGlobal(rect.origin);
@@ -489,7 +489,7 @@ Vec2 GObject::globalToLocal(const Vec2& pt)
     return pt2;
 }
 
-cocos2d::Rect GObject::globalToLocal(const cocos2d::Rect& rect)
+cc::Rect GObject::globalToLocal(const cc::Rect& rect)
 {
     Rect ret;
     Vec2 v = globalToLocal(rect.origin);
@@ -501,7 +501,7 @@ cocos2d::Rect GObject::globalToLocal(const cocos2d::Rect& rect)
     return ret;
 }
 
-cocos2d::Rect GObject::transformRect(const cocos2d::Rect& rect, GObject* targetSpace)
+cc::Rect GObject::transformRect(const cc::Rect& rect, GObject* targetSpace)
 {
     if (targetSpace == this)
         return rect;
@@ -672,7 +672,7 @@ void GObject::removeFromParent()
         _parent->removeChild(this);
 }
 
-cocos2d::Value GObject::getProp(ObjectPropID propId)
+cc::Value GObject::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -685,7 +685,7 @@ cocos2d::Value GObject::getProp(ObjectPropID propId)
     }
 }
 
-void GObject::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GObject::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {
@@ -718,7 +718,7 @@ GObject* GObject::hitTest(const Vec2& worldPoint, const Camera* camera)
 
 void GObject::handleInit()
 {
-    cc::IntrusivePtr<cocos2d::Node> displayObject;
+    cc::IntrusivePtr<cc::Node> displayObject;
     _displayObject = (displayObject = Node::create()).get();
     _displayObject->retain();
 }

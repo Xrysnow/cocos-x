@@ -14,12 +14,12 @@ namespace lua
 	// cocos::Vector requires non-null Ref pointers. Shared Ref conversion allows
 	// nil for ordinary pointer arguments, so reject it before native pushBack.
 	template<typename T>
-	struct to_native<cocos2d::Vector<T>> {
-		static bool F(lua_State* L, int lo, cocos2d::Vector<T>* outValue, const char* fName = "") {
+	struct to_native<cc::Vector<T>> {
+		static bool F(lua_State* L, int lo, cc::Vector<T>* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
 			const size_t len = lua_objlen(L, lo);
-			cocos2d::Vector<T> result;
+			cc::Vector<T> result;
 			for (size_t i = 0; i < len; ++i) {
 				T value{};
 				lua_pushnumber(L, i + 1);
@@ -34,13 +34,13 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_VECTOR(cocos2d::Vector);
+	LUA_TO_LUA_VECTOR(cc::Vector);
 
 	// StringMap uses transparent hash/equality parameters. Match the complete
 	// Map type instead of assuming its default std::hash specialization.
 	template<typename K, typename V, typename Hash, typename Equal>
-	struct to_lua<cocos2d::Map<K, V, Hash, Equal>> {
-		static void F(lua_State* L, const cocos2d::Map<K, V, Hash, Equal>& inValue) {
+	struct to_lua<cc::Map<K, V, Hash, Equal>> {
+		static void F(lua_State* L, const cc::Map<K, V, Hash, Equal>& inValue) {
 			if (!L) return;
 			lua_createtable(L, 0, static_cast<int>(inValue.size()));
 			const int table = lua_gettop(L);
@@ -129,11 +129,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::Value> {
-		static bool F(lua_State* L, int lo, cocos2d::Value* outValue, const char* fName = "") {
+	struct to_native<cc::Value> {
+		static bool F(lua_State* L, int lo, cc::Value* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			const void* ancestors[64]{};
-			cocos2d::Value result;
+			cc::Value result;
 			const bool ok = read(L, lo, result, ancestors, 0);
 			lua_settop(L, top);
 			if (ok) *outValue = std::move(result);
@@ -143,22 +143,22 @@ namespace lua
 	private:
 		// Value is a data snapshot: inspect raw entries, never call metamethods.
 		// The ancestor path rejects cycles while allowing shared sibling tables.
-		static bool read(lua_State* L, int index, cocos2d::Value& result,
+		static bool read(lua_State* L, int index, cc::Value& result,
 			const void** ancestors, size_t depth) {
 			switch (lua_type(L, index)) {
 			case LUA_TNIL:
-				result = cocos2d::Value::Null;
+				result = cc::Value::Null;
 				return true;
 			case LUA_TBOOLEAN:
-				result = cocos2d::Value(lua_toboolean(L, index) != 0);
+				result = cc::Value(lua_toboolean(L, index) != 0);
 				return true;
 			case LUA_TNUMBER:
-				result = cocos2d::Value(lua_tonumber(L, index));
+				result = cc::Value(lua_tonumber(L, index));
 				return true;
 			case LUA_TSTRING: {
 				size_t size = 0;
 				const auto* text = lua_tolstring(L, index, &size);
-				result = cocos2d::Value(std::string_view(text, size));
+				result = cc::Value(std::string_view(text, size));
 				return true;
 			}
 			case LUA_TTABLE: {
@@ -177,7 +177,7 @@ namespace lua
 			}
 		}
 
-		static bool read_table(lua_State* L, int index, cocos2d::Value& result,
+		static bool read_table(lua_State* L, int index, cc::Value& result,
 			const void** ancestors, size_t depth) {
 			size_t numeric = 0, strings = 0;
 			lua_Number maximum = 0;
@@ -197,68 +197,68 @@ namespace lua
 			// Positive integral keys must be exactly 1..N, without string fields.
 			if (numeric && (strings || maximum != numeric)) return false;
 			if (numeric) {
-				cocos2d::ValueVector values;
+				cc::ValueVector values;
 				values.reserve(numeric);
 				for (size_t i = 0; i < numeric; ++i) {
 					lua_rawgeti(L, index, static_cast<int>(i + 1));
-					cocos2d::Value value;
+					cc::Value value;
 					if (!read(L, lua_gettop(L), value, ancestors, depth)) return false;
 					values.emplace_back(std::move(value));
 					lua_pop(L, 1);
 				}
-				result = cocos2d::Value(std::move(values));
+				result = cc::Value(std::move(values));
 			} else {
 				// An empty table consistently represents an empty string dictionary.
-				cocos2d::ValueMap values;
+				cc::ValueMap values;
 				lua_pushnil(L);
 				while (lua_next(L, index)) {
 					size_t size = 0;
 					const auto* key = lua_tolstring(L, -2, &size);
-					cocos2d::Value value;
+					cc::Value value;
 					if (!read(L, lua_gettop(L), value, ancestors, depth)) return false;
 					values[std::string(key, size)] = std::move(value);
 					lua_pop(L, 1);
 				}
-				result = cocos2d::Value(std::move(values));
+				result = cc::Value(std::move(values));
 			}
 			return true;
 		}
 	};
 
 	template<>
-	struct to_lua<cocos2d::Value> {
-		static void F(lua_State* L, const cocos2d::Value& inValue) {
+	struct to_lua<cc::Value> {
+		static void F(lua_State* L, const cc::Value& inValue) {
 			if (!L) return;
 			luaL_checkstack(L, 4, "Value result stack overflow");
 			switch (inValue.getTypeFamily())
 			{
-			case cocos2d::Value::Type::NONE:
+			case cc::Value::Type::NONE:
 				lua_pushnil(L);
 				break;
-			case cocos2d::Value::Type::BOOLEAN:
+			case cc::Value::Type::BOOLEAN:
 				lua_pushboolean(L, inValue.asBool());
 				break;
-			case cocos2d::Value::Type::FLOAT:
-			case cocos2d::Value::Type::DOUBLE:
+			case cc::Value::Type::FLOAT:
+			case cc::Value::Type::DOUBLE:
 				lua_pushnumber(L, inValue.asDouble());
 				break;
-			case cocos2d::Value::Type::INTEGER:
+			case cc::Value::Type::INTEGER:
 				lua_pushinteger(L, inValue.asInt64());
 				break;
-			case cocos2d::Value::Type::STRING:
+			case cc::Value::Type::STRING:
 				native_to_luaval(L, inValue.asStringRef());
 				break;
-			case cocos2d::Value::Type::VECTOR:
+			case cc::Value::Type::VECTOR:
 				native_to_luaval(L, inValue.asValueVector());
 				break;
-			case cocos2d::Value::Type::MAP:
+			case cc::Value::Type::MAP:
 				native_to_luaval(L, inValue.asValueMap());
 				break;
-			case cocos2d::Value::Type::INT_KEY_MAP:
+			case cc::Value::Type::INT_KEY_MAP:
 				native_to_luaval(L, inValue.asIntKeyMap());
 				break;
 			default:
-				luaL_error(L, "unsupported cocos2d::Value type: %d", static_cast<int>(inValue.getType()));
+				luaL_error(L, "unsupported cc::Value type: %d", static_cast<int>(inValue.getType()));
 				break;
 			}
 		}

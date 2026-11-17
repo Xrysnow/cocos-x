@@ -29,7 +29,7 @@
 // No Available on tvOS
 #if CC_ENABLE_VIDEO_PLATFORM && CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)
 
-using namespace cocos2d::ui;
+using namespace cc::ui;
 //-------------------------------------------------------------------------------------
 
     #include "platform/ios/CCEAGLView-ios.h"
@@ -186,7 +186,7 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
     [self setUserInteractionEnabled:_userInteractionEnabled];
     [self showPlaybackControls:_showPlaybackControls];
 
-    auto view     = cocos2d::Director::getInstance()->getOpenGLView();
+    auto view     = cc::Director::getInstance()->getOpenGLView();
     auto eaglView = (CCEAGLView*)view->getEAGLView();
     [eaglView addSubview:self.playerController.view];
     [self registerPlayerEventListener];
@@ -295,11 +295,11 @@ typedef NS_ENUM(NSInteger, PlayerbackState) {
 
 VideoPlayer::VideoPlayer()
 {
-    cc::IntrusivePtr<DrawNode> debugDrawNode;
     _videoContext = [[UIVideoViewWrapperIos alloc] init:this];
 
     #if CC_VIDEOPLAYER_DEBUG_DRAW
-    _debugDrawNode = (debugDrawNode = DrawNode::create()).get();
+    auto debugDrawNode = cc::DrawNode::create();
+    _debugDrawNode = debugDrawNode.get();
     addChild(_debugDrawNode);
     #endif
 }
@@ -367,7 +367,7 @@ void VideoPlayer::setPlayRate(float fRate) {}
 
 void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    cocos2d::ui::Widget::draw(renderer, transform, flags);
+    cc::ui::Widget::draw(renderer, transform, flags);
 
     if (flags & FLAGS_TRANSFORM_DIRTY)
     {
@@ -480,7 +480,7 @@ bool VideoPlayer::isUserInputEnabled() const
 
 void VideoPlayer::setVisible(bool visible)
 {
-    cocos2d::ui::Widget::setVisible(visible);
+    cc::ui::Widget::setVisible(visible);
 
     if (!visible)
     {
@@ -523,7 +523,7 @@ void VideoPlayer::onPlayEvent(int event)
     if (callback) callback(this, static_cast<EventType>(event));
 }
 
-cc::IntrusivePtr<cocos2d::ui::Widget> VideoPlayer::createCloneInstance()
+cc::IntrusivePtr<cc::ui::Widget> VideoPlayer::createCloneInstance()
 {
     return VideoPlayer::create();
 }

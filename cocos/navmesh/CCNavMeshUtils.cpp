@@ -73,7 +73,7 @@ int LZ4Compressor::maxCompressedSize(const int bufferSize)
     return LZ4_compressBound(bufferSize);
 }
 
-dtStatus cocos2d::LZ4Compressor::decompress(const unsigned char* compressed,
+dtStatus cc::LZ4Compressor::decompress(const unsigned char* compressed,
                                             const int compressedSize,
                                             unsigned char* buffer,
                                             const int maxBufferSize,
@@ -83,7 +83,7 @@ dtStatus cocos2d::LZ4Compressor::decompress(const unsigned char* compressed,
     return *bufferSize < 0 ? DT_FAILURE : DT_SUCCESS;
 }
 
-dtStatus cocos2d::LZ4Compressor::compress(const unsigned char* buffer,
+dtStatus cc::LZ4Compressor::compress(const unsigned char* buffer,
                                           const int bufferSize,
                                           unsigned char* compressed,
                                           const int maxCompressedSize,

@@ -448,7 +448,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderHost_nativeClose(JNIEnv*, j
 
 JNIEXPORT jintArray JNICALL Java_org_cocos_lib_CocosActivity_getGLContextAttrs(JNIEnv* env, jclass)
 {
-    cocos2d::Application::getInstance()->initGLContextAttrs();
+    cc::Application::getInstance()->initGLContextAttrs();
     GLContextAttrs _glContextAttrs = GLView::getGLContextAttrs();
 
     int tmp[7] = {_glContextAttrs.redBits,           _glContextAttrs.greenBits, _glContextAttrs.blueBits,
@@ -463,7 +463,7 @@ JNIEXPORT jintArray JNICALL Java_org_cocos_lib_CocosActivity_getGLContextAttrs(J
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnSurfaceChanged(JNIEnv*, jclass, jint w, jint h)
 {
-    cocos2d::Application::getInstance()->applicationScreenSizeChanged(w, h);
+    cc::Application::getInstance()->applicationScreenSizeChanged(w, h);
 }
 
 }

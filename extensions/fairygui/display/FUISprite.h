@@ -6,7 +6,7 @@
 
 NS_FGUI_BEGIN
 
-class FUISprite : public cocos2d::Sprite
+class FUISprite : public cc::Sprite
 {
 public:
     FUISprite();
@@ -15,7 +15,7 @@ public:
     CREATE_FUNC(FUISprite);
 
     void clearContent();
-    void setScale9Grid(cocos2d::Rect* value);
+    void setScale9Grid(cc::Rect* value);
     void setGrayed(bool value);
 
     FillMethod getFillMethod() const { return _fillMethod; }
@@ -33,17 +33,17 @@ public:
     bool isScaleByTile() const { return _scaleByTile; }
     void setScaleByTile(bool value);
 
-    virtual void setContentSize(const cocos2d::Size& size) override;
+    virtual void setContentSize(const cc::Size& size) override;
 
 protected:
-    virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t flags) override;
+    virtual void draw(cc::Renderer *renderer, const cc::Mat4 &transform, uint32_t flags) override;
 
-    cocos2d::Tex2F textureCoordFromAlphaPoint(cocos2d::Vec2 alpha);
-    cocos2d::Vec3 vertexFromAlphaPoint(cocos2d::Vec2 alpha);
+    cc::Tex2F textureCoordFromAlphaPoint(cc::Vec2 alpha);
+    cc::Vec3 vertexFromAlphaPoint(cc::Vec2 alpha);
     void updateBar(void);
     void updateRadial(void);
     virtual void updateColor(void) override;
-    cocos2d::Vec2 boundaryTexCoord(char index);
+    cc::Vec2 boundaryTexCoord(char index);
 
     void setupFill();
 
@@ -54,11 +54,11 @@ private:
     bool _fillClockwise;
     bool _scaleByTile;
     int _vertexDataCount;
-    cocos2d::TrianglesCommand::Triangles _fillTriangles;
-    cocos2d::V3F_C4B_T2F *_vertexData;
+    cc::TrianglesCommand::Triangles _fillTriangles;
+    cc::V3F_C4B_T2F *_vertexData;
     unsigned short *_vertexIndex;
     
-    static cocos2d::Texture2D* _empty;
+    static cc::Texture2D* _empty;
 };
 
 NS_FGUI_END

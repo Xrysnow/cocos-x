@@ -7,7 +7,7 @@
 
 NS_FGUI_BEGIN
 
-class IUISource : public cocos2d::Ref
+class IUISource : public cc::Ref
 {
 public:
     IUISource() = default;
@@ -92,7 +92,7 @@ private:
     GObject* _contentArea;
     bool _modal;
     bool _bringToFontOnClick;
-    cocos2d::Vector<IUISource*> _uiSources;
+    cc::Vector<IUISource*> _uiSources;
     bool _inited;
     bool _loading;
 };

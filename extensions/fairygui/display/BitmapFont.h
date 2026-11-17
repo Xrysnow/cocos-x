@@ -7,7 +7,7 @@
 
 NS_FGUI_BEGIN
 
-class BitmapFont : public cocos2d::Font
+class BitmapFont : public cc::Font
 {
 public:
     BitmapFont();
@@ -17,11 +17,11 @@ public:
 
     virtual int* getHorizontalKerningForTextUTF32(const std::u32string& text, int &outNumLetters) const override;
 #if defined(CC_VERSION)
-    virtual cocos2d::FontAtlas* newFontAtlas() override { return cc::IntrusivePtr{new cocos2d::FontAtlas(this)}.detach(); }
+    virtual cc::FontAtlas* newFontAtlas() override { return cc::IntrusivePtr{new cc::FontAtlas(this)}.detach(); }
 #else
-    virtual cc::IntrusivePtr<cocos2d::FontAtlas> createFontAtlas() override { return cc::IntrusivePtr{new cocos2d::FontAtlas(*this)}.detach(); }
+    virtual cc::IntrusivePtr<cc::FontAtlas> createFontAtlas() override { return cc::IntrusivePtr{new cc::FontAtlas(*this)}.detach(); }
 #endif
-    cocos2d::FontAtlas* resetFontAtlas(cocos2d::FontAtlas* fontAtlas)
+    cc::FontAtlas* resetFontAtlas(cc::FontAtlas* fontAtlas)
     {
         if (_fontAtlas != fontAtlas)
         {
@@ -30,7 +30,7 @@ public:
         }
         return _fontAtlas;
     }
-    cocos2d::FontAtlas* getFontAtlas() const { return _fontAtlas; }
+    cc::FontAtlas* getFontAtlas() const { return _fontAtlas; }
     void releaseAtlas() { resetFontAtlas(nullptr); }
     void setFontSize(float fontSize) {}
     int getOriginalFontSize()const { return _originalFontSize; }
@@ -41,7 +41,7 @@ private:
     float _originalFontSize;
     bool _resizable;
     bool _canTint;
-    cocos2d::FontAtlas* _fontAtlas;
+    cc::FontAtlas* _fontAtlas;
 
     friend class UIPackage;
 };

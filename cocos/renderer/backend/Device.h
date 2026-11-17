@@ -56,7 +56,7 @@ class Program;
 /**
  * New or create resources from Device.
  */
-class CC_DLL Device : public cocos2d::Ref
+class CC_DLL Device : public cc::Ref
 {
 public:
     Device() = default;

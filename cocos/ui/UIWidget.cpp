@@ -764,9 +764,9 @@ bool Widget::onTouchBegan(Touch* touch, Event* /*unusedEvent*/)
     return true;
 }
 
-void Widget::propagateTouchEvent(cocos2d::ui::Widget::TouchEventType event,
-                                 cocos2d::ui::Widget* sender,
-                                 cocos2d::Touch* touch)
+void Widget::propagateTouchEvent(cc::ui::Widget::TouchEventType event,
+                                 cc::ui::Widget* sender,
+                                 cc::Touch* touch)
 {
     auto keepAlive = cc::IntrusivePtr{this};
     auto senderAlive = cc::IntrusivePtr{sender};
@@ -952,7 +952,7 @@ bool Widget::isClippingParentContainsPoint(const Vec2& pt)
     return true;
 }
 
-void Widget::interceptTouchEvent(cocos2d::ui::Widget::TouchEventType event, cocos2d::ui::Widget* sender, Touch* touch)
+void Widget::interceptTouchEvent(cc::ui::Widget::TouchEventType event, cc::ui::Widget* sender, Touch* touch)
 {
     Widget* widgetParent = getWidgetParent();
     if (widgetParent)
@@ -1341,7 +1341,7 @@ Widget* Widget::findNextFocusedWidget(FocusDirection direction, Widget* current)
     }
 }
 
-void Widget::dispatchFocusEvent(cocos2d::ui::Widget* widgetLoseFocus, cocos2d::ui::Widget* widgetGetFocus)
+void Widget::dispatchFocusEvent(cc::ui::Widget* widgetLoseFocus, cc::ui::Widget* widgetGetFocus)
 {
     auto keepAlive = cc::IntrusivePtr{this};
     // if the widgetLoseFocus doesn't get focus, it will use the previous focused widget instead

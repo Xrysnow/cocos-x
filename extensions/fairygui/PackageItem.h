@@ -13,7 +13,7 @@ class BitmapFont;
 class PixelHitTestData;
 class ByteBuffer;
 
-class PackageItem : public cocos2d::Ref
+class PackageItem : public cc::Ref
 {
 public:
     PackageItem();
@@ -38,17 +38,17 @@ public:
     std::vector<std::string>* highResolution;
 
     //atlas
-    cocos2d::Texture2D* texture;
+    cc::Texture2D* texture;
 
     //image
-    cocos2d::Rect* scale9Grid;
+    cc::Rect* scale9Grid;
     bool scaleByTile;
     int tileGridIndice;
-    cocos2d::SpriteFrame* spriteFrame;
+    cc::SpriteFrame* spriteFrame;
     PixelHitTestData* pixelHitTestData;
 
     //movieclip
-    cocos2d::Animation* animation;
+    cc::Animation* animation;
     float delayPerUnit;
     float repeatDelay;
     bool swing;
@@ -61,7 +61,7 @@ public:
     BitmapFont* bitmapFont;
 
     //skeleton
-    cocos2d::Vec2* skeletonAnchor;
+    cc::Vec2* skeletonAnchor;
 };
 
 NS_FGUI_END

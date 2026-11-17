@@ -40,7 +40,7 @@
 
 #    import "ui/UIEditBox/iOS/CCUIEditBoxIOS.h"
 
-    #define getEditBoxImplIOS() ((cocos2d::ui::EditBoxImplIOS*)_editBox)
+    #define getEditBoxImplIOS() ((cc::ui::EditBoxImplIOS*)_editBox)
 
 NS_CC_BEGIN
 
@@ -62,11 +62,11 @@ EditBoxImplIOS::~EditBoxImplIOS()
 
 void EditBoxImplIOS::createNativeControl(const Rect& frame)
 {
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
 
     Rect rect(0, 0, frame.size.width * glView->getScaleX(), frame.size.height * glView->getScaleY());
 
-    float factor = cocos2d::Director::getInstance()->getContentScaleFactor();
+    float factor = cc::Director::getInstance()->getContentScaleFactor();
 
     rect.size.width /= factor;
     rect.size.height /= factor;
@@ -153,7 +153,7 @@ void EditBoxImplIOS::setNativeReturnType(EditBox::KeyboardReturnType returnType)
     [_systemControl setReturnType:returnType];
 }
 
-void EditBoxImplIOS::setNativeTextHorizontalAlignment(cocos2d::TextHAlignment alignment)
+void EditBoxImplIOS::setNativeTextHorizontalAlignment(cc::TextHAlignment alignment)
 {
     [_systemControl setTextHorizontalAlignment:alignment];
 }
@@ -179,7 +179,7 @@ void EditBoxImplIOS::setNativeVisible(bool visible)
 
 void EditBoxImplIOS::updateNativeFrame(const Rect& rect)
 {
-    auto glView          = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView          = cc::Director::getInstance()->getOpenGLView();
     CCEAGLView* eaglView = (CCEAGLView*)glView->getEAGLView();
 
     float factor = eaglView.contentScaleFactor;
@@ -208,13 +208,13 @@ void EditBoxImplIOS::nativeCloseKeyboard()
 UIFont* EditBoxImplIOS::constructFont(const char* fontName, int fontSize)
 {
     CCASSERT(fontName != nullptr, "fontName can't be nullptr");
-    CCEAGLView* eaglView = static_cast<CCEAGLView*>(cocos2d::Director::getInstance()->getOpenGLView()->getEAGLView());
+    CCEAGLView* eaglView = static_cast<CCEAGLView*>(cc::Director::getInstance()->getOpenGLView()->getEAGLView());
     float retinaFactor   = eaglView.contentScaleFactor;
     NSString* fntName    = [NSString stringWithUTF8String:fontName];
 
     fntName = [[fntName lastPathComponent] stringByDeletingPathExtension];
 
-    auto glView       = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView       = cc::Director::getInstance()->getOpenGLView();
     float scaleFactor = glView->getScaleX();
 
     if (fontSize == -1)

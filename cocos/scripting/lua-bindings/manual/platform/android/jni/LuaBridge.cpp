@@ -41,7 +41,7 @@ JNIEXPORT jint JNICALL Java_org_cocos_lib_LuaBridge_callLuaFunctionWithString(JN
                                                                                              jint functionId,
                                                                                              jstring value)
 {
-    std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(env, value);
+    std::string strValue = cc::StringUtils::getStringUTFCharsJNI(env, value);
     int ret              = LuaJavaBridge::callLuaFunctionById(functionId, strValue.c_str());
     return ret;
 }
@@ -52,8 +52,8 @@ Java_org_cocos_lib_LuaBridge_callLuaGlobalFunctionWithString(JNIEnv* env,
                                                                             jstring luaFunctionName,
                                                                             jstring value)
 {
-    std::string functionNameStr = cocos2d::StringUtils::getStringUTFCharsJNI(env, luaFunctionName);
-    std::string valueStr        = cocos2d::StringUtils::getStringUTFCharsJNI(env, value);
+    std::string functionNameStr = cc::StringUtils::getStringUTFCharsJNI(env, luaFunctionName);
+    std::string valueStr        = cc::StringUtils::getStringUTFCharsJNI(env, value);
 
     int ret = LuaJavaBridge::callLuaGlobalFunction(functionNameStr.c_str(), valueStr.c_str());
     return ret;

@@ -44,20 +44,20 @@ NS_CC_BEGIN
 /**
  * @brief Convenient class to create a rigid body with a MeshRenderer
  */
-class CC_DLL PhysicsMeshRenderer : public cocos2d::MeshRenderer
+class CC_DLL PhysicsMeshRenderer : public cc::MeshRenderer
 {
 public:
     /** creates a PhysicsMeshRenderer */
     static cc::IntrusivePtr<PhysicsMeshRenderer> create(std::string_view modelPath,
                                    Physics3DRigidBodyDes* rigidDes,
-                                   const cocos2d::Vec3& translateInPhysics = cocos2d::Vec3::ZERO,
-                                   const cocos2d::Quaternion& rotInPhsyics = cocos2d::Quaternion::ZERO);
+                                   const cc::Vec3& translateInPhysics = cc::Vec3::ZERO,
+                                   const cc::Quaternion& rotInPhsyics = cc::Quaternion::ZERO);
 
     /** creates a PhysicsMeshRenderer with a collider */
     static cc::IntrusivePtr<PhysicsMeshRenderer> createWithCollider(std::string_view modelPath,
                                                Physics3DColliderDes* colliderDes,
-                                               const cocos2d::Vec3& translateInPhysics = cocos2d::Vec3::ZERO,
-                                               const cocos2d::Quaternion& rotInPhsyics = cocos2d::Quaternion::ZERO);
+                                               const cc::Vec3& translateInPhysics = cc::Vec3::ZERO,
+                                               const cc::Quaternion& rotInPhsyics = cc::Quaternion::ZERO);
 
     /** Get the Physics3DObject. */
     Physics3DObject* getPhysicsObj() const;

@@ -57,12 +57,12 @@ NS_CC_END
         #include "bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
 
 // convert between cocos and bullet
-cocos2d::Vec3 convertbtVector3ToVec3(const btVector3& btVec3);
-btVector3 convertVec3TobtVector3(const cocos2d::Vec3& vec3);
-cocos2d::Mat4 convertbtTransformToMat4(const btTransform& btTrans);
-btTransform convertMat4TobtTransform(const cocos2d::Mat4& mat4);
-cocos2d::Quaternion convertbtQuatToQuat(const btQuaternion& btQuat);
-btQuaternion convertQuatTobtQuat(const cocos2d::Quaternion& quat);
+cc::Vec3 convertbtVector3ToVec3(const btVector3& btVec3);
+btVector3 convertVec3TobtVector3(const cc::Vec3& vec3);
+cc::Mat4 convertbtTransformToMat4(const btTransform& btTrans);
+btTransform convertMat4TobtTransform(const cc::Mat4& mat4);
+cc::Quaternion convertbtQuatToQuat(const btQuaternion& btQuat);
+btQuaternion convertQuatTobtQuat(const cc::Quaternion& quat);
 
     #endif  // CC_ENABLE_BULLET_INTEGRATION
 

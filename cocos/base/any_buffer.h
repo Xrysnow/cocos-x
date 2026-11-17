@@ -22,12 +22,14 @@
  THE SOFTWARE.
  ****************************************************************************/
 #pragma once
+
+#include "platform/CCNamespace.h"
 #include <string.h>
 #include <utility>
 #include <new>
 #include <type_traits>
 
-namespace cocos2d
+namespace cc
 {
 struct any_buffer
 {

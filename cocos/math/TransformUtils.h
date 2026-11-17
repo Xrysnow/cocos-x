@@ -28,6 +28,8 @@ THE SOFTWARE.
 #ifndef __SUPPORT_TRANSFORM_UTILS_H__
 #define __SUPPORT_TRANSFORM_UTILS_H__
 
+#include "platform/CCNamespace.h"
+
 #include "base/ccMacros.h"
 
 /**
@@ -35,7 +37,7 @@ THE SOFTWARE.
  * @{
  */
 
-namespace   cocos2d {
+namespace   cc {
 
 struct AffineTransform;
 /**@{
@@ -46,7 +48,7 @@ struct AffineTransform;
 CC_DLL void CGAffineToGL(const AffineTransform& t, float* m);
 CC_DLL void GLToCGAffine(const float* m, AffineTransform* t);
 /**@}*/
-}  // namespace   cocos2d
+}  // namespace cc
 /**
  end of base group
  @}

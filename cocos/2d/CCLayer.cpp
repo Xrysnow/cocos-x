@@ -379,8 +379,8 @@ LayerRadialGradient::~LayerRadialGradient()
     CC_SAFE_RELEASE_NULL(_customCommand.getPipelineDescriptor().programState);
 }
 
-bool LayerRadialGradient::initWithColor(const cocos2d::Color4B& startColor,
-                                        const cocos2d::Color4B& endColor,
+bool LayerRadialGradient::initWithColor(const cc::Color4B& startColor,
+                                        const cc::Color4B& endColor,
                                         float radius,
                                         const Vec2& center,
                                         float expand)
@@ -493,7 +493,7 @@ void LayerRadialGradient::setStartColor(const Color3B& color)
     setStartColor(Color4B(color));
 }
 
-void LayerRadialGradient::setStartColor(const cocos2d::Color4B& color)
+void LayerRadialGradient::setStartColor(const cc::Color4B& color)
 {
     _startColor = color;
     convertColor4B24F(_startColorRend, _startColor);
@@ -514,7 +514,7 @@ void LayerRadialGradient::setEndColor(const Color3B& color)
     setEndColor(Color4B(color));
 }
 
-void LayerRadialGradient::setEndColor(const cocos2d::Color4B& color)
+void LayerRadialGradient::setEndColor(const cc::Color4B& color)
 {
     _endColor = color;
     convertColor4B24F(_endColorRend, _endColor);

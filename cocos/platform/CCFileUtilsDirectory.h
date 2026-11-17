@@ -1,11 +1,13 @@
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include "base/filesystem.h"
 #include <string_view>
 #include <stdexcept>
 #include <system_error>
 
-namespace cocos2d::detail
+namespace cc::detail
 {
 // Writer-side preparation only. FileUtils path queries must never call this.
 inline bool ensureNativeDirectory(std::string_view directory)
@@ -56,4 +58,4 @@ inline bool ensureNativeParentDirectory(std::string_view filename)
         return false;
     }
 }
-} // namespace cocos2d::detail
+} // namespace cc::detail

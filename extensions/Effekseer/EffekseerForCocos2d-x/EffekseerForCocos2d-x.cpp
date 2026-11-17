@@ -24,7 +24,7 @@ void CalculateCameraDirectionAndPosition(const Effekseer::Matrix44& matrix, Effe
 	}
 }
 
-class ImageAccessor : public cocos2d::Image
+class ImageAccessor : public cc::Image
 {
 public:
 	static bool getPngPremultipledAlphaEnabled() { return PNG_PREMULTIPLIED_ALPHA_ENABLED; }
@@ -34,7 +34,7 @@ Effekseer::ModelLoaderRef CreateModelLoader(Effekseer::FileInterfaceRef);
 
 ::Effekseer::MaterialLoaderRef CreateMaterialLoader(Effekseer::FileInterfaceRef);
 
-void UpdateTextureData(::Effekseer::TextureRef textureData, cocos2d::Texture2D* texture);
+void UpdateTextureData(::Effekseer::TextureRef textureData, cc::Texture2D* texture);
 
 void CleanupTextureData(::Effekseer::TextureRef textureData);
 
@@ -141,7 +141,7 @@ Effekseer::FileReaderRef EffekseerFile::OpenRead(const EFK_CHAR* path)
 	char path_[300];
 	::Effekseer::ConvertUtf16ToUtf8(path_, 300, path);
 
-	cocos2d::Data data_ = cocos2d::FileUtils::getInstance()->getDataFromFile(path_);
+	cc::Data data_ = cc::FileUtils::getInstance()->getDataFromFile(path_);
 
 	if (data_.isNull())
 	{
@@ -157,7 +157,7 @@ Effekseer::FileReaderRef EffekseerFile::OpenRead(const EFK_CHAR* path)
 Effekseer::FileWriterRef EffekseerFile::OpenWrite(const EFK_CHAR* path) { return nullptr; }
 
 static std::map<Effekseer::TextureRef, std::basic_string<EFK_CHAR>> g_glTex2FilePath;
-static std::map<std::basic_string<EFK_CHAR>, cocos2d::Texture2D*> g_filePath2CTex;
+static std::map<std::basic_string<EFK_CHAR>, cc::Texture2D*> g_filePath2CTex;
 static std::map<std::basic_string<EFK_CHAR>, Effekseer::TextureRef> g_filePath2EffectData;
 
 class TextureLoader : public ::Effekseer::TextureLoader
@@ -200,11 +200,11 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		char* data_texture = new char[size_texture];
 		reader->Read(data_texture, size_texture);
 
-		cc::IntrusivePtr image{new cocos2d::Image()};
-		cc::IntrusivePtr texture{new cocos2d::Texture2D()};
+		cc::IntrusivePtr image{new cc::Image()};
+		cc::IntrusivePtr texture{new cc::Texture2D()};
 
 		auto backup = ImageAccessor::getPngPremultipledAlphaEnabled();
-		cocos2d::Image::setPNGPremultipliedAlphaEnabled(false);
+		cc::Image::setPNGPremultipliedAlphaEnabled(false);
 
 		if (image != nullptr && texture != nullptr && image->initWithImageData((const uint8_t*)data_texture, size_texture))
 		{
@@ -245,7 +245,7 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		g_filePath2EffectData[key] = textureData;
 		g_glTex2FilePath[textureData] = key;
 
-		cocos2d::Image::setPNGPremultipliedAlphaEnabled(backup);
+		cc::Image::setPNGPremultipliedAlphaEnabled(backup);
 
 		return textureData;
 	}
@@ -606,7 +606,7 @@ bool EffectEmitter::getRemoveOnStop() { return removeOnStop; }
 
 void EffectEmitter::setRemoveOnStop(bool value) { removeOnStop = value; }
 
-void EffectEmitter::setColor(cocos2d::Color4B color)
+void EffectEmitter::setColor(cc::Color4B color)
 {
 	color_ = color;
 	Effekseer::Color col;
@@ -629,7 +629,7 @@ void EffectEmitter::setSpeed(float speed)
 	manager->getInternalManager()->SetSpeed(handle, speed);
 }
 
-void EffectEmitter::setTargetPosition(cocos2d::Vec3 position)
+void EffectEmitter::setTargetPosition(cc::Vec3 position)
 {
 	targetPosition_ = position;
 	manager->getInternalManager()->SetTargetLocation(handle, position.x, position.y, position.z);
@@ -654,7 +654,7 @@ void EffectEmitter::stopRoot() { manager->getInternalManager()->StopRoot(handle)
 
 void EffectEmitter::onEnter()
 {
-	cocos2d::Node::onEnter();
+	cc::Node::onEnter();
 
 	if (playOnEnter)
 	{
@@ -672,7 +672,7 @@ void EffectEmitter::onExit()
 		manager->getInternalManager()->StopEffect(handle);
 	}
 
-	cocos2d::Node::onExit();
+	cc::Node::onExit();
 }
 
 void EffectEmitter::update(float delta)
@@ -688,7 +688,7 @@ void EffectEmitter::update(float delta)
 		{
 			auto transform = this->getNodeToWorldTransform();
 			manager->setMatrix(handle, transform);
-			cocos2d::Node::update(delta);
+			cc::Node::update(delta);
 
 			this->removeFromParent();
 			return;
@@ -699,11 +699,11 @@ void EffectEmitter::update(float delta)
 		auto transform = this->getNodeToWorldTransform();
 		manager->setMatrix(handle, transform);
 
-		cocos2d::Node::update(delta);
+		cc::Node::update(delta);
 	}
 }
 
-void EffectEmitter::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags)
+void EffectEmitter::draw(cc::Renderer* renderer, const cc::Mat4& parentTransform, uint32_t parentFlags)
 {
     if (!manager->getInternalManager()->GetShown(handle) ||
         manager->getInternalManager()->GetTotalInstanceCount() < 1)
@@ -713,7 +713,7 @@ void EffectEmitter::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& paren
     if (!manager->isDistorted)
     {
         // allow frame buffer texture to be copied for distortion
-        cocos2d::backend::Device::getInstance()->setFrameBufferOnly(false);
+        cc::backend::Device::getInstance()->setFrameBufferOnly(false);
     }
 #endif
 
@@ -751,7 +751,7 @@ void EffectEmitter::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& paren
 
 	renderer->addCommand(renderCommand);
 
-	cocos2d::Node::draw(renderer, parentTransform, parentFlags);
+	cc::Node::draw(renderer, parentTransform, parentFlags);
 }
 
 ::Effekseer::Handle EffectManager::play(Effect* effect, float x, float y, float z)
@@ -764,7 +764,7 @@ void EffectEmitter::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& paren
 	return manager2d->Play(effect->getInternalPtr(), Effekseer::Vector3D(x, y, z), startTime);
 }
 
-void EffectManager::setMatrix(::Effekseer::Handle handle, const cocos2d::Mat4& mat)
+void EffectManager::setMatrix(::Effekseer::Handle handle, const cc::Mat4& mat)
 {
 	Effekseer::Matrix43 mat_;
 	const float* p = mat.m;
@@ -785,7 +785,7 @@ void EffectManager::setRotation(::Effekseer::Handle handle, float x, float y, fl
 
 void EffectManager::setScale(::Effekseer::Handle handle, float x, float y, float z) { manager2d->SetScale(handle, x, y, z); }
 
-bool EffectManager::Initialize(cocos2d::Size visibleSize)
+bool EffectManager::Initialize(cc::Size visibleSize)
 {
 	int32_t spriteSize = 4000;
 
@@ -821,7 +821,7 @@ bool EffectManager::Initialize(cocos2d::Size visibleSize)
 	return true;
 }
 
-cc::IntrusivePtr<EffectManager> EffectManager::create(cocos2d::Size visibleSize)
+cc::IntrusivePtr<EffectManager> EffectManager::create(cc::Size visibleSize)
 {
 	cc::IntrusivePtr ret{new EffectManager()};
 	if (ret->Initialize(visibleSize))
@@ -875,7 +875,7 @@ void EffectManager::setIsDistortionEnabled(bool value)
     }
 }
 
-void EffectManager::begin(cocos2d::Renderer* renderer, float globalZOrder)
+void EffectManager::begin(cc::Renderer* renderer, float globalZOrder)
 {
 	if (isDistortionEnabled)
 	{
@@ -907,7 +907,7 @@ void EffectManager::begin(cocos2d::Renderer* renderer, float globalZOrder)
 	*/
 }
 
-void EffectManager::end(cocos2d::Renderer* renderer, float globalZOrder)
+void EffectManager::end(cc::Renderer* renderer, float globalZOrder)
 {
 	// TODO Batch render
 	/*
@@ -922,7 +922,7 @@ void EffectManager::end(cocos2d::Renderer* renderer, float globalZOrder)
 	*/
 }
 
-void EffectManager::setCameraMatrix(const cocos2d::Mat4& mat)
+void EffectManager::setCameraMatrix(const cc::Mat4& mat)
 {
 	Effekseer::Matrix44 mat_;
 	memcpy(mat_.Values, mat.m, sizeof(float) * 16);
@@ -938,7 +938,7 @@ void EffectManager::setCameraMatrix(const cocos2d::Mat4& mat)
 	getInternalRenderer()->SetCameraMatrix(mat_);
 }
 
-void EffectManager::setProjectionMatrix(const cocos2d::Mat4& mat)
+void EffectManager::setProjectionMatrix(const cc::Mat4& mat)
 {
 	Effekseer::Matrix44 mat_;
 	memcpy(mat_.Values, mat.m, sizeof(float) * 16);

@@ -29,7 +29,7 @@
 
 NS_CC_BEGIN
 
-cocos2d::Vec3 PUUtil::randomDeviant(const Vec3& src, float angle, const Vec3& up /*= Vec3::ZERO*/)
+cc::Vec3 PUUtil::randomDeviant(const Vec3& src, float angle, const Vec3& up /*= Vec3::ZERO*/)
 {
     Vec3 newUp;
 
@@ -83,7 +83,7 @@ cocos2d::Vec3 PUUtil::randomDeviant(const Vec3& src, float angle, const Vec3& up
     //}
 }
 
-cocos2d::Vec3 PUUtil::perpendicular(const Vec3& src)
+cc::Vec3 PUUtil::perpendicular(const Vec3& src)
 {
     // static const float fSquareZero = (float)(1e-06 * 1e-06);
 

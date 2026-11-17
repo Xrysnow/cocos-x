@@ -127,7 +127,7 @@ void PUDynamicAttributeRandom::setMinMax(float min, float max)
 //-----------------------------------------------------------------------
 float PUDynamicAttributeRandom::getValue(float /*x*/)
 {
-    return cocos2d::random(_min, _max);
+    return cc::random(_min, _max);
 }
 
 void PUDynamicAttributeRandom::copyAttributesTo(PUDynamicAttribute* dynamicAttribute)

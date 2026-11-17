@@ -1,8 +1,10 @@
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 struct GLFWwindow;
 
-namespace cocos2d
+namespace cc
 {
 namespace detail
 {
@@ -23,4 +25,4 @@ void* getMacMetalLayer(const MacWindowBridge* bridge);          // CAMetalLayer*
 void* getMacNSGLContext(const MacWindowBridge* bridge);
 
 } // namespace detail
-} // namespace cocos2d
+} // namespace cc

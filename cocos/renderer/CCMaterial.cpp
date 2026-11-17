@@ -159,7 +159,7 @@ void Material::draw(MeshCommand* meshCommands,
     }
 }
 
-void Material::setTarget(cocos2d::Node* target)
+void Material::setTarget(cc::Node* target)
 {
     _target = target;
 }

@@ -946,7 +946,7 @@ public:
      *
      */
     template <typename _T>
-    inline static void sortNodes(cocos2d::Vector<_T*>& nodes)
+    inline static void sortNodes(cc::Vector<_T*>& nodes)
     {
         static_assert(std::is_base_of<Node, _T>::value, "Node::sortNodes: Only accept derived of Node!");
 #if CC_64BITS

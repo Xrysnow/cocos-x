@@ -1,10 +1,12 @@
 #pragma once
 
-#include "gfx/base/RefCounted.h"
+#include "platform/CCNamespace.h"
 
-namespace cocos2d
+#include "base/RefCounted.h"
+
+namespace cc
 {
 // Compatibility name only. Network roots explicitly select Atomic and acquire
 // the legacy owned-raw first reference; this alias adds no counter or Lua state.
 using ConcurrentRefCountedBase = cc::RefCounted;
-}  // namespace cocos2d
+}  // namespace cc

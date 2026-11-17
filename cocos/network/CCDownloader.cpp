@@ -187,4 +187,4 @@ std::shared_ptr<DownloadTask> Downloader::createDownloadFileTask(std::string_vie
 //}
 
 }  // namespace network
-NS_CC_END  // namespace cocos2d
+NS_CC_END  // namespace cc

@@ -208,7 +208,7 @@ int luaReg_cc_video_texture_videoDecoder(lua_State* lua_S)
 {
 	LUA_ENTRY("video");
 	LUA_CLS_DEF_BASE(video::Decoder, "Decoder", "video.Decoder",
-		cocos2d::Ref, "cc.Ref",
+		cc::Ref, "cc.Ref",
 		nullptr, nullptr);
 	LUA_METHOD("getAudioBitRate", lua_video_Decoder_getAudioBitRate);
 	LUA_METHOD("getAudioChannelCount", lua_video_Decoder_getAudioChannelCount);
@@ -345,7 +345,7 @@ int luaReg_cc_video_texture_videoPlayer(lua_State* lua_S)
 {
 	LUA_ENTRY("video");
 	LUA_CLS_DEF_BASE(video::Player, "Player", "video.Player",
-		cocos2d::Sprite, "cc.Sprite",
+		cc::Sprite, "cc.Sprite",
 		nullptr, nullptr);
 	LUA_METHOD("advance", lua_video_Player_advance);
 	LUA_METHOD("advanceFrame", lua_video_Player_advanceFrame);

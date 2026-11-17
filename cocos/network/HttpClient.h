@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include "platform/CCNamespace.h"
+
 #include <thread>
 #include <condition_variable>
 #include <deque>
@@ -45,7 +47,7 @@
  * @{
  */
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network

@@ -18,11 +18,11 @@ namespace lua
 	}
 
 	template<>
-	struct to_native<cocos2d::backend::TextureDescriptor> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::TextureDescriptor* outValue, const char* fName = "") {
+	struct to_native<cc::backend::TextureDescriptor> {
+		static bool F(lua_State* L, int lo, cc::backend::TextureDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::backend::TextureDescriptor value;
+			cc::backend::TextureDescriptor value;
 			if (!render_detail::optional_field(L, lo, "textureType", &value.textureType, fName) ||
 				!render_detail::optional_field(L, lo, "textureFormat", &value.textureFormat, fName) ||
 				!render_detail::optional_field(L, lo, "textureUsage", &value.textureUsage, fName) ||
@@ -36,8 +36,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::backend::TextureDescriptor> {
-		static void F(lua_State* L, const cocos2d::backend::TextureDescriptor& inValue) {
+	struct to_lua<cc::backend::TextureDescriptor> {
+		static void F(lua_State* L, const cc::backend::TextureDescriptor& inValue) {
 			if (!L) return;
 			const auto value = inValue;
 			lua_createtable(L, 0, 7);
@@ -52,11 +52,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::backend::StencilDescriptor> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::StencilDescriptor* outValue, const char* fName = "") {
+	struct to_native<cc::backend::StencilDescriptor> {
+		static bool F(lua_State* L, int lo, cc::backend::StencilDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::backend::StencilDescriptor value;
+			cc::backend::StencilDescriptor value;
 			if (!render_detail::optional_field(L, lo, "stencilFailureOperation", &value.stencilFailureOperation, fName) ||
 				!render_detail::optional_field(L, lo, "depthFailureOperation", &value.depthFailureOperation, fName) ||
 				!render_detail::optional_field(L, lo, "depthStencilPassOperation", &value.depthStencilPassOperation, fName) ||
@@ -69,8 +69,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::backend::StencilDescriptor> {
-		static void F(lua_State* L, const cocos2d::backend::StencilDescriptor& inValue) {
+	struct to_lua<cc::backend::StencilDescriptor> {
+		static void F(lua_State* L, const cc::backend::StencilDescriptor& inValue) {
 			if (!L) return;
 			const auto value = inValue;
 			lua_createtable(L, 0, 6);
@@ -84,11 +84,11 @@ namespace lua
 	};
 
 	template<>
-	struct to_native<cocos2d::backend::DepthStencilDescriptor> {
-		static bool F(lua_State* L, int lo, cocos2d::backend::DepthStencilDescriptor* outValue, const char* fName = "") {
+	struct to_native<cc::backend::DepthStencilDescriptor> {
+		static bool F(lua_State* L, int lo, cc::backend::DepthStencilDescriptor* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!is_indexable(L, lo)) return false;
-			cocos2d::backend::DepthStencilDescriptor value;
+			cc::backend::DepthStencilDescriptor value;
 			if (!render_detail::optional_field(L, lo, "depthCompareFunction", &value.depthCompareFunction, fName) ||
 				!render_detail::optional_field(L, lo, "backFaceStencil", &value.backFaceStencil, fName) ||
 				!render_detail::optional_field(L, lo, "frontFaceStencil", &value.frontFaceStencil, fName) ||
@@ -99,8 +99,8 @@ namespace lua
 	};
 
 	template<>
-	struct to_lua<cocos2d::backend::DepthStencilDescriptor> {
-		static void F(lua_State* L, const cocos2d::backend::DepthStencilDescriptor& inValue) {
+	struct to_lua<cc::backend::DepthStencilDescriptor> {
+		static void F(lua_State* L, const cc::backend::DepthStencilDescriptor& inValue) {
 			if (!L) return;
 			const auto value = inValue;
 			lua_createtable(L, 0, 4);

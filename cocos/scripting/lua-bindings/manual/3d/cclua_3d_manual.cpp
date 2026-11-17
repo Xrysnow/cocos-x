@@ -35,9 +35,9 @@
 
 // ThreeD bridges only: shared conversion/invocation owns checks, diagnostics and callbacks.
 namespace three_d_binding {
-struct AABBBorrow { cocos2d::AABB* pointer; };
-struct HeightNormal { float height; cocos2d::Vec3 normal; };
-struct Intersection { bool hit; cocos2d::Vec3 point; };
+struct AABBBorrow { cc::AABB* pointer; };
+struct HeightNormal { float height; cc::Vec3 normal; };
+struct Intersection { bool hit; cc::Vec3 point; };
 }
 namespace lua {
 template<> struct to_lua<three_d_binding::AABBBorrow> {
@@ -64,8 +64,8 @@ int cclua_3d_MeshRenderer_getAABB(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.MeshRenderer", "cc.MeshRenderer:getAABB");
     // Explicit non-owning borrow. Ref self is not an automatically retained value owner.
-    const auto borrow = [](cocos2d::MeshRenderer* self) -> three_d_binding::AABBBorrow {
-        return {const_cast<cocos2d::AABB*>(&self->getAABB())};
+    const auto borrow = [](cc::MeshRenderer* self) -> three_d_binding::AABBBorrow {
+        return {const_cast<cc::AABB*>(&self->getAABB())};
     };
     LUA_TRY_INVOKE_R(0, borrow);
     LUA_INVOKE_FOOTER("0");
@@ -75,16 +75,16 @@ int cclua_3d_MeshRenderer_createAsync(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.MeshRenderer", "cc.MeshRenderer:createAsync");
     const auto start = [](std::string_view model, std::string_view texture,
-                          std::function<void(cc::IntrusivePtr<cocos2d::MeshRenderer>)> callback) {
-        cocos2d::MeshRenderer::createAsync(model, texture,
-            [callback = std::move(callback)](cc::IntrusivePtr<cocos2d::MeshRenderer> mesh, void*) { callback(std::move(mesh)); }, nullptr);
+                          std::function<void(cc::IntrusivePtr<cc::MeshRenderer>)> callback) {
+        cc::MeshRenderer::createAsync(model, texture,
+            [callback = std::move(callback)](cc::IntrusivePtr<cc::MeshRenderer> mesh, void*) { callback(std::move(mesh)); }, nullptr);
     };
     if (argc == 2 || argc == 3) {
         // Required callable in both checks modes; the owned converter handles its lifetime.
         if (lua_type(lua_S, argc + 1) != LUA_TFUNCTION) arg_cur = argc;
         else {
             LUA_TRY_INVOKE(3, start);
-            const auto shortStart = [&](std::string_view model, std::function<void(cc::IntrusivePtr<cocos2d::MeshRenderer>)> callback) {
+            const auto shortStart = [&](std::string_view model, std::function<void(cc::IntrusivePtr<cc::MeshRenderer>)> callback) {
                 start(model, "", std::move(callback));
             };
             LUA_TRY_INVOKE(2, shortStart);
@@ -96,8 +96,8 @@ int cclua_3d_MeshRenderer_createAsync(lua_State* lua_S)
 int cclua_3d_Terrain_getHeight(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getHeight");
-    const auto xy = [](const cocos2d::Terrain* self, float x, float z) { return self->getHeight(x, z); };
-    const auto point = [](const cocos2d::Terrain* self, const cocos2d::Vec2& pos) { return self->getHeight(pos); };
+    const auto xy = [](const cc::Terrain* self, float x, float z) { return self->getHeight(x, z); };
+    const auto point = [](const cc::Terrain* self, const cc::Vec2& pos) { return self->getHeight(pos); };
     LUA_TRY_INVOKE_R(2, xy);
     LUA_TRY_INVOKE_R(1, point);
     LUA_INVOKE_FOOTER("1,2");
@@ -106,12 +106,12 @@ int cclua_3d_Terrain_getHeight(lua_State* lua_S)
 int cclua_3d_Terrain_getHeightWithNormal(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:getHeightWithNormal");
-    const auto xy = [](const cocos2d::Terrain* self, float x, float z) {
+    const auto xy = [](const cc::Terrain* self, float x, float z) {
         three_d_binding::HeightNormal result{};
         result.height = self->getHeight(x, z, &result.normal);
         return result;
     };
-    const auto point = [&](const cocos2d::Terrain* self, const cocos2d::Vec2& pos) { return xy(self, pos.x, pos.y); };
+    const auto point = [&](const cc::Terrain* self, const cc::Vec2& pos) { return xy(self, pos.x, pos.y); };
     LUA_TRY_INVOKE_R(2, xy);
     LUA_TRY_INVOKE_R(1, point);
     LUA_INVOKE_FOOTER("1,2");
@@ -120,7 +120,7 @@ int cclua_3d_Terrain_getHeightWithNormal(lua_State* lua_S)
 int cclua_3d_Terrain_intersectRay(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.Terrain", "cc.Terrain:intersectRay");
-    const auto intersect = [](const cocos2d::Terrain* self, const cocos2d::Ray& ray) {
+    const auto intersect = [](const cc::Terrain* self, const cc::Ray& ray) {
         three_d_binding::Intersection result{};
         result.hit = self->getIntersectionPoint(ray, result.point);
         return result;
@@ -148,8 +148,8 @@ static int register_all_cc_3d_manual(lua_State* L)
 int cclua_3d_AABB_getCorners(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.AABB", "cc.AABB:getCorners");
-    const auto corners = [](const cocos2d::AABB* self) {
-        std::array<cocos2d::Vec3, 8> result{};
+    const auto corners = [](const cc::AABB* self) {
+        std::array<cc::Vec3, 8> result{};
         self->getCorners(result.data());
         return result;
     };
@@ -160,7 +160,7 @@ int cclua_3d_AABB_getCorners(lua_State* lua_S)
 int cclua_3d_AABB_updateMinMax(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.AABB", "cc.AABB:updateMinMax");
-    const auto update = [](cocos2d::AABB* self, const std::vector<cocos2d::Vec3>& points) {
+    const auto update = [](cc::AABB* self, const std::vector<cc::Vec3>& points) {
         self->updateMinMax(points.data(), static_cast<ssize_t>(points.size()));
     };
     LUA_TRY_INVOKE_R(1, update);
@@ -170,8 +170,8 @@ int cclua_3d_AABB_updateMinMax(lua_State* lua_S)
 int cclua_3d_OBB_getCorners(lua_State* lua_S)
 {
     LUA_INVOKE_HEADER("cc.OBB", "cc.OBB:getCorners");
-    const auto corners = [](const cocos2d::OBB* self) {
-        std::array<cocos2d::Vec3, 8> result{};
+    const auto corners = [](const cc::OBB* self) {
+        std::array<cc::Vec3, 8> result{};
         self->getCorners(result.data());
         return result;
     };
@@ -185,12 +185,12 @@ static int cclua_3d_OBB_constructor(lua_State* L)
     if (lua_gettop(L) - 1 != 2)
         return lua_tocfunction(L, lua_upvalueindex(1))(L);
 
-    const cocos2d::Vec3* points = nullptr;
+    const cc::Vec3* points = nullptr;
     int count = 0;
-    if (!luaval_to_object<const cocos2d::Vec3>(L, 2, "cc.Vec3", &points, "cc.OBB:OBB") || !points ||
+    if (!luaval_to_object<const cc::Vec3>(L, 2, "cc.Vec3", &points, "cc.OBB:OBB") || !points ||
         !luaval_to_int32(L, 3, &count, "cc.OBB:OBB"))
         return luaL_error(L, "invalid arguments in 'cc.OBB:OBB'");
-    lua::push_value_owned(L, new cocos2d::OBB(points, count));
+    lua::push_value_owned(L, new cc::OBB(points, count));
     return 1;
 }
 

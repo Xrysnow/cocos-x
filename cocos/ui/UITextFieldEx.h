@@ -16,7 +16,7 @@ namespace ui
 /**
 @brief  A extension implementation of ui::TextField
 */
-class CC_DLL TextFieldEx : public cocos2d::Node, public IMEDelegate
+class CC_DLL TextFieldEx : public cc::Node, public IMEDelegate
 {
 public:
     /**
@@ -185,7 +185,7 @@ protected:
 
     int _fontType;
 
-    cocos2d::stimer::TIMER_ID _continuousTouchDelayTimerID;
+    cc::stimer::TIMER_ID _continuousTouchDelayTimerID;
     float _continuousTouchDelayTime;
     std::function<void(const Point& worldPoint)> _continuousTouchCallback;
 

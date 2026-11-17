@@ -20,13 +20,13 @@ VideoPlayback::VideoPlayback(std::unique_ptr<VideoDecodeWorker> source, const Pl
 {
 }
 
-std::unique_ptr<VideoPlayback> VideoPlayback::createAsync(cocos2d::io::StreamPtr source,
+std::unique_ptr<VideoPlayback> VideoPlayback::createAsync(cc::io::StreamPtr source,
 	std::function<void()> cancel)
 {
 	return createAsync(std::move(source), std::move(cancel), PlaybackOptions{});
 }
 
-std::unique_ptr<VideoPlayback> VideoPlayback::createAsync(cocos2d::io::StreamPtr source,
+std::unique_ptr<VideoPlayback> VideoPlayback::createAsync(cc::io::StreamPtr source,
 	std::function<void()> cancel, const PlaybackOptions& options)
 {
 	if (options.audioEnabled && options.mode != PlayMode::REALTIME)

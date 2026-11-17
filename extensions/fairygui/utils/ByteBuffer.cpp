@@ -110,7 +110,7 @@ const std::string& ByteBuffer::readS()
 {
     int index = readUshort();
     if (index == 65534 || index == 65533)
-        return cocos2d::STD_STRING_EMPTY;
+        return cc::STD_STRING_EMPTY;
     else
         return (*_stringTable)[index];
 }
@@ -138,7 +138,7 @@ const string* ByteBuffer::readSP()
     if (index == 65534) //null
         return nullptr;
     else if (index == 65533)
-        return &cocos2d::STD_STRING_EMPTY;
+        return &cc::STD_STRING_EMPTY;
     else
         return &(*_stringTable)[index];
 }
@@ -156,7 +156,7 @@ void ByteBuffer::writeS(const std::string& value)
         (*_stringTable)[index] = value;
 }
 
-cocos2d::Color4B ByteBuffer::readColor()
+cc::Color4B ByteBuffer::readColor()
 {
     int startIndex = _offset + _position;
     uint8_t r = _buffer[startIndex];
@@ -165,7 +165,7 @@ cocos2d::Color4B ByteBuffer::readColor()
     uint8_t a = _buffer[startIndex + 3];
     _position += 4;
 
-    return cocos2d::Color4B(r, g, b, a);
+    return cc::Color4B(r, g, b, a);
 }
 
 ByteBuffer* ByteBuffer::readBuffer()

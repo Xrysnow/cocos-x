@@ -59,7 +59,7 @@ void GLoader::setURL(const std::string& value)
     updateGear(7);
 }
 
-void GLoader::setAlign(cocos2d::TextHAlignment value)
+void GLoader::setAlign(cc::TextHAlignment value)
 {
     if (_align != value)
     {
@@ -68,7 +68,7 @@ void GLoader::setAlign(cocos2d::TextHAlignment value)
     }
 }
 
-void GLoader::setVerticalAlign(cocos2d::TextVAlignment value)
+void GLoader::setVerticalAlign(cc::TextVAlignment value)
 {
     if (_verticalAlign != value)
     {
@@ -104,17 +104,17 @@ void GLoader::setShrinkOnly(bool value)
     }
 }
 
-const cocos2d::Size & GLoader::getContentSize()
+const cc::Size & GLoader::getContentSize()
 {
     return _content->getContentSize();
 }
 
-cocos2d::Color3B GLoader::getColor() const
+cc::Color3B GLoader::getColor() const
 {
     return _content->getColor();
 }
 
-void GLoader::setColor(const cocos2d::Color3B& value)
+void GLoader::setColor(const cc::Color3B& value)
 {
     _content->setColor(value);
 }
@@ -290,11 +290,11 @@ void GLoader::loadExternal()
         onExternalLoadFailed();
 }
 
-void GLoader::freeExternal(cocos2d::SpriteFrame* spriteFrame)
+void GLoader::freeExternal(cc::SpriteFrame* spriteFrame)
 {
 }
 
-void GLoader::onExternalLoadSuccess(cocos2d::SpriteFrame* spriteFrame)
+void GLoader::onExternalLoadSuccess(cc::SpriteFrame* spriteFrame)
 {
     _contentStatus = 4;
     _content->setSpriteFrame(spriteFrame);
@@ -503,7 +503,7 @@ void GLoader::handleGrayedChanged()
         _content2->setGrayed(_finalGrayed);
 }
 
-cocos2d::Value GLoader::getProp(ObjectPropID propId)
+cc::Value GLoader::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -523,7 +523,7 @@ cocos2d::Value GLoader::getProp(ObjectPropID propId)
     }
 }
 
-void GLoader::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GLoader::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {

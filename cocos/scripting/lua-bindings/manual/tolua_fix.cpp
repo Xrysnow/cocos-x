@@ -31,7 +31,7 @@
 
 USING_NS_CC;
 
-bool cocos2d::isRefScriptContext(lua_State* L) noexcept {
+bool cc::isRefScriptContext(lua_State* L) noexcept {
     auto* active=static_cast<lua_State*>(getRefScriptContext());
     if (!L || !active) return false;
     return L==active || lua_topointer(L,LUA_REGISTRYINDEX)==lua_topointer(active,LUA_REGISTRYINDEX);

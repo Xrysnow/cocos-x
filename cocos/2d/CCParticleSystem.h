@@ -80,7 +80,7 @@ struct EmissionShape
 struct ParticleEmissionMaskDescriptor
 {
     Vec2 size;
-    std::vector<cocos2d::Vec2> points;
+    std::vector<cc::Vec2> points;
 };
 
 /** @struct ParticleAnimationDescriptor
@@ -99,7 +99,7 @@ Structure that contains frame description
 */
 struct ParticleFrameDescriptor
 {
-    cocos2d::Rect rect;
+    cc::Rect rect;
     bool isRotated;
 };
 
@@ -239,7 +239,7 @@ public:
  * Particle emission mask cache.
  * @since axmol-1.0.0b8
  */
-class CC_DLL ParticleEmissionMaskCache : public cocos2d::Ref
+class CC_DLL ParticleEmissionMaskCache : public cc::Ref
 {
 public:
     ParticleEmissionMaskCache() = default;
@@ -1147,7 +1147,7 @@ public:
      *
      * @return Returns true of the index was successfully found and added. Otherwise, false
      */
-    bool addAnimationIndex(cocos2d::SpriteFrame* frame);
+    bool addAnimationIndex(cc::SpriteFrame* frame);
 
     /** Add a particle animation index based on tex coords spicified using a sprite frame.
      * you can specify which index you want to override in this function
@@ -1157,7 +1157,7 @@ public:
      *
      * @return Returns true of the index was successfully found and added. Otherwise, false
      */
-    bool addAnimationIndex(unsigned short index, cocos2d::SpriteFrame* frame);
+    bool addAnimationIndex(unsigned short index, cc::SpriteFrame* frame);
 
     /** Add a particle animation index based on tex coords spicified.
      * you can specify which index you want to override in this function
@@ -1168,13 +1168,13 @@ public:
      *
      * @return Returns true of the index was successfully found and added. Otherwise, false
      */
-    bool addAnimationIndex(unsigned short index, cocos2d::Rect rect, bool rotated = false);
+    bool addAnimationIndex(unsigned short index, cc::Rect rect, bool rotated = false);
 
     /** You can specify what rect is used if an index in an animation descriptor wasn't found.
      *
      * @param rect Rect containting data about tex coords in pixels
      */
-    void setRectForUndefinedIndices(cocos2d::Rect rect) { _undefinedIndexRect = rect; };
+    void setRectForUndefinedIndices(cc::Rect rect) { _undefinedIndexRect = rect; };
 
     /** Add a particle animation descriptor with an index.
      *
@@ -1650,7 +1650,7 @@ protected:
     /** Wether the animation goes with the time scale of the system or is independent. */
     bool _animationTimescaleInd;
     /** A rect that is used instead when an index is not found */
-    cocos2d::Rect _undefinedIndexRect;
+    cc::Rect _undefinedIndexRect;
     /** does FlippedY variance of each particle */
     int _yCoordFlipped;
 

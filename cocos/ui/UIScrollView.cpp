@@ -1579,7 +1579,7 @@ void ScrollView::removeScrollBar()
     }
 }
 
-Widget* ScrollView::findNextFocusedWidget(cocos2d::ui::Widget::FocusDirection direction, cocos2d::ui::Widget* current)
+Widget* ScrollView::findNextFocusedWidget(cc::ui::Widget::FocusDirection direction, cc::ui::Widget* current)
 {
     if (this->getLayoutType() == Layout::Type::VERTICAL || this->getLayoutType() == Layout::Type::HORIZONTAL)
     {

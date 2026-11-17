@@ -676,7 +676,7 @@ bool Texture2D::isContain9PatchInfo() const
     return nullptr != _ninePatchInfo;
 }
 
-const Rect& Texture2D::getSpriteFrameCapInset(cocos2d::SpriteFrame* spriteFrame) const
+const Rect& Texture2D::getSpriteFrameCapInset(cc::SpriteFrame* spriteFrame) const
 {
     CCASSERT(_ninePatchInfo != nullptr,
              "Can't get the sprite frame capInset when the texture contains no 9-patch info.");
@@ -731,7 +731,7 @@ void Texture2D::initProgram()
     auto& pipelineDescriptor = _customCommand.getPipelineDescriptor();
     // create program state
     auto* program      = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE);
-    _programState      = cc::IntrusivePtr{new cocos2d::backend::ProgramState(program)}.detach();
+    _programState      = cc::IntrusivePtr{new cc::backend::ProgramState(program)}.detach();
     _mvpMatrixLocation = _programState->getUniformLocation("u_MVPMatrix");
     _textureLocation   = _programState->getUniformLocation("u_texture");
 

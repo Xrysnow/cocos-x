@@ -30,58 +30,6 @@ function(cocos_add_gfx_sources target)
     set(gfx_src_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
 
     set(gfx_src
-      base/Agent.h
-      base/Assertf.h
-      base/BinaryArchive.cpp
-      base/BinaryArchive.h
-      base/CachedArray.h
-      base/CoreStd.h
-      base/IndexHandle.h
-      base/Log.cpp
-      base/Log.h
-      base/Macros.h
-      base/Object.h
-      base/Ptr.h
-      base/Random.cpp
-      base/Random.h
-      base/RefCounted.cpp
-      base/RefCounted.h
-      base/RefMap.h
-      base/RefVector.h
-      base/StringHandle.cpp
-      base/StringHandle.h
-      base/StringPool.h
-      base/StringUtil.cpp
-      base/StringUtil.h
-      base/ThreadPool.cpp
-      base/ThreadPool.h
-      base/Timer.cpp
-      base/Timer.h
-      base/TypeDef.h
-      base/Utils.cpp
-      base/Utils.h
-
-      base/memory/CallStack.cpp
-      base/memory/CallStack.h
-      base/memory/Memory.h
-      base/memory/MemoryHook.cpp
-      base/memory/MemoryHook.h
-
-      base/threading/ConditionVariable.h
-      base/threading/ConditionVariable.cpp
-      base/threading/SyncEvent.h
-      base/threading/MessageQueue.h
-      base/threading/MessageQueue.cpp
-      base/threading/Semaphore.h
-      base/threading/Semaphore.cpp
-      base/threading/ThreadPool.h
-      base/threading/ThreadPool.cpp
-      base/threading/ThreadSafeCounter.h
-      base/threading/ThreadSafeLinearAllocator.h
-      base/threading/ThreadSafeLinearAllocator.cpp
-
-      base/job-system/JobSystem.h
-
       math/Math.h
 
       backend/GFXDeviceManager.h
@@ -115,13 +63,6 @@ function(cocos_add_gfx_sources target)
     endif()
     if(CC_USE_GLES2)
         list(APPEND gfx_source_dirs backend/gfx-gles2)
-    endif()
-    if(USE_JOB_SYSTEM_TASKFLOW)
-        list(APPEND gfx_source_dirs base/job-system/job-system-taskflow)
-    elseif(USE_JOB_SYSTEM_TBB)
-        list(APPEND gfx_source_dirs base/job-system/job-system-tbb)
-    else()
-        list(APPEND gfx_source_dirs base/job-system/job-system-dummy)
     endif()
     foreach(gfx_source_dir IN LISTS gfx_source_dirs)
         file(GLOB_RECURSE gfx_backend_src
@@ -167,22 +108,10 @@ function(cocos_add_gfx_sources target)
         target_compile_definitions(${target} PUBLIC CC_USE_GLES2)
     endif()
 
-    if(USE_JOB_SYSTEM_TASKFLOW)
-        target_include_directories(${target} PUBLIC
-            ${COCOS2DX_ROOT_PATH}/external/taskflow
-        )
-    elseif(USE_JOB_SYSTEM_TBB)
-        target_include_directories(${target} PUBLIC
-            ${COCOS2DX_ROOT_PATH}/external/tbb/include
-        )
-    endif()
-
     target_compile_definitions(${target} PUBLIC
         NOMINMAX
         CC_USE_PROFILER=0
         USE_MEMORY_LEAK_DETECTOR=0
-        $<IF:$<BOOL:${USE_JOB_SYSTEM_TBB}>,CC_USE_JOB_SYSTEM_TBB=1,CC_USE_JOB_SYSTEM_TBB=0>
-        $<IF:$<BOOL:${USE_JOB_SYSTEM_TASKFLOW}>,CC_USE_JOB_SYSTEM_TASKFLOW=1,CC_USE_JOB_SYSTEM_TASKFLOW=0>
     )
 
     # Preserve the existing public include roots and their relative order.

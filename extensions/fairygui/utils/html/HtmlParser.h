@@ -13,15 +13,15 @@ class HtmlParseOptions
 {
 public:
     static bool defaultLinkUnderline;
-    static cocos2d::Color3B defaultLinkColor;
+    static cc::Color3B defaultLinkColor;
 
     HtmlParseOptions();
 
     bool linkUnderline;
-    cocos2d::Color3B linkColor;
+    cc::Color3B linkColor;
 };
 
-class HtmlParser : public cocos2d::SAXDelegator
+class HtmlParser : public cc::SAXDelegator
 {
 public:
     static HtmlParser defaultParser;
@@ -36,8 +36,8 @@ public:
     void textHandler(void *ctx, const char *s, size_t len) override;
 
 private:
-    cocos2d::ValueMap parseAttrs(const char ** attrs);
-    int attributeInt(const  cocos2d::ValueMap& vm, const std::string& key, int defaultValue);
+    cc::ValueMap parseAttrs(const char ** attrs);
+    int attributeInt(const  cc::ValueMap& vm, const std::string& key, int defaultValue);
 
     void pushTextFormat();
     void popTextFormat();

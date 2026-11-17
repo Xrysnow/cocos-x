@@ -60,7 +60,7 @@ USING_NS_CC;
             (ps)->setUniform(__loc, &__v, sizeof(__v));           \
         } while (false)
 
-using namespace cocos2d::ui;
+using namespace cc::ui;
 
 namespace
 {
@@ -206,7 +206,7 @@ enum class VideoSampleFormat
     YUY2,
     NV12,
 };
-using PlayerEventQueue = cocos2d::ui::detail::VideoPlayerEventQueue<VideoPlayer, VideoPlayer::EventType>;
+using PlayerEventQueue = cc::ui::detail::VideoPlayerEventQueue<VideoPlayer, VideoPlayer::EventType>;
 
 struct VideoSampleBuffer
 {
@@ -337,7 +337,7 @@ VideoPlayer::VideoPlayer()
     const auto hr = MFMediaPlayer::CreateInstance(&pvd->_vplayer);
     if (FAILED(hr))
     {
-        cocos2d::log("Create VideoPlayer backend failed, hr=%d", (int)hr);
+        cc::log("Create VideoPlayer backend failed, hr=%d", (int)hr);
         return;
     }
     pvd->_vrender = cc::IntrusivePtr{new Sprite()}.detach();
@@ -437,7 +437,7 @@ void VideoPlayer::setStyle(StyleType style)
 
 void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    cocos2d::ui::Widget::draw(renderer, transform, flags);
+    cc::ui::Widget::draw(renderer, transform, flags);
 
     auto pvd     = (PrivateVideoDescriptor*)_videoContext;  //
     auto vrender = pvd->_vrender;
@@ -696,7 +696,7 @@ bool VideoPlayer::isUserInputEnabled() const
 
 void VideoPlayer::setVisible(bool visible)
 {
-    cocos2d::ui::Widget::setVisible(visible);
+    cc::ui::Widget::setVisible(visible);
 }
 
 void VideoPlayer::onEnter()
@@ -730,7 +730,7 @@ void VideoPlayer::onPlayEvent(int event)
     });
 }
 
-cc::IntrusivePtr<cocos2d::ui::Widget> VideoPlayer::createCloneInstance()
+cc::IntrusivePtr<cc::ui::Widget> VideoPlayer::createCloneInstance()
 {
     return VideoPlayer::create();
 }

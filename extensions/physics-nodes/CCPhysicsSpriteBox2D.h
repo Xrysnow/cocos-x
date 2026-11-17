@@ -129,7 +129,7 @@ protected:
     float _PTMRatio;
 
     // Event for update synchronise physic transform
-    cocos2d::EventListenerCustom* _syncTransform;
+    cc::EventListenerCustom* _syncTransform;
 };
 
 NS_CC_EXT_END

@@ -95,7 +95,7 @@ EditBoxImplAndroid::~EditBoxImplAndroid()
 
 void EditBoxImplAndroid::createNativeControl(const Rect& frame)
 {
-    auto director  = cocos2d::Director::getInstance();
+    auto director  = cc::Director::getInstance();
     auto glView    = director->getOpenGLView();
     auto frameSize = glView->getFrameSize();
 
@@ -117,13 +117,13 @@ void EditBoxImplAndroid::createNativeControl(const Rect& frame)
 
 void EditBoxImplAndroid::setNativeFont(const char* pFontName, int fontSize)
 {
-    auto director            = cocos2d::Director::getInstance();
+    auto director            = cc::Director::getInstance();
     auto glView              = director->getOpenGLView();
-    auto isFontFileExists    = cocos2d::FileUtils::getInstance()->isFileExist(pFontName);
+    auto isFontFileExists    = cc::FileUtils::getInstance()->isFileExist(pFontName);
     std::string realFontPath = pFontName;
     if (isFontFileExists)
     {
-        realFontPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(pFontName);
+        realFontPath = cc::FileUtils::getInstance()->fullPathForFilename(pFontName);
         using namespace std::literals;  // for std::string_view literal
         if (realFontPath.starts_with("assets/"sv))
         {
@@ -171,7 +171,7 @@ void EditBoxImplAndroid::setNativeReturnType(EditBox::KeyboardReturnType returnT
     JniHelper::callStaticVoidMethod(editBoxClassName, "setReturnType", _editBoxIndex, static_cast<int>(returnType));
 }
 
-void EditBoxImplAndroid::setNativeTextHorizontalAlignment(cocos2d::TextHAlignment alignment)
+void EditBoxImplAndroid::setNativeTextHorizontalAlignment(cc::TextHAlignment alignment)
 {
     JniHelper::callStaticVoidMethod(editBoxClassName, "setTextHorizontalAlignment", _editBoxIndex,
                                     static_cast<int>(alignment));
@@ -236,7 +236,7 @@ void editBoxEditingDidEnd(int index, std::string_view text, int action)
     if (it != s_allEditBoxes.end())
     {
         s_allEditBoxes[index]->editBoxEditingDidEnd(
-            text, static_cast<cocos2d::ui::EditBoxDelegate::EditBoxEndAction>(action));
+            text, static_cast<cc::ui::EditBoxDelegate::EditBoxEndAction>(action));
     }
 }
 

@@ -147,7 +147,7 @@ NSString* webViewString(std::string_view value)
     }
     if (!self.wkWebView.superview)
     {
-        auto view     = cocos2d::Director::getInstance()->getOpenGLView();
+        auto view     = cc::Director::getInstance()->getOpenGLView();
         auto eaglView = (CCEAGLView*)view->getEAGLView();
         [eaglView addSubview:self.wkWebView];
     }
@@ -487,7 +487,7 @@ void WebViewImpl::loadURL(std::string_view url, bool cleanCachedData)
 
 void WebViewImpl::loadFile(std::string_view fileName)
 {
-    auto fullPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(fileName);
+    auto fullPath = cc::FileUtils::getInstance()->fullPathForFilename(fileName);
     [_uiWebViewWrapper loadFile:fullPath];
 }
 
@@ -536,12 +536,12 @@ void WebViewImpl::setScalesPageToFit(const bool scalesPageToFit)
     [_uiWebViewWrapper setScalesPageToFit:scalesPageToFit];
 }
 
-void WebViewImpl::draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transform, uint32_t flags)
+void WebViewImpl::draw(cc::Renderer* renderer, cc::Mat4 const& transform, uint32_t flags)
 {
-    if (flags & cocos2d::Node::FLAGS_TRANSFORM_DIRTY)
+    if (flags & cc::Node::FLAGS_TRANSFORM_DIRTY)
     {
 
-        auto director  = cocos2d::Director::getInstance();
+        auto director  = cc::Director::getInstance();
         auto glView    = director->getOpenGLView();
         auto frameSize = glView->getFrameSize();
 
@@ -549,9 +549,9 @@ void WebViewImpl::draw(cocos2d::Renderer* renderer, cocos2d::Mat4 const& transfo
 
         auto winSize = director->getWinSize();
 
-        auto leftBottom = this->_webView->convertToWorldSpace(cocos2d::Vec2::ZERO);
+        auto leftBottom = this->_webView->convertToWorldSpace(cc::Vec2::ZERO);
         auto rightTop   = this->_webView->convertToWorldSpace(
-              cocos2d::Vec2(this->_webView->getContentSize().width, this->_webView->getContentSize().height));
+              cc::Vec2(this->_webView->getContentSize().width, this->_webView->getContentSize().height));
 
         auto x      = (frameSize.width / 2 + (leftBottom.x - winSize.width / 2) * glView->getScaleX()) / scaleFactor;
         auto y      = (frameSize.height / 2 - (rightTop.y - winSize.height / 2) * glView->getScaleY()) / scaleFactor;
@@ -583,4 +583,4 @@ void WebViewImpl::setBackgroundTransparent()
 }
 
 }  // namespace ui
-}  // namespace cocos2d
+}  // namespace cc

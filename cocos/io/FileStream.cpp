@@ -7,7 +7,7 @@
 #include <new>
 #include <stdexcept>
 
-namespace cocos2d::io
+namespace cc::io
 {
 namespace
 {
@@ -30,7 +30,7 @@ StreamError fileError(int error)
 }
 }
 
-FileStream::FileStream(RefConstructionToken token, std::unique_ptr<cocos2d::FileStream> backend,
+FileStream::FileStream(RefConstructionToken token, std::unique_ptr<cc::FileStream> backend,
                        FileOpenOptions options)
     : Stream(token), _backend(std::move(backend)), _options(options)
 {}
@@ -40,9 +40,9 @@ FileStream::~FileStream() { close(); }
 Result<ThreadSafeRefPtr<FileStream>> FileStream::open(std::string_view path, FileOpenOptions options)
 {
     using Output = Result<ThreadSafeRefPtr<FileStream>>;
-    cocos2d::FileStream::Mode mode;
+    cc::FileStream::Mode mode;
     if (path.empty() || path.find('\0') != std::string_view::npos ||
-        !cocos2d::FileStream::encodeOpenOptions(options, mode))
+        !cc::FileStream::encodeOpenOptions(options, mode))
         return Output::failure({ErrorCode::InvalidArgument});
     try
     {
@@ -67,12 +67,12 @@ Result<ThreadSafeRefPtr<FileStream>> FileStream::open(std::string_view path, Fil
     catch (const std::length_error&) { return Output::failure({ErrorCode::Overflow}); }
 }
 
-Result<ThreadSafeRefPtr<FileStream>> FileStream::fromBackend(std::unique_ptr<cocos2d::FileStream> backend,
+Result<ThreadSafeRefPtr<FileStream>> FileStream::fromBackend(std::unique_ptr<cc::FileStream> backend,
                                                           FileOpenOptions options)
 {
     using Output = Result<ThreadSafeRefPtr<FileStream>>;
-    cocos2d::FileStream::Mode mode;
-    if (!cocos2d::FileStream::encodeOpenOptions(options, mode))
+    cc::FileStream::Mode mode;
+    if (!cc::FileStream::encodeOpenOptions(options, mode))
         return Output::failure({ErrorCode::InvalidArgument});
     if (!backend || !backend->isOpen())
         return Output::failure({ErrorCode::Closed});

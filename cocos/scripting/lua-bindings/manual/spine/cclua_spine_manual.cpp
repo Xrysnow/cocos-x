@@ -33,7 +33,7 @@
 namespace spine_binding
 {
 using Node = spine::SkeletonAnimation;
-using Snapshot = cocos2d::ValueMap;
+using Snapshot = cc::ValueMap;
 using Callback = std::function<void(const Snapshot&)>;
 struct BoneSnapshot { bool present = false; Snapshot fields; };
 struct Channel { spine::EventType value = spine::EventType_Start; };
@@ -68,19 +68,19 @@ Snapshot eventSnapshot(spine::EventType type, spine::TrackEntry* entry, spine::E
             && count <= std::numeric_limits<int>::max()) loops = static_cast<int>(count);
     }
     Snapshot result{
-        {"type", cocos2d::Value(names[static_cast<int>(type)])},
-        {"trackIndex", cocos2d::Value(entry ? entry->getTrackIndex() : 0)},
-        {"animation", cocos2d::Value(animation ? copyString(animation->getName()) : std::string())},
-        {"loopCount", cocos2d::Value(loops)}
+        {"type", cc::Value(names[static_cast<int>(type)])},
+        {"trackIndex", cc::Value(entry ? entry->getTrackIndex() : 0)},
+        {"animation", cc::Value(animation ? copyString(animation->getName()) : std::string())},
+        {"loopCount", cc::Value(loops)}
     };
     if (event) {
         Snapshot data{
-            {"name", cocos2d::Value(copyString(event->getData().getName()))},
-            {"intValue", cocos2d::Value(event->getIntValue())},
-            {"floatValue", cocos2d::Value(event->getFloatValue())},
-            {"stringValue", cocos2d::Value(copyString(event->getStringValue()))}
+            {"name", cc::Value(copyString(event->getData().getName()))},
+            {"intValue", cc::Value(event->getIntValue())},
+            {"floatValue", cc::Value(event->getFloatValue())},
+            {"stringValue", cc::Value(copyString(event->getStringValue()))}
         };
-        result.emplace("eventData", cocos2d::Value(std::move(data)));
+        result.emplace("eventData", cc::Value(std::move(data)));
     }
     return result;
 }
@@ -113,7 +113,7 @@ void setListener(Node* self, Channel channel, Callback callback)
 
 cc::IntrusivePtr<Node> create(const std::string& skeleton, const std::string& atlas, float scale)
 {
-    if (cocos2d::FileUtils::getInstance()->getFileExtension(skeleton) == ".json")
+    if (cc::FileUtils::getInstance()->getFileExtension(skeleton) == ".json")
         return Node::createWithJsonFile(skeleton, atlas, scale);
     return Node::createWithBinaryFile(skeleton, atlas, scale);
 }
@@ -164,10 +164,10 @@ static int spine_findBone(lua_State* lua_S)
         if (auto* bone = self->findBone(name)) {
             result.present = true;
             result.fields = {
-                {"x", cocos2d::Value(bone->getX())}, {"y", cocos2d::Value(bone->getY())},
-                {"rotation", cocos2d::Value(bone->getRotation())},
-                {"scaleX", cocos2d::Value(bone->getScaleX())}, {"scaleY", cocos2d::Value(bone->getScaleY())},
-                {"worldX", cocos2d::Value(bone->getWorldX())}, {"worldY", cocos2d::Value(bone->getWorldY())}
+                {"x", cc::Value(bone->getX())}, {"y", cc::Value(bone->getY())},
+                {"rotation", cc::Value(bone->getRotation())},
+                {"scaleX", cc::Value(bone->getScaleX())}, {"scaleY", cc::Value(bone->getScaleY())},
+                {"worldX", cc::Value(bone->getWorldX())}, {"worldY", cc::Value(bone->getWorldY())}
             };
         }
         return result;

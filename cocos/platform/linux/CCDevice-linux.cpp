@@ -389,8 +389,8 @@ public:
         std::transform(lowerCasePath.begin(), lowerCasePath.end(), lowerCasePath.begin(), ::tolower);
         if (lowerCasePath.find(".ttf") != std::string::npos)
         {
-            fontPath        = cocos2d::FileUtils::getInstance()->fullPathForFilename(fontPath);
-            auto fileStream = cocos2d::FileUtils::getInstance()->openFileStream(fontPath, FileStream::Mode::READ);
+            fontPath        = cc::FileUtils::getInstance()->fullPathForFilename(fontPath);
+            auto fileStream = cc::FileUtils::getInstance()->openFileStream(fontPath, FileStream::Mode::READ);
             if (fileStream)
             {
                 fontCache.insert(std::pair<std::string, std::string>(family_name, fontPath));

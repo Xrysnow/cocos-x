@@ -50,12 +50,12 @@ void GImage::handleGrayedChanged()
     ((FUISprite*)_content)->setGrayed(_finalGrayed);
 }
 
-cocos2d::Color3B GImage::getColor() const
+cc::Color3B GImage::getColor() const
 {
     return _content->getColor();
 }
 
-void GImage::setColor(const cocos2d::Color3B& value)
+void GImage::setColor(const cc::Color3B& value)
 {
     _content->setColor(value);
 }
@@ -100,7 +100,7 @@ void GImage::setFillAmount(float value)
     _content->setFillAmount(value);
 }
 
-cocos2d::Value GImage::getProp(ObjectPropID propId)
+cc::Value GImage::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -111,7 +111,7 @@ cocos2d::Value GImage::getProp(ObjectPropID propId)
     }
 }
 
-void GImage::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GImage::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {

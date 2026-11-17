@@ -64,7 +64,7 @@ ControlButton::~ControlButton()
 bool ControlButton::init()
 {
     return this->initWithLabelAndBackgroundSprite(Label::createWithSystemFont("", "Helvetica", 12).get(),
-                                                  cocos2d::ui::Scale9Sprite::create().get(), true);
+                                                  cc::ui::Scale9Sprite::create().get(), true);
 }
 
 bool ControlButton::initWithLabelAndBackgroundSprite(Node* node,
@@ -123,7 +123,7 @@ bool ControlButton::initWithLabelAndBackgroundSprite(Node* node,
     }
 }
 
-cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label, cocos2d::ui::Scale9Sprite* backgroundSprite)
+cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label, cc::ui::Scale9Sprite* backgroundSprite)
 {
     cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithLabelAndBackgroundSprite(label, backgroundSprite, true);
@@ -131,7 +131,7 @@ cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label, cocos2d::ui::
 }
 
 cc::IntrusivePtr<ControlButton> ControlButton::create(Node* label,
-                                     cocos2d::ui::Scale9Sprite* backgroundSprite,
+                                     cc::ui::Scale9Sprite* backgroundSprite,
                                      bool adjustBackGroundSize)
 {
     cc::IntrusivePtr pRet{new ControlButton()};
@@ -144,7 +144,7 @@ bool ControlButton::initWithTitleAndFontNameAndFontSize(std::string_view title,
                                                         float fontSize)
 {
     return initWithLabelAndBackgroundSprite(Label::createWithSystemFont(title, fontName, fontSize).get(),
-                                            cocos2d::ui::Scale9Sprite::create().get(), true);
+                                            cc::ui::Scale9Sprite::create().get(), true);
 }
 
 cc::IntrusivePtr<ControlButton> ControlButton::create(std::string_view title, std::string_view fontName, float fontSize)
@@ -154,13 +154,13 @@ cc::IntrusivePtr<ControlButton> ControlButton::create(std::string_view title, st
     return pRet;
 }
 
-bool ControlButton::initWithBackgroundSprite(cocos2d::ui::Scale9Sprite* sprite)
+bool ControlButton::initWithBackgroundSprite(cc::ui::Scale9Sprite* sprite)
 {
     cc::IntrusivePtr<Label> label = Label::createWithSystemFont("", "Arial", 30);  //
     return initWithLabelAndBackgroundSprite(label, sprite, false);
 }
 
-cc::IntrusivePtr<ControlButton> ControlButton::create(cocos2d::ui::Scale9Sprite* sprite)
+cc::IntrusivePtr<ControlButton> ControlButton::create(cc::ui::Scale9Sprite* sprite)
 {
     cc::IntrusivePtr pRet{new ControlButton()};
     pRet->initWithBackgroundSprite(sprite);

@@ -490,7 +490,7 @@ void Slider::updateVisualSlider()
     }
 }
 
-bool Slider::hitTest(const cocos2d::Vec2& pt, const Camera* camera, Vec3* /*p*/) const
+bool Slider::hitTest(const cc::Vec2& pt, const Camera* camera, Vec3* /*p*/) const
 {
     Rect rect;
     rect.size = _slidBallNormalRenderer->getContentSize();

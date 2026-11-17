@@ -118,7 +118,7 @@ void GRichTextField::handleSizeChanged()
     }
 }
 
-GObject* GRichTextField::hitTest(const cocos2d::Vec2& worldPoint, const cocos2d::Camera* camera)
+GObject* GRichTextField::hitTest(const cc::Vec2& worldPoint, const cc::Camera* camera)
 {
     const std::vector<HtmlObject*>& objs = _richText->getControls();
     for (auto &obj : objs)

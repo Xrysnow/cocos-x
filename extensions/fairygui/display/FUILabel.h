@@ -7,7 +7,7 @@
 
 NS_FGUI_BEGIN
 
-class FUILabel : public cocos2d::Label
+class FUILabel : public cc::Label
 {
 public:
     FUILabel();
@@ -21,16 +21,16 @@ public:
     TextFormat* getTextFormat() const { return _textFormat; }
     void applyTextFormat();
 
-    void setUnderlineColor(const cocos2d::Color3B& value);
+    void setUnderlineColor(const cc::Color3B& value);
 
 #if defined(CC_VERSION)
     bool setBMFontFilePath(std::string_view bmfontFilePath,
-                           const cocos2d::Rect& imageRect = cocos2d::Rect::ZERO,
+                           const cc::Rect& imageRect = cc::Rect::ZERO,
                            bool imageRotated = false,
                            float fontSize = 0) override;
 #else
     bool setBMFontFilePath(std::string_view bmfontFilePath,
-                                   const cocos2d::Vec2& imageOffset = cocos2d::Vec2::ZERO,
+                                   const cc::Vec2& imageOffset = cc::Vec2::ZERO,
                                    float fontSize              = 0) override;
 #endif
     void setGrayed(bool value);

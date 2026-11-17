@@ -7,7 +7,7 @@
 #include <vector>
 
 NS_CC_BEGIN
-	class CC_DLL AudioDecoder : public cocos2d::Ref
+	class CC_DLL AudioDecoder : public cc::Ref
 	{
 	public:
 		enum class DecoderType

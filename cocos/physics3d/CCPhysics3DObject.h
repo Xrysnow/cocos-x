@@ -100,7 +100,7 @@ public:
     Physics3DWorld* getPhysicsWorld() const { return _physicsWorld; }
 
     /** Get the world matrix of Physics3DObject. */
-    virtual cocos2d::Mat4 getWorldTransform() const = 0;
+    virtual cc::Mat4 getWorldTransform() const = 0;
 
     /** Set the collision callback function. */
     void setCollisionCallback(const CollisionCallbackFunc& func) { _collisionCallbackFunc = func; };
@@ -137,9 +137,9 @@ protected:
 struct CC_DLL Physics3DRigidBodyDes
 {
     float mass;                  // Note: mass equals zero means static, default 0
-    cocos2d::Vec3 localInertia;  // default (0, 0, 0)
+    cc::Vec3 localInertia;  // default (0, 0, 0)
     Physics3DShape* shape;
-    cocos2d::Mat4 originalTransform;
+    cc::Mat4 originalTransform;
     bool disableSleep;  // it is always active if disabled
 
     Physics3DRigidBodyDes() : mass(0.f), localInertia(0.f, 0.f, 0.f), shape(nullptr), disableSleep(false) {}
@@ -169,35 +169,35 @@ public:
      * @param   force the value of the force
      * @param   rel_pos the position of the force
      */
-    void applyForce(const cocos2d::Vec3& force, const cocos2d::Vec3& rel_pos);
+    void applyForce(const cc::Vec3& force, const cc::Vec3& rel_pos);
 
     /**
      * Apply a central force.
      *
      * @param   force the value of the force
      */
-    void applyCentralForce(const cocos2d::Vec3& force);
+    void applyCentralForce(const cc::Vec3& force);
 
     /**
      * Apply a central impulse.
      *
      * @param   impulse the value of the impulse
      */
-    void applyCentralImpulse(const cocos2d::Vec3& impulse);
+    void applyCentralImpulse(const cc::Vec3& impulse);
 
     /**
      * Apply a torque.
      *
      * @param   torque the value of the torque
      */
-    void applyTorque(const cocos2d::Vec3& torque);
+    void applyTorque(const cc::Vec3& torque);
 
     /**
      * Apply a torque impulse.
      *
      * @param   torque the value of the torque
      */
-    void applyTorqueImpulse(const cocos2d::Vec3& torque);
+    void applyTorqueImpulse(const cc::Vec3& torque);
 
     /**
      * Apply a impulse.
@@ -205,43 +205,43 @@ public:
      * @param   impulse the value of the impulse
      * @param   rel_pos the position of the impulse
      */
-    void applyImpulse(const cocos2d::Vec3& impulse, const cocos2d::Vec3& rel_pos);
+    void applyImpulse(const cc::Vec3& impulse, const cc::Vec3& rel_pos);
 
     /** Damps the velocity, using the given linearDamping and angularDamping. */
     void applyDamping(float timeStep);
 
     /** Set the linear velocity. */
-    void setLinearVelocity(const cocos2d::Vec3& lin_vel);
+    void setLinearVelocity(const cc::Vec3& lin_vel);
 
     /** Get the linear velocity. */
-    cocos2d::Vec3 getLinearVelocity() const;
+    cc::Vec3 getLinearVelocity() const;
 
     /** Set the linear factor. */
-    void setLinearFactor(const cocos2d::Vec3& linearFactor);
+    void setLinearFactor(const cc::Vec3& linearFactor);
 
     /** Get the linear factor. */
-    cocos2d::Vec3 getLinearFactor() const;
+    cc::Vec3 getLinearFactor() const;
 
     /** Set the angular factor. */
-    void setAngularFactor(const cocos2d::Vec3& angFac);
+    void setAngularFactor(const cc::Vec3& angFac);
 
     /** Set the angular factor, use unified factor. */
     void setAngularFactor(float angFac);
 
     /** Get the angular factor. */
-    cocos2d::Vec3 getAngularFactor() const;
+    cc::Vec3 getAngularFactor() const;
 
     /** Set the angular velocity. */
-    void setAngularVelocity(const cocos2d::Vec3& ang_vel);
+    void setAngularVelocity(const cc::Vec3& ang_vel);
 
     /** Get the angular velocity. */
-    cocos2d::Vec3 getAngularVelocity() const;
+    cc::Vec3 getAngularVelocity() const;
 
     /** Set the center of mass. */
-    void setCenterOfMassTransform(const cocos2d::Mat4& xform);
+    void setCenterOfMassTransform(const cc::Mat4& xform);
 
     /** Get the center of mass. */
-    cocos2d::Mat4 getCenterOfMassTransform() const;
+    cc::Mat4 getCenterOfMassTransform() const;
 
     /** Set linear damping and angular damping. */
     void setDamping(float lin_damping, float ang_damping);
@@ -253,28 +253,28 @@ public:
     float getAngularDamping() const;
 
     /** Set the acceleration. */
-    void setGravity(const cocos2d::Vec3& acceleration);
+    void setGravity(const cc::Vec3& acceleration);
 
     /** Get the acceleration. */
-    cocos2d::Vec3 getGravity() const;
+    cc::Vec3 getGravity() const;
 
     /** Set the inverse of local inertia. */
-    void setInvInertiaDiagLocal(const cocos2d::Vec3& diagInvInertia);
+    void setInvInertiaDiagLocal(const cc::Vec3& diagInvInertia);
 
     /** Get the inverse of local inertia. */
-    cocos2d::Vec3 getInvInertiaDiagLocal() const;
+    cc::Vec3 getInvInertiaDiagLocal() const;
 
     /** Set mass and inertia. */
-    void setMassProps(float mass, const cocos2d::Vec3& inertia);
+    void setMassProps(float mass, const cc::Vec3& inertia);
 
     /** Get inverse of mass. */
     float getInvMass() const;
 
     /** Get total force. */
-    cocos2d::Vec3 getTotalForce() const;
+    cc::Vec3 getTotalForce() const;
 
     /** Get total torque. */
-    cocos2d::Vec3 getTotalTorque() const;
+    cc::Vec3 getTotalTorque() const;
 
     /** Set restitution. */
     void setRestitution(float rest);
@@ -320,7 +320,7 @@ public:
     bool isKinematic() const;
 
     /** override. */
-    virtual cocos2d::Mat4 getWorldTransform() const override;
+    virtual cc::Mat4 getWorldTransform() const override;
 
     /** Get constraint by index. */
     Physics3DConstraint* getConstraint(unsigned int idx) const;
@@ -354,7 +354,7 @@ struct CC_DLL Physics3DColliderDes
     /**shape pointer*/
     Physics3DShape* shape;
     /**original world Transform*/
-    cocos2d::Mat4 originalTransform;
+    cc::Mat4 originalTransform;
     /**Is collider a trigger?*/
     bool isTrigger;
     /**the friction*/
@@ -472,7 +472,7 @@ public:
     float getCcdSweptSphereRadius() const;
 
     /** override. */
-    virtual cocos2d::Mat4 getWorldTransform() const;
+    virtual cc::Mat4 getWorldTransform() const;
 
     /** Set a callback when trigger enter. */
     std::function<void(Physics3DObject* otherObject)> onTriggerEnter;

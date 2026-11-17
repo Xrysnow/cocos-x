@@ -430,7 +430,7 @@ void ParticleBatchNode::draw(Renderer* renderer, const Mat4& transform, uint32_t
     _customCommand.init(_globalZOrder, _blendFunc);
 
     // Texture is set in TextureAtlas.
-    const cocos2d::Mat4& projectionMat = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+    const cc::Mat4& projectionMat = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
     Mat4 finalMat                      = projectionMat * transform;
     auto programState                  = _customCommand.getPipelineDescriptor().programState;
     programState->setUniform(_mvpMatrixLocaiton, finalMat.m, sizeof(finalMat.m));

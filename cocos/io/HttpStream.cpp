@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <system_error>
 
-namespace cocos2d::io
+namespace cc::io
 {
 namespace
 {

@@ -17,8 +17,8 @@
 #include <thread>
 
 using namespace video;
-using namespace cocos2d;
-using namespace cocos2d::io;
+using namespace cc;
+using namespace cc::io;
 
 namespace
 {

@@ -9,7 +9,7 @@ namespace ffmpeg
 {
 	struct ContainerInfo;
 
-	class InputStream : public cocos2d::Ref
+	class InputStream : public cc::Ref
 	{
 	protected:
 		InputStream();

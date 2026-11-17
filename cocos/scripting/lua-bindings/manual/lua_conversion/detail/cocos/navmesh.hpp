@@ -6,13 +6,13 @@
 
 namespace lua
 {
-    template<> struct to_native<cocos2d::NavMeshAgentParam> {
-        static bool F(lua_State* L, int lo, cocos2d::NavMeshAgentParam* outValue, const char* fName = "") {
+    template<> struct to_native<cc::NavMeshAgentParam> {
+        static bool F(lua_State* L, int lo, cc::NavMeshAgentParam* outValue, const char* fName = "") {
             LUA_CHECK_TO_NATIVE;
             if (!record_detail::fields(L, lo, {"radius", "height", "maxAcceleration", "maxSpeed",
                 "collisionQueryRange", "pathOptimizationRange", "separationWeight", "updateFlags",
                 "obstacleAvoidanceType", "queryFilterType"})) return false;
-            cocos2d::NavMeshAgentParam value;
+            cc::NavMeshAgentParam value;
             if (!record_detail::number(L, lo, "radius", &value.radius, fName) ||
                 !record_detail::number(L, lo, "height", &value.height, fName) ||
                 !record_detail::number(L, lo, "maxAcceleration", &value.maxAcceleration, fName) ||
@@ -34,8 +34,8 @@ namespace lua
         }
     };
 
-    template<> struct to_lua<cocos2d::OffMeshLinkData> {
-        static void F(lua_State* L, const cocos2d::OffMeshLinkData& inValue) {
+    template<> struct to_lua<cc::OffMeshLinkData> {
+        static void F(lua_State* L, const cc::OffMeshLinkData& inValue) {
             if (!L) return;
             const auto value = inValue;
             lua_createtable(L, 0, 2);

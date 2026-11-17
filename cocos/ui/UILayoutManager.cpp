@@ -276,7 +276,7 @@ cc::IntrusivePtr<RelativeLayoutManager> RelativeLayoutManager::create()
     return ret;
 }
 
-Vector<Widget*> RelativeLayoutManager::getAllWidgets(cocos2d::ui::LayoutProtocol* layout)
+Vector<Widget*> RelativeLayoutManager::getAllWidgets(cc::ui::LayoutProtocol* layout)
 {
     Vector<Node*> container = layout->getLayoutElements();
     Vector<Widget*> widgetChildren;

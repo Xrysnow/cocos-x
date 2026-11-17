@@ -32,7 +32,7 @@ namespace video
 
 		VideoAVDecoder();
 		~VideoAVDecoder();
-		bool open(cocos2d::io::StreamPtr source, const std::atomic<bool>* stop);
+		bool open(cc::io::StreamPtr source, const std::atomic<bool>* stop);
 		bool seek(double seconds, bool audioEnabled);
 		Step step(bool wantVideo, bool wantAudio);
 		const Info& info() const;

@@ -22,7 +22,7 @@ public:
     InputProcessor(GComponent* owner);
     ~InputProcessor();
 
-    cocos2d::Vec2 getTouchPosition(int touchId);
+    cc::Vec2 getTouchPosition(int touchId);
 
     void addTouchMonitor(int touchId, GObject* target);
     void removeTouchMonitor(GObject* target);
@@ -33,23 +33,23 @@ public:
     void setCaptureCallback(CaptureEventCallback value) { _captureCallback = value; }
     
     void disableDefaultTouchEvent();
-    bool touchDown(cocos2d::Touch *touch, cocos2d::Event *event);
-    void touchMove(cocos2d::Touch *touch, cocos2d::Event *event);
-    void touchUp(cocos2d::Touch *touch, cocos2d::Event *event);
+    bool touchDown(cc::Touch *touch, cc::Event *event);
+    void touchMove(cc::Touch *touch, cc::Event *event);
+    void touchUp(cc::Touch *touch, cc::Event *event);
     
 private:
-    bool onTouchBegan(cocos2d::Touch * touch, cocos2d::Event *);
-    void onTouchMoved(cocos2d::Touch * touch, cocos2d::Event *);
-    void onTouchEnded(cocos2d::Touch * touch, cocos2d::Event *);
-    void onTouchCancelled(cocos2d::Touch * touch, cocos2d::Event *);
+    bool onTouchBegan(cc::Touch * touch, cc::Event *);
+    void onTouchMoved(cc::Touch * touch, cc::Event *);
+    void onTouchEnded(cc::Touch * touch, cc::Event *);
+    void onTouchCancelled(cc::Touch * touch, cc::Event *);
 
-    void onMouseDown(cocos2d::EventMouse* event);
-    void onMouseUp(cocos2d::EventMouse* event);
-    void onMouseMove(cocos2d::EventMouse* event);
-    void onMouseScroll(cocos2d::EventMouse* event);
+    void onMouseDown(cc::EventMouse* event);
+    void onMouseUp(cc::EventMouse* event);
+    void onMouseMove(cc::EventMouse* event);
+    void onMouseScroll(cc::EventMouse* event);
 
-    void onKeyDown(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event*);
-    void onKeyUp(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event*);
+    void onKeyDown(cc::EventKeyboard::KeyCode keyCode, cc::Event*);
+    void onKeyUp(cc::EventKeyboard::KeyCode keyCode, cc::Event*);
 
     TouchInfo* getTouch(int touchId, bool createIfNotExisits = true);
     void updateRecentInput(TouchInfo* touch, GObject* target);
@@ -58,9 +58,9 @@ private:
     void setEnd(TouchInfo* touch, GObject* target);
     GObject* clickTest(TouchInfo* touch, GObject* target);
 
-    cocos2d::EventListenerTouchOneByOne* _touchListener;
-    cocos2d::EventListenerMouse* _mouseListener;
-    cocos2d::EventListenerKeyboard* _keyboardListener;
+    cc::EventListenerTouchOneByOne* _touchListener;
+    cc::EventListenerMouse* _mouseListener;
+    cc::EventListenerKeyboard* _keyboardListener;
     std::vector<TouchInfo*> _touches;
     GComponent* _owner;
     CaptureEventCallback _captureCallback;

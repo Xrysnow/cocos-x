@@ -35,7 +35,7 @@ void GTextField::setUBBEnabled(bool value)
     }
 }
 
-void GTextField::setColor(const cocos2d::Color3B& value)
+void GTextField::setColor(const cc::Color3B& value)
 {
     TextFormat* tf = getTextFormat();
     if (tf->color != value)
@@ -55,7 +55,7 @@ void GTextField::setFontSize(float value)
     }
 }
 
-void GTextField::setOutlineColor(const cocos2d::Color3B& value)
+void GTextField::setOutlineColor(const cc::Color3B& value)
 {
     TextFormat* tf = getTextFormat();
     if (tf->outlineColor != value)
@@ -65,7 +65,7 @@ void GTextField::setOutlineColor(const cocos2d::Color3B& value)
     }
 }
 
-void GTextField::setTemplateVars(cocos2d::ValueMap* value)
+void GTextField::setTemplateVars(cc::ValueMap* value)
 {
     if (_templateVars == nullptr && value == nullptr)
         return;
@@ -75,17 +75,17 @@ void GTextField::setTemplateVars(cocos2d::ValueMap* value)
     else
     {
         if (_templateVars == nullptr)
-            _templateVars = new cocos2d::ValueMap();
+            _templateVars = new cc::ValueMap();
         *_templateVars = *value;
     }
 
     flushVars();
 }
 
-GTextField* GTextField::setVar(const std::string& name, const cocos2d::Value& value)
+GTextField* GTextField::setVar(const std::string& name, const cc::Value& value)
 {
     if (_templateVars == nullptr)
-        _templateVars = new cocos2d::ValueMap();
+        _templateVars = new cc::ValueMap();
 
     (*_templateVars)[name] = value;
 
@@ -102,7 +102,7 @@ void GTextField::updateSize()
 {
 }
 
-cocos2d::Value GTextField::getProp(ObjectPropID propId)
+cc::Value GTextField::getProp(ObjectPropID propId)
 {
     switch (propId)
     {
@@ -117,7 +117,7 @@ cocos2d::Value GTextField::getProp(ObjectPropID propId)
     }
 }
 
-void GTextField::setProp(ObjectPropID propId, const cocos2d::Value& value)
+void GTextField::setProp(ObjectPropID propId, const cc::Value& value)
 {
     switch (propId)
     {
@@ -175,7 +175,7 @@ void GTextField::setup_beforeAdd(ByteBuffer* buffer, int beginPos)
     }
 
     if (buffer->readBool())
-        _templateVars = new cocos2d::ValueMap();
+        _templateVars = new cc::ValueMap();
 }
 
 void GTextField::setup_afterAdd(ByteBuffer* buffer, int beginPos)

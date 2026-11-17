@@ -78,7 +78,7 @@ void ActionEase::startWithTarget(Node* target)
     }
     else
     {
-        cocos2d::log("ActionEase::startWithTarget error: target or _inner is nullptr!");
+        cc::log("ActionEase::startWithTarget error: target or _inner is nullptr!");
     }
 }
 
@@ -133,7 +133,7 @@ bool EaseRateAction::initWithAction(ActionInterval* action, float rate)
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)         \
-    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action)            \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cc::ActionInterval* action)            \
     {                                                                        \
         auto ease = cc::IntrusivePtr{new CLASSNAME()};                                   \
         if (ease->initWithAction(action))                                    \
@@ -182,7 +182,7 @@ EASE_TEMPLATE_IMPL(EaseCubicActionInOut, tweenfunc::cubicEaseInOut, EaseCubicAct
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASERATE_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC)                               \
-    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float rate)       \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cc::ActionInterval* action, float rate)       \
     {                                                                               \
         auto ease = cc::IntrusivePtr{new CLASSNAME()};                                          \
         if (ease->initWithAction(action, rate))                                     \
@@ -223,7 +223,7 @@ bool EaseElastic::initWithAction(ActionInterval* action, float period /* = 0.3f*
 // issue #16159 [https://github.com/cocos2d/cocos2d-x/pull/16159] for further info
 //
 #define EASEELASTIC_TEMPLATE_IMPL(CLASSNAME, TWEEN_FUNC, REVERSE_CLASSNAME)                 \
-    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cocos2d::ActionInterval* action, float period /* = 0.3f*/) \
+    cc::IntrusivePtr<CLASSNAME> CLASSNAME::create(cc::ActionInterval* action, float period /* = 0.3f*/) \
     {                                                                                       \
         auto ease = cc::IntrusivePtr{new CLASSNAME()};                                                  \
         if (ease->initWithAction(action, period))                                           \
@@ -247,7 +247,7 @@ EASEELASTIC_TEMPLATE_IMPL(EaseElasticInOut, tweenfunc::elasticEaseInOut, EaseEla
 // EaseBezierAction
 //
 
-cc::IntrusivePtr<EaseBezierAction> EaseBezierAction::create(cocos2d::ActionInterval* action)
+cc::IntrusivePtr<EaseBezierAction> EaseBezierAction::create(cc::ActionInterval* action)
 {
     auto ret = cc::IntrusivePtr{new EaseBezierAction()};
     if (ret->initWithAction(action))

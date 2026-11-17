@@ -35,7 +35,7 @@ namespace backend
 {
 namespace PixelFormatUtils
 {
-typedef cocos2d::backend::PixelFormat PixelFormat;
+typedef cc::backend::PixelFormat PixelFormat;
 
 struct PixelFormatDescriptor
 {

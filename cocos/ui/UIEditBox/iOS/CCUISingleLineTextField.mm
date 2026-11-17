@@ -76,7 +76,7 @@
 
 - (CGRect)textRectForBounds:(CGRect)bounds
 {
-    auto glView = cocos2d::Director::getInstance()->getOpenGLView();
+    auto glView = cc::Director::getInstance()->getOpenGLView();
 
     float padding = CC_EDIT_BOX_PADDING * glView->getScaleX() / glView->getContentScaleFactor();
     return CGRectInset(bounds, padding, padding);

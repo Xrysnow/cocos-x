@@ -51,8 +51,8 @@ bool Physics3DComponent::init()
 }
 
 cc::IntrusivePtr<Physics3DComponent> Physics3DComponent::create(Physics3DObject* physicsObj,
-                                               const cocos2d::Vec3& translateInPhysics,
-                                               const cocos2d::Quaternion& rotInPhsyics)
+                                               const cc::Vec3& translateInPhysics,
+                                               const cc::Quaternion& rotInPhsyics)
 {
     cc::IntrusivePtr ret{new Physics3DComponent()};
     if (ret->init())
@@ -160,8 +160,8 @@ void Physics3DComponent::postSimulate()
     }
 }
 
-void Physics3DComponent::setTransformInPhysics(const cocos2d::Vec3& translateInPhysics,
-                                               const cocos2d::Quaternion& rotInPhsyics)
+void Physics3DComponent::setTransformInPhysics(const cc::Vec3& translateInPhysics,
+                                               const cc::Quaternion& rotInPhsyics)
 {
     Mat4::createRotation(rotInPhsyics, &_transformInPhysics);
     _transformInPhysics.m[12] = translateInPhysics.x;

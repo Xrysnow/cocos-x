@@ -242,7 +242,7 @@ void ComponentLua::storeLuaTable()
     lua_pop(l, 1);         // stack: table_return_from_lua
 
     // add table's elements to userdata's metatable
-    object_to_luaval<cocos2d::ComponentLua>(l, "cc.ComponentLua", this);  // stack: table_return_from_lua userdata
+    object_to_luaval<cc::ComponentLua>(l, "cc.ComponentLua", this);  // stack: table_return_from_lua userdata
     lua_getmetatable(l, -1);                                              // stack: table_return_from_lua userdata mt
     lua_remove(l, -2);                                                    // stack: table_return_from_lua mt
     lua_pushnil(l);                                                       // stack: table_return_from_lua mt nil
@@ -275,7 +275,7 @@ void ComponentLua::removeLuaTable()
 void ComponentLua::getUserData()
 {
     lua_State* l = LuaEngine::getInstance()->getLuaStack()->getLuaState();
-    object_to_luaval<cocos2d::ComponentLua>(l, "cc.ComponentLua", this);
+    object_to_luaval<cc::ComponentLua>(l, "cc.ComponentLua", this);
 }
 
 NS_CC_END

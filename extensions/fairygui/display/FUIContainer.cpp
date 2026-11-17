@@ -80,7 +80,7 @@ void FUIContainer::setClippingRegion(const Rect & clippingRegion)
     _rectClippingSupport->_clippingRegion = clippingRegion;
 }
 
-cocos2d::Node * FUIContainer::getStencil() const
+cc::Node * FUIContainer::getStencil() const
 {
     if (_stencilClippingSupport != nullptr)
         return _stencilClippingSupport->_stencil;
@@ -88,7 +88,7 @@ cocos2d::Node * FUIContainer::getStencil() const
         return nullptr;
 }
 
-void FUIContainer::setStencil(cocos2d::Node * stencil)
+void FUIContainer::setStencil(cc::Node * stencil)
 {
     if (_stencilClippingSupport == nullptr)
     {
@@ -296,7 +296,7 @@ const Rect& FUIContainer::getClippingRect()
     return _rectClippingSupport->_clippingRect;
 }
 
-void FUIContainer::visit(cocos2d::Renderer * renderer, const cocos2d::Mat4 & parentTransform, uint32_t parentFlags)
+void FUIContainer::visit(cc::Renderer * renderer, const cc::Mat4 & parentTransform, uint32_t parentFlags)
 {
     if (_stencilClippingSupport != nullptr)
     {

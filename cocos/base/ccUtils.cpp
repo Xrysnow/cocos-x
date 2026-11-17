@@ -633,7 +633,7 @@ backend::SamplerAddressMode toBackendAddressMode(int mode)
 
 const Mat4& getAdjustMatrix()
 {
-    static cocos2d::Mat4 adjustMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 1};
+    static cc::Mat4 adjustMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 1};
 
     return adjustMatrix;
 }
@@ -782,7 +782,7 @@ std::string urlDecode(std::string_view st)
 
 CC_DLL std::string base64Encode(std::string_view s)
 {
-    size_t n = cocos2d::base64::encoded_size(s.length());
+    size_t n = cc::base64::encoded_size(s.length());
     if (n > 0)
     {
         std::string ret;
@@ -795,10 +795,10 @@ CC_DLL std::string base64Encode(std::string_view s)
          * 
          */
 #if defined(_HAS_CXX23) && _HAS_CXX23 && (_MSC_VER >= 1931)
-        ret.resize_and_overwrite(n, [&](char* p, size_t) { return cocos2d::base64::encode(p, s.data(), s.length()); });
+        ret.resize_and_overwrite(n, [&](char* p, size_t) { return cc::base64::encode(p, s.data(), s.length()); });
 #else
         ret.resize(n);
-        ret.resize(cocos2d::base64::encode(&ret.front(), s.data(), s.length()));
+        ret.resize(cc::base64::encode(&ret.front(), s.data(), s.length()));
 #endif
 
         return ret;
@@ -808,16 +808,16 @@ CC_DLL std::string base64Encode(std::string_view s)
 
 CC_DLL std::string base64Decode(std::string_view s)
 {
-    size_t n = cocos2d::base64::decoded_size(s.length());
+    size_t n = cc::base64::decoded_size(s.length());
     if (n > 0)
     {
         std::string ret;
 
 #if defined(_HAS_CXX23) && _HAS_CXX23 && (_MSC_VER >= 1931)
-        ret.resize_and_overwrite(n, [&](char* p, size_t) { return cocos2d::base64::decode(p, s.data(), s.length()); });
+        ret.resize_and_overwrite(n, [&](char* p, size_t) { return cc::base64::decode(p, s.data(), s.length()); });
 #else
         ret.resize(n);
-        ret.resize(cocos2d::base64::decode(&ret.front(), s.data(), s.length()));
+        ret.resize(cc::base64::decode(&ret.front(), s.data(), s.length()));
 #endif
 
         return ret;
@@ -827,12 +827,12 @@ CC_DLL std::string base64Decode(std::string_view s)
 
 int base64Encode(const unsigned char* in, unsigned int inLength, char** out)
 {
-    auto n = cocos2d::base64::encoded_size(inLength);
+    auto n = cc::base64::encoded_size(inLength);
     // should be enough to store 8-bit buffers in 6-bit buffers
     *out = (char*)malloc(n + 1);
     if (*out)
     {
-        auto ret  = cocos2d::base64::encode(*out, in, inLength);
+        auto ret  = cc::base64::encode(*out, in, inLength);
         *out[ret] = '\0';
         return ret;
     }
@@ -841,10 +841,10 @@ int base64Encode(const unsigned char* in, unsigned int inLength, char** out)
 
 CC_DLL int base64Decode(const unsigned char* in, unsigned int inLength, unsigned char** out)
 {
-    size_t n = cocos2d::base64::decoded_size(inLength);
+    size_t n = cc::base64::decoded_size(inLength);
     *out     = (unsigned char*)malloc(n);
     if (*out)
-        return static_cast<int>(cocos2d::base64::decode(*out, (char*)in, inLength));
+        return static_cast<int>(cc::base64::decode(*out, (char*)in, inLength));
     return 0;
 }
 

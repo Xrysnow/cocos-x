@@ -8,7 +8,7 @@
 
 NS_FGUI_BEGIN
 
-class FUIInput : public cocos2d::ui::EditBox
+class FUIInput : public cc::ui::EditBox
 {
 public:
     static cc::IntrusivePtr<FUIInput> create();
@@ -36,7 +36,7 @@ public:
 private:
     void continueInit();
 
-    void _touchDownAction(cocos2d::Ref *sender, cocos2d::ui::Widget::TouchEventType controlEvent);
+    void _touchDownAction(cc::Ref *sender, cc::ui::Widget::TouchEventType controlEvent);
 
     TextFormat* _textFormat;
     bool _password;

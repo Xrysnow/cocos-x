@@ -14,7 +14,7 @@
 #error "CCGLViewImpl-desktop-mac.mm requires -fno-objc-arc"
 #endif
 
-namespace cocos2d
+namespace cc
 {
 namespace detail
 {
@@ -113,4 +113,4 @@ void* getMacNSGLContext(const MacWindowBridge* /*bridge*/)
 }
 
 } // namespace detail
-} // namespace cocos2d
+} // namespace cc

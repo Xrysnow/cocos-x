@@ -69,7 +69,7 @@ void FileUtilsAndroid::setAssetManagerFromJava(jobject a)
         return;
     }
 
-    cocos2d::FileUtilsAndroid::assetmanager = aassetMgr;
+    cc::FileUtilsAndroid::assetmanager = aassetMgr;
 }
 
 FileUtils* FileUtils::getInstance()

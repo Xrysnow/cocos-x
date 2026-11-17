@@ -38,7 +38,7 @@
 
 using namespace yasio;
 
-namespace cocos2d
+namespace cc
 {
 
 namespace network
