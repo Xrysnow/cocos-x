@@ -26,7 +26,7 @@
 
 #include <cstdint>
 #include "../memory/Memory.h"
-#include "Event.h"
+#include "SyncEvent.h"
 #include "concurrentqueue/concurrentqueue.h"
 
 namespace cc {
@@ -207,13 +207,13 @@ private:
 
 class TerminateConsumerThreadMessage final : public Message {
 public:
-    TerminateConsumerThreadMessage(EventSem *pEvent, ReaderContext *pR) noexcept;
+    TerminateConsumerThreadMessage(SyncEventSem *pEvent, ReaderContext *pR) noexcept;
 
     void execute() noexcept override;
     char const *getName() const noexcept override;
 
 private:
-    EventSem *_event{nullptr};
+    SyncEventSem *_event{nullptr};
     ReaderContext *_reader{nullptr};
 };
 

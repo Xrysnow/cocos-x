@@ -30,7 +30,7 @@
 namespace cc {
 
 template <typename T>
-class Event final {
+class SyncEvent final {
 public:
     inline void wait() noexcept { _syncObject.wait(); }
     inline void signal() noexcept { _syncObject.signal(); };
@@ -40,7 +40,7 @@ private:
     T _syncObject{};
 };
 
-using EventCV = Event<ConditionVariable>;
-using EventSem = Event<Semaphore>;
+using SyncEventCV = SyncEvent<ConditionVariable>;
+using SyncEventSem = SyncEvent<Semaphore>;
 
 } // namespace cc

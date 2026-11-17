@@ -76,7 +76,7 @@ set(gfx_src
 
   base/threading/ConditionVariable.h
   base/threading/ConditionVariable.cpp
-  base/threading/Event.h
+  base/threading/SyncEvent.h
   base/threading/MessageQueue.h
   base/threading/MessageQueue.cpp
   base/threading/Semaphore.h

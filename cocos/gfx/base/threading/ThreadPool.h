@@ -29,7 +29,7 @@
 #include <functional>
 #include <future>
 #include <thread>
-#include "Event.h"
+#include "SyncEvent.h"
 #include "base/Macros.h"
 #include "base/std/container/list.h"
 #include "concurrentqueue/concurrentqueue.h"

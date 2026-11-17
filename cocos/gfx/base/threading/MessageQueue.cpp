@@ -119,8 +119,8 @@ void MessageQueue::kick() noexcept {
 }
 
 void MessageQueue::kickAndWait() noexcept {
-    EventSem event;
-    EventSem *const pEvent = &event;
+    SyncEventSem event;
+    SyncEventSem *const pEvent = &event;
 
     ENQUEUE_MESSAGE_1(this, WaitUntilFinish,
                       pEvent, pEvent,
@@ -145,8 +145,8 @@ void MessageQueue::runConsumerThread() noexcept {
 void MessageQueue::terminateConsumerThread() noexcept {
     if (_immediateMode || !_workerAttached) return;
 
-    EventSem event;
-    EventSem *const pEvent = &event;
+    SyncEventSem event;
+    SyncEventSem *const pEvent = &event;
 
     ReaderContext *const pR = &_reader;
 
@@ -304,7 +304,7 @@ char const *MemoryChunkSwitchMessage::getName() const noexcept {
     return "MemoryChunkSwitch";
 }
 
-TerminateConsumerThreadMessage::TerminateConsumerThreadMessage(EventSem *const pEvent, ReaderContext *const pR) noexcept
+TerminateConsumerThreadMessage::TerminateConsumerThreadMessage(SyncEventSem *const pEvent, ReaderContext *const pR) noexcept
 : _event(pEvent),
   _reader(pR) {
 }
