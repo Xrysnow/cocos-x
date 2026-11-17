@@ -169,18 +169,14 @@ endif()
 
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
-# gfx remains static in the original mode and supplies objects to the core DLL.
-add_subdirectory(gfx)
-target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} external OpenAL ogg cocos_gfx)
+target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} external OpenAL ogg)
 if(CC_BUILD_SHARED_LIBS)
-    # Preserve the public header requirements without propagating the internal
-    # gfx objects or implementation libraries into consumers' link commands.
-    foreach(_cc_headers_target external cocos_gfx)
-        target_include_directories(${COCOS_CORE_LIB} PUBLIC
-            $<TARGET_PROPERTY:${_cc_headers_target},INTERFACE_INCLUDE_DIRECTORIES>)
-        target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
-            $<TARGET_PROPERTY:${_cc_headers_target},INTERFACE_COMPILE_DEFINITIONS>)
-    endforeach()
+    # Preserve external's public header requirements across the core DLL boundary.
+    # Its implementation libraries remain private to cocos2d.dll.
+    target_include_directories(${COCOS_CORE_LIB} PUBLIC
+        $<TARGET_PROPERTY:external,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
+        $<TARGET_PROPERTY:external,INTERFACE_COMPILE_DEFINITIONS>)
 endif()
 
 if(CC_ENABLE_VIDEO_TEXTURE)
@@ -215,6 +211,10 @@ target_include_directories(${COCOS_CORE_LIB}
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/audio
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/platform/${PLATFORM_FOLDER}
 )
+
+# Append gfx's original include roots after the core's existing roots.
+# gfx sources share the core library/export contract and skip its PCH.
+include(gfx/CMakeLists.txt)
 
 set_target_properties(${COCOS_CORE_LIB}
                       PROPERTIES

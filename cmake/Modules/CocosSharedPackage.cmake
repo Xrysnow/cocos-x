@@ -27,9 +27,6 @@ function(cocos_collect_consumer_links consumer_target output)
         # public interface can add libraries to an independent consumer link.
         if(current_type STREQUAL "SHARED_LIBRARY" OR current_type STREQUAL "MODULE_LIBRARY")
             set(link_properties INTERFACE_LINK_LIBRARIES)
-        elseif(current_type STREQUAL "OBJECT_LIBRARY")
-            # gfx objects belong exclusively to cocos2d.dll.
-            continue()
         else()
             set(link_properties LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
         endif()

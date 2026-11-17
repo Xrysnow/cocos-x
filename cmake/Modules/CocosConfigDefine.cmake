@@ -91,7 +91,7 @@ function(use_cocos2dx_compile_define target)
             PUBLIC _SCL_SECURE_NO_WARNINGS
         )
         if(CC_BUILD_SHARED_LIBS)
-            # Both the core and its gfx object library produce the same DLL.
+            # All core sources, including gfx, are built into the same DLL.
             # Consumers must see dllimport, never the producer definitions.
             target_compile_definitions(${target} 
                 PRIVATE _USRDLL

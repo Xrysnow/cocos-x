@@ -13,4 +13,6 @@ The cocos renderer adapter remains in `cocos/renderer/backend/gfx`.
 
 ### CMake usage
 
-`cocos/CMakeLists.txt` builds this module as the independent C++20 static library `cocos_gfx` and links it directly to `cocos2d`. Shader compiler and optional job-system dependencies are supplied by the engine's `external` directory. Metal header and framework requirements are configured by this module.
+`cocos/CMakeLists.txt` includes this module's source configuration and compiles gfx directly into `cocos2d` in both static and shared-core builds. The existing public include roots and backend definitions are preserved. Gfx translation units skip the core `cocos2d.h` precompiled header.
+
+Shader compiler and optional job-system libraries are supplied by the engine's `external` target. Metal source properties and framework requirements are applied directly to the core target.

@@ -10,8 +10,9 @@ The option defaults to `OFF` and works with both static and supported shared-cor
 builds. Platform entry points, icons and build commands are documented in
 [`templates/README.md`](../templates/README.md).
 
-The default `CC_BUILD_SHARED_LIBS=OFF` keeps the core and gfx static. Set
-`CC_BUILD_SHARED_LIBS=ON` to build `cocos2d.dll` with gfx embedded in that DLL;
+Gfx sources are compiled directly into the core target. The default
+`CC_BUILD_SHARED_LIBS=OFF` builds a static `cocos2d` library; set
+`CC_BUILD_SHARED_LIBS=ON` to build `cocos2d.dll`;
 Lua bindings and extensions remain static libraries. The shared mode currently
 supports Windows x64 with MSVC only. It does not change third-party library types.
 
