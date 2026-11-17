@@ -81,15 +81,28 @@ elseif(APPLE)
         set_target_properties(cocos_demo PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/proj.ios_mac/ios/Info.plist"
             XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
-            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
+            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "@executable_path/Frameworks"
+            INSTALL_RPATH_USE_LINK_PATH FALSE)
+        get_target_property(demo_openal_framework OpenAL FRAMEWORK)
+        if(demo_openal_framework)
+            if(XCODE)
+                # Match the framework location recorded by CMake for the link.
+                set_xcode_property(OpenAL CONFIGURATION_BUILD_DIR "${CMAKE_BINARY_DIR}/lib/$(CONFIGURATION)")
+                set_property(TARGET cocos_demo APPEND PROPERTY XCODE_EMBED_FRAMEWORKS OpenAL)
+            else()
+                add_custom_command(TARGET cocos_demo POST_BUILD
+                    COMMAND /usr/bin/ditto "$<TARGET_BUNDLE_DIR:OpenAL>"
+                        "$<TARGET_BUNDLE_CONTENT_DIR:cocos_demo>/Frameworks/soft_oal.framework"
+                    VERBATIM)
+            endif()
+        endif()
     endif()
     cocos_config_app_xcode_property(cocos_demo)
     if(CC_ENABLE_VIDEO_TEXTURE)
         if(XCODE)
             set_property(TARGET cocos_demo APPEND PROPERTY XCODE_EMBED_FRAMEWORKS "${FFMPEG_LIBRARY}")
-            set_target_properties(cocos_demo PROPERTIES
-                XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
-                XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY ON)
         else()
             get_target_property(demo_ffmpeg_framework ext_ffmpeg LOCATION)
             add_custom_command(TARGET cocos_demo POST_BUILD
@@ -99,8 +112,11 @@ elseif(APPLE)
         endif()
         if(MACOSX)
             target_link_options(cocos_demo PRIVATE -Wl,-rpath,@loader_path/../Frameworks)
-        else()
-            target_link_options(cocos_demo PRIVATE -Wl,-rpath,@executable_path/Frameworks)
         endif()
+    endif()
+    if(XCODE AND (CC_ENABLE_VIDEO_TEXTURE OR demo_openal_framework))
+        set_target_properties(cocos_demo PROPERTIES
+            XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
+            XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY ON)
     endif()
 endif()

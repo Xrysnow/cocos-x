@@ -2,7 +2,9 @@
 
 The demo shares `Classes/AppDelegate.*` and `Resources/main.lua` across Windows,
 Linux, macOS, iOS and Android. Lua creates one `cc.Label` containing `Hello world!`
-16 design units from the upper-left corner of the visible area. The desktop
+16 design units from the upper-left corner of the visible area. With a native
+file picker available, “Open a file” selects a document, imports an application-owned
+copy in the background, and displays its path. The desktop
 window is 960 x 540. No console window or statistics overlay is created.
 The script returns `true` after installing the scene so startup can detect a
 missing or broken script. Desktop resource lookup also works from another CWD.
@@ -31,6 +33,12 @@ static/shared mode.
 
 ## Linux
 
+An enabled file dialog needs libdbus-1 at build time and a session bus, XDG
+Desktop Portal and a FileChooser backend at runtime. Folder selection needs
+FileChooser v3. Building GLFW with Wayland adds wayland-client, wayland-protocols
+and wayland-scanner. A parented Wayland picker uses compositor xdg-foreign v2.
+The engine's existing Linux rendering path uses X11.
+
 Install the engine's Linux development dependencies first, then:
 
 ```sh
@@ -56,6 +64,14 @@ open build-demo-mac/bin/cocos_demo/Debug/cocos_demo.app
 The bundle contains the Lua script, PNG and multi-resolution ICNS icon. No
 console controller is used. Use the matching architecture for engine dependencies.
 
+The native file dialog uses an AppKit sheet on the engine window. When enabling
+App Sandbox for a host application, configure its signing target with
+`com.apple.security.app-sandbox` and the user-selected file entitlement it
+needs. Apps that open files only can use `com.apple.security.files.user-selected.read-only`.
+Apps that export files need `com.apple.security.files.user-selected.read-write`.
+Hosts with App Sandbox enabled should use `DocumentAccess` for selected external
+files. Hosts without App Sandbox can also use the local path when available.
+
 ## iOS
 
 ```sh
@@ -66,11 +82,23 @@ cmake -S . -B build-demo-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS \
 
 Open the generated Xcode project, select `cocos_demo`, set your signing team and
 choose a device. The iPhone/iPad target includes an AppIcon asset catalog and a
-plain launch storyboard. UIKit owns the native gfx Metal surface and forwards
-background/foreground events to the shared application. Simulator builds require
-engine dependencies built for that simulator SDK.
+plain launch storyboard. The template declares one UIKit window scene, attaches
+the native gfx Metal surface to that scene, and forwards its background and
+foreground transitions to the shared application. Reconnecting the scene
+reattaches the same game view. Simulator builds require engine dependencies
+built for that simulator SDK.
+
+`CC_ENABLE_FILE_DIALOG=ON` uses UIKit and Uniform Type Identifiers and requires
+iOS 14 or later. The picker presents from the engine view's active scene. Exports
+hand an existing file to Files as a copy. Provider URLs are accessed through
+`DocumentAccess` while the system authorization and file coordination are active.
 
 ## Android
+
+The engine's CocosActivity forwards Storage Access Framework results. Selected
+files and trees keep their URI grants for the session. An app using a custom
+Activity should preserve the CocosActivity result and lifecycle hooks. No broad
+storage permission is required for the picker.
 
 Open `templates/proj.android` in Android Studio or run its Gradle wrapper with a
 JDK 17+ and installed SDK 35, NDK `30.0.16248370`, and CMake `4.1.2`:
