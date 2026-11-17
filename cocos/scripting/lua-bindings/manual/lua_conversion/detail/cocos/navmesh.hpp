@@ -2,7 +2,7 @@
 #include "../record.hpp"
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
-#include "navmesh/CCNavMeshAgent.h"
+#include "navmesh/NavMeshAgent.h"
 
 namespace lua
 {

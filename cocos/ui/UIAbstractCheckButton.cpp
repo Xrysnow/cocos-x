@@ -24,7 +24,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "ui/UIAbstractCheckButton.h"
-#include "2d/CCSprite.h"
+#include "2d/Sprite.h"
 #include "renderer/ccShaders.h"
 #include "renderer/backend/ProgramStateRegistry.h"
 

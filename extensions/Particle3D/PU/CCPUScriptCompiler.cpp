@@ -26,7 +26,7 @@
 
 #include "CCPUScriptCompiler.h"
 #include "extensions/Particle3D/PU/CCPUTranslateManager.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 NS_CC_BEGIN
 
 // ObjectAbstractNode

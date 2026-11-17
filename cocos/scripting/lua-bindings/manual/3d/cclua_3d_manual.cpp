@@ -27,9 +27,9 @@
 #include "scripting/lua-bindings/auto/cclua_geometry_auto.hpp"
 #include "scripting/lua-bindings/manual/lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#include "3d/CCBundle3D.h"
-#include "3d/CCMeshRenderer.h"
-#include "3d/CCTerrain.h"
+#include "3d/Bundle3D.h"
+#include "3d/MeshRenderer.h"
+#include "3d/Terrain.h"
 #include <array>
 #include <vector>
 

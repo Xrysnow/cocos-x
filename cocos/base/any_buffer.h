@@ -23,7 +23,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include <string.h>
 #include <utility>
 #include <new>

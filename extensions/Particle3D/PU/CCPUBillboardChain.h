@@ -27,12 +27,12 @@
 #pragma once
 
 #include <vector>
-#include "renderer/CCRenderState.h"
-#include "renderer/CCMeshCommand.h"
-#include "renderer/CCCallbackCommand.h"
+#include "renderer/RenderState.h"
+#include "renderer/MeshCommand.h"
+#include "renderer/CallbackCommand.h"
 #include "renderer/backend/Buffer.h"
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 
 NS_CC_BEGIN
 

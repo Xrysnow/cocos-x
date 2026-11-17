@@ -30,8 +30,8 @@ THE SOFTWARE.
 
 #include <string>
 
-#include "math/CCMath.h"
-#include "base/CCRef.h"
+#include "math/Math.h"
+#include "base/Ref.h"
 #include "renderer/backend/Types.h"
 
 #include "ccEnums.h"

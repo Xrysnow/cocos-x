@@ -28,8 +28,8 @@
 
 #if CC_ENABLE_VIDEO_PLATFORM && (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 #include "platform/android/jni/JniHelper.h"
-#include "platform/CCFileUtils.h"
-#include "base/CCRefPtr.h"
+#include "platform/FileUtils.h"
+#include "base/RefPtr.h"
 #include "ui/UIHelper.h"
 #include <algorithm>
 #include <array>

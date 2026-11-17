@@ -42,10 +42,10 @@
 #include <stdlib.h>
 #include <set>
 
-#include "base/CCData.h"
+#include "base/Data.h"
 #include "base/Macros.h"
-#include "platform/CCPlatformMacros.h"
-#include "platform/CCFileUtils.h"
+#include "platform/PlatformMacros.h"
+#include "platform/FileUtils.h"
 #include <map>
 #include <mutex>
 

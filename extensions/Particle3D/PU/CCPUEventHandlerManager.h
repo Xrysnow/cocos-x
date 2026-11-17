@@ -26,7 +26,7 @@
 #ifndef __CC_PU_PARTICLE_3D_EVENT_HANDLER_MANAGER_H__
 #define __CC_PU_PARTICLE_3D_EVENT_HANDLER_MANAGER_H__
 
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "extensions/Particle3D/PU/CCPUScriptTranslator.h"
 #include "extensions/Particle3D/PU/CCPUEventHandler.h"
 #include "extensions/Particle3D/PU/CCPUDoAffectorEventHandlerTranslator.h"

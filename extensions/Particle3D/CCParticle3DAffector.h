@@ -26,7 +26,7 @@
 #ifndef __CC_PARTICLE_3D_AFFECTOR_H__
 #define __CC_PARTICLE_3D_AFFECTOR_H__
 
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include <vector>
 #include "ExtensionExport.h"
 

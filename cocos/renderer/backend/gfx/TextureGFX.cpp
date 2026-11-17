@@ -1,10 +1,10 @@
 #include "TextureGFX.h"
 #include "base/Macros.h"
-#include "base/CCEventListenerCustom.h"
-#include "base/CCEventDispatcher.h"
-#include "base/CCEventType.h"
-#include "base/CCDirector.h"
-#include "platform/CCPlatformConfig.h"
+#include "base/EventListenerCustom.h"
+#include "base/EventDispatcher.h"
+#include "base/EventType.h"
+#include "base/Director.h"
+#include "platform/PlatformConfig.h"
 #include "UtilsGFX.h"
 #include <cstring>
 

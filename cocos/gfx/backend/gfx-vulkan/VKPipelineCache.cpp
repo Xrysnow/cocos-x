@@ -29,7 +29,7 @@
 #include "base/BinaryArchive.h"
 
 #include "gfx-base/GFXUtil.h"
-#include "platform/CCFileUtilsDirectory.h"
+#include "platform/FileUtilsDirectory.h"
 
 namespace {
 const char *fileName = "pipeline_cache_vk.bin";

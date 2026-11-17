@@ -39,24 +39,24 @@ THE SOFTWARE.
 
 #include "openssl/evp.h"
 
-#include "base/CCDirector.h"
-#include "base/CCAsyncTaskPool.h"
-#include "base/CCEventDispatcher.h"
+#include "base/Director.h"
+#include "base/AsyncTaskPool.h"
+#include "base/EventDispatcher.h"
 #include "base/ccConstants.h"
 #include "base/ccUTF8.h"
-#include "renderer/CCCustomCommand.h"
-#include "renderer/CCRenderer.h"
-#include "renderer/CCTextureCache.h"
-#include "renderer/CCRenderState.h"
+#include "renderer/CustomCommand.h"
+#include "renderer/Renderer.h"
+#include "renderer/TextureCache.h"
+#include "renderer/RenderState.h"
 #include "renderer/backend/Types.h"
 #include "renderer/backend/PixelBufferDescriptor.h"
 
-#include "platform/CCStdC.h"
-#include "platform/CCImage.h"
-#include "platform/CCFileUtils.h"
-#include "platform/CCFileUtilsDirectory.h"
-#include "2d/CCSprite.h"
-#include "2d/CCRenderTexture.h"
+#include "platform/StdC.h"
+#include "platform/Image.h"
+#include "platform/FileUtils.h"
+#include "platform/FileUtilsDirectory.h"
+#include "2d/Sprite.h"
+#include "2d/RenderTexture.h"
 
 #include "base/base64.h"
 
@@ -429,7 +429,7 @@ std::string computeDigest(std::string_view data, std::string_view algorithm, boo
 LanguageType getLanguageTypeByISO2(const char* code)
 {
     // this function is used by all platforms to get system language
-    // except windows: core/platform/win32/CCApplication-win32.cpp
+    // except windows: core/platform/win32/Application-win32.cpp
     LanguageType ret = LanguageType::ENGLISH;
 
     if (strncmp(code, "zh", 2) == 0)

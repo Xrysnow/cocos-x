@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include "io/MemoryBuffer.h"
 #include "io/Stream.h"
 

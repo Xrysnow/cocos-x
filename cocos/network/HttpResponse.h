@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include <ctype.h>
 #include <algorithm>
 #include <map>

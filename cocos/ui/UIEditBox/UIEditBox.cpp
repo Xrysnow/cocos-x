@@ -24,7 +24,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "ui/UIEditBox/UIEditBox.h"
 #include "ui/UIEditBox/UIEditBoxImpl.h"
 #include "ui/UIHelper.h"

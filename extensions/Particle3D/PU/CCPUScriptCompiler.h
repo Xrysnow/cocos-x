@@ -26,7 +26,7 @@
 
 #ifndef __CC_PU_SCRIPT_COMPILER_H__
 #define __CC_PU_SCRIPT_COMPILER_H__
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "base/hlookup.h"
 #include "extensions/Particle3D/PU/CCPUScriptParser.h"
 

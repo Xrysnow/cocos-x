@@ -26,7 +26,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "math/TransformUtils.h"
-#include "math/CCAffineTransform.h"
+#include "math/AffineTransform.h"
 
 namespace cc {
 

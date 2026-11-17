@@ -27,7 +27,7 @@
 #ifndef __CC_PU_SCRIPT_LEXER_H__
 #define __CC_PU_SCRIPT_LEXER_H__
 
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include <vector>
 #include <string>
 #include "ExtensionExport.h"

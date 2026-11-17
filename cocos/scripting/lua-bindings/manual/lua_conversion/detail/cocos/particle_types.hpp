@@ -1,6 +1,6 @@
 #pragma once
 #include "value_types.hpp"
-#include "2d/CCParticleSystem.h"
+#include "2d/ParticleSystem.h"
 
 namespace lua
 {

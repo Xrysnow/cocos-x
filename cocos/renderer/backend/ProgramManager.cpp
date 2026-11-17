@@ -28,8 +28,8 @@
 #include "ShaderModule.h"
 #include "renderer/ccShaders.h"
 #include "base/Macros.h"
-#include "platform/CCPlatformMacros.h"
-#include "base/CCConfiguration.h"
+#include "platform/PlatformMacros.h"
+#include "base/Configuration.h"
 
 CC_BACKEND_BEGIN
 

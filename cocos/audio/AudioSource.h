@@ -1,9 +1,9 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioPool.h"
 #include "AudioFilter.h"
 #include "AudioCommon.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "math/Vec3.h"
 #include <array>
 #include <map>

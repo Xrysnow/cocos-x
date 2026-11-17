@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "VideoPlayMode.h"
 #include "VideoAsync.h"
-#include "2d/CCSprite.h"
+#include "2d/Sprite.h"
 #include "io/Stream.h"
 #include <cstdint>
 #include <functional>

@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 /// @cond DO_NOT_SHOW
 
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 /**
  * @addtogroup renderer

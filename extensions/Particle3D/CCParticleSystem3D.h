@@ -26,8 +26,8 @@
 #ifndef __CC_PARTICLE_SYSTEM_3D_H__
 #define __CC_PARTICLE_SYSTEM_3D_H__
 
-#include "2d/CCNode.h"
-#include "math/CCMath.h"
+#include "2d/Node.h"
+#include "math/Math.h"
 #include <vector>
 #include <map>
 #include <list>

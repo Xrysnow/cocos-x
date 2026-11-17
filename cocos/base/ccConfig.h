@@ -27,7 +27,7 @@ THE SOFTWARE.
 ****************************************************************************/
 #pragma once
 
-#include "platform/CCPlatformConfig.h"
+#include "platform/PlatformConfig.h"
 
 /**
  * @file

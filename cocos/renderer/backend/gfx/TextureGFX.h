@@ -1,6 +1,6 @@
 #pragma once
 #include "renderer/backend/Texture.h"
-#include "base/CCEventListenerCustom.h"
+#include "base/EventListenerCustom.h"
 #include "gfx/backend/GFXDeviceManager.h"
 
 CC_BACKEND_BEGIN

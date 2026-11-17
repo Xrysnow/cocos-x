@@ -27,8 +27,8 @@
 #ifndef __CC_PU_PARTICLE_3D_RIBBON_TRAIL_RENDER_H__
 #define __CC_PU_PARTICLE_3D_RIBBON_TRAIL_RENDER_H__
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/CCParticle3DRender.h"
 #include "extensions/Particle3D/PU/CCPUListener.h"
 #include "extensions/Particle3D/PU/CCPURender.h"

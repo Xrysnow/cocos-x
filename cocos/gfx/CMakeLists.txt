@@ -30,8 +30,6 @@ function(cocos_add_gfx_sources target)
     set(gfx_src_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
 
     set(gfx_src
-      math/Math.h
-
       backend/GFXDeviceManager.h
       backend/gfx-gles-common/GLESCommandPool.h
     )

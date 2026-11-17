@@ -29,7 +29,7 @@
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
 
     #include "ui/UIEditBox/UIEditBox.h"
-    #include "2d/CCLabel.h"
+    #include "2d/Label.h"
     #include "base/ccUTF8.h"
     #include <gtk/gtk.h>
 

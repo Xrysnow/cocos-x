@@ -20,7 +20,7 @@
  */
 
 #include "network/Uri.h"
-#include "base/CCConsole.h"
+#include "base/Console.h"
 
 #include <regex>
 #include <sstream>

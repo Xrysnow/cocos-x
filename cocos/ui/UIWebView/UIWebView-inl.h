@@ -24,14 +24,14 @@
  ****************************************************************************/
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 /// @cond DO_NOT_SHOW
 
 #include "ui/UIWebView/UIWebView.h"
-#include "platform/CCGLView.h"
-#include "base/CCDirector.h"
-#include "platform/CCFileUtils.h"
+#include "platform/GLView.h"
+#include "base/Director.h"
+#include "platform/FileUtils.h"
 
 NS_CC_BEGIN
 namespace ui

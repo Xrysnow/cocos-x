@@ -27,8 +27,8 @@
 #ifndef __CC_PU_PARTICLE_3D_DYNAMIC_ATTRIBUTE_H__
 #define __CC_PU_PARTICLE_3D_DYNAMIC_ATTRIBUTE_H__
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 #include "CCPUSimpleSpline.h"
 #include <vector>
 

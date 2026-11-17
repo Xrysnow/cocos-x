@@ -22,7 +22,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#include "platform/CCPlatformConfig.h"
+#include "platform/PlatformConfig.h"
 #include "base/ccConfig.h"
 #include "lua_conversion/lua_conversion.hpp"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
@@ -30,8 +30,8 @@
     #include "scripting/lua-bindings/auto/cclua_physics3d_auto.hpp"
     #include "scripting/lua-bindings/manual/tolua_fix.h"
     #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-    #include "scripting/lua-bindings/manual/CCLuaEngine.h"
-    #include "physics3d/CCPhysics3D.h"
+    #include "scripting/lua-bindings/manual/LuaEngine.h"
+    #include "physics3d/Physics3D.h"
 
 bool luaval_to_Physics3DWorld_HitResult(lua_State* L,
                                         int lo,

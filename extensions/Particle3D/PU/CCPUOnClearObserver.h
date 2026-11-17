@@ -27,8 +27,8 @@
 #ifndef __CC_PU_PARTICLE_3D_ON_CLEAR_OBSERVER_H__
 #define __CC_PU_PARTICLE_3D_ON_CLEAR_OBSERVER_H__
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/PU/CCPUObserver.h"
 #include <vector>
 #include <string>

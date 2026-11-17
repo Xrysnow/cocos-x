@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioDecoder.h"
 #include "base/Macros.h"
 #if CC_64BITS

@@ -1,8 +1,8 @@
 #include "cclua_geometry_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
-#include "3d/CCAABB.h"
-#include "3d/CCOBB.h"
-#include "3d/CCRay.h"
+#include "3d/AABB.h"
+#include "3d/OBB.h"
+#include "3d/Ray.h"
 
 static_assert(lua::value_type<cc::AABB>::value, "ValueTypes requires a shared runtime trait for cc::AABB");
 static_assert(lua::value_type<cc::OBB>::value, "ValueTypes requires a shared runtime trait for cc::OBB");

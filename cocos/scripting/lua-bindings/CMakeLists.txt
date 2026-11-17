@@ -1,12 +1,12 @@
 set(cocos_root ${COCOS2DX_ROOT_PATH})
 
 set(lua_bindings_manual_headers
-    manual/CCComponentLua.h
+    manual/ComponentLua.h
     manual/3d/cclua_3d_manual.h
-    manual/CCLuaStack.h
-    manual/CCLuaEngine.h
+    manual/LuaStack.h
+    manual/LuaEngine.h
     manual/lua_module_register.h
-    manual/CCLuaBridge.h
+    manual/LuaBridge.h
     manual/LuaBasicConversions.h
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
@@ -32,7 +32,7 @@ set(lua_bindings_manual_headers
     manual/lua_conversion/detail/cocos/physics.hpp
     manual/lua_conversion/detail/cocos/assets_manager.hpp
     manual/lua_conversion/detail/cocos/app_directories.hpp
-    manual/platform/ios/CCLuaObjcBridge.h
+    manual/platform/ios/LuaObjcBridge.h
     manual/network/cclua_network_manual.h
     manual/network/lua_xml_http_request.h
     manual/network/lua_downloader.h
@@ -41,7 +41,7 @@ set(lua_bindings_manual_headers
     manual/base/LuaScriptHandlerMgr.h
     manual/base/cclua_base_manual.hpp
     manual/CcluaLoader.h
-    manual/CCLuaValue.h
+    manual/LuaValue.h
     manual/physics3d/cclua_physics3d_manual.h
     manual/ui/cclua_ui_manual.hpp
     manual/ui/cclua_ui_values.hpp
@@ -49,15 +49,15 @@ set(lua_bindings_manual_headers
     )
 
 set(lua_bindings_manual_files
-    manual/CCLuaBridge.cpp
-    manual/CCLuaEngine.cpp
-    manual/CCLuaStack.cpp
-    manual/CCLuaValue.cpp
+    manual/LuaBridge.cpp
+    manual/LuaEngine.cpp
+    manual/LuaStack.cpp
+    manual/LuaValue.cpp
     manual/CcluaLoader.cpp
     manual/LuaBasicConversions.cpp
     manual/lua_module_register.cpp
     manual/tolua_fix.cpp
-    manual/CCComponentLua.cpp
+    manual/ComponentLua.cpp
     manual/base/LuaScriptHandlerMgr.cpp
     manual/base/cclua_base_manual.cpp
     manual/physics/cclua_physics_manual.cpp
@@ -123,14 +123,14 @@ if(CC_ENABLE_EXT_SPINE)
 endif()
 
 if(APPLE)
-    # CCLuaObjcBridge.mm needed by ios and mac
+    # LuaObjcBridge.mm needed by ios and mac
     set(lua_bindings_manual_headers
         ${lua_bindings_manual_headers}
-        manual/platform/ios/CCLuaObjcBridge.h
+        manual/platform/ios/LuaObjcBridge.h
         )
     set(lua_bindings_manual_files
         ${lua_bindings_manual_files}
-        manual/platform/ios/CCLuaObjcBridge.mm
+        manual/platform/ios/LuaObjcBridge.mm
         )
 endif()
 
@@ -229,7 +229,7 @@ endif()
 if(ANDROID)
     # Keep JNI entry points in a separate archive for whole-archive linking.
     add_library(lua_android_spec STATIC
-        manual/platform/android/CCLuaJavaBridge.cpp
+        manual/platform/android/LuaJavaBridge.cpp
         manual/platform/android/jni/LuaBridge.cpp
     )
 

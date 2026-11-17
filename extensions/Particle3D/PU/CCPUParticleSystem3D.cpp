@@ -37,7 +37,7 @@
 #include "extensions/Particle3D/PU/CCPUObserver.h"
 #include "extensions/Particle3D/PU/CCPUObserverManager.h"
 #include "extensions/Particle3D/PU/CCPUBehaviour.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 
 NS_CC_BEGIN
 

@@ -6,7 +6,7 @@
 
 #include "cocos2d.h"
 #include "base/Macros.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "base/SimpleTimer.h"
 
 NS_CC_BEGIN

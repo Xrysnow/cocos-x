@@ -30,7 +30,7 @@
 
 #include "GLES3GPUObjects.h"
 #include "gfx-base/GFXUtil.h"
-#include "platform/CCFileUtilsDirectory.h"
+#include "platform/FileUtilsDirectory.h"
 
 namespace cc::gfx {
 

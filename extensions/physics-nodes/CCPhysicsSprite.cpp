@@ -23,8 +23,8 @@
  */
 
 #include "CCPhysicsSprite.h"
-#include "base/CCDirector.h"
-#include "base/CCEventDispatcher.h"
+#include "base/Director.h"
+#include "base/EventDispatcher.h"
 
 #if (CC_ENABLE_CHIPMUNK_INTEGRATION || CC_ENABLE_BOX2D_INTEGRATION)
 

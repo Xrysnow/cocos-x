@@ -25,13 +25,13 @@
  ****************************************************************************/
 #include "scripting/lua-bindings/manual/network/lua_xml_http_request.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
-#include "scripting/lua-bindings/manual/CCLuaStack.h"
-#include "scripting/lua-bindings/manual/CCLuaValue.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
+#include "scripting/lua-bindings/manual/LuaStack.h"
+#include "scripting/lua-bindings/manual/LuaValue.h"
+#include "scripting/lua-bindings/manual/LuaEngine.h"
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
 
 #include "network/HttpClient.h"
-#include "platform/CCStdC.h"
+#include "platform/StdC.h"
 #include "yasio/yasio.hpp"
 
 #include <unordered_map>

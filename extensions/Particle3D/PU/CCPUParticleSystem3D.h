@@ -27,9 +27,9 @@
 #ifndef __CC_PU_PARTICLE_SYSTEM_3D_H__
 #define __CC_PU_PARTICLE_SYSTEM_3D_H__
 
-#include "2d/CCNode.h"
-#include "base/CCProtocols.h"
-#include "math/CCMath.h"
+#include "2d/Node.h"
+#include "base/Protocols.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/CCParticleSystem3D.h"
 #include <vector>
 #include <map>

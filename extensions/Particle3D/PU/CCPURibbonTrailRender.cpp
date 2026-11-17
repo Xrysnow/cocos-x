@@ -28,13 +28,13 @@
 #include "extensions/Particle3D/PU/CCPURibbonTrailRender.h"
 #include "extensions/Particle3D/PU/CCPUUtil.h"
 #include "extensions/Particle3D/PU/CCPUSimpleSpline.h"
-#include "renderer/CCMeshCommand.h"
-#include "renderer/CCRenderer.h"
-#include "renderer/CCTextureCache.h"
-#include "base/CCDirector.h"
-#include "3d/CCMeshRenderer.h"
-#include "3d/CCMesh.h"
-#include "2d/CCCamera.h"
+#include "renderer/MeshCommand.h"
+#include "renderer/Renderer.h"
+#include "renderer/TextureCache.h"
+#include "base/Director.h"
+#include "3d/MeshRenderer.h"
+#include "3d/Mesh.h"
+#include "2d/Camera.h"
 #include <sstream>
 
 NS_CC_BEGIN

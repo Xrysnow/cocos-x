@@ -26,7 +26,7 @@
 #include "scripting/lua-bindings/auto/cclua_ui_auto.hpp"
 #include "scripting/lua-bindings/manual/ui/cclua_ui_values.hpp"
 #include "scripting/lua-bindings/manual/lua_conversion/detail/binding_macros.hpp"
-#include "base/CCEventListenerFocus.h"
+#include "base/EventListenerFocus.h"
 #include "ui/CocosGUI.h"
 #if CC_ENABLE_VIDEO_PLATFORM
 #include "scripting/lua-bindings/auto/cclua_video_platform_auto.hpp"

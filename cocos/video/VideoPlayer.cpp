@@ -1,7 +1,7 @@
 ﻿#include "VideoPlayer.h"
 #include "VideoDecoder.h"
 #include "VideoPlayback.h"
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "renderer/backend/Device.h"
 
 using namespace video;

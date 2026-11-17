@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #define CC_BACKEND_BEGIN  namespace cc{ namespace backend{
 #define CC_BACKEND_END    }}

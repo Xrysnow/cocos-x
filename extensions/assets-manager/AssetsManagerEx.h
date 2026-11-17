@@ -30,9 +30,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "base/CCEventDispatcher.h"
-#include "platform/CCFileUtils.h"
-#include "network/CCDownloader.h"
+#include "base/EventDispatcher.h"
+#include "platform/FileUtils.h"
+#include "network/Downloader.h"
 
 #include "CCEventAssetsManagerEx.h"
 

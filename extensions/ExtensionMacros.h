@@ -26,7 +26,7 @@
 #ifndef __EXTENSIONMARCROS_H__
 #define __EXTENSIONMARCROS_H__
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #define NS_CC_EXT_BEGIN \
     namespace cc        \

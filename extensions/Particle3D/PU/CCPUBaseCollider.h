@@ -28,7 +28,7 @@
 #define __CC_PU_PARTICLE_3D_BASE_COLLIDER_H__
 
 #include "extensions/Particle3D/PU/CCPUAffector.h"
-#include "3d/CCAABB.h"
+#include "3d/AABB.h"
 
 NS_CC_BEGIN
 

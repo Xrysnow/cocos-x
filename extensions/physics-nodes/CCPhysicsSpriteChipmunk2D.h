@@ -25,10 +25,10 @@
 #ifndef __PHYSICSNODES_CCPhysicsSpriteChipmunk2DCHIPMUNK2D_H__
 #define __PHYSICSNODES_CCPhysicsSpriteChipmunk2DCHIPMUNK2D_H__
 
-#include "2d/CCSprite.h"
+#include "2d/Sprite.h"
 #include "extensions/ExtensionMacros.h"
 #include "extensions/ExtensionExport.h"
-#include "base/CCEventListenerCustom.h"
+#include "base/EventListenerCustom.h"
 
 struct cpBody;
 

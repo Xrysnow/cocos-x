@@ -1,8 +1,8 @@
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include "io/Stream.h"
-#include "platform/CCFileStream.h"
+#include "platform/FileStream.h"
 #include <memory>
 #include <string_view>
 

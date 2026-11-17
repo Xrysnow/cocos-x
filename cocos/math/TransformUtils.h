@@ -28,7 +28,7 @@ THE SOFTWARE.
 #ifndef __SUPPORT_TRANSFORM_UTILS_H__
 #define __SUPPORT_TRANSFORM_UTILS_H__
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include "base/Macros.h"
 

@@ -27,7 +27,7 @@
 #ifndef __UIEditBoxIMPLMAC_H__
 #define __UIEditBoxIMPLMAC_H__
 
-#include "platform/CCPlatformConfig.h"
+#include "platform/PlatformConfig.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
 

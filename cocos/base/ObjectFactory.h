@@ -29,9 +29,9 @@ THE SOFTWARE.
 #include <string>
 #include <unordered_map>
 #include <functional>
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "base/hlookup.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 NS_CC_BEGIN
 

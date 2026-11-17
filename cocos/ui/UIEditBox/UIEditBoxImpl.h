@@ -27,7 +27,7 @@
 #ifndef __UIEditBoxIMPL_H__
 #define __UIEditBoxIMPL_H__
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include "ui/UIEditBox/UIEditBox.h"
 

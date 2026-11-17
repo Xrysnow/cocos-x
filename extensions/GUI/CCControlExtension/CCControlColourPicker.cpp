@@ -32,8 +32,8 @@
  */
 
 #include "CCControlColourPicker.h"
-#include "2d/CCSpriteFrameCache.h"
-#include "2d/CCSpriteBatchNode.h"
+#include "2d/SpriteFrameCache.h"
+#include "2d/SpriteBatchNode.h"
 
 NS_CC_EXT_BEGIN
 

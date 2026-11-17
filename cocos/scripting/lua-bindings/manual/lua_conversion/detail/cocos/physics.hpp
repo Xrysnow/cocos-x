@@ -3,7 +3,7 @@
 #include "object.hpp"
 #include "value_types.hpp"
 #include "cocos2d.h"
-#include "physics3d/CCPhysics3DObject.h"
+#include "physics3d/Physics3DObject.h"
 
 namespace lua
 {

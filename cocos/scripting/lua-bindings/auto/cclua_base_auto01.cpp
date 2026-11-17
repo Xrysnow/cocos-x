@@ -1,19 +1,19 @@
 #include "cclua_base_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
 #include "cocos2d.h"
-#include "2d/CCProtectedNode.h"
-#include "base/CCAsyncTaskPool.h"
-#include "scripting/lua-bindings/manual/CCComponentLua.h"
-#include "renderer/CCRenderer.h"
-#include "renderer/CCPipelineDescriptor.h"
+#include "2d/ProtectedNode.h"
+#include "base/AsyncTaskPool.h"
+#include "scripting/lua-bindings/manual/ComponentLua.h"
+#include "renderer/Renderer.h"
+#include "renderer/PipelineDescriptor.h"
 #include "renderer/backend/RenderTarget.h"
 #include "renderer/backend/ShaderCache.h"
 #include "renderer/backend/Buffer.h"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-#include "physics3d/CCPhysics3DWorld.h"
+#include "physics3d/Physics3DWorld.h"
 #endif
 #if CC_USE_NAVMESH
-#include "navmesh/CCNavMesh.h"
+#include "navmesh/NavMesh.h"
 #endif
 
 int lua_cc_GLView_endToLua(lua_State* lua_S)

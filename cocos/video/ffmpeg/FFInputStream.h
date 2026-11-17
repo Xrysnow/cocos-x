@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "video/VideoCommon.h"
 #include "video/FFInfo.h"
 #include "FFFrameReceiver.h"

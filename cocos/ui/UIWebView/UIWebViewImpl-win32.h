@@ -26,14 +26,14 @@
 #ifndef __CC__UI__WEBVIEWIMPL_WIN32_H_
 #define __CC__UI__WEBVIEWIMPL_WIN32_H_
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2
 
     #include <string>
-    #include "CCStdC.h"
+    #include "StdC.h"
 
 NS_CC_BEGIN
 

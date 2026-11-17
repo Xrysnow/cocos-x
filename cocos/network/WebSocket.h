@@ -35,7 +35,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <algorithm>
 #include <map>
@@ -48,10 +48,10 @@
 #include <condition_variable>
 #include <future>
 
-#include "platform/CCPlatformMacros.h"
-#include "platform/CCStdC.h"
-#include "base/CCScheduler.h"
-#include "base/CCRef.h"
+#include "platform/PlatformMacros.h"
+#include "platform/StdC.h"
+#include "base/Scheduler.h"
+#include "base/Ref.h"
 #include "base/ConcurrentDeque.h"
 #include "yasio/yasio_fwd.hpp"
 #include "yasio/tlx/byte_buffer.hpp"

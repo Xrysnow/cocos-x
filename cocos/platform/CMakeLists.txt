@@ -25,87 +25,87 @@
 if(ANDROID)
     # refer to target: cocos/platform/android/CMakeLists.txt
     set(COCOS_PLATFORM_SPECIFIC_SRC
-        platform/android/CCApplication-android.cpp
-        platform/android/CCCommon-android.cpp
-        platform/android/CCGLViewImpl-android.cpp
-        platform/android/CCFileUtils-android.cpp
+        platform/android/Application-android.cpp
+        platform/android/Common-android.cpp
+        platform/android/GLViewImpl-android.cpp
+        platform/android/FileUtils-android.cpp
     )
 elseif(WINDOWS)
     set(COCOS_PLATFORM_SPECIFIC_HEADER
         platform/win32/compat/stdint.h
-        platform/win32/CCApplication-win32.h
+        platform/win32/Application-win32.h
         platform/win32/inet_pton_mingw.h
-        platform/win32/CCGL-win32.h
-        platform/win32/CCFileUtils-win32.h
-        platform/win32/CCStdC-win32.h
-        platform/win32/CCPlatformDefine-win32.h
-        platform/desktop/CCGLViewImpl-desktop.h
+        platform/win32/GL-win32.h
+        platform/win32/FileUtils-win32.h
+        platform/win32/StdC-win32.h
+        platform/win32/PlatformDefine-win32.h
+        platform/desktop/GLViewImpl-desktop.h
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
-        platform/win32/CCStdC-win32.cpp
-        platform/win32/CCFileUtils-win32.cpp
-        platform/win32/CCCommon-win32.cpp
-        platform/win32/CCApplication-win32.cpp
-        platform/win32/CCDevice-win32.cpp
+        platform/win32/StdC-win32.cpp
+        platform/win32/FileUtils-win32.cpp
+        platform/win32/Common-win32.cpp
+        platform/win32/Application-win32.cpp
+        platform/win32/Device-win32.cpp
         platform/win32/inet_pton_mingw.cpp
-        platform/desktop/CCGLViewImpl-desktop.cpp
+        platform/desktop/GLViewImpl-desktop.cpp
         )
 
 elseif(APPLE)
     set(COCOS_PLATFORM_SPECIFIC_HEADER
-        platform/apple/CCFileUtils-apple.h
-        platform/apple/CCDevice-apple.h
+        platform/apple/FileUtils-apple.h
+        platform/apple/Device-apple.h
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
-        platform/apple/CCFileUtils-apple.mm
-        platform/apple/CCAppDirectories-apple.mm
-        platform/apple/CCDevice-apple.mm
+        platform/apple/FileUtils-apple.mm
+        platform/apple/AppDirectories-apple.mm
+        platform/apple/Device-apple.mm
         )
     if(MACOSX)
         set(COCOS_PLATFORM_SPECIFIC_HEADER
             ${COCOS_PLATFORM_SPECIFIC_HEADER}
-            platform/mac/CCStdC-mac.h
-            platform/desktop/CCGLViewImpl-desktop.h
-            platform/mac/CCGLViewImpl-desktop-mac.h
-            platform/mac/CCPlatformDefine-mac.h
-            platform/mac/CCApplication-mac.h
+            platform/mac/StdC-mac.h
+            platform/desktop/GLViewImpl-desktop.h
+            platform/mac/GLViewImpl-desktop-mac.h
+            platform/mac/PlatformDefine-mac.h
+            platform/mac/Application-mac.h
             )
         set(COCOS_PLATFORM_SPECIFIC_SRC
             ${COCOS_PLATFORM_SPECIFIC_SRC}
-            platform/mac/CCApplication-mac.mm
-            platform/desktop/CCGLViewImpl-desktop.cpp
-            platform/mac/CCGLViewImpl-desktop-mac.mm
-            platform/mac/CCCommon-mac.mm
-            platform/mac/CCDevice-mac.mm
+            platform/mac/Application-mac.mm
+            platform/desktop/GLViewImpl-desktop.cpp
+            platform/mac/GLViewImpl-desktop-mac.mm
+            platform/mac/Common-mac.mm
+            platform/mac/Device-mac.mm
             )
         # Keep the shared implementation pure C++; native ownership stays in MRC.
-        set_source_files_properties(platform/desktop/CCGLViewImpl-desktop.cpp
+        set_source_files_properties(platform/desktop/GLViewImpl-desktop.cpp
             PROPERTIES LANGUAGE CXX)
-        set_source_files_properties(platform/mac/CCGLViewImpl-desktop-mac.mm
+        set_source_files_properties(platform/mac/GLViewImpl-desktop-mac.mm
             PROPERTIES LANGUAGE OBJCXX)
-        set_property(SOURCE platform/mac/CCGLViewImpl-desktop-mac.mm
+        set_property(SOURCE platform/mac/GLViewImpl-desktop-mac.mm
             APPEND PROPERTY COMPILE_OPTIONS -fno-objc-arc)
     elseif(IOS)
         set(COCOS_PLATFORM_SPECIFIC_HEADER
             ${COCOS_PLATFORM_SPECIFIC_HEADER}
-            platform/ios/CCApplication-ios.h
-            platform/ios/CCDirectorCaller-ios.h
-            platform/ios/CCEAGLView-ios.h
-            platform/ios/CCGLViewImpl-ios.h
-            platform/ios/CCPlatformDefine-ios.h
-            platform/ios/CCStdC-ios.h
-            platform/ios/CCInputView-ios.h
+            platform/ios/Application-ios.h
+            platform/ios/DirectorCaller-ios.h
+            platform/ios/EAGLView-ios.h
+            platform/ios/GLViewImpl-ios.h
+            platform/ios/PlatformDefine-ios.h
+            platform/ios/StdC-ios.h
+            platform/ios/InputView-ios.h
             )
         set(COCOS_PLATFORM_SPECIFIC_SRC
             ${COCOS_PLATFORM_SPECIFIC_SRC}
-            platform/ios/CCApplication-ios.mm
-            platform/ios/CCCommon-ios.mm
-            platform/ios/CCDevice-ios.mm
-            platform/ios/CCDirectorCaller-ios.mm
-            platform/ios/CCEAGLView-ios.mm
-            platform/ios/CCGLViewImpl-ios.mm
-            platform/ios/CCImage-ios.mm
-            platform/ios/CCInputView-ios.mm
+            platform/ios/Application-ios.mm
+            platform/ios/Common-ios.mm
+            platform/ios/Device-ios.mm
+            platform/ios/DirectorCaller-ios.mm
+            platform/ios/EAGLView-ios.mm
+            platform/ios/GLViewImpl-ios.mm
+            platform/ios/Image-ios.mm
+            platform/ios/InputView-ios.mm
             )
     endif()
 
@@ -120,50 +120,50 @@ elseif(LINUX)
     endif(NOT CMAKE_CROSSCOMPILING)
 
     set(COCOS_PLATFORM_SPECIFIC_HEADER
-        platform/linux/CCApplication-linux.h
-        platform/linux/CCGL-linux.h
-        platform/linux/CCStdC-linux.h
-        platform/linux/CCFileUtils-linux.h
-        platform/linux/CCPlatformDefine-linux.h
-        platform/desktop/CCGLViewImpl-desktop.h
+        platform/linux/Application-linux.h
+        platform/linux/GL-linux.h
+        platform/linux/StdC-linux.h
+        platform/linux/FileUtils-linux.h
+        platform/linux/PlatformDefine-linux.h
+        platform/desktop/GLViewImpl-desktop.h
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
-        platform/linux/CCFileUtils-linux.cpp
-        platform/linux/CCCommon-linux.cpp
-        platform/linux/CCApplication-linux.cpp
-        platform/linux/CCDevice-linux.cpp
-        platform/desktop/CCGLViewImpl-desktop.cpp
+        platform/linux/FileUtils-linux.cpp
+        platform/linux/Common-linux.cpp
+        platform/linux/Application-linux.cpp
+        platform/linux/Device-linux.cpp
+        platform/desktop/GLViewImpl-desktop.cpp
         )
 endif()
 
 set(COCOS_PLATFORM_HEADER
     ${COCOS_PLATFORM_SPECIFIC_HEADER}
-    platform/CCApplication.h
-    platform/CCApplicationProtocol.h
-    platform/CCCommon.h
-    platform/CCDevice.h
-    platform/CCFileUtils.h
-    platform/CCAppDirectories.h
-    platform/CCFileStream.h
-    platform/CCGL.h
-    platform/CCGLView.h
-    platform/CCImage.h
-    platform/CCPlatformConfig.h
-    platform/CCPlatformDefine.h
-    platform/CCNamespace.h
-    platform/CCPlatformMacros.h
-    platform/CCPosixFileStream.h
-    platform/CCSAXParser.h
-    platform/CCStdC.h
+    platform/Application.h
+    platform/ApplicationProtocol.h
+    platform/Common.h
+    platform/Device.h
+    platform/FileUtils.h
+    platform/AppDirectories.h
+    platform/FileStream.h
+    platform/GL.h
+    platform/GLView.h
+    platform/Image.h
+    platform/PlatformConfig.h
+    platform/PlatformDefine.h
+    platform/Namespace.h
+    platform/PlatformMacros.h
+    platform/PosixFileStream.h
+    platform/SAXParser.h
+    platform/StdC.h
     )
 
 set(COCOS_PLATFORM_SRC
     ${COCOS_PLATFORM_SPECIFIC_SRC}
-    platform/CCFileUtils.cpp
-    platform/CCAppDirectories.cpp
-    platform/CCFileStream.cpp
-    platform/CCGLView.cpp
-    platform/CCImage.cpp
-    platform/CCPosixFileStream.cpp
-    platform/CCSAXParser.cpp
+    platform/FileUtils.cpp
+    platform/AppDirectories.cpp
+    platform/FileStream.cpp
+    platform/GLView.cpp
+    platform/Image.cpp
+    platform/PosixFileStream.cpp
+    platform/SAXParser.cpp
     )

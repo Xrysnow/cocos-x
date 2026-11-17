@@ -22,7 +22,7 @@
 
 #include "extensions/ExtensionMacros.h"
 #include "extensions/ExtensionExport.h"
-#include "2d/CCDrawNode.h"
+#include "2d/DrawNode.h"
 #include "box2d/box2d.h"
 #include "cocos2d.h"
 

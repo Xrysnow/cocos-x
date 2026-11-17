@@ -25,11 +25,11 @@
  ****************************************************************************/
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include "ui/UIWidget.h"
 #include "ui/GUIExport.h"
-#include "base/CCData.h"
+#include "base/Data.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) || \
     (CC_TARGET_PLATFORM == CC_PLATFORM_IOS && !defined(CC_TARGET_OS_TVOS)) || \

@@ -27,11 +27,11 @@
 
 #include "network/WebSocket.h"
 
-#include "base/CCDirector.h"
-#include "base/CCEventDispatcher.h"
+#include "base/Director.h"
+#include "base/EventDispatcher.h"
 #include "base/CCUtils.h"
 #include "base/ccRandom.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 #include "network/SSLVerification.h"
 
 using namespace yasio;

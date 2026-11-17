@@ -8,7 +8,7 @@
 #include "AudioDecoderFlac.h"
 #include "AudioDecoderMp3.h"
 #include "AudioCommon.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 #include <algorithm>
 #include <cctype>
 #include <unordered_map>

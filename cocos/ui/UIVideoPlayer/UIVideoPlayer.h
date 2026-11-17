@@ -25,7 +25,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "platform/CCPlatformConfig.h"
+#include "platform/PlatformConfig.h"
 
 #if CC_ENABLE_VIDEO_PLATFORM && \
     (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || \
@@ -34,7 +34,7 @@
     #include "ui/UIWidget.h"
 
     #if CC_VIDEOPLAYER_DEBUG_DRAW
-        #include "2d/CCDrawNode.h"
+        #include "2d/DrawNode.h"
     #endif
 
     #undef ERROR

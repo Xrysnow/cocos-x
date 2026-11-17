@@ -26,7 +26,7 @@
 #pragma once
 
 #include "Macros.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 #include <assert.h>
 #include <cstdint>

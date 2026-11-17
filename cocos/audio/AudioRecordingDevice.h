@@ -1,8 +1,8 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioSoundData.h"
 #include "AudioCommon.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include <string>
 
 NS_CC_BEGIN

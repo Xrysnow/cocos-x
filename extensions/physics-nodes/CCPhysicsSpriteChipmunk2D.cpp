@@ -23,8 +23,8 @@
  */
 
 #include "CCPhysicsSpriteChipmunk2D.h"
-#include "base/CCDirector.h"
-#include "base/CCEventDispatcher.h"
+#include "base/Director.h"
+#include "base/EventDispatcher.h"
 
 #include "chipmunk/chipmunk.h"
 

@@ -29,9 +29,9 @@
 #include "network/HttpClient.h"
 #include <errno.h>
 #include "base/ccUtils.h"
-#include "base/CCDirector.h"
-#include "platform/CCFileUtils.h"
-#include "platform/CCFileUtilsDirectory.h"
+#include "base/Director.h"
+#include "platform/FileUtils.h"
+#include "platform/FileUtilsDirectory.h"
 #include "yasio/yasio.hpp"
 #include "yasio/tlx/string_view.hpp"
 #include "network/SSLVerification.h"

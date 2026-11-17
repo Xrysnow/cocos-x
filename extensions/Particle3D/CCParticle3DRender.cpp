@@ -26,16 +26,16 @@
 #include <stddef.h>  // offsetof
 #include "base/ccTypes.h"
 #include "extensions/Particle3D/CCParticle3DRender.h"
-#include "renderer/CCMeshCommand.h"
-#include "renderer/CCRenderer.h"
-#include "renderer/CCTextureCache.h"
+#include "renderer/MeshCommand.h"
+#include "renderer/Renderer.h"
+#include "renderer/TextureCache.h"
 #include "renderer/backend/ProgramState.h"
 #include "renderer/backend/Buffer.h"
 #include "renderer/backend/Device.h"
 #include "renderer/ccShaders.h"
-#include "base/CCDirector.h"
-#include "3d/CCMeshRenderer.h"
-#include "2d/CCCamera.h"
+#include "base/Director.h"
+#include "3d/MeshRenderer.h"
+#include "2d/Camera.h"
 
 NS_CC_BEGIN
 

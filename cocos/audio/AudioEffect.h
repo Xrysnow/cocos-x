@@ -1,7 +1,7 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioCommon.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include <map>
 #ifdef ECHO
 #undef ECHO

@@ -29,8 +29,8 @@
 
 #include <iostream>
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/PU/CCPUScriptCompiler.h"
 
 NS_CC_BEGIN

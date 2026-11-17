@@ -30,7 +30,7 @@
 #define __CCCONTROLPOTENTIOMETER_H__
 
 #include "CCControl.h"
-#include "2d/CCProgressTimer.h"
+#include "2d/ProgressTimer.h"
 #include "extensions/ExtensionExport.h"
 
 NS_CC_EXT_BEGIN

@@ -33,7 +33,7 @@
 
 #include "CCControl.h"
 #include "CCInvocation.h"
-#include "base/CCMap.h"
+#include "base/Map.h"
 #include "ui/UIScale9Sprite.h"
 
 NS_CC_EXT_BEGIN

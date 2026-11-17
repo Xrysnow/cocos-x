@@ -3,7 +3,7 @@
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#include "physics3d/CCPhysics3D.h"
+#include "physics3d/Physics3D.h"
 
 int lua_cc_physics3d_Physics3DShape_constructor(lua_State* tolua_S)
 {

@@ -2,7 +2,7 @@
 #include "VideoDecoder.h"
 #include "VideoAsync.h"
 #include "VideoPlayMode.h"
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include <cstdint>
 #include <memory>
 #include <functional>

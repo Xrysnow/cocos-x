@@ -1,8 +1,8 @@
 #pragma once
 #include "../value_userdata.hpp"
-#include "3d/CCAABB.h"
-#include "3d/CCOBB.h"
-#include "3d/CCRay.h"
+#include "3d/AABB.h"
+#include "3d/OBB.h"
+#include "3d/Ray.h"
 
 namespace lua
 {

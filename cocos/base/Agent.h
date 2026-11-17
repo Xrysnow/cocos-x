@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <memory>
 #include "Macros.h"

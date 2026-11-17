@@ -27,7 +27,7 @@
 #if CC_USE_PHYSICS
 #include "scripting/lua-bindings/manual/lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
-#include "2d/CCScene.h"
+#include "2d/Scene.h"
 #include <cmath>
 #include <limits>
 #include <new>

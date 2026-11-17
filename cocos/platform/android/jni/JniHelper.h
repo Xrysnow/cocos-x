@@ -27,7 +27,7 @@ THE SOFTWARE.
 #ifndef __ANDROID_JNI_HELPER_H__
 #define __ANDROID_JNI_HELPER_H__
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <jni.h>
 #include <string>
@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include <unordered_map>
 #include <functional>
 #include <type_traits>
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "math/Vec3.h"
 #include "jni/jni.hpp"
 #include "base/ccstd.h"

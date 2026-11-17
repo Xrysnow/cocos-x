@@ -1,5 +1,5 @@
 #include "io/FileStream.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 #include <algorithm>
 #include <cerrno>
 #include <cstdio>

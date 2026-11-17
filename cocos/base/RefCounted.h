@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include "RefCountedExport.h"
 #include "Ptr.h"

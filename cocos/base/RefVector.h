@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include "base/Log.h"
 #include "base/Random.h"
 #include "base/RefCounted.h"

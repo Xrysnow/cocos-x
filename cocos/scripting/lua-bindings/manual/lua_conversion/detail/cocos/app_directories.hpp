@@ -1,6 +1,6 @@
 #pragma once
 #include "../conversion.hpp"
-#include "platform/CCAppDirectories.h"
+#include "platform/AppDirectories.h"
 
 namespace lua
 {

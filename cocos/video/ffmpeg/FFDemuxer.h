@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "base/CCRef.h"
-#include "base/CCMap.h"
+#include "base/Ref.h"
+#include "base/Map.h"
 #include "io/Stream.h"
 #include <atomic>
 #include <memory>

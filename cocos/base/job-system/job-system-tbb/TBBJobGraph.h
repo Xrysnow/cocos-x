@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <tbb/flow_graph.h>
 #include "base/std/container/deque.h"

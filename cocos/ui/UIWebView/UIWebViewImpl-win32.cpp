@@ -24,17 +24,17 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "platform/CCPlatformConfig.h"
+#include "platform/PlatformConfig.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 && defined(CC_ENABLE_MSEDGE_WEBVIEW2) && CC_ENABLE_MSEDGE_WEBVIEW2
 
 #include "UIWebViewImpl-win32.h"
 #include "UIWebView.h"
-#include "base/CCDirector.h"
-#include "base/CCRefPtr.h"
+#include "base/Director.h"
+#include "base/RefPtr.h"
 #include "base/ccUtils.h"
-#include "platform/CCFileUtils.h"
-#include "platform/CCGLView.h"
+#include "platform/FileUtils.h"
+#include "platform/GLView.h"
 #include "ui/UIHelper.h"
 
 #define WIN32_LEAN_AND_MEAN

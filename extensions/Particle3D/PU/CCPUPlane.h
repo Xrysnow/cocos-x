@@ -27,9 +27,9 @@
 #ifndef __CC_PU_PARTICLE_3D_PLANE_H__
 #define __CC_PU_PARTICLE_3D_PLANE_H__
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
-#include "3d/CCAABB.h"
+#include "base/Ref.h"
+#include "math/Math.h"
+#include "3d/AABB.h"
 #include <vector>
 
 NS_CC_BEGIN

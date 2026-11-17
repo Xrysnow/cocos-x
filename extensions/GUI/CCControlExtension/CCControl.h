@@ -32,7 +32,7 @@
 #define __CCCONTROL_H__
 
 #include "CCControlUtils.h"
-#include "2d/CCLayer.h"
+#include "2d/Layer.h"
 #include "extensions/ExtensionExport.h"
 
 NS_CC_EXT_BEGIN

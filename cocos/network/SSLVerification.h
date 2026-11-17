@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "yasio/yasio.hpp"
 #include "yasio/logging.hpp"
 #include <string>

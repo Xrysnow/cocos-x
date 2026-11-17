@@ -27,14 +27,14 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <string>
 #include <vector>
 #include <memory>
 #include <future>
 #include <atomic>
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "base/Macros.h"
 #include <functional>
 #include <string_view>

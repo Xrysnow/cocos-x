@@ -1,7 +1,7 @@
 #include "scripting/lua-bindings/auto/cclua_base_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
 #include "cocos2d.h"
-#include "2d/CCProtectedNode.h"
+#include "2d/ProtectedNode.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 

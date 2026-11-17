@@ -32,7 +32,7 @@
 #include <list>
 #include <map>
 
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include "extensions/Particle3D/PU/CCPUScriptLexer.h"
 
 NS_CC_BEGIN

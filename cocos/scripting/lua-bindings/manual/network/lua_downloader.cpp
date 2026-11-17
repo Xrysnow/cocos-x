@@ -22,11 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 #include "lua_downloader.h"
-#include "scripting/lua-bindings/manual/CCLuaValue.h"
+#include "scripting/lua-bindings/manual/LuaValue.h"
 
-#include "network/CCDownloader.h"
-#include "base/CCDirector.h"
-#include "base/CCScheduler.h"
+#include "network/Downloader.h"
+#include "base/Director.h"
+#include "base/Scheduler.h"
 #include <atomic>
 #include <iostream>
 
@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include <string>
 #include <sstream>
 
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
+#include "scripting/lua-bindings/manual/LuaEngine.h"
 
 USING_NS_CC;
 using namespace cc::network;

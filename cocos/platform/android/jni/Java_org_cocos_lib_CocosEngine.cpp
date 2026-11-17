@@ -28,7 +28,7 @@ THE SOFTWARE.
 #include <android/log.h>
 #include <string>
 #include "platform/android/jni/JniHelper.h"
-#include "platform/android/CCFileUtils-android.h"
+#include "platform/android/FileUtils-android.h"
 #include "platform/android/jni/Java_org_cocos_lib_CocosEngine.h"
 
 #include "base/ccUTF8.h"

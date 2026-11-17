@@ -28,12 +28,12 @@
 
 #include "ui/UIWebView/UIWebViewImpl-ios.h"
 #include "ui/UIWebView/UIWebView.h"
-#include "renderer/CCRenderer.h"
-#include "base/CCDirector.h"
-#include "base/CCRefPtr.h"
-#include "platform/CCGLView.h"
-#include "platform/ios/CCEAGLView-ios.h"
-#include "platform/CCFileUtils.h"
+#include "renderer/Renderer.h"
+#include "base/Director.h"
+#include "base/RefPtr.h"
+#include "platform/GLView.h"
+#include "platform/ios/EAGLView-ios.h"
+#include "platform/FileUtils.h"
 
 namespace
 {

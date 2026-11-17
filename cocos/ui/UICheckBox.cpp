@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "ui/UICheckBox.h"
 
 NS_CC_BEGIN

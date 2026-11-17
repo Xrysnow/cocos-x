@@ -3,10 +3,10 @@
 #include "renderer/backend/CommandBuffer.h"
 #include "renderer/backend/gfx/BufferGFX.h"
 #include "renderer/backend/gfx/RenderTargetGFX.h"
-#include "base/CCEventListenerCustom.h"
+#include "base/EventListenerCustom.h"
 #include "gfx/backend/GFXDeviceManager.h"
 #include "base/RefMap.h"
-#include "math/CCMath.h"
+#include "math/Math.h"
 #include <vector>
 
 CC_BACKEND_BEGIN

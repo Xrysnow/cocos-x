@@ -47,7 +47,7 @@ public final class BitmapHelper {
     // Constants
     // ===========================================================
 
-    /* The values are the same as cocos/platform/CCImage.h. */
+    /* The values are the same as cocos/platform/Image.h. */
     private static final int HORIZONTAL_ALIGN_LEFT = 1;
     private static final int HORIZONTAL_ALIGN_RIGHT = 2;
     private static final int HORIZONTAL_ALIGN_CENTER = 3;

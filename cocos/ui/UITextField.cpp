@@ -23,12 +23,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "ui/UITextField.h"
-#include "platform/CCFileUtils.h"
+#include "platform/FileUtils.h"
 #include "ui/UIHelper.h"
 #include "base/ccUTF8.h"
-#include "2d/CCCamera.h"
+#include "2d/Camera.h"
 
 NS_CC_BEGIN
 

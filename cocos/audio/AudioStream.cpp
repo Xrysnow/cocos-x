@@ -1,7 +1,7 @@
 #include "AudioStream.h"
 #include "AudioCommon.h"
-#include "platform/CCFileUtils.h"
-#include "platform/CCFileStream.h"
+#include "platform/FileUtils.h"
+#include "platform/FileStream.h"
 #include <algorithm>
 #include <cstdio>
 #include <limits>

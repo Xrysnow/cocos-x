@@ -32,14 +32,14 @@
     #include <string>
     #include <cmath>
     #include <limits>
-    #include "base/CCScheduler.h"
-    #include "base/CCEventDispatcher.h"
-    #include "base/CCEventListenerCustom.h"
-    #include "base/CCRefPtr.h"
+    #include "base/Scheduler.h"
+    #include "base/EventDispatcher.h"
+    #include "base/EventListenerCustom.h"
+    #include "base/RefPtr.h"
     #include "ui/UIVideoPlayer/VideoPlayerEventQueue.h"
-    #include "base/CCDirector.h"
-    #include "base/CCEventListenerKeyboard.h"
-    #include "platform/CCFileUtils.h"
+    #include "base/Director.h"
+    #include "base/EventListenerKeyboard.h"
+    #include "platform/FileUtils.h"
     #include "ui/UIHelper.h"
     #include "ui/UIVideoPlayer/MFMediaPlayer.h"
     #include "yasio/tlx/byte_buffer.hpp"

@@ -23,7 +23,7 @@
 ****************************************************************************/
 
 #include "GFXUtil.h"
-//#include "../../cocos/platform/CCFileUtils.h"
+//#include "../../cocos/platform/FileUtils.h"
 static std::function<ccstd::string()> PipelineCacheFolderHandler;
 
 namespace cc::gfx {

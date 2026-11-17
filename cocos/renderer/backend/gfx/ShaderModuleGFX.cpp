@@ -1,5 +1,5 @@
 #include "ShaderModuleGFX.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "base/Macros.h"
 #include "UtilsGFX.h"
 

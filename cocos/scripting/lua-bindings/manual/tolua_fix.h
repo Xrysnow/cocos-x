@@ -26,7 +26,7 @@
 #define __TOLUA_FIX_H_
 
 #include "tolua++.h"
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include <string>
 

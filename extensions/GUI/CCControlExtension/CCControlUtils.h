@@ -36,7 +36,7 @@
 #ifndef __CCCONTROL_UTILS_H__
 #define __CCCONTROL_UTILS_H__
 
-#include "2d/CCSprite.h"
+#include "2d/Sprite.h"
 #include "../../ExtensionMacros.h"
 #include "extensions/ExtensionExport.h"
 

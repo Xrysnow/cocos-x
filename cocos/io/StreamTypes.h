@@ -1,7 +1,7 @@
 #pragma once
 
-#include "platform/CCNamespace.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/Namespace.h"
+#include "platform/PlatformMacros.h"
 #include <cstddef>
 #include <cstdint>
 #include <optional>

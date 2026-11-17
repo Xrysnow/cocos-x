@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #ifndef USE_MEMORY_LEAK_DETECTOR
 #define USE_MEMORY_LEAK_DETECTOR 0

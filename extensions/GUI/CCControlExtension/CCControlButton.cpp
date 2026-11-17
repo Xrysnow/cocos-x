@@ -28,9 +28,9 @@
  */
 
 #include "CCControlButton.h"
-#include "2d/CCLabel.h"
-#include "2d/CCAction.h"
-#include "2d/CCActionInterval.h"
+#include "2d/Label.h"
+#include "2d/Action.h"
+#include "2d/ActionInterval.h"
 
 using namespace std;
 

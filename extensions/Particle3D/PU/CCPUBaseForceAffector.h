@@ -27,7 +27,7 @@
 #ifndef __CC_PU_PARTICLE_3D_BASE_FORCE_AFFECTOR_H__
 #define __CC_PU_PARTICLE_3D_BASE_FORCE_AFFECTOR_H__
 
-#include "math/CCMath.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/PU/CCPUAffector.h"
 
 NS_CC_BEGIN

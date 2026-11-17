@@ -1,7 +1,7 @@
 #include "cclua_3d_auto.hpp"
 #include "lua_conversion/lua_conversion.hpp"
 #include "cocos2d.h"
-#include "3d/CCBundle3D.h"
+#include "3d/Bundle3D.h"
 
 int lua_cc_Animation3D_getDuration(lua_State* lua_S)
 {

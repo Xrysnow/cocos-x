@@ -33,14 +33,14 @@
     #define _USE_MATH_DEFINES
 #endif
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 #include "base/ccConfig.h"
 // Define the common helper before loading platform compatibility fallbacks.
 #ifndef CC_UNUSED_PARAM
     #define CC_UNUSED_PARAM(unusedparam) (void)unusedparam
 #endif
 
-#include "platform/CCPlatformDefine.h"
+#include "platform/PlatformDefine.h"
 
 // Retain the foundation header contract for targets without a platform adapter.
 #ifndef CC_DLL

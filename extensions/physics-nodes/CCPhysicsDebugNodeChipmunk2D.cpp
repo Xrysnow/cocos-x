@@ -26,7 +26,7 @@
 #include "chipmunk/chipmunk_private.h"
 
 #include "base/ccTypes.h"
-#include "math/CCMath.h"
+#include "math/Math.h"
 
 #include <stdlib.h>
 #include <stdio.h>

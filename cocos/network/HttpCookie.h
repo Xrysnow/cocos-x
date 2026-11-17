@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 /// @cond DO_NOT_SHOW
 
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 #include <string.h>
 #include <string>

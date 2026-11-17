@@ -2,7 +2,7 @@
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 #include "lua_conversion/lua_conversion.hpp"
-#include "navmesh/CCNavMesh.h"
+#include "navmesh/NavMesh.h"
 
 int lua_cc_NavMeshAgent_completeOffMeshLink(lua_State* lua_S)
 {

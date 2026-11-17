@@ -23,14 +23,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "ui/UIScrollView.h"
-#include "base/CCDirector.h"
+#include "base/Director.h"
 #include "base/ccUtils.h"
-#include "platform/CCDevice.h"
+#include "platform/Device.h"
 #include "ui/UIScrollViewBar.h"
-#include "2d/CCTweenFunction.h"
-#include "2d/CCCamera.h"
+#include "2d/TweenFunction.h"
+#include "2d/Camera.h"
 NS_CC_BEGIN
 
 static const int NUMBER_OF_GATHERED_TOUCHES_FOR_MOVE_SPEED = 5;

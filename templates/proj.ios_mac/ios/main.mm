@@ -1,6 +1,6 @@
 #include "AppDelegate.h"
 #import <UIKit/UIKit.h>
-#import "platform/ios/CCEAGLView-ios.h"
+#import "platform/ios/EAGLView-ios.h"
 
 @interface DemoViewController : UIViewController
 @end

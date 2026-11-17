@@ -1,11 +1,11 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioSource.h"
 #include "AudioEffect.h"
 #include "AudioPool.h"
 #include "AudioDecoder.h"
 #include "AudioRecordingDevice.h"
-#include "base/CCVector.h"
+#include "base/Vector.h"
 #include <functional>
 #include <vector>
 #include <stack>

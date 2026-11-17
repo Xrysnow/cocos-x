@@ -27,7 +27,7 @@
 #if defined(__ANDROID__)
     #include <android/log.h>
 
-    #include "scripting/lua-bindings/manual/platform/android/CCLuaJavaBridge.h"
+    #include "scripting/lua-bindings/manual/platform/android/LuaJavaBridge.h"
 
     #include "base/ccUTF8.h"
 

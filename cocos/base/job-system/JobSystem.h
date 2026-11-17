@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #if CC_USE_JOB_SYSTEM_TASKFLOW
     #include "job-system-taskflow/TFJobGraph.h"

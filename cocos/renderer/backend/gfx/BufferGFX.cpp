@@ -1,8 +1,8 @@
 #include "BufferGFX.h"
 #include "base/Macros.h"
-#include "base/CCDirector.h"
-#include "base/CCEventType.h"
-#include "base/CCEventDispatcher.h"
+#include "base/Director.h"
+#include "base/EventType.h"
+#include "base/EventDispatcher.h"
 #include "UtilsGFX.h"
 #include <cassert>
 

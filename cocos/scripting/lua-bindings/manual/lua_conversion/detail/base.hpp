@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "tolua++.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include <cstddef>

@@ -1,6 +1,6 @@
 #pragma once
 #include "../conversion.hpp"
-#include "3d/CCTerrain.h"
+#include "3d/Terrain.h"
 #include <cmath>
 
 namespace lua {

@@ -30,15 +30,15 @@ THE SOFTWARE.
 
 #include <vector>
 #include <string>
-#include "2d/CCNode.h"
+#include "2d/Node.h"
 #include "base/Macros.h"
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include <cstdlib>
 #include <functional>
 #include <string_view>
 #include <utility>
-#include "base/CCRefPtr.h"
-#include "base/CCData.h"
+#include "base/RefPtr.h"
+#include "base/Data.h"
 #include "renderer/backend/Types.h"
 #include "math/Mat4.h"
 

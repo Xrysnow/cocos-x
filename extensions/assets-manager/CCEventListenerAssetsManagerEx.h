@@ -26,8 +26,8 @@
 #ifndef __cocos2d_libs__CCEventListenerAssetsManagerEx__
 #define __cocos2d_libs__CCEventListenerAssetsManagerEx__
 
-#include "base/CCEventListener.h"
-#include "base/CCEventListenerCustom.h"
+#include "base/EventListener.h"
+#include "base/EventListenerCustom.h"
 #include "extensions/ExtensionMacros.h"
 #include "extensions/ExtensionExport.h"
 

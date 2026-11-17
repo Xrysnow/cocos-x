@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include <cstdint>
 #include <string>
 #include <vector>

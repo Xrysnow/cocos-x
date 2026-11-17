@@ -46,7 +46,7 @@ THE SOFTWARE.
 /// @cond DO_NOT_SHOW
 
 #include "base/Macros.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 
 #include <stdlib.h>
 #include <string.h>

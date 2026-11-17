@@ -1,7 +1,7 @@
 #pragma once
 
-#include "platform/CCNamespace.h"
-#include "base/CCRefPtr.h"
+#include "platform/Namespace.h"
+#include "base/RefPtr.h"
 #include "io/StreamTypes.h"
 #include <limits>
 #include <vector>

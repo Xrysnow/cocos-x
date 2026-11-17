@@ -24,11 +24,11 @@
 
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 #include "Macros.h"
 #include "Types.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 
 NS_CC_BEGIN
 

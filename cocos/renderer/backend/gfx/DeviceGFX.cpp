@@ -9,7 +9,7 @@
 #include "DeviceInfoGFX.h"
 #include "RenderTargetGFX.h"
 #include "UtilsGFX.h"
-#include "base/CCConfiguration.h"
+#include "base/Configuration.h"
 #include "renderer/ccShaders.h"
 #include "gfx/backend/gfx-base/GFXUtil.h"
 #include <algorithm>

@@ -1,7 +1,7 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioStream.h"
-#include "base/CCRef.h"
+#include "base/Ref.h"
 #include <cstdint>
 #include <string>
 #include <vector>

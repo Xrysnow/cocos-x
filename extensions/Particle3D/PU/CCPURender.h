@@ -28,10 +28,10 @@
 
 #include <vector>
 
-#include "base/CCRef.h"
-#include "math/CCMath.h"
+#include "base/Ref.h"
+#include "math/Math.h"
 #include "extensions/Particle3D/CCParticle3DRender.h"
-#include "renderer/CCRenderState.h"
+#include "renderer/RenderState.h"
 #include "renderer/backend/Types.h"
 #include "renderer/backend/Buffer.h"
 

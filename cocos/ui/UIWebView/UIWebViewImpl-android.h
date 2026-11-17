@@ -24,7 +24,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "platform/CCNamespace.h"
+#include "platform/Namespace.h"
 
 /// @cond DO_NOT_SHOW
 
@@ -33,7 +33,7 @@
 #include <string>
 #include <string_view>
 
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 
 NS_CC_BEGIN
 

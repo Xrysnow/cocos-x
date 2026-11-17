@@ -24,14 +24,14 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#include "base/CCRefPtr.h"
+#include "base/RefPtr.h"
 #include "ui/UIEditBox/UIEditBoxImpl-common.h"
 
 #define kLabelZOrder 9999
 
 #include "ui/UIEditBox/UIEditBox.h"
-#include "base/CCDirector.h"
-#include "2d/CCLabel.h"
+#include "base/Director.h"
+#include "2d/Label.h"
 #include "ui/UIHelper.h"
 
 static const int CC_EDIT_BOX_PADDING = 5;

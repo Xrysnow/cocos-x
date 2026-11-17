@@ -32,14 +32,14 @@
 using namespace cc::ui;
 //-------------------------------------------------------------------------------------
 
-    #include "platform/ios/CCEAGLView-ios.h"
+    #include "platform/ios/EAGLView-ios.h"
 #    import <AVKit/AVPlayerViewController.h>
 #    import <CoreMedia/CMTime.h>
-    #include "base/CCDirector.h"
-    #include "base/CCRefPtr.h"
+    #include "base/Director.h"
+    #include "base/RefPtr.h"
     #include <cmath>
     #include <limits>
-    #include "platform/CCFileUtils.h"
+    #include "platform/FileUtils.h"
 
 @interface UIVideoViewWrapperIos : NSObject
 

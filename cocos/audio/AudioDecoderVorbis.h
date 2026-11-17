@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/CCPlatformMacros.h"
+#include "platform/PlatformMacros.h"
 #include "AudioDecoder.h"
 #include "AudioStream.h"
 #define OV_EXCLUDE_STATIC_CALLBACKS

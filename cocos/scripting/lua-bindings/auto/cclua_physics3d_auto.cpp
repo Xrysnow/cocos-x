@@ -2,7 +2,7 @@
 #include "base/ccConfig.h"
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
 #include "lua_conversion/lua_conversion.hpp"
-#include "physics3d/CCPhysics3D.h"
+#include "physics3d/Physics3D.h"
 
 int lua_cc_Physics3DShape_getShapeType(lua_State* lua_S)
 {

@@ -999,7 +999,7 @@ void CCVKDevice::copyBuffersToTexture(const uint8_t *const *buffers, Texture *ds
 // The swapchain is acquired/presented in BGRA order (see CCVKSwapchain::doInit ->
 // VK_FORMAT_B8G8R8A8_UNORM), but every readback consumer in the engine expects RGBA8 bytes:
 // PixelBufferDescriptor carries no format (renderer/backend/PixelBufferDescriptor.h) and
-// Image::initWithRawData hardcodes RGBA8 (platform/CCImage.cpp) before saveImageToPNG writes
+// Image::initWithRawData hardcodes RGBA8 (platform/Image.cpp) before saveImageToPNG writes
 // each pixel's first three bytes as R, G, B. Without this swap a captured PNG has red and blue
 // exchanged. The legacy Metal backend normalizes MTLPixelFormatBGRA8Unorm the same way in
 // UtilsMTL::swizzleImage().
