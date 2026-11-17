@@ -137,6 +137,7 @@ elseif(LINUX)
 endif()
 
 set(COCOS_PLATFORM_HEADER
+    platform/FileDialog.h
     ${COCOS_PLATFORM_SPECIFIC_HEADER}
     platform/Application.h
     platform/ApplicationProtocol.h
@@ -158,6 +159,7 @@ set(COCOS_PLATFORM_HEADER
     )
 
 set(COCOS_PLATFORM_SRC
+    platform/FileDialog.cpp
     ${COCOS_PLATFORM_SPECIFIC_SRC}
     platform/FileUtils.cpp
     platform/AppDirectories.cpp
@@ -167,3 +169,26 @@ set(COCOS_PLATFORM_SRC
     platform/PosixFileStream.cpp
     platform/SAXParser.cpp
     )
+
+if(CC_ENABLE_FILE_DIALOG)
+    if(WINDOWS)
+        list(APPEND COCOS_PLATFORM_SRC platform/win32/FileDialog-win32.cpp)
+    elseif(ANDROID)
+        list(APPEND COCOS_PLATFORM_SRC platform/android/jni/FileDialog-android.cpp)
+    elseif(LINUX)
+        list(APPEND COCOS_PLATFORM_SRC platform/linux/FileDialog-linux.cpp)
+    elseif(APPLE)
+        if(IOS)
+            if((CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS 14)
+                OR (CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET AND
+                    CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET VERSION_LESS 14))
+                message(FATAL_ERROR "CC_ENABLE_FILE_DIALOG requires iOS 14 or later")
+            endif()
+            set(_cc_picker platform/ios/FileDialog-ios.mm)
+        else()
+            set(_cc_picker platform/mac/FileDialog-mac.mm)
+        endif()
+        list(APPEND COCOS_PLATFORM_SRC ${_cc_picker} io/Document-apple.mm)
+        set_property(SOURCE ${_cc_picker} io/Document-apple.mm APPEND PROPERTY COMPILE_OPTIONS -fobjc-arc)
+    endif()
+endif()

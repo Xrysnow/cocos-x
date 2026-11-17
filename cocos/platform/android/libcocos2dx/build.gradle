@@ -7,6 +7,7 @@ android {
     defaultConfig {
         minSdkVersion PROP_MIN_SDK_VERSION
         targetSdkVersion PROP_TARGET_SDK_VERSION
+        consumerProguardFiles '../java/file-dialog.pro'
         versionCode 1
         versionName "1.0"
     }

@@ -25,6 +25,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "platform/desktop/GLViewImpl-desktop.h"
+#include "platform/FileDialogInternal.h"
 #include "platform/Application.h"
 #include "base/Configuration.h"
 #include "base/Director.h"
@@ -739,6 +740,7 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
+    dialog::forgetView(this);
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     GLFWEventHandler::setGLViewImpl(nullptr);
     _renderSurfaceAvailable = false;

@@ -43,6 +43,7 @@ if (NOT DEFINED CC_ENABLE_MFMEDIA)
 endif()
 
 option(CC_ENABLE_VIDEO_TEXTURE "Build FFmpeg video textures" OFF)
+option(CC_ENABLE_FILE_DIALOG "Build native asynchronous file dialogs" ON)
 
 # The legacy Windows selector supplies the default only. An explicitly set
 # platform option controls source selection and bindings on every platform.
@@ -146,6 +147,17 @@ else()
     set(_cc_core_link_scope PUBLIC)
 endif()
 target_compile_features(${COCOS_CORE_LIB} PUBLIC cxx_std_20)
+target_compile_definitions(${COCOS_CORE_LIB} PRIVATE CC_ENABLE_FILE_DIALOG=$<BOOL:${CC_ENABLE_FILE_DIALOG}>)
+if(CC_ENABLE_FILE_DIALOG)
+    if(WINDOWS)
+        target_link_libraries(${COCOS_CORE_LIB} PRIVATE uuid)
+    elseif(APPLE)
+        target_link_libraries(${COCOS_CORE_LIB} PRIVATE "-framework UniformTypeIdentifiers")
+        if(MACOSX)
+            target_link_libraries(${COCOS_CORE_LIB} PRIVATE "-framework Security")
+        endif()
+    endif()
+endif()
 target_compile_definitions(${COCOS_CORE_LIB} PUBLIC
     CC_ENABLE_VIDEO_PLATFORM=$<BOOL:${CC_ENABLE_VIDEO_PLATFORM}>)
 
@@ -169,6 +181,9 @@ endif()
 
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
+if(CC_ENABLE_FILE_DIALOG AND LINUX)
+    include(platform/linux/FileDialog-deps.cmake)
+endif()
 target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} external OpenAL ogg)
 if(CC_BUILD_SHARED_LIBS)
     # Preserve external's public header requirements across the core DLL boundary.

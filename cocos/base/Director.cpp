@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 // cocos2d includes
 #include "base/Director.h"
+#include "platform/FileDialogInternal.h"
 
 // standard includes
 #include <string>
@@ -109,6 +110,7 @@ Director::Director() = default;
 
 bool Director::init()
 {
+    dialog::startSession();
     PoolManager::getInstance();
     setDefaultValues();
 
@@ -155,6 +157,7 @@ bool Director::init()
 
 Director::~Director()
 {
+    dialog::stopSession();
     CCLOGINFO("deallocing Director: %p", this);
 
     CC_SAFE_RELEASE(_FPSLabel);
@@ -260,6 +263,7 @@ void Director::setGLDefaultValues()
 // Draw the Scene
 void Director::drawScene()
 {
+    dialog::pump();
 
     // calculate "global" dt
     calculateDeltaTime();
@@ -394,6 +398,7 @@ void Director::setOpenGLView(GLView* openGLView)
 
     if (_openGLView != openGLView)
     {
+        dialog::setView(openGLView);
         // Configuration. Gather GPU info
         Configuration* conf = Configuration::getInstance();
         conf->gatherGPUInfo();
@@ -969,6 +974,7 @@ void Director::restart()
 
 void Director::reset()
 {
+    dialog::stopSession();
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
 #endif  // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
@@ -1094,6 +1100,8 @@ void Director::purgeDirector()
 void Director::restartDirector()
 {
     reset();
+    dialog::startSession();
+    dialog::setView(_openGLView);
 
     // Texture cache need to be reinitialized
     initTextureCache();

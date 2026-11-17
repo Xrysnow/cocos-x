@@ -1,4 +1,5 @@
 set(COCOS_IO_HEADER
+    io/Document.h
     io/StreamTypes.h
     io/Stream.h
     io/MemoryBuffer.h
@@ -8,6 +9,9 @@ set(COCOS_IO_HEADER
     io/HttpStream.h
 )
 set(COCOS_IO_SRC
+    io/Document.cpp
+    io/DocumentTransfer.cpp
+    io/DocumentStaging.cpp
     io/Stream.cpp
     io/MemoryBuffer.cpp
     io/MemoryStream.cpp

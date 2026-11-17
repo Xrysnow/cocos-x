@@ -170,6 +170,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         this.mHandler = new CocosHandler(this);
 
         CocosEngine.init(this);
+        CocosFileDialog.bind(this, savedInstanceState);
 
         this.init();
 
@@ -212,6 +213,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         if (sContext != this) return;
 
         hideVirtualButton();
+        CocosFileDialog.setResumed(this, true);
         CocosEngine.onResume();
         if (mGLSurfaceView != null) mGLSurfaceView.handleOnResume();
         if (mWebViewHelper != null) WebViewHelper.setResumed(this, true);
@@ -223,6 +225,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     protected void onPause() {
     	Log.i(TAG, "onPause()");
 
+        CocosFileDialog.setResumed(this, false);
         if (mEditBoxHelper != null) EditBoxHelper.pause(this);
         if (mWebViewHelper != null) WebViewHelper.setResumed(this, false);
         VideoHelper.setResumed(this, false);
@@ -250,6 +253,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy()");
+        CocosFileDialog.unbind(this, !isFinishing());
         if (mHandler != null) mHandler.removeCallbacksAndMessages(null);
         if (mWebViewHelper != null) WebViewHelper.unbind(this, !isFinishing());
         if (mEditBoxHelper != null) EditBoxHelper.unbind(this, !isFinishing());
@@ -297,10 +301,18 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle state) {
+        CocosFileDialog.saveState(this, state);
+        super.onSaveInstanceState(state);
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        for (OnActivityResultListener listener : CocosEngine.getOnActivityResultListeners()) {
-            listener.onActivityResult(requestCode, resultCode, data);
+        if (!CocosFileDialog.onActivityResult(requestCode, resultCode, data)) {
+            for (OnActivityResultListener listener : CocosEngine.getOnActivityResultListeners()) {
+                listener.onActivityResult(requestCode, resultCode, data);
+            }
         }
 
         super.onActivityResult(requestCode, resultCode, data);

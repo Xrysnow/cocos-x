@@ -25,6 +25,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "platform/GLView.h"
+#include "platform/FileDialogInternal.h"
 
 #include "base/Touch.h"
 #include "base/Director.h"
@@ -116,7 +117,7 @@ GLView::GLView()
     , _resolutionPolicy(ResolutionPolicy::UNKNOWN)
 {}
 
-GLView::~GLView() {}
+GLView::~GLView() { dialog::forgetView(this); }
 
 void GLView::pollEvents() {}
 
