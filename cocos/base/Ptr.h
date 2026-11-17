@@ -26,6 +26,7 @@
 
 #include "platform/CCNamespace.h"
 
+#include <compare>
 #include <cstddef>
 #include <functional>
 #include <type_traits>
@@ -154,130 +155,38 @@ private:
 template <class T, class Ops>
 void swap(IntrusivePtr<T, Ops> &lhs, IntrusivePtr<T, Ops> &rhs) noexcept { lhs.swap(rhs); }
 
+// C++20 rewrites != and reversed operands from ==, and relational operators
+// from <=>. Compare borrowed pointers only; comparisons never acquire a share.
 template <class T, class U, class Ops, class OtherOps>
+    requires requires(T *a, U *b) { a == b; }
 bool operator==(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
     return lhs.get() == rhs.get();
 }
 template <class T, class U, class Ops>
+    requires requires(T *a, U *b) { a == b; }
 bool operator==(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
     return lhs.get() == rhs;
-}
-template <class T, class U, class Ops>
-bool operator==(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return lhs == rhs.get();
 }
 template <class T, class Ops>
 bool operator==(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
     return ptr.get() == nullptr;
 }
-template <class T, class Ops>
-bool operator==(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return nullptr == ptr.get();
-}
 
 template <class T, class U, class Ops, class OtherOps>
-bool operator!=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
-    return !(lhs.get() == rhs.get());
+    requires std::three_way_comparable_with<T *, U *>
+std::strong_ordering operator<=>(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
+    // compare_three_way supplies the total pointer order, including unrelated
+    // allocations, while preserving derived-to-base pointer adjustment.
+    return std::compare_three_way{}(lhs.get(), rhs.get());
 }
 template <class T, class U, class Ops>
-bool operator!=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
-    return !(lhs.get() == rhs);
-}
-template <class T, class U, class Ops>
-bool operator!=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return !(lhs == rhs.get());
+    requires std::three_way_comparable_with<T *, U *>
+std::strong_ordering operator<=>(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
+    return std::compare_three_way{}(lhs.get(), rhs);
 }
 template <class T, class Ops>
-bool operator!=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
-    return !(ptr.get() == nullptr);
-}
-template <class T, class Ops>
-bool operator!=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return !(nullptr == ptr.get());
-}
-
-template <class T, class U, class Ops, class OtherOps>
-bool operator<(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs.get());
-}
-template <class T, class U, class Ops>
-bool operator<(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs);
-}
-template <class T, class U, class Ops>
-bool operator<(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(lhs, rhs.get());
-}
-template <class T, class Ops>
-bool operator<(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
-    return std::less<T *>{}(ptr.get(), nullptr);
-}
-template <class T, class Ops>
-bool operator<(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return std::less<T *>{}(nullptr, ptr.get());
-}
-
-template <class T, class U, class Ops, class OtherOps>
-bool operator>(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs.get());
-}
-template <class T, class U, class Ops>
-bool operator>(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(rhs, lhs.get());
-}
-template <class T, class U, class Ops>
-bool operator>(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs);
-}
-template <class T, class Ops>
-bool operator>(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
-    return std::less<T *>{}(nullptr, ptr.get());
-}
-template <class T, class Ops>
-bool operator>(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return std::less<T *>{}(ptr.get(), nullptr);
-}
-
-template <class T, class U, class Ops, class OtherOps>
-bool operator<=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs.get());
-}
-template <class T, class U, class Ops>
-bool operator<=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(rhs, lhs.get());
-}
-template <class T, class U, class Ops>
-bool operator<=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(rhs.get(), lhs);
-}
-template <class T, class Ops>
-bool operator<=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
-    return !std::less<T *>{}(nullptr, ptr.get());
-}
-template <class T, class Ops>
-bool operator<=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return !std::less<T *>{}(ptr.get(), nullptr);
-}
-
-template <class T, class U, class Ops, class OtherOps>
-bool operator>=(const IntrusivePtr<T, Ops> &lhs, const IntrusivePtr<U, OtherOps> &rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs.get());
-}
-template <class T, class U, class Ops>
-bool operator>=(const IntrusivePtr<T, Ops> &lhs, U *rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(lhs.get(), rhs);
-}
-template <class T, class U, class Ops>
-bool operator>=(T *lhs, const IntrusivePtr<U, Ops> &rhs) noexcept {
-    return !std::less<std::common_type_t<T *, U *>>{}(lhs, rhs.get());
-}
-template <class T, class Ops>
-bool operator>=(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
-    return !std::less<T *>{}(ptr.get(), nullptr);
-}
-template <class T, class Ops>
-bool operator>=(std::nullptr_t, const IntrusivePtr<T, Ops> &ptr) noexcept {
-    return !std::less<T *>{}(nullptr, ptr.get());
+std::strong_ordering operator<=>(const IntrusivePtr<T, Ops> &ptr, std::nullptr_t) noexcept {
+    return std::compare_three_way{}(ptr.get(), static_cast<T *>(nullptr));
 }
 
 template <class T, class U, class Ops>
