@@ -266,7 +266,7 @@ public:
     {
         if (!_data.empty())
         {
-            ssize_t randIdx = RandomHelper::random_int<int>(0, static_cast<int>(_data.size()) - 1);
+            ssize_t randIdx = RandomHelper::randomInt<int>(0, static_cast<int>(_data.size()) - 1);
             return *(_data.begin() + randIdx);
         }
         return nullptr;

@@ -50,6 +50,7 @@ set(gfx_src
   base/Macros.h
   base/Object.h
   base/Ptr.h
+  base/Random.cpp
   base/Random.h
   base/RefCounted.cpp
   base/RefCounted.h

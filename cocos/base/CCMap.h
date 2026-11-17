@@ -369,7 +369,7 @@ public:
     {
         if (!_data.empty())
         {
-            ssize_t randIdx         = RandomHelper::random_int<int>(0, static_cast<int>(_data.size()) - 1);
+            ssize_t randIdx         = RandomHelper::randomInt<int>(0, static_cast<int>(_data.size()) - 1);
             const_iterator randIter = _data.begin();
             std::advance(randIter, randIdx);
             return randIter->second;

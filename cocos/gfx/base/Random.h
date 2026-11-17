@@ -29,7 +29,16 @@
 #include <cstdlib>
 #include <random>
 
-#include "base/Macros.h"
+// Match the core DLL contract without importing gfx's platform/helper macros.
+#if defined(_WIN32) && !defined(CC_STATIC)
+    #if defined(_USRDLL)
+        #define CC_RANDOM_API __declspec(dllexport)
+    #else
+        #define CC_RANDOM_API __declspec(dllimport)
+    #endif
+#else
+    #define CC_RANDOM_API
+#endif
 
 namespace cc {
 
@@ -37,7 +46,7 @@ namespace cc {
  * @class RandomHelper
  * @brief A helper class for creating random number.
  */
-class CC_DLL RandomHelper {
+class CC_RANDOM_API RandomHelper {
 public:
     template <typename T>
     static inline T randomReal(T min, T max) {
@@ -53,12 +62,19 @@ public:
         return dist(mt);
     }
 
-private:
-    static inline std::mt19937 &getEngine() {
-        static std::random_device seedGen;
-        static std::mt19937 engine(seedGen());
-        return engine;
+    // Compatibility with the cocos2d RandomHelper API.
+    template <typename T>
+    static inline T random_real(T min, T max) {
+        return randomReal(min, max);
     }
+
+    template <typename T>
+    static inline T random_int(T min, T max) {
+        return randomInt(min, max);
+    }
+
+private:
+    static std::mt19937 &getEngine();
 };
 
 /**

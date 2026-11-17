@@ -127,7 +127,6 @@ set(COCOS_BASE_SRC
     base/base64.cpp
     base/ccCArray.cpp
     base/ccFPSImages.cpp
-    base/ccRandom.cpp
     base/ccTypes.cpp
     base/ccUTF8.cpp
     base/ccUtils.cpp
