@@ -56,6 +56,7 @@ set(lua_bindings_manual_files
     manual/CcluaLoader.cpp
     manual/LuaBasicConversions.cpp
     manual/lua_module_register.cpp
+    manual/cclua_file_dialog.cpp
     manual/tolua_fix.cpp
     manual/ComponentLua.cpp
     manual/base/LuaScriptHandlerMgr.cpp

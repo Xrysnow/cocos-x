@@ -55,6 +55,8 @@ extern "C" {
 #include "base/ZipUtils.h"
 #include "platform/FileUtils.h"
 
+void register_file_dialog(lua_State* L);
+
 namespace
 {
 int get_string_for_print(lua_State* L, std::string* out)
@@ -145,6 +147,7 @@ bool LuaStack::init()
 
     g_luaType.clear();
     register_all_cc_base(_state);
+    register_file_dialog(_state);
     register_all_cc_backend(_state);
     register_all_cc_manual(_state);
     register_all_cc_module_manual(_state);
