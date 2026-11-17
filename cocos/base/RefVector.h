@@ -155,13 +155,13 @@ public:
         _data.push_back(object.get());
         object.detach(); // Commit ownership only after insertion succeeds.
     }
-    void pushBack(const RefVector &other) {
+    void extend(const RefVector &other) {
         const auto count = other.size();
         if (count == 0) return;
         if (this == &other) {
             // Snapshot iterators before growing would be invalidated by reserve.
             RefVector copy(other);
-            pushBack(copy);
+            extend(copy);
             return;
         }
         _data.insert(_data.end(), other.begin(), other.end());

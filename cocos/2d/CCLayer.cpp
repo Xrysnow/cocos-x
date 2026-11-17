@@ -662,7 +662,7 @@ bool LayerMultiplex::initWithArray(const Vector<Node*>& arrayOfLayers)
         }
 #endif  // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
         _layers.reserve(arrayOfLayers.size());
-        _layers.pushBack(arrayOfLayers);
+        _layers.extend(arrayOfLayers);
 
         _enabledLayer = 0;
         this->addChild(_layers.at(_enabledLayer));
