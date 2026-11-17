@@ -474,25 +474,16 @@ UIInterfaceOrientation getFixedOrientation(UIInterfaceOrientation statusBarOrien
 
 - (void)didMoveToWindow
 {
+    [super didMoveToWindow];
 #if !defined(CC_TARGET_OS_TVOS)
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onUIKeyboardNotification:)
-                                                 name:UIKeyboardWillShowNotification
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onUIKeyboardNotification:)
-                                                 name:UIKeyboardDidShowNotification
-                                               object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onUIKeyboardNotification:)
-                                                 name:UIKeyboardWillHideNotification
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onUIKeyboardNotification:)
-                                                 name:UIKeyboardDidHideNotification
-                                               object:nil];
+    NSNotificationCenter* center = NSNotificationCenter.defaultCenter;
+    for (NSString* name in @[UIKeyboardWillShowNotification, UIKeyboardDidShowNotification,
+                             UIKeyboardWillHideNotification, UIKeyboardDidHideNotification])
+    {
+        [center removeObserver:self name:name object:nil];
+        if (self.window)
+            [center addObserver:self selector:@selector(onUIKeyboardNotification:) name:name object:nil];
+    }
 #endif
 }
 

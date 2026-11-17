@@ -49,10 +49,9 @@ Application::~Application()
 
 int Application::run()
 {
-    if (applicationDidFinishLaunching())
-    {
-        [[CCDirectorCaller sharedDirectorCaller] startMainLoop];
-    }
+    if (!applicationDidFinishLaunching())
+        return 1;
+    [[CCDirectorCaller sharedDirectorCaller] startMainLoop];
     return 0;
 }
 
