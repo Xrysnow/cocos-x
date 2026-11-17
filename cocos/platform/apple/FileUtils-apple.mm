@@ -202,11 +202,17 @@ std::string FileUtilsApple::getPathForDirectory(std::string_view dir,
 std::string FileUtilsApple::getFullPathForFilenameWithinDirectory(std::string_view directory,
                                                                   std::string_view filename) const
 {
-    if (directory[0] != '/')
+    if (filename.empty() || filename.find('\0') != std::string_view::npos ||
+        directory.find('\0') != std::string_view::npos)
+        return "";
+
+    if (directory.empty() || directory.front() != '/')
     {
-        NSString* fullpath = [pimpl_->getBundle() pathForResource:[NSString stringWithUTF8String:filename.data()]
-                                                           ofType:nil
-                                                      inDirectory:[NSString stringWithUTF8String:directory.data()]];
+        NSString* name = [NSString stringWithUTF8String:std::string(filename).c_str()];
+        NSString* folder = directory.empty() ? nil : [NSString stringWithUTF8String:std::string(directory).c_str()];
+        if (name == nil || (!directory.empty() && folder == nil))
+            return "";
+        NSString* fullpath = [pimpl_->getBundle() pathForResource:name ofType:nil inDirectory:folder];
         if (fullpath != nil)
         {
             return [fullpath UTF8String];
