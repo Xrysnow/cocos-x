@@ -332,7 +332,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
             s.height           = attributeDict["tileheight"].asFloat();
             tileset->_tileSize = s;
 
-            tmxMapInfo->getTilesets().pushBack(tileset.get());
+            tmxMapInfo->getTilesets().pushBack(tileset);
         }
     }
     else if (elementName == "tile")
@@ -377,7 +377,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         float y = attributeDict["y"].asFloat();
         layer->_offset.set(x, y);
 
-        tmxMapInfo->getLayers().pushBack(layer.get());
+        tmxMapInfo->getLayers().pushBack(layer);
 
         // The parent element is now "layer"
         tmxMapInfo->setParentElement(TMXPropertyLayer);
@@ -391,7 +391,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         positionOffset.y = attributeDict["y"].asFloat() * tmxMapInfo->getTileSize().height;
         objectGroup->setPositionOffset(positionOffset);
 
-        tmxMapInfo->getObjectGroups().pushBack(objectGroup.get());
+        tmxMapInfo->getObjectGroups().pushBack(objectGroup);
 
         // The parent element is now "objectgroup"
         tmxMapInfo->setParentElement(TMXPropertyObjectGroup);

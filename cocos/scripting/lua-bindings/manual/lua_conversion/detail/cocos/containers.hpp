@@ -11,15 +11,15 @@
 
 namespace lua
 {
-	// cocos::Vector requires non-null Ref pointers. Shared Ref conversion allows
+	// cc::RefVector requires non-null Ref pointers. Shared Ref conversion allows
 	// nil for ordinary pointer arguments, so reject it before native pushBack.
 	template<typename T>
-	struct to_native<cc::Vector<T>> {
-		static bool F(lua_State* L, int lo, cc::Vector<T>* outValue, const char* fName = "") {
+	struct to_native<cc::RefVector<T>> {
+		static bool F(lua_State* L, int lo, cc::RefVector<T>* outValue, const char* fName = "") {
 			LUA_CHECK_TO_NATIVE;
 			if (!lua_istable(L, lo)) return false;
 			const size_t len = lua_objlen(L, lo);
-			cc::Vector<T> result;
+			cc::RefVector<T> result;
 			for (size_t i = 0; i < len; ++i) {
 				T value{};
 				lua_pushnumber(L, i + 1);
@@ -34,7 +34,7 @@ namespace lua
 		}
 	};
 
-	LUA_TO_LUA_VECTOR(cc::Vector);
+	LUA_TO_LUA_VECTOR(cc::RefVector);
 
 	// StringMap uses transparent hash/equality parameters. Match the complete
 	// Map type instead of assuming its default std::hash specialization.

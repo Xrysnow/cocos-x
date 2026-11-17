@@ -125,7 +125,7 @@ void ResourceAllocator<DeviceResourceType, DescriptorType, DeviceResourceCreator
             for (; j > i; --j) {
                 int64_t ageJ = _ages[pool.at(j)];
                 if (ageJ < 0 || _age - ageJ < unusedFrameCount) {
-                    std::swap(pool.at(i), pool.at(j));
+                    pool.swap(i, j);
                     destroyBegin = j - 1;
                     break;
                 }
@@ -241,7 +241,7 @@ void ResourceAllocator<DeviceResourceType, gfx::FramebufferInfo, DeviceResourceC
             for (; j > i; --j) {
                 int64_t ageJ = _ages[pool.at(j)];
                 if (ageJ < 0 || _age - ageJ < unusedFrameCount) {
-                    std::swap(pool.at(i), pool.at(j));
+                    pool.swap(i, j);
                     destroyBegin = j - 1;
                     break;
                 }

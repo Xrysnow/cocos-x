@@ -2518,7 +2518,7 @@ cc::IntrusivePtr<Action> Animate::reverse() const
                 break;
             }
 
-            newArray.pushBack(animFrame->clone().get());
+            newArray.pushBack(animFrame->clone());
         }
     }
 

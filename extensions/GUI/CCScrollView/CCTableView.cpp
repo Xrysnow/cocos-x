@@ -481,8 +481,9 @@ void TableView::scrollViewDidScroll(ScrollView* /*view*/)
     if (_isUsedCellsDirty)
     {
         _isUsedCellsDirty = false;
-        std::sort(_cellsUsed.begin(), _cellsUsed.end(),
-                  [](TableViewCell* a, TableViewCell* b) -> bool { return a->getIdx() < b->getIdx(); });
+        _cellsUsed.sort([](TableViewCell* a, TableViewCell* b) -> bool {
+            return a->getIdx() < b->getIdx();
+        });
     }
 
     ssize_t startIdx = 0, endIdx = 0, idx = 0, maxIdx = 0;

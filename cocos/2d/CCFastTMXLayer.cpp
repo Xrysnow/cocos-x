@@ -956,7 +956,7 @@ TMXTileAnimManager::TMXTileAnimManager(FastTMXLayer* layer)
     {
         for (auto&& tilePos : p.second)
         {
-            _tasks.pushBack(TMXTileAnimTask::create(_layer, _layer->getTileSet()->_animationInfo.at(p.first), tilePos).get());
+            _tasks.pushBack(TMXTileAnimTask::create(_layer, _layer->getTileSet()->_animationInfo.at(p.first), tilePos));
         }
     }
 }
