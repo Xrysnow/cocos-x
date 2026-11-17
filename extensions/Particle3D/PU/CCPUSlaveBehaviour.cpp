@@ -25,7 +25,7 @@
  ****************************************************************************/
 
 #include "extensions/Particle3D/PU/CCPUSlaveBehaviour.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 
 NS_CC_BEGIN
 

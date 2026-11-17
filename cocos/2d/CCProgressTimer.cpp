@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <stddef.h>  // offsetof
 #include "base/ccTypes.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCDirector.h"
 #include "2d/CCSprite.h"
 #include "renderer/CCRenderer.h"

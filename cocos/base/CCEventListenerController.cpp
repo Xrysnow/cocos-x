@@ -26,7 +26,7 @@
 
 #include "base/CCEventListenerController.h"
 #include "base/CCEventController.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCController.h"
 
 NS_CC_BEGIN

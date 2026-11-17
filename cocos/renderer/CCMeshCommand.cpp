@@ -24,7 +24,8 @@
  ****************************************************************************/
 
 #include "renderer/CCMeshCommand.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
 #include "base/CCEventCustom.h"

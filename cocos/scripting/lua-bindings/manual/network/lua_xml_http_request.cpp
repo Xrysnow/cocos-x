@@ -31,6 +31,7 @@
 #include "scripting/lua-bindings/manual/base/LuaScriptHandlerMgr.h"
 
 #include "network/HttpClient.h"
+#include "platform/CCStdC.h"
 #include "yasio/yasio.hpp"
 
 #include <unordered_map>

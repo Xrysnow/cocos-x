@@ -30,7 +30,7 @@
 #include <unordered_map>
 
 #include "3d/CCAnimation3D.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCRef.h"
 #include "2d/CCActionInterval.h"
 

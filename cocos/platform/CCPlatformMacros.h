@@ -28,19 +28,13 @@ Copyright (c) 2021 Bytedance Inc.
 #ifndef __CC_PLATFORM_MACROS_H__
 #define __CC_PLATFORM_MACROS_H__
 
-#include "platform/CCNamespace.h"
+#include "base/Macros.h"
 
 /**
  * Define some platform specific macros.
  */
-#include "base/ccConfig.h"
-#include "platform/CCPlatformConfig.h"
-#include "platform/CCPlatformDefine.h"
 #include "base/Ptr.h"
 
-#ifndef CC_DEBUG
-    #define CC_DEBUG 0
-#endif
 #define COCOS2D_DEBUG CC_DEBUG
 
 /** @def CREATE_FUNC(__TYPE__)
@@ -95,22 +89,6 @@ Copyright (c) 2021 Bytedance Inc.
 #endif
 
 // Generic macros
-
-/// @name namespace cc
-/// @{
-#ifdef __cplusplus
-    #define NS_CC_BEGIN                     namespace cc {
-    #define NS_CC_END                       }
-    #define USING_NS_CC                     using namespace cc
-    #define NS_CC                           ::cc
-#else
-    #define NS_CC_BEGIN 
-    #define NS_CC_END 
-    #define USING_NS_CC 
-    #define NS_CC
-#endif 
-//  end of namespace group
-/// @}
 
 /** @def CC_PROPERTY_READONLY
  * It is used to declare a protected variable. We can use getter to read the variable.
@@ -232,14 +210,6 @@ public:                                                             \
         }                                                           \
     }
 
-#define CC_SAFE_DELETE(p)           do { delete (p); (p) = nullptr; } while(0)
-#define CC_SAFE_DELETE_ARRAY(p)     do { if(p) { delete[] (p); (p) = nullptr; } } while(0)
-#define CC_SAFE_FREE(p)             do { if(p) { free(p); (p) = nullptr; } } while(0)
-#define CC_SAFE_RELEASE(p)          do { if(p) { (p)->release(); } } while(0)
-#define CC_SAFE_RELEASE_NULL(p)     do { if(p) { (p)->release(); (p) = nullptr; } } while(0)
-#define CC_SAFE_RETAIN(p)           do { if(p) { (p)->retain(); } } while(0)
-#define CC_BREAK_IF(cond)           if(cond) break
-
 #define __CCLOGWITHFUNCTION(s, ...) \
     cc::print("%s : %s", __FUNCTION__, cc::StringUtils::format(s, ##__VA_ARGS__).c_str())
 
@@ -301,52 +271,10 @@ public:                                                             \
     TypeName();                                     \
     CC_DISALLOW_COPY_AND_ASSIGN(TypeName)
 
-/** @def CC_DEPRECATED_ATTRIBUTE
- * Only certain compilers support __attribute__((deprecated)).
- */
-#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-    #define CC_DEPRECATED_ATTRIBUTE __attribute__((deprecated))
-#elif _MSC_VER >= 1400  // vs 2005 or higher
-    #define CC_DEPRECATED_ATTRIBUTE __declspec(deprecated)
-#else
-    #define CC_DEPRECATED_ATTRIBUTE
-#endif
-
-/** @def CC_DEPRECATED(...)
- * Macro to mark things deprecated as of a particular version
- * can be used with arbitrary parameters which are thrown away.
- * e.g. CC_DEPRECATED(4.0) or CC_DEPRECATED(4.0, "not going to need this anymore") etc.
- */
-#define CC_DEPRECATED(...) CC_DEPRECATED_ATTRIBUTE
-
-/** @def CC_FORMAT_PRINTF(formatPos, argPos)
- * Only certain compiler support __attribute__((format))
- *
- * @param formatPos 1-based position of format string argument.
- * @param argPos    1-based position of first format-dependent argument.
- */
-#if defined(__GNUC__) && (__GNUC__ >= 4)
-    #define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
-#elif defined(__has_attribute)
-    #if __has_attribute(format)
-        #define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
-    #else
-        #define CC_FORMAT_PRINTF(formatPos, argPos)
-    #endif  // __has_attribute(format)
-#else
-    #define CC_FORMAT_PRINTF(formatPos, argPos)
-#endif
-
 #if defined(_MSC_VER)
     #define CC_FORMAT_PRINTF_SIZE_T "%08lX"
 #else
     #define CC_FORMAT_PRINTF_SIZE_T "%08zX"
-#endif
-
-#ifdef __GNUC__
-    #define CC_UNUSED __attribute__((unused))
-#else
-    #define CC_UNUSED
 #endif
 
 /** @def CC_REQUIRES_NULL_TERMINATION

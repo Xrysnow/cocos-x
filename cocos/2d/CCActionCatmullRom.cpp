@@ -31,7 +31,9 @@
  *
  * Adapted from cocos2d-x to cocos2d-iphone by Ricardo Quesada
  */
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
+#include "platform/CCStdC.h"
 #include "2d/CCActionCatmullRom.h"
 #include "2d/CCNode.h"
 

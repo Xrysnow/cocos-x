@@ -50,16 +50,24 @@ THE SOFTWARE.
 // #define CC_PLATFORM_BLACKBERRY         7
 #define CC_PLATFORM_MAC                8
 // #define CC_PLATFORM_NACL               9
-// #define CC_PLATFORM_EMSCRIPTEN        10
+#define CC_PLATFORM_EMSCRIPTEN        10
 // #define CC_PLATFORM_TIZEN             11
 // #define CC_PLATFORM_QT5               12
 // #define CC_PLATFORM_WINRT             13
+#define CC_PLATFORM_MAC_IOS           CC_PLATFORM_IOS
+#define CC_PLATFORM_MAC_OSX           CC_PLATFORM_MAC
+#define CC_PLATFORM_MACOS             CC_PLATFORM_MAC
+#define CC_PLATFORM_OHOS              14
+#define CC_PLATFORM_QNX               15
+#define CC_PLATFORM_NX                16
 
 // Determine target platform by compile environment macro.
-#define CC_TARGET_PLATFORM CC_PLATFORM_UNKNOWN
+#ifndef CC_TARGET_PLATFORM
+    #define CC_TARGET_PLATFORM CC_PLATFORM_UNKNOWN
+#endif
 
 // Apple: Mac and iOS
-#if defined(__APPLE__) && !defined(__ANDROID__)  // exclude android for binding generator.
+#if defined(__APPLE__) && !defined(__ANDROID__) && !defined(ANDROID)  // exclude android for binding generator.
     #include <TargetConditionals.h>
     #if TARGET_OS_IPHONE  // TARGET_OS_IPHONE includes TARGET_OS_IOS TARGET_OS_TV and TARGET_OS_WATCH. see
                           // TargetConditionals.h
@@ -78,7 +86,7 @@ THE SOFTWARE.
 #endif
 
 // linux
-#if defined(__linux__)
+#if defined(__linux__) || (defined(LINUX) && !defined(__APPLE__))
     #undef CC_TARGET_PLATFORM
     #define CC_TARGET_PLATFORM CC_PLATFORM_LINUX
 #endif
@@ -121,6 +129,9 @@ THE SOFTWARE.
 #ifndef CC_VERSION
 #    define CC_VERSION 0x00040000
 #endif
+
+#define CC_PLATFORM CC_TARGET_PLATFORM
+#define CC_PLATFORM_WINDOWS CC_PLATFORM_WIN32
 
 /// @endcond
 #endif  // __BASE_CC_PLATFORM_CONFIG_H__

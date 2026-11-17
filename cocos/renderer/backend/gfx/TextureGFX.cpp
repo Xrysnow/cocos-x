@@ -1,5 +1,5 @@
 #include "TextureGFX.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCEventListenerCustom.h"
 #include "base/CCEventDispatcher.h"
 #include "base/CCEventType.h"

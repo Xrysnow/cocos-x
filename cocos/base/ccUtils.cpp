@@ -51,6 +51,7 @@ THE SOFTWARE.
 #include "renderer/backend/Types.h"
 #include "renderer/backend/PixelBufferDescriptor.h"
 
+#include "platform/CCStdC.h"
 #include "platform/CCImage.h"
 #include "platform/CCFileUtils.h"
 #include "platform/CCFileUtilsDirectory.h"

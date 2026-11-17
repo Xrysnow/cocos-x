@@ -26,7 +26,7 @@
 #ifndef __CC_FRUSTUM_H_
 #define __CC_FRUSTUM_H_
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "math/CCMath.h"
 #include "3d/CCAABB.h"
 #include "3d/CCOBB.h"

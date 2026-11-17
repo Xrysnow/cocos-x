@@ -1,5 +1,7 @@
 #pragma once
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <string>
+#include <vector>
 #include "renderer/backend/Types.h"
 #include "gfx/backend/GFXDeviceManager.h"
 #include "glslang/Public/ShaderLang.h"

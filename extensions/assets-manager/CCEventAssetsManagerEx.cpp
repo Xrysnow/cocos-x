@@ -24,7 +24,7 @@
  ****************************************************************************/
 
 #include "CCEventAssetsManagerEx.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include <functional>
 #include "AssetsManagerEx.h"
 

@@ -28,7 +28,7 @@
 #include "platform/CCPlatformConfig.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
 
-    #include "base/ccMacros.h"
+    #include "base/Macros.h"
     #include "base/CCEventDispatcher.h"
     #include "base/CCEventController.h"
     #include "base/CCEventListenerController.h"

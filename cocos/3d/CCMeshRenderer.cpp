@@ -38,7 +38,7 @@
 #include "base/ccUtils.h"
 #include "2d/CCLight.h"
 #include "2d/CCCamera.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "platform/CCPlatformMacros.h"
 #include "platform/CCFileUtils.h"
 #include "renderer/CCTextureCache.h"

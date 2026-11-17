@@ -1,7 +1,7 @@
 #pragma once
 #include "platform/CCPlatformMacros.h"
 #include "AudioDecoder.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #if CC_64BITS
 #define DRFLAC_64BIT
 #endif

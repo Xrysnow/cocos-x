@@ -45,7 +45,7 @@ THE SOFTWARE.
 #define CC_ARRAY_H
 /// @cond DO_NOT_SHOW
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCRef.h"
 
 #include <stdlib.h>

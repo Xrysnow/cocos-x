@@ -58,6 +58,10 @@
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
 
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    #include <android/log.h>
+#endif
+
 // !FIXME: the previous version of cc::log not thread safe
 // since axmol make it multi-threading safe by default
 #if !defined(CC_LOG_MULTITHREAD)

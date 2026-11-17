@@ -28,7 +28,8 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
     #include <functional>
-    #include "base/ccMacros.h"
+    #include "base/Macros.h"
+    #include "platform/CCPlatformMacros.h"
     #include "base/CCDirector.h"
     #include "platform/android/jni/JniHelper.h"
     #include "base/CCEventController.h"

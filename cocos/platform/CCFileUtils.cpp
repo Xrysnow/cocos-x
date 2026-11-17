@@ -35,7 +35,8 @@ THE SOFTWARE.
 #include <system_error>
 
 #include "base/CCData.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCDirector.h"
 #include "base/ccUTF8.h"
 #include "platform/CCSAXParser.h"

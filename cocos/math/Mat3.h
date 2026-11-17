@@ -19,7 +19,9 @@ DEALINGS IN THE SOFTWARE.
 #ifndef _CCMAT3_H_
     #define _CCMAT3_H_
 
-    #include "base/ccMacros.h"
+    #include "base/Macros.h"
+    #include <cmath>
+    #include <string>
     #include "math/Vec3.h"
     #include "math/Vec4.h"
 

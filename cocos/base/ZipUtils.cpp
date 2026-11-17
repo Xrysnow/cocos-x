@@ -43,7 +43,8 @@
 #include <set>
 
 #include "base/CCData.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "platform/CCFileUtils.h"
 #include <map>
 #include <mutex>

@@ -46,7 +46,8 @@ typedef SSIZE_T ssize_t;
 #include "yasio/impl/socket.hpp"
 
 #include "base/CCRef.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <string_view>
 #include "platform/CCPlatformMacros.h"
 #include "base/hlookup.h"
 
@@ -54,13 +55,6 @@ NS_CC_BEGIN
 
 /// The max length of CCLog message.
 static const int MAX_LOG_LENGTH = 16 * 1024;
-
-/**
- @brief Output Debug message.
- */
-void CC_DLL print(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
-
-/* CC_DEPRECATED_ATTRIBUTE*/ void CC_DLL log(const char* format, ...) CC_FORMAT_PRINTF(1, 2);  // use print instead
 
 /** Console is helper class that lets the developer control the game from TCP connection.
  Console will spawn a new thread that will listen to a specified TCP port.

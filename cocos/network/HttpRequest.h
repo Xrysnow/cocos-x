@@ -35,7 +35,10 @@
 #include <future>
 #include <atomic>
 #include "base/CCRef.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <functional>
+#include <string_view>
+#include <utility>
 
 #include "yasio/tlx/byte_buffer.hpp"
 

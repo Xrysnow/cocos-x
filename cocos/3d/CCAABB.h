@@ -26,7 +26,7 @@
 #ifndef __CC_AABB_H__
 #define __CC_AABB_H__
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "math/CCMath.h"
 
 NS_CC_BEGIN

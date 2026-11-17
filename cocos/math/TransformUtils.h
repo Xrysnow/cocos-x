@@ -30,7 +30,7 @@ THE SOFTWARE.
 
 #include "platform/CCNamespace.h"
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 
 /**
  * @addtogroup base

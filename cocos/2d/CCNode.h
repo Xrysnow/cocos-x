@@ -32,7 +32,13 @@
 #define __CCNODE_H__
 
 #include <cstdint>
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
+#include <functional>
+#include <map>
+#include <string>
+#include <string_view>
+#include <type_traits>
 #include "base/CCVector.h"
 #include "base/CCProtocols.h"
 #include "base/CCScriptSupport.h"

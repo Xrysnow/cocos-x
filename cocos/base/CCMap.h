@@ -26,7 +26,9 @@
 #ifndef __CCMAP_H__
 #define __CCMAP_H__
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <functional>
+#include <string>
 #include "base/CCRef.h"
 #include "base/RefMap.h"
 #include "base/StringHash.h"

@@ -31,7 +31,12 @@ THE SOFTWARE.
 #include <vector>
 #include <string>
 #include "2d/CCNode.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
+#include <cstdlib>
+#include <functional>
+#include <string_view>
+#include <utility>
 #include "base/CCRefPtr.h"
 #include "base/CCData.h"
 #include "renderer/backend/Types.h"

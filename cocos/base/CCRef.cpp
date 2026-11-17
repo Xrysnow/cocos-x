@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 #include "base/CCRef.h"
 #include "base/CCAutoreleasePool.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include <atomic>
 #include <mutex>
 #include <thread>

@@ -27,7 +27,8 @@ THE SOFTWARE.
 #include "3d/CCBundle3D.h"
 #include "3d/CCObjLoader.h"
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "platform/CCFileUtils.h"
 #include "3d/CCBundleReader.h"
 #include "base/CCData.h"

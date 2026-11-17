@@ -34,7 +34,8 @@
 #include "3d/CCMesh.h"
 #include "3d/CCBundle3D.h"
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCEventCustom.h"
 #include "base/CCEventListenerCustom.h"
 #include "base/CCEventDispatcher.h"

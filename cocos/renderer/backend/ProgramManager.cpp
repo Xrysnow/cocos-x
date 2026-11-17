@@ -27,7 +27,8 @@
 #include "Device.h"
 #include "ShaderModule.h"
 #include "renderer/ccShaders.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCConfiguration.h"
 
 CC_BACKEND_BEGIN

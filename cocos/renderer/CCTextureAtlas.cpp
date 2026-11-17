@@ -30,7 +30,9 @@ THE SOFTWARE.
 
 #include <stdlib.h>
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
+#include "platform/CCStdC.h"
 #include "base/ccUTF8.h"
 #include "base/CCEventType.h"
 #include "base/CCDirector.h"

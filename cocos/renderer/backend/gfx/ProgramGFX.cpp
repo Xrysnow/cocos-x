@@ -1,6 +1,6 @@
 #include "ProgramGFX.h"
 #include "renderer/backend/Types.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCDirector.h"
 #include "base/CCEventDispatcher.h"
 #include "base/CCEventType.h"

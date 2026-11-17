@@ -1,7 +1,9 @@
 
 #pragma once
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <string>
+#include <utility>
 #include "math/CCMath.h"
 
 #include <unordered_map>

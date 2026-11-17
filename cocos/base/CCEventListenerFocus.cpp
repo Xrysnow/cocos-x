@@ -28,7 +28,8 @@
 #include "base/CCEventListenerFocus.h"
 #include "base/CCEventFocus.h"
 #include "ui/UIWidget.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 
 NS_CC_BEGIN
 

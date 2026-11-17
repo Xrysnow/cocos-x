@@ -27,7 +27,8 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "base/CCScheduler.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCDirector.h"
 #include "uthash/utlist.h"
 #include "base/ccCArray.h"

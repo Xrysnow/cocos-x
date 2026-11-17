@@ -1,5 +1,5 @@
 #include "BufferGFX.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCDirector.h"
 #include "base/CCEventType.h"
 #include "base/CCEventDispatcher.h"

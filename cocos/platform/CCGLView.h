@@ -33,7 +33,8 @@ THE SOFTWARE.
 #include <vector>
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    #include <windows.h>
+    // Keep Winsock ahead of Windows and apply the engine's Windows macro cleanup.
+    #include "platform/CCStdC.h"
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) */
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)

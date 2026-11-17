@@ -120,7 +120,8 @@ struct dirent* readdir$INODE64(DIR* dir)
     #include "decode.h"
 #endif  // CC_USE_WEBP
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "platform/CCCommon.h"
 #include "platform/CCStdC.h"
 #include "platform/CCFileUtils.h"

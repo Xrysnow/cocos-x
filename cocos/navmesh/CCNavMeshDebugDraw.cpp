@@ -32,7 +32,7 @@
     #include "renderer/CCRenderState.h"
     #include "renderer/ccShaders.h"
     #include "base/CCDirector.h"
-    #include "base/ccMacros.h"
+    #include "base/Macros.h"
 
 NS_CC_BEGIN
 

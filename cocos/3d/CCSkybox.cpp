@@ -23,7 +23,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 #include "3d/CCSkybox.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
 #include "renderer/CCRenderer.h"

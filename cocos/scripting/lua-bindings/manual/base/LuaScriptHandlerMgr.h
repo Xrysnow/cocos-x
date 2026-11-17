@@ -27,7 +27,9 @@
 
 #include "tolua++.h"
 #include "base/CCRef.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <functional>
+#include <utility>
 #include "2d/CCActionInstant.h"
 #include <vector>
 #include <map>

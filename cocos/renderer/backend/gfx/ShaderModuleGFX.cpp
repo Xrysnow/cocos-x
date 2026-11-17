@@ -1,6 +1,6 @@
 #include "ShaderModuleGFX.h"
 #include "platform/CCPlatformMacros.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
 #include "UtilsGFX.h"
 
 using namespace cc;

@@ -30,7 +30,8 @@
 
 #include "3d/CCAnimationCurve.h"
 
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include <string_view>
 #include "base/CCRef.h"
 #include "3d/CCBundle3DData.h"
 

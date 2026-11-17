@@ -24,7 +24,8 @@
 #include <cmath>
 #include "math/Quaternion.h"
 #include "math/MathUtil.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "gfx-base/GFXDevice.h"
 
 NS_CC_MATH_BEGIN

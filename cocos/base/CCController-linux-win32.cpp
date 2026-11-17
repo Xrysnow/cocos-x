@@ -29,7 +29,8 @@ THE SOFTWARE.
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     #include <functional>
-    #include "base/ccMacros.h"
+    #include "base/Macros.h"
+    #include "platform/CCPlatformMacros.h"
     #include "base/CCDirector.h"
     #include "base/CCScheduler.h"
     #include "base/CCEventController.h"

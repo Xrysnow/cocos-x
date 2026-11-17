@@ -27,7 +27,8 @@
 #include <stddef.h>  // offsetof
 #include "base/ccTypes.h"
 #include "2d/CCCamera.h"
-#include "base/ccMacros.h"
+#include "base/Macros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/ccUtils.h"
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
