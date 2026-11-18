@@ -29,30 +29,30 @@ printInfo("")
 printInfo("# DEBUG                        = " .. DEBUG)
 printInfo("#")
 
-device     = require("cc.framework.device")
-display    = require("cc.framework.display")
-transition = require("cc.framework.transition")
+device     = require("cocos.framework.device")
+display    = require("cocos.framework.display")
+transition = require("cocos.framework.transition")
 
-require("cc.framework.extends.NodeEx")
-require("cc.framework.extends.SpriteEx")
-require("cc.framework.extends.LayerEx")
-require("cc.framework.extends.MenuEx")
+require("cocos.framework.extends.NodeEx")
+require("cocos.framework.extends.SpriteEx")
+require("cocos.framework.extends.LayerEx")
+require("cocos.framework.extends.MenuEx")
 
 if ccui then
-require("cc.framework.extends.UIWidget")
-require("cc.framework.extends.UICheckBox")
-require("cc.framework.extends.UIEditBox")
-require("cc.framework.extends.UIListView")
-require("cc.framework.extends.UIPageView")
-require("cc.framework.extends.UIScrollView")
-require("cc.framework.extends.UISlider")
-require("cc.framework.extends.UITextField")
+    require("cocos.framework.extends.UIWidget")
+    require("cocos.framework.extends.UICheckBox")
+    require("cocos.framework.extends.UIEditBox")
+    require("cocos.framework.extends.UIListView")
+    require("cocos.framework.extends.UIPageView")
+    require("cocos.framework.extends.UIScrollView")
+    require("cocos.framework.extends.UISlider")
+    require("cocos.framework.extends.UITextField")
 end
 
-require("cc.framework.package_support")
+require("cocos.framework.package_support")
 
 -- register the build-in packages
-cc.register("event", require("cc.framework.components.event"))
+cc.register("event", require("cocos.framework.components.event"))
 
 -- export global variable
 local __g = _G

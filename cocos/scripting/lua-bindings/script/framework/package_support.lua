@@ -23,7 +23,6 @@ THE SOFTWARE.
 ]]
 
 -- Cocos2d-Lua core functions
-local unpack = table.unpack
 cc.loaded_packages = {}
 local loaded_packages = cc.loaded_packages
 
@@ -50,7 +49,7 @@ function cc.load(...)
         end
         packages[#packages + 1] = loaded_packages[name]
     end
-    return unpack(packages)
+    return table.unpack(packages)
 end
 
 local load_ = cc.load

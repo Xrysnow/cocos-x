@@ -23,6 +23,7 @@ THE SOFTWARE.
 ]]
 
 local Menu = cc.Menu
+---@type cc.MenuItem
 local MenuItem = cc.MenuItem
 
 function MenuItem:onClicked(callback)

@@ -38,11 +38,10 @@ if not view then
             height = CC_DESIGN_RESOLUTION.height
         end
     end
-    view = cc.GLViewImpl:createWithRect("Cocos2d-Lua", cc.rect(0, 0, width, height))
+    view = cc.GLViewImpl:createWithRect(CC_WINDOW_TITLE or "cocos-x", cc.rect(0, 0, width, height))
     director:setOpenGLView(view)
 end
 
-local framesize = view:getFrameSize()
 local textureCache = director:getTextureCache()
 local spriteFrameCache = cc.SpriteFrameCache:getInstance()
 local animationCache = cc.AnimationCache:getInstance()
@@ -58,7 +57,7 @@ end
 
 local function setDesignResolution(r, framesize)
     if r.autoscale == "FILL_ALL" then
-        view:setDesignResolutionSize(framesize.x, framesize.y, cc.ResolutionPolicy.FILL_ALL)
+        view:setDesignResolutionSize(framesize.x, framesize.y, cc.ResolutionPolicy.EXACT_FIT)
     else
         local scaleX, scaleY = framesize.x / r.width, framesize.y / r.height
         local width, height = framesize.x, framesize.y
@@ -84,7 +83,7 @@ end
 
 local function setConstants()
     local sizeInPixels = view:getFrameSize()
-    display.sizeInPixels = {width = sizeInPixels.x, height = sizeInPixels.y}
+    display.sizeInPixels = { width = sizeInPixels.x, height = sizeInPixels.y }
 
     local viewsize = director:getWinSize()
     display.contentScaleFactor = director:getContentScaleFactor()
@@ -109,7 +108,8 @@ local function setConstants()
     display.right_bottom       = cc.p(display.right, display.bottom)
     display.right_center       = cc.p(display.right, display.cy)
     display.top_center         = cc.p(display.cx, display.top)
-    display.top_bottom         = cc.p(display.cx, display.bottom)
+    display.bottom_center      = cc.p(display.cx, display.bottom)
+    display.top_bottom         = display.bottom_center
 
     printInfo(string.format("# display.sizeInPixels         = {width = %0.2f, height = %0.2f}", display.sizeInPixels.width, display.sizeInPixels.height))
     printInfo(string.format("# display.size                 = {width = %0.2f, height = %0.2f}", display.size.width, display.size.height))
@@ -139,9 +139,12 @@ local function setConstants()
 end
 
 function display.setAutoScale(configs)
-    if type(configs) ~= "table" then return end
+    if type(configs) ~= "table" then
+        return
+    end
 
     checkResolution(configs)
+    local framesize = view:getFrameSize()
     if type(configs.callback) == "function" then
         local c = configs.callback(framesize)
         for k, v in pairs(c or {}) do
@@ -159,6 +162,8 @@ end
 
 if type(CC_DESIGN_RESOLUTION) == "table" then
     display.setAutoScale(CC_DESIGN_RESOLUTION)
+else
+    setConstants()
 end
 
 display.COLOR_WHITE = cc.c3b(255, 255, 255)
@@ -185,40 +190,39 @@ display.CENTER_TOP    = cc.p(0.5, 1)
 display.CENTER_BOTTOM = cc.p(0.5, 0)
 
 display.SCENE_TRANSITIONS = {
-    CROSSFADE       = {cc.TransitionCrossFade},
-    FADE            = {cc.TransitionFade, cc.c3b(0, 0, 0)},
-    FADEBL          = {cc.TransitionFadeBL},
-    FADEDOWN        = {cc.TransitionFadeDown},
-    FADETR          = {cc.TransitionFadeTR},
-    FADEUP          = {cc.TransitionFadeUp},
-    FLIPANGULAR     = {cc.TransitionFlipAngular, cc.TRANSITION_ORIENTATION_LEFT_OVER},
-    FLIPX           = {cc.TransitionFlipX, cc.TRANSITION_ORIENTATION_LEFT_OVER},
-    FLIPY           = {cc.TransitionFlipY, cc.TRANSITION_ORIENTATION_UP_OVER},
-    JUMPZOOM        = {cc.TransitionJumpZoom},
-    MOVEINB         = {cc.TransitionMoveInB},
-    MOVEINL         = {cc.TransitionMoveInL},
-    MOVEINR         = {cc.TransitionMoveInR},
-    MOVEINT         = {cc.TransitionMoveInT},
-    PAGETURN        = {cc.TransitionPageTurn, false},
-    ROTOZOOM        = {cc.TransitionRotoZoom},
-    SHRINKGROW      = {cc.TransitionShrinkGrow},
-    SLIDEINB        = {cc.TransitionSlideInB},
-    SLIDEINL        = {cc.TransitionSlideInL},
-    SLIDEINR        = {cc.TransitionSlideInR},
-    SLIDEINT        = {cc.TransitionSlideInT},
-    SPLITCOLS       = {cc.TransitionSplitCols},
-    SPLITROWS       = {cc.TransitionSplitRows},
-    TURNOFFTILES    = {cc.TransitionTurnOffTiles},
-    ZOOMFLIPANGULAR = {cc.TransitionZoomFlipAngular},
-    ZOOMFLIPX       = {cc.TransitionZoomFlipX, cc.TRANSITION_ORIENTATION_LEFT_OVER},
-    ZOOMFLIPY       = {cc.TransitionZoomFlipY, cc.TRANSITION_ORIENTATION_UP_OVER},
+    CROSSFADE       = { cc.TransitionCrossFade },
+    FADE            = { cc.TransitionFade, cc.c3b(0, 0, 0) },
+    FADEBL          = { cc.TransitionFadeBL },
+    FADEDOWN        = { cc.TransitionFadeDown },
+    FADETR          = { cc.TransitionFadeTR },
+    FADEUP          = { cc.TransitionFadeUp },
+    FLIPANGULAR     = { cc.TransitionFlipAngular, cc.TRANSITION_ORIENTATION_LEFT_OVER },
+    FLIPX           = { cc.TransitionFlipX, cc.TRANSITION_ORIENTATION_LEFT_OVER },
+    FLIPY           = { cc.TransitionFlipY, cc.TRANSITION_ORIENTATION_UP_OVER },
+    JUMPZOOM        = { cc.TransitionJumpZoom },
+    MOVEINB         = { cc.TransitionMoveInB },
+    MOVEINL         = { cc.TransitionMoveInL },
+    MOVEINR         = { cc.TransitionMoveInR },
+    MOVEINT         = { cc.TransitionMoveInT },
+    PAGETURN        = { cc.TransitionPageTurn, false },
+    ROTOZOOM        = { cc.TransitionRotoZoom },
+    SHRINKGROW      = { cc.TransitionShrinkGrow },
+    SLIDEINB        = { cc.TransitionSlideInB },
+    SLIDEINL        = { cc.TransitionSlideInL },
+    SLIDEINR        = { cc.TransitionSlideInR },
+    SLIDEINT        = { cc.TransitionSlideInT },
+    SPLITCOLS       = { cc.TransitionSplitCols },
+    SPLITROWS       = { cc.TransitionSplitRows },
+    TURNOFFTILES    = { cc.TransitionTurnOffTiles },
+    ZOOMFLIPANGULAR = { cc.TransitionZoomFlipAngular },
+    ZOOMFLIPX       = { cc.TransitionZoomFlipX, cc.TRANSITION_ORIENTATION_LEFT_OVER },
+    ZOOMFLIPY       = { cc.TransitionZoomFlipY, cc.TRANSITION_ORIENTATION_UP_OVER },
 }
 
 display.TEXTURES_PIXEL_FORMAT = {}
 
-display.DEFAULT_TTF_FONT        = "Arial"
-display.DEFAULT_TTF_FONT_SIZE   = 32
-
+display.DEFAULT_TTF_FONT = "Arial"
+display.DEFAULT_TTF_FONT_SIZE = 32
 
 local PARAMS_EMPTY = {}
 local RECT_ZERO = cc.rect(0, 0, 0, 0)
@@ -286,7 +290,7 @@ function display.newNode()
 end
 
 function display.newLayer(...)
-    local params = {...}
+    local params = { ... }
     local c = #params
     local layer
     if c == 0 then
@@ -358,7 +362,8 @@ function display.newSprite(source, x, y, params)
 
         local sourceType = type(source)
         if sourceType == "string" then
-            if string.byte(source) == 35 then -- first char is #
+            if string.byte(source) == 35 then
+                -- first char is #
                 -- create sprite from spriteFrame
                 if not scale9 then
                     sprite = spriteClass:createWithSpriteFrameName(string.sub(source, 2))
@@ -401,8 +406,12 @@ function display.newSprite(source, x, y, params)
     end
 
     if sprite then
-        if x and y then sprite:setPosition(x, y) end
-        if params.size then sprite:setContentSize(params.size) end
+        if x and y then
+            sprite:setPosition(x, y)
+        end
+        if params.size then
+            sprite:setContentSize(params.size)
+        end
     else
         error(string.format("display.newSprite() - create sprite failure, source \"%s\"", tostring(source)), 0)
     end
@@ -413,7 +422,8 @@ end
 function display.newSpriteFrame(source, ...)
     local frame
     if type(source) == "string" then
-        if string.byte(source) == 35 then -- first char is #
+        if string.byte(source) == 35 then
+            -- first char is #
             source = string.sub(source, 2)
         end
         frame = spriteFrameCache:getSpriteFrame(source)
@@ -457,7 +467,7 @@ local function newAnimation(frames, time)
 end
 
 function display.newAnimation(...)
-    local params = {...}
+    local params = { ... }
     local c = #params
     if c == 2 then
         -- frames, time

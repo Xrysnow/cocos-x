@@ -23,52 +23,47 @@ THE SOFTWARE.
 
 ]]
 
--- >= lua-5.4
-if (math.pow == nil) then
-    math.pow = function (x,y)
-        return x ^ y
-    end
-end
+table.unpack = table.unpack or unpack
+math.pow = math.pow or function(x, y) return x ^ y end
 
--- < lua-5.4
-if (unpack) then
-    table.unpack = unpack
-end
-
--- Keep method aliases within the directly registered cc table.
+-- Legacy method aliases within the directly registered cc table.
 cc.Director.setDisplayStats = cc.Director.setStatsDisplay
 cc.Sprite3D = cc.MeshRenderer
 
-require "cc.cocos2d.Cocos2d"
-require "cc.cocos2d.Cocos2dConstants"
-require "cc.cocos2d.functions"
+require "cocos.cocos2d.Cocos2d"
+require "cocos.cocos2d.Cocos2dConstants"
+require "cocos.cocos2d.functions"
+if cc.FileDialog then
+    require "cocos.cocos2d.FileDialog"
+end
 
 __G__TRACKBACK__ = function(msg)
-    local msg = debug.traceback(msg, 3)
+    msg = debug.traceback(msg, 3)
     print(msg)
     return msg
 end
 
 -- ui
 if nil ~= ccui then
-    require "cc.ui.GuiConstants"
+    require "cocos.ui.GuiConstants"
 end
 
 -- extensions
-require "cc.extension.ExtensionConstants"
+require "cocos.extension.ExtensionConstants"
+if cc.Controller then
+    require "cocos.controller.ControllerConstants"
+end
+require "cocos.3d.3dConstants"
 -- network
-require "cc.network.NetworkConstants"
+require "cocos.network.NetworkConstants"
 -- Spine
 if nil ~= sp then
-    require "cc.spine.SpineConstants"
+    require "cocos.spine.SpineConstants"
 end
 
--- Lua extensions
-require "cc.cocos2d.bitExtend"
-
 -- physics3d
-require "cc.physics3d.physics3d-constants"
+require "cocos.physics3d.physics3d-constants"
 
 if CC_USE_FRAMEWORK then
-    require "cc.framework.init"
+    require "cocos.framework.init"
 end

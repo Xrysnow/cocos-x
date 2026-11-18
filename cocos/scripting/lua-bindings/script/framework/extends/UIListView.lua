@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type ccui.ListView
 local ListView = ccui.ListView
 
 function ListView:onEvent(callback)

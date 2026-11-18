@@ -22,7 +22,6 @@ THE SOFTWARE.
 
 ]]
 
-local unpack = table.unpack
 local transition = {}
 
 local ACTION_EASING = {}
@@ -54,7 +53,7 @@ function transition.newEasing(action, easingName, more)
     local key = string.upper(tostring(easingName))
     local easing
     if ACTION_EASING[key] then
-        local cls, count, default = unpack(ACTION_EASING[key])
+        local cls, count, default = table.unpack(ACTION_EASING[key])
         if count == 2 then
             easing = cls:create(action, more or default)
         else
@@ -68,7 +67,7 @@ function transition.create(action, args)
     args = checktable(args)
     if args.easing then
         if type(args.easing) == "table" then
-            action = transition.newEasing(action, unpack(args.easing))
+            action = transition.newEasing(action, table.unpack(args.easing))
         else
             action = transition.newEasing(action, args.easing)
         end

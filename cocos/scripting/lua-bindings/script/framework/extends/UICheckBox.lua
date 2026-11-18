@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type ccui.CheckBox
 local CheckBox = ccui.CheckBox
 
 function CheckBox:onEvent(callback)

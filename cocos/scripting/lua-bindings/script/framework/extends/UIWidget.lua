@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type ccui.Widget
 local Widget = ccui.Widget
 
 function Widget:onTouch(callback)

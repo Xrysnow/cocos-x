@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type ccui.EditBox
 local EditBox = ccui.EditBox
 
 function EditBox:onEditHandler(callback)

@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type cc.Node
 local Node = cc.Node
 
 function Node:add(child, zorder, tag)
@@ -35,6 +35,7 @@ function Node:add(child, zorder, tag)
     return self
 end
 
+---@return cc.Node
 function Node:addTo(parent, zorder, tag)
     if tag then
         parent:addChild(self, zorder, tag)

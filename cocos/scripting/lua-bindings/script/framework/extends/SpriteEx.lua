@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type cc.Sprite
 local Sprite = cc.Sprite
 
 function Sprite:playAnimationOnce(animation, args)

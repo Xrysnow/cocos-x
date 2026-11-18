@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ]]
-
+---@type cc.Layer
 local Layer = cc.Layer
 
 function Layer:onTouch(callback, isMultiTouches, swallowTouches)

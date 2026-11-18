@@ -3,6 +3,9 @@ local luaoc = {}
 
 local callStaticMethod = LuaObjcBridge.callStaticMethod
 
+---@param className string
+---@param methodName string
+---@param args table
 function luaoc.callStaticMethod(className, methodName, args)
     local ok, ret = callStaticMethod(className, methodName, args)
     if not ok then
