@@ -28,7 +28,6 @@
 #include "base/ccUTF8.h"
 #include "platform/Common.h"
 #include "base/Console.h"
-#include "base/StringUtil.h"
 #include "ConvertUTF.h"
 #include <limits>
 
@@ -38,28 +37,6 @@ NS_CC_BEGIN
 
 namespace StringUtils
 {
-
-std::string CC_DLL format(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    try
-    {
-        auto result = vformat(format, args);
-        va_end(args);
-        return result;
-    }
-    catch (...)
-    {
-        va_end(args);
-        throw;
-    }
-}
-
-std::string vformat(const char* format, va_list ap)
-{
-    return StringUtil::vformat(format, ap);
-}
 
 /*
  * @str:    the string to search through.

@@ -28,11 +28,10 @@
 #ifndef __cocos2dx__ccUTF8__
 #define __cocos2dx__ccUTF8__
 
+#include "base/StringUtil.h"
 #include "platform/PlatformMacros.h"
-#include <cstdarg>
 #include <vector>
 #include <string>
-#include <sstream>
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
     #include "platform/android/jni/JniHelper.h"
@@ -59,18 +58,6 @@ const char CarriageReturn    = '\r';
 const char NextCharNoChangeX = '\b';
 const char Space             = ' ';
 }  // namespace AsciiCharacters
-
-template <typename T>
-std::string toString(T arg)
-{
-    std::stringstream ss;
-    ss << arg;
-    return ss.str();
-}
-
-// Return the full formatted string, or an empty string on a formatting error.
-std::string CC_DLL format(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
-std::string CC_DLL vformat(const char* format, va_list ap);
 
 /**
  *  @brief Converts from UTF8 string to UTF16 string.

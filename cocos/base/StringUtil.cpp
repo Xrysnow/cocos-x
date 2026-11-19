@@ -26,22 +26,15 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdio>
-#include "base/std/container/string.h"
-#include "memory/Memory.h"
 
-#if (CC_PLATFORM == CC_PLATFORM_WINDOWS)
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <Windows.h>
-#endif
-
-namespace cc {
+namespace cc::StringUtils {
 
 #if defined(_WIN32)
-int StringUtil::vprintf(char *buf, const char *last, const char *fmt, va_list args) {
+int vprintf(char *buf, const char *last, const char *fmt, va_list args) {
     if (last <= buf) return 0;
 
     int count = (int)(last - buf);
@@ -57,7 +50,7 @@ int StringUtil::vprintf(char *buf, const char *last, const char *fmt, va_list ar
     }
 }
 #else
-int StringUtil::vprintf(char *buf, const char *last, const char *fmt, va_list args) {
+int vprintf(char *buf, const char *last, const char *fmt, va_list args) {
     if (last <= buf) {
         return 0;
     }
@@ -74,7 +67,7 @@ int StringUtil::vprintf(char *buf, const char *last, const char *fmt, va_list ar
 }
 #endif
 
-int StringUtil::printf(char *buf, const char *last, const char *fmt, ...) {
+int printf(char *buf, const char *last, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     int ret = vprintf(buf, last, fmt, args);
@@ -82,7 +75,7 @@ int StringUtil::printf(char *buf, const char *last, const char *fmt, ...) {
     return ret;
 }
 
-ccstd::string StringUtil::format(const char *fmt, ...) {
+std::string format(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     try {
@@ -95,7 +88,7 @@ ccstd::string StringUtil::format(const char *fmt, ...) {
     }
 }
 
-ccstd::string StringUtil::vformat(const char *fmt, va_list args) {
+std::string vformat(const char *fmt, va_list args) {
     if (fmt == nullptr) {
         return {};
     }
@@ -114,7 +107,7 @@ ccstd::string StringUtil::vformat(const char *fmt, va_list args) {
         return {buffer, size};
     }
 
-    ccstd::string result(size + 1, '\0');
+    std::string result(size + 1, '\0');
     va_copy(copy, args);
     const int written = std::vsnprintf(result.data(), result.size(), fmt, copy);
     va_end(copy);
@@ -126,8 +119,8 @@ ccstd::string StringUtil::vformat(const char *fmt, va_list args) {
     return result;
 }
 
-ccstd::vector<ccstd::string> StringUtil::split(const ccstd::string &str, const ccstd::string &delims, uint32_t maxSplits) {
-    ccstd::vector<ccstd::string> strs;
+std::vector<std::string> split(const std::string &str, const std::string &delims, uint32_t maxSplits) {
+    std::vector<std::string> strs;
     if (str.empty()) {
         return strs;
     }
@@ -145,7 +138,7 @@ ccstd::vector<ccstd::string> StringUtil::split(const ccstd::string &str, const c
         if (pos == start) {
             // Do nothing
             start = pos + 1;
-        } else if (pos == ccstd::string::npos || (maxSplits && numSplits == maxSplits)) {
+        } else if (pos == std::string::npos || (maxSplits && numSplits == maxSplits)) {
             // Copy the rest of the string
             strs.push_back(str.substr(start));
             break;
@@ -157,42 +150,42 @@ ccstd::vector<ccstd::string> StringUtil::split(const ccstd::string &str, const c
         // parse up to next real data
         start = str.find_first_not_of(delims, start);
         ++numSplits;
-    } while (pos != ccstd::string::npos);
+    } while (pos != std::string::npos);
 
     return strs;
 }
 
-ccstd::string &StringUtil::replace(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr) {
+std::string &replace(std::string &str, const std::string &findStr, const std::string &replaceStr) {
     size_t startPos = str.find(findStr);
-    if (startPos == ccstd::string::npos) {
+    if (startPos == std::string::npos) {
         return str;
     }
     str.replace(startPos, findStr.length(), replaceStr);
     return str;
 }
 
-ccstd::string &StringUtil::replaceAll(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr) {
+std::string &replaceAll(std::string &str, const std::string &findStr, const std::string &replaceStr) {
     if (findStr.empty()) {
         return str;
     }
     size_t startPos = 0;
-    while ((startPos = str.find(findStr, startPos)) != ccstd::string::npos) {
+    while ((startPos = str.find(findStr, startPos)) != std::string::npos) {
         str.replace(startPos, findStr.length(), replaceStr);
         startPos += replaceStr.length();
     }
     return str;
 }
 
-ccstd::string &StringUtil::tolower(ccstd::string &str) {
+std::string &tolower(std::string &str) {
     std::transform(str.begin(), str.end(), str.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     return str;
 }
 
-ccstd::string &StringUtil::toupper(ccstd::string &str) {
+std::string &toupper(std::string &str) {
     std::transform(str.begin(), str.end(), str.begin(),
                    [](unsigned char c) { return std::toupper(c); });
     return str;
 }
 
-} // namespace cc
+} // namespace cc::StringUtils

@@ -24,29 +24,37 @@
 
 #pragma once
 
-#include "platform/Namespace.h"
+#include "base/Macros.h"
 
 #include <cstdarg>
-#include <cstddef>
 #include <cstdint>
-#include "Macros.h"
-#include "base/std/container/string.h"
-#include "base/std/container/vector.h"
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace cc {
+namespace StringUtils {
 
-class CC_DLL StringUtil {
-public:
-    static int vprintf(char *buf, const char *last, const char *fmt, va_list args);
-    static int printf(char *buf, const char *last, const char *fmt, ...);
-    // Return the full formatted string, or an empty string on a formatting error.
-    static ccstd::string format(const char *fmt, ...);
-    static ccstd::string vformat(const char *fmt, va_list args);
-    static ccstd::vector<ccstd::string> split(const ccstd::string &str, const ccstd::string &delims, uint32_t maxSplits = 0);
-    static ccstd::string &replace(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr);
-    static ccstd::string &replaceAll(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr);
-    static ccstd::string &tolower(ccstd::string &str);
-    static ccstd::string &toupper(ccstd::string &str);
-};
+template <typename T>
+std::string toString(T arg) {
+    std::stringstream ss;
+    ss << arg;
+    return ss.str();
+}
+
+CC_DLL int vprintf(char *buf, const char *last, const char *fmt, va_list args);
+CC_DLL int printf(char *buf, const char *last, const char *fmt, ...);
+// Return the full formatted string, or an empty string on a formatting error.
+CC_DLL std::string format(const char *fmt, ...) CC_FORMAT_PRINTF(1, 2);
+CC_DLL std::string vformat(const char *fmt, va_list args);
+CC_DLL std::vector<std::string> split(const std::string &str, const std::string &delims, uint32_t maxSplits = 0);
+CC_DLL std::string &replace(std::string &str, const std::string &findStr, const std::string &replaceStr);
+CC_DLL std::string &replaceAll(std::string &str, const std::string &findStr, const std::string &replaceStr);
+CC_DLL std::string &tolower(std::string &str);
+CC_DLL std::string &toupper(std::string &str);
+
+} // namespace StringUtils
+
+namespace StringUtil = StringUtils;
 
 } // namespace cc
