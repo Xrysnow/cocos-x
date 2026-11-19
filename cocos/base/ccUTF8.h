@@ -29,6 +29,7 @@
 #define __cocos2dx__ccUTF8__
 
 #include "platform/PlatformMacros.h"
+#include <cstdarg>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -67,6 +68,7 @@ std::string toString(T arg)
     return ss.str();
 }
 
+// Return the full formatted string, or an empty string on a formatting error.
 std::string CC_DLL format(const char* format, ...) CC_FORMAT_PRINTF(1, 2);
 std::string CC_DLL vformat(const char* format, va_list ap);
 

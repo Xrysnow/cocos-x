@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdarg>
+#include <cstdio>
 #include "base/std/container/string.h"
 #include "memory/Memory.h"
 
@@ -82,12 +83,47 @@ int StringUtil::printf(char *buf, const char *last, const char *fmt, ...) {
 }
 
 ccstd::string StringUtil::format(const char *fmt, ...) {
-    char sz[4096];
     va_list args;
     va_start(args, fmt);
-    vprintf(sz, sz + sizeof(sz) - 1, fmt, args);
-    va_end(args);
-    return sz;
+    try {
+        auto result = vformat(fmt, args);
+        va_end(args);
+        return result;
+    } catch (...) {
+        va_end(args);
+        throw;
+    }
+}
+
+ccstd::string StringUtil::vformat(const char *fmt, va_list args) {
+    if (fmt == nullptr) {
+        return {};
+    }
+
+    char buffer[512];
+    va_list copy;
+    va_copy(copy, args);
+    const int length = std::vsnprintf(buffer, sizeof(buffer), fmt, copy);
+    va_end(copy);
+    if (length < 0) {
+        return {};
+    }
+
+    const auto size = static_cast<size_t>(length);
+    if (size < sizeof(buffer)) {
+        return {buffer, size};
+    }
+
+    ccstd::string result(size + 1, '\0');
+    va_copy(copy, args);
+    const int written = std::vsnprintf(result.data(), result.size(), fmt, copy);
+    va_end(copy);
+    if (written < 0 || static_cast<size_t>(written) >= result.size()) {
+        return {};
+    }
+
+    result.resize(static_cast<size_t>(written));
+    return result;
 }
 
 ccstd::vector<ccstd::string> StringUtil::split(const ccstd::string &str, const ccstd::string &delims, uint32_t maxSplits) {

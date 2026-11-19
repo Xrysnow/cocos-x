@@ -28,6 +28,7 @@
 #include "base/ccUTF8.h"
 #include "platform/Common.h"
 #include "base/Console.h"
+#include "base/StringUtil.h"
 #include "ConvertUTF.h"
 #include <limits>
 
@@ -42,78 +43,22 @@ std::string CC_DLL format(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    auto ret = vformat(format, args);
-    va_end(args);
-    return ret;
+    try
+    {
+        auto result = vformat(format, args);
+        va_end(args);
+        return result;
+    }
+    catch (...)
+    {
+        va_end(args);
+        throw;
+    }
 }
-/*--- This a C++ universal sprintf in the future.
-**  @pitfall: The behavior of vsnprintf between VS2013 and VS2015/2017 is different
-**      VS2013 or Unix-Like System will return -1 when buffer not enough, but VS2015/2017 will return the actural needed
-*length for buffer at this station
-**      The _vsnprintf behavior is compatible API which always return -1 when buffer isn't enough at VS2013/2015/2017
-**      Yes, The vsnprintf is more efficient implemented by MSVC 19.0 or later, AND it's also standard-compliant, see
-*reference: http://www.cplusplus.com/reference/cstdio/vsnprintf/
-*/
+
 std::string vformat(const char* format, va_list ap)
 {
-#define CC_VSNPRINTF_BUFFER_LENGTH 512
-    std::string buf(CC_VSNPRINTF_BUFFER_LENGTH, '\0');
-
-    va_list args;
-    va_copy(args, ap);
-    int nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
-    va_end(args);
-
-    if (nret >= 0)
-    {
-        if ((unsigned int)nret < buf.length())
-        {
-            buf.resize(nret);
-        }
-        else if ((unsigned int)nret > buf.length())
-        {  // handle return required length when buffer insufficient
-            buf.resize(nret);
-
-            va_copy(args, ap);
-            nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
-            va_end(args);
-        }
-        // else equals, do nothing.
-    }
-    else
-    {   // handle return -1 when buffer insufficient
-        /*
-        vs2013/older & glibc <= 2.0.6, they would return -1 when the output was truncated.
-        see: http://man7.org/linux/man-pages/man3/vsnprintf.3.html
-        */
-#if (defined(__linux__) && ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1)))) || \
-    (defined(_MSC_VER) && _MSC_VER < 1900)
-        enum : size_t
-        {
-            enlarge_limits = (1 << 20),  // limits the buffer cost memory less than 2MB
-        };
-        do
-        {
-            buf.resize(buf.length() << 1);
-
-            va_copy(args, ap);
-            nret = vsnprintf(&buf.front(), buf.length() + 1, format, args);
-            va_end(args);
-
-        } while (nret < 0 && buf.size() <= enlarge_limits);
-        if (nret > 0)
-            buf.resize(nret);
-        else
-            buf = "strfmt: an error is encountered!";
-#else
-        /* other standard implementation
-        see: http://www.cplusplus.com/reference/cstdio/vsnprintf/
-        */
-        buf = "strfmt: an error is encountered!";
-#endif
-    }
-
-    return buf;
+    return StringUtil::vformat(format, ap);
 }
 
 /*

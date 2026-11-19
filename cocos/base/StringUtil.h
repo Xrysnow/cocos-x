@@ -39,7 +39,9 @@ class CC_DLL StringUtil {
 public:
     static int vprintf(char *buf, const char *last, const char *fmt, va_list args);
     static int printf(char *buf, const char *last, const char *fmt, ...);
+    // Return the full formatted string, or an empty string on a formatting error.
     static ccstd::string format(const char *fmt, ...);
+    static ccstd::string vformat(const char *fmt, va_list args);
     static ccstd::vector<ccstd::string> split(const ccstd::string &str, const ccstd::string &delims, uint32_t maxSplits = 0);
     static ccstd::string &replace(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr);
     static ccstd::string &replaceAll(ccstd::string &str, const ccstd::string &findStr, const ccstd::string &replaceStr);
