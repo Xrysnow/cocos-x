@@ -159,7 +159,6 @@ set(COCOS_BASE_STANDALONE_HEADER
     base/StringHandle.h
     base/StringPool.h
     base/StringUtil.h
-    base/ThreadPool.h
     base/Timer.h
     base/TypeDef.h
     base/Utils.h
@@ -197,7 +196,6 @@ set(COCOS_BASE_STANDALONE_SRC
     base/RefCounted.cpp
     base/StringHandle.cpp
     base/StringUtil.cpp
-    base/ThreadPool.cpp
     base/Timer.cpp
     base/Utils.cpp
     base/memory/CallStack.cpp
