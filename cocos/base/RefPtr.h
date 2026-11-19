@@ -30,6 +30,7 @@
 
 #include "base/Ref.h"
 #include "base/Macros.h"
+#include <compare>
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
@@ -253,40 +254,32 @@ ThreadSafeRefPtr<T> dynamic_pointer_cast(const ThreadSafeRefPtr<U>& ptr)
     return ThreadSafeRefPtr<T>(dynamic_cast<T*>(ptr.get()));
 }
 
+// C++20 rewrites != and reversed operands from ==, and relational operators
+// from <=>. Comparisons borrow pointers without changing ownership.
 template <class T, class U>
+    requires requires(T* a, U* b) { a == b; }
 bool operator==(const ThreadSafeRefPtr<T>& lhs, const ThreadSafeRefPtr<U>& rhs) noexcept
 {
     return lhs.get() == rhs.get();
 }
 
-template <class T, class U>
-bool operator!=(const ThreadSafeRefPtr<T>& lhs, const ThreadSafeRefPtr<U>& rhs) noexcept
-{
-    return !(lhs == rhs);
-}
-
 template <class T>
 bool operator==(const ThreadSafeRefPtr<T>& ptr, std::nullptr_t) noexcept
 {
-    return !ptr;
+    return ptr.get() == nullptr;
+}
+
+template <class T, class U>
+    requires std::three_way_comparable_with<T*, U*>
+std::strong_ordering operator<=>(const ThreadSafeRefPtr<T>& lhs, const ThreadSafeRefPtr<U>& rhs) noexcept
+{
+    return std::compare_three_way{}(lhs.get(), rhs.get());
 }
 
 template <class T>
-bool operator==(std::nullptr_t, const ThreadSafeRefPtr<T>& ptr) noexcept
+std::strong_ordering operator<=>(const ThreadSafeRefPtr<T>& ptr, std::nullptr_t) noexcept
 {
-    return !ptr;
-}
-
-template <class T>
-bool operator!=(const ThreadSafeRefPtr<T>& ptr, std::nullptr_t) noexcept
-{
-    return static_cast<bool>(ptr);
-}
-
-template <class T>
-bool operator!=(std::nullptr_t, const ThreadSafeRefPtr<T>& ptr) noexcept
-{
-    return static_cast<bool>(ptr);
+    return std::compare_three_way{}(ptr.get(), static_cast<T*>(nullptr));
 }
 
 template <class T>
