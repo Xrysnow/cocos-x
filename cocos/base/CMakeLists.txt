@@ -75,7 +75,6 @@ set(COCOS_BASE_HEADER
     base/EventListenerTouch.h
     base/EventListenerAcceleration.h
     base/firePngData.h
-    base/ccCArray.h
     base/EventListener.h
     base/Scheduler.h
     base/EventType.h
@@ -125,7 +124,6 @@ set(COCOS_BASE_SRC
     base/ZipUtils.cpp
     base/atitc.cpp
     base/base64.cpp
-    base/ccCArray.cpp
     base/ccFPSImages.cpp
     base/ccTypes.cpp
     base/ccUTF8.cpp

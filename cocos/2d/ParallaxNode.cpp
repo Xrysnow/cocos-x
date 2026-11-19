@@ -26,11 +26,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 #include "2d/ParallaxNode.h"
-#include "base/ccCArray.h"
 
 NS_CC_BEGIN
 
-class PointObject : public Ref
+class ParallaxNode::PointObject : public Ref
 {
 public:
     PointObject() = default;
@@ -66,20 +65,12 @@ private:
     Node* _child;  // weak ref
 };
 
-ParallaxNode::ParallaxNode()
+ParallaxNode::ParallaxNode() : _parallaxArray(5)
 {
-    _parallaxArray = ccArrayNew(5);
     _lastPosition.set(-100.0f, -100.0f);
 }
 
-ParallaxNode::~ParallaxNode()
-{
-    if (_parallaxArray)
-    {
-        ccArrayFree(_parallaxArray);
-        _parallaxArray = nullptr;
-    }
-}
+ParallaxNode::~ParallaxNode() = default;
 
 cc::IntrusivePtr<ParallaxNode> ParallaxNode::create()
 {
@@ -102,7 +93,7 @@ void ParallaxNode::addChild(Node* child, int z, const Vec2& ratio, const Vec2& o
     CCASSERT(child != nullptr, "Argument must be non-nil");
     cc::IntrusivePtr<PointObject> obj = PointObject::create(ratio, offset);
     obj->setChild(child);
-    ccArrayAppendObjectWithResize(_parallaxArray, (Ref*)obj);
+    _parallaxArray.pushBack(std::move(obj));
 
     Vec2 pos = this->absolutePosition();
     pos.x    = -pos.x + pos.x * ratio.x + offset.x;
@@ -114,12 +105,11 @@ void ParallaxNode::addChild(Node* child, int z, const Vec2& ratio, const Vec2& o
 
 void ParallaxNode::removeChild(Node* child, bool cleanup)
 {
-    for (int i = 0; i < _parallaxArray->num; i++)
+    for (auto it = _parallaxArray.begin(); it != _parallaxArray.end(); ++it)
     {
-        PointObject* point = (PointObject*)_parallaxArray->arr[i];
-        if (point->getChild() == child)
+        if ((*it)->getChild() == child)
         {
-            ccArrayRemoveObjectAtIndex(_parallaxArray, i, true);
+            _parallaxArray.erase(it);
             break;
         }
     }
@@ -128,7 +118,7 @@ void ParallaxNode::removeChild(Node* child, bool cleanup)
 
 void ParallaxNode::removeAllChildrenWithCleanup(bool cleanup)
 {
-    ccArrayRemoveAllObjects(_parallaxArray);
+    _parallaxArray.clear();
     Node::removeAllChildrenWithCleanup(cleanup);
 }
 
@@ -156,9 +146,9 @@ void ParallaxNode::visit(Renderer* renderer, const Mat4& parentTransform, uint32
     Vec2 pos = this->absolutePosition();
     if (!pos.equals(_lastPosition))
     {
-        for (int i = 0; i < _parallaxArray->num; i++)
+        for (ssize_t i = 0; i < _parallaxArray.size(); ++i)
         {
-            PointObject* point = (PointObject*)_parallaxArray->arr[i];
+            auto* point        = _parallaxArray.at(i);
             float x            = -pos.x + pos.x * point->getRatio().x + point->getOffset().x;
             float y            = -pos.y + pos.y * point->getRatio().y + point->getOffset().y;
             point->getChild()->setPosition(x, y);

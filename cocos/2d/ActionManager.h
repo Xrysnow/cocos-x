@@ -198,7 +198,6 @@ protected:
 
     void removeActionAtIndex(ssize_t index, struct _hashElement* element);
     void deleteHashElement(struct _hashElement* element);
-    void actionAllocWithHashElement(struct _hashElement* element);
 
 protected:
     struct _hashElement* _targets;

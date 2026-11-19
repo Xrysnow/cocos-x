@@ -29,11 +29,9 @@ THE SOFTWARE.
 #define __CCPARALLAX_NODE_H__
 
 #include "2d/Node.h"
-/*#include "ccArray.h"*/
+#include "base/RefVector.h"
 
 NS_CC_BEGIN
-
-struct _ccArray;
 
 /**
  * @addtogroup _2d
@@ -67,18 +65,6 @@ public:
      */
     void addChild(Node* child, int z, const Vec2& parallaxRatio, const Vec2& positionOffset);
 
-    /** Sets an array of layers for the Parallax node.
-     *
-     * @param parallaxArray An array of layers for the Parallax node.
-     */
-    void setParallaxArray(struct _ccArray* parallaxArray) { _parallaxArray = parallaxArray; }
-    /** Returns the array of layers of the Parallax node.
-     *
-     * @return An array of layers for the Parallax node.
-     */
-    struct _ccArray* getParallaxArray() { return _parallaxArray; }
-    const struct _ccArray* getParallaxArray() const { return _parallaxArray; }
-
     //
     // Overrides
     //
@@ -104,9 +90,11 @@ protected:
     Vec2 absolutePosition();
 
     Vec2 _lastPosition;
-    struct _ccArray* _parallaxArray;
 
 private:
+    class PointObject;
+    RefVector<PointObject*> _parallaxArray;
+
     CC_DISALLOW_COPY_AND_ASSIGN(ParallaxNode);
 };
 
