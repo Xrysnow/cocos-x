@@ -289,5 +289,3 @@ add_subdirectory(${COCOS2DX_ROOT_PATH}/extensions ${ENGINE_BINARY_PATH}/extensio
 if(CC_ENABLE_EXT_LUA)
     add_subdirectory(scripting/lua-bindings)
 endif()
-
-target_compile_definitions(${COCOS_CORE_LIB} PUBLIC CC_USE_GFX)

@@ -36,7 +36,6 @@ elseif(WINDOWS)
         platform/win32/compat/stdint.h
         platform/win32/Application-win32.h
         platform/win32/inet_pton_mingw.h
-        platform/win32/GL-win32.h
         platform/win32/FileUtils-win32.h
         platform/win32/StdC-win32.h
         platform/win32/PlatformDefine-win32.h

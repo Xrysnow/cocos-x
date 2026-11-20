@@ -12,8 +12,7 @@ function(setup_ax_extension_config target_name)
   target_compile_features(${target_name} PUBLIC cxx_std_20)
 
   if(ANDROID)
-    # An INTERFACE link does not apply cocos definitions to this target itself.
-    target_compile_definitions(${target_name} PUBLIC CC_USE_GFX)
+    # An INTERFACE link does not provide include directories to this target.
     target_link_libraries(${target_name} INTERFACE ${COCOS_CORE_LIB})
     target_include_directories(${target_name} PRIVATE $<TARGET_PROPERTY:${COCOS_CORE_LIB},INTERFACE_INCLUDE_DIRECTORIES>)
   else()

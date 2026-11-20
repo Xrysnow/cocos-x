@@ -189,14 +189,12 @@ THE SOFTWARE.
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
     #include "platform/android/Application-android.h"
     #include "platform/android/GLViewImpl-android.h"
-    #include "platform/android/GL-android.h"
     #include "platform/android/StdC-android.h"
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     #include "platform/win32/Application-win32.h"
     #include "platform/desktop/GLViewImpl-desktop.h"
-    #include "platform/win32/GL-win32.h"
     #include "platform/win32/StdC-win32.h"
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 
