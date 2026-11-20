@@ -306,10 +306,10 @@ public:
     // override methods
     virtual void doLayout() override;
     virtual void requestDoLayout() override;
-    virtual void addChild(Node* child) override;
-    virtual void addChild(Node* child, int localZOrder) override;
-    virtual void addChild(Node* child, int zOrder, int tag) override;
-    virtual void addChild(Node* child, int zOrder, std::string_view name) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int localZOrder) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name) override;
     virtual void removeAllChildren() override;
     virtual void removeAllChildrenWithCleanup(bool cleanup) override;
     virtual void removeChild(Node* child, bool cleanup = true) override;

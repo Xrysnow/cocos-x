@@ -699,13 +699,13 @@ int lua_cc_Node__setLocalZOrder(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &cc::Node::_setLocalZOrder);
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cc_Node_addChild(lua_State* lua_S)
+int lua_cc_Node_addChild_1(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Node", "cc.Node:addChild");
-	LUA_TRY_INVOKE_OVERLOAD(3, (static_cast<void(cc::Node::*)(cc::Node*, int, std::string_view)>(&cc::Node::addChild)));
-	LUA_TRY_INVOKE_OVERLOAD(3, (static_cast<void(cc::Node::*)(cc::Node*, int, int)>(&cc::Node::addChild)));
-	LUA_TRY_INVOKE(2, (static_cast<void(cc::Node::*)(cc::Node*, int)>(&cc::Node::addChild)));
-	LUA_TRY_INVOKE(1, static_cast<void(cc::Node::*)(cc::Node*)>(&cc::Node::addChild));
+	LUA_TRY_INVOKE_OVERLOAD(3, (static_cast<void(cc::Node::*)(cc::IntrusivePtr<cc::Node>, int, int)>(&cc::Node::addChild)));
+	LUA_TRY_INVOKE_OVERLOAD(3, (static_cast<void(cc::Node::*)(cc::IntrusivePtr<cc::Node>, int, std::string_view)>(&cc::Node::addChild)));
+	LUA_TRY_INVOKE(2, (static_cast<void(cc::Node::*)(cc::IntrusivePtr<cc::Node>, int)>(&cc::Node::addChild)));
+	LUA_TRY_INVOKE(1, static_cast<void(cc::Node::*)(cc::IntrusivePtr<cc::Node>)>(&cc::Node::addChild));
 	LUA_INVOKE_FOOTER("1,2,3");
 }
 int lua_cc_Node_addComponent(lua_State* lua_S)
@@ -1632,7 +1632,7 @@ int luaReg_Core_ccNode(lua_State* lua_S)
 		cc::Node, "cc.Ref",
 		nullptr, nullptr);
 	LUA_METHOD("_setLocalZOrder", lua_cc_Node__setLocalZOrder);
-	LUA_METHOD("addChild", lua_cc_Node_addChild);
+	LUA_METHOD("addChild", lua_cc_Node_addChild_1);
 	LUA_METHOD("addComponent", lua_cc_Node_addComponent);
 	LUA_METHOD("applyMaskOnEnter", lua_cc_Node_applyMaskOnEnter);
 	LUA_METHOD("cleanup", lua_cc_Node_cleanup);

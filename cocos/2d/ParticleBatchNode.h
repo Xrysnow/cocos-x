@@ -126,8 +126,8 @@ public:
     virtual void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
 
     using Node::addChild;
-    virtual void addChild(Node* child, int zOrder, int tag) override;
-    virtual void addChild(Node* child, int zOrder, std::string_view name) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name) override;
     virtual void removeChild(Node* child, bool cleanup) override;
     virtual void reorderChild(Node* child, int zOrder) override;
     virtual void draw(Renderer* renderer, const Mat4& transform, uint32_t flags) override;
@@ -170,7 +170,7 @@ private:
     int searchNewPositionInChildrenForZ(int z);
     void getCurrentIndex(int* oldIndex, int* newIndex, Node* child, int z);
     int addChildHelper(ParticleSystem* child, int z, int aTag, std::string_view name, bool setTag);
-    void addChildByTagOrName(ParticleSystem* child, int z, int tag, std::string_view name, bool setTag);
+    void addChildByTagOrName(cc::IntrusivePtr<ParticleSystem> child, int z, int tag, std::string_view name, bool setTag);
     void updateBlendFunc();
 
     void updateProgramStateTexture();

@@ -143,35 +143,38 @@ bool Layout::init()
     return false;
 }
 
-void Layout::addChild(Node* child)
+void Layout::addChild(cc::IntrusivePtr<Node> child)
 {
-    Layout::addChild(child, child->getLocalZOrder(), child->getTag());
+    const int localZOrder = child->getLocalZOrder();
+    const int tag = child->getTag();
+    Layout::addChild(std::move(child), localZOrder, tag);
 }
 
-void Layout::addChild(Node* child, int localZOrder)
+void Layout::addChild(cc::IntrusivePtr<Node> child, int localZOrder)
 {
-    Layout::addChild(child, localZOrder, child->getTag());
+    const int tag = child->getTag();
+    Layout::addChild(std::move(child), localZOrder, tag);
 }
 
-void Layout::addChild(Node* child, int zOrder, int tag)
+void Layout::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
-    if (dynamic_cast<Widget*>(child))
+    if (auto* widget = dynamic_cast<Widget*>(child.get()))
     {
-        supplyTheLayoutParameterLackToChild(static_cast<Widget*>(child));
+        supplyTheLayoutParameterLackToChild(widget);
     }
     child->setGlobalZOrder(_globalZOrder);
-    Widget::addChild(child, zOrder, tag);
+    Widget::addChild(std::move(child), zOrder, tag);
     _doLayoutDirty = true;
 }
 
-void Layout::addChild(Node* child, int zOrder, std::string_view name)
+void Layout::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
-    if (dynamic_cast<Widget*>(child))
+    if (auto* widget = dynamic_cast<Widget*>(child.get()))
     {
-        supplyTheLayoutParameterLackToChild(static_cast<Widget*>(child));
+        supplyTheLayoutParameterLackToChild(widget);
     }
     child->setGlobalZOrder(_globalZOrder);
-    Widget::addChild(child, zOrder, name);
+    Widget::addChild(std::move(child), zOrder, name);
     _doLayoutDirty = true;
 }
 

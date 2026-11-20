@@ -935,7 +935,7 @@ int luaReg_Core_ccSpriteBatchNode(lua_State* lua_S)
 int lua_cc_ParallaxNode_addChild_1(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.ParallaxNode", "cc.ParallaxNode:addChild");
-	LUA_TRY_INVOKE(4, (static_cast<void(cc::ParallaxNode::*)(cc::Node*, int, const cc::Vec2&, const cc::Vec2&)>(&cc::ParallaxNode::addChild)));
+	LUA_TRY_INVOKE(4, (static_cast<void(cc::ParallaxNode::*)(cc::IntrusivePtr<cc::Node>, int, const cc::Vec2&, const cc::Vec2&)>(&cc::ParallaxNode::addChild)));
 	LUA_INVOKE_FOOTER("4");
 }
 int lua_cc_ParallaxNode_removeAllChildrenWithCleanup(lua_State* lua_S)

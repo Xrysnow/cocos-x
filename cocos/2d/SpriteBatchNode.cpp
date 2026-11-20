@@ -204,31 +204,43 @@ void SpriteBatchNode::visit(Renderer* renderer, const Mat4& parentTransform, uin
     }
 }
 
-void SpriteBatchNode::addChild(Node* child, int zOrder, int tag)
+void SpriteBatchNode::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
     CCASSERT(child != nullptr, "child should not be null");
-    CCASSERT(dynamic_cast<Sprite*>(child) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
-    Sprite* sprite = static_cast<Sprite*>(child);
+    CCASSERT(dynamic_cast<Sprite*>(child.get()) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
+    Sprite* sprite = static_cast<Sprite*>(child.get());
     // check Sprite is using the same texture id
     CCASSERT(sprite->getTexture()->getBackendTexture() == _textureAtlas->getTexture()->getBackendTexture(),
              "CCSprite is not using the same texture id");
 
     Node::addChild(child, zOrder, tag);
 
-    appendChild(sprite);
+    if (sprite->getParent() != this)
+        return;
+
+    const bool registered = sprite->getBatchNode() == this &&
+                            std::find(_descendants.begin(), _descendants.end(), sprite) != _descendants.end();
+    if (!registered)
+        appendChild(sprite);
 }
 
-void SpriteBatchNode::addChild(Node* child, int zOrder, std::string_view name)
+void SpriteBatchNode::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
     CCASSERT(child != nullptr, "child should not be null");
-    CCASSERT(dynamic_cast<Sprite*>(child) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
-    Sprite* sprite = static_cast<Sprite*>(child);
+    CCASSERT(dynamic_cast<Sprite*>(child.get()) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
+    Sprite* sprite = static_cast<Sprite*>(child.get());
     // check Sprite is using the same texture id
     CCASSERT(sprite->getTexture() == _textureAtlas->getTexture(), "CCSprite is not using the same texture id");
 
     Node::addChild(child, zOrder, name);
 
-    appendChild(sprite);
+    if (sprite->getParent() != this)
+        return;
+
+    const bool registered = sprite->getBatchNode() == this &&
+                            std::find(_descendants.begin(), _descendants.end(), sprite) != _descendants.end();
+    if (!registered)
+        appendChild(sprite);
 }
 
 // override reorderChild
@@ -631,26 +643,26 @@ void SpriteBatchNode::appendChild(Sprite* sprite)
 
 void SpriteBatchNode::removeSpriteFromAtlas(Sprite* sprite)
 {
-    // remove from TextureAtlas
-    _textureAtlas->removeQuadAtIndex(sprite->getAtlasIndex());
+    const bool hasQuad = sprite->getBatchNode() == this;
+    if (hasQuad)
+    {
+        _textureAtlas->removeQuadAtIndex(sprite->getAtlasIndex());
+        sprite->setBatchNode(nullptr);
+    }
 
-    // Cleanup sprite. It might be reused (issue #569)
-    sprite->setBatchNode(nullptr);
-
+    // A child can leave during onEnter before receiving a quad.
     auto it = std::find(_descendants.begin(), _descendants.end(), sprite);
     if (it != _descendants.end())
     {
-        auto next = std::next(it);
-
-        Sprite* spr = nullptr;
-        for (auto nextEnd = _descendants.end(); next != nextEnd; ++next)
+        if (hasQuad)
         {
-            spr = *next;
-            spr->setAtlasIndex(spr->getAtlasIndex() - 1);
+            for (auto next = std::next(it); next != _descendants.end(); ++next)
+                (*next)->setAtlasIndex((*next)->getAtlasIndex() - 1);
         }
-
         _descendants.erase(it);
     }
+    if (!hasQuad)
+        return;
 
     // remove children recursively
     auto& children = sprite->getChildren();

@@ -324,7 +324,10 @@ void ProtectedNode::visit(Renderer* renderer, const Mat4& parentTransform, uint3
 
 void ProtectedNode::onEnter()
 {
+    const auto parentRevision = _parentRevision;
     Node::onEnter();
+    if (_parentRevision != parentRevision)
+        return;
     for (const auto& child : _protectedChildren)
         child->onEnter();
 }

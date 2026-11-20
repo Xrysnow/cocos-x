@@ -268,26 +268,29 @@ const Vec2& ScrollView::getInnerContainerPosition() const
     return _innerContainer->getPosition();
 }
 
-void ScrollView::addChild(Node* child)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child)
 {
-    ScrollView::addChild(child, child->getLocalZOrder(), child->getTag());
+    const int localZOrder = child->getLocalZOrder();
+    const int tag = child->getTag();
+    ScrollView::addChild(std::move(child), localZOrder, tag);
 }
 
-void ScrollView::addChild(Node* child, int localZOrder)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child, int localZOrder)
 {
-    ScrollView::addChild(child, localZOrder, child->getTag());
+    const int tag = child->getTag();
+    ScrollView::addChild(std::move(child), localZOrder, tag);
 }
 
-void ScrollView::addChild(Node* child, int zOrder, int tag)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
     child->setGlobalZOrder(_globalZOrder);
-    _innerContainer->addChild(child, zOrder, tag);
+    _innerContainer->addChild(std::move(child), zOrder, tag);
 }
 
-void ScrollView::addChild(Node* child, int zOrder, std::string_view name)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
     child->setGlobalZOrder(_globalZOrder);
-    _innerContainer->addChild(child, zOrder, name);
+    _innerContainer->addChild(std::move(child), zOrder, name);
 }
 
 void ScrollView::removeAllChildren()

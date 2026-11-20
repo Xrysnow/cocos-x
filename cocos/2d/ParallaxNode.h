@@ -63,13 +63,13 @@ public:
      * @param parallaxRatio A given parallax ratio.
      * @param positionOffset A given position offset.
      */
-    void addChild(Node* child, int z, const Vec2& parallaxRatio, const Vec2& positionOffset);
+    void addChild(cc::IntrusivePtr<Node> child, int z, const Vec2& parallaxRatio, const Vec2& positionOffset);
 
     //
     // Overrides
     //
-    virtual void addChild(Node* child, int zOrder, int tag) override;
-    virtual void addChild(Node* child, int zOrder, std::string_view name) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name) override;
     virtual void removeChild(Node* child, bool cleanup) override;
     virtual void removeAllChildrenWithCleanup(bool cleanup) override;
     virtual void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;

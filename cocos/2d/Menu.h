@@ -156,10 +156,10 @@ public:
     // overrides
     virtual void removeChild(Node* child, bool cleanup) override;
 
-    virtual void addChild(Node* child) override;
-    virtual void addChild(Node* child, int zOrder) override;
-    virtual void addChild(Node* child, int zOrder, int tag) override;
-    virtual void addChild(Node* child, int zOrder, std::string_view name) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name) override;
 
     virtual void onEnter() override;
     virtual void onExit() override;

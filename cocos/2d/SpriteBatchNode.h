@@ -194,8 +194,8 @@ public:
     virtual void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
 
     using Node::addChild;
-    virtual void addChild(Node* child, int zOrder, int tag) override;
-    virtual void addChild(Node* child, int zOrder, std::string_view name) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag) override;
+    virtual void addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name) override;
     virtual void reorderChild(Node* child, int zOrder) override;
 
     virtual void removeChild(Node* child, bool cleanup) override;

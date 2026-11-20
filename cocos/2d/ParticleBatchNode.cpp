@@ -156,31 +156,31 @@ void ParticleBatchNode::visit(Renderer* renderer, const Mat4& parentTransform, u
 }
 
 // override addChild:
-void ParticleBatchNode::addChild(Node* aChild, int zOrder, int tag)
+void ParticleBatchNode::addChild(cc::IntrusivePtr<Node> aChild, int zOrder, int tag)
 {
     CCASSERT(aChild != nullptr, "Argument must be non-nullptr");
-    CCASSERT(dynamic_cast<ParticleSystem*>(aChild) != nullptr,
+    CCASSERT(dynamic_cast<ParticleSystem*>(aChild.get()) != nullptr,
              "CCParticleBatchNode only supports QuadParticleSystems as children");
-    ParticleSystem* child = static_cast<ParticleSystem*>(aChild);
+    auto child = cc::static_pointer_cast<ParticleSystem>(std::move(aChild));
     CCASSERT(child->getTexture()->getBackendTexture() == _textureAtlas->getTexture()->getBackendTexture(),
              "CCParticleSystem is not using the same texture id");
 
-    addChildByTagOrName(child, zOrder, tag, "", true);
+    addChildByTagOrName(std::move(child), zOrder, tag, "", true);
 }
 
-void ParticleBatchNode::addChild(Node* aChild, int zOrder, std::string_view name)
+void ParticleBatchNode::addChild(cc::IntrusivePtr<Node> aChild, int zOrder, std::string_view name)
 {
     CCASSERT(aChild != nullptr, "Argument must be non-nullptr");
-    CCASSERT(dynamic_cast<ParticleSystem*>(aChild) != nullptr,
+    CCASSERT(dynamic_cast<ParticleSystem*>(aChild.get()) != nullptr,
              "CCParticleBatchNode only supports QuadParticleSystems as children");
-    ParticleSystem* child = static_cast<ParticleSystem*>(aChild);
+    auto child = cc::static_pointer_cast<ParticleSystem>(std::move(aChild));
     CCASSERT(child->getTexture()->getBackendTexture() == _textureAtlas->getTexture()->getBackendTexture(),
              "CCParticleSystem is not using the same texture id");
 
-    addChildByTagOrName(child, zOrder, 0, name, false);
+    addChildByTagOrName(std::move(child), zOrder, 0, name, false);
 }
 
-void ParticleBatchNode::addChildByTagOrName(ParticleSystem* child,
+void ParticleBatchNode::addChildByTagOrName(cc::IntrusivePtr<ParticleSystem> child,
                                             int zOrder,
                                             int tag,
                                             std::string_view name,
@@ -195,12 +195,8 @@ void ParticleBatchNode::addChildByTagOrName(ParticleSystem* child,
     CCASSERT(_blendFunc.src == child->getBlendFunc().src && _blendFunc.dst == child->getBlendFunc().dst,
              "Can't add a ParticleSystem that uses a different blending function");
 
-    // no lazy sorting, so don't call super addChild, call helper instead
-    int pos = 0;
-    if (setTag)
-        pos = addChildHelper(child, zOrder, tag, "", true);
-    else
-        pos = addChildHelper(child, zOrder, 0, name, false);
+    // Particles are inserted in atlas order before their enter callbacks.
+    const int pos = addChildHelper(child.get(), zOrder, tag, name, setTag);
 
     // get new atlasIndex
     int atlasIndex = 0;
@@ -215,10 +211,11 @@ void ParticleBatchNode::addChildByTagOrName(ParticleSystem* child,
         atlasIndex = 0;
     }
 
-    insertChild(child, atlasIndex);
+    insertChild(child.get(), atlasIndex);
 
     // update quad info
     child->setBatchNode(this);
+    enterAttachedChild(child.get());
 }
 
 // don't use lazy sorting, reordering the particle systems quads afterwards would be too complex
@@ -246,12 +243,6 @@ int ParticleBatchNode::addChildHelper(ParticleSystem* child, int z, int aTag, st
     child->setLocalZOrder(z);
 
     child->setParent(this);
-
-    if (_running)
-    {
-        child->onEnter();
-        child->onEnterTransitionDidFinish();
-    }
     return pos;
 }
 

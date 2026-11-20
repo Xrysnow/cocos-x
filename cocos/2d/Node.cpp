@@ -168,6 +168,7 @@ Node::~Node()
     for (auto&& child : _children)
     {
         child->_parent = nullptr;
+        ++child->_parentRevision;
     }
 
     removeAllComponents();
@@ -663,7 +664,11 @@ bool Node::isRunning() const
 /// parent setter
 void Node::setParent(Node* parent)
 {
-    _parent           = parent;
+    if (_parent != parent)
+    {
+        _parent = parent;
+        ++_parentRevision;
+    }
     _normalizedPositionDirty = true;
     _transformUpdated = _transformDirty = _inverseDirty = true;
 }
@@ -960,27 +965,27 @@ bool Node::doEnumerate(std::string name, std::function<bool(Node*)> callback) co
  * If a class want's to extend the 'addChild' behavior it only needs
  * to override this method
  */
-void Node::addChild(Node* child, int localZOrder, int tag)
+void Node::addChild(cc::IntrusivePtr<Node> child, int localZOrder, int tag)
 {
     CCASSERT(child != nullptr, "Argument must be non-nil");
     CCASSERT(child->_parent == nullptr, "child already added. It can't be added again");
 
-    addChildHelper(child, localZOrder, tag, "", true);
+    addChildHelper(std::move(child), localZOrder, tag, "", true);
 }
 
-void Node::addChild(Node* child, int localZOrder, std::string_view name)
+void Node::addChild(cc::IntrusivePtr<Node> child, int localZOrder, std::string_view name)
 {
     CCASSERT(child != nullptr, "Argument must be non-nil");
     CCASSERT(child->_parent == nullptr, "child already added. It can't be added again");
 
-    addChildHelper(child, localZOrder, INVALID_TAG, name, false);
+    addChildHelper(std::move(child), localZOrder, INVALID_TAG, name, false);
 }
 
-void Node::addChildHelper(Node* child, int localZOrder, int tag, std::string_view name, bool setTag)
+void Node::addChildHelper(cc::IntrusivePtr<Node> child, int localZOrder, int tag, std::string_view name, bool setTag)
 {
-    auto assertNotSelfChild([this, child]() -> bool {
-        for (Node* parent(getParent()); parent != nullptr; parent = parent->getParent())
-            if (parent == child)
+    auto assertNotSelfChild([this, node = child.get()]() -> bool {
+        for (Node* parent = this; parent != nullptr; parent = parent->getParent())
+            if (parent == node)
                 return false;
 
         return true;
@@ -994,7 +999,7 @@ void Node::addChildHelper(Node* child, int localZOrder, int tag, std::string_vie
         this->childrenAlloc();
     }
 
-    this->insertChild(child, localZOrder);
+    this->insertChild(child.get(), localZOrder);
 
     child->setParent(this);
     
@@ -1017,15 +1022,10 @@ void Node::addChildHelper(Node* child, int localZOrder, int tag, std::string_vie
 
     child->updateOrderOfArrival();
 
-    if (_running)
-    {
-        child->onEnter();
-        // prevent onEnterTransitionDidFinish to be called twice when a node is added in onEnter
-        if (_isTransitionFinished)
-        {
-            child->onEnterTransitionDidFinish();
-        }
-    }
+    const auto parentRevision = child->_parentRevision;
+    enterAttachedChild(child.get());
+    if (child->_parentRevision != parentRevision)
+        return;
 
     if (_cascadeColorEnabled)
     {
@@ -1038,16 +1038,36 @@ void Node::addChildHelper(Node* child, int localZOrder, int tag, std::string_vie
     }
 }
 
-void Node::addChild(Node* child, int zOrder)
+void Node::enterAttachedChild(Node* child)
 {
-    CCASSERT(child != nullptr, "Argument must be non-nil");
-    this->addChild(child, zOrder, child->_name);
+    if (!_running)
+        return;
+
+    const auto parentRevision = child->_parentRevision;
+    const bool transitionFinished = _isTransitionFinished;
+    child->onEnter();
+    // Discard this notification if onEnter detached or reattached the child.
+    // If the parent finished its transition during onEnter, it notified its children.
+    if (_running && transitionFinished && _isTransitionFinished && child->_parent == this &&
+        child->_parentRevision == parentRevision)
+    {
+        child->onEnterTransitionDidFinish();
+    }
 }
 
-void Node::addChild(Node* child)
+void Node::addChild(cc::IntrusivePtr<Node> child, int zOrder)
 {
     CCASSERT(child != nullptr, "Argument must be non-nil");
-    this->addChild(child, child->getLocalZOrder(), child->_name);
+    const std::string_view name = child->_name;
+    this->addChild(std::move(child), zOrder, name);
+}
+
+void Node::addChild(cc::IntrusivePtr<Node> child)
+{
+    CCASSERT(child != nullptr, "Argument must be non-nil");
+    const int zOrder = child->getLocalZOrder();
+    const std::string_view name = child->_name;
+    this->addChild(std::move(child), zOrder, name);
 }
 
 void Node::removeFromParent()
@@ -1322,17 +1342,33 @@ Mat4 Node::transform(const Mat4& parentTransform)
 
 void Node::onEnter()
 {
-    if (!_running)
-    {
+    const auto parentRevision = _parentRevision;
+    const bool starting = !_running;
+    if (starting)
         ++__attachedNodeCount;
-    }
+
+    // Keep the count visible during enter callbacks, rolling back this entry
+    // if an onExit occurred before the node became running.
+    const auto continuesEntering = [this, parentRevision, starting] {
+        if (_parentRevision == parentRevision)
+            return true;
+        if (starting)
+            --__attachedNodeCount;
+        return false;
+    };
 
     if (_onEnterCallback)
+    {
         _onEnterCallback();
+        if (!continuesEntering())
+            return;
+    }
 
     if (_componentContainer && !_componentContainer->isEmpty())
     {
         _componentContainer->onEnter();
+        if (!continuesEntering())
+            return;
     }
 
     _isTransitionFinished = false;
@@ -1340,7 +1376,11 @@ void Node::onEnter()
     for (const auto& child : _children)
         child->onEnter();
 
+    if (!continuesEntering())
+        return;
     this->resume();
+    if (!continuesEntering())
+        return;
 
     _running = true;
 

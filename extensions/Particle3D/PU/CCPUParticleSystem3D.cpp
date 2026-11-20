@@ -1247,7 +1247,7 @@ cc::IntrusivePtr<PUParticleSystem3D> PUParticleSystem3D::clone()
     {
         PUParticleSystem3D* child = dynamic_cast<PUParticleSystem3D*>(iter);
         if (child)
-            ps->addChild(child->clone().get());
+            ps->addChild(child->clone());
     }
     return ps;
 }

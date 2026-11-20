@@ -145,26 +145,26 @@ bool Menu::initWithArray(const Vector<MenuItem*>& arrayOfItems)
 /*
  * override add:
  */
-void Menu::addChild(Node* child)
+void Menu::addChild(cc::IntrusivePtr<Node> child)
 {
-    Node::addChild(child);
+    Node::addChild(std::move(child));
 }
 
-void Menu::addChild(Node* child, int zOrder)
+void Menu::addChild(cc::IntrusivePtr<Node> child, int zOrder)
 {
-    Node::addChild(child, zOrder);
+    Node::addChild(std::move(child), zOrder);
 }
 
-void Menu::addChild(Node* child, int zOrder, int tag)
+void Menu::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
-    CCASSERT(dynamic_cast<MenuItem*>(child) != nullptr, "Menu only supports MenuItem objects as children");
-    Node::addChild(child, zOrder, tag);
+    CCASSERT(dynamic_cast<MenuItem*>(child.get()) != nullptr, "Menu only supports MenuItem objects as children");
+    Node::addChild(std::move(child), zOrder, tag);
 }
 
-void Menu::addChild(Node* child, int zOrder, std::string_view name)
+void Menu::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
-    CCASSERT(dynamic_cast<MenuItem*>(child) != nullptr, "Menu only supports MenuItem objects as children");
-    Node::addChild(child, zOrder, name);
+    CCASSERT(dynamic_cast<MenuItem*>(child.get()) != nullptr, "Menu only supports MenuItem objects as children");
+    Node::addChild(std::move(child), zOrder, name);
 }
 
 void Menu::onEnter()

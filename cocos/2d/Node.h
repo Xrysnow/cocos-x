@@ -734,7 +734,7 @@ public:
      *
      * @param child A child node.
      */
-    virtual void addChild(Node* child);
+    virtual void addChild(cc::IntrusivePtr<Node> child);
     /**
      * Adds a child to the container with a local z-order.
      *
@@ -744,7 +744,7 @@ public:
      * @param child     A child node.
      * @param localZOrder    Z order for drawing priority. Please refer to `setLocalZOrder(int)`.
      */
-    virtual void addChild(Node* child, int localZOrder);
+    virtual void addChild(cc::IntrusivePtr<Node> child, int localZOrder);
     /**
      * Adds a child to the container with z order and tag.
      *
@@ -755,9 +755,9 @@ public:
      * @param localZOrder   Z order for drawing priority. Please refer to `setLocalZOrder(int)`.
      * @param tag           An integer to identify the node easily. Please refer to `setTag(int)`.
      *
-     * Please use `addChild(Node* child, int localZOrder, const std::string &name)` instead.
+     * Please use `addChild(cc::IntrusivePtr<Node> child, int localZOrder, std::string_view name)` instead.
      */
-    virtual void addChild(Node* child, int localZOrder, int tag);
+    virtual void addChild(cc::IntrusivePtr<Node> child, int localZOrder, int tag);
     /**
      * Adds a child to the container with z order and tag
      *
@@ -769,7 +769,7 @@ public:
      * @param name      A string to identify the node easily. Please refer to `setName(int)`.
      *
      */
-    virtual void addChild(Node* child, int localZOrder, std::string_view name);
+    virtual void addChild(cc::IntrusivePtr<Node> child, int localZOrder, std::string_view name);
     /**
      * Gets a child from the container with its tag.
      *
@@ -1890,11 +1890,14 @@ protected:
     // update Rotation3D from quaternion
     void updateRotation3D();
 
+    // The caller keeps the child alive through the enter callbacks.
+    void enterAttachedChild(Node* child);
+
     void updateParentChildrenIndexer(int tag);
     void updateParentChildrenIndexer(std::string_view name);
 
 private:
-    void addChildHelper(Node* child, int localZOrder, int tag, std::string_view name, bool setTag);
+    void addChildHelper(cc::IntrusivePtr<Node> child, int localZOrder, int tag, std::string_view name, bool setTag);
 
     NodeIndexerMap_t* getParentChildrenIndexer();
 
@@ -1962,6 +1965,7 @@ protected:
     Node* _parent;                       ///< weak reference to parent node
     Director* _director;                 // cached director pointer to improve rendering performance
     int _tag;                            ///< a tag. Can be any number you assigned just to identify this node
+    uint32_t _parentRevision = 0;        ///< distinguishes successive attachments to the same parent
 
     std::string _name;     ///< a string label, an user defined string to identify this node
     uint64_t _hashOfName;  ///< hash value of _name, used for speed in getChildByName

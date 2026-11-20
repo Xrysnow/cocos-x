@@ -78,21 +78,21 @@ cc::IntrusivePtr<ParallaxNode> ParallaxNode::create()
     return ret;
 }
 
-void ParallaxNode::addChild(Node* /*child*/, int /*zOrder*/, int /*tag*/)
+void ParallaxNode::addChild(cc::IntrusivePtr<Node> /*child*/, int /*zOrder*/, int /*tag*/)
 {
     CCASSERT(0, "ParallaxNode: use addChild:z:parallaxRatio:positionOffset instead");
 }
 
-void ParallaxNode::addChild(Node* /*child*/, int /*zOrder*/, std::string_view /*name*/)
+void ParallaxNode::addChild(cc::IntrusivePtr<Node> /*child*/, int /*zOrder*/, std::string_view /*name*/)
 {
     CCASSERT(0, "ParallaxNode: use addChild:z:parallaxRatio:positionOffset instead");
 }
 
-void ParallaxNode::addChild(Node* child, int z, const Vec2& ratio, const Vec2& offset)
+void ParallaxNode::addChild(cc::IntrusivePtr<Node> child, int z, const Vec2& ratio, const Vec2& offset)
 {
     CCASSERT(child != nullptr, "Argument must be non-nil");
     cc::IntrusivePtr<PointObject> obj = PointObject::create(ratio, offset);
-    obj->setChild(child);
+    obj->setChild(child.get());
     _parallaxArray.pushBack(std::move(obj));
 
     Vec2 pos = this->absolutePosition();
@@ -100,7 +100,8 @@ void ParallaxNode::addChild(Node* child, int z, const Vec2& ratio, const Vec2& o
     pos.y    = -pos.y + pos.y * ratio.y + offset.y;
     child->setPosition(pos);
 
-    Node::addChild(child, z, child->getName());
+    const std::string_view name = child->getName();
+    Node::addChild(std::move(child), z, name);
 }
 
 void ParallaxNode::removeChild(Node* child, bool cleanup)

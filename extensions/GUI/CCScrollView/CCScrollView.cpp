@@ -510,15 +510,15 @@ void ScrollView::updateInset()
 /**
  * make sure all children go to the container
  */
-void ScrollView::addChild(Node* child, int zOrder, int tag)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
-    if (_container != child)
+    if (_container != child.get())
     {
-        _container->addChild(child, zOrder, tag);
+        _container->addChild(std::move(child), zOrder, tag);
     }
     else
     {
-        Layer::addChild(child, zOrder, tag);
+        Layer::addChild(std::move(child), zOrder, tag);
     }
 }
 
@@ -545,15 +545,15 @@ void ScrollView::removeAllChildren()
     removeAllChildrenWithCleanup(true);
 }
 
-void ScrollView::addChild(Node* child, int zOrder, std::string_view name)
+void ScrollView::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
-    if (_container != child)
+    if (_container != child.get())
     {
-        _container->addChild(child, zOrder, name);
+        _container->addChild(std::move(child), zOrder, name);
     }
     else
     {
-        Layer::addChild(child, zOrder, name);
+        Layer::addChild(std::move(child), zOrder, name);
     }
 }
 

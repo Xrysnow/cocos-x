@@ -1507,7 +1507,10 @@ void ParticleSystem::resimulate(float seconds, float frameRate)
 
 void ParticleSystem::onEnter()
 {
+    const auto parentRevision = _parentRevision;
     Node::onEnter();
+    if (_parentRevision != parentRevision)
+        return;
 
     // update after action in run!
     this->scheduleUpdateWithPriority(1);

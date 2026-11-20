@@ -250,7 +250,7 @@ void ListView::pushBackDefaultItem()
     }
     cc::IntrusivePtr<Widget> newItem = _model->clone();
     remedyLayoutParameter(newItem);
-    addChild(newItem);
+    addChild(std::move(newItem));
     requestDoLayout();
 }
 
@@ -270,34 +270,37 @@ void ListView::pushBackCustomItem(Widget* item)
     requestDoLayout();
 }
 
-void ListView::addChild(cc::Node* child, int zOrder, int tag)
+void ListView::addChild(cc::IntrusivePtr<Node> child, int zOrder, int tag)
 {
     ScrollView::addChild(child, zOrder, tag);
 
-    Widget* widget = dynamic_cast<Widget*>(child);
-    if (nullptr != widget)
+    auto* widget = dynamic_cast<Widget*>(child.get());
+    if (widget && widget->getParent() == _innerContainer && !_items.contains(widget))
     {
         _items.pushBack(widget);
         onItemListChanged();
     }
 }
 
-void ListView::addChild(cc::Node* child)
+void ListView::addChild(cc::IntrusivePtr<Node> child)
 {
-    ListView::addChild(child, child->getLocalZOrder(), child->getName());
+    const int zOrder = child->getLocalZOrder();
+    const std::string_view name = child->getName();
+    ListView::addChild(std::move(child), zOrder, name);
 }
 
-void ListView::addChild(cc::Node* child, int zOrder)
+void ListView::addChild(cc::IntrusivePtr<Node> child, int zOrder)
 {
-    ListView::addChild(child, zOrder, child->getName());
+    const std::string_view name = child->getName();
+    ListView::addChild(std::move(child), zOrder, name);
 }
 
-void ListView::addChild(Node* child, int zOrder, std::string_view name)
+void ListView::addChild(cc::IntrusivePtr<Node> child, int zOrder, std::string_view name)
 {
     ScrollView::addChild(child, zOrder, name);
 
-    Widget* widget = dynamic_cast<Widget*>(child);
-    if (nullptr != widget)
+    auto* widget = dynamic_cast<Widget*>(child.get());
+    if (widget && widget->getParent() == _innerContainer && !_items.contains(widget))
     {
         _items.pushBack(widget);
         onItemListChanged();
@@ -312,7 +315,7 @@ void ListView::removeChild(cc::Node* child, bool cleanup)
         if (-1 != _curSelectedIndex)
         {
             auto removedIndex = getIndex(widget);
-            if (_curSelectedIndex > removedIndex)
+            if (removedIndex != -1 && _curSelectedIndex > removedIndex)
             {
                 _curSelectedIndex -= 1;
             }
