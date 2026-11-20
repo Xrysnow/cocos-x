@@ -53,7 +53,7 @@ public:
     static bool FORCE_DISABLE_VALIDATION;
     static bool FORCE_ENABLE_VALIDATION;
 
-    static Device* create(const DeviceInfo& info, API preferredAPI = API::UNKNOWN) {
+    static Device* create(const DeviceInfo& info, API preferredAPI = API::UNKNOWN, bool allowFallback = true) {
         Device* device = nullptr;
         switch (preferredAPI)
         {
@@ -92,6 +92,8 @@ public:
         default:
             break;
         }
+        if (!allowFallback)
+            return nullptr;
 
 #ifdef CC_USE_VULKAN
         if (preferredAPI != API::VULKAN && tryCreate<CCVKDevice>(info, &device))

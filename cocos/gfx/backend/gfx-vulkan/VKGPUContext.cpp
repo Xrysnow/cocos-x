@@ -23,6 +23,10 @@
 ****************************************************************************/
 
 #include "VKGPUObjects.h"
+#ifdef CC_VULKAN_GLFW_SURFACE
+#define GLFW_INCLUDE_NONE
+#include "glfw3.h"
+#endif
 
 namespace cc {
 namespace gfx {
@@ -149,10 +153,16 @@ bool CCVKGPUContext::initialize() {
         requestedExtensions.push_back("VK_KHR_portability_enumeration");
         requestedExtensions.push_back("VK_KHR_portability_subset");
     }
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    requestedExtensions.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-    requestedExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+#elif defined(CC_VULKAN_GLFW_SURFACE)
+    uint32_t extensionCount = 0;
+    const char** surfaceExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+    if (!surfaceExtensions)
+        return false;
+    for (uint32_t i = 0; i < extensionCount; ++i) {
+        // VK_KHR_surface is already in the common list.
+        if (strcmp(surfaceExtensions[i], VK_KHR_SURFACE_EXTENSION_NAME) != 0)
+            requestedExtensions.push_back(surfaceExtensions[i]);
+    }
 #else
     #pragma error Platform not supported
 #endif

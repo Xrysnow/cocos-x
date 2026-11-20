@@ -90,7 +90,7 @@ function(cocos_add_gfx_sources target)
         elseif(MACOSX)
             target_compile_definitions(${target} PUBLIC VK_USE_PLATFORM_MACOS_MVK)
         else()
-            target_compile_definitions(${target} PUBLIC VK_USE_PLATFORM_XCB_KHR)
+            target_compile_definitions(${target} PRIVATE CC_VULKAN_GLFW_SURFACE=1)
         endif()
     endif()
 

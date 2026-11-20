@@ -30,6 +30,10 @@
 #include "VKRenderPass.h"
 #include "VKTexture.h"
 #include "VKUtils.h"
+#ifdef CC_VULKAN_GLFW_SURFACE
+#define GLFW_INCLUDE_NONE
+#include "glfw3.h"
+#endif
 
 #if CC_SWAPPY_ENABLED
     #include "platform/android/AndroidPlatform.h"
@@ -700,16 +704,13 @@ void CCVKSwapchain::createVkSurface() {
     VkMacOSSurfaceCreateInfoMVK surfaceCreateInfo{VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK};
     surfaceCreateInfo.pView = _windowHandle;
     VK_CHECK(vkCreateMacOSSurfaceMVK(gpuContext->vkInstance, &surfaceCreateInfo, nullptr, &_gpuSwapchain->vkSurface));
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    VkWaylandSurfaceCreateInfoKHR surfaceCreateInfo{VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR};
-    surfaceCreateInfo.display = nullptr; // TODO
-    surfaceCreateInfo.surface = reinterpret_cast<wl_surface *>(_windowHandle);
-    VK_CHECK(vkCreateWaylandSurfaceKHR(gpuContext->vkInstance, &surfaceCreateInfo, nullptr, &_gpuSwapchain->vkSurface));
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
-    surfaceCreateInfo.connection = nullptr; // TODO
-    surfaceCreateInfo.window = reinterpret_cast<uint64_t>(_windowHandle);
-    VK_CHECK(vkCreateXcbSurfaceKHR(gpuContext->vkInstance, &surfaceCreateInfo, nullptr, &_gpuSwapchain->vkSurface));
+#elif defined(CC_VULKAN_GLFW_SURFACE)
+    const auto result = glfwCreateWindowSurface(gpuContext->vkInstance, static_cast<GLFWwindow*>(_windowHandle),
+                                                nullptr, &_gpuSwapchain->vkSurface);
+    if (result != VK_SUCCESS) {
+        setAcquireResult(result);
+        CC_LOG_ERROR("glfwCreateWindowSurface failed: %d", result);
+    }
 #else
     #pragma error Platform not supported
 #endif
