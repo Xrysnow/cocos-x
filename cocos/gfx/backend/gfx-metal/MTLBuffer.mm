@@ -253,7 +253,7 @@ void CCMTLBuffer::update(const void *buffer, uint size, uint offset) {
     }
 }
 
-void CCMTLBuffer::updateMTLBuffer(const void *buffer, uint32_t /*offset*/, uint32_t size) {
+void CCMTLBuffer::updateMTLBuffer(const void *buffer, uint32_t writeOffset, uint32_t size) {
     id<MTLBuffer> mtlBuffer = _gpuBuffer->mtlBuffer;
     auto* ccDevice = CCMTLDevice::getInstance();
     if(mtlBuffer.storageMode != MTLStorageModePrivate) {
@@ -270,7 +270,7 @@ void CCMTLBuffer::updateMTLBuffer(const void *buffer, uint32_t /*offset*/, uint3
 #endif
     } else {
         auto* cmdBuffer = ccDevice->getCommandBuffer();
-        cmdBuffer->updateBuffer(this, buffer, size);
+        cmdBuffer->updateBuffer(this, buffer, size, writeOffset);
     }
 }
 
