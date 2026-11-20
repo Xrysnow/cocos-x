@@ -28,7 +28,8 @@ THE SOFTWARE.
 #define __CC_TEXT_FIELD_H__
 
 #include "2d/Label.h"
-#include "base/IMEDelegate.h"
+#include "base/EventKeyboard.h"
+#include "platform/TextInputService.h"
 
 /**
  * @addtogroup ui
@@ -53,11 +54,11 @@ public:
     /**
      *@brief    If the sender doesn't want to attach to the IME, return true.
      */
-    virtual bool onTextFieldAttachWithIME(TextFieldTTF* sender);
+    virtual bool onTextFieldBeginEditing(TextFieldTTF* sender);
     /**
      *@brief    If the sender doesn't want to detach from the IME, return true.
      */
-    virtual bool onTextFieldDetachWithIME(TextFieldTTF* sender);
+    virtual bool onTextFieldEndEditing(TextFieldTTF* sender);
 
     /**
      *@brief    If the sender doesn't want to insert the text, return true.
@@ -79,7 +80,7 @@ public:
 /**
  *@brief    A simple text input field with TTF font.
  */
-class CC_DLL TextFieldTTF : public Label, public IMEDelegate
+class CC_DLL TextFieldTTF : public Label
 {
 public:
     /**
@@ -124,12 +125,13 @@ public:
     /**
      *@brief    Open keyboard and receive input text.
      */
-    virtual bool attachWithIME() override;
+    virtual bool beginEditing();
+    bool isEditing() const { return _inputSession.state().active; }
 
     /**
      *@brief    End text input and close keyboard.
      */
-    virtual bool detachWithIME() override;
+    virtual bool endEditing();
 
     //////////////////////////////////////////////////////////////////////////
     // properties
@@ -224,6 +226,7 @@ public:
     virtual void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags) override;
 
     virtual void update(float delta) override;
+    void onExit() override;
 
     /**
      * Set enable cursor use.
@@ -251,17 +254,16 @@ public:
 
 protected:
     //////////////////////////////////////////////////////////////////////////
-    // IMEDelegate interface
+    // Text editing
     //////////////////////////////////////////////////////////////////////////
 
-    virtual bool canAttachWithIME() override;
-    virtual bool canDetachWithIME() override;
-    virtual void didAttachWithIME() override;
-    virtual void didDetachWithIME() override;
-    virtual void insertText(const char* text, size_t len) override;
-    virtual void deleteBackward() override;
-    virtual std::string_view getContentText() override;
-    virtual void controlKey(EventKeyboard::KeyCode keyCode) override;
+    virtual bool canBeginEditing();
+    virtual bool canEndEditing();
+    virtual void didBeginEditing();
+    virtual void didEndEditing();
+    virtual void insertText(const char* text, size_t len);
+    virtual void deleteBackward();
+    virtual void controlKey(EventKeyboard::KeyCode keyCode);
 
     TextFieldDelegate* _delegate;
     std::size_t _charCount;
@@ -284,14 +286,17 @@ protected:
     // >0 - show, <0 - hide
     float _cursorShowingTime;
 
-    bool _isAttachWithIME;
+    bool _editing;
 
     void makeStringSupportCursor(std::string& displayText);
     void updateCursorDisplayText();
-    void setAttachWithIME(bool isAttachWithIME);
+    void setEditing(bool editing);
     void setTextColorInternally(const Color4B& color);
 
 private:
+    std::optional<TextInputArea> inputArea();
+    void receiveTextInput(const TextInputEvent& event);
+    TextInputSession _inputSession;
     class LengthStack;
     LengthStack* _lens;
 };

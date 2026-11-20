@@ -31,6 +31,7 @@
 
 #include "ui/UIEditBox/UIEditBox.h"
 #include "base/Director.h"
+#include "platform/GLView.h"
 #include "2d/Label.h"
 #include "ui/UIHelper.h"
 
@@ -360,6 +361,21 @@ void EditBoxImplCommon::onEndEditing(std::string_view /*text*/)
 void EditBoxImplCommon::editBoxEditingDidBegin()
 {
     auto keepAlive = cc::IntrusivePtr{_editBox};
+    auto view = Director::getInstance()->getOpenGLView();
+    if (view && view->getTextInputWindow() && !_nativeInput.state().active)
+    {
+        auto result = view->getTextInputService().beginNativeEditing(view->getTextInputWindow(),
+            [this](const TextInputEvent& event) {
+                if (const auto* changed = std::get_if<TextInputStateChanged>(&event.payload))
+                {
+                    const auto& area = changed->targetOcclusion ? changed->targetOcclusion : changed->state.occlusion;
+                    if (area)
+                        _editBox->updateKeyboardOcclusion(area, static_cast<float>(changed->animationDuration.value_or(0)));
+                }
+            });
+        if (result)
+            _nativeInput = std::move(result.session);
+    }
     // LOGD("textFieldShouldBeginEditing...");
     cc::ui::EditBoxDelegate* pDelegate = _editBox->getDelegate();
 
@@ -383,6 +399,8 @@ void EditBoxImplCommon::editBoxEditingDidBegin()
 void EditBoxImplCommon::editBoxEditingDidEnd(std::string_view text, EditBoxDelegate::EditBoxEndAction action)
 {
     auto keepAlive = cc::IntrusivePtr{_editBox};
+    _nativeInput = {};
+    _editBox->updateKeyboardOcclusion({}, 0);
     // LOGD("textFieldShouldEndEditing...");
     _text = text;
 

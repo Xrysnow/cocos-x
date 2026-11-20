@@ -4,6 +4,9 @@
 #ifndef _UITEXTFIELD_CPP_H_
 #define _UITEXTFIELD_CPP_H_
 #include "UITextFieldEx.h"
+#include "2d/TextInputGeometry.h"
+#include "platform/TextInputIndex.h"
+#include "platform/GLView.h"
 
 #include "base/Director.h"
 
@@ -118,44 +121,6 @@ static cc::IntrusivePtr<Sprite> engine_inj_create_lump(const Color4B& color, int
 namespace ui
 {
 
-/// calculate the UTF-8 string's char count.
-static int _calcCharCount(const char* text)
-{
-    int n   = 0;
-    char ch = 0;
-    while ((ch = *text) != 0x0)
-    {
-        CC_BREAK_IF(!ch);
-
-        if (0x80 != (0xC0 & ch))
-        {
-            ++n;
-        }
-        ++text;
-    }
-    return n;
-}
-
-/// calculate the UTF-8 string's char count.
-static int _truncateUTF8String(const char* text, int limit, int& nb)
-{
-    int n   = 0;
-    char ch = 0;
-    nb      = 0;
-    while ((ch = *text) != 0x0)
-    {
-        CC_BREAK_IF(!ch || n > limit);
-
-        if (0x80 != (0xC0 & ch))
-        {
-            ++n;
-        }
-        ++nb;
-        ++text;
-    }
-    return n;
-}
-
 static void internalSetLableFont(Label* l, std::string_view fontName, float fontSize)
 {
     if (FileUtils::getInstance()->isFileExist(fontName))
@@ -224,7 +189,6 @@ static std::string internalUTF8MoveRight(std::string_view utf8Text, int length /
 //////////////////////////////////////////////////////////////////////////
 // constructor and destructor
 //////////////////////////////////////////////////////////////////////////
-bool TextFieldEx::s_keyboardVisible = false;
 TextFieldEx::TextFieldEx()
     : editable(true)
     , renderLabel(nullptr)
@@ -237,7 +201,6 @@ TextFieldEx::TextFieldEx()
     , cursor(nullptr)
     , enabled(true)
     , touchListener(nullptr)
-    , kbdListener(nullptr)
     , onTextModify(nullptr)
     , onOpenIME(nullptr)
     , onCloseIME(nullptr)
@@ -255,8 +218,6 @@ TextFieldEx::TextFieldEx()
 
 TextFieldEx::~TextFieldEx()
 {
-    if (this->kbdListener != nullptr)
-        CCEVENTMGR->removeEventListener(this->kbdListener);
     if (this->touchListener != nullptr)
         CCEVENTMGR->removeEventListener(this->touchListener);
 }
@@ -413,8 +374,8 @@ void TextFieldEx::enableIME(Node* control)
 
         if (focus)
         {
-            if (!s_keyboardVisible || !this->cursorVisible)
-                openIME();
+            if (!this->cursorVisible)
+                beginEditing();
             if (this->touchCursorControlEnabled)
             {
                 auto renderLabelPoint = renderLabel->convertToNodeSpace(touch->getLocation());
@@ -423,46 +384,21 @@ void TextFieldEx::enableIME(Node* control)
         }
         else
         {
-            closeIME();
+            endEditing();
         }
     };
 
     CCEVENTMGR->addEventListenerWithSceneGraphPriority(touchListener, this);
 
-    /// enable use keyboard <- -> to move cursor.
-    auto keyboardOwner = EventListenerKeyboard::create();
-    kbdListener = keyboardOwner.get();
-    kbdListener->onKeyPressed = [this](EventKeyboard::KeyCode code, Event*) {
-        if (this->cursorVisible)
-        {
-            switch (code)
-            {
-            case EventKeyboard::KeyCode::KEY_LEFT_ARROW:
-                this->__moveCursor(-1);
-                break;
-            case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
-                this->__moveCursor(1);
-                break;
-            case EventKeyboard::KeyCode::KEY_DELETE:
-            case EventKeyboard::KeyCode::KEY_KP_DELETE:
-                this->handleDeleteKeyEvent();
-                break;
-            default:;
-            }
-        }
-    };
 
-    CCEVENTMGR->addEventListenerWithSceneGraphPriority(kbdListener, this);
 }
 
 void TextFieldEx::disableIME(void)
 {
-    CCEVENTMGR->removeEventListener(kbdListener);
     CCEVENTMGR->removeEventListener(touchListener);
 
-    kbdListener   = nullptr;
     touchListener = nullptr;
-    closeIME();
+    endEditing();
 }
 
 Label* TextFieldEx::getRenderLabel()
@@ -471,143 +407,116 @@ Label* TextFieldEx::getRenderLabel()
 }
 
 //////////////////////////////////////////////////////////////////////////
-// IMEDelegate
+// Editing focus
 //////////////////////////////////////////////////////////////////////////
 
-bool TextFieldEx::attachWithIME()
+void TextFieldEx::beginEditing()
 {
-    bool ret = IMEDelegate::attachWithIME();
-    if (ret)
-    {
-        // open keyboard
-        GLView* pGlView = _director->getOpenGLView();
-        if (pGlView)
-        {
-            pGlView->setIMEKeyboardState(true);
-        }
-    }
-    return ret;
-}
-
-bool TextFieldEx::detachWithIME()
-{
-    bool ret = IMEDelegate::detachWithIME();
-    if (ret)
-    {
-        // close keyboard
-        GLView* glView = _director->getOpenGLView();
-        if (glView)
-        {
-            glView->setIMEKeyboardState(false);
-        }
-    }
-    return ret;
-}
-
-void TextFieldEx::keyboardDidShow(IMEKeyboardNotificationInfo& /*info*/)
-{
-    s_keyboardVisible = true;
-}
-
-void TextFieldEx::keyboardDidHide(IMEKeyboardNotificationInfo& /*info*/)
-{
-    s_keyboardVisible = false;
-}
-
-void TextFieldEx::openIME(void)
-{
-    CCLOG("TextFieldEx:: openIME");
-    this->attachWithIME();
+    auto view = _director->getOpenGLView();
+    if (!view || !view->getTextInputWindow() || _inputSession.state().active)
+        return;
+    TextInputOptions options;
+    options.purpose = secureTextEntry ? TextInputPurpose::password : TextInputPurpose::text;
+    auto result = view->getTextInputService().begin(view->getTextInputWindow(), options,
+        [this](const TextInputEvent& event) { receiveTextInput(event); }, {inputArea(), {}});
+    if (!result)
+        return;
+    _inputSession = std::move(result.session);
     __updateCursorPosition();
     __showCursor();
-
-    if (this->onOpenIME)
-        this->onOpenIME();
+    _inputSession.requestKeyboard(true);
+    if (onOpenIME)
+        onOpenIME();
 }
 
-void TextFieldEx::closeIME(void)
+void TextFieldEx::endEditing()
 {
-    CCLOG("TextFieldEx:: closeIME");
-    __hideCursor();
-    this->detachWithIME();
-
-    if (this->onCloseIME)
-        this->onCloseIME();
+    _inputSession.close();
 }
 
-bool TextFieldEx::canAttachWithIME()
+void TextFieldEx::receiveTextInput(const TextInputEvent& event)
 {
-    return true;  //(_delegate) ? (! _delegate->onTextFieldAttachWithIME(this)) : true;
+    auto keepAlive = cc::IntrusivePtr{this};
+    if (event.session != _inputSession.id())
+        return;
+    if (auto text = std::get_if<TextInputCommit>(&event.payload))
+        insertText(text->text.c_str(), text->text.size());
+    else if (auto cmd = std::get_if<TextInputCommand>(&event.payload))
+    {
+        switch (cmd->action)
+        {
+        case TextInputCommandAction::backspace: deleteBackward(); break;
+        case TextInputCommandAction::deleteForward: handleDeleteKeyEvent(); break;
+        case TextInputCommandAction::left: __moveCursor(-1); break;
+        case TextInputCommandAction::right: __moveCursor(1); break;
+        case TextInputCommandAction::cancel:
+        case TextInputCommandAction::insertNewline:
+        case TextInputCommandAction::done: endEditing(); break;
+        default: break;
+        }
+    }
+    else if (std::holds_alternative<TextInputClosed>(event.payload))
+    {
+        _inputSession = {};
+        __hideCursor();
+        if (onCloseIME)
+            onCloseIME();
+    }
 }
 
-bool TextFieldEx::canDetachWithIME()
+std::optional<TextInputArea> TextFieldEx::inputArea()
 {
-    return true;  //(_delegate) ? (! _delegate->onTextFieldDetachWithIME(this)) : true;
+    if (!cursor)
+        return {};
+    const auto caret = cursor->getBoundingBox();
+    return textInputAreaForNode(*this, caret, Rect(0, caret.origin.y,
+        std::max(1.0f, getContentSize().width), caret.size.height));
 }
+
+void TextFieldEx::visit(Renderer* renderer, const Mat4& parentTransform, uint32_t flags)
+{
+    Node::visit(renderer, parentTransform, flags);
+    if (_inputSession.id() && cursorVisible && isVisible())
+        _inputSession.setArea(inputArea());
+}
+
+void TextFieldEx::onExit()
+{
+    if (_inputSession.id())
+    {
+        _inputSession = {};
+        __hideCursor();
+    }
+    Node::onExit();
+}
+
 
 void TextFieldEx::insertText(const char* text, size_t len)
 {
-    if (!this->editable || !this->enabled)
-    {
+    if (!editable || !enabled)
         return;
-    }
 
-    if (this->charLimit > 0 && this->charCount >= this->charLimit)
-    {  // regard zero as unlimited
-        nxbeep(0);
+    const std::string_view input(text, len);
+    const auto newline = input.find('\n');
+    const auto prefix = input.substr(0, newline);
+    const TextInputIndex incoming(prefix);
+    const auto count = incoming.scalarCount();
+    if (!count)
         return;
-    }
-
-    int nb;
-    auto n = _truncateUTF8String(text, static_cast<int>(this->charLimit - this->charCount), nb);
-
-    std::string insert(text, nb);
-
-    // insert \n means input end
-    auto pos = insert.find('\n');
-    if (insert.npos != pos)
+    const auto capacity = charLimit ? charLimit - std::min(charLimit, charCount) : count.offset;
+    const auto accepted = std::min(capacity, count.offset);
+    if (accepted)
     {
-        len = pos;
-        insert.erase(pos);
+        const auto nextCursor = static_cast<size_t>(insertPosUtf8) + accepted;
+        std::string updated = inputText;
+        updated.insert(static_cast<size_t>(insertPos), prefix.substr(0, incoming.utf8FromScalar(accepted).offset));
+        setString(updated);
+        setCursorAtScalar(nextCursor);
+        if (onTextModify)
+            onTextModify();
     }
-
-    if (len > 0)
-    {
-        // if (_delegate && _delegate->onTextFieldInsertText(this, insert.c_str(), len))
-        //{
-        //     // delegate doesn't want to insert text
-        //     return;
-        // }
-
-        charCount += n;  // _calcCharCount(insert.c_str());
-        std::string sText(inputText);
-        sText.insert(this->insertPos, insert);  // original is: sText.append(insert);
-
-        // bool needUpdatePos
-        this->setString(sText);
-        while (n-- > 0)
-            __moveCursor(1);
-
-        // this->contentDirty = true;
-        // __updateCursorPosition();
-
-        if (this->onTextModify)
-            this->onTextModify();
-    }
-
-    if (insert.npos == pos)
-    {
-        return;
-    }
-
-    // '\n' inserted, let delegate process first
-    /*if (_delegate && _delegate->onTextFieldInsertText(this, "\n", 1))
-    {
-    return;
-    }*/
-
-    // if delegate hasn't processed, detach from IME by default
-    this->closeIME();
+    if (newline != input.npos)
+        endEditing();
 }
 
 void TextFieldEx::deleteBackward()
@@ -737,10 +646,6 @@ void TextFieldEx::handleDeleteKeyEvent()
         this->onTextModify();
 }
 
-std::string_view TextFieldEx::getContentText()
-{
-    return inputText;
-}
 
 void TextFieldEx::setTextColor(const Color4B& color)
 {
@@ -783,31 +688,15 @@ void TextFieldEx::setPlaceholderColor(const Color4B& color)
 // input text property
 void TextFieldEx::setString(std::string_view text)
 {
-    static char bulletString[] = {(char)0xe2, (char)0x80, (char)0xa2, (char)0x00};
-
-    this->inputText = text;
-
-    std::string secureText;
-
-    std::string* displayText = &this->inputText;
-
-    if (!this->inputText.empty())
-    {
-        if (secureTextEntry)
-        {
-            size_t length = inputText.length();
-            displayText   = &secureText;
-
-            while (length > 0)
-            {
-                displayText->append(bulletString);
-                --length;
-            }
-        }
-    }
-
-    // if there is no input text, display placeholder instead
-    if (this->inputText.empty())
+    const TextInputIndex index(text);
+    const auto count = index.scalarCount();
+    if (!count)
+        return;
+    const auto oldCursor = static_cast<size_t>(insertPosUtf8);
+    const auto newCursor = oldCursor == charCount ? count.offset : std::min(oldCursor, count.offset);
+    inputText = text;
+    charCount = count.offset;
+    if (inputText.empty())
     {
         renderLabel->setTextColor(colorSpaceHolder);
         renderLabel->setString(placeHolder);
@@ -815,18 +704,31 @@ void TextFieldEx::setString(std::string_view text)
     else
     {
         renderLabel->setTextColor(colorText);
-        renderLabel->setString(*displayText);
+        if (secureTextEntry)
+        {
+            std::string masked;
+            for (size_t i = 0; i < charCount; ++i)
+                masked.append("\xe2\x80\xa2");
+            renderLabel->setString(masked);
+        }
+        else
+            renderLabel->setString(inputText);
     }
+    setCursorAtScalar(newCursor);
+}
 
-    bool bInsertAtEnd = (insertPosUtf8 == charCount);
-
-    charCount = _calcCharCount(inputText.c_str());
-
-    if (bInsertAtEnd)
+void TextFieldEx::setCursorAtScalar(size_t position)
+{
+    const bool atEnd = position == charCount;
+    insertPosUtf8 = static_cast<int>(position);
+    insertPos = static_cast<int>(atEnd ? inputText.size() : TextInputIndex(inputText).utf8FromScalar(position).offset);
+    cursorPos = secureTextEntry ? static_cast<int>(position * 3) : insertPos;
+    if (cursor)
     {
-        insertPosUtf8 = static_cast<int>(charCount);
-        insertPos     = static_cast<int>(inputText.length());
-        cursorPos     = static_cast<int>(displayText->length());
+        const auto visible = renderLabel->getString().substr(0, cursorPos);
+        const float x = position == 0 ? 0 : (atEnd ? renderLabel->getContentSize().width :
+                                             internalCalcStringWidth(visible, fontName, fontSize));
+        cursor->setPosition(Point(x, getContentSize().height / 2));
     }
 }
 
@@ -884,7 +786,7 @@ void TextFieldEx::setEnabled(bool bEnabled)
     {
         if (!bEnabled)
         {
-            this->closeIME();
+            this->endEditing();
         }
         this->enabled = bEnabled;
     }

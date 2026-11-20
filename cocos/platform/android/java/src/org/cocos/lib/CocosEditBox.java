@@ -288,7 +288,7 @@ public class CocosEditBox extends EditText {
     @Override
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
         CocosGLSurfaceView inputView = CocosGLSurfaceView.getInstance();
-        if (inputView != null && inputView.isIMEEditor(this) && inputView.handleIMEKeyEvent(pKeyEvent)) return true;
+        if (inputView != null && inputView.isIMEEditor(this) && inputView.handleTextInputKey(pKeyEvent)) return true;
         switch (pKeyCode) {
             case KeyEvent.KEYCODE_BACK:
                 Context context = getContext();
@@ -306,19 +306,9 @@ public class CocosEditBox extends EditText {
     }
 
     @Override
-    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
-        CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
-        if (view != null && view.isIMEEditor(this) && keyCode == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) view.dismissIME();
-            return true;
-        }
-        return super.onKeyPreIme(keyCode, event);
-    }
-
-    @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
-        if (view != null && view.isIMEEditor(this) && view.handleIMEKeyEvent(event)) return true;
+        if (view != null && view.isIMEEditor(this) && view.handleTextInputKey(event)) return true;
         return super.onKeyUp(keyCode, event);
     }
 
@@ -327,6 +317,13 @@ public class CocosEditBox extends EditText {
         InputConnection connection = super.onCreateInputConnection(info);
         CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
         return view != null && view.isIMEEditor(this) ? view.wrapInputConnection(connection) : connection;
+    }
+
+    @Override
+    protected void onSelectionChanged(int start, int end) {
+        super.onSelectionChanged(start, end);
+        final CocosGLSurfaceView view = CocosGLSurfaceView.getInstance();
+        if (view != null && view.isIMEEditor(this)) view.textInputSelectionChanged();
     }
 
     public void setInputFlag(int inputFlag) {

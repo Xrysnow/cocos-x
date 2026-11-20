@@ -22,7 +22,6 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "base/IMEDispatcher.h"
 #include "base/Director.h"
 #include "base/EventType.h"
 #include "base/EventCustom.h"
@@ -30,8 +29,6 @@
 #include "platform/Application.h"
 #include "platform/FileUtils.h"
 #include <jni.h>
-
-#include "base/ccUTF8.h"
 
 using namespace cc;
 
@@ -62,29 +59,4 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeOnResume(JNIEnv*, 
     }
 }
 
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeInsertText(JNIEnv* env, jclass, jstring text)
-{
-    std::string strValue = cc::StringUtils::getStringUTFCharsJNI(env, text);
-    const char* pszText  = strValue.c_str();
-    cc::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
-}
-
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeDeleteBackward(JNIEnv*, jclass, jint numChars)
-{
-    // Java counts Unicode code points, matching the native delegates' deletion unit.
-    for (jint i = 0; i < numChars; ++i)
-        cc::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
-}
-
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosRenderer_nativeIMEClosed(JNIEnv*, jclass)
-{
-    cc::IMEKeyboardNotificationInfo info{};
-    cc::IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidHide(info);
-}
-
-JNIEXPORT jstring JNICALL Java_org_cocos_lib_CocosRenderer_nativeGetContentText(JNIEnv* env, jclass)
-{
-    auto pszText = cc::IMEDispatcher::sharedDispatcher()->getContentText();
-    return cc::StringUtils::newStringUTFJNI(env, pszText);
-}
 }

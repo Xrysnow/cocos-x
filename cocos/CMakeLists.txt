@@ -172,7 +172,7 @@ endif()
 target_compile_definitions(${COCOS_CORE_LIB} PRIVATE
     "CC_APP_DIRECTORY_DEFAULT_ID=\"${CC_APP_DIRECTORY_DEFAULT_ID}\"")
 if(WINDOWS)
-    target_link_libraries(${COCOS_CORE_LIB} PRIVATE shell32 ole32)
+    target_link_libraries(${COCOS_CORE_LIB} PRIVATE shell32 ole32 imm32 comctl32)
 endif()
 
 if(AUDIO_USE_LIBVORBIS)
@@ -181,6 +181,9 @@ endif()
 
 # use external libs
 add_subdirectory(${COCOS2DX_ROOT_PATH}/external ${ENGINE_BINARY_PATH}/external)
+if(LINUX)
+    include(platform/linux/TextInput-deps.cmake)
+endif()
 if(CC_ENABLE_FILE_DIALOG AND LINUX)
     include(platform/linux/FileDialog-deps.cmake)
 endif()

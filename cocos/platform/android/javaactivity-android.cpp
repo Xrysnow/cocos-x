@@ -115,6 +115,11 @@ void detachWindow()
 {
     hostReady = false;
     hostSurfaceSize = Size::ZERO;
+    if (hostDirector)
+    {
+        if (auto* view = dynamic_cast<GLViewImpl*>(hostDirector->getOpenGLView()))
+            view->detachTextInputWindow();
+    }
     if (hostWindow)
     {
         setHostState(HostState::Detaching);
@@ -328,6 +333,7 @@ JNIEXPORT jint JNICALL Java_org_cocos_lib_CocosRenderHost_nativeAttach(
             return -1;
         }
         view->setFrameSize(width, height);
+        view->attachTextInputWindow();
         hostDirector->setOpenGLView(view);
         if (Application::getInstance()->run() != -1)
         {
@@ -350,6 +356,10 @@ JNIEXPORT jint JNICALL Java_org_cocos_lib_CocosRenderHost_nativeAttach(
         setHostState(HostState::SurfaceFailed);
         __android_log_print(ANDROID_LOG_ERROR, HOST_TAG, "surface-failed: reattach failed");
         return -1;
+    }
+    else if (auto* view = dynamic_cast<GLViewImpl*>(hostDirector->getOpenGLView()))
+    {
+        view->attachTextInputWindow();
     }
     presentBaseline = backend::DeviceGFX::getPresentCount();
     return resizeWindow(width, height);

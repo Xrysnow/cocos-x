@@ -1030,16 +1030,16 @@ int lua_cc_ui_TextField_addEventListener(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &cc::ui::TextField::addEventListener);
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cc_ui_TextField_attachWithIME(lua_State* lua_S)
+int lua_cc_ui_TextField_beginEditing(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:attachWithIME");
-	LUA_TRY_INVOKE(0, &cc::ui::TextField::attachWithIME);
+	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:beginEditing");
+	LUA_TRY_INVOKE(0, &cc::ui::TextField::beginEditing);
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cc_ui_TextField_detachWithIME(lua_State* lua_S)
+int lua_cc_ui_TextField_endEditing(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:detachWithIME");
-	LUA_TRY_INVOKE(0, &cc::ui::TextField::detachWithIME);
+	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:endEditing");
+	LUA_TRY_INVOKE(0, &cc::ui::TextField::endEditing);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cc_ui_TextField_didNotSelectSelf(lua_State* lua_S)
@@ -1048,10 +1048,10 @@ int lua_cc_ui_TextField_didNotSelectSelf(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &cc::ui::TextField::didNotSelectSelf);
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cc_ui_TextField_getAttachWithIME(lua_State* lua_S)
+int lua_cc_ui_TextField_isEditing(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:getAttachWithIME");
-	LUA_TRY_INVOKE_R(0, &cc::ui::TextField::getAttachWithIME);
+	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:isEditing");
+	LUA_TRY_INVOKE_R(0, &cc::ui::TextField::isEditing);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cc_ui_TextField_getAutoRenderSize(lua_State* lua_S)
@@ -1064,12 +1064,6 @@ int lua_cc_ui_TextField_getDeleteBackward(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:getDeleteBackward");
 	LUA_TRY_INVOKE_R(0, &cc::ui::TextField::getDeleteBackward);
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_ui_TextField_getDetachWithIME(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:getDetachWithIME");
-	LUA_TRY_INVOKE_R(0, &cc::ui::TextField::getDetachWithIME);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_cc_ui_TextField_getFontName(lua_State* lua_S)
@@ -1162,12 +1156,6 @@ int lua_cc_ui_TextField_isPasswordEnabled(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &cc::ui::TextField::isPasswordEnabled);
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cc_ui_TextField_setAttachWithIME(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:setAttachWithIME");
-	LUA_TRY_INVOKE(1, &cc::ui::TextField::setAttachWithIME);
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cc_ui_TextField_setCursorEnabled(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:setCursorEnabled");
@@ -1190,12 +1178,6 @@ int lua_cc_ui_TextField_setDeleteBackward(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:setDeleteBackward");
 	LUA_TRY_INVOKE(1, &cc::ui::TextField::setDeleteBackward);
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_ui_TextField_setDetachWithIME(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("ccui.TextField", "ccui.TextField:setDetachWithIME");
-	LUA_TRY_INVOKE(1, &cc::ui::TextField::setDetachWithIME);
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cc_ui_TextField_setFontName(lua_State* lua_S)
@@ -1315,13 +1297,13 @@ int luaReg_UI_ccuiTextField(lua_State* lua_S)
 		cc::ui::TextField, "ccui.Widget",
 		nullptr, nullptr);
 	LUA_METHOD("addEventListener", lua_cc_ui_TextField_addEventListener);
-	LUA_METHOD("attachWithIME", lua_cc_ui_TextField_attachWithIME);
-	LUA_METHOD("detachWithIME", lua_cc_ui_TextField_detachWithIME);
+	LUA_METHOD("beginEditing", lua_cc_ui_TextField_beginEditing);
+	LUA_METHOD("endEditing", lua_cc_ui_TextField_endEditing);
 	LUA_METHOD("didNotSelectSelf", lua_cc_ui_TextField_didNotSelectSelf);
-	LUA_METHOD("getAttachWithIME", lua_cc_ui_TextField_getAttachWithIME);
+	LUA_METHOD("isEditing", lua_cc_ui_TextField_isEditing);
 	LUA_METHOD("getAutoRenderSize", lua_cc_ui_TextField_getAutoRenderSize);
 	LUA_METHOD("getDeleteBackward", lua_cc_ui_TextField_getDeleteBackward);
-	LUA_METHOD("getDetachWithIME", lua_cc_ui_TextField_getDetachWithIME);
+
 	LUA_METHOD("getFontName", lua_cc_ui_TextField_getFontName);
 	LUA_METHOD("getFontSize", lua_cc_ui_TextField_getFontSize);
 	LUA_METHOD("getInsertText", lua_cc_ui_TextField_getInsertText);
@@ -1337,12 +1319,12 @@ int luaReg_UI_ccuiTextField(lua_State* lua_S)
 	LUA_METHOD("getTouchSize", lua_cc_ui_TextField_getTouchSize);
 	LUA_METHOD("isMaxLengthEnabled", lua_cc_ui_TextField_isMaxLengthEnabled);
 	LUA_METHOD("isPasswordEnabled", lua_cc_ui_TextField_isPasswordEnabled);
-	LUA_METHOD("setAttachWithIME", lua_cc_ui_TextField_setAttachWithIME);
+
 	LUA_METHOD("setCursorEnabled", lua_cc_ui_TextField_setCursorEnabled);
 	LUA_METHOD("setCursorFromPoint", lua_cc_ui_TextField_setCursorFromPoint);
 	LUA_METHOD("setCursorPosition", lua_cc_ui_TextField_setCursorPosition);
 	LUA_METHOD("setDeleteBackward", lua_cc_ui_TextField_setDeleteBackward);
-	LUA_METHOD("setDetachWithIME", lua_cc_ui_TextField_setDetachWithIME);
+
 	LUA_METHOD("setFontName", lua_cc_ui_TextField_setFontName);
 	LUA_METHOD("setFontSize", lua_cc_ui_TextField_setFontSize);
 	LUA_METHOD("setInsertText", lua_cc_ui_TextField_setInsertText);

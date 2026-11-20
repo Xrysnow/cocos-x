@@ -181,6 +181,15 @@ final class CocosRenderHost implements Choreographer.FrameCallback {
         return isCurrent() && resumed && focused && ready && surfaceAlive && epoch == inputEpoch;
     }
 
+    long getTextInputGeneration() {
+        return generation;
+    }
+
+    boolean isTextInputCurrent(long current) {
+        // The IME itself can resize the surface while this input connection is active.
+        return isCurrent() && resumed && focused && surfaceAlive && generation == current;
+    }
+
     void cancelInput(Runnable cancel) {
         ENGINE.post(() -> {
             if (engineInitialized && engineOwner == this) cancel.run();

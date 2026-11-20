@@ -354,6 +354,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         this.mGLSurfaceView.setEditText(edittext);
         mGLSurfaceView.setOnApplyWindowInsetsListener((view, insets) -> {
             CocosEngine.refreshWindowInfo(this, insets);
+            mGLSurfaceView.refreshTextInputInsets(insets);
             return insets;
         });
         mFrameLayout.addOnLayoutChangeListener((view, l, t, r, b, oldL, oldT, oldR, oldB) ->

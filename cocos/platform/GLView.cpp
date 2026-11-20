@@ -119,7 +119,28 @@ GLView::GLView()
 
 GLView::~GLView() { dialog::forgetView(this); }
 
-void GLView::pollEvents() {}
+void GLView::pollEvents()
+{
+    _textInputService.dispatchPending();
+}
+
+std::optional<TextInputArea> GLView::textInputAreaToWindow(const TextInputArea& area) const
+{
+    if (area.space == TextInputSpace::window)
+        return area;
+    if (_screenSize.width <= 0 || _screenSize.height <= 0 || _scaleX <= 0 || _scaleY <= 0)
+        return std::nullopt;
+
+    const auto toWindow = [this](const TextInputRect& rect) {
+        return TextInputRect{_viewPortRect.origin.x + rect.x * _scaleX,
+                             _screenSize.height - _viewPortRect.origin.y - (rect.y + rect.height) * _scaleY,
+                             rect.width * _scaleX, rect.height * _scaleY};
+    };
+    TextInputArea converted{toWindow(area.caret), toWindow(area.line), std::nullopt, TextInputSpace::window};
+    if (area.clip)
+        converted.clip = toWindow(*area.clip);
+    return converted;
+}
 
 void GLView::updateDesignResolutionSize()
 {
@@ -171,6 +192,8 @@ void GLView::updateDesignResolutionSize()
         // TODO: minggo
         //        glViewport(0, 0, _screenSize.width, _screenSize.height);
     }
+    if (_textInputWindow)
+        _textInputService.geometryChanged(_textInputWindow);
 }
 
 void GLView::setDesignResolutionSize(float width, float height, ResolutionPolicy resolutionPolicy)

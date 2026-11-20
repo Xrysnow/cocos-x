@@ -110,7 +110,6 @@ public:
     virtual void end() override;
     virtual void swapBuffers() override;
     virtual void setFrameSize(float width, float height) override;
-    virtual void setIMEKeyboardState(bool bOpen) override;
 
 #if CC_ICON_SET_SUPPORT
     virtual void setIcon(std::string_view filename) const override;

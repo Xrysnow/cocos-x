@@ -77,21 +77,11 @@ public:
     static cc::IntrusivePtr<UICCTextField> create(std::string_view placeholder, std::string_view fontName, float fontSize);
 
     // override functions
-    virtual bool onTextFieldAttachWithIME(TextFieldTTF* pSender) override;
-    virtual bool onTextFieldDetachWithIME(TextFieldTTF* pSender) override;
+    void didBeginEditing() override;
+    void didEndEditing() override;
     virtual bool onTextFieldInsertText(TextFieldTTF* pSender, const char* text, size_t nLen) override;
     virtual bool onTextFieldDeleteBackward(TextFieldTTF* pSender, const char* delText, size_t nLen) override;
     void insertText(const char* text, size_t len) override;
-
-    /**
-     * Open up the IME.
-     */
-    void openIME();
-
-    /**
-     * Close the IME.
-     */
-    void closeIME();
 
     /**
      * Toggle enable max length limitation.
@@ -156,28 +146,28 @@ public:
      *
      * @param attach True if attach with IME, false otherwise.
      */
-    void setAttachWithIME(bool attach);
+    void setEditingBegan(bool attach);
 
     /**
      * @brief Query whether the IME is attached or not.
      *
      * @return True if IME is attached, false otherwise.
      */
-    bool getAttachWithIME() const;
+    bool getEditingBegan() const;
 
     /**
      * @brief Toggle detach with IME.
      *
      * @param detach True if detach with IME, false otherwise.
      */
-    void setDetachWithIME(bool detach);
+    void setEditingEnded(bool detach);
 
     /**
      * @brief Query whether IME is detached or not.
      *
      * @return True if IME is detached, false otherwise.
      */
-    bool getDetachWithIME() const;
+    bool getEditingEnded() const;
 
     /**
      * @brief Toggle enable text insert.
@@ -210,8 +200,8 @@ public:
 protected:
     bool _maxLengthEnabled;
     int _maxLength;
-    bool _attachWithIME;
-    bool _detachWithIME;
+    bool _editingBegan;
+    bool _editingEnded;
     bool _insertText;
     bool _deleteBackward;
 };
@@ -234,8 +224,8 @@ public:
      */
     enum class EventType
     {
-        ATTACH_WITH_IME,
-        DETACH_WITH_IME,
+        EDITING_BEGAN,
+        EDITING_ENDED,
         INSERT_TEXT,
         DELETE_BACKWARD,
     };
@@ -455,33 +445,7 @@ public:
 
     virtual void update(float dt) override;
 
-    /**
-     * @brief Query whether the IME is attached or not.
-     *
-     * @return True if IME is attached, false otherwise.
-     */
-    bool getAttachWithIME() const;
-
-    /**
-     * @brief Toggle attach with IME.
-     *
-     * @param attach True if attach with IME, false otherwise.
-     */
-    void setAttachWithIME(bool attach);
-
-    /**
-     * @brief Query whether IME is detached or not.
-     *
-     * @return True if IME is detached, false otherwise.
-     */
-    bool getDetachWithIME() const;
-
-    /**
-     * @brief Toggle detach with IME.
-     *
-     * @param detach True if detach with IME, false otherwise.
-     */
-    void setDetachWithIME(bool detach);
+    bool isEditing() const;
 
     /**
      * @brief Whether it is ready to get the inserted text or not.
@@ -537,13 +501,13 @@ public:
      * @brief Attach the IME for inputing.
      *
      */
-    void attachWithIME();
+    void beginEditing();
 
     /**
      * @brief Detach the IME from inputing.
      *
      */
-    void detachWithIME();
+    void endEditing();
 
     /**
      * @brief Change the text area size.
@@ -608,8 +572,8 @@ public:
 
 protected:
     virtual void initRenderer() override;
-    void attachWithIMEEvent();
-    void detachWithIMEEvent();
+    void editingBeganEvent();
+    void editingEndedEvent();
     void insertTextEvent();
     void deleteBackwardEvent();
     virtual void onSizeChanged() override;

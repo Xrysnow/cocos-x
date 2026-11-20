@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include "base/ccTypes.h"
 #include "base/EventTouch.h"
+#include "platform/TextInputService.h"
 
 #include <vector>
 
@@ -134,12 +135,6 @@ public:
     /** Exchanges the front and back buffers, subclass must implement this method. */
     virtual void swapBuffers() = 0;
 
-    /** Open or close IME keyboard , subclass must implement this method.
-     *
-     * @param open Open or close IME keyboard.
-     */
-    virtual void setIMEKeyboardState(bool open) = 0;
-
     /** When the window is closed, it will return false if the platforms is Ios or Android.
      * If the platforms is windows or Mac,it will return true.
      *
@@ -164,6 +159,11 @@ public:
 
     /** Polls the events. */
     virtual void pollEvents();
+
+    TextInputService& getTextInputService() { return _textInputService; }
+    TextInputWindowId getTextInputWindow() const { return _textInputWindow; }
+    // Converts main-view design coordinates into top-left coordinates in the view frame.
+    std::optional<TextInputArea> textInputAreaToWindow(const TextInputArea& area) const;
 
     /**
      * Get the frame size of EGL view.
@@ -433,6 +433,7 @@ public:
     void renderScene(Scene* scene, Renderer* renderer);
 
 protected:
+    void setTextInputWindow(TextInputWindowId window) { _textInputWindow = window; }
     void updateDesignResolutionSize();
 
     void handleTouchesOfEndOrCancel(EventTouch::EventCode eventCode, int num, intptr_t ids[], float xs[], float ys[]);
@@ -449,6 +450,10 @@ protected:
     float _scaleX;
     float _scaleY;
     ResolutionPolicy _resolutionPolicy;
+
+private:
+    TextInputService _textInputService;
+    TextInputWindowId _textInputWindow = 0;
 };
 
 // end of platform group

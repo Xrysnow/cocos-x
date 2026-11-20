@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 #include "platform/desktop/GLViewImpl-desktop.h"
 #include "platform/FileDialogInternal.h"
+#include "platform/desktop/TextInputGLFW.h"
 #include "platform/Application.h"
 #include "base/Configuration.h"
 #include "base/Director.h"
@@ -33,7 +34,6 @@ THE SOFTWARE.
 #include "base/EventDispatcher.h"
 #include "base/EventKeyboard.h"
 #include "base/EventMouse.h"
-#include "base/IMEDispatcher.h"
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
 #include "2d/Camera.h"
@@ -64,7 +64,12 @@ THE SOFTWARE.
 #define GLFW_EXPOSE_NATIVE_WGL
 #else
 #define GLFW_EXPOSE_NATIVE_EGL
+#ifdef CC_GLFW_WAYLAND
+#define GLFW_EXPOSE_NATIVE_WAYLAND
+#endif
+#ifdef CC_GLFW_X11
 #define GLFW_EXPOSE_NATIVE_X11
+#endif
 #ifndef Status
 #define Status int
 #endif
@@ -393,6 +398,7 @@ GLViewImpl::~GLViewImpl()
 {
     CCLOGINFO("deallocing GLViewImpl: %p", this);
     GLFWEventHandler::setGLViewImpl(nullptr);
+    TextInputGLFW::detachWindows(getTextInputService());
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     backend::DeviceGFX::shutdownSurface();
     detail::destroyMacWindowBridge(_macBridge);
@@ -480,6 +486,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     _frameZoomFactor = frameZoomFactor;
     bool useGL = CC_TARGET_PLATFORM != CC_PLATFORM_MAC;
     auto desiredApi = cc::gfx::API::VULKAN;
+    bool allowApiFallback = true;
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     desiredApi = cc::gfx::API::METAL;
     const auto& configuredAPI = Configuration::getInstance()->getValue("GFXDesiredAPI");
@@ -501,6 +508,19 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     const auto configAPI = Configuration::getInstance()->getValue("GFXDesiredAPI").asInt((int)desiredApi);
     if (0 <= configAPI && configAPI <= (int)cc::gfx::API::WEBGPU)
 	    desiredApi = (cc::gfx::API)configAPI;
+#ifdef CC_GLFW_WAYLAND
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
+    {
+        // GFX's EGL swapchains own an EGL native window. A wl_surface is valid
+        // for Vulkan WSI but cannot be used as an EGL native window.
+        if (desiredApi != cc::gfx::API::VULKAN && desiredApi != cc::gfx::API::UNKNOWN)
+        {
+            CC_LOG_ERROR("Native Wayland requires the Vulkan renderer. Select the X11 platform for GLES.");
+            return false;
+        }
+        allowApiFallback = false;
+    }
+#endif
     useGL = !(desiredApi == cc::gfx::API::VULKAN || desiredApi == cc::gfx::API::METAL || desiredApi == cc::gfx::API::UNKNOWN);
     if (!useGL)
     {
@@ -599,8 +619,35 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
     glfwSetWindowSizeCallback(_mainWindow, GLFWEventHandler::onGLFWWindowSizeCallback);
     glfwSetWindowIconifyCallback(_mainWindow, GLFWEventHandler::onGLFWWindowIconifyCallback);
     glfwSetWindowFocusCallback(_mainWindow, GLFWEventHandler::onGLFWWindowFocusCallback);
+    glfwSetWindowContentScaleCallback(_mainWindow, [](GLFWwindow* window, float, float) {
+        TextInputGLFW::handleGeometry(window);
+    });
 
     setFrameSize(rect.size.width, rect.size.height);
+    setTextInputWindow(TextInputGLFW::attachWindow(getTextInputService(), _mainWindow, [this](const TextInputArea& area) {
+        auto converted = textInputAreaToWindow(area);
+        if (!converted || area.space == TextInputSpace::window)
+            return converted;
+
+        int width = 0, height = 0;
+        glfwGetWindowSize(_mainWindow, &width, &height);
+        const auto frame = getFrameSize();
+        if (width <= 0 || height <= 0 || frame.width <= 0 || frame.height <= 0)
+            return std::optional<TextInputArea>{};
+        const double scaleX = width / static_cast<double>(frame.width);
+        const double scaleY = height / static_cast<double>(frame.height);
+        const auto scale = [scaleX, scaleY](TextInputRect& rect) {
+            rect.x *= scaleX;
+            rect.y *= scaleY;
+            rect.width *= scaleX;
+            rect.height *= scaleY;
+        };
+        scale(converted->caret);
+        scale(converted->line);
+        if (converted->clip)
+            scale(*converted->clip);
+        return converted;
+    }));
 
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
     if (useGL)
@@ -642,7 +689,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         CC_LOG_INFO("Enable detach thread");
     }
     cc::gfx::DeviceInfo info;
-    const auto device = cc::gfx::DeviceManager::create(info, desiredApi);
+    const auto device = cc::gfx::DeviceManager::create(info, desiredApi, allowApiFallback);
     if (!device)
     {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -682,6 +729,10 @@ bool GLViewImpl::initWithRect(std::string_view viewName, Rect rect, float frameZ
         _renderFramebufferSize.width, _renderFramebufferSize.height,
         _glContextAttrs.vsync ? "on" : "off");
 #else
+#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+    if (api == cc::gfx::API::VULKAN)
+        hdl = _mainWindow; // glfwCreateWindowSurface selects the active WSI.
+#endif
     backend::DeviceGFX::setSwapchainInfo(hdl, true, rect.size.width, rect.size.height);
 #endif
 
@@ -748,6 +799,8 @@ void GLViewImpl::end()
 #endif
     if (_mainWindow)
     {
+        TextInputGLFW::detachWindow(_mainWindow);
+        setTextInputWindow(0);
         glfwSetWindowShouldClose(_mainWindow, 1);
         _mainWindow = nullptr;
     }
@@ -776,9 +829,13 @@ void GLViewImpl::pollEvents()
         return;
 #endif
     glfwPollEvents();
+#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+    TextInputGLFW::pollNativeEvents();
+#endif
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     refreshRenderSurfaceState(true);
 #endif
+    GLView::pollEvents();
 }
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -841,8 +898,6 @@ void GLViewImpl::enableRetina(bool enabled)
    //     updateFrameSize();
    // #endif
 }
-
-void GLViewImpl::setIMEKeyboardState(bool /*bOpen*/) {}
 
 #if CC_ICON_SET_SUPPORT
 void GLViewImpl::setIcon(std::string_view filename) const
@@ -1191,7 +1246,15 @@ id GLViewImpl::getNSGLContext()
 #else
 void* GLViewImpl::getLinuxWindow()
 {
-    return (void*)glfwGetX11Window(_mainWindow);
+#ifdef CC_GLFW_WAYLAND
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
+        return glfwGetWaylandWindow(_mainWindow);
+#endif
+#ifdef CC_GLFW_X11
+    if (glfwGetPlatform() == GLFW_PLATFORM_X11)
+        return reinterpret_cast<void*>(glfwGetX11Window(_mainWindow));
+#endif
+    return nullptr;
 }
 #endif
 
@@ -1202,7 +1265,7 @@ void* GLViewImpl::getWindowHandle()
 #elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
     return detail::getMacWindowHandle(_macBridge);
 #else
-    return (void*)glfwGetX11Window(_mainWindow);
+    return getLinuxWindow();
 #endif
 }
 
@@ -1329,65 +1392,31 @@ void GLViewImpl::onGLFWMouseScrollCallback(GLFWwindow* /*window*/, double x, dou
     Director::getInstance()->getEventDispatcher()->dispatchEvent(&event);
 }
 
-void GLViewImpl::onGLFWKeyCallback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
+void GLViewImpl::onGLFWKeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int mods)
 {
+    // Resolve the text target before a game listener can open a field in response to this key.
+    if (action != GLFW_RELEASE && getTextInputService().hasTextFocus())
+    {
+        if (TextInputGLFW::isKeyConsumed(window))
+            return;
+        TextInputGLFW::handleKey(window, key, mods);
+    }
     if (GLFW_REPEAT != action)
     {
         EventKeyboard event(g_keyCodeMap[key], GLFW_PRESS == action);
         auto dispatcher = Director::getInstance()->getEventDispatcher();
         dispatcher->dispatchEvent(&event);
     }
-
-    if (GLFW_RELEASE != action)
-    {
-        switch (g_keyCodeMap[key])
-        {
-        case EventKeyboard::KeyCode::KEY_BACKSPACE:
-            IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
-            break;
-        case EventKeyboard::KeyCode::KEY_HOME:
-        case EventKeyboard::KeyCode::KEY_KP_HOME:
-        case EventKeyboard::KeyCode::KEY_DELETE:
-        case EventKeyboard::KeyCode::KEY_KP_DELETE:
-        case EventKeyboard::KeyCode::KEY_END:
-        case EventKeyboard::KeyCode::KEY_LEFT_ARROW:
-        case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
-        case EventKeyboard::KeyCode::KEY_ESCAPE:
-            IMEDispatcher::sharedDispatcher()->dispatchControlKey(g_keyCodeMap[key]);
-            break;
-        default:
-            break;
-        }
-    }
 }
 
-void GLViewImpl::onGLFWCharCallback(GLFWwindow* /*window*/, unsigned int character)
+void GLViewImpl::onGLFWCharCallback(GLFWwindow* window, unsigned int character)
 {
-    char16_t wcharString[2] = {(char16_t)character, 0};
-    std::string utf8String;
-
-    StringUtils::UTF16ToUTF8(wcharString, utf8String);
-    static std::set<std::string> controlUnicode = {
-        "\xEF\x9C\x80",  // up
-        "\xEF\x9C\x81",  // down
-        "\xEF\x9C\x82",  // left
-        "\xEF\x9C\x83",  // right
-        "\xEF\x9C\xA8",  // delete
-        "\xEF\x9C\xA9",  // home
-        "\xEF\x9C\xAB",  // end
-        "\xEF\x9C\xAC",  // pageup
-        "\xEF\x9C\xAD",  // pagedown
-        "\xEF\x9C\xB9"   // clear
-    };
-    // Check for send control key
-    if (controlUnicode.find(utf8String) == controlUnicode.end())
-    {
-        IMEDispatcher::sharedDispatcher()->dispatchInsertText(utf8String.c_str(), utf8String.size());
-    }
+    TextInputGLFW::handleCharacter(window, character);
 }
 
-void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* /*window*/, int x, int y)
+void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* window, int x, int y)
 {
+    TextInputGLFW::handleGeometry(window);
     Director::getInstance()->setViewport();
     if (_monitor)
     {
@@ -1395,11 +1424,12 @@ void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* /*window*/, int x, int y)
     }
 }
 
-void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
+void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* window, int w, int h)
 {
     // should skip fullscreen
     if (isFullscreen())
     {
+        TextInputGLFW::handleGeometry(window);
         //NOTE: when exclusive fullscreen, the window size will be set to 0x0 when jump out
         Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_RESIZED, nullptr);
         return;
@@ -1424,12 +1454,14 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* /*window*/, int w, int h)
         */
         updateDesignResolutionSize();
 
+        TextInputGLFW::handleGeometry(window);
         Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_RESIZED, nullptr);
     }
 }
 
-void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* /*window*/, int iconified)
+void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* window, int iconified)
 {
+    TextInputGLFW::handleGeometry(window);
     if (iconified == GLFW_TRUE)
     {
         Application::getInstance()->applicationDidEnterBackground();
@@ -1442,8 +1474,9 @@ void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* /*window*/, int iconifi
     }
 }
 
-void GLViewImpl::onGLFWWindowFocusCallback(GLFWwindow* /*window*/, int focused)
+void GLViewImpl::onGLFWWindowFocusCallback(GLFWwindow* window, int focused)
 {
+    TextInputGLFW::handleFocus(window, focused == GLFW_TRUE);
     if (focused == GLFW_TRUE)
     {
         Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_FOCUSED, nullptr);

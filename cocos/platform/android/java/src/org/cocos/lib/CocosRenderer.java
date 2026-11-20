@@ -104,24 +104,4 @@ public class CocosRenderer {
         keys.clear();
     }
 
-    private static native void nativeInsertText(final String text);
-    private static native void nativeDeleteBackward(final int numChars);
-    private static native void nativeIMEClosed();
-    private static native String nativeGetContentText();
-
-    public void handleInsertText(final String text) {
-        CocosRenderer.nativeInsertText(text);
-    }
-
-    public void handleDeleteBackward(final int numChars) {
-        CocosRenderer.nativeDeleteBackward(numChars);
-    }
-
-    void handleIMEClosed() {
-        CocosRenderer.nativeIMEClosed();
-    }
-
-    public String getContentText() {
-        return CocosRenderer.nativeGetContentText();
-    }
 }

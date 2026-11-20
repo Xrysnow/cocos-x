@@ -68,7 +68,6 @@ set(COCOS_BASE_HEADER
     base/Protocols.h
     base/TGAlib.h
     base/EventMouse.h
-    base/IMEDelegate.h
     base/NS.h
     base/AutoreleasePool.h
     base/StencilStateManager.h
@@ -78,7 +77,6 @@ set(COCOS_BASE_HEADER
     base/EventListener.h
     base/Scheduler.h
     base/EventType.h
-    base/IMEDispatcher.h
     base/SimpleTimer.h
     )
 
@@ -108,7 +106,6 @@ set(COCOS_BASE_SRC
     base/EventListenerTouch.cpp
     base/EventMouse.cpp
     base/EventTouch.cpp
-    base/IMEDispatcher.cpp
     base/NS.cpp
     base/Profiling.cpp
     base/Properties.cpp

@@ -44,8 +44,6 @@ THE SOFTWARE.
 #include "base/Console.h"
 #include "base/Data.h"
 #include "base/Director.h"
-#include "base/IMEDelegate.h"
-#include "base/IMEDispatcher.h"
 #include "base/Map.h"
 #include "base/NS.h"
 #include "base/Profiling.h"
@@ -180,6 +178,7 @@ THE SOFTWARE.
 #include "platform/PlatformConfig.h"
 #include "platform/PlatformMacros.h"
 #include "platform/SAXParser.h"
+#include "platform/TextInputService.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     #include "platform/ios/Application-ios.h"

@@ -184,12 +184,6 @@ int lua_cc_GLView_setFrameZoomFactor(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &cc::GLView::setFrameZoomFactor);
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cc_GLView_setIMEKeyboardState(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.GLView", "cc.GLView:setIMEKeyboardState");
-	LUA_TRY_INVOKE(1, &cc::GLView::setIMEKeyboardState);
-	LUA_INVOKE_FOOTER("1");
-}
 int lua_cc_GLView_setIcon(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.GLView", "cc.GLView:setIcon");
@@ -261,7 +255,7 @@ int luaReg_Core_ccGLView(lua_State* lua_S)
 	LUA_METHOD("setDesignResolutionSize", lua_cc_GLView_setDesignResolutionSize);
 	LUA_METHOD("setFrameSize", lua_cc_GLView_setFrameSize);
 	LUA_METHOD("setFrameZoomFactor", lua_cc_GLView_setFrameZoomFactor);
-	LUA_METHOD("setIMEKeyboardState", lua_cc_GLView_setIMEKeyboardState);
+
 	LUA_METHOD("setIcon", lua_cc_GLView_setIcon);
 	LUA_METHOD("setScissorInPoints", lua_cc_GLView_setScissorInPoints);
 	LUA_METHOD("setViewName", lua_cc_GLView_setViewName);

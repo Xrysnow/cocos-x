@@ -29,6 +29,7 @@
 #define __UIEditBoxIMPLICOMMON_H__
 
 #include "platform/PlatformConfig.h"
+#include "platform/TextInputService.h"
 #include "2d/Label.h"
 #include "ui/UIEditBox/UIEditBoxImpl-common.h"
 #include "ui/UIEditBox/UIEditBoxImpl.h"
@@ -141,6 +142,7 @@ protected:
     virtual void doAnimationWhenKeyboardMove(float duration, float distance) override{};
 
     Label* _label;
+    TextInputSession _nativeInput;
     Label* _labelPlaceHolder;
     EditBox::InputMode _editBoxInputMode;
     EditBox::InputFlag _editBoxInputFlag;

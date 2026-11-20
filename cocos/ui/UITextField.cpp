@@ -44,8 +44,8 @@ cc::IntrusivePtr<UICCTextField> UICCTextField::create()
 UICCTextField::UICCTextField()
     : _maxLengthEnabled(false)
     , _maxLength(0)
-    , _attachWithIME(false)
-    , _detachWithIME(false)
+    , _editingBegan(false)
+    , _editingEnded(false)
     , _insertText(false)
     , _deleteBackward(false)
 {}
@@ -75,10 +75,10 @@ void UICCTextField::onEnter()
     TextFieldTTF::setDelegate(this);
 }
 
-bool UICCTextField::onTextFieldAttachWithIME(TextFieldTTF* /*pSender*/)
+void UICCTextField::didBeginEditing()
 {
-    setAttachWithIME(true);
-    return false;
+    TextFieldTTF::didBeginEditing();
+    setEditingBegan(true);
 }
 
 bool UICCTextField::onTextFieldInsertText(TextFieldTTF* /*pSender*/, const char* text, size_t nLen)
@@ -105,10 +105,10 @@ bool UICCTextField::onTextFieldDeleteBackward(TextFieldTTF* /*pSender*/, const c
     return false;
 }
 
-bool UICCTextField::onTextFieldDetachWithIME(TextFieldTTF* /*pSender*/)
+void UICCTextField::didEndEditing()
 {
-    setDetachWithIME(true);
-    return false;
+    TextFieldTTF::didEndEditing();
+    setEditingEnded(true);
 }
 
 void UICCTextField::insertText(const char* text, size_t len)
@@ -143,16 +143,6 @@ void UICCTextField::insertText(const char* text, size_t len)
         }
     }
     TextFieldTTF::insertText(input_text.c_str(), len);
-}
-
-void UICCTextField::openIME()
-{
-    TextFieldTTF::attachWithIME();
-}
-
-void UICCTextField::closeIME()
-{
-    TextFieldTTF::detachWithIME();
 }
 
 void UICCTextField::setMaxLengthEnabled(bool enable)
@@ -217,24 +207,24 @@ void UICCTextField::setPasswordText(std::string_view text)
     Label::setString(tempStr);
 }
 
-void UICCTextField::setAttachWithIME(bool attach)
+void UICCTextField::setEditingBegan(bool attach)
 {
-    _attachWithIME = attach;
+    _editingBegan = attach;
 }
 
-bool UICCTextField::getAttachWithIME() const
+bool UICCTextField::getEditingBegan() const
 {
-    return _attachWithIME;
+    return _editingBegan;
 }
 
-void UICCTextField::setDetachWithIME(bool detach)
+void UICCTextField::setEditingEnded(bool detach)
 {
-    _detachWithIME = detach;
+    _editingEnded = detach;
 }
 
-bool UICCTextField::getDetachWithIME() const
+bool UICCTextField::getEditingEnded() const
 {
-    return _detachWithIME;
+    return _editingEnded;
 }
 
 void UICCTextField::setInsertText(bool insert)
@@ -486,7 +476,7 @@ std::string_view TextField::getFontName() const
 
 void TextField::didNotSelectSelf()
 {
-    _textFieldRenderer->detachWithIME();
+    _textFieldRenderer->endEditing();
 }
 
 std::string_view TextField::getString() const
@@ -510,7 +500,7 @@ bool TextField::onTouchBegan(Touch* touch, Event* unusedEvent)
             requestFocus();
         }
 
-        _textFieldRenderer->attachWithIME();
+        _textFieldRenderer->beginEditing();
     }
     else
     {
@@ -566,16 +556,16 @@ std::string_view TextField::getPasswordStyleText() const
 void TextField::update(float /*dt*/)
 {
     auto keepAlive = cc::IntrusivePtr{this};
-    if (getDetachWithIME())
+    if (_textFieldRenderer->getEditingEnded())
     {
-        detachWithIMEEvent();
-        setDetachWithIME(false);
+        editingEndedEvent();
+        _textFieldRenderer->setEditingEnded(false);
     }
 
-    if (getAttachWithIME())
+    if (_textFieldRenderer->getEditingBegan())
     {
-        attachWithIMEEvent();
-        setAttachWithIME(false);
+        editingBeganEvent();
+        _textFieldRenderer->setEditingBegan(false);
     }
 
     if (getDeleteBackward())
@@ -598,24 +588,9 @@ void TextField::update(float /*dt*/)
     }
 }
 
-bool TextField::getAttachWithIME() const
+bool TextField::isEditing() const
 {
-    return _textFieldRenderer->getAttachWithIME();
-}
-
-void TextField::setAttachWithIME(bool attach)
-{
-    _textFieldRenderer->setAttachWithIME(attach);
-}
-
-bool TextField::getDetachWithIME() const
-{
-    return _textFieldRenderer->getDetachWithIME();
-}
-
-void TextField::setDetachWithIME(bool detach)
-{
-    _textFieldRenderer->setDetachWithIME(detach);
+    return _textFieldRenderer->isEditing();
 }
 
 bool TextField::getInsertText() const
@@ -638,22 +613,22 @@ void TextField::setDeleteBackward(bool deleteBackward)
     _textFieldRenderer->setDeleteBackward(deleteBackward);
 }
 
-void TextField::attachWithIMEEvent()
+void TextField::editingBeganEvent()
 {
     this->retain();
     if (auto callback = _eventCallback)
     {
-        callback(this, EventType::ATTACH_WITH_IME);
+        callback(this, EventType::EDITING_BEGAN);
     }
     this->release();
 }
 
-void TextField::detachWithIMEEvent()
+void TextField::editingEndedEvent()
 {
     this->retain();
     if (auto callback = _eventCallback)
     {
-        callback(this, EventType::DETACH_WITH_IME);
+        callback(this, EventType::EDITING_ENDED);
     }
     this->release();
 }
@@ -735,14 +710,14 @@ std::string TextField::getDescription() const
     return "TextField";
 }
 
-void TextField::attachWithIME()
+void TextField::beginEditing()
 {
-    _textFieldRenderer->attachWithIME();
+    _textFieldRenderer->beginEditing();
 }
 
-void TextField::detachWithIME()
+void TextField::endEditing()
 {
-    _textFieldRenderer->detachWithIME();
+    _textFieldRenderer->endEditing();
 }
 
 cc::IntrusivePtr<Widget> TextField::createCloneInstance()
@@ -763,8 +738,6 @@ void TextField::copySpecialProperties(Widget* widget)
         setMaxLength(textField->getMaxLength());
         setPasswordEnabled(textField->isPasswordEnabled());
         setPasswordStyleText(textField->getPasswordStyleText());
-        setAttachWithIME(textField->getAttachWithIME());
-        setDetachWithIME(textField->getDetachWithIME());
         setInsertText(textField->getInsertText());
         setDeleteBackward(textField->getDeleteBackward());
         _eventCallback          = textField->_eventCallback;

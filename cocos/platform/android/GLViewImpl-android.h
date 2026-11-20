@@ -43,11 +43,13 @@ public:
     bool isOpenGLReady() override;
     void end() override;
     void swapBuffers() override;
-    void setIMEKeyboardState(bool bOpen) override;
     virtual Rect getSafeAreaRect() const override;
 
     // Engine-thread query of B2's physical Surface size, zero while detached.
     Size getNativeSurfaceSize() const;
+
+    void attachTextInputWindow();
+    void detachTextInputWindow();
 
     void queueOperation(void (*op)(void*), void* param);
 

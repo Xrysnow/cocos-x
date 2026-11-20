@@ -25,6 +25,9 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "2d/TextFieldTTF.h"
+#include "2d/TextInputGeometry.h"
+#include "platform/TextInputIndex.h"
+#include "platform/GLView.h"
 
 #include "base/Director.h"
 #include "platform/FileUtils.h"
@@ -53,12 +56,12 @@ static std::size_t _calcCharCount(const char* text)
     return n;
 }
 
-bool TextFieldDelegate::onTextFieldAttachWithIME(TextFieldTTF* /*sender*/)
+bool TextFieldDelegate::onTextFieldBeginEditing(TextFieldTTF* /*sender*/)
 {
     return false;
 }
 
-bool TextFieldDelegate::onTextFieldDetachWithIME(TextFieldTTF* /*sender*/)
+bool TextFieldDelegate::onTextFieldEndEditing(TextFieldTTF* /*sender*/)
 {
     return false;
 }
@@ -97,7 +100,7 @@ TextFieldTTF::TextFieldTTF()
     , _cursorPosition(0)
     , _cursorChar(CURSOR_DEFAULT_CHAR)
     , _cursorShowingTime(0.0f)
-    , _isAttachWithIME(false)
+    , _editing(false)
 {
     _colorSpaceHolder.r = _colorSpaceHolder.g = _colorSpaceHolder.b = 127;
     _colorSpaceHolder.a                                             = 255;
@@ -197,57 +200,130 @@ bool TextFieldTTF::initWithPlaceHolder(std::string_view placeholder, std::string
 }
 
 //////////////////////////////////////////////////////////////////////////
-// IMEDelegate
+// Text editing
 //////////////////////////////////////////////////////////////////////////
 
-bool TextFieldTTF::attachWithIME()
+bool TextFieldTTF::beginEditing()
 {
-    bool ret = IMEDelegate::attachWithIME();
-    if (ret)
+    auto view = _director->getOpenGLView();
+    if (view && view->getTextInputWindow())
     {
-        // open keyboard
-        auto pGlView = _director->getOpenGLView();
-        if (pGlView)
+        if (_inputSession.state().active)
+            return true;
+        auto keepAlive = cc::IntrusivePtr{this};
+        if (!canBeginEditing())
+            return false;
+        TextInputOptions options;
+        options.purpose = _secureTextEntry ? TextInputPurpose::password : TextInputPurpose::text;
+        auto result = view->getTextInputService().begin(view->getTextInputWindow(), options,
+            [this](const TextInputEvent& event) { receiveTextInput(event); }, {inputArea(), {}});
+        if (!result)
+            return false;
+        _inputSession = std::move(result.session);
+        didBeginEditing();
+        _inputSession.setArea(inputArea());
+        _inputSession.requestKeyboard(true);
+        return true;
+    }
+    return false;
+}
+
+bool TextFieldTTF::endEditing()
+{
+    if (_inputSession.id())
+    {
+        auto keepAlive = cc::IntrusivePtr{this};
+        if (!canEndEditing())
+            return false;
+        return _inputSession.close() == TextInputError::none;
+    }
+    return true;
+}
+
+void TextFieldTTF::didBeginEditing()
+{
+    setEditing(true);
+}
+
+void TextFieldTTF::onExit()
+{
+    if (_inputSession.id())
+    {
+        _inputSession = {};
+        didEndEditing();
+    }
+    Label::onExit();
+}
+
+void TextFieldTTF::receiveTextInput(const TextInputEvent& event)
+{
+    auto keepAlive = cc::IntrusivePtr{this};
+    if (event.session != _inputSession.id())
+        return;
+    if (auto text = std::get_if<TextInputCommit>(&event.payload))
+        insertText(text->text.c_str(), text->text.size());
+    else if (auto cmd = std::get_if<TextInputCommand>(&event.payload))
+    {
+        using Key = EventKeyboard::KeyCode;
+        switch (cmd->action)
         {
-            pGlView->setIMEKeyboardState(true);
+        case TextInputCommandAction::backspace: deleteBackward(); break;
+        case TextInputCommandAction::deleteForward: controlKey(Key::KEY_DELETE); break;
+        case TextInputCommandAction::left: controlKey(Key::KEY_LEFT_ARROW); break;
+        case TextInputCommandAction::right: controlKey(Key::KEY_RIGHT_ARROW); break;
+        case TextInputCommandAction::lineStart: controlKey(Key::KEY_HOME); break;
+        case TextInputCommandAction::lineEnd: controlKey(Key::KEY_END); break;
+        case TextInputCommandAction::cancel: endEditing(); break;
+        case TextInputCommandAction::insertNewline:
+        case TextInputCommandAction::done: insertText("\n", 1); break;
+        default: break;
         }
     }
-    return ret;
+    else if (auto closed = std::get_if<TextInputClosed>(&event.payload))
+    {
+        _inputSession = {};
+        didEndEditing();
+        if (closed->reason != TextInputCloseReason::requested && _delegate)
+            _delegate->onTextFieldEndEditing(this);
+    }
 }
 
-bool TextFieldTTF::detachWithIME()
+std::optional<TextInputArea> TextFieldTTF::inputArea()
 {
-    bool ret = IMEDelegate::detachWithIME();
-    if (ret)
+    const auto size = getContentSize();
+    const bool systemFont = _currentLabelType == LabelType::STRING_TEXTURE;
+    const auto lineHeight = systemFont ? getSystemFontSize() : getLineHeight();
+    const auto height = std::max(1.0f, lineHeight > 0 ? lineHeight : getRenderingFontSize());
+    // A system-font bitmap exposes no individual glyph positions. Only its unwrapped,
+    // naturally sized end (or empty start) supplies a reliable insertion point.
+    if (systemFont && (_cursorEnabled || getDimensions().width > 0 || getDimensions().height > 0 ||
+                       _inputText.find('\n') != std::string::npos))
+        return {};
+    Rect caret(_inputText.empty() ? 0.0f : size.width, 0, 1, height);
+    if (_cursorEnabled && _editing && _currentLabelType != LabelType::STRING_TEXTURE)
     {
-        // close keyboard
-        auto glView = _director->getOpenGLView();
-        if (glView)
+        if (auto glyph = getLetter(static_cast<int>(_cursorPosition) + 1))
         {
-            glView->setIMEKeyboardState(false);
+            const auto box = glyph->getBoundingBox();
+            caret.origin.set(box.getMinX(), box.getMidY() - height / 2);
         }
     }
-    return ret;
+    return textInputAreaForNode(*this, caret, Rect(0, caret.origin.y, std::max(size.width, 1.0f), height));
 }
 
-void TextFieldTTF::didAttachWithIME()
+void TextFieldTTF::didEndEditing()
 {
-    setAttachWithIME(true);
+    setEditing(false);
 }
 
-void TextFieldTTF::didDetachWithIME()
+bool TextFieldTTF::canBeginEditing()
 {
-    setAttachWithIME(false);
+    return (_delegate) ? (!_delegate->onTextFieldBeginEditing(this)) : true;
 }
 
-bool TextFieldTTF::canAttachWithIME()
+bool TextFieldTTF::canEndEditing()
 {
-    return (_delegate) ? (!_delegate->onTextFieldAttachWithIME(this)) : true;
-}
-
-bool TextFieldTTF::canDetachWithIME()
-{
-    return (_delegate) ? (!_delegate->onTextFieldDetachWithIME(this)) : true;
+    return (_delegate) ? (!_delegate->onTextFieldEndEditing(this)) : true;
 }
 
 void TextFieldTTF::insertText(const char* text, size_t len)
@@ -304,69 +380,30 @@ void TextFieldTTF::insertText(const char* text, size_t len)
     }
 
     // if delegate hasn't processed, detach from IME by default
-    detachWithIME();
+    endEditing();
 }
 
 void TextFieldTTF::deleteBackward()
 {
-    size_t len = _inputText.length();
-    if (!len)
-    {
-        // there is no string
+    const auto end = _cursorEnabled ? _cursorPosition : _charCount;
+    if (!end)
         return;
-    }
-
-    // get the delete byte number
-    size_t deleteLen = 1;  // default, erase 1 byte
-
-    while (0x80 == (0xC0 & _inputText.at(len - deleteLen)))
-    {
-        ++deleteLen;
-    }
-
-    if (_delegate &&
-        _delegate->onTextFieldDeleteBackward(this, _inputText.c_str() + len - deleteLen, static_cast<int>(deleteLen)))
-    {
-        // delegate doesn't want to delete backwards
+    const TextInputIndex index(_inputText);
+    const auto first = index.utf8FromScalar(end - 1);
+    const auto last = index.utf8FromScalar(end);
+    if (!first || !last)
         return;
-    }
-
-    // if all text deleted, show placeholder string
-    if (len <= deleteLen)
-    {
-        _inputText = "";
-        _charCount = 0;
-        setCursorPosition(0);
-        setString(_inputText);
+    const auto length = last.offset - first.offset;
+    if (_delegate && _delegate->onTextFieldDeleteBackward(this, _inputText.c_str() + first.offset, length))
         return;
-    }
-
-    // set new input text
+    auto value = _inputText;
+    value.erase(first.offset, length);
+    setString(value);
     if (_cursorEnabled)
     {
-        if (_cursorPosition)
-        {
-            setCursorPosition(_cursorPosition - 1);
-
-            StringUtils::StringUTF8 stringUTF8;
-
-            stringUTF8.replace(_inputText);
-            stringUTF8.deleteChar(_cursorPosition);
-
-            _charCount = stringUTF8.length();
-            setString(stringUTF8.getAsCharSequence());
-        }
+        setCursorPosition(end - 1);
+        updateCursorDisplayText();
     }
-    else
-    {
-        std::string text(_inputText.c_str(), len - deleteLen);
-        setString(text);
-    }
-}
-
-std::string_view TextFieldTTF::getContentText()
-{
-    return _inputText;
 }
 
 void TextFieldTTF::setCursorPosition(std::size_t cursorPosition)
@@ -383,8 +420,8 @@ void TextFieldTTF::setCursorFromPoint(const Vec2& point, const Camera* camera)
     if (_cursorEnabled)
     {
         // Reset Label, no cursor
-        bool oldIsAttachWithIME = _isAttachWithIME;
-        _isAttachWithIME        = false;
+        bool wasEditing = _editing;
+        _editing        = false;
         updateCursorDisplayText();
 
         Rect rect;
@@ -415,18 +452,18 @@ void TextFieldTTF::setCursorFromPoint(const Vec2& point, const Camera* camera)
         }
 
         // Set cursor
-        _isAttachWithIME = oldIsAttachWithIME;
+        _editing = wasEditing;
         updateCursorDisplayText();
     }
 }
 
-void TextFieldTTF::setAttachWithIME(bool isAttachWithIME)
+void TextFieldTTF::setEditing(bool editing)
 {
-    if (isAttachWithIME != _isAttachWithIME)
+    if (editing != _editing)
     {
-        _isAttachWithIME = isAttachWithIME;
+        _editing = editing;
 
-        if (_isAttachWithIME)
+        if (_editing)
         {
             setCursorPosition(_charCount);
         }
@@ -461,11 +498,13 @@ void TextFieldTTF::visit(Renderer* renderer, const Mat4& parentTransform, uint32
         return;
     }
     Label::visit(renderer, parentTransform, parentFlags);
+    if (_editing && _inputSession.id() && isVisible())
+        _inputSession.setArea(inputArea());
 }
 
 void TextFieldTTF::update(float delta)
 {
-    if (_cursorEnabled && _isAttachWithIME)
+    if (_cursorEnabled && _editing)
     {
         _cursorShowingTime -= delta;
         if (_cursorShowingTime < -CURSOR_TIME_SHOW_HIDE)
@@ -557,7 +596,7 @@ void TextFieldTTF::setString(std::string_view text)
     }
 
     // if there is no input text, display placeholder instead
-    if (_inputText.empty() && (!_cursorEnabled || !_isAttachWithIME))
+    if (_inputText.empty() && (!_cursorEnabled || !_editing))
     {
         setTextColorInternally(_colorSpaceHolder);
         Label::setString(_placeHolder);
@@ -578,7 +617,7 @@ void TextFieldTTF::appendString(std::string_view text)
 
 void TextFieldTTF::makeStringSupportCursor(std::string& displayText)
 {
-    if (_cursorEnabled && _isAttachWithIME)
+    if (_cursorEnabled && _editing)
     {
         if (displayText.empty())
         {
@@ -667,7 +706,7 @@ void TextFieldTTF::controlKey(EventKeyboard::KeyCode keyCode)
             }
             break;
         case EventKeyboard::KeyCode::KEY_ESCAPE:
-            detachWithIME();
+            endEditing();
             break;
         default:
             break;
@@ -684,7 +723,7 @@ std::string_view TextFieldTTF::getString() const
 void TextFieldTTF::setPlaceHolder(std::string_view text)
 {
     _placeHolder = text;
-    if (_inputText.empty() && !_isAttachWithIME)
+    if (_inputText.empty() && !_editing)
     {
         setTextColorInternally(_colorSpaceHolder);
         Label::setString(_placeHolder);

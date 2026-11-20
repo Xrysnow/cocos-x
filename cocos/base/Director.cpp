@@ -975,6 +975,8 @@ void Director::restart()
 void Director::reset()
 {
     dialog::stopSession();
+    if (_openGLView)
+        _openGLView->getTextInputService().reset();
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
 #endif  // CC_ENABLE_GC_FOR_NATIVE_OBJECTS

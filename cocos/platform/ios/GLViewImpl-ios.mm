@@ -28,6 +28,8 @@
 #include "platform/ios/EAGLView-ios.h"
 #include "platform/ios/DirectorCaller-ios.h"
 #include "platform/ios/GLViewImpl-ios.h"
+#include "platform/ios/TextInput-ios.h"
+#include "platform/TextInputBackend.h"
 #include "base/Touch.h"
 #include "base/Director.h"
 #include "base/EventDispatcher.h"
@@ -120,6 +122,7 @@ GLViewImpl::GLViewImpl() {}
 
 GLViewImpl::~GLViewImpl()
 {
+    detachTextInput();
     // Safeguard for destruction without end(): release the gfx swapchains while the
     // gfx device still exists, before the native view's CAMetalLayer goes away.
     backend::DeviceGFX::shutdownSurface();
@@ -138,6 +141,7 @@ bool GLViewImpl::initWithEAGLView(void* eaglView)
 
     _screenSize.width = _designResolutionSize.width = [glView getWidth];
     _screenSize.height = _designResolutionSize.height = [glView getHeight];
+    attachTextInput();
     //    _scaleX = _scaleY = [glView contentScaleFactor];
 
     return true;
@@ -216,6 +220,7 @@ bool GLViewImpl::initWithRect(std::string_view viewName, const Rect& rect, float
     //    _scaleX = _scaleY = [eaglView contentScaleFactor];
 
     _eaglView = eaglView;
+    attachTextInput();
 
     return true;
 }
@@ -262,6 +267,7 @@ float GLViewImpl::getContentScaleFactor() const
 void GLViewImpl::end()
 {
     [CCDirectorCaller destroy];
+    detachTextInput();
 
     // Release the gfx swapchains while the device queue is alive and before the native
     // view goes away; the gfx device itself is destroyed by Director teardown.
@@ -294,18 +300,39 @@ void GLViewImpl::updateLayoutSize(float width, float height)
     director->getEventDispatcher()->dispatchCustomEvent("glview_window_resized", nullptr);
 }
 
-void GLViewImpl::setIMEKeyboardState(bool open)
+void GLViewImpl::attachTextInput()
 {
-    CCEAGLView* eaglView = (CCEAGLView*)_eaglView;
+    auto backend = createIOSTextInputBackend(_eaglView);
+    if (!backend)
+        return;
+    setTextInputWindow(getTextInputService().registerWindow(std::move(backend), true, [this](const TextInputArea& area) {
+        auto windowArea = textInputAreaToWindow(area);
+        auto host = (CCEAGLView*)_eaglView;
+        const auto frameSize = getFrameSize();
+        if (!windowArea || frameSize.width <= 0 || frameSize.height <= 0 || CGRectIsEmpty(host.bounds))
+            return std::optional<TextInputArea>{};
+        const auto size = host.bounds.size;
+        const auto toPoints = [&](TextInputRect& rect) {
+            rect.x *= size.width / frameSize.width;
+            rect.width *= size.width / frameSize.width;
+            rect.y *= size.height / frameSize.height;
+            rect.height *= size.height / frameSize.height;
+        };
+        toPoints(windowArea->caret);
+        toPoints(windowArea->line);
+        if (windowArea->clip)
+            toPoints(*windowArea->clip);
+        return windowArea;
+    }));
+}
 
-    if (open)
-    {
-        [eaglView showKeyboard];
-    }
-    else
-    {
-        [eaglView hideKeyboard];
-    }
+void GLViewImpl::detachTextInput()
+{
+    const auto id = getTextInputWindow();
+    if (!id)
+        return;
+    setTextInputWindow(0);
+    getTextInputService().unregisterWindow(id);
 }
 
 Rect GLViewImpl::getSafeAreaRect() const

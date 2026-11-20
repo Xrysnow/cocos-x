@@ -119,6 +119,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (CGRect)convertRectFromViewToSurface:(CGRect)rect;
 - (CGPoint)convertPointFromViewToSurface:(CGPoint)point;
+- (CGRect)convertKeyboardRectFromScreen:(CGRect)rect;
 
 - (int)getWidth;
 - (int)getHeight;
@@ -126,6 +127,4 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 - (void)doAnimationWhenKeyboardMoveWithDuration:(float)duration distance:(float)dis;
 - (void)doAnimationWhenAnotherEditBeClicked;
 
-- (void)showKeyboard;
-- (void)hideKeyboard;
 @end

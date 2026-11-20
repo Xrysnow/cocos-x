@@ -28,6 +28,7 @@ if(ANDROID)
         platform/android/Application-android.cpp
         platform/android/Common-android.cpp
         platform/android/GLViewImpl-android.cpp
+        platform/android/TextInput-android.cpp
         platform/android/FileUtils-android.cpp
     )
 elseif(WINDOWS)
@@ -40,6 +41,7 @@ elseif(WINDOWS)
         platform/win32/StdC-win32.h
         platform/win32/PlatformDefine-win32.h
         platform/desktop/GLViewImpl-desktop.h
+        platform/desktop/TextInputGLFW.h
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/win32/StdC-win32.cpp
@@ -49,6 +51,8 @@ elseif(WINDOWS)
         platform/win32/Device-win32.cpp
         platform/win32/inet_pton_mingw.cpp
         platform/desktop/GLViewImpl-desktop.cpp
+        platform/desktop/TextInputGLFW.cpp
+        platform/win32/TextInput-win32.cpp
         )
 
 elseif(APPLE)
@@ -66,6 +70,7 @@ elseif(APPLE)
             ${COCOS_PLATFORM_SPECIFIC_HEADER}
             platform/mac/StdC-mac.h
             platform/desktop/GLViewImpl-desktop.h
+            platform/desktop/TextInputGLFW.h
             platform/mac/GLViewImpl-desktop-mac.h
             platform/mac/PlatformDefine-mac.h
             platform/mac/Application-mac.h
@@ -74,16 +79,18 @@ elseif(APPLE)
             ${COCOS_PLATFORM_SPECIFIC_SRC}
             platform/mac/Application-mac.mm
             platform/desktop/GLViewImpl-desktop.cpp
+            platform/desktop/TextInputGLFW.cpp
             platform/mac/GLViewImpl-desktop-mac.mm
+            platform/mac/TextInput-mac.mm
             platform/mac/Common-mac.mm
             platform/mac/Device-mac.mm
             )
         # Keep the shared implementation pure C++; native ownership stays in MRC.
         set_source_files_properties(platform/desktop/GLViewImpl-desktop.cpp
             PROPERTIES LANGUAGE CXX)
-        set_source_files_properties(platform/mac/GLViewImpl-desktop-mac.mm
+        set_source_files_properties(platform/mac/GLViewImpl-desktop-mac.mm platform/mac/TextInput-mac.mm
             PROPERTIES LANGUAGE OBJCXX)
-        set_property(SOURCE platform/mac/GLViewImpl-desktop-mac.mm
+        set_property(SOURCE platform/mac/GLViewImpl-desktop-mac.mm platform/mac/TextInput-mac.mm
             APPEND PROPERTY COMPILE_OPTIONS -fno-objc-arc)
     elseif(IOS)
         set(COCOS_PLATFORM_SPECIFIC_HEADER
@@ -94,7 +101,7 @@ elseif(APPLE)
             platform/ios/GLViewImpl-ios.h
             platform/ios/PlatformDefine-ios.h
             platform/ios/StdC-ios.h
-            platform/ios/InputView-ios.h
+            platform/ios/TextInput-ios.h
             )
         set(COCOS_PLATFORM_SPECIFIC_SRC
             ${COCOS_PLATFORM_SPECIFIC_SRC}
@@ -105,8 +112,9 @@ elseif(APPLE)
             platform/ios/EAGLView-ios.mm
             platform/ios/GLViewImpl-ios.mm
             platform/ios/Image-ios.mm
-            platform/ios/InputView-ios.mm
+            platform/ios/TextInput-ios.mm
             )
+        set_property(SOURCE platform/ios/TextInput-ios.mm APPEND PROPERTY COMPILE_OPTIONS -fobjc-arc)
     endif()
 
 elseif(LINUX)
@@ -126,6 +134,7 @@ elseif(LINUX)
         platform/linux/FileUtils-linux.h
         platform/linux/PlatformDefine-linux.h
         platform/desktop/GLViewImpl-desktop.h
+        platform/desktop/TextInputGLFW.h
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/linux/FileUtils-linux.cpp
@@ -133,6 +142,7 @@ elseif(LINUX)
         platform/linux/Application-linux.cpp
         platform/linux/Device-linux.cpp
         platform/desktop/GLViewImpl-desktop.cpp
+        platform/desktop/TextInputGLFW.cpp
         )
 endif()
 
@@ -156,6 +166,10 @@ set(COCOS_PLATFORM_HEADER
     platform/PosixFileStream.h
     platform/SAXParser.h
     platform/StdC.h
+    platform/TextInputBackend.h
+    platform/TextInputIndex.h
+    platform/TextInputService.h
+    platform/TextInputTypes.h
     )
 
 set(COCOS_PLATFORM_SRC
@@ -168,6 +182,8 @@ set(COCOS_PLATFORM_SRC
     platform/Image.cpp
     platform/PosixFileStream.cpp
     platform/SAXParser.cpp
+    platform/TextInputIndex.cpp
+    platform/TextInputService.cpp
     )
 
 if(CC_ENABLE_FILE_DIALOG)

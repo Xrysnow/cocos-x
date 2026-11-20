@@ -25,6 +25,8 @@
  ****************************************************************************/
 
 #include "base/RefPtr.h"
+#include "base/Director.h"
+#include "platform/GLView.h"
 #include "ui/UIEditBox/UIEditBox.h"
 #include "ui/UIEditBox/UIEditBoxImpl.h"
 #include "ui/UIHelper.h"
@@ -824,49 +826,33 @@ void EditBox::onExit()
     }
 }
 
-static Rect getRect(Node* pNode)
+void EditBox::updateKeyboardOcclusion(const std::optional<TextInputRect>& area, float duration)
 {
-    Vec2 contentSize = pNode->getContentSize();
-    Rect rect        = Rect(0, 0, contentSize.width, contentSize.height);
-    return RectApplyTransform(rect, pNode->getNodeToWorldTransform());
-}
-
-void EditBox::keyboardWillShow(IMEKeyboardNotificationInfo& info)
-{
-    // CCLOG("CCEditBox::keyboardWillShow");
-    Rect rectTracked = getRect(this);
-    // some adjustment for margin between the keyboard and the edit box.
-    rectTracked.origin.y -= 4;
-
-    // if the keyboard area doesn't intersect with the tracking node area, nothing needs to be done.
-    if (!rectTracked.intersectsRect(info.end))
-    {
-        CCLOG("needn't to adjust view layout.");
+    auto view = Director::getInstance()->getOpenGLView();
+    if (!view || !_editBoxImpl || view->getScaleX() <= 0 || view->getScaleY() <= 0)
         return;
-    }
 
-    // assume keyboard at the bottom of screen, calculate the vertical adjustment.
-    _adjustHeight = info.end.getMaxY() - rectTracked.getMinY();
-    // CCLOG("CCEditBox:needAdjustVerticalPosition(%f)", _adjustHeight);
-
-    if (_editBoxImpl != nullptr)
+    float height = 0;
+    if (area && area->width > 0 && area->height > 0)
     {
-        _editBoxImpl->doAnimationWhenKeyboardMove(info.duration, _adjustHeight);
+        const auto scale = view->getContentScaleFactor();
+        const auto& vp = view->getViewPortRect();
+        const Rect keyboard(
+            (area->x * scale - vp.origin.x) / view->getScaleX(),
+            (view->getFrameSize().height - (area->y + area->height) * scale - vp.origin.y) / view->getScaleY(),
+            area->width * scale / view->getScaleX(), area->height * scale / view->getScaleY());
+        const auto size = getContentSize();
+        auto tracked = RectApplyTransform(Rect(0, 0, size.width, size.height), getNodeToWorldTransform());
+        tracked.origin.y -= 4;
+        if (tracked.intersectsRect(keyboard))
+            height = keyboard.getMaxY() - tracked.getMinY();
+    }
+    if (height != _adjustHeight)
+    {
+        _editBoxImpl->doAnimationWhenKeyboardMove(duration, height == 0 ? -_adjustHeight : height);
+        _adjustHeight = height;
     }
 }
-
-void EditBox::keyboardDidShow(IMEKeyboardNotificationInfo& /*info*/) {}
-
-void EditBox::keyboardWillHide(IMEKeyboardNotificationInfo& info)
-{
-    // CCLOG("CCEditBox::keyboardWillHide");
-    if (_editBoxImpl != nullptr)
-    {
-        _editBoxImpl->doAnimationWhenKeyboardMove(info.duration, -_adjustHeight);
-    }
-}
-
-void EditBox::keyboardDidHide(IMEKeyboardNotificationInfo& /*info*/) {}
 
 void EditBox::setGlobalZOrder(float globalZOrder)
 {

@@ -69,7 +69,6 @@ public:
     virtual bool isOpenGLReady() override;
     virtual void end() override;
     virtual void swapBuffers() override;
-    virtual void setIMEKeyboardState(bool bOpen) override;
 
     virtual Rect getSafeAreaRect() const override;
 
@@ -91,6 +90,8 @@ protected:
      *  Director::setOpenGLView, whose Renderer::init constructs the DeviceGFX singleton.
      */
     bool setupGfxSurface(void* eaglView);
+    void attachTextInput();
+    void detachTextInput();
 
     // the objective-c CCEAGLView instance
     void* _eaglView;

@@ -27,7 +27,7 @@
 #ifndef __UIEDITTEXT_H__
 #define __UIEDITTEXT_H__
 
-#include "base/IMEDelegate.h"
+#include "platform/TextInputTypes.h"
 #include "ui/GUIDefine.h"
 #include "ui/UIWidget.h"
 #include "ui/UIScale9Sprite.h"
@@ -100,7 +100,7 @@ public:
  * You can use this widget to gather small amounts of text from the user.
  *
  */
-class CC_GUI_DLL EditBox : public Widget, public IMEDelegate
+class CC_GUI_DLL EditBox : public Widget
 {
 public:
     /**
@@ -631,26 +631,7 @@ public:
      * @lua NA
      */
     virtual void onExit() override;
-    /**
-     * @js NA
-     * @lua NA
-     */
-    virtual void keyboardWillShow(IMEKeyboardNotificationInfo& info) override;
-    /**
-     * @js NA
-     * @lua NA
-     */
-    virtual void keyboardDidShow(IMEKeyboardNotificationInfo& info) override;
-    /**
-     * @js NA
-     * @lua NA
-     */
-    virtual void keyboardWillHide(IMEKeyboardNotificationInfo& info) override;
-    /**
-     * @js NA
-     * @lua NA
-     */
-    virtual void keyboardDidHide(IMEKeyboardNotificationInfo& info) override;
+    void updateKeyboardOcclusion(const std::optional<TextInputRect>& area, float duration);
 
     void setGlobalZOrder(float globalZOrder) override;
 

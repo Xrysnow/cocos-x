@@ -27,6 +27,8 @@ THE SOFTWARE.
 #include "base/Director.h"
 #include "base/Macros.h"
 #include "platform/android/jni/JniHelper.h"
+#include "platform/TextInputBackend.h"
+#include "platform/TextInputService.h"
 #include "GL.h"
 
 
@@ -44,6 +46,8 @@ void cocos_android_render_host_ended();
 cc::Size cocos_android_render_host_size();
 
 NS_CC_BEGIN
+
+std::unique_ptr<TextInputBackend> createAndroidTextInputBackend();
 
 cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithRect(std::string_view viewName, const Rect& rect, float frameZoomFactor, bool resizable)
 {
@@ -75,11 +79,46 @@ cc::IntrusivePtr<GLViewImpl> GLViewImpl::createWithFullScreen(std::string_view v
     return nullptr;
 }
 
-GLViewImpl::GLViewImpl()
+GLViewImpl::GLViewImpl() = default;
+
+GLViewImpl::~GLViewImpl()
 {
+    detachTextInputWindow();
 }
 
-GLViewImpl::~GLViewImpl() {}
+void GLViewImpl::attachTextInputWindow()
+{
+    if (getTextInputWindow())
+        return;
+    setTextInputWindow(getTextInputService().registerWindow(createAndroidTextInputBackend(), true,
+        [this](const TextInputArea& area) {
+            auto mapped = textInputAreaToWindow(area);
+            if (!mapped || area.space != TextInputSpace::design)
+                return mapped;
+            const auto dpi = JniHelper::callStaticIntMethod("org/cocos/lib/CocosEngine", "getDPI");
+            const auto toDp = dpi > 0 ? 160.0 / dpi : 1.0;
+            const auto convert = [toDp](TextInputRect& rect) {
+                rect.x *= toDp;
+                rect.y *= toDp;
+                rect.width *= toDp;
+                rect.height *= toDp;
+            };
+            convert(mapped->caret);
+            convert(mapped->line);
+            if (mapped->clip)
+                convert(*mapped->clip);
+            return mapped;
+        }));
+}
+
+void GLViewImpl::detachTextInputWindow()
+{
+    if (getTextInputWindow())
+    {
+        getTextInputService().unregisterWindow(getTextInputWindow());
+        setTextInputWindow(0);
+    }
+}
 
 bool GLViewImpl::initWithRect(std::string_view /*viewName*/, const Rect& /*rect*/, float /*frameZoomFactor*/, bool /*resizable*/)
 {
@@ -99,6 +138,7 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
+    detachTextInputWindow();
     cocos_android_render_host_ended();
     JniHelper::callStaticVoidMethod("org.cocos.lib.CocosEngine", "onExit");
     release();
@@ -109,18 +149,6 @@ void GLViewImpl::swapBuffers() {}
 Size GLViewImpl::getNativeSurfaceSize() const
 {
     return cocos_android_render_host_size();
-}
-
-void GLViewImpl::setIMEKeyboardState(bool bOpen)
-{
-    if (bOpen)
-    {
-        JniHelper::callStaticVoidMethod("org.cocos.lib.CocosGLSurfaceView", "openIMEKeyboard");
-    }
-    else
-    {
-        JniHelper::callStaticVoidMethod("org.cocos.lib.CocosGLSurfaceView", "closeIMEKeyboard");
-    }
 }
 
 Rect GLViewImpl::getSafeAreaRect() const

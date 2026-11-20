@@ -26,20 +26,26 @@ package org.cocos.lib;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Insets;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.os.Build;
+import android.text.InputType;
 import android.view.SurfaceView;
 import android.view.SurfaceHolder;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.EditorInfo;
-import java.util.concurrent.atomic.AtomicLong;
+import android.view.inputmethod.CursorAnchorInfo;
+import java.util.Objects;
 
 
 /** Compatibility name: this view no longer creates an EGL context. */
@@ -49,9 +55,6 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     // ===========================================================
 
     private static final String TAG = CocosGLSurfaceView.class.getSimpleName();
-
-    private final static int HANDLER_OPEN_IME_KEYBOARD = 2;
-    private final static int HANDLER_CLOSE_IME_KEYBOARD = 3;
 
     // ===========================================================
     // Fields
@@ -69,21 +72,43 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     private boolean mMultipleTouchEnabled = true;
 
     private CocosRenderHost mRenderHost;
-    private boolean mIMEEditorActive;
-    private boolean mImeWasVisible;
-    private final AtomicLong mImeSerial = new AtomicLong();
 
-    private static final class ImeRequest {
-        final String text;
-        final long epoch;
-        final long serial;
+    // These values mirror TextInputCommandAction and TextInputCloseReason.
+    private static final int TEXT_BACKSPACE = 0;
+    private static final int TEXT_DELETE = 1;
+    private static final int TEXT_LEFT = 2;
+    private static final int TEXT_RIGHT = 3;
+    private static final int TEXT_UP = 4;
+    private static final int TEXT_DOWN = 5;
+    private static final int TEXT_LINE_START = 6;
+    private static final int TEXT_LINE_END = 7;
+    private static final int TEXT_SELECT_ALL = 8;
+    private static final int TEXT_NEWLINE = 9;
+    private static final int TEXT_DONE = 10;
+    private static final int TEXT_SEARCH = 11;
+    private static final int TEXT_SEND = 12;
+    private static final int TEXT_NEXT = 13;
+    private static final int TEXT_GO = 14;
+    private static final int TEXT_CANCEL = 15;
+    private static final int CLOSE_REQUESTED = 0;
+    private static final int CLOSE_REPLACED = 1;
+    private static final int CLOSE_FOCUS_LOST = 2;
+    private static final int CLOSE_ACTIVATION_FAILED = 3;
+    private static final int CLOSE_NATIVE_ENDED = 4;
 
-        ImeRequest(String text, long epoch, long serial) {
-            this.text = text;
-            this.epoch = epoch;
-            this.serial = serial;
-        }
-    }
+    // These fields live on the Android UI thread.
+    private long mTextInputSession;
+    private long mTextInputGeneration;
+    private boolean mTextInputMultiline;
+    private boolean mHasCaret;
+    private float mCaretX;
+    private float mCaretY;
+    private float mCaretHeight;
+    private int mCursorUpdateMode;
+    private Boolean mLastKeyboardVisibility;
+    private Rect mLastKeyboardOcclusion;
+    private float mLastKeyboardDensity;
+    private boolean mWaitingForSnapshot;
 
     public boolean isSoftKeyboardShown() {
         return mSoftKeyboardShown;
@@ -125,42 +150,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         CocosGLSurfaceView.mGLSurfaceView = this;
         mTextInputWrapper = new TextInputWrapper(this);
 
-        mImeHandler = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(final Message msg) {
-                if (!isCurrentHost()) return;
-                switch (msg.what) {
-                    case HANDLER_OPEN_IME_KEYBOARD:
-                        final ImeRequest request = (ImeRequest) msg.obj;
-                        if (!mRenderHost.isInputCurrent(request.epoch) || request.serial != mImeSerial.get()) return;
-                        if (null != CocosGLSurfaceView.this.mEditText) {
-                            mIMEEditorActive = true;
-                            mImeWasVisible = false;
-                            mEditText.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI | EditorInfo.IME_ACTION_DONE);
-                            CocosGLSurfaceView.this.mEditText.setVisibility(View.VISIBLE);
-                            if (CocosGLSurfaceView.this.mEditText.requestFocus()) {
-                                CocosGLSurfaceView.this.mEditText.removeTextChangedListener(mTextInputWrapper);
-                                final String text = request.text;
-                                CocosGLSurfaceView.this.mEditText.setText(text);
-                                CocosGLSurfaceView.this.mEditText.setSelection(text.length());
-                                mTextInputWrapper.setOriginText(text);
-                                CocosGLSurfaceView.this.mEditText.addTextChangedListener(mTextInputWrapper);
-                                final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                                imm.restartInput(CocosGLSurfaceView.this.mEditText);
-                                imm.showSoftInput(CocosGLSurfaceView.this.mEditText, 0);
-                                mSoftKeyboardShown = true;
-                                Log.d("GLSurfaceView", "showSoftInput");
-                            }
-                        }
-                        break;
-
-                    case HANDLER_CLOSE_IME_KEYBOARD:
-                        if ((Long) msg.obj != mImeSerial.get()) return;
-                        dismissIME(false);
-                        break;
-                }
-            }
-        };
+        mImeHandler = new Handler(Looper.getMainLooper());
     }
 
     // ===========================================================
@@ -191,10 +181,6 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         this.setRenderer(this.mRenderer);
     }
 
-    private String getContentText() {
-        return this.mRenderer.getContentText();
-    }
-
     public CocosEditBox getEditText() {
         return this.mEditText;
     }
@@ -207,12 +193,12 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         if (null != this.mEditText && null != mTextInputWrapper) {
             this.mEditText.setOnEditorActionListener(mTextInputWrapper);
             this.mEditText.setOnFocusChangeListener((view, focused) -> {
-                if (!focused && mIMEEditorActive) dismissIME();
+                if (!focused) dismissTextInput(CLOSE_FOCUS_LOST);
             });
             getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-                if (!mIMEEditorActive) return;
-                if (CocosEngine.isImeVisible()) mImeWasVisible = true;
-                else if (mImeWasVisible) dismissIME();
+                if (mTextInputSession == 0) return;
+                refreshTextInputInsets(getRootWindowInsets());
+                if ((mCursorUpdateMode & InputConnection.CURSOR_UPDATE_MONITOR) != 0) updateTextInputCaret();
             });
             this.requestFocus();
         }
@@ -234,7 +220,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         final float[] xs = new float[pointerNumber];
         final float[] ys = new float[pointerNumber];
 
-        if (mSoftKeyboardShown && !mIMEEditorActive){
+        if (mSoftKeyboardShown && mTextInputSession == 0){
             InputMethodManager imm = (InputMethodManager)this.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             View view = ((Activity)this.getContext()).getCurrentFocus();
             if (null != view) {
@@ -389,7 +375,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        dismissIME();
+        dismissTextInput(CLOSE_NATIVE_ENDED);
         cancelPendingInput();
         mRenderHost.surfaceDestroyed();
     }
@@ -429,69 +415,33 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
         });
     }
 
-    void dismissIME() {
-        dismissIME(true);
-    }
-
-    private void dismissIME(boolean notifyNative) {
-        final boolean wasActive = mIMEEditorActive;
-        mIMEEditorActive = false;
-        final long serial = mImeSerial.incrementAndGet();
-        mImeHandler.removeCallbacksAndMessages(null);
+    private void dismissTextInput(int reason) {
+        final long session = mTextInputSession;
+        if (session == 0) return;
+        if (reason == CLOSE_REQUESTED) mTextInputWrapper.flushCommittedText();
+        mTextInputWrapper.finishObservation();
+        mTextInputSession = 0;
+        mCursorUpdateMode = 0;
+        mHasCaret = false;
+        mLastKeyboardVisibility = null;
+        mLastKeyboardOcclusion = null;
+        mWaitingForSnapshot = false;
         mTextInputWrapper.deactivate();
-        if (mEditText != null) {
-            mEditText.removeTextChangedListener(mTextInputWrapper);
-            final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) imm.hideSoftInputFromWindow(mEditText.getWindowToken(), 0);
-            mEditText.clearFocus();
-            mEditText.setVisibility(View.GONE);
-        }
-        mSoftKeyboardShown = false;
-        if (wasActive) {
-            requestFocus();
-            if (notifyNative) mRenderHost.cancelInput(() -> {
-                if (mRenderer != null && serial == mImeSerial.get()) mRenderer.handleIMEClosed();
-            });
-        }
+        mEditText.removeTextChangedListener(mTextInputWrapper);
+        final InputMethodManager imm = textInputManager();
+        if (imm != null) imm.hideSoftInputFromWindow(mEditText.getWindowToken(), 0);
+        mEditText.clearFocus();
+        mEditText.setVisibility(View.GONE);
+        mEditText.getText().clear();
+        nativeTextInputClosed(session, reason);
     }
 
     boolean isIMEEditor(CocosEditBox editor) {
-        return mIMEEditorActive && mEditText == editor && isCurrentHost();
+        return mTextInputSession != 0 && mEditText == editor && isCurrentHost();
     }
 
     InputConnection wrapInputConnection(InputConnection connection) {
         return connection == null ? null : mTextInputWrapper.wrap(connection);
-    }
-
-    boolean handleIMEKeyEvent(KeyEvent event) {
-        final int code = event.getKeyCode();
-        if (code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_ESCAPE) {
-            if (event.getAction() == KeyEvent.ACTION_UP) dismissIME();
-            return true;
-        }
-        if (code == KeyEvent.KEYCODE_DEL) {
-            if (mEditText.length() == 0) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN) deleteBackward(1);
-                return true;
-            }
-            return false;
-        }
-        // Keep editor navigation and shortcuts at the native caret; printable
-        // characters still pass through EditText/IME, avoiding duplicate text.
-        if (event.isCtrlPressed() || event.isAltPressed()
-                || KeyEvent.isModifierKey(code) || code == KeyEvent.KEYCODE_TAB
-                || code == KeyEvent.KEYCODE_FORWARD_DEL || code == KeyEvent.KEYCODE_MOVE_HOME
-                || code == KeyEvent.KEYCODE_MOVE_END || code == KeyEvent.KEYCODE_PAGE_UP
-                || code == KeyEvent.KEYCODE_PAGE_DOWN
-                || (code >= KeyEvent.KEYCODE_DPAD_UP && code <= KeyEvent.KEYCODE_DPAD_CENTER)) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                mTextInputWrapper.resetForNativeCaret();
-                final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.restartInput(mEditText);
-            }
-            return event.getAction() == KeyEvent.ACTION_DOWN ? onKeyDown(code, event) : onKeyUp(code, event);
-        }
-        return false;
     }
 
     protected boolean isIgnoredKey(final int keyCode) {
@@ -561,13 +511,13 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     public void handleOnPause() {
         cancelPendingInput();
         mRenderHost.setResumed(false);
-        dismissIME();
+        dismissTextInput(CLOSE_FOCUS_LOST);
     }
 
     void handleWindowFocusChanged(boolean hasFocus) {
         mRenderHost.setFocused(hasFocus);
         if (!hasFocus) {
-            dismissIME();
+            dismissTextInput(CLOSE_FOCUS_LOST);
             cancelPendingInput();
         }
     }
@@ -577,7 +527,7 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     }
 
     public void closeRenderHost(boolean finalClose) {
-        dismissIME();
+        dismissTextInput(CLOSE_NATIVE_ENDED);
         cancelPendingInput();
         mRenderHost.close(finalClose);
         if (mEditText != null) mEditText.setOnEditorActionListener(null);
@@ -591,44 +541,294 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     // Inner and Anonymous Classes
     // ===========================================================
 
-    public static void openIMEKeyboard() {
+    private static native void nativeTextInputCommit(long session, String text);
+    private static native boolean nativeTextInputEdit(long session, long epoch, long revision, long transaction,
+            long origin, String previous, String current, int anchor, int focus);
+    private static native void nativeTextInputPreedit(long session, String text, int phase, int anchor, int focus);
+    private static native void nativeTextInputCommand(long session, int action);
+    private static native void nativeTextInputClosed(long session, int reason);
+    private static native void nativeTextInputKeyboardState(long session, int composing, boolean visible,
+            boolean hasOcclusion, float x, float y, float width, float height);
+
+    public static boolean activateTextInput(long session, int purpose, int capitalization,
+            int returnAction, boolean multiline, int autocorrect, boolean initialSnapshot, boolean observePreedit) {
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        if (view == null) return false;
+        final long generation = view.mRenderHost.getTextInputGeneration();
+        return view.mImeHandler.post(() -> {
+            if (!view.isCurrentHost() || !view.mRenderHost.isTextInputCurrent(generation) || view.mEditText == null) {
+                nativeTextInputClosed(session, CLOSE_ACTIVATION_FAILED);
+                return;
+            }
+            view.beginTextInput(session, generation, purpose, capitalization, returnAction, multiline, autocorrect,
+                    initialSnapshot, observePreedit);
+        });
+    }
+
+    private void beginTextInput(long session, long generation, int purpose, int capitalization,
+            int returnAction, boolean multiline, int autocorrect, boolean initialSnapshot, boolean observePreedit) {
+        if (mTextInputSession != 0) dismissTextInput(CLOSE_REPLACED);
+        mTextInputSession = session;
+        mTextInputGeneration = generation;
+        mTextInputMultiline = multiline;
+        mWaitingForSnapshot = initialSnapshot;
+
+        mEditText.setShowSoftInputOnFocus(false);
+        mEditText.setInputType(textInputType(purpose, capitalization, multiline, autocorrect));
+        final int action = returnAction == 0 && multiline ? EditorInfo.IME_ACTION_NONE : RETURN_ACTIONS[returnAction];
+        mEditText.setImeOptions(action | EditorInfo.IME_FLAG_NO_EXTRACT_UI | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
+        mEditText.setText("");
+        mTextInputWrapper.activate(observePreedit);
+        mEditText.addTextChangedListener(mTextInputWrapper);
+        mEditText.setVisibility(View.VISIBLE);
+        if (!mEditText.requestFocus()) {
+            dismissTextInput(CLOSE_ACTIVATION_FAILED);
+            return;
+        }
+        if (!initialSnapshot) restartTextInput(true);
+        refreshTextInputInsets(getRootWindowInsets());
+    }
+
+    private void restartTextInput(boolean showKeyboard) {
+        final InputMethodManager imm = textInputManager();
+        if (imm == null) return;
+        mCursorUpdateMode = 0;
+        imm.restartInput(mEditText);
+        if (showKeyboard) imm.showSoftInput(mEditText, 0);
+    }
+
+    private static final int[] RETURN_ACTIONS = {
+        EditorInfo.IME_ACTION_DONE, EditorInfo.IME_ACTION_DONE, EditorInfo.IME_ACTION_SEARCH,
+        EditorInfo.IME_ACTION_SEND, EditorInfo.IME_ACTION_NEXT, EditorInfo.IME_ACTION_GO
+    };
+    private static final int[] PURPOSE_INPUT_TYPES = {
+        InputType.TYPE_CLASS_TEXT,
+        InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME,
+        InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS,
+        InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI,
+        InputType.TYPE_CLASS_PHONE,
+        InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED,
+        InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL,
+        InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD
+    };
+
+    private static int textInputType(int purpose, int capitalization, boolean multiline, int autocorrect) {
+        int type = PURPOSE_INPUT_TYPES[purpose];
+        if ((type & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT || purpose == 7) return type;
+        if (multiline) type |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+        if (autocorrect == 0) type |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+        else if (autocorrect == 1) type |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+        if (capitalization == 2) type |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+        if (capitalization == 3) type |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+        if (capitalization == 4) type |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+        return type;
+    }
+
+    public static boolean closeTextInput(long session) {
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        return view != null && view.mImeHandler.post(() -> {
+            if (view.mTextInputSession == session) view.dismissTextInput(CLOSE_REQUESTED);
+            else nativeTextInputClosed(session, CLOSE_REQUESTED);
+        });
+    }
+
+    public static boolean requestTextInputKeyboard(long session, boolean visible) {
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        return view != null && view.mImeHandler.post(() -> {
+            if (!view.isTextInputCurrent(session)) return;
+            final InputMethodManager imm = view.textInputManager();
+            if (imm == null) return;
+            if (visible) imm.showSoftInput(view.mEditText, 0);
+            else imm.hideSoftInputFromWindow(view.mEditText.getWindowToken(), 0);
+        });
+    }
+
+    public static boolean cancelTextInputComposition(long session) {
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        return view != null && view.mImeHandler.post(() -> {
+            if (!view.isTextInputCurrent(session)) return;
+            if (view.mTextInputWrapper.cancelComposition()) view.restartTextInput(false);
+            else view.dismissTextInput(CLOSE_ACTIVATION_FAILED);
+        });
+    }
+
+    private InputMethodManager textInputManager() {
+        return (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+    }
+
+    public static boolean hasTextInputKeyboardVisibility() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
+    }
+
+    void refreshTextInputInsets(WindowInsets insets) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || insets == null ||
+                !isTextInputCurrent(mTextInputSession)) return;
+        final boolean visible = insets.isVisible(WindowInsets.Type.ime());
+        final Rect occlusion = visible ? textInputOcclusion(insets.getInsets(WindowInsets.Type.ime())) : new Rect();
+        final float density = getResources().getDisplayMetrics().density;
+        if (mLastKeyboardVisibility != null && mLastKeyboardVisibility == visible &&
+                Objects.equals(mLastKeyboardOcclusion, occlusion) && mLastKeyboardDensity == density) return;
+        mLastKeyboardVisibility = visible;
+        mLastKeyboardOcclusion = occlusion;
+        mLastKeyboardDensity = density;
+        nativeTextInputKeyboardState(mTextInputSession, mTextInputWrapper.compositionKnowledge(), visible, occlusion != null,
+                occlusion != null ? occlusion.left / density : 0,
+                occlusion != null ? occlusion.top / density : 0,
+                occlusion != null ? occlusion.width() / density : 0,
+                occlusion != null ? occlusion.height() / density : 0);
+    }
+
+    private Rect textInputOcclusion(Insets insets) {
+        // Insets expose the bottom strip of a docked keyboard. A floating IME
+        // can be visible without giving an edge inset.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || insets.bottom <= 0 ||
+                insets.top != 0 || insets.left != 0 || insets.right != 0 ||
+                getWidth() <= 0 || getHeight() <= 0) return null;
+        final Rect bounds = ((Activity) getContext()).getWindowManager().getCurrentWindowMetrics().getBounds();
+        final Rect occlusion = new Rect(bounds.left, Math.max(bounds.top, bounds.bottom - insets.bottom),
+                bounds.right, bounds.bottom);
+        final int[] surface = new int[2];
+        getLocationOnScreen(surface);
+        if (occlusion.intersect(surface[0], surface[1], surface[0] + getWidth(), surface[1] + getHeight())) {
+            occlusion.offset(-surface[0], -surface[1]);
+        } else {
+            occlusion.setEmpty();
+        }
+        return occlusion;
+    }
+
+    public static void setTextInputArea(long session, boolean available, float x, float y, float height) {
         final CocosGLSurfaceView view = mGLSurfaceView;
         if (view == null) return;
-        final long epoch = view.mRenderHost.getInputEpoch();
-        final long serial = view.mImeSerial.incrementAndGet();
-        view.queueInput(() -> {
-            final String text = view.getContentText();
-            final Handler handler = view.mImeHandler;
-            if (view.isCurrentHost()) {
-                handler.obtainMessage(HANDLER_OPEN_IME_KEYBOARD, new ImeRequest(text, epoch, serial)).sendToTarget();
+        view.mImeHandler.post(() -> {
+            if (!view.isTextInputCurrent(session)) return;
+            view.mHasCaret = available;
+            view.mCaretX = x;
+            view.mCaretY = y;
+            view.mCaretHeight = height;
+            if ((view.mCursorUpdateMode & InputConnection.CURSOR_UPDATE_MONITOR) != 0) view.updateTextInputCaret();
+        });
+    }
+
+    public static void setTextInputSnapshot(long session, long epoch, long revision, long acknowledged, long origin,
+            String text, int anchor, int focus) {
+        final CocosGLSurfaceView view = mGLSurfaceView;
+        if (view == null) return;
+        view.mImeHandler.post(() -> {
+            if (!view.isTextInputCurrent(session)) return;
+            final TextInputWrapper.SnapshotResult result = view.mTextInputWrapper.setSnapshot(
+                    epoch, revision, acknowledged, origin, text, anchor, focus);
+            if (result == TextInputWrapper.SnapshotResult.INVALID) {
+                view.dismissTextInput(CLOSE_ACTIVATION_FAILED);
+                return;
+            }
+            if (result == TextInputWrapper.SnapshotResult.APPLIED) {
+                view.restartTextInput(view.mWaitingForSnapshot);
+                view.mWaitingForSnapshot = false;
             }
         });
     }
 
-    public static void closeIMEKeyboard() {
-        final CocosGLSurfaceView view = mGLSurfaceView;
-        if (view != null) {
-            final long serial = view.mImeSerial.incrementAndGet();
-            view.mImeHandler.obtainMessage(HANDLER_CLOSE_IME_KEYBOARD, Long.valueOf(serial)).sendToTarget();
+    void textInputSelectionChanged() {
+        mTextInputWrapper.afterSelectionChanged();
+    }
+
+    boolean requestTextInputCursorUpdates(int mode) {
+        if (!isTextInputCurrent(mTextInputSession)) return false;
+        mCursorUpdateMode = mode;
+        if ((mode & InputConnection.CURSOR_UPDATE_IMMEDIATE) != 0) updateTextInputCaret();
+        return true;
+    }
+
+    private void updateTextInputCaret() {
+        if (!isTextInputCurrent(mTextInputSession)) return;
+        final InputMethodManager imm = textInputManager();
+        if (imm == null) return;
+        final int[] origin = new int[2];
+        getLocationOnScreen(origin);
+        final Matrix toScreen = new Matrix();
+        toScreen.setTranslate(origin[0], origin[1]);
+        final CursorAnchorInfo.Builder info = new CursorAnchorInfo.Builder().setMatrix(toScreen);
+        if (mHasCaret) {
+            final float density = getResources().getDisplayMetrics().density;
+            final float x = mCaretX * density;
+            final float top = mCaretY * density;
+            final float bottom = top + mCaretHeight * density;
+            final boolean visible = x >= 0 && x <= getWidth() && top < getHeight() && bottom > 0;
+            info.setInsertionMarkerLocation(x, top, bottom, bottom,
+                    visible ? CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION : CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION);
+        }
+        imm.updateCursorAnchorInfo(mEditText, info.build());
+    }
+
+    private boolean isTextInputCurrent(long session) {
+        return session != 0 && session == mTextInputSession && isCurrentHost() &&
+                mRenderHost.isTextInputCurrent(mTextInputGeneration);
+    }
+
+    void commitTextInput(String text) {
+        if (!mWaitingForSnapshot && !text.isEmpty() && isTextInputCurrent(mTextInputSession))
+            nativeTextInputCommit(mTextInputSession, text);
+    }
+
+    boolean editTextInput(long epoch, long revision, long transaction, long origin,
+            String previous, String current, int anchor, int focus) {
+        return isTextInputCurrent(mTextInputSession) && nativeTextInputEdit(mTextInputSession,
+                epoch, revision, transaction, origin, previous, current, anchor, focus);
+    }
+
+    void observeTextInputPreedit(String text, int phase, int anchor, int focus) {
+        if (!mWaitingForSnapshot && isTextInputCurrent(mTextInputSession))
+            nativeTextInputPreedit(mTextInputSession, text, phase, anchor, focus);
+    }
+
+    boolean deleteTextInput(int before, int after) {
+        if (before == 1 && after == 0) return sendTextInputCommand(TEXT_BACKSPACE);
+        if (before == 0 && after == 1) return sendTextInputCommand(TEXT_DELETE);
+        return false;
+    }
+
+    boolean handleTextInputEditorAction(int action) {
+        switch (action) {
+            case EditorInfo.IME_ACTION_DONE: return sendTextInputCommand(TEXT_DONE);
+            case EditorInfo.IME_ACTION_SEARCH: return sendTextInputCommand(TEXT_SEARCH);
+            case EditorInfo.IME_ACTION_SEND: return sendTextInputCommand(TEXT_SEND);
+            case EditorInfo.IME_ACTION_NEXT: return sendTextInputCommand(TEXT_NEXT);
+            case EditorInfo.IME_ACTION_GO: return sendTextInputCommand(TEXT_GO);
+            case EditorInfo.IME_NULL:
+            case EditorInfo.IME_ACTION_NONE: return sendTextInputCommand(mTextInputMultiline ? TEXT_NEWLINE : TEXT_DONE);
+            default: return false;
         }
     }
 
-    public void insertText(final String pText) {
-        this.queueInput(new Runnable() {
-            @Override
-            public void run() {
-                CocosGLSurfaceView.this.mRenderer.handleInsertText(pText);
-            }
-        });
+    private boolean sendTextInputCommand(int command) {
+        if (command < 0 || !isTextInputCurrent(mTextInputSession)) return false;
+        nativeTextInputCommand(mTextInputSession, command);
+        return true;
     }
 
-    public void deleteBackward(int numChars) {
-        this.queueInput(new Runnable() {
-            @Override
-            public void run() {
-                CocosGLSurfaceView.this.mRenderer.handleDeleteBackward(numChars);
-            }
-        });
+    boolean handleTextInputKey(KeyEvent event) {
+        if (mTextInputWrapper.isRangeReady() && event.getKeyCode() != KeyEvent.KEYCODE_ESCAPE) return false;
+        final int command = textInputCommandForKey(event);
+        if (command < 0) return false;
+        if (event.getAction() == KeyEvent.ACTION_DOWN) sendTextInputCommand(command);
+        return true;
+    }
+
+    private int textInputCommandForKey(KeyEvent event) {
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DEL: return mEditText.length() == 0 ? TEXT_BACKSPACE : -1;
+            case KeyEvent.KEYCODE_FORWARD_DEL: return mEditText.length() == 0 ? TEXT_DELETE : -1;
+            case KeyEvent.KEYCODE_DPAD_LEFT: return TEXT_LEFT;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return TEXT_RIGHT;
+            case KeyEvent.KEYCODE_DPAD_UP: return TEXT_UP;
+            case KeyEvent.KEYCODE_DPAD_DOWN: return TEXT_DOWN;
+            case KeyEvent.KEYCODE_MOVE_HOME: return TEXT_LINE_START;
+            case KeyEvent.KEYCODE_MOVE_END: return TEXT_LINE_END;
+            case KeyEvent.KEYCODE_A: return event.isCtrlPressed() ? TEXT_SELECT_ALL : -1;
+            case KeyEvent.KEYCODE_ESCAPE: return TEXT_CANCEL;
+            default: return -1;
+        }
     }
 
     private static void dumpMotionEvent(final MotionEvent event) {

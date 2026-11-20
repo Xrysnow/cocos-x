@@ -7,6 +7,7 @@
 #include "cocos2d.h"
 #include "base/Macros.h"
 #include "platform/PlatformMacros.h"
+#include "platform/TextInputService.h"
 #include "base/SimpleTimer.h"
 
 NS_CC_BEGIN
@@ -17,7 +18,7 @@ namespace ui
 /**
 @brief  A extension implementation of ui::TextField
 */
-class CC_DLL TextFieldEx : public cc::Node, public IMEDelegate
+class CC_DLL TextFieldEx : public cc::Node
 {
 public:
     /**
@@ -109,36 +110,19 @@ public:
     std::function<void(void)> onTextModify;
     std::function<void(void)> onOpenIME;
     std::function<void(void)> onCloseIME;
-    // IMEDelegate interface
-    //////////////////////////////////////////////////////////////////////////
-    void openIME(void);
-    void closeIME(void);
-
-    virtual void insertText(const char* text, size_t len) override;
+    void beginEditing();
+    void endEditing();
+    virtual void insertText(const char* text, size_t len);
+    void visit(Renderer* renderer, const Mat4& parentTransform, uint32_t flags) override;
+    using Node::visit;
+    void onExit() override;
 
 protected:
-    //////////////////////////////////////////////////////////////////////////
-
-    virtual bool canAttachWithIME() override;
-    virtual bool canDetachWithIME() override;
-
-    virtual void deleteBackward() override;
-    virtual std::string_view getContentText() override;
-
+    virtual void deleteBackward();
     void handleDeleteKeyEvent();
-
-    /**
-    @brief    Open keyboard and receive input text.
-    */
-    virtual bool attachWithIME() override;
-
-    /**
-    @brief    End text input and close keyboard.
-    */
-    virtual bool detachWithIME() override;
-
-    void keyboardDidShow(IMEKeyboardNotificationInfo& /*info*/) override;
-    void keyboardDidHide(IMEKeyboardNotificationInfo& /*info*/) override;
+    std::optional<TextInputArea> inputArea();
+    void receiveTextInput(const TextInputEvent& event);
+    TextInputSession _inputSession;
 
     void updateContentSize(void);
 
@@ -147,6 +131,7 @@ protected:
     void __hideCursor(void);
     void __updateCursorPosition(void);
 
+    void setCursorAtScalar(size_t position);
     void __moveCursor(int direction);
 
     void __moveCursorTo(float x);
@@ -179,7 +164,6 @@ protected:
     bool enabled;
 
     EventListenerTouchOneByOne* touchListener;
-    EventListenerKeyboard* kbdListener;
 
     bool touchCursorControlEnabled;
     float asteriskWidth;
@@ -190,7 +174,6 @@ protected:
     float _continuousTouchDelayTime;
     std::function<void(const Point& worldPoint)> _continuousTouchCallback;
 
-    static bool s_keyboardVisible;
 };
 
 // end of input group
