@@ -305,7 +305,6 @@ Sprite::~Sprite()
     CC_SAFE_FREE(_trianglesVertex);
     CC_SAFE_FREE(_trianglesIndex);
     CC_SAFE_RELEASE(_spriteFrame);
-    CC_SAFE_RELEASE(_texture);
 }
 
 /*
@@ -350,7 +349,7 @@ void Sprite::setVertexLayout()
 
 void Sprite::setProgramState(uint32_t type)
 {
-    setProgramStateWithRegistry(type, _texture);
+    setProgramStateWithRegistry(type, _texture.get());
 }
 
 bool Sprite::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
@@ -366,7 +365,7 @@ bool Sprite::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
         _mvpMatrixLocation = _programState->getUniformLocation(backend::Uniform::MVP_MATRIX);
 
         setVertexLayout();
-        updateProgramStateTexture(_texture);
+        updateProgramStateTexture(_texture.get());
         setMVPMatrixUniform();
         return true;
     }
@@ -402,24 +401,20 @@ void Sprite::setTexture(Texture2D* texture)
 
     if (_renderMode != RenderMode::QUAD_BATCHNODE)
     {
-        if (_texture != texture)
-        {
-            CC_SAFE_RETAIN(texture);
-            CC_SAFE_RELEASE(_texture);
-            _texture = texture;
-        }
+        if (_texture.get() != texture)
+            _texture.reset(texture);
         updateBlendFunc();
     }
 
     if (needsUpdatePS)
         setProgramState(backend::ProgramType::POSITION_TEXTURE_COLOR);
     else
-        updateProgramStateTexture(_texture);
+        updateProgramStateTexture(_texture.get());
 }
 
 Texture2D* Sprite::getTexture() const
 {
-    return _texture;
+    return _texture.get();
 }
 
 void Sprite::setTextureRect(const Rect& rect)
@@ -785,7 +780,7 @@ void Sprite::setTextureCoords(const Rect& rectInPoints)
 
 void Sprite::setTextureCoords(const Rect& rectInPoints, V3F_C4B_T2F_Quad* outQuad)
 {
-    Texture2D* tex = (_renderMode == RenderMode::QUAD_BATCHNODE) ? _textureAtlas->getTexture() : _texture;
+    Texture2D* tex = (_renderMode == RenderMode::QUAD_BATCHNODE) ? _textureAtlas->getTexture() : _texture.get();
 
     if (tex == nullptr)
         return;
@@ -1063,7 +1058,7 @@ void Sprite::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
     if (_insideBounds)
 #endif
     {
-        _trianglesCommand.init(_globalZOrder, _texture, _blendFunc, _polyInfo.triangles, transform, flags);
+        _trianglesCommand.init(_globalZOrder, _texture.get(), _blendFunc, _polyInfo.triangles, transform, flags);
         renderer->addCommand(&_trianglesCommand);
 
 #if CC_SPRITE_DEBUG_DRAW
@@ -1604,7 +1599,7 @@ cc::IntrusivePtr<SpriteFrame> Sprite::getSpriteFrame() const
     if (nullptr != this->_spriteFrame)
         return this->_spriteFrame;
 
-    return SpriteFrame::createWithTexture(_texture, CC_RECT_POINTS_TO_PIXELS(_rect), _rectRotated,
+    return SpriteFrame::createWithTexture(_texture.get(), CC_RECT_POINTS_TO_PIXELS(_rect), _rectRotated,
                                           CC_POINT_POINTS_TO_PIXELS(_unflippedOffsetPositionFromCenter),
                                           CC_SIZE_POINTS_TO_PIXELS(_originalContentSize));
 }

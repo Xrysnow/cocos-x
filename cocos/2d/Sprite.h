@@ -244,7 +244,7 @@ public:
      */
     virtual void setTexture(Texture2D* texture) override;
 
-    /** Returns the Texture2D object used by the sprite. */
+    /** Borrows the stored texture until it is replaced or the sprite is destroyed. */
     virtual Texture2D* getTexture() const override;
 
     /**
@@ -655,7 +655,7 @@ protected:
     // Data used when the sprite is self-rendered
     //
     BlendFunc _blendFunc;                 /// It's required for TextureProtocol inheritance
-    Texture2D* _texture       = nullptr;  /// Texture2D object that is used to render the sprite
+    cc::IntrusivePtr<Texture2D> _texture;  /// Texture used when the sprite renders itself
     SpriteFrame* _spriteFrame = nullptr;
     TrianglesCommand _trianglesCommand;
 

@@ -229,7 +229,7 @@ void BillBoard::draw(Renderer* renderer, const Mat4& /*transform*/, uint32_t fla
 {
     // FIXME: frustum culling here
     flags |= Node::FLAGS_RENDER_AS_3D;
-    _trianglesCommand.init(0, _texture, _blendFunc, _polyInfo.triangles, _modelViewTransform, flags);
+    _trianglesCommand.init(0, _texture.get(), _blendFunc, _polyInfo.triangles, _modelViewTransform, flags);
     setMVPMatrixUniform();  // update uniform
     renderer->addCommand(&_trianglesCommand);
 }

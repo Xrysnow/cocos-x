@@ -33,7 +33,7 @@ void FUISprite::clearContent()
     CC_SAFE_RELEASE_NULL(_spriteFrame);
     setCenterRectNormalized(Rect(0, 0, 1, 1));
 
-    _empty = _texture;
+    _empty = _texture.get();
 }
 
 void FUISprite::setScale9Grid(Rect* value)
@@ -507,7 +507,7 @@ void FUISprite::draw(cc::Renderer* renderer, const cc::Mat4& transform, uint32_t
 #endif
         {
             _trianglesCommand.init(_globalZOrder,
-                                   _texture,
+                                   _texture.get(),
                                    _blendFunc,
                                    _fillTriangles,
                                    transform,
