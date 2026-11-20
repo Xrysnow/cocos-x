@@ -194,7 +194,7 @@ protected:
     #endif
 
     #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
-    cc::IntrusivePtr<Physics3DWorld> _physics3DWorld = nullptr;
+    cc::IntrusivePtr<Physics3DWorld> _physics3DWorld{};
     Camera* _physics3dDebugCamera   = nullptr;
     #endif
 #endif  // (CC_USE_PHYSICS || CC_USE_3D_PHYSICS)

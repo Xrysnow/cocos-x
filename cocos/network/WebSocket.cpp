@@ -29,7 +29,7 @@
 
 #include "base/Director.h"
 #include "base/EventDispatcher.h"
-#include "base/CCUtils.h"
+#include "base/ccUtils.h"
 #include "base/ccRandom.h"
 #include "platform/FileUtils.h"
 #include "network/SSLVerification.h"
