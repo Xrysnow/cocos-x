@@ -137,8 +137,8 @@ public:
     virtual void setVertexBuffer(Buffer* buffer) = 0;
 
     /**
-     * Set unifroms and textures
-     * @param programState A programState object that hold the uniform and texture data.
+     * Select uniforms and textures for the next draw.
+     * @param programState Borrowed from the draw command's owner until recording starts.
      */
     virtual void setProgramState(ProgramState* programState) = 0;
 

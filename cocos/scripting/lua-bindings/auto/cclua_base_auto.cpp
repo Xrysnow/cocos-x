@@ -1433,10 +1433,9 @@ int lua_cc_Node_setPositionZ(lua_State* lua_S)
 int lua_cc_Node_setProgramState(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Node", "cc.Node:setProgramState");
-	LUA_TRY_INVOKE_R(2, (static_cast<bool(cc::Node::*)(cc::backend::ProgramState*, bool)>(&cc::Node::setProgramState)));
-	LUA_TRY_INVOKE_R_OVERLOAD(1, ([](cc::Node* obj,cc::backend::ProgramState* arg0){{return obj->setProgramState(arg0);}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(1, static_cast<bool(cc::Node::*)(cc::IntrusivePtr<cc::backend::ProgramState>)>(&cc::Node::setProgramState));
 	LUA_TRY_INVOKE_OVERLOAD(1, static_cast<void(cc::Node::*)(uint32_t)>(&cc::Node::setProgramState));
-	LUA_INVOKE_FOOTER("1,2");
+	LUA_INVOKE_FOOTER("1");
 }
 int lua_cc_Node_setProgramStateWithRegistry(lua_State* lua_S)
 {

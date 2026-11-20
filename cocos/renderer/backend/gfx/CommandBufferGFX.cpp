@@ -548,6 +548,7 @@ void CommandBufferGFX::endFrame()
     gfx::Device::getInstance()->getQueue()->submit({_cb});
     // present will wait
     gfx::Device::getInstance()->present();
+    _usedProgramStates.clear();
 
     _inputAssemblers     = _usedInputAssemblers;
     _usedInputAssemblers = {};
@@ -662,6 +663,9 @@ void CommandBufferGFX::readPixels(RenderTarget* rt, std::function<void(const Pix
 
 void CommandBufferGFX::prepareDrawing(bool useIndex, const gfx::DrawInfo& drawInfo)
 {
+    // Keep each recorded state's resources through the gfx agent's command flush.
+    // Take the share before uniform callbacks can replace the submitting owner's state.
+    _usedProgramStates.try_emplace(_programState, _programState);
     _pstateinfo.inputState.attributes = getAttributesFromProgramState(_programState);
     _inputAssemblerHash[0]            = _programState->getVertexLayout();
     if (_pstateinfo.inputState.attributes.empty())

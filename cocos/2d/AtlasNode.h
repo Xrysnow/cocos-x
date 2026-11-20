@@ -99,7 +99,7 @@ public:
     void setQuadsToDraw(ssize_t quadsToDraw);
     size_t getQuadsToDraw() const;
 
-    bool setProgramState(backend::ProgramState* programState, bool needsRetain = true) override;
+    bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state) override;
 
     AtlasNode() = default;
     virtual ~AtlasNode();

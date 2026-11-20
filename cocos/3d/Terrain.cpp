@@ -105,7 +105,7 @@ void cc::Terrain::setLightDir(const Vec3& lightDir)
 bool Terrain::initProperties()
 {
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::TERRAIN_3D);
-    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
 
     _stateBlock.depthWrite = true;
     _stateBlock.depthTest  = true;
@@ -119,6 +119,9 @@ bool Terrain::initProperties()
 
 void Terrain::draw(cc::Renderer* renderer, const cc::Mat4& transform, uint32_t flags)
 {
+    if (!_programState)
+        return;
+
     auto modelMatrix = getNodeToWorldTransform();
     if (memcmp(&modelMatrix, &_terrainModelMatrix, sizeof(Mat4)) != 0)
     {
@@ -978,7 +981,7 @@ void Terrain::Chunk::bindAndDraw()
     CCASSERT(_buffer && _chunkIndices._indexBuffer, "buffer should not be nullptr");
     _command.setIndexBuffer(_chunkIndices._indexBuffer, backend::IndexFormat::U_SHORT);
     _command.setVertexBuffer(_buffer);
-    _command.getPipelineDescriptor().programState = _terrain->_programState;
+    _command.getPipelineDescriptor().programState = _terrain->_programState.get();
     _command.setIndexDrawInfo(0, _chunkIndices._size);
     renderer->addCommand(&_command);
     CC_INCREMENT_GL_DRAWN_BATCHES_AND_VERTICES(1, _chunkIndices._size);

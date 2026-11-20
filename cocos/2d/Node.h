@@ -41,6 +41,7 @@
 #include <type_traits>
 #include "base/Vector.h"
 #include "base/Protocols.h"
+#include "base/Ptr.h"
 #include "base/ScriptSupport.h"
 #include "math/AffineTransform.h"
 #include "math/Math.h"
@@ -1832,11 +1833,12 @@ public:
     void setProgramStateWithRegistry(uint32_t programType, Texture2D* texture);
 
     /**
-     * Sets ProgramState with retain
-     * @param programState
+     * Takes a reference to state. Returns true when a different non-null state is installed.
+     * A null state clears the current state on nodes that support clearing.
      */
-    virtual bool setProgramState(backend::ProgramState* programState, bool needsRetain = true);
+    virtual bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state);
 
+    /** Borrows the state until it is replaced or the node is destroyed. */
     backend::ProgramState* getProgramState() const;
 
     void updateProgramStateTexture(Texture2D* texture);
@@ -2015,7 +2017,7 @@ protected:
     std::function<void()> _onEnterTransitionDidFinishCallback;
     std::function<void()> _onExitTransitionDidStartCallback;
 
-    backend::ProgramState* _programState = nullptr;
+    cc::IntrusivePtr<backend::ProgramState> _programState;
 
 // Physics:remaining backwardly compatible
 #if CC_USE_PHYSICS

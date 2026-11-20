@@ -217,16 +217,14 @@ void MotionStreak::setTexture(Texture2D* texture)
     }
 }
 
-bool MotionStreak::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool MotionStreak::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    if (Node::setProgramState(programState, needsRetain))
+    _customCommand.getPipelineDescriptor().programState = state.get();
+    if (Node::setProgramState(std::move(state)))
     {
-        CCASSERT(programState, "argument should not be nullptr");
-        auto& pipelineDescriptor        = _customCommand.getPipelineDescriptor();
-        pipelineDescriptor.programState = _programState;
 
         _mvpMatrixLocaiton = _programState->getUniformLocation("u_MVPMatrix");
-        _textureLocation   = _programState->getUniformLocation("u_tex0");
+        _textureLocation   = _programState->getUniformLocation(backend::Uniform::TEXTURE);
 
         // setup custom vertex layout for V2F_T2F_C4B
         const auto& attributeInfo = _programState->getProgram()->getActiveAttributes();
@@ -405,7 +403,7 @@ void MotionStreak::reset()
 
 void MotionStreak::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    if (_nuPoints <= 1)
+    if (!_programState || _nuPoints <= 1)
         return;
 
     auto drawCount = _nuPoints * 2;

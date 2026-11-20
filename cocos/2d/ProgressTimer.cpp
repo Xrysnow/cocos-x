@@ -45,43 +45,27 @@ const char kProgressTextureCoords = 0x4b;
 
 namespace
 {
-backend::ProgramState* initPipelineDescriptor(cc::CustomCommand& command,
-                                              bool ridal,
-                                              backend::UniformLocation& locMVP,
-                                              backend::UniformLocation& locTexture)
+cc::IntrusivePtr<backend::ProgramState> createProgressProgramState()
 {
-    auto& pipelieDescriptor = command.getPipelineDescriptor();
-    auto* program           = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-    auto programState       = cc::IntrusivePtr{new backend::ProgramState(program)}.detach();
-    CC_SAFE_RELEASE(pipelieDescriptor.programState);
-    pipelieDescriptor.programState = programState;
+    auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
+    return cc::IntrusivePtr{new backend::ProgramState(program)};
+}
 
-    // set custom vertexLayout according to V2F_C4B_T2F structure
-    programState->setVertexAttrib("a_position", program->getAttributeLocation(backend::Attribute::POSITION),
-                                  backend::VertexFormat::FLOAT2, 0, false);
-    programState->setVertexAttrib("a_texCoord", program->getAttributeLocation(backend::Attribute::TEXCOORD),
-                                  backend::VertexFormat::FLOAT2,
-                                   offsetof(V2F_C4B_T2F, texCoords), false);
-    programState->setVertexAttrib("a_color", program->getAttributeLocation(backend::Attribute::COLOR),
-                                  backend::VertexFormat::UBYTE4,
-                                   offsetof(V2F_C4B_T2F, colors), true);
-    programState->setVertexStride(sizeof(V2F_C4B_T2F));
+void setupProgressProgramState(backend::ProgramState& state,
+                               backend::UniformLocation& locMVP,
+                               backend::UniformLocation& locTexture)
+{
+    auto* program = state.getProgram();
+    state.setVertexAttrib("a_position", program->getAttributeLocation(backend::Attribute::POSITION),
+                          backend::VertexFormat::FLOAT2, 0, false);
+    state.setVertexAttrib("a_texCoord", program->getAttributeLocation(backend::Attribute::TEXCOORD),
+                          backend::VertexFormat::FLOAT2, offsetof(V2F_C4B_T2F, texCoords), false);
+    state.setVertexAttrib("a_color", program->getAttributeLocation(backend::Attribute::COLOR),
+                          backend::VertexFormat::UBYTE4, offsetof(V2F_C4B_T2F, colors), true);
+    state.setVertexStride(sizeof(V2F_C4B_T2F));
 
-    if (ridal)
-    {
-        command.setDrawType(CustomCommand::DrawType::ELEMENT);
-        command.setPrimitiveType(CustomCommand::PrimitiveType::TRIANGLE);
-    }
-    else
-    {
-        command.setDrawType(CustomCommand::DrawType::ARRAY);
-        command.setPrimitiveType(CustomCommand::PrimitiveType::TRIANGLE_STRIP);
-    }
-
-    locMVP     = programState->getUniformLocation("u_MVPMatrix");
-    locTexture = programState->getUniformLocation("u_tex0");
-
-    return programState;
+    locMVP     = state.getUniformLocation("u_MVPMatrix");
+    locTexture = state.getUniformLocation(backend::Uniform::TEXTURE);
 }
 }  // namespace
 
@@ -103,18 +87,33 @@ bool ProgressTimer::initWithSprite(Sprite* sp)
     setBarChangeRate(Vec2(1, 1));
     setSprite(sp);
 
-    // TODO: Use ProgramState Vector to Node
-    CC_SAFE_RELEASE(_programState2);
-    setProgramState(initPipelineDescriptor(_customCommand, true, _locMVP1, _locTex1), false);
-    _programState2 = initPipelineDescriptor(_customCommand2, false, _locMVP2, _locTex2);
+    _customCommand.setDrawType(CustomCommand::DrawType::ELEMENT);
+    _customCommand.setPrimitiveType(CustomCommand::PrimitiveType::TRIANGLE);
+    setProgramState(createProgressProgramState());
 
+    _customCommand2.setDrawType(CustomCommand::DrawType::ARRAY);
+    _customCommand2.setPrimitiveType(CustomCommand::PrimitiveType::TRIANGLE_STRIP);
+    auto secondState = createProgressProgramState();
+    setupProgressProgramState(*secondState, _locMVP2, _locTex2);
+    _customCommand2.getPipelineDescriptor().programState = secondState.get();
+    _programState2 = std::move(secondState);
+
+    return true;
+}
+
+bool ProgressTimer::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
+{
+    _customCommand.getPipelineDescriptor().programState = state.get();
+    if (!Node::setProgramState(std::move(state)))
+        return false;
+
+    setupProgressProgramState(*_programState, _locMVP1, _locTex1);
     return true;
 }
 
 ProgressTimer::~ProgressTimer()
 {
     CC_SAFE_RELEASE(_sprite);
-    CC_SAFE_RELEASE(_programState2);
 }
 
 void ProgressTimer::setPercentage(float percentage)
@@ -599,7 +598,7 @@ Vec2 ProgressTimer::boundaryTexCoord(char index)
 
 void ProgressTimer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    if (_vertexData.empty() || !_sprite)
+    if (!_programState || _vertexData.empty() || !_sprite)
         return;
 
     const cc::Mat4& projectionMat = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);

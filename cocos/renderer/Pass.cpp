@@ -72,10 +72,10 @@ cc::IntrusivePtr<Pass> Pass::create(Technique* technique)
     return nullptr;
 }
 
-cc::IntrusivePtr<Pass> Pass::createWithProgramState(Technique* technique, backend::ProgramState* programState)
+cc::IntrusivePtr<Pass> Pass::createWithProgramState(Technique* technique, cc::IntrusivePtr<backend::ProgramState> programState)
 {
     cc::IntrusivePtr pass{new Pass()};
-    if (pass->initWithProgramState(technique, programState))
+    if (pass->initWithProgramState(technique, std::move(programState)))
     {
         return pass;
     }
@@ -88,10 +88,10 @@ bool Pass::init(Technique* technique)
     return true;
 }
 
-bool Pass::initWithProgramState(Technique* technique, backend::ProgramState* programState)
+bool Pass::initWithProgramState(Technique* technique, cc::IntrusivePtr<backend::ProgramState> programState)
 {
     _technique = technique;
-    setProgramState(programState);
+    setProgramState(std::move(programState));
     return true;
 }
 
@@ -100,7 +100,6 @@ Pass::Pass() = default;
 Pass::~Pass()
 {
     CC_SAFE_RELEASE(_vertexAttribBinding);
-    CC_SAFE_RELEASE(_programState);
 }
 
 cc::IntrusivePtr<Pass> Pass::clone() const
@@ -108,8 +107,7 @@ cc::IntrusivePtr<Pass> Pass::clone() const
     cc::IntrusivePtr pass{new Pass()};
     pass->_renderState.copyFrom(_renderState);
 
-    auto state = _programState->clone();
-    pass->setProgramState(state);
+    pass->setProgramState(_programState->clone());
 
     pass->_vertexAttribBinding = _vertexAttribBinding;
     CC_SAFE_RETAIN(pass->_vertexAttribBinding);
@@ -121,16 +119,14 @@ cc::IntrusivePtr<Pass> Pass::clone() const
 
 backend::ProgramState* Pass::getProgramState() const
 {
-    return _programState;
+    return _programState.get();
 }
 
-void Pass::setProgramState(backend::ProgramState* programState)
+void Pass::setProgramState(cc::IntrusivePtr<backend::ProgramState> programState)
 {
-    if (_programState != programState)
+    if (_programState.get() != programState.get())
     {
-        CC_SAFE_RELEASE(_programState);
-        _programState = programState;
-        CC_SAFE_RETAIN(_programState);
+        _programState = std::move(programState);
         initUniformLocations();
         _hashDirty = true;
     }
@@ -138,7 +134,7 @@ void Pass::setProgramState(backend::ProgramState* programState)
 
 void Pass::initUniformLocations()
 {
-    auto* ps = _programState;
+    auto* ps = _programState.get();
 
     _locMVPMatrix    = ps->getUniformLocation("u_MVPMatrix");
     _locMVMatrix     = ps->getUniformLocation("u_MVMatrix");
@@ -185,7 +181,7 @@ void Pass::draw(MeshCommand* meshCommand,
     meshCommand->setIndexBuffer(indexBuffer, indexFormat);
     meshCommand->setVertexBuffer(vertexBuffer);
     meshCommand->setIndexDrawInfo(0, indexCount);
-    meshCommand->getPipelineDescriptor().programState = _programState;
+    meshCommand->getPipelineDescriptor().programState = _programState.get();
 
     auto* renderer = Director::getInstance()->getRenderer();
 

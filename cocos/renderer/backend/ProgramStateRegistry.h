@@ -30,13 +30,14 @@ public:
     bool init();
     void clearPrograms();
 
-    void registerProgram(uint32_t programType, int textureSamplerFlags, Program*);
+    /** Holds the registered program until replacement or clear. A null entry uses the built-in fallback. */
+    void registerProgram(uint32_t programType, int textureSamplerFlags, cc::IntrusivePtr<Program> program);
 
-    ProgramState* newProgramState(uint32_t programType, int textureSamplerFlags);
+    cc::IntrusivePtr<ProgramState> newProgramState(uint32_t programType, int textureSamplerFlags);
     uint32_t getProgramType(uint32_t programType, int textureSamplerFlags);
 
 protected:
-    std::unordered_map<uint32_t, Program*> _registry;
+    std::unordered_map<uint32_t, cc::IntrusivePtr<Program>> _registry;
 };
 
 // end of _backend group

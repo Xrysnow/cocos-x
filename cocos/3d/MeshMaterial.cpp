@@ -291,12 +291,12 @@ cc::IntrusivePtr<MeshMaterial> MeshMaterial::createWithFilename(std::string_view
     return nullptr;
 }
 
-cc::IntrusivePtr<MeshMaterial> MeshMaterial::createWithProgramState(backend::ProgramState* programState)
+cc::IntrusivePtr<MeshMaterial> MeshMaterial::createWithProgramState(cc::IntrusivePtr<backend::ProgramState> programState)
 {
     CCASSERT(programState, "Invalid program state.");
 
     cc::IntrusivePtr mat{new MeshMaterial()};
-    if (mat->initWithProgramState(programState))
+    if (mat->initWithProgramState(std::move(programState)))
     {
         mat->_type = MeshMaterial::MaterialType::CUSTOM;
         return mat;

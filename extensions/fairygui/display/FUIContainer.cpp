@@ -16,7 +16,6 @@ RectClippingSupport::RectClippingSupport() :
 
 StencilClippingSupport::StencilClippingSupport() :
     _stencil(nullptr),
-    _originStencilProgram(nullptr),
     _stencilStateManager(new StencilStateManager())
 {
 }
@@ -113,6 +112,8 @@ void FUIContainer::setStencil(cc::Node * stencil)
     }
 #endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
 
+    _stencilClippingSupport->_stencilStateManager->restoreAlphaTestProgram();
+
     //cleanup current stencil
     if (_stencilClippingSupport->_stencil != nullptr && _stencilClippingSupport->_stencil->isRunning())
     {
@@ -132,9 +133,6 @@ void FUIContainer::setStencil(cc::Node * stencil)
             _stencilClippingSupport->_stencil->onEnterTransitionDidFinish();
         }
     }
-
-    if (_stencilClippingSupport->_stencil != nullptr)
-        _stencilClippingSupport->_originStencilProgram = _stencilClippingSupport->_stencil->getProgramState();
 }
 
 float FUIContainer::getAlphaThreshold() const
@@ -149,12 +147,6 @@ void FUIContainer::setAlphaThreshold(float alphaThreshold)
 {
     if (_stencilClippingSupport == nullptr)
         _stencilClippingSupport = new StencilClippingSupport();
-
-    if (alphaThreshold == 1 && alphaThreshold != _stencilClippingSupport->_stencilStateManager->getAlphaThreshold()) {
-        if (_stencilClippingSupport->_stencil) {
-            restoreAllProgramStates();
-        }
-    }
 
     _stencilClippingSupport->_stencilStateManager->setAlphaThreshold(alphaThreshold);
 }
@@ -223,27 +215,6 @@ void FUIContainer::setCameraMask(unsigned short mask, bool applyChildren)
         _stencilClippingSupport->_stencil->setCameraMask(mask, applyChildren);
 }
 
-void FUIContainer::setProgramStateRecursively(Node* node, backend::ProgramState* programState)
-{
-    _originalStencilProgramState[node] = node->getProgramState();
-    node->setProgramState(programState);
-
-    auto& children = node->getChildren();
-    for (const auto &child : children) {
-        setProgramStateRecursively(child, programState);
-    }
-}
-
-void FUIContainer::restoreAllProgramStates()
-{
-    for (auto item : _originalStencilProgramState)
-    {
-        auto node = item.first;
-        auto programState = item.second;
-        node->setProgramState(programState);
-    }
-}
-
 void FUIContainer::onBeforeVisitScissor()
 {
     auto glView = Director::getInstance()->getOpenGLView();
@@ -298,7 +269,7 @@ const Rect& FUIContainer::getClippingRect()
 
 void FUIContainer::visit(cc::Renderer * renderer, const cc::Mat4 & parentTransform, uint32_t parentFlags)
 {
-    if (_stencilClippingSupport != nullptr)
+    if (_stencilClippingSupport && _stencilClippingSupport->_stencil)
     {
         if (!_visible || _children.empty())
             return;
@@ -327,16 +298,7 @@ void FUIContainer::visit(cc::Renderer * renderer, const cc::Mat4 & parentTransfo
 
         _stencilClippingSupport->_stencilStateManager->onBeforeVisit(_globalZOrder);
 
-        auto alphaThreshold = this->getAlphaThreshold();
-        if (alphaThreshold < 1)
-        {
-            auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
-            cc::IntrusivePtr programState{new backend::ProgramState(program)};
-            auto alphaLocation = programState->getUniformLocation("u_alpha_value");
-            programState->setUniform(alphaLocation, &alphaThreshold, sizeof(alphaThreshold));
-            setProgramStateRecursively(_stencilClippingSupport->_stencil, programState.get());
-
-        }
+        _stencilClippingSupport->_stencilStateManager->applyAlphaTestProgram(_stencilClippingSupport->_stencil);
         _stencilClippingSupport->_stencil->visit(renderer, _modelViewTransform, flags);
 
         auto afterDrawStencilCmd = renderer->nextCallbackCommand();

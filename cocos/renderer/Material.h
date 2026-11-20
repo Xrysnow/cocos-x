@@ -84,7 +84,7 @@ public:
      It will only contain one Technique and one Pass.
      Added in order to support legacy code.
      */
-    static cc::IntrusivePtr<Material> createWithProgramState(backend::ProgramState* programState);
+    static cc::IntrusivePtr<Material> createWithProgramState(cc::IntrusivePtr<backend::ProgramState> programState);
 
     /**
      * Creates a material from the specified properties object.
@@ -179,7 +179,7 @@ public:
 protected:
     Material();
     ~Material();
-    bool initWithProgramState(backend::ProgramState* state);
+    bool initWithProgramState(cc::IntrusivePtr<backend::ProgramState> state);
     bool initWithFile(std::string_view file);
     bool initWithProperties(Properties* materialProperties);
 

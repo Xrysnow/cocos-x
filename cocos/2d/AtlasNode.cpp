@@ -90,15 +90,15 @@ bool AtlasNode::initWithTexture(Texture2D* texture, int tileWidth, int tileHeigh
     return true;
 }
 
-bool AtlasNode::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool AtlasNode::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    if (Node::setProgramState(programState, needsRetain))
+    _quadCommand.getPipelineDescriptor().programState = state.get();
+    if (Node::setProgramState(std::move(state)))
     {
-        auto& pipelineDescriptor        = _quadCommand.getPipelineDescriptor();
-        pipelineDescriptor.programState = _programState;
         _mvpMatrixLocation              = _programState->getUniformLocation("u_MVPMatrix");
 
-        updateProgramStateTexture(_textureAtlas->getTexture());
+        if (_textureAtlas)
+            updateProgramStateTexture(_textureAtlas->getTexture());
         return true;
     }
     return false;
@@ -127,7 +127,7 @@ void AtlasNode::updateAtlasValues()
 // AtlasNode - draw
 void AtlasNode::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    if (_textureAtlas->getTotalQuads() == 0)
+    if (!_programState || _textureAtlas->getTotalQuads() == 0)
         return;
 
     auto programState = _quadCommand.getPipelineDescriptor().programState;

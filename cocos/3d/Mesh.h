@@ -210,7 +210,7 @@ public:
     /**  Sets a new ProgramState for the Mesh
      * A new Material will be created for it
      */
-    void setProgramState(backend::ProgramState* programState);
+    void setProgramState(cc::IntrusivePtr<backend::ProgramState> programState);
 
     /** Sets a new Material to the Mesh */
     void setMaterial(Material* material);

@@ -37,7 +37,6 @@ public:
 #if !defined(CC_VERSION) 
     cc::GroupCommand _groupCommand;
 #endif
-    cc::backend::ProgramState* _originStencilProgram;
     //cocos2d::CallbackCommand _beforeVisitCmd;
     //cocos2d::CallbackCommand _afterDrawStencilCmd;
     //cocos2d::CallbackCommand _afterVisitCmd;
@@ -80,10 +79,6 @@ private:
     RectClippingSupport* _rectClippingSupport;
     StencilClippingSupport* _stencilClippingSupport;
     
-    void setProgramStateRecursively(Node* node, cc::backend::ProgramState* programState);
-    void restoreAllProgramStates();
-    
-    std::unordered_map<Node*, cc::backend::ProgramState*> _originalStencilProgramState;
 };
 
 //internal use

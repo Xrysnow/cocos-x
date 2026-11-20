@@ -26,15 +26,19 @@
 #pragma once
 
 #include "base/ccConfig.h"
+#include "base/Ptr.h"
 #include "platform/PlatformMacros.h"
 #include "renderer/CustomCommand.h"
 #include "renderer/CallbackCommand.h"
+#include <unordered_map>
 
 /**
  * @addtogroup base
  * @{
  */
 NS_CC_BEGIN
+
+class Node;
 
 class CC_DLL StencilStateManager
 {
@@ -45,6 +49,8 @@ public:
     void onAfterDrawStencil();
     void onAfterVisit();
     void setAlphaThreshold(float alphaThreshold);
+    void applyAlphaTestProgram(Node* stencil);
+    void restoreAlphaTestProgram();
     void setInverted(bool inverted);
     bool isInverted() const;
     float getAlphaThreshold() const;
@@ -59,6 +65,19 @@ private:
     void updateLayerMask();
     void onBeforeDrawQuadCmd();
     void onAfterDrawQuadCmd();
+
+    struct StencilStateSnapshot
+    {
+        cc::IntrusivePtr<Node> node;
+        cc::IntrusivePtr<backend::ProgramState> original;
+        bool visited = false;
+    };
+
+    void applyAlphaTestProgramRecursively(Node* node, backend::ProgramState* programState);
+    void restoreStencilState(StencilStateSnapshot& snapshot, backend::ProgramState* appliedState);
+
+    std::unordered_map<Node*, StencilStateSnapshot> _stencilStates;
+    cc::IntrusivePtr<backend::ProgramState> _alphaTestState;
 
     float _alphaThreshold = 1.f;
     bool _inverted        = false;

@@ -96,7 +96,7 @@ public:
      * @param programState GLProgramState instance
      * @return An autorelease material object
      */
-    static cc::IntrusivePtr<MeshMaterial> createWithProgramState(backend::ProgramState* programState);
+    static cc::IntrusivePtr<MeshMaterial> createWithProgramState(cc::IntrusivePtr<backend::ProgramState> programState);
 
     void setTexture(Texture2D* tex, NTextureData::Usage usage);
 

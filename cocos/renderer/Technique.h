@@ -59,7 +59,7 @@ public:
     /** Creates a new Technique with a GLProgramState.
      Method added to support legacy code
      */
-    static cc::IntrusivePtr<Technique> createWithProgramState(Material* parent, backend::ProgramState* state);
+    static cc::IntrusivePtr<Technique> createWithProgramState(Material* parent, cc::IntrusivePtr<backend::ProgramState> state);
     static cc::IntrusivePtr<Technique> create(Material* parent);
 
     /** Adds a new pass to the Technique.

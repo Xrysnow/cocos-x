@@ -97,21 +97,21 @@ cc::IntrusivePtr<Material> Material::createWithProperties(Properties* materialPr
     return nullptr;
 }
 
-cc::IntrusivePtr<Material> Material::createWithProgramState(backend::ProgramState* programState)
+cc::IntrusivePtr<Material> Material::createWithProgramState(cc::IntrusivePtr<backend::ProgramState> programState)
 {
     CCASSERT(programState, "Invalid Program State");
 
     cc::IntrusivePtr mat{new Material()};
-    if (mat->initWithProgramState(programState))
+    if (mat->initWithProgramState(std::move(programState)))
     {
         return mat;
     }
     return nullptr;
 }
 
-bool Material::initWithProgramState(backend::ProgramState* state)
+bool Material::initWithProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    auto technique = Technique::createWithProgramState(this, state);
+    auto technique = Technique::createWithProgramState(this, std::move(state));
     if (technique)
     {
         _techniques.pushBack(technique);
@@ -377,8 +377,8 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         fragShaderSrc = defs + "\n" + fragShaderSrc;
 
         auto* program     = backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
-        cc::IntrusivePtr programState{new backend::ProgramState(program)};
-        pass->setProgramState(programState.get());
+        pass->setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
+        auto* programState = pass->getProgramState();
 
         // Parse uniforms only if the GLProgramState was created
         auto property = shaderProperties->getNextProperty();
@@ -386,7 +386,7 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         {
             if (isValidUniform(property))
             {
-                parseUniform(programState.get(), shaderProperties, property);
+                parseUniform(programState, shaderProperties, property);
             }
 
             property = shaderProperties->getNextProperty();
@@ -398,7 +398,7 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
             const char* name = space->getNamespace();
             if (strcmp(name, "sampler") == 0)
             {
-                parseSampler(programState.get(), space);
+                parseSampler(programState, space);
             }
             space = shaderProperties->getNextNamespace();
         }

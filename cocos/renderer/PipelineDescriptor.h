@@ -40,6 +40,7 @@ NS_CC_BEGIN
 
 struct CC_DLL PipelineDescriptor
 {
+    // Borrowed through command execution from the object that configures the command.
     backend::ProgramState* programState = nullptr;
     backend::BlendDescriptor blendDescriptor;
 };

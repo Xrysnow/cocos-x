@@ -353,13 +353,15 @@ void Sprite::setProgramState(uint32_t type)
     setProgramStateWithRegistry(type, _texture);
 }
 
-bool Sprite::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool Sprite::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    CCASSERT(programState, "argument should not be nullptr");
-    if (Node::setProgramState(programState, needsRetain))
+    CCASSERT(state, "programState should not be nullptr");
+    if (!state)
+        return false;
+    if (Node::setProgramState(std::move(state)))
     {
         auto& pipelineDescriptor        = _trianglesCommand.getPipelineDescriptor();
-        pipelineDescriptor.programState = _programState;
+        pipelineDescriptor.programState = _programState.get();
 
         _mvpMatrixLocation = _programState->getUniformLocation(backend::Uniform::MVP_MATRIX);
 

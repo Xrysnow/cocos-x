@@ -61,11 +61,11 @@ class CC_DLL Pass : public Ref
 public:
     /** Creates a Pass with a GLProgramState.
      */
-    static cc::IntrusivePtr<Pass> createWithProgramState(Technique* parent, backend::ProgramState* programState);
+    static cc::IntrusivePtr<Pass> createWithProgramState(Technique* parent, cc::IntrusivePtr<backend::ProgramState> programState);
 
     static cc::IntrusivePtr<Pass> create(Technique* parent);
 
-    /** Returns the ProgramState */
+    /** Borrows the state until it is replaced or the pass is destroyed. */
     backend::ProgramState* getProgramState() const;
 
     void draw(MeshCommand* meshCommand,
@@ -133,13 +133,13 @@ protected:
     Pass();
     ~Pass();
     bool init(Technique* parent);
-    bool initWithProgramState(Technique* parent, backend::ProgramState* glProgramState);
+    bool initWithProgramState(Technique* parent, cc::IntrusivePtr<backend::ProgramState> programState);
 
-    void setProgramState(backend::ProgramState* programState);
+    void setProgramState(cc::IntrusivePtr<backend::ProgramState> programState);
     Node* getTarget() const;
 
     VertexAttribBinding* _vertexAttribBinding = nullptr;
-    backend::ProgramState* _programState      = nullptr;
+    cc::IntrusivePtr<backend::ProgramState> _programState;
     Technique* _technique                     = nullptr;
     bool _hashDirty                           = true;
     RenderState _renderState;

@@ -64,17 +64,12 @@ bool Skybox::init()
 
     // create and set our custom shader
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::SKYBOX_3D);
-    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
 
     auto& pipelineDescriptor = _customCommand.getPipelineDescriptor();
 
-    pipelineDescriptor.programState = _programState;
     // disable blend
     pipelineDescriptor.blendDescriptor.blendEnabled = false;
-
-    _uniformColorLoc     = _programState->getUniformLocation("u_color");
-    _uniformCameraRotLoc = _programState->getUniformLocation("u_cameraRot");
-    _uniformEnvLoc       = _programState->getUniformLocation("u_Env");
 
     initBuffers();
     return true;
@@ -93,6 +88,20 @@ bool Skybox::init(std::string_view positive_x,
 
     init();
     setTexture(texture);
+    return true;
+}
+
+bool Skybox::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
+{
+    _customCommand.getPipelineDescriptor().programState = state.get();
+    if (!Node::setProgramState(std::move(state)))
+        return false;
+
+    _uniformColorLoc     = _programState->getUniformLocation("u_color");
+    _uniformCameraRotLoc = _programState->getUniformLocation("u_cameraRot");
+    _uniformEnvLoc       = _programState->getUniformLocation("u_Env");
+    if (_texture)
+        _programState->setTexture(_uniformEnvLoc, 0, _texture->getBackendTexture());
     return true;
 }
 
@@ -134,6 +143,9 @@ void Skybox::initBuffers()
 
 void Skybox::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
+    if (!_programState)
+        return;
+
     _customCommand.init(_globalZOrder);
 
     renderer->addCommand(&_customCommand);
@@ -160,7 +172,8 @@ void Skybox::setTexture(TextureCube* texture)
     CC_SAFE_RELEASE_NULL(_texture);
     texture->retain();
     _texture = texture;
-    _programState->setTexture(_uniformEnvLoc, 0, _texture->getBackendTexture());
+    if (_programState)
+        _programState->setTexture(_uniformEnvLoc, 0, _texture->getBackendTexture());
 }
 
 void Skybox::reload()

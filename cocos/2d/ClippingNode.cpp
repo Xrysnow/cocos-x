@@ -28,7 +28,6 @@
 #include "2d/ClippingNode.h"
 #include "renderer/Renderer.h"
 #include "renderer/ccShaders.h"
-#include "renderer/backend/ProgramState.h"
 #include "base/Director.h"
 #include "base/StencilStateManager.h"
 
@@ -125,6 +124,11 @@ void ClippingNode::onExit()
 
 void ClippingNode::visit(Renderer* renderer, const Mat4& parentTransform, uint32_t parentFlags)
 {
+    if (!_stencil)
+    {
+        Node::visit(renderer, parentTransform, parentFlags);
+        return;
+    }
     if (!_visible || !hasContent())
         return;
 
@@ -150,16 +154,7 @@ void ClippingNode::visit(Renderer* renderer, const Mat4& parentTransform, uint32
     // renderer->addCommand(&_beforeVisitCmd);
     _stencilStateManager->onBeforeVisit(_globalZOrder);
 
-    auto alphaThreshold = this->getAlphaThreshold();
-    if (alphaThreshold < 1)
-    {
-        auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
-        cc::IntrusivePtr programState{new backend::ProgramState(program)};
-        auto alphaLocation = programState->getUniformLocation("u_alpha_value");
-        programState->setUniform(alphaLocation, &alphaThreshold, sizeof(alphaThreshold));
-        setProgramStateRecursively(_stencil, programState.get());
-
-    }
+    _stencilStateManager->applyAlphaTestProgram(_stencil);
     _stencil->visit(renderer, _modelViewTransform, flags);
 
 
@@ -247,6 +242,8 @@ void ClippingNode::setStencil(Node* stencil)
     }
 #endif  // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
 
+    _stencilStateManager->restoreAlphaTestProgram();
+
     // cleanup current stencil
     if (_stencil != nullptr && _stencil->isRunning())
     {
@@ -266,16 +263,6 @@ void ClippingNode::setStencil(Node* stencil)
             _stencil->onEnterTransitionDidFinish();
         }
     }
-
-    if (_stencil != nullptr)
-    {
-        _originalStencilProgramState[_stencil] = _stencil->getProgramState();
-        auto& children                         = _stencil->getChildren();
-        for (const auto& child : children)
-        {
-            _originalStencilProgramState[child] = child->getProgramState();
-        }
-    }
 }
 
 bool ClippingNode::hasContent() const
@@ -290,12 +277,6 @@ float ClippingNode::getAlphaThreshold() const
 
 void ClippingNode::setAlphaThreshold(float alphaThreshold)
 {
-    if (alphaThreshold == 1 && alphaThreshold != _stencilStateManager->getAlphaThreshold())
-    {
-        // should reset program used by _stencil
-        if (_stencil)
-            restoreAllProgramStates();
-    }
     _stencilStateManager->setAlphaThreshold(alphaThreshold);
 }
 
@@ -307,28 +288,6 @@ bool ClippingNode::isInverted() const
 void ClippingNode::setInverted(bool inverted)
 {
     _stencilStateManager->setInverted(inverted);
-}
-
-void ClippingNode::setProgramStateRecursively(Node* node, backend::ProgramState* programState)
-{
-    _originalStencilProgramState[node] = node->getProgramState();
-    node->setProgramState(programState);
-
-    auto& children = node->getChildren();
-    for (const auto& child : children)
-    {
-        setProgramStateRecursively(child, programState);
-    }
-}
-
-void ClippingNode::restoreAllProgramStates()
-{
-    for (auto&& item : _originalStencilProgramState)
-    {
-        auto node         = item.first;
-        auto programState = item.second;
-        node->setProgramState(programState);
-    }
 }
 
 NS_CC_END

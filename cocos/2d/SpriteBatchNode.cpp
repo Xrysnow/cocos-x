@@ -123,13 +123,15 @@ void SpriteBatchNode::setVertexLayout()
     _programState->validateSharedVertexLayout(VertexLayoutHelper::setupSprite);
 }
 
-bool SpriteBatchNode::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool SpriteBatchNode::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    CCASSERT(programState, "programState should not be nullptr");
-    if (Node::setProgramState(programState, needsRetain))
+    CCASSERT(state, "programState should not be nullptr");
+    if (!state)
+        return false;
+    if (Node::setProgramState(std::move(state)))
     {
         auto& pipelineDescriptor        = _quadCommand.getPipelineDescriptor();
-        pipelineDescriptor.programState = _programState;
+        pipelineDescriptor.programState = _programState.get();
 
         setVertexLayout();
         updateProgramStateTexture(_textureAtlas->getTexture());

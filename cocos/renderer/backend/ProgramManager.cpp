@@ -78,6 +78,7 @@ ProgramManager* ProgramManager::getInstance()
 
 void ProgramManager::destroyInstance()
 {
+    ProgramStateRegistry::destroyInstance();
     CC_SAFE_RELEASE_NULL(_sharedProgramManager);
 }
 

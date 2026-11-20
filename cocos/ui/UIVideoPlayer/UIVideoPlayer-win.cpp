@@ -488,7 +488,7 @@ void VideoPlayer::draw(Renderer* renderer, const Mat4& transform, uint32_t flags
                         std::string{pvd->_sampleFormat == VideoSampleFormat::NV12 ? NV12_FRAG : YUY2_FRAG},
                         VertexLayoutHelper::setupSprite);
                     auto program = programManager->getCustomProgram(VIDEO_PROGRAM_ID);
-                    pvd->_vrender->setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
+                    pvd->_vrender->setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
                     break;
                 }
                 default:;

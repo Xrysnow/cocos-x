@@ -68,6 +68,9 @@ public:
     /**texture getter and setter*/
     void setTexture(TextureCube*);
 
+    using Node::setProgramState;
+    bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state) override;
+
     /** draw Skybox object */
     virtual void draw(Renderer* renderer, const Mat4& transform, uint32_t flags) override;
 

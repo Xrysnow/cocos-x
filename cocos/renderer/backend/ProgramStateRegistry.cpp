@@ -29,14 +29,10 @@ bool ProgramStateRegistry::init()
     return true;
 }
 
-void ProgramStateRegistry::registerProgram(uint32_t programType, int textureSamplerFlags, Program* program)
+void ProgramStateRegistry::registerProgram(uint32_t programType, int textureSamplerFlags, cc::IntrusivePtr<Program> program)
 {
-    uint32_t key = (static_cast<uint32_t>(programType) << 16) | textureSamplerFlags;
-    auto it      = this->_registry.find(key);
-    if (it == this->_registry.end())
-        this->_registry.emplace(key, program);
-    else
-        it->second = program;
+    uint32_t key = (programType << 16) | textureSamplerFlags;
+    this->_registry.insert_or_assign(key, std::move(program));
 }
 
 void ProgramStateRegistry::clearPrograms()
@@ -44,18 +40,18 @@ void ProgramStateRegistry::clearPrograms()
     this->_registry.clear();
 }
 
-ProgramState* ProgramStateRegistry::newProgramState(uint32_t programType, int textureSamplerFlags)
+cc::IntrusivePtr<ProgramState> ProgramStateRegistry::newProgramState(uint32_t programType, int textureSamplerFlags)
 {
     uint32_t key = ((programType) << 16) | textureSamplerFlags;
     auto it      = this->_registry.find(key);
     if (it != this->_registry.end())
     {
-        auto fallback = it->second;
+        auto* fallback = it->second.get();
         if (fallback)
-            return cc::IntrusivePtr{new ProgramState(fallback)}.detach();
+            return cc::IntrusivePtr{new ProgramState(fallback)};
     }
 
-    return cc::IntrusivePtr{new ProgramState(Program::getBuiltinProgram(programType))}.detach();
+    return cc::IntrusivePtr{new ProgramState(Program::getBuiltinProgram(programType))};
 }
 
 uint32_t ProgramStateRegistry::getProgramType(uint32_t programType, int textureSamplerFlags)
@@ -64,7 +60,7 @@ uint32_t ProgramStateRegistry::getProgramType(uint32_t programType, int textureS
     auto it      = this->_registry.find(key);
     if (it != this->_registry.end())
     {
-        auto fallback = it->second;
+        auto* fallback = it->second.get();
         if (fallback)
             return fallback->getProgramType();
     }

@@ -31,6 +31,7 @@
 #include "2d/Node.h"
 #include "renderer/CustomCommand.h"
 #include "renderer/QuadCommand.h"
+#include "renderer/backend/ProgramState.h"
 #include "2d/FontAtlas.h"
 #include "base/ccTypes.h"
 
@@ -674,7 +675,7 @@ public:
      */
     float getAdditionalKerning() const;
 
-    bool setProgramState(backend::ProgramState* programState, bool needsRetain = true) override;
+    bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state) override;
 
     FontAtlas* getFontAtlas() { return _fontAtlas; }
 
@@ -753,6 +754,7 @@ protected:
         CustomCommand textCommand;
         CustomCommand outLineCommand;
         CustomCommand shadowCommand;
+        std::array<cc::IntrusivePtr<backend::ProgramState>, 3> programStates;
     };
 
     virtual void setFontAtlas(FontAtlas* atlas, bool distanceFieldEnabled = false, bool useA8Shader = false);

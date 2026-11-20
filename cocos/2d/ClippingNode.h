@@ -31,7 +31,6 @@
 #include "renderer/GroupCommand.h"
 #include "renderer/CustomCommand.h"
 #include "renderer/CallbackCommand.h"
-#include <unordered_map>
 NS_CC_BEGIN
 
 class StencilStateManager;
@@ -153,15 +152,11 @@ public:
     virtual bool init(Node* stencil);
 
 protected:
-    void setProgramStateRecursively(Node* node, backend::ProgramState* programState);
-    void restoreAllProgramStates();
-
     Node* _stencil                            = nullptr;
     StencilStateManager* _stencilStateManager = nullptr;
 
     //CallbackCommand _afterDrawStencilCmd;
     //CallbackCommand _afterVisitCmd;
-    std::unordered_map<Node*, backend::ProgramState*> _originalStencilProgramState;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(ClippingNode);

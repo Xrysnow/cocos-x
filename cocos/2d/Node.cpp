@@ -191,7 +191,6 @@ Node::~Node()
     CC_SAFE_RELEASE(_eventDispatcher);
 
     delete[] _additionalTransform;
-    CC_SAFE_RELEASE(_programState);
 }
 
 bool Node::init()
@@ -2221,21 +2220,16 @@ int Node::getAttachedNodeCount()
 void Node::setProgramStateWithRegistry(uint32_t programType, Texture2D* texture)
 {
     auto samplerFlags = texture ? texture->getSamplerFlags() : 0;
-    auto programState = backend::ProgramStateRegistry::getInstance()->newProgramState(programType, samplerFlags);
-    setProgramState(programState, false);
+    setProgramState(backend::ProgramStateRegistry::getInstance()->newProgramState(programType, samplerFlags));
 }
 
-bool Node::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool Node::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    if (_programState != programState)
-    {
-        CC_SAFE_RELEASE(_programState);
-        _programState = programState;
-        if (needsRetain)
-            CC_SAFE_RETAIN(_programState);
-        return !!_programState;
-    }
-    return false;
+    if (_programState.get() == state.get())
+        return false;
+
+    _programState = std::move(state);
+    return static_cast<bool>(_programState);
 }
 
 void Node::updateProgramStateTexture(Texture2D* texture)
@@ -2248,7 +2242,7 @@ void Node::updateProgramStateTexture(Texture2D* texture)
 
 backend::ProgramState* Node::getProgramState() const
 {
-    return _programState;
+    return _programState.get();
 }
 
 NS_CC_END

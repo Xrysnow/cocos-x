@@ -118,9 +118,7 @@ bool MotionStreak3D::initWithFade(float fade, float minSeg, float stroke, const 
 
     // shader state
     auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR);
-    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
-
-    _customCommand.getPipelineDescriptor().programState = _programState;
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
 
     initCustomCommand();
 
@@ -128,6 +126,19 @@ bool MotionStreak3D::initWithFade(float fade, float minSeg, float stroke, const 
     setColor(color);
     scheduleUpdate();
 
+    return true;
+}
+
+bool MotionStreak3D::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
+{
+    _customCommand.getPipelineDescriptor().programState = state.get();
+    if (!Node::setProgramState(std::move(state)))
+        return false;
+
+    _locMVP     = _programState->getUniformLocation("u_MVPMatrix");
+    _locTexture = _programState->getUniformLocation(backend::Uniform::TEXTURE);
+    if (_texture)
+        _programState->setTexture(_locTexture, 0, _texture->getBackendTexture());
     return true;
 }
 
@@ -142,9 +153,6 @@ void MotionStreak3D::initCustomCommand()
     blend.blendEnabled           = true;
     blend.sourceAlphaBlendFactor = blend.sourceRGBBlendFactor = _blendFunc.src;
     blend.destinationAlphaBlendFactor = blend.destinationRGBBlendFactor = _blendFunc.dst;
-
-    _locMVP     = _programState->getUniformLocation("u_MVPMatrix");
-    _locTexture = _programState->getUniformLocation("u_tex0");
 
     _customCommand.createVertexBuffer(sizeof(VertexData), _vertexData.size(), CustomCommand::BufferUsage::DYNAMIC);
 }
@@ -251,7 +259,8 @@ void MotionStreak3D::setTexture(Texture2D* texture)
         CC_SAFE_RETAIN(texture);
         CC_SAFE_RELEASE(_texture);
         _texture = texture;
-        _programState->setTexture(_locTexture, 0, _texture->getBackendTexture());
+        if (_programState && _texture)
+            _programState->setTexture(_locTexture, 0, _texture->getBackendTexture());
     }
 }
 
@@ -392,7 +401,7 @@ void MotionStreak3D::reset()
 
 void MotionStreak3D::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    if (_nuPoints <= 1)
+    if (!_programState || _nuPoints <= 1)
         return;
     auto beforeCommand = renderer->nextCallbackCommand();
     auto afterCommand = renderer->nextCallbackCommand();

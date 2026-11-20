@@ -112,7 +112,8 @@ private:
 
     cc::IntrusivePtr<BufferGFX> _vertexBuffer;
     cc::IntrusivePtr<BufferGFX> _indexBuffer;
-    cc::IntrusivePtr<ProgramState> _programState;
+    ProgramState* _programState = nullptr;
+    std::unordered_map<ProgramState*, cc::IntrusivePtr<ProgramState>> _usedProgramStates;
     RenderPipelineGFX* _renderPipeline          = nullptr;
     DepthStencilStateGFX* _depthStencilStateGFX = nullptr;
     std::unordered_map<const VertexLayout*, cc::gfx::AttributeList> _attributeLists;

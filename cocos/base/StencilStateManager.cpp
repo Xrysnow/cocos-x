@@ -24,6 +24,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 #include "base/StencilStateManager.h"
+#include "2d/Node.h"
 #include "base/Director.h"
 #include "renderer/Renderer.h"
 #include "renderer/ccShaders.h"
@@ -57,6 +58,7 @@ StencilStateManager::StencilStateManager()
 
 StencilStateManager::~StencilStateManager()
 {
+    restoreAlphaTestProgram();
     CC_SAFE_RELEASE(_programState);
 }
 
@@ -70,6 +72,67 @@ void StencilStateManager::drawFullScreenQuadClearStencil(float globalZOrder)
 void StencilStateManager::setAlphaThreshold(float alphaThreshold)
 {
     _alphaThreshold = alphaThreshold;
+    if (!(_alphaThreshold < 1.f))
+        restoreAlphaTestProgram();
+}
+
+void StencilStateManager::applyAlphaTestProgram(Node* stencil)
+{
+    if (!(_alphaThreshold < 1.f))
+        return;
+
+    auto* program = backend::Program::getBuiltinProgram(backend::ProgramType::POSITION_TEXTURE_COLOR_ALPHA_TEST);
+    cc::IntrusivePtr state{new backend::ProgramState(program)};
+    auto alphaLocation = state->getUniformLocation("u_alpha_value");
+    state->setUniform(alphaLocation, &_alphaThreshold, sizeof(_alphaThreshold));
+    applyAlphaTestProgramRecursively(stencil, state.get());
+
+    // Restore nodes removed from the stencil tree since the previous visit.
+    for (auto it = _stencilStates.begin(); it != _stencilStates.end();)
+    {
+        if (it->second.visited)
+        {
+            it->second.visited = false;
+            ++it;
+        }
+        else
+        {
+            auto entry = _stencilStates.extract(it++);
+            restoreStencilState(entry.mapped(), _alphaTestState.get());
+        }
+    }
+    _alphaTestState = std::move(state);
+}
+
+void StencilStateManager::applyAlphaTestProgramRecursively(Node* node, backend::ProgramState* programState)
+{
+    auto [it, inserted] = _stencilStates.try_emplace(node);
+    auto& snapshot = it->second;
+    if (inserted)
+        snapshot.node.reset(node);
+    auto* current = node->getProgramState();
+    if (inserted || current != _alphaTestState.get())
+        snapshot.original.reset(current);
+    snapshot.visited = true;
+    node->setProgramState(programState);
+
+    for (auto* child : node->getChildren())
+        applyAlphaTestProgramRecursively(child, programState);
+}
+
+void StencilStateManager::restoreAlphaTestProgram()
+{
+    auto appliedState = std::move(_alphaTestState);
+    auto snapshots = std::exchange(_stencilStates, {});
+    for (auto& entry : snapshots)
+        restoreStencilState(entry.second, appliedState.get());
+}
+
+void StencilStateManager::restoreStencilState(StencilStateSnapshot& snapshot, backend::ProgramState* appliedState)
+{
+    // An application can replace the stencil node's state after its last visit.
+    if (snapshot.node->getProgramState() == appliedState)
+        snapshot.node->setProgramState(std::move(snapshot.original));
 }
 
 float StencilStateManager::getAlphaThreshold() const

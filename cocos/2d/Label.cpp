@@ -203,28 +203,17 @@ Label::BatchCommand::BatchCommand()
     outLineCommand.setPrimitiveType(CustomCommand::PrimitiveType::TRIANGLE);
 }
 
-Label::BatchCommand::~BatchCommand()
-{
-    CC_SAFE_RELEASE(textCommand.getPipelineDescriptor().programState);
-    CC_SAFE_RELEASE(shadowCommand.getPipelineDescriptor().programState);
-    CC_SAFE_RELEASE(outLineCommand.getPipelineDescriptor().programState);
-}
+Label::BatchCommand::~BatchCommand() = default;
 
 void Label::BatchCommand::setProgramState(backend::ProgramState* programState)
 {
-    assert(programState);
-
-    auto& programStateText = textCommand.getPipelineDescriptor().programState;
-    CC_SAFE_RELEASE(programStateText);
-    programStateText = programState->clone().detach();
-
-    auto& programStateShadow = shadowCommand.getPipelineDescriptor().programState;
-    CC_SAFE_RELEASE(programStateShadow);
-    programStateShadow = programState->clone().detach();
-
-    auto& programStateOutline = outLineCommand.getPipelineDescriptor().programState;
-    CC_SAFE_RELEASE(programStateOutline);
-    programStateOutline = programState->clone().detach();
+    const auto commands = getCommandArray();
+    for (std::size_t i = 0; i < commands.size(); ++i)
+    {
+        cc::IntrusivePtr<backend::ProgramState> state = programState ? programState->clone() : nullptr;
+        commands[i]->getPipelineDescriptor().programState = state.get();
+        programStates[i] = std::move(state);
+    }
 }
 
 std::array<CustomCommand*, 3> Label::BatchCommand::getCommandArray()
@@ -659,24 +648,25 @@ void Label::setVertexLayout()
     _programState->validateSharedVertexLayout(VertexLayoutHelper::setupSprite);
 }
 
-bool Label::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool Label::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    if (Node::setProgramState(programState, needsRetain))
+    if (_programState.get() == state.get())
+        return false;
+
+    _quadCommand.getPipelineDescriptor().programState = state.get();
+    const bool installed = Node::setProgramState(std::move(state));
+    if (installed)
     {
         updateUniformLocations();
-        for (auto&& batch : _batchCommands)
-        {
-            updateBatchCommand(batch);
-        }
-
         setVertexLayout();
-
-        auto& quadPipeline = _quadCommand.getPipelineDescriptor();
-        quadPipeline.programState = _programState;
-        
-        return true;
     }
-    return false;
+
+    for (auto&& batch : _batchCommands)
+    {
+        updateBatchCommand(batch);
+    }
+
+    return installed;
 }
 
 void Label::updateShaderProgram()
@@ -731,23 +721,12 @@ void Label::updateShaderProgram()
     }
 
     auto* program = backend::Program::getBuiltinProgram(programType);
-    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)}.detach(), false);
-
-    updateUniformLocations();
-
-    for (auto&& batch : _batchCommands)
-    {
-        updateBatchCommand(batch);
-    }
-
-    auto& quadPipeline = _quadCommand.getPipelineDescriptor();
-    quadPipeline.programState = _programState;
+    setProgramState(cc::IntrusivePtr{new backend::ProgramState(program)});
 }
 
 void Label::updateBatchCommand(Label::BatchCommand& batch)
 {
-    CCASSERT(_programState, "programState should be set!");
-    batch.setProgramState(_programState);
+    batch.setProgramState(_programState.get());
 }
 
 void Label::updateUniformLocations()
@@ -1873,7 +1852,7 @@ void Label::updateEffectUniforms(BatchCommand& batch,
 
 void Label::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-    if (_batchNodes.empty() || _lengthOfString <= 0)
+    if (!_programState || _batchNodes.empty() || _lengthOfString <= 0)
     {
         return;
     }
@@ -1932,7 +1911,8 @@ void Label::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
             	// clear before resize since CCCustomCommand is not copyable
                 _batchCommands.clear();
                 _batchCommands.resize(_batchNodes.size());
-                updateShaderProgram();
+                for (auto& batch : _batchCommands)
+                    updateBatchCommand(batch);
             }
 
             updateBlendState();

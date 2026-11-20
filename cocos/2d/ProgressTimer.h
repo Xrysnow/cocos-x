@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "renderer/CustomCommand.h"
 #include "2d/Node.h"
 #include "renderer/PipelineDescriptor.h"
+#include "renderer/backend/ProgramState.h"
 
 #include <vector>
 
@@ -170,6 +171,9 @@ public:
     /** Initializes a progress timer with the sprite as the shape the timer goes through */
     bool initWithSprite(Sprite* sp);
 
+    using Node::setProgramState;
+    bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state) override;
+
 protected:
     Tex2F textureCoordFromAlphaPoint(Vec2 alpha);
     Vec2 vertexFromAlphaPoint(Vec2 alpha);
@@ -192,7 +196,7 @@ protected:
     CustomCommand _customCommand;
     CustomCommand _customCommand2;
 
-    backend::ProgramState* _programState2 = nullptr;
+    cc::IntrusivePtr<backend::ProgramState> _programState2;
 
     backend::UniformLocation _locMVP1;
     backend::UniformLocation _locTex1;

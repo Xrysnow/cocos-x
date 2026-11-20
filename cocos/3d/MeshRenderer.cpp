@@ -230,8 +230,7 @@ bool MeshRenderer::loadFromCache(std::string_view path)
         {
             // cloning is needed in order to have one state per mesh
             auto glstate = meshdata->programStates.at(i);
-            auto state = glstate->clone();
-            _meshes.at(i)->setProgramState(state);
+            _meshes.at(i)->setProgramState(glstate->clone());
         }
         return true;
     }
@@ -849,13 +848,13 @@ void MeshRenderer::draw(Renderer* renderer, const Mat4& transform, uint32_t flag
     }
 }
 
-bool MeshRenderer::setProgramState(backend::ProgramState* programState, bool needsRetain)
+bool MeshRenderer::setProgramState(cc::IntrusivePtr<backend::ProgramState> state)
 {
-    if (Node::setProgramState(programState, needsRetain))
+    if (Node::setProgramState(std::move(state)))
     {
-        for (auto&& state : _meshes)
+        for (auto&& mesh : _meshes)
         {
-            state->setProgramState(programState);
+            mesh->setProgramState(_programState);
         }
         return true;
     }

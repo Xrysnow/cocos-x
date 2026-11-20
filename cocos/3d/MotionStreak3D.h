@@ -129,6 +129,9 @@ public:
     virtual void update(float delta) override;
     virtual Texture2D* getTexture() const override;
     virtual void setTexture(Texture2D* texture) override;
+
+    using Node::setProgramState;
+    bool setProgramState(cc::IntrusivePtr<backend::ProgramState> state) override;
     /**
      * @js NA
      * @lua NA

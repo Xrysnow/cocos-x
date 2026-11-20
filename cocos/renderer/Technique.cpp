@@ -31,15 +31,16 @@
 #include "renderer/Technique.h"
 #include "renderer/Material.h"
 #include "renderer/Pass.h"
+#include "renderer/backend/ProgramState.h"
 
 NS_CC_BEGIN
 
-cc::IntrusivePtr<Technique> Technique::createWithProgramState(Material* parent, backend::ProgramState* state)
+cc::IntrusivePtr<Technique> Technique::createWithProgramState(Material* parent, cc::IntrusivePtr<backend::ProgramState> state)
 {
     cc::IntrusivePtr technique{new Technique()};
     if (technique->init(parent))
     {
-        auto pass = Pass::createWithProgramState(technique.get(), state);
+        auto pass = Pass::createWithProgramState(technique.get(), std::move(state));
         technique->addPass(pass);
 
         return technique;

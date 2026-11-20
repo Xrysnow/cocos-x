@@ -475,9 +475,9 @@ void Mesh::setMeshIndexData(MeshIndexData* subMesh)
     }
 }
 
-void Mesh::setProgramState(backend::ProgramState* programState)
+void Mesh::setProgramState(cc::IntrusivePtr<backend::ProgramState> programState)
 {
-    auto material = Material::createWithProgramState(programState);
+    auto material = Material::createWithProgramState(std::move(programState));
     if (_material)
     {
         material->setStateBlock(_material->getStateBlock());
