@@ -33,6 +33,7 @@ public:
     // Supply this monotonic time when accepting a command and when checking expiry.
     bool apply(const OutputCommand& command, std::uint64_t now);
     bool expire(std::uint64_t now);
+    bool hasTimedRumble() const noexcept { return _expires.has_value(); }
     std::span<const std::uint8_t> encode(DualSenseTransport transport, unsigned usbLength = 63);
 
 private:

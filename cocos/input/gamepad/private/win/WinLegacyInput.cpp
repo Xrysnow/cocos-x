@@ -9,6 +9,7 @@
 #include <array>
 #include <chrono>
 #include <future>
+#include <map>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -18,6 +19,7 @@ namespace {
 
 using namespace std::chrono_literals;
 using Clock = std::chrono::steady_clock;
+constexpr std::size_t maxOutputCommands = 256;
 
 std::wstring lowerAscii(std::wstring_view text)
 {
@@ -51,6 +53,28 @@ bool hasXInputProperty(DEVINST node, const DEVPROPKEY& key)
             return true;
     }
     return false;
+}
+
+struct HidNode {
+    DEVINST device;
+    std::wstring instance;
+};
+
+std::optional<HidNode> interfaceNode(std::wstring_view path)
+{
+    if (path.empty())
+        return {};
+    const std::wstring terminated(path);
+    std::array<wchar_t, MAX_DEVICE_ID_LEN> instance{};
+    ULONG size = sizeof(instance) - sizeof(wchar_t);
+    DEVPROPTYPE type{};
+    if (CM_Get_Device_Interface_PropertyW(terminated.c_str(), &DEVPKEY_Device_InstanceId, &type,
+            reinterpret_cast<PBYTE>(instance.data()), &size, 0) != CR_SUCCESS || type != DEVPROP_TYPE_STRING)
+        return {};
+    DEVINST node{};
+    if (CM_Locate_DevNodeW(&node, instance.data(), CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS)
+        return {};
+    return HidNode{node, lowerAscii(instance.data())};
 }
 
 class WinLegacyInput final : public GamepadBackend {
@@ -100,9 +124,28 @@ public:
         _quit = false;
         _topology = false;
         _baselines.clear();
+        _sensorRequests.clear();
+        _commands.clear();
+        _active = true;
+        _resetOutput = false;
     }
 
-    void setActive(bool) override {}
+    void setActive(bool active) override
+    {
+        {
+            std::lock_guard lock(_mutex);
+            if (_active == active)
+                return;
+            _active = active;
+            if (!active)
+            {
+                ++_outputEpoch;
+                _resetOutput = true;
+            }
+            if (_wake && !_quit)
+                SetEvent(_wake);
+        }
+    }
 
     void requestBaseline(EndpointKey key) override
     {
@@ -122,9 +165,64 @@ public:
         SetEvent(_wake);
     }
 
-    Error submit(EndpointKey, const NativeCommand&) override { return Error::Unsupported; }
+    Error setSensor(EndpointKey key, Sensor sensor, bool enabled) override
+    {
+        if (key.backend != WinRawHidId || (sensor != Sensor::Gyro && sensor != Sensor::Accel))
+            return Error::Unsupported;
+        {
+            std::lock_guard lock(_mutex);
+            if (!_wake || _quit)
+                return Error::Disconnected;
+            _sensorRequests[{key, sensor}] = enabled;
+            SetEvent(_wake);
+        }
+        return Error::None;
+    }
+
+    Error submit(EndpointKey key, const NativeCommand& command) override
+    {
+        if (key.backend != WinRawHidId)
+            return Error::Unsupported;
+        {
+            std::lock_guard lock(_mutex);
+            if (!_wake || _quit)
+                return Error::Disconnected;
+            if (!_active && !std::holds_alternative<Stop>(command.command))
+                return Error::Busy;
+            if (_commands.size() >= maxOutputCommands)
+                return Error::QueueFull;
+            _commands.push_back({key, command, _outputEpoch});
+            SetEvent(_wake);
+        }
+        return Error::None;
+    }
 
 private:
+    struct Command {
+        EndpointKey key;
+        NativeCommand effect;
+        std::uint64_t epoch;
+    };
+
+    void send(ReportSink& sink, const Command& command)
+    {
+        bool blocked;
+        {
+            std::lock_guard lock(_mutex);
+            blocked = !_active || _quit || command.epoch != _outputEpoch;
+        }
+        auto result = Error::Disconnected;
+        if (_raw)
+        {
+            if (blocked && !std::holds_alternative<Stop>(command.effect.command))
+                result = Error::Busy;
+            else
+                result = _raw->submit(command.key, command.effect.command);
+        }
+        if (command.effect.id != CommandId{})
+            sink.outputCompleted(command.key, command.effect.id, result);
+    }
+
     static LRESULT CALLBACK windowProc(HWND window, UINT message, WPARAM kind, LPARAM param)
     {
         if (message == WM_NCCREATE)
@@ -202,14 +300,21 @@ private:
         for (;;)
         {
             std::set<EndpointKey> baselines;
-            bool topology;
+            std::vector<Command> commands;
+            std::map<std::pair<EndpointKey, Sensor>, bool> sensors;
+            bool topology, resetOutput;
             {
                 std::lock_guard lock(_mutex);
                 if (_quit)
                     break;
                 topology = std::exchange(_topology, false);
+                resetOutput = std::exchange(_resetOutput, false);
                 _baselines.swap(baselines);
+                _commands.swap(commands);
+                _sensorRequests.swap(sensors);
             }
+            if (resetOutput && _raw)
+                _raw->stopOutputs();
             const auto now = Clock::now();
             if (topology || _rescan || now - lastScan >= 1s)
             {
@@ -242,8 +347,14 @@ private:
                 nextPoll = now + 4ms;
             }
             if (_raw)
+            {
+                for (const auto& [request, enabled] : sensors)
+                    _raw->setSensor(request.first, request.second, enabled);
                 _raw->pollReports();
-            const bool polling = (_direct && _direct->hasDevices()) || (_raw && _raw->hasPendingReads());
+            }
+            for (const auto& command : commands)
+                send(sink, command);
+            const bool polling = (_direct && _direct->hasDevices()) || (_raw && _raw->needsPolling());
             const DWORD timeout = polling ? 4 : 1000;
             MsgWaitForMultipleObjectsEx(1, &_wake, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
             // Bound one visit so a busy HID cannot starve DI or shutdown.
@@ -260,7 +371,11 @@ private:
     std::thread _worker;
     std::mutex _mutex;
     std::set<EndpointKey> _baselines;
+    std::map<std::pair<EndpointKey, Sensor>, bool> _sensorRequests;
+    std::vector<Command> _commands;
+    std::uint64_t _outputEpoch = 0;
     bool _quit = false, _topology = false;
+    bool _active = true, _resetOutput = false;
     bool _rescan = true;
     std::unique_ptr<WinRawHid> _raw;
     std::unique_ptr<WinDirectInput> _direct;
@@ -280,23 +395,25 @@ bool isXInputMirror(std::wstring_view path)
 {
     if (hasXInputMarker(path))
         return true;
-    if (path.empty())
+    const auto node = interfaceNode(path);
+    if (!node)
         return false;
-    std::wstring terminated(path);
-    std::array<wchar_t, MAX_DEVICE_ID_LEN> instance{};
-    ULONG size = sizeof(instance) - sizeof(wchar_t);
-    DEVPROPTYPE type{};
-    if (CM_Get_Device_Interface_PropertyW(terminated.c_str(), &DEVPKEY_Device_InstanceId, &type,
-            reinterpret_cast<PBYTE>(instance.data()), &size, 0) != CR_SUCCESS)
+    return hasXInputMarker(node->instance) ||
+           hasXInputProperty(node->device, DEVPKEY_Device_HardwareIds) ||
+           hasXInputProperty(node->device, DEVPKEY_Device_CompatibleIds) ||
+           hasXInputProperty(node->device, DEVPKEY_Device_Service) ||
+           hasXInputProperty(node->device, DEVPKEY_Device_UpperFilters);
+}
+
+bool isUsbHidDevice(std::wstring_view path)
+{
+    const auto node = interfaceNode(path);
+    DEVINST parent{};
+    if (!node || CM_Get_Parent(&parent, node->device, 0) != CR_SUCCESS)
         return false;
-    DEVINST node{};
-    if (CM_Locate_DevNodeW(&node, instance.data(), CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS)
-        return false;
-    return hasXInputMarker(lowerAscii(instance.data())) ||
-           hasXInputProperty(node, DEVPKEY_Device_HardwareIds) ||
-           hasXInputProperty(node, DEVPKEY_Device_CompatibleIds) ||
-           hasXInputProperty(node, DEVPKEY_Device_Service) ||
-           hasXInputProperty(node, DEVPKEY_Device_UpperFilters);
+    std::array<wchar_t, MAX_DEVICE_ID_LEN> id{};
+    return CM_Get_Device_IDW(parent, id.data(), static_cast<ULONG>(id.size()), 0) == CR_SUCCESS &&
+           lowerAscii(id.data()).starts_with(L"usb\\");
 }
 
 std::string winUtf8(std::wstring_view value)

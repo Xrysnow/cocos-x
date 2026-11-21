@@ -1,4 +1,5 @@
 #include "WinLegacyInput.h"
+#include "../drivers/DualSenseReports.h"
 
 #include <cfgmgr32.h>
 #include <hidsdi.h>
@@ -47,6 +48,187 @@ struct FreePreparsedData {
     void operator()(PHIDP_PREPARSED_DATA data) const { HidD_FreePreparsedData(data); }
 };
 
+struct CloseHidHandle {
+    void operator()(HANDLE handle) const { CloseHandle(handle); }
+};
+
+using HidHandle = std::unique_ptr<void, CloseHidHandle>;
+
+HidHandle openHid(std::wstring_view path, DWORD access, DWORD flags)
+{
+    const std::wstring terminated(path);
+    const auto handle = CreateFileW(terminated.c_str(), access, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                   OPEN_EXISTING, flags, nullptr);
+    return HidHandle(handle != INVALID_HANDLE_VALUE ? handle : nullptr);
+}
+
+class WinDualSense {
+public:
+    WinDualSense(const std::wstring& path, const HIDP_CAPS& hid, EndpointDescriptor& descriptor)
+        : _outputLength(hid.OutputReportByteLength)
+    {
+        descriptor.link = Link::Wired;
+        auto& caps = descriptor.capabilities;
+        caps.fingersPerPad = {2};
+        // Windows pads feature reads to the collection's longest feature report.
+        constexpr std::size_t calibrationLength = 41;
+        if (hid.FeatureReportByteLength >= calibrationLength)
+            if (const auto feature = openHid(path, GENERIC_READ, FILE_ATTRIBUTE_NORMAL))
+            {
+                std::vector<std::uint8_t> buffer(hid.FeatureReportByteLength);
+                buffer.front() = 0x05;
+                if (HidD_GetFeature(feature.get(), buffer.data(), static_cast<ULONG>(buffer.size())))
+                    _calibration = decodeDualSenseCalibration(DualSenseTransport::Usb,
+                                                              std::span(buffer).first(calibrationLength));
+            }
+        if (_calibration)
+        {
+            caps.sensors.set(static_cast<unsigned>(Sensor::Gyro));
+            caps.sensors.set(static_cast<unsigned>(Sensor::Accel));
+        }
+        if (_output.encode(DualSenseTransport::Usb, _outputLength).empty())
+            return;
+        _writable = openHid(path, GENERIC_WRITE, FILE_FLAG_OVERLAPPED);
+        if (_writable)
+            _written.reset(CreateEventW(nullptr, TRUE, FALSE, nullptr));
+        if (!_written)
+            return;
+        for (auto feature : {Feature::BodyRumble, Feature::RgbLed, Feature::PlayerLights,
+                             Feature::AdaptiveLeft, Feature::AdaptiveRight})
+            caps.features.set(static_cast<unsigned>(feature));
+        caps.playerLightMask = 31;
+        caps.triggerLimits = {TriggerLimits{true, true, 1, 255}, TriggerLimits{true, true, 1, 255}};
+    }
+
+    ~WinDualSense() { stopOutput(); }
+
+    void setSensor(Sensor sensor, bool enabled)
+    {
+        if (_calibration && (sensor == Sensor::Gyro || sensor == Sensor::Accel))
+            _sensors.set(static_cast<unsigned>(sensor), enabled);
+    }
+
+    void resetBaseline()
+    {
+        _fingers = {};
+        _refreshPower = true;
+    }
+
+    void resetTopology()
+    {
+        stopOutput();
+        resetBaseline();
+        _sensors.reset();
+    }
+
+    void publish(WinInputEndpoint& endpoint, std::span<const char> packet, std::span<const RawChange> changes,
+                 ReportSink& sink, ReportTime time)
+    {
+        const auto bytes = std::span(reinterpret_cast<const std::uint8_t*>(packet.data()), packet.size());
+        const auto sample = decodeDualSenseInput(DualSenseTransport::Usb, bytes, _calibration);
+        std::vector<Contact> contacts;
+        std::array<Motion, 2> motion{};
+        unsigned motionCount = 0;
+        std::optional<Power> power;
+        if (sample)
+        {
+            contacts = dualSenseTouchChanges(_fingers, sample->fingers);
+            _fingers = sample->fingers;
+            for (const auto& value : sample->motion)
+                if (_sensors.test(static_cast<unsigned>(value.sensor)))
+                    motion[motionCount++] = value;
+            auto& current = endpoint.descriptor.power;
+            if (_refreshPower || current.state != sample->power.state || current.percent != sample->power.percent)
+            {
+                current = sample->power;
+                power = current;
+                _refreshPower = false;
+            }
+        }
+        if (!changes.empty() || !contacts.empty() || motionCount || power)
+            sink.report(endpoint.key, {changes, contacts, std::span(motion).first(motionCount), power,
+                                       ++endpoint.cursor, time});
+    }
+
+    Error submit(const OutputCommand& command)
+    {
+        if (!_written)
+            return Error::Unsupported;
+        const auto* stop = std::get_if<Stop>(&command);
+        const bool stopAll = stop && stop->channel == Channel::All;
+        if (_resetOutput && !stopAll)
+            return Error::Busy;
+        auto next = _output;
+        if (!next.apply(command, nowNs()))
+            return Error::Unsupported;
+        if (!write(next))
+            return Error::BackendFailure;
+        _output = next;
+        _hasOutput = !stopAll && (_hasOutput || !stop);
+        _resetOutput = false;
+        return Error::None;
+    }
+
+    void stopOutput()
+    {
+        if (_hasOutput)
+        {
+            DualSenseOutput neutral;
+            if (write(neutral))
+            {
+                _output = neutral;
+                _hasOutput = false;
+            }
+        }
+        _resetOutput = _hasOutput;
+    }
+
+    bool needsPolling() const { return _resetOutput || _output.hasTimedRumble(); }
+
+    void pollOutput()
+    {
+        if (_resetOutput)
+            stopOutput();
+        else if (_output.hasTimedRumble())
+        {
+            auto next = _output;
+            if (next.expire(nowNs()) && write(next))
+                _output = next;
+        }
+    }
+
+private:
+    bool write(DualSenseOutput& output)
+    {
+        const auto report = output.encode(DualSenseTransport::Usb, _outputLength);
+        OVERLAPPED operation{};
+        operation.hEvent = _written.get();
+        ResetEvent(operation.hEvent);
+        DWORD count{};
+        if (!WriteFile(_writable.get(), report.data(), static_cast<DWORD>(report.size()), &count, &operation))
+        {
+            if (GetLastError() != ERROR_IO_PENDING)
+                return false;
+            // A stalled write must not hold up input polling or a focus-loss stop.
+            const bool ready = WaitForSingleObject(operation.hEvent, 25) == WAIT_OBJECT_0;
+            if (!ready)
+                CancelIoEx(_writable.get(), &operation);
+            // A completed transfer can win the race with cancellation.
+            if (!GetOverlappedResult(_writable.get(), &operation, &count, ready ? FALSE : TRUE))
+                return false;
+        }
+        return count == report.size();
+    }
+
+    HidHandle _writable, _written;
+    unsigned _outputLength;
+    DualSenseOutput _output;
+    std::optional<DualSenseCalibration> _calibration;
+    std::array<std::optional<Contact>, 2> _fingers{};
+    std::bitset<SensorCount> _sensors;
+    bool _refreshPower = true, _hasOutput = false, _resetOutput = false;
+};
+
 std::int64_t logicalValue(const Control& control, ULONG value)
 {
     const auto range = std::uint64_t{1} << control.bits;
@@ -83,6 +265,7 @@ struct Device : WinInputEndpoint {
     std::vector<RawChange> changes;
     std::bitset<256> seenReports;
     std::bitset<256> reportIds;
+    std::unique_ptr<WinDualSense> dualSense;
 
     PHIDP_PREPARSED_DATA parser()
     {
@@ -96,6 +279,7 @@ struct Device : WinInputEndpoint {
         const auto report = static_cast<unsigned char>(packet.front());
         if (!reportIds[report])
             return;
+        const auto input = packet;
         if (packet.size() < buffer.size())
         {
             std::ranges::fill(buffer, '\0');
@@ -155,7 +339,12 @@ struct Device : WinInputEndpoint {
             }
         }
         if (first)
+        {
             sendBaseline(sink, time);
+            changes.clear();
+        }
+        if (dualSense)
+            dualSense->publish(*this, input, changes, sink, time);
         else if (!changes.empty())
             sink.report(key, {changes, {}, {}, {}, ++cursor, time});
     }
@@ -324,6 +513,13 @@ void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::
             if (indices->buttons.size() != layout.buttonCount || indices->axes.size() != layout.axisCount)
                 layout.sdlIndices = std::move(indices);
         }
+    if (vendor == 0x054c && product == 0x0ce6 && device.buffer.size() == 64 && device.reportIds[0x01] &&
+        isUsbHidDevice(device.path))
+    {
+        HIDP_CAPS hid{};
+        if (HidP_GetCaps(device.parser(), &hid) == HIDP_STATUS_SUCCESS)
+            device.dualSense = std::make_unique<WinDualSense>(device.path, hid, descriptor);
+    }
 }
 
 bool initialize(Device& device)
@@ -405,13 +601,13 @@ std::unique_ptr<DirectHidDevice> openInterface(const std::wstring& path)
     device->nativePreparsed.reset(data);
     if (!initialize(*device))
         return {};
+    device->path = path;
     HIDD_ATTRIBUTES attributes{};
     attributes.Size = sizeof(attributes);
     if (HidD_GetAttributes(device->file, &attributes))
         describe(*device, attributes.VendorID, attributes.ProductID, attributes.VersionNumber, device->file);
     else
         device->descriptor.name = "HID Gamepad";
-    device->path = path;
     device->input.resize(device->buffer.size());
     CloseHandle(device->file);
     device->file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
@@ -492,6 +688,17 @@ std::optional<std::vector<RAWINPUTDEVICE>> registeredDevices()
 
 struct WinRawHid::Impl {
     Impl(ReportSink& target, WinDirectInput* fallback) : sink(target), direct(fallback) {}
+
+    Device* find(EndpointKey key)
+    {
+        for (auto& [handle, device] : devices)
+            if (device.key == key)
+                return &device;
+        for (auto& [path, device] : interfaces)
+            if (device->key == key)
+                return device.get();
+        return nullptr;
+    }
 
     void publish(Device& device)
     {
@@ -667,10 +874,17 @@ void WinRawHid::remove(HANDLE handle)
 
 void WinRawHid::pollReports()
 {
+    for (auto& [handle, device] : _impl->devices)
+        if (device.dualSense)
+            device.dualSense->pollOutput();
     for (auto it = _impl->interfaces.begin(); it != _impl->interfaces.end();)
     {
         if (it->second->pollReports(_impl->sink))
+        {
+            if (it->second->dualSense)
+                it->second->dualSense->pollOutput();
             ++it;
+        }
         else
             it = _impl->removeInterface(it);
     }
@@ -678,29 +892,62 @@ void WinRawHid::pollReports()
 
 void WinRawHid::requestBaseline(EndpointKey key)
 {
-    for (auto& [handle, device] : _impl->devices)
-        if (device.key == key)
-            device.sendBaseline(_impl->sink);
-    for (auto& [path, device] : _impl->interfaces)
-        if (device->key == key)
-            device->sendBaseline(_impl->sink);
+    if (const auto device = _impl->find(key))
+    {
+        if (device->dualSense)
+            device->dualSense->resetBaseline();
+        device->sendBaseline(_impl->sink);
+    }
 }
 
 void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
 {
     for (auto& [handle, device] : _impl->devices)
     {
+        if (device.dualSense)
+            device.dualSense->resetTopology();
         ++device.key.generation;
         endpoints.push_back(device.attachment());
     }
     for (auto& [path, device] : _impl->interfaces)
     {
+        if (device->dualSense)
+            device->dualSense->resetTopology();
         ++device->key.generation;
         endpoints.push_back(device->attachment());
     }
 }
 
+void WinRawHid::setSensor(EndpointKey key, Sensor sensor, bool enabled)
+{
+    if (const auto device = _impl->find(key); device && device->dualSense)
+        device->dualSense->setSensor(sensor, enabled);
+}
+
+Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
+{
+    const auto device = _impl->find(key);
+    if (!device)
+        return Error::Disconnected;
+    return device->dualSense ? device->dualSense->submit(command) : Error::Unsupported;
+}
+
+void WinRawHid::stopOutputs()
+{
+    for (auto& [handle, device] : _impl->devices)
+        if (device.dualSense)
+            device.dualSense->stopOutput();
+    for (auto& [path, device] : _impl->interfaces)
+        if (device->dualSense)
+            device->dualSense->stopOutput();
+}
+
 const HidPaths& WinRawHid::paths() const { return _impl->paths; }
-bool WinRawHid::hasPendingReads() const { return !_impl->interfaces.empty(); }
+bool WinRawHid::needsPolling() const
+{
+    return !_impl->interfaces.empty() || std::ranges::any_of(_impl->devices, [](const auto& item) {
+        return item.second.dualSense && item.second.dualSense->needsPolling();
+    });
+}
 
 } // namespace cc::input::detail

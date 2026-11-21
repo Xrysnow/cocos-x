@@ -126,6 +126,12 @@ public:
             owner->requestBaseline(key);
     }
 
+    Error setSensor(EndpointKey key, Sensor sensor, bool enabled) override
+    {
+        const auto owner = backend(key);
+        return owner ? owner->setSensor(key, sensor, enabled) : Error::Disconnected;
+    }
+
     void requestTopology() override
     {
         {
