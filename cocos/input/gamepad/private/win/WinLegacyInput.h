@@ -18,7 +18,8 @@ using HidPaths = std::set<std::wstring, std::less<>>;
 
 std::wstring normalizeHidPath(std::wstring_view path);
 bool isXInputMirror(std::wstring_view normalizedPath);
-bool isUsbHidDevice(std::wstring_view normalizedPath);
+enum class WinHidBus { Unknown, Usb, Bluetooth };
+WinHidBus hidBus(std::wstring_view normalizedPath);
 std::string winUtf8(std::wstring_view value);
 std::int16_t normalizeWinAxis(std::int64_t value, std::int64_t min, std::int64_t max);
 std::uint8_t winHat(unsigned position);

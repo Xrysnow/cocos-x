@@ -55,6 +55,23 @@ std::int16_t stick(std::uint8_t value)
     return static_cast<std::int16_t>(centered < 0 ? centered * 256 : centered * 32767 / 127);
 }
 
+void decodeControls(DualSenseControls& result, std::span<const std::uint8_t, 4> sticks,
+                    std::span<const std::uint8_t, 2> triggers, std::span<const std::uint8_t, 3> buttons)
+{
+    constexpr std::array positions{1, 3, 2, 6, 4, 12, 8, 9};
+    const auto dir = buttons[0] & 15u;
+    if (dir < positions.size())
+        result.hat = static_cast<std::uint8_t>(positions[dir]);
+    // Keep the existing canonical indices. Right trigger's digital bit is appended.
+    constexpr std::array<unsigned, 15> offsets{5, 6, 4, 7, 12, 16, 13, 14, 15, 8, 9, 17, 18, 10, 11};
+    for (unsigned i = 0; i < offsets.size(); ++i)
+        result.buttons[i] = (buttons[offsets[i] / 8] >> (offsets[i] % 8)) & 1u;
+    for (unsigned i = 0; i < sticks.size(); ++i)
+        result.axes[i] = stick(sticks[i]);
+    for (unsigned i = 0; i < triggers.size(); ++i)
+        result.axes[i + sticks.size()] = static_cast<std::int16_t>(triggers[i] * 257 - 32768);
+}
+
 void encodeTrigger(const AdaptiveTrigger& trigger, std::span<std::uint8_t> bytes)
 {
     bytes[0] = 0x05;
@@ -112,17 +129,8 @@ std::optional<DualSenseInput> decodeDualSenseInput(DualSenseTransport transport,
         return {};
     const auto data = packet.subspan(transport == DualSenseTransport::Usb ? 1 : 2);
     DualSenseInput result;
-    constexpr std::array positions{1, 3, 2, 6, 4, 12, 8, 9};
-    const auto dir = data[7] & 15u;
-    if (dir < positions.size())
-        result.hat = static_cast<std::uint8_t>(positions[dir]);
-    constexpr std::array<unsigned, 14> offsets{5, 6, 4, 7, 12, 16, 13, 14, 15, 8, 9, 17, 18, 10};
-    for (unsigned i = 0; i < offsets.size(); ++i)
-        result.buttons[i] = (data[7 + offsets[i] / 8] >> (offsets[i] % 8)) & 1u;
-    for (unsigned i = 0; i < 4; ++i)
-        result.axes[i] = stick(data[i]);
-    for (unsigned i = 4; i < 6; ++i)
-        result.axes[i] = static_cast<std::int16_t>(data[i] * 257 - 32768);
+    decodeControls(result, data.first<4>(), data.subspan<4, 2>(), data.subspan<7, 3>());
+    result.sensorTicks = little(data.subspan(27, 4));
     for (unsigned i = 0; i < result.fingers.size(); ++i)
     {
         const auto point = data.subspan(32 + i * 4, 4);
@@ -145,6 +153,21 @@ std::optional<DualSenseInput> decodeDualSenseInput(DualSenseTransport transport,
     if (state <= 2 && capacity <= 10)
         result.power = {state == 0 ? Power::State::OnBattery : state == 1 ? Power::State::Charging : Power::State::Charged,
                         state == 2 ? 100u : std::min(100u, capacity * 10u + 5u), {}};
+    return result;
+}
+
+std::optional<DualSenseControls> decodeDualSenseBluetoothSimple(std::span<const std::uint8_t> packet)
+{
+    if (packet.size() < 10 || packet.front() != 0x01)
+        return {};
+    // Windows can pad the compatibility report to the maximum HID report size.
+    // Bits 2–7 in its last button byte are a counter, not extra buttons.
+    const std::array buttons{packet[5], packet[6], static_cast<std::uint8_t>(packet[7] & 0x03)};
+    DualSenseControls result;
+    decodeControls(result, packet.subspan<1, 4>(), packet.subspan<8, 2>(), buttons);
+    for (unsigned i = 0; i < 2; ++i)
+        if (packet[8 + i] == 0 && result.buttons[13 + i])
+            result.axes[4 + i] = 32767;
     return result;
 }
 
@@ -229,11 +252,12 @@ bool DualSenseOutput::expire(std::uint64_t now)
     return true;
 }
 
-std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transport, unsigned usbLength)
+std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transport, unsigned usbLength,
+                                                       DualSenseOutputKind kind)
 {
     _packet.fill(0);
     const bool wireless = transport == DualSenseTransport::Bluetooth;
-    if (!wireless && (usbLength < 48 || usbLength > 64))
+    if (!wireless && (usbLength < 48 || usbLength > 64 || kind != DualSenseOutputKind::Effects))
         return {};
     _packet[0] = wireless ? 0x31 : 0x02;
     if (wireless)
@@ -242,16 +266,21 @@ std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transpo
         _packet[2] = 0x10;
     }
     const auto data = std::span(_packet).subspan(wireless ? 3 : 1);
-    data[0] = 0x0f; // Enable compatible vibration and independent trigger channels.
-    data[1] = 0x14; // RGB and five player indicators.
-    data[2] = _high;
-    data[3] = _low;
-    encodeTrigger(_triggers[1], data.subspan(10, 11));
-    encodeTrigger(_triggers[0], data.subspan(21, 11));
-    data[43] = static_cast<std::uint8_t>(_lights.mask);
-    data[44] = _rgb.r;
-    data[45] = _rgb.g;
-    data[46] = _rgb.b;
+    if (kind == DualSenseOutputKind::Effects)
+    {
+        data[0] = 0x0f; // Enable compatible vibration and independent trigger channels.
+        data[1] = 0x14; // RGB and five player indicators.
+        data[2] = _high;
+        data[3] = _low;
+        encodeTrigger(_triggers[1], data.subspan(10, 11));
+        encodeTrigger(_triggers[0], data.subspan(21, 11));
+        data[43] = static_cast<std::uint8_t>(_lights.mask);
+        data[44] = _rgb.r;
+        data[45] = _rgb.g;
+        data[46] = _rgb.b;
+    }
+    else if (kind == DualSenseOutputKind::ReleaseBluetoothLights)
+        data[1] = 0x08;
     if (wireless)
         store(std::span(_packet).last(4), crc(0xa2, std::span(_packet).first(74)));
     return std::span(_packet).first(wireless ? _packet.size() : usbLength);

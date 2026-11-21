@@ -5,19 +5,24 @@
 namespace cc::input::detail {
 
 enum class DualSenseTransport { Usb, Bluetooth };
+enum class DualSenseOutputKind { Effects, EnableBluetooth, ReleaseBluetoothLights };
 
 struct DualSenseCalibration {
     std::array<float, 6> bias{};
     std::array<float, 6> scale{};
 };
 
-struct DualSenseInput {
-    std::array<std::uint8_t, 14> buttons{};
+struct DualSenseControls {
+    std::array<std::uint8_t, 15> buttons{};
     std::array<std::int16_t, 6> axes{};
     std::uint8_t hat = 0;
+};
+
+struct DualSenseInput : DualSenseControls {
     std::array<std::optional<Contact>, 2> fingers{};
     std::array<Motion, 2> motion{};
     Power power;
+    std::uint32_t sensorTicks = 0;
 };
 
 std::optional<DualSenseCalibration> decodeDualSenseCalibration(DualSenseTransport transport,
@@ -25,6 +30,7 @@ std::optional<DualSenseCalibration> decodeDualSenseCalibration(DualSenseTranspor
 std::optional<DualSenseInput> decodeDualSenseInput(DualSenseTransport transport,
                                                   std::span<const std::uint8_t> packet,
                                                   const std::optional<DualSenseCalibration>& calibration);
+std::optional<DualSenseControls> decodeDualSenseBluetoothSimple(std::span<const std::uint8_t> packet);
 std::vector<Contact> dualSenseTouchChanges(const std::array<std::optional<Contact>, 2>& old,
                                            const std::array<std::optional<Contact>, 2>& next);
 
@@ -34,7 +40,8 @@ public:
     bool apply(const OutputCommand& command, std::uint64_t now);
     bool expire(std::uint64_t now);
     bool hasTimedRumble() const noexcept { return _expires.has_value(); }
-    std::span<const std::uint8_t> encode(DualSenseTransport transport, unsigned usbLength = 63);
+    std::span<const std::uint8_t> encode(DualSenseTransport transport, unsigned usbLength = 63,
+                                         DualSenseOutputKind kind = DualSenseOutputKind::Effects);
 
 private:
     std::array<std::uint8_t, 78> _packet{};

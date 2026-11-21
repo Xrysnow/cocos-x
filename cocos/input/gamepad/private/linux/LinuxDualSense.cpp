@@ -105,7 +105,7 @@ bool LinuxDualSense::read(ReportSink& sink)
                 changes[count++] = {kind, index, next};
             }
         };
-        for (unsigned i = 0; i < sample->buttons.size(); ++i)
+        for (unsigned i = 0; i < _raw.buttons.size(); ++i)
             update(RawKind::Button, _raw.buttons, i, sample->buttons[i]);
         for (unsigned i = 0; i < sample->axes.size(); ++i)
             update(RawKind::Axis, _raw.axes, i, sample->axes[i]);

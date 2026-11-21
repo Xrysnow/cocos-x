@@ -409,15 +409,29 @@ bool isXInputMirror(std::wstring_view path)
            hasXInputProperty(node->device, DEVPKEY_Device_UpperFilters);
 }
 
-bool isUsbHidDevice(std::wstring_view path)
+WinHidBus hidBus(std::wstring_view path)
 {
     const auto node = interfaceNode(path);
+    if (!node)
+        return WinHidBus::Unknown;
+    auto child = node->device;
     DEVINST parent{};
-    if (!node || CM_Get_Parent(&parent, node->device, 0) != CR_SUCCESS)
-        return false;
-    std::array<wchar_t, MAX_DEVICE_ID_LEN> id{};
-    return CM_Get_Device_IDW(parent, id.data(), static_cast<ULONG>(id.size()), 0) == CR_SUCCESS &&
-           lowerAscii(id.data()).starts_with(L"usb\\");
+    while (CM_Get_Parent(&parent, child, 0) == CR_SUCCESS)
+    {
+        std::array<wchar_t, MAX_DEVICE_ID_LEN> id{};
+        if (CM_Get_Device_IDW(parent, id.data(), static_cast<ULONG>(id.size()), 0) != CR_SUCCESS)
+            break;
+        const auto name = lowerAscii(id.data());
+        if (name.starts_with(L"bthenum\\") || name.starts_with(L"bthledevice\\"))
+            return WinHidBus::Bluetooth;
+        if (name.starts_with(L"usb\\"))
+            return WinHidBus::Usb;
+        // Walk through intermediate HID collections, up to the transport node.
+        if (!name.starts_with(L"hid\\"))
+            break;
+        child = parent;
+    }
+    return WinHidBus::Unknown;
 }
 
 std::string winUtf8(std::wstring_view value)
