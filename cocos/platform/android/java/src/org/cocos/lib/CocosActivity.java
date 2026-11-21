@@ -176,6 +176,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         CocosFileDialog.bind(this, savedInstanceState);
 
         this.init();
+        if (mGLSurfaceView != null) mGamepads.bindCaptureView(mGLSurfaceView);
 
         if(mWebViewHelper == null){
             mWebViewHelper = new WebViewHelper(mFrameLayout);
@@ -284,7 +285,13 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
-        return (mGamepads != null && mGamepads.motion(event)) || super.dispatchGenericMotionEvent(event);
+        return (mGamepads != null && (mGamepads.touchpad(event) || mGamepads.motion(event)))
+            || super.dispatchGenericMotionEvent(event);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        return (mGamepads != null && mGamepads.touchpad(event)) || super.dispatchTouchEvent(event);
     }
 
     @Override
@@ -296,6 +303,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     public void onWindowFocusChanged(boolean hasFocus) {
         Log.i(TAG, "onWindowFocusChanged() hasFocus=" + hasFocus);
         super.onWindowFocusChanged(hasFocus);
+        if (mGamepads != null) mGamepads.updateCapture();
         if (mGLSurfaceView != null) mGLSurfaceView.handleWindowFocusChanged(hasFocus);
         if (hasFocus) CocosEngine.refreshWindowInfo(this);
     }

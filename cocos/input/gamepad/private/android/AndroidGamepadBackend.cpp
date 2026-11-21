@@ -1,8 +1,11 @@
 #include "../PlatformGamepadBackend.h"
+#include "../drivers/DualSenseReports.h"
+#include "../DeviceGuid.h"
 
 #include "platform/android/jni/JniHelper.h"
 
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <mutex>
 
@@ -15,14 +18,33 @@ constexpr std::array buttonNames{"a", "b", "x", "y", "back", "guide", "start", "
                                  "leftshoulder", "rightshoulder", "dpup", "dpdown", "dpleft", "dpright"};
 constexpr std::array axisNames{"leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger"};
 constexpr unsigned rawButtonCount = 36, maxAxes = 64;
+constexpr unsigned usbReportSize = 63;
+
+struct UsbWrite {
+    DualSenseOutput output;
+    CommandId id{};
+    std::uint64_t generation = 0;
+};
+
+struct UsbState {
+    std::optional<DualSenseCalibration> calibration;
+    std::bitset<SensorCount> sensors;
+    DualSenseOutput output;
+    std::deque<NativeCommand> pending;
+    std::optional<UsbWrite> writing;
+    bool neutral = true;
+};
 
 struct Device {
     jint id;
     EndpointKey key;
     EndpointDescriptor descriptor;
     RawState state;
+    std::array<std::optional<Contact>, 2> fingers;
+    std::unique_ptr<UsbState> usb;
     std::uint64_t cursor = 0;
     bool claimed = false;
+    bool published = false;
 
     AttachedEndpoint attachment() const { return {key, descriptor, {state, cursor, {}}}; }
 };
@@ -53,9 +75,34 @@ struct Bridge {
         const auto found = devices.find(id);
         if (found == devices.end())
             return;
-        if (sink)
+        if (sink && found->second.published)
             sink->detached(found->second.key);
         devices.erase(found);
+    }
+
+    void publish(Device& device)
+    {
+        device.published = true;
+        if (sink)
+        {
+            auto attached = device.attachment();
+            sink->attached(attached.key, std::move(attached.descriptor), std::move(attached.initial));
+        }
+    }
+
+    void cancelUsb(Device& device)
+    {
+        auto& usb = *device.usb;
+        if (sink)
+        {
+            for (const auto& command : usb.pending)
+                if (command.id != CommandId{}) sink->outputCompleted(device.key, command.id, Error::Busy);
+            if (usb.writing && usb.writing->id != CommandId{} && usb.writing->generation == device.key.generation)
+                sink->outputCompleted(device.key, usb.writing->id, Error::Busy);
+        }
+        if (usb.writing) usb.writing->id = {};
+        usb.pending.clear();
+        usb.neutral = true;
     }
 };
 
@@ -101,6 +148,7 @@ public:
         b.active = true;
         for (auto& [id, device] : b.devices)
         {
+            if (!device.published) continue;
             auto attached = device.attachment();
             sink.attached(attached.key, std::move(attached.descriptor), std::move(attached.initial));
         }
@@ -126,6 +174,12 @@ public:
         {
             std::lock_guard lock(b.mutex);
             b.active = active;
+            if (!active)
+                for (auto& [id, device] : b.devices)
+                {
+                    device.fingers = {};
+                    if (device.usb) b.cancelUsb(device);
+                }
             host = b.host;
         }
         JniHelper::callStaticBooleanMethod(javaBridge, "setActive", host, static_cast<jboolean>(active));
@@ -135,8 +189,11 @@ public:
     {
         auto& b = bridge();
         std::lock_guard lock(b.mutex);
-        if (auto* device = b.find(key); b.sink && device)
+        if (auto* device = b.find(key); b.sink && device && device->published)
+        {
+            device->fingers = {};
             b.sink->baseline(key, {device->state, device->cursor, {}});
+        }
     }
 
     void requestTopology() override
@@ -147,8 +204,11 @@ public:
         std::vector<AttachedEndpoint> snapshot;
         for (auto& [id, device] : b.devices)
         {
+            if (!device.published) continue;
+            if (device.usb) b.cancelUsb(device);
             ++device.key.generation;
             device.claimed = false;
+            device.fingers = {};
             snapshot.push_back(device.attachment());
         }
         b.sink->topology(std::move(snapshot));
@@ -170,9 +230,14 @@ public:
         jint id;
         {
             std::lock_guard lock(b.mutex);
-            const auto* device = b.find(key);
+            auto* device = b.find(key);
             if (!device) return Error::Disconnected;
             if (!device->descriptor.capabilities.sensors.test(static_cast<unsigned>(sensor))) return Error::Unsupported;
+            if (device->usb)
+            {
+                device->usb->sensors.set(static_cast<unsigned>(sensor), enabled);
+                return Error::None;
+            }
             host = b.host;
             id = device->id;
         }
@@ -190,6 +255,14 @@ public:
             std::lock_guard lock(b.mutex);
             auto* device = b.find(key);
             if (!device) return Error::Disconnected;
+            if (device->usb)
+            {
+                auto& usb = *device->usb;
+                if (!b.active && !std::holds_alternative<Stop>(command.command)) return Error::Busy;
+                if (usb.pending.size() >= 32) return Error::Busy;
+                usb.pending.push_back(command);
+                return Error::None;
+            }
             host = b.host;
             id = device->id;
         }
@@ -270,6 +343,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Accel), (additional & 1) != 0);
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Gyro), (additional & 2) != 0);
     descriptor.capabilities.features.set(static_cast<unsigned>(Feature::RgbLed), (additional & 4) != 0);
+    if (additional & 8) descriptor.capabilities.fingersPerPad = {2};
     auto& layout = descriptor.layout;
     layout.id = "android-sdl-v2/" + std::to_string(buttons) + utf8(env, axisLayout);
     layout.guid = DeviceGuid::android(descriptor.vendor.value_or(0), descriptor.product.value_or(0), utf8(env, identity),
@@ -296,11 +370,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
             layout.builtInMapping += std::string(axisNames[i]) + ":b" + std::to_string(i + 11) + ",";
     }
     auto& inserted = b.devices.emplace(id, std::move(device)).first->second;
-    if (b.sink)
-    {
-        auto attached = inserted.attachment();
-        b.sink->attached(attached.key, std::move(attached.descriptor), std::move(attached.initial));
-    }
+    b.publish(inserted);
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeDetach(JNIEnv*, jclass, jlong host, jint id, jlong endpoint)
@@ -411,6 +481,25 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeSensorCapabilities
     if (b.sink && caps.sensors != previous) b.sink->capabilitiesChanged(device->key, caps);
 }
 
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeTouch(
+    JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jint first, jfloat firstX, jfloat firstY,
+    jint second, jfloat secondX, jfloat secondY, jboolean cancelled, jlong timestamp)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device || !b.active || device->descriptor.capabilities.fingersPerPad.empty()) return;
+    std::array<std::optional<Contact>, 2> current;
+    if (!cancelled && first >= 0) current[0] = Contact{0, static_cast<unsigned>(first), ContactPhase::Move, firstX, firstY, {}};
+    if (!cancelled && second >= 0) current[1] = Contact{0, static_cast<unsigned>(second), ContactPhase::Move, secondX, secondY, {}};
+    auto changes = dualSenseTouchChanges(device->fingers, current);
+    if (cancelled)
+        for (auto& contact : changes) contact.phase = ContactPhase::Cancel;
+    device->fingers = current;
+    if (b.sink && !changes.empty())
+        b.sink->report(device->key, {{}, changes, {}, {}, ++device->cursor, clock(timestamp)});
+}
+
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputDone(
     JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jlong generation, jlong command, jint status)
 {
@@ -424,5 +513,177 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputDone(
             : status == 2 ? Error::PermissionDenied : Error::BackendFailure;
         b.sink->outputCompleted(device->key, static_cast<CommandId>(command), error);
     }
+}
+
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOpen(
+    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray calibration)
+{
+    std::optional<DualSenseCalibration> decoded;
+    if (calibration && env->GetArrayLength(calibration) == 41)
+    {
+        std::array<std::uint8_t, 41> bytes;
+        env->GetByteArrayRegion(calibration, 0, bytes.size(), reinterpret_cast<jbyte*>(bytes.data()));
+        decoded = decodeDualSenseCalibration(DualSenseTransport::Usb, bytes);
+    }
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    if (!b.running || host != b.host || id >= 0 || b.devices.contains(id)) return false;
+    Device device{};
+    device.id = id;
+    device.key = {backendId, static_cast<std::uint64_t>(endpoint), 1};
+    device.usb = std::make_unique<UsbState>();
+    device.usb->calibration = decoded;
+    auto& descriptor = device.descriptor;
+    descriptor.name = "DualSense Wireless Controller";
+    descriptor.vendor = 0x054c;
+    descriptor.product = 0x0ce6;
+    descriptor.link = Link::Wired;
+    auto& caps = descriptor.capabilities;
+    caps.fingersPerPad = {2};
+    caps.sensors.set(static_cast<unsigned>(Sensor::Accel), decoded.has_value());
+    caps.sensors.set(static_cast<unsigned>(Sensor::Gyro), decoded.has_value());
+    for (auto feature : {Feature::BodyRumble, Feature::RgbLed, Feature::PlayerLights,
+                         Feature::AdaptiveLeft, Feature::AdaptiveRight})
+        caps.features.set(static_cast<unsigned>(feature));
+    caps.playerLightMask = 31;
+    caps.triggerLimits = {TriggerLimits{true, true, 1, 255}, TriggerLimits{true, true, 1, 255}};
+    auto& layout = descriptor.layout;
+    layout.id = "android-dualsense-usb-v1";
+    layout.guid = DeviceGuid::make(3, *descriptor.vendor, *descriptor.product, 0, {}, descriptor.name, 'h');
+    layout.legacyHidapi = true;
+    layout.buttonCount = 15;
+    layout.axisCount = 6;
+    layout.hatCount = 1;
+    layout.builtInMapping =
+        "a:b0,b:b1,x:b2,y:b3,back:b4,guide:b5,start:b6,leftstick:b7,rightstick:b8,"
+        "leftshoulder:b9,rightshoulder:b10,touchpad:b11,misc1:b12,"
+        "leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,"
+        "dpup:h0.1,dpright:h0.2,dpdown:h0.4,dpleft:h0.8,face:sony";
+    device.state.buttons.resize(layout.buttonCount);
+    device.state.axes.resize(layout.axisCount);
+    device.state.axesKnown.assign(layout.axisCount, 1);
+    device.state.hats.resize(layout.hatCount);
+    b.devices.emplace(id, std::move(device));
+    return true;
+}
+
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeRead(
+    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray packet, jint length)
+{
+    std::array<std::uint8_t, 64> bytes;
+    if (length != bytes.size()) return false;
+    env->GetByteArrayRegion(packet, 0, length, reinterpret_cast<jbyte*>(bytes.data()));
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device || !device->usb) return false;
+    const auto sample = decodeDualSenseInput(DualSenseTransport::Usb, bytes, device->usb->calibration);
+    if (!sample) return false;
+
+    std::array<RawChange, 22> changes{};
+    unsigned count = 0;
+    const auto update = [&](RawKind kind, auto& previous, unsigned index, auto value) {
+        if (previous[index] != value)
+        {
+            previous[index] = value;
+            changes[count++] = {kind, index, value};
+        }
+    };
+    for (unsigned i = 0; i < sample->buttons.size(); ++i)
+        update(RawKind::Button, device->state.buttons, i, sample->buttons[i]);
+    for (unsigned i = 0; i < sample->axes.size(); ++i)
+        update(RawKind::Axis, device->state.axes, i, sample->axes[i]);
+    update(RawKind::Hat, device->state.hats, 0, sample->hat);
+    std::optional<Power> power;
+    if (const auto& previous = device->descriptor.power;
+        previous.state != sample->power.state || previous.percent != sample->power.percent)
+    {
+        power = sample->power;
+        device->descriptor.power = *power;
+    }
+    if (!device->published)
+    {
+        b.publish(*device);
+        count = 0;
+        power.reset();
+    }
+    std::vector<Contact> contacts;
+    std::array<Motion, 2> motion{};
+    unsigned motionCount = 0;
+    if (b.active)
+    {
+        contacts = dualSenseTouchChanges(device->fingers, sample->fingers);
+        device->fingers = sample->fingers;
+        for (const auto& value : sample->motion)
+            if (device->usb->sensors.test(static_cast<unsigned>(value.sensor))) motion[motionCount++] = value;
+    }
+    if (b.sink && (count || !contacts.empty() || motionCount || power))
+        b.sink->report(device->key, {std::span(changes).first(count), contacts,
+            std::span(motion).first(motionCount), power, ++device->cursor, {}});
+    return true;
+}
+
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeNextOutput(
+    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray packet)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device || !device->usb || device->usb->writing) return false;
+    auto& usb = *device->usb;
+    UsbWrite write{usb.output, {}, device->key.generation};
+    if (usb.neutral)
+    {
+        write.output.apply(Stop{}, nowNs());
+        usb.neutral = false;
+    }
+    else if (!usb.pending.empty())
+    {
+        const auto command = usb.pending.front();
+        usb.pending.pop_front();
+        write.id = command.id;
+        if (!write.output.apply(command.command, nowNs()))
+        {
+            if (b.sink && command.id != CommandId{})
+                b.sink->outputCompleted(device->key, command.id, Error::InvalidArgument);
+            return false;
+        }
+    }
+    else if (!write.output.expire(nowNs())) return false;
+    const auto bytes = write.output.encode(DualSenseTransport::Usb, usbReportSize);
+    env->SetByteArrayRegion(packet, 0, bytes.size(), reinterpret_cast<const jbyte*>(bytes.data()));
+    usb.writing = std::move(write);
+    return true;
+}
+
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOutputDone(
+    JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jboolean success)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device || !device->usb || !device->usb->writing) return;
+    auto& usb = *device->usb;
+    if (success) usb.output = usb.writing->output;
+    if (b.sink && usb.writing->id != CommandId{} && usb.writing->generation == device->key.generation)
+        b.sink->outputCompleted(device->key, usb.writing->id, success ? Error::None : Error::BackendFailure);
+    usb.writing.reset();
+}
+
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeClose(
+    JNIEnv*, jclass, jlong host, jint id, jlong endpoint)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    if (b.find(host, id, endpoint)) b.detach(id);
+}
+
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeNeutral(
+    JNIEnv* env, jclass, jbyteArray packet)
+{
+    DualSenseOutput output;
+    output.apply(Stop{}, nowNs());
+    const auto bytes = output.encode(DualSenseTransport::Usb, usbReportSize);
+    env->SetByteArrayRegion(packet, 0, bytes.size(), reinterpret_cast<const jbyte*>(bytes.data()));
 }
 }

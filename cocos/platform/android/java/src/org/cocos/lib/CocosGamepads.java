@@ -24,9 +24,11 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
+import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /** UI-thread collection of game controller input, shared by application and templates. */
 final class CocosGamepads implements InputManager.InputDeviceListener {
     private static final AtomicLong next = new AtomicLong();
+    static long nextEndpoint() { return next.incrementAndGet(); }
     private static volatile CocosGamepads current;
     // These indices are the Android indices used in the SDL mapping database.
     private static final int[][] BUTTONS = {
@@ -64,7 +67,10 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     }
 
     private static final class Pad {
-        final long generation = next.incrementAndGet();
+        final long generation = nextEndpoint();
+        final String descriptor;
+        final boolean touchpad;
+        int sources;
         final ArrayList<InputDevice.MotionRange> ranges = new ArrayList<>();
         final int[] defaultAxes = new int[AXES.length];
         final SparseBooleanArray keyState = new SparseBooleanArray();
@@ -76,6 +82,11 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         final DeviceExtras extras;
 
         Pad(InputDevice device) {
+            descriptor = device.getDescriptor();
+            sources = device.getSources();
+            touchpad = Build.VERSION.SDK_INT >= 26
+                && CocosDualSenseUsb.isDualSense(device.getVendorId(), device.getProductId())
+                && (device.supportsSource(InputDevice.SOURCE_MOUSE) || device.supportsSource(InputDevice.SOURCE_TOUCHPAD));
             HashSet<Integer> seen = new HashSet<>();
             for (InputDevice.MotionRange range : device.getMotionRanges()) {
                 int axis = range.getAxis();
@@ -298,14 +309,18 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     private final InputManager manager;
     private final SensorClient sensorClient;
+    private final CocosDualSenseUsb usb;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final SparseArray<Pad> devices = new SparseArray<>();
     private final long host = next.incrementAndGet();
     private boolean resumed, engineActive = true;
+    private View captureView;
+    private boolean captureRequested, absoluteCaptureAvailable = true;
 
     CocosGamepads(Context context) {
         manager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
         sensorClient = Build.VERSION.SDK_INT >= 31 && Build.VERSION.SDK_INT < 33 ? new SensorClient(context) : null;
+        usb = new CocosDualSenseUsb(context, handler, host);
         current = this;
         nativeHost(host, true);
         manager.registerInputDeviceListener(this, handler);
@@ -328,8 +343,9 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         if (descriptor == null || descriptor.isEmpty()) descriptor = device.getName();
         nativeAttach(host, id, pad.generation, device.getName(), descriptor, device.getVendorId(), device.getProductId(),
             pad.buttons, pad.layoutMask(), pad.axisMask, pad.axisLayout, pad.ranges.size(), pad.defaultAxes, pad.vibrator != null,
-            pad.extras != null ? pad.extras.capabilities() : 0);
+            (pad.extras != null ? pad.extras.capabilities() : 0) | (pad.touchpad ? 8 : 0));
         if (pad.extras != null && pad.extras.remoteSensors) sensorClient.update(id, pad);
+        updateCapture();
     }
 
     @Override public void onInputDeviceRemoved(int id) {
@@ -344,11 +360,99 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         }
         nativeDetach(host, id, pad.generation);
         devices.delete(id);
+        updateCapture();
     }
 
     @Override public void onInputDeviceChanged(int id) {
+        Pad pad = devices.get(id);
+        InputDevice device = manager.getInputDevice(id);
+        if (pad != null && pad.touchpad && device != null && pad.descriptor != null
+            && pad.descriptor.equals(device.getDescriptor())) {
+            int changed = pad.sources ^ device.getSources();
+            int pointerSources = InputDevice.SOURCE_TOUCHPAD | InputDevice.SOURCE_MOUSE;
+            // Pointer capture makes Android reconfigure the touchpad source on the same logical device.
+            if (changed != 0 && (changed & ~pointerSources) == 0) {
+                pad.sources = device.getSources();
+                return;
+            }
+        }
         onInputDeviceRemoved(id);
         onInputDeviceAdded(id);
+    }
+
+    void bindCaptureView(View view) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        captureView = view;
+        view.setOnCapturedPointerListener((ignored, event) -> touchpad(event));
+        updateCapture();
+    }
+
+    void updateCapture() {
+        if (Build.VERSION.SDK_INT < 26 || captureView == null) return;
+        boolean want = false;
+        if (resumed && engineActive && absoluteCaptureAvailable && captureView.hasWindowFocus()) {
+            for (int i = 0; i < devices.size() && !want; ++i) want = devices.valueAt(i).touchpad;
+        }
+        if (want == captureRequested) return;
+        captureRequested = want;
+        if (want) {
+            if (Build.VERSION.SDK_INT < 37) captureView.requestPointerCapture();
+            else {
+                // The public absolute overload is newer than this library's compile SDK.
+                try {
+                    int mode = View.class.getField("POINTER_CAPTURE_MODE_ABSOLUTE").getInt(null);
+                    View.class.getMethod("requestPointerCapture", int.class).invoke(captureView, mode);
+                } catch (ReflectiveOperationException failure) {
+                    absoluteCaptureAvailable = false;
+                    captureRequested = false;
+                    Log.w("CocosGamepads", "Absolute gamepad touchpad capture is unavailable", failure);
+                }
+            }
+        } else {
+            captureView.releasePointerCapture();
+            for (int i = 0; i < devices.size(); ++i) {
+                Pad pad = devices.valueAt(i);
+                if (pad.touchpad) nativeTouch(host, devices.keyAt(i), pad.generation, -1, 0, 0, -1, 0, 0, true, 0);
+            }
+        }
+    }
+
+    boolean touchpad(MotionEvent event) {
+        if (current != this || !captureRequested || event.getSource() != InputDevice.SOURCE_TOUCHPAD) return false;
+        int id = event.getDeviceId();
+        Pad pad = devices.get(id);
+        if (pad == null || !pad.touchpad) return false;
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_UP) {
+            nativeTouch(host, id, pad.generation, -1, 0, 0, -1, 0, 0,
+                action == MotionEvent.ACTION_CANCEL, event.getEventTime());
+            return true;
+        }
+        if (action != MotionEvent.ACTION_DOWN && action != MotionEvent.ACTION_POINTER_DOWN
+            && action != MotionEvent.ACTION_MOVE && action != MotionEvent.ACTION_POINTER_UP) return true;
+        int first = -1, second = -1;
+        for (int i = 0; i < event.getPointerCount(); ++i) {
+            if (action == MotionEvent.ACTION_POINTER_UP && i == event.getActionIndex()) continue;
+            if (first < 0) first = i;
+            else { second = i; break; }
+        }
+        InputDevice device = event.getDevice();
+        InputDevice.MotionRange x = device == null ? null : device.getMotionRange(MotionEvent.AXIS_X, InputDevice.SOURCE_TOUCHPAD);
+        InputDevice.MotionRange y = device == null ? null : device.getMotionRange(MotionEvent.AXIS_Y, InputDevice.SOURCE_TOUCHPAD);
+        nativeTouch(host, id, pad.generation,
+            first < 0 ? -1 : event.getPointerId(first),
+            first < 0 ? 0 : normalizeTouch(event.getX(first), x, 1919),
+            first < 0 ? 0 : normalizeTouch(event.getY(first), y, 1079),
+            second < 0 ? -1 : event.getPointerId(second),
+            second < 0 ? 0 : normalizeTouch(event.getX(second), x, 1919),
+            second < 0 ? 0 : normalizeTouch(event.getY(second), y, 1079), false, event.getEventTime());
+        return true;
+    }
+
+    private static float normalizeTouch(float coordinate, InputDevice.MotionRange range, float fallback) {
+        float min = range == null ? 0 : range.getMin();
+        float span = range == null ? fallback : range.getRange();
+        return Math.max(0f, Math.min(1f, (coordinate - min) / (span > 0 ? span : fallback)));
     }
 
     boolean key(KeyEvent event) {
@@ -407,10 +511,12 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     void setResumed(boolean value) {
         resumed = value;
+        usb.setResumed(value);
         updateLifecycle();
     }
 
     private void updateLifecycle() {
+        updateCapture();
         for (int i = 0; i < devices.size(); ++i) {
             Pad pad = devices.valueAt(i);
             if (!resumed || !engineActive) {
@@ -426,6 +532,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     void close() {
         setResumed(false);
+        usb.close();
         manager.unregisterInputDeviceListener(this);
         if (sensorClient != null) sensorClient.close();
         if (current == this) current = null;
@@ -492,5 +599,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     private static native void nativeSensor(long host, int id, long generation, int index, long timestamp,
                                             float x, float y, float z);
     private static native void nativeSensorCapabilities(long host, int id, long generation, int mask);
+    private static native void nativeTouch(long host, int id, long generation,
+        int first, float firstX, float firstY, int second, float secondX, float secondY, boolean cancelled, long timestamp);
     private static native void nativeOutputDone(long host, int id, long endpoint, long generation, long command, int status);
 }
