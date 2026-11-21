@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Debian/Ubuntu host tools and system interfaces only. OpenSSL, curl, OpenAL,
+# Debian/Ubuntu host tools and system dependencies. OpenSSL, curl, OpenAL,
 # GLFW and PNG are built from bundled sources; zlib uses the bundled library.
 # Linux deliberately uses system FreeType (2.11 or newer).
 if ! command -v apt-get >/dev/null 2>&1; then
@@ -15,8 +15,10 @@ packages=(
     # X11 / XCB and OpenGL.
     libxxf86vm-dev libx11-dev libxrandr-dev libxinerama-dev
     libxcursor-dev libxi-dev libxext-dev libxcb1-dev libgl1-mesa-dev
-    # GLFW enables both X11 and Wayland by default.
-    libwayland-dev libwayland-bin libxkbcommon-dev
+    # EGL, OpenGL ES and Vulkan loader development files and validation layers.
+    libegl-dev libgles-dev libvulkan-dev vulkan-validationlayers
+    # Wayland client tools and protocol definitions.
+    libwayland-dev libwayland-bin libxkbcommon-dev wayland-protocols
     # OpenAL audio backends.
     libasound2-dev libpulse-dev
     # Text input and fonts.
