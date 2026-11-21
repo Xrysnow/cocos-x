@@ -5,18 +5,26 @@
 #endif
 #include <dinput.h>
 #include <hidusage.h>
+#include <objbase.h>
 
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <cstddef>
 #include <cstring>
+#include <condition_variable>
+#include <future>
 #include <map>
+#include <mutex>
+#include <thread>
+#include <utility>
 
 namespace cc::input::detail {
 namespace {
 
 constexpr DWORD bufferSize = 256;
+using Clock = std::chrono::steady_clock;
+using namespace std::chrono_literals;
 
 struct ComRelease {
     void operator()(IUnknown* value) const { value->Release(); }
@@ -109,22 +117,18 @@ struct Device : WinInputEndpoint {
         return sample();
     }
 
-    void baseline(ReportSink& sink)
+    void baseline(ReportSink& sink, const auto& attach)
     {
         if (!captureBaseline())
             return;
-        needsBaseline = false;
         if (published)
             sendBaseline(sink);
         else
-        {
-            auto endpoint = attachment();
-            sink.attached(endpoint.key, std::move(endpoint.descriptor), std::move(endpoint.initial));
-            published = true;
-        }
+            published = attach(*this);
+        needsBaseline = !published;
     }
 
-    void pollReports(ReportSink& sink)
+    void pollReports(ReportSink& sink, const auto& attach)
     {
         auto status = native->Poll();
         if (status == DIERR_INPUTLOST || status == DIERR_NOTACQUIRED)
@@ -141,7 +145,7 @@ struct Device : WinInputEndpoint {
         }
         if (needsBaseline)
         {
-            baseline(sink);
+            baseline(sink, attach);
             return;
         }
         if (!buffered)
@@ -280,131 +284,338 @@ std::optional<Device> configureDevice(DirectDevice native, HWND window, const DI
 } // namespace
 
 struct WinDirectInput::Impl {
-    explicit Impl(ReportSink& target) : sink(target) {}
+    Impl(ReportSink& target, HANDLE event) : sink(target), wakeWindow(event) {}
+
+    ~Impl()
+    {
+        if (!worker.joinable())
+            return;
+        {
+            std::lock_guard lock(mutex);
+            stopping = true;
+        }
+        wake.notify_one();
+        worker.join();
+    }
+
+    void run(HWND window, std::promise<bool>& ready)
+    {
+        const auto com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        IDirectInput8W* created = nullptr;
+        if (SUCCEEDED(com) &&
+            SUCCEEDED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8W,
+                                        reinterpret_cast<LPVOID*>(&created), nullptr)))
+        {
+            DirectInput input(created);
+            ready.set_value(true);
+            service(*input, window);
+            devices.clear();
+        }
+        else
+            ready.set_value(false);
+        if (SUCCEEDED(com))
+            CoUninitialize();
+    }
+
+    bool publish(const Device& device)
+    {
+        auto endpoint = device.attachment();
+        std::lock_guard lock(mutex);
+        if (!device.path.empty())
+        {
+            if (rawPaths.contains(device.path))
+                return false;
+            publishedPaths.insert_or_assign(device.path, device.key);
+        }
+        sink.attached(endpoint.key, std::move(endpoint.descriptor), std::move(endpoint.initial));
+        return true;
+    }
+
+    void detach(const Device& device)
+    {
+        if (!device.published)
+            return;
+        std::lock_guard lock(mutex);
+        if (!device.path.empty())
+        {
+            const auto found = publishedPaths.find(device.path);
+            if (found == publishedPaths.end() || found->second != device.key)
+                return; // Raw Input already retired this public endpoint.
+            publishedPaths.erase(found);
+        }
+        sink.detached(device.key);
+    }
+
+    void scan(IDirectInput8W& input, HWND window, const HidPaths& rawHidPaths)
+    {
+        std::vector<DIDEVICEINSTANCEW> list;
+        if (FAILED(input.EnumDevices(DI8DEVCLASS_GAMECTRL, collectDevice, &list, DIEDFL_ATTACHEDONLY)))
+            return;
+        HidPaths present;
+        for (const auto& instance : list)
+        {
+            // DirectInput can enumerate auxiliary HID collections as game controllers.
+            if ((instance.dwDevType & DIDEVTYPE_HID) &&
+                (instance.wUsagePage == HID_USAGE_PAGE_CONSUMER ||
+                 (instance.wUsagePage == HID_USAGE_PAGE_GENERIC && instance.wUsage == HID_USAGE_GENERIC_SYSTEM_CTL)))
+                continue;
+            IDirectInputDevice8W* created = nullptr;
+            if (FAILED(input.CreateDevice(instance.guidInstance, &created, nullptr)))
+                continue;
+            DirectDevice native(created);
+            auto path = devicePath(*native);
+            if (rawHidPaths.contains(path) || isXInputMirror(path))
+                continue;
+            if (path.empty() && (instance.dwDevType & DIDEVTYPE_HID))
+                continue; // HID devices without a provable interface could mirror another backend.
+            std::array<wchar_t, 40> guid{};
+            StringFromGUID2(instance.guidInstance, guid.data(), static_cast<int>(guid.size()));
+            const auto identity = path.empty() ? std::wstring(guid.data()) : path;
+            if (!present.insert(identity).second)
+                continue;
+            auto current = devices.find(identity);
+            if (current != devices.end() && current->second.instance == instance.guidInstance)
+                continue;
+            auto opened = configureDevice(std::move(native), window, instance, std::move(path));
+            if (!opened)
+                continue;
+            if (current == devices.end())
+            {
+                opened->key = {WinDirectInputId, ++nextEndpoint, 1};
+                devices.emplace(identity, std::move(*opened));
+                continue;
+            }
+            auto& old = current->second;
+            if (old.descriptor.layout.id == opened->descriptor.layout.id)
+            {
+                old.markGap(sink);
+                opened->key = old.key;
+                opened->cursor = old.cursor;
+                opened->published = old.published;
+            }
+            else
+            {
+                detach(old);
+                opened->key = {WinDirectInputId, ++nextEndpoint, 1};
+            }
+            old = std::move(*opened);
+        }
+        std::erase_if(devices, [&](const auto& entry) {
+            if (present.contains(entry.first))
+                return false;
+            detach(entry.second);
+            return true;
+        });
+    }
+
+    using Snapshot = std::vector<std::pair<std::wstring, AttachedEndpoint>>;
+
+    void prepareSnapshot()
+    {
+        Snapshot endpoints;
+        for (auto& [identity, device] : devices)
+        {
+            ++device.key.generation;
+            device.published = device.captureBaseline();
+            {
+                std::lock_guard lock(mutex);
+                if (!device.path.empty())
+                {
+                    if (rawPaths.contains(device.path))
+                        device.published = false;
+                    if (device.published)
+                        publishedPaths.insert_or_assign(device.path, device.key);
+                    else
+                        publishedPaths.erase(device.path);
+                }
+            }
+            device.needsBaseline = !device.published;
+            if (device.published)
+                endpoints.emplace_back(device.path, device.attachment());
+        }
+        std::unique_lock lock(mutex);
+        pendingSnapshot = std::move(endpoints);
+        awaitingPublication = true;
+        SetEvent(wakeWindow);
+        // Let Raw Input keep collecting while DirectInput is scanning. Once
+        // ready, hold reports from the new DirectInput generation until the
+        // window thread publishes the complete topology.
+        wake.wait(lock, [this] { return stopping || !awaitingPublication; });
+    }
+
+    void service(IDirectInput8W& input, HWND window)
+    {
+        auto nextPoll = Clock::now();
+        for (;;)
+        {
+            HidPaths rawHidPaths;
+            std::set<EndpointKey> baselines, retire;
+            bool rescan, topology, ownershipChanged;
+            {
+                std::unique_lock lock(mutex);
+                const auto work = [this] {
+                    return stopping || refreshRequested || pathsChanged || !baselineRequests.empty();
+                };
+                if (devices.empty())
+                    wake.wait(lock, work);
+                else
+                    wake.wait_until(lock, nextPoll, work);
+                if (stopping)
+                    break;
+                rescan = std::exchange(refreshRequested, false);
+                topology = std::exchange(snapshotRequested, false);
+                ownershipChanged = std::exchange(pathsChanged, false);
+                if (rescan || ownershipChanged)
+                    rawHidPaths = rawPaths;
+                baselines.swap(baselineRequests);
+                retire.swap(retired);
+            }
+            if (ownershipChanged)
+                std::erase_if(devices, [&](const auto& entry) {
+                    const auto& device = entry.second;
+                    if (!rawHidPaths.contains(device.path) && !retire.contains(device.key))
+                        return false;
+                    detach(device);
+                    return true;
+                });
+            if (rescan)
+                scan(input, window, rawHidPaths);
+            if (topology)
+            {
+                prepareSnapshot();
+                continue;
+            }
+            for (auto& [identity, device] : devices)
+                if (baselines.contains(device.key))
+                    device.needsBaseline = true;
+            const auto now = Clock::now();
+            if (now >= nextPoll)
+            {
+                for (auto& [identity, device] : devices)
+                    device.pollReports(sink, [this](const Device& entry) { return publish(entry); });
+                nextPoll = now + 4ms;
+            }
+        }
+    }
 
     ReportSink& sink;
-    DirectInput input;
-    HWND window = nullptr;
+    HANDLE wakeWindow;
+    std::thread worker;
+    std::mutex mutex;
+    std::condition_variable wake;
+    // Only publication and path ownership use this mutex. DirectInput COM
+    // calls and device destruction always run outside it on the worker.
+    HidPaths rawPaths;
+    std::map<std::wstring, EndpointKey> publishedPaths;
+    std::set<EndpointKey> baselineRequests, retired;
+    std::optional<Snapshot> pendingSnapshot;
+    bool stopping = false, refreshRequested = false, pathsChanged = false;
+    bool snapshotRequested = false, awaitingPublication = false;
     std::uint64_t nextEndpoint = 0;
     std::map<std::wstring, Device> devices;
 };
 
-WinDirectInput::WinDirectInput(ReportSink& sink) : _impl(std::make_unique<Impl>(sink)) {}
+WinDirectInput::WinDirectInput(ReportSink& sink, HANDLE wakeWindow)
+    : _impl(std::make_unique<Impl>(sink, wakeWindow)) {}
 WinDirectInput::~WinDirectInput() = default;
 
 bool WinDirectInput::start(HWND window)
 {
-    IDirectInput8W* input = nullptr;
-    if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8W,
-                                  reinterpret_cast<LPVOID*>(&input), nullptr)))
-        return false;
-    _impl->input.reset(input);
-    _impl->window = window;
-    return true;
-}
-
-void WinDirectInput::refresh(const HidPaths& rawHidPaths)
-{
-    std::vector<DIDEVICEINSTANCEW> list;
-    if (FAILED(_impl->input->EnumDevices(DI8DEVCLASS_GAMECTRL, collectDevice, &list, DIEDFL_ATTACHEDONLY)))
-        return;
-    HidPaths present;
-    for (const auto& instance : list)
+    std::promise<bool> ready;
+    auto running = ready.get_future();
+    try
     {
-        // DirectInput can enumerate auxiliary HID collections as game controllers.
-        if ((instance.dwDevType & DIDEVTYPE_HID) &&
-            (instance.wUsagePage == HID_USAGE_PAGE_CONSUMER ||
-             (instance.wUsagePage == HID_USAGE_PAGE_GENERIC && instance.wUsage == HID_USAGE_GENERIC_SYSTEM_CTL)))
-            continue;
-        IDirectInputDevice8W* created = nullptr;
-        if (FAILED(_impl->input->CreateDevice(instance.guidInstance, &created, nullptr)))
-            continue;
-        DirectDevice native(created);
-        auto path = devicePath(*native);
-        if (isXInputMirror(path) || rawHidPaths.contains(path))
-            continue;
-        if (path.empty() && (instance.dwDevType & DIDEVTYPE_HID))
-            continue; // HID devices without a provable interface could mirror another backend.
-        std::array<wchar_t, 40> guid{};
-        StringFromGUID2(instance.guidInstance, guid.data(), static_cast<int>(guid.size()));
-        const auto identity = path.empty() ? std::wstring(guid.data()) : path;
-        if (!present.insert(identity).second)
-            continue;
-        auto current = _impl->devices.find(identity);
-        if (current != _impl->devices.end() && current->second.instance == instance.guidInstance)
-            continue;
-        auto opened = configureDevice(std::move(native), _impl->window, instance, std::move(path));
-        if (!opened)
-            continue;
-        if (current == _impl->devices.end())
-        {
-            opened->key = {WinDirectInputId, ++_impl->nextEndpoint, 1};
-            _impl->devices.emplace(identity, std::move(*opened));
-            continue;
-        }
-        auto& old = current->second;
-        if (old.descriptor.layout.id == opened->descriptor.layout.id)
-        {
-            old.markGap(_impl->sink);
-            opened->key = old.key;
-            opened->cursor = old.cursor;
-            opened->published = old.published;
-        }
-        else
-        {
-            if (old.published)
-                _impl->sink.detached(old.key);
-            opened->key = {WinDirectInputId, ++_impl->nextEndpoint, 1};
-        }
-        old = std::move(*opened);
+        _impl->worker = std::thread([this, window, ready = std::move(ready)]() mutable {
+            _impl->run(window, ready);
+        });
     }
-    std::erase_if(_impl->devices, [&](const auto& entry) {
-        const auto& [id, device] = entry;
-        if (present.contains(id))
-            return false;
-        if (device.published)
-            _impl->sink.detached(device.key);
-        return true;
-    });
+    catch (const std::system_error&)
+    {
+        return false;
+    }
+    return running.get();
 }
 
-void WinDirectInput::pollReports()
+void WinDirectInput::refresh()
 {
-    for (auto& [id, device] : _impl->devices)
-        device.pollReports(_impl->sink);
-}
-
-void WinDirectInput::dropMirror(std::wstring_view path)
-{
-    std::erase_if(_impl->devices, [&](const auto& entry) {
-        const auto& device = entry.second;
-        if (device.path != path)
-            return false;
-        if (device.published)
-            _impl->sink.detached(device.key);
-        return true;
-    });
+    {
+        std::lock_guard lock(_impl->mutex);
+        _impl->refreshRequested = true;
+    }
+    _impl->wake.notify_one();
 }
 
 void WinDirectInput::requestBaseline(EndpointKey key)
 {
-    for (auto& [id, device] : _impl->devices)
-        if (device.key == key)
-            device.needsBaseline = true;
-}
-
-void WinDirectInput::snapshot(std::vector<AttachedEndpoint>& endpoints)
-{
-    for (auto& [id, device] : _impl->devices)
     {
-        ++device.key.generation;
-        device.published = device.captureBaseline();
-        device.needsBaseline = !device.published;
-        if (device.published)
-            endpoints.push_back(device.attachment());
+        std::lock_guard lock(_impl->mutex);
+        _impl->baselineRequests.insert(key);
     }
+    _impl->wake.notify_one();
 }
 
-bool WinDirectInput::hasDevices() const { return !_impl->devices.empty(); }
+void WinDirectInput::requestSnapshot()
+{
+    {
+        std::lock_guard lock(_impl->mutex);
+        _impl->refreshRequested = true;
+        _impl->snapshotRequested = true;
+    }
+    _impl->wake.notify_one();
+}
+
+std::optional<std::vector<AttachedEndpoint>> WinDirectInput::takeSnapshot()
+{
+    std::lock_guard lock(_impl->mutex);
+    auto pending = std::exchange(_impl->pendingSnapshot, std::nullopt);
+    if (!pending)
+        return {};
+    std::vector<AttachedEndpoint> endpoints;
+    endpoints.reserve(pending->size());
+    for (auto& [path, endpoint] : *pending)
+    {
+        const auto found = _impl->publishedPaths.find(path);
+        if (path.empty() || (found != _impl->publishedPaths.end() && found->second == endpoint.key))
+            endpoints.push_back(std::move(endpoint));
+    }
+    return endpoints;
+}
+
+void WinDirectInput::finishSnapshot()
+{
+    {
+        std::lock_guard lock(_impl->mutex);
+        _impl->awaitingPublication = false;
+    }
+    _impl->wake.notify_one();
+}
+
+void WinDirectInput::attachRaw(const std::wstring& path, AttachedEndpoint endpoint)
+{
+    {
+        std::lock_guard lock(_impl->mutex);
+        const auto found = _impl->publishedPaths.find(path);
+        if (found != _impl->publishedPaths.end())
+        {
+            _impl->retired.insert(found->second);
+            _impl->sink.detached(found->second);
+            _impl->publishedPaths.erase(found);
+        }
+        _impl->pathsChanged |= _impl->rawPaths.insert(path).second;
+        _impl->sink.attached(endpoint.key, std::move(endpoint.descriptor), std::move(endpoint.initial));
+    }
+    _impl->wake.notify_one();
+}
+
+void WinDirectInput::detachRaw(const std::wstring& path, EndpointKey key, bool keepPath)
+{
+    {
+        std::lock_guard lock(_impl->mutex);
+        _impl->sink.detached(key);
+        if (!keepPath)
+            _impl->refreshRequested |= _impl->rawPaths.erase(path) != 0;
+    }
+    _impl->wake.notify_one();
+}
 
 } // namespace cc::input::detail

@@ -278,7 +278,7 @@ private:
     {
         if (_paths != WinLegacyPaths::RawHid)
         {
-            _direct = std::make_unique<WinDirectInput>(sink);
+            _direct = std::make_unique<WinDirectInput>(sink, _wake);
             if (!_direct->start(window))
                 _direct.reset();
         }
@@ -294,9 +294,8 @@ private:
             return;
         }
         ready.set_value(Error::None);
-        HidPaths empty;
         auto lastScan = Clock::time_point{};
-        auto nextPoll = Clock::time_point{};
+        bool snapshotPending = false;
         for (;;)
         {
             std::set<EndpointKey> baselines;
@@ -322,17 +321,27 @@ private:
                 lastScan = now;
                 if (_raw)
                     _raw->refresh();
-                if (_direct)
-                    _direct->refresh(_raw ? _raw->paths() : empty);
+                if (_direct && !topology)
+                    _direct->refresh();
             }
-            if (topology)
+            if (topology && !snapshotPending)
             {
-                std::vector<AttachedEndpoint> endpoints;
-                if (_raw)
-                    _raw->snapshot(endpoints);
+                snapshotPending = true;
                 if (_direct)
-                    _direct->snapshot(endpoints);
-                sink.topology(std::move(endpoints));
+                    _direct->requestSnapshot();
+            }
+            if (snapshotPending)
+            {
+                auto endpoints = _direct ? _direct->takeSnapshot() : std::optional{std::vector<AttachedEndpoint>{}};
+                if (endpoints)
+                {
+                    if (_raw)
+                        _raw->snapshot(*endpoints);
+                    sink.topology(std::move(*endpoints));
+                    if (_direct)
+                        _direct->finishSnapshot();
+                    snapshotPending = false;
+                }
             }
             for (const auto& key : baselines)
             {
@@ -340,11 +349,6 @@ private:
                     _raw->requestBaseline(key);
                 if (key.backend == WinDirectInputId && _direct)
                     _direct->requestBaseline(key);
-            }
-            if (_direct && now >= nextPoll)
-            {
-                _direct->pollReports();
-                nextPoll = now + 4ms;
             }
             if (_raw)
             {
@@ -354,10 +358,10 @@ private:
             }
             for (const auto& command : commands)
                 send(sink, command);
-            const bool polling = (_direct && _direct->hasDevices()) || (_raw && _raw->needsPolling());
+            const bool polling = _raw && _raw->needsPolling();
             const DWORD timeout = polling ? 4 : 1000;
             MsgWaitForMultipleObjectsEx(1, &_wake, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
-            // Bound one visit so a busy HID cannot starve DI or shutdown.
+            // Bound one visit so a busy HID cannot starve control requests or shutdown.
             MSG message{};
             for (unsigned i = 0; i < 128 && PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE); ++i)
                 DispatchMessageW(&message);

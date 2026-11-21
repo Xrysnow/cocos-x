@@ -703,15 +703,25 @@ struct WinRawHid::Impl {
     void publish(Device& device)
     {
         device.key = {WinRawHidId, ++nextEndpoint, 1};
-        if (direct)
-            direct->dropMirror(device.path);
         auto endpoint = device.attachment();
-        sink.attached(endpoint.key, std::move(endpoint.descriptor), std::move(endpoint.initial));
+        if (direct)
+            direct->attachRaw(device.path, std::move(endpoint));
+        else
+            sink.attached(endpoint.key, std::move(endpoint.descriptor), std::move(endpoint.initial));
     }
 
-    auto removeInterface(std::map<std::wstring, std::unique_ptr<DirectHidDevice>>::iterator device)
+    void detach(const Device& device, bool keepPath = false)
     {
-        sink.detached(device->second->key);
+        if (direct)
+            direct->detachRaw(device.path, device.key, keepPath);
+        else
+            sink.detached(device.key);
+    }
+
+    auto removeInterface(std::map<std::wstring, std::unique_ptr<DirectHidDevice>>::iterator device,
+                         bool keepPath = false)
+    {
+        detach(*device->second, keepPath);
         paths.erase(device->first);
         return interfaces.erase(device);
     }
@@ -725,7 +735,7 @@ struct WinRawHid::Impl {
         auto device = openDevice(handle);
         if (device)
             if (const auto old = interfaces.find(device->path); old != interfaces.end())
-                removeInterface(old);
+                removeInterface(old, true);
         if (!device || !paths.insert(device->path).second)
         {
             ignored.insert(handle);
@@ -867,7 +877,7 @@ void WinRawHid::remove(HANDLE handle)
     const auto item = _impl->devices.find(handle);
     if (item == _impl->devices.end())
         return;
-    _impl->sink.detached(item->second.key);
+    _impl->detach(item->second);
     _impl->paths.erase(item->second.path);
     _impl->devices.erase(item);
 }
@@ -942,7 +952,6 @@ void WinRawHid::stopOutputs()
             device->dualSense->stopOutput();
 }
 
-const HidPaths& WinRawHid::paths() const { return _impl->paths; }
 bool WinRawHid::needsPolling() const
 {
     return !_impl->interfaces.empty() || std::ranges::any_of(_impl->devices, [](const auto& item) {

@@ -57,7 +57,6 @@ public:
     void setSensor(EndpointKey key, Sensor sensor, bool enabled);
     Error submit(EndpointKey key, const OutputCommand& command);
     void stopOutputs();
-    const HidPaths& paths() const;
     bool needsPolling() const;
 
 private:
@@ -67,16 +66,17 @@ private:
 
 class WinDirectInput {
 public:
-    explicit WinDirectInput(ReportSink& sink);
+    WinDirectInput(ReportSink& sink, HANDLE wakeWindow);
     ~WinDirectInput();
 
     bool start(HWND window);
-    void refresh(const HidPaths& rawHidPaths);
-    void dropMirror(std::wstring_view path);
-    void pollReports();
+    void refresh();
     void requestBaseline(EndpointKey key);
-    void snapshot(std::vector<AttachedEndpoint>& endpoints);
-    bool hasDevices() const;
+    void requestSnapshot();
+    std::optional<std::vector<AttachedEndpoint>> takeSnapshot();
+    void finishSnapshot();
+    void attachRaw(const std::wstring& path, AttachedEndpoint endpoint);
+    void detachRaw(const std::wstring& path, EndpointKey key, bool keepPath = false);
 
 private:
     struct Impl;
