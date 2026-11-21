@@ -20,7 +20,8 @@ class BindingPlan
 {
 public:
     static BindingPlan compile(const RawLayout& layout, const MappingRecord& record,
-                               std::vector<Diagnostic>& diagnostics, bool legacyHidapi = false);
+                               std::vector<Diagnostic>& diagnostics, bool legacyHidapi = false,
+                               bool useSdlIndices = false);
 
     const std::bitset<ButtonCount>& buttons() const noexcept { return buttons_; }
     const std::bitset<AxisCount>& axes() const noexcept { return axes_; }

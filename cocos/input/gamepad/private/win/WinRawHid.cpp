@@ -259,6 +259,33 @@ void addValues(Device& device, USHORT count)
     }
 }
 
+bool hasDirectInputOrder(std::span<const Control> controls)
+{
+    // The Windows database uses DirectInput indices. These HID usages follow
+    // its DIJOYSTATE slot order with no gaps in the buttons and no aliases.
+    unsigned nextButton = 1, lastAxis = 0;
+    bool hasHat = false;
+    for (const auto& control : controls)
+    {
+        switch (control.kind)
+        {
+        case RawKind::Button:
+            if (control.page != HID_USAGE_PAGE_BUTTON || control.usage != nextButton++) return false;
+            break;
+        case RawKind::Axis:
+            if (control.page != HID_USAGE_PAGE_GENERIC || control.usage < HID_USAGE_GENERIC_X ||
+                control.usage > HID_USAGE_GENERIC_SLIDER || control.usage <= lastAxis) return false;
+            lastAxis = control.usage;
+            break;
+        case RawKind::Hat:
+            if (hasHat) return false;
+            hasHat = true;
+            break;
+        }
+    }
+    return nextButton > 1;
+}
+
 void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file)
 {
     auto& descriptor = device.descriptor;
@@ -266,14 +293,21 @@ void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::
     descriptor.product = product;
     descriptor.version = version;
     descriptor.name = "HID Gamepad";
-    if (file == INVALID_HANDLE_VALUE)
-        return;
-    std::array<wchar_t, 128> text{};
-    if (HidD_GetProductString(file, text.data(), sizeof(text)) && text[0])
-        descriptor.name = winUtf8(text.data());
-    text.fill(L'\0');
-    if (HidD_GetSerialNumberString(file, text.data(), sizeof(text)) && text[0])
-        descriptor.serial = winUtf8(text.data());
+    std::string manufacturer, name;
+    if (file != INVALID_HANDLE_VALUE)
+    {
+        std::array<wchar_t, 128> text{};
+        if (HidD_GetProductString(file, text.data(), sizeof(text)) && text[0])
+            descriptor.name = name = winUtf8(text.data());
+        text.fill(L'\0');
+        if (HidD_GetManufacturerString(file, text.data(), sizeof(text)) && text[0])
+            manufacturer = winUtf8(text.data());
+        text.fill(L'\0');
+        if (HidD_GetSerialNumberString(file, text.data(), sizeof(text)) && text[0])
+            descriptor.serial = winUtf8(text.data());
+    }
+    if (vendor && product && hasDirectInputOrder(device.controls))
+        descriptor.layout.guid = DeviceGuid::make(3, vendor, product, 0, manufacturer, name);
 }
 
 bool initialize(Device& device)

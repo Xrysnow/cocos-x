@@ -45,13 +45,13 @@ std::string safeName(std::string_view name)
 }
 
 std::string exportLine(const DeviceGuid& guid, std::string_view name, std::string_view platform,
-                       const MappingRecord& record, const BindingPlan& plan)
+                       const MappingRecord& record, std::span<const Binding> bindings, FaceStyle face)
 {
     std::string result = guid.str();
     result += ',';
     result += safeName(name);
     result += ',';
-    for (const auto& binding : plan.bindings())
+    for (const auto& binding : bindings)
     {
         // Multi-digit hat indices only belong to layout-local bindings.
         if (binding.inputKind == RawKind::Hat && binding.inputIndex > 9)
@@ -61,10 +61,10 @@ std::string exportLine(const DeviceGuid& guid, std::string_view name, std::strin
     }
     if (!record.type.empty())
         result += "type:" + record.type + ',';
-    if (plan.face() != FaceStyle::Unspecified)
+    if (face != FaceStyle::Unspecified)
     {
         result += "face:";
-        result += faceName(plan.face());
+        result += faceName(face);
         result += ',';
     }
     for (const auto& field : record.extraFields)
@@ -177,7 +177,11 @@ ImportReport MappingDatabase::import(std::string_view utf8, MappingSource source
                     {{lineNumber, 1, "MissingPlatform", "Batch mapping has no platform"}}});
                 continue;
             }
-            if (SdlMappingParser::canonicalPlatform(platform) != env_.platform)
+            const auto rowPlatform = SdlMappingParser::canonicalPlatform(platform);
+            // Both Apple targets use the same GameController profile layout.
+            const bool sharedMfi = env_.platform == "macOS" && rowPlatform == "iOS" && content.size() > 32 &&
+                content[28] == '6' && (content[29] == 'd' || content[29] == 'D') && content[32] == ',';
+            if (rowPlatform != env_.platform && !sharedMfi)
             {
                 count(result, {MappingChange::ConditionSkipped,
                     {{lineNumber, static_cast<std::size_t>(platform.data() - line.data()) + 1,
@@ -240,17 +244,20 @@ MappingSelection MappingDatabase::compile(const RawLayout& layout, std::string_v
                                           std::string_view status, bool fixupLegacyHidapi) const
 {
     MappingSelection selection;
-    selection.plan = BindingPlan::compile(layout, record, selection.diagnostics, fixupLegacyHidapi);
-    if (selection.plan.empty())
+    const bool projected = layout.sdlIndices && status == "Matched" && record.slot == MappingSlot::Guid;
+    selection.plan = BindingPlan::compile(layout, record, selection.diagnostics, fixupLegacyHidapi, projected);
+    if (selection.plan.empty() || (projected && !selection.diagnostics.empty()))
     {
+        selection.plan = {};
         selection.status = "LayoutUnavailable";
         return selection;
     }
     selection.name = record.name.empty() || record.name == "*" ? name : std::string_view(record.name);
     selection.status = status;
     selection.source = source;
-    if (layout.guid && selection.status != "Local")
-        selection.exported = exportLine(*layout.guid, selection.name, env_.platform, record, selection.plan);
+    if (layout.guid && selection.status != "Local" && (!layout.sdlIndices || projected))
+        selection.exported = exportLine(*layout.guid, selection.name, env_.platform, record,
+            projected ? std::span<const Binding>(record.bindings) : selection.plan.bindings(), selection.plan.face());
     return selection;
 }
 

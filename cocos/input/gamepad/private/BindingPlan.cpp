@@ -48,6 +48,23 @@ std::optional<int> rawAxis(const RawState& raw, unsigned index)
     return raw.axes[index];
 }
 
+bool resolveSdlIndex(Binding& binding, const SdlInputIndices& indices)
+{
+    const auto index = binding.inputIndex;
+    if (binding.inputKind == RawKind::Button && index < indices.buttons.size() && indices.buttons[index])
+    {
+        binding.inputIndex = *indices.buttons[index];
+        return true;
+    }
+    if (binding.inputKind == RawKind::Axis && index < indices.axes.size() && indices.axes[index])
+    {
+        binding.inputIndex = indices.axes[index]->index;
+        binding.encoding = indices.axes[index]->encoding;
+        return true;
+    }
+    return false;
+}
+
 int evaluateBinding(const RawState& raw, const Binding& binding)
 {
     const unsigned index = binding.inputIndex;
@@ -61,10 +78,16 @@ int evaluateBinding(const RawState& raw, const Binding& binding)
                (binding.outputAxis ? binding.outEnd : 1) : 0;
     case RawKind::Axis:
     {
-        const auto value = rawAxis(raw, index);
+        auto value = rawAxis(raw, index);
+        if (!value)
+            return 0;
+        if (binding.encoding == AxisEncoding::Inverted)
+            *value = std::clamp(-*value, -32767, 32767);
+        else if (binding.encoding == AxisEncoding::PositiveHalf)
+            *value = (*value + 32768) * 32767 / 65535;
         const int start = binding.inStart;
         const int end = binding.inEnd;
-        if (!value || *value < std::min(start, end) || *value > std::max(start, end))
+        if (*value < std::min(start, end) || *value > std::max(start, end))
             return 0;
         if (!binding.outputAxis)
         {
@@ -83,7 +106,7 @@ int evaluateBinding(const RawState& raw, const Binding& binding)
 } // namespace
 
 BindingPlan BindingPlan::compile(const RawLayout& layout, const MappingRecord& record,
-                                 std::vector<Diagnostic>& diagnostics, bool legacyHidapi)
+                                 std::vector<Diagnostic>& diagnostics, bool legacyHidapi, bool useSdlIndices)
 {
     BindingPlan plan;
     plan.face_ = record.face;
@@ -94,7 +117,8 @@ BindingPlan BindingPlan::compile(const RawLayout& layout, const MappingRecord& r
     const bool fixup = legacyHidapi && needsHidapiFixup(record.bindings);
     for (auto binding : record.bindings)
     {
-        const bool valid = !fixup || adjustHidapi(binding);
+        const bool valid = (!fixup || adjustHidapi(binding)) &&
+            (!useSdlIndices || resolveSdlIndex(binding, *layout.sdlIndices));
         const auto kind = static_cast<unsigned>(binding.inputKind);
         const auto index = binding.inputIndex;
         if (!valid || index >= counts[kind] ||

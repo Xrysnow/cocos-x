@@ -44,6 +44,8 @@ std::unique_ptr<LinuxDualSense> LinuxDualSense::open(const std::string& path, En
     descriptor.physicalAssociation = device->_association;
     auto& layout = descriptor.layout;
     layout.id = "linux-dualsense-hid-v1";
+    layout.guid = DeviceGuid::make(info.bustype, *descriptor.vendor, *descriptor.product, 0, {}, descriptor.name, 'h');
+    layout.legacyHidapi = true;
     layout.buttonCount = 14;
     layout.axisCount = 6;
     layout.hatCount = 1;

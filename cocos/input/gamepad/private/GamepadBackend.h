@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DeviceGuid.h"
+#include "SdlMappingParser.h"
 #include "input/gamepad/GamepadFrame.h"
 
 #include <bitset>
@@ -8,6 +8,16 @@
 #include <compare>
 
 namespace cc::input::detail {
+
+struct SdlAxisIndex {
+    unsigned index;
+    AxisEncoding encoding;
+};
+
+struct SdlInputIndices {
+    std::vector<std::optional<unsigned>> buttons;
+    std::vector<std::optional<SdlAxisIndex>> axes;
+};
 
 struct EndpointKey {
     std::uint64_t backend, endpoint, generation;
@@ -21,6 +31,7 @@ struct RawLayout {
     bool usesVersion = true;
     bool xinput = false;
     bool legacyHidapi = false;
+    std::optional<SdlInputIndices> sdlIndices;
     std::string builtInMapping;
     // Empty leaves all indices present. A zero preserves an index without
     // advertising its absent hardware control to the binding compiler.

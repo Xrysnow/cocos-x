@@ -252,6 +252,12 @@ std::optional<Device> configureDevice(DirectDevice native, HWND window, const DI
         descriptor.product = HIWORD(ids.dwData);
     }
     auto& layout = descriptor.layout;
+    if ((instance.dwDevType & DIDEVTYPE_HID) && descriptor.vendor && descriptor.product)
+    {
+        const auto vendor = *descriptor.vendor;
+        const auto product = *descriptor.product;
+        layout.guid = DeviceGuid::make(vendor && product ? 3 : 5, vendor, product, 0, {}, descriptor.name);
+    }
     layout.id = "win-directinput8-v1";
     const std::array counts{&layout.buttonCount, &layout.axisCount, &layout.hatCount};
     for (auto& control : device.controls)

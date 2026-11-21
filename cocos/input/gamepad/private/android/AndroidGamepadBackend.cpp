@@ -14,6 +14,7 @@ constexpr auto javaBridge = "org/cocos/lib/CocosGamepads";
 constexpr std::array buttonNames{"a", "b", "x", "y", "back", "guide", "start", "leftstick", "rightstick",
                                  "leftshoulder", "rightshoulder", "dpup", "dpdown", "dpleft", "dpright"};
 constexpr std::array axisNames{"leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger"};
+constexpr unsigned rawButtonCount = 36, maxAxes = 64;
 
 struct Device {
     jint id;
@@ -244,9 +245,15 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeHost(JNIEnv*, jcla
 }
 
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
-    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jstring name, jint vendor, jint product, jint buttons,
-    jint axes, jboolean feedback, jint additional)
+    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jstring name, jstring identity, jint vendor, jint product,
+    jlong buttons, jint guidButtons, jint guidAxes, jstring axisLayout, jint axisCount, jintArray defaultAxes,
+    jboolean feedback, jint additional)
 {
+    std::array<jint, axisNames.size()> axisIndices;
+    if (axisCount < 0 || axisCount > static_cast<jint>(maxAxes) || !defaultAxes ||
+        env->GetArrayLength(defaultAxes) != static_cast<jsize>(axisIndices.size()))
+        return;
+    env->GetIntArrayRegion(defaultAxes, 0, static_cast<jsize>(axisIndices.size()), axisIndices.data());
     auto& b = bridge();
     std::lock_guard lock(b.mutex);
     if (!b.running || host != b.host) return;
@@ -264,24 +271,30 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Gyro), (additional & 2) != 0);
     descriptor.capabilities.features.set(static_cast<unsigned>(Feature::RgbLed), (additional & 4) != 0);
     auto& layout = descriptor.layout;
-    layout.id = "android-physical-v1/" + std::to_string(buttons) + "/" + std::to_string(axes);
-    layout.buttonCount = buttonNames.size();
-    layout.axisCount = axisNames.size();
-    device.state.buttons.resize(buttonNames.size());
-    device.state.axes.resize(axisNames.size());
-    const auto describe = [&](auto names, auto mask, const char* prefix, auto& present) {
-        for (unsigned i = 0; i < names.size(); ++i)
-        {
-            const bool available = (mask & (1 << i)) != 0;
-            present.push_back(available);
-            if (available)
-                layout.builtInMapping += std::string(names[i]) + ":" + prefix + std::to_string(i) + ",";
-        }
-    };
-    describe(buttonNames, buttons, "b", layout.buttonPresent);
-    describe(axisNames, axes, "a", layout.axisPresent);
-    device.state.axesKnown = layout.axisPresent;
-    device.state.axes[4] = device.state.axes[5] = -32768;
+    layout.id = "android-sdl-v2/" + std::to_string(buttons) + utf8(env, axisLayout);
+    layout.guid = DeviceGuid::android(descriptor.vendor.value_or(0), descriptor.product.value_or(0), utf8(env, identity),
+        static_cast<std::uint16_t>(guidButtons), static_cast<std::uint16_t>(guidAxes));
+    layout.usesVersion = false;
+    layout.buttonCount = rawButtonCount;
+    layout.axisCount = static_cast<unsigned>(axisCount);
+    device.state.buttons.resize(layout.buttonCount);
+    device.state.axes.resize(layout.axisCount);
+    device.state.axesKnown.resize(layout.axisCount);
+    for (unsigned i = 0; i < layout.buttonCount; ++i)
+    {
+        const bool available = (static_cast<std::uint64_t>(buttons) & (std::uint64_t{1} << i)) != 0;
+        layout.buttonPresent.push_back(available);
+        if (available && i < buttonNames.size())
+            layout.builtInMapping += std::string(buttonNames[i]) + ":b" + std::to_string(i) + ",";
+    }
+    for (unsigned i = 0; i < axisNames.size(); ++i)
+    {
+        const auto index = axisIndices[i];
+        if (index >= 0 && index < axisCount)
+            layout.builtInMapping += std::string(axisNames[i]) + ":a" + std::to_string(index) + ",";
+        else if (i >= 4 && layout.buttonPresent[i + 11])
+            layout.builtInMapping += std::string(axisNames[i]) + ":b" + std::to_string(i + 11) + ",";
+    }
     auto& inserted = b.devices.emplace(id, std::move(device)).first->second;
     if (b.sink)
     {
@@ -312,7 +325,7 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosGamepads_nativeKey(
     auto& b = bridge();
     std::lock_guard lock(b.mutex);
     auto* device = b.find(host, id, endpoint);
-    if (!device || index < 0 || static_cast<unsigned>(index) >= buttonNames.size()) return false;
+    if (!device || index < 0 || static_cast<unsigned>(index) >= device->state.buttons.size()) return false;
     auto& value = device->state.buttons[index];
     if (value != down)
     {
@@ -328,26 +341,30 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosGamepads_nativeMotion(
 {
     if (!times || !input) return false;
     const auto count = env->GetArrayLength(times);
-    constexpr unsigned stride = axisNames.size() + 2;
-    if (count <= 0 || count > 1024 || env->GetArrayLength(input) != count * stride)
+    const auto valueCount = env->GetArrayLength(input);
+    if (count <= 0 || count > 1024 || valueCount < count * 2 || valueCount > count * static_cast<jsize>(maxAxes + 2))
         return false;
     std::vector<jlong> timestamps(count);
-    std::vector<jshort> values(count * stride);
+    std::vector<jshort> values(valueCount);
     env->GetLongArrayRegion(times, 0, count, timestamps.data());
     env->GetShortArrayRegion(input, 0, static_cast<jsize>(values.size()), values.data());
     auto& b = bridge();
     std::lock_guard lock(b.mutex);
     auto* device = b.find(host, id, endpoint);
     if (!device) return false;
-    std::array<RawChange, 10> changes{};
+    const auto axes = device->descriptor.layout.axisCount;
+    const auto stride = axes + 2;
+    if (values.size() != timestamps.size() * stride) return false;
+    std::array<RawChange, maxAxes + 4> changes{};
     for (unsigned row = 0; row < timestamps.size(); ++row)
     {
         unsigned size = 0;
         const auto* sample = values.data() + row * stride;
-        for (unsigned i = 0; i < axisNames.size(); ++i)
-            if (device->descriptor.layout.axisPresent[i] && device->state.axes[i] != sample[i])
+        for (unsigned i = 0; i < axes; ++i)
+            if (!device->state.axesKnown[i] || device->state.axes[i] != sample[i])
             {
                 device->state.axes[i] = sample[i];
+                device->state.axesKnown[i] = 1;
                 changes[size++] = {RawKind::Axis, i, sample[i]};
             }
         constexpr unsigned up = 11, down = 12, left = 13, right = 14;
@@ -359,8 +376,8 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosGamepads_nativeMotion(
                 changes[size++] = {RawKind::Button, index, previous};
             }
         };
-        if (sample[6] != 2) { direction(left, sample[6] < 0); direction(right, sample[6] > 0); }
-        if (sample[7] != 2) { direction(up, sample[7] < 0); direction(down, sample[7] > 0); }
+        if (sample[axes] != 2) { direction(left, sample[axes] < 0); direction(right, sample[axes] > 0); }
+        if (sample[axes + 1] != 2) { direction(up, sample[axes + 1] < 0); direction(down, sample[axes + 1] > 0); }
         if (b.sink && size)
             b.sink->report(device->key, {std::span(changes).first(size), {}, {}, {}, ++device->cursor, clock(timestamps[row])});
     }

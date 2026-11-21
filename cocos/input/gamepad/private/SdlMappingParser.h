@@ -20,6 +20,7 @@ struct MappingEnvironment
 
 enum class MappingSlot { Guid, XInput, Default };
 enum class FaceStyle { Unspecified, Abxy, Axby, Bayx, Sony };
+enum class AxisEncoding { Signed, Inverted, PositiveHalf };
 
 struct Binding
 {
@@ -33,6 +34,7 @@ struct Binding
     int outStart = 0;
     int outEnd = 0;
     std::size_t column = 0;
+    AxisEncoding encoding = AxisEncoding::Signed;
 
     bool operator==(const Binding& other) const noexcept;
     std::string field() const;

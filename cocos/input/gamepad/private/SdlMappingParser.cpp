@@ -557,7 +557,7 @@ bool Binding::operator==(const Binding& other) const noexcept
 {
     return inputKind == other.inputKind && inputIndex == other.inputIndex && hatMask == other.hatMask &&
            inStart == other.inStart && inEnd == other.inEnd && outputAxis == other.outputAxis &&
-           outputIndex == other.outputIndex && outStart == other.outStart && outEnd == other.outEnd;
+           outputIndex == other.outputIndex && outStart == other.outStart && outEnd == other.outEnd && encoding == other.encoding;
 }
 
 std::string Binding::field() const

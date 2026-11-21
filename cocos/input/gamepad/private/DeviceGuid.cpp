@@ -21,17 +21,6 @@ std::uint16_t read16(const DeviceGuid& guid, unsigned offset)
     return static_cast<std::uint16_t>(guid.bytes[offset] | (guid.bytes[offset + 1] << 8));
 }
 
-std::uint16_t crc16(std::uint16_t crc, std::string_view text)
-{
-    for (const unsigned char byte : text)
-    {
-        crc ^= byte;
-        for (unsigned bit = 0; bit < 8; ++bit)
-            crc = static_cast<std::uint16_t>((crc >> 1) ^ ((crc & 1) ? 0xa001 : 0));
-    }
-    return crc;
-}
-
 bool hasBus(const DeviceGuid& guid)
 {
     const auto bus = read16(guid, 0);
@@ -44,6 +33,17 @@ bool hasProductIds(const DeviceGuid& guid)
 }
 
 } // namespace
+
+std::uint16_t DeviceGuid::nameChecksum(std::uint16_t crc, std::string_view text) noexcept
+{
+    for (const unsigned char byte : text)
+    {
+        crc ^= byte;
+        for (unsigned bit = 0; bit < 8; ++bit)
+            crc = static_cast<std::uint16_t>((crc >> 1) ^ ((crc & 1) ? 0xa001 : 0));
+    }
+    return crc;
+}
 
 std::optional<DeviceGuid> DeviceGuid::parse(std::string_view hex)
 {
@@ -70,9 +70,9 @@ DeviceGuid DeviceGuid::make(std::uint16_t bus, std::uint16_t vendor, std::uint16
     DeviceGuid guid;
     std::uint16_t crc = 0;
     if (!manufacturer.empty() && !name.empty())
-        crc = crc16(crc16(crc, manufacturer), " ");
+        crc = nameChecksum(nameChecksum(crc, manufacturer), " ");
     write16(guid, 0, bus);
-    write16(guid, 2, crc16(crc, name));
+    write16(guid, 2, nameChecksum(crc, name));
     if (vendor)
     {
         write16(guid, 4, vendor);
@@ -102,6 +102,16 @@ std::string DeviceGuid::str() const
         result.push_back(hexDigits[byte & 15]);
     }
     return result;
+}
+
+DeviceGuid DeviceGuid::android(std::uint16_t vendor, std::uint16_t product, std::string_view descriptor,
+                              std::uint16_t buttons, std::uint16_t axes)
+{
+    auto guid = make(5, vendor, product, 0, {}, descriptor);
+    // Android reserves these bytes for its input capability masks, including on name-only devices.
+    write16(guid, 12, buttons);
+    write16(guid, 14, axes);
+    return guid;
 }
 
 std::uint16_t DeviceGuid::crc() const noexcept { return hasBus(*this) ? read16(*this, 2) : 0; }

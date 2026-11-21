@@ -59,9 +59,19 @@ bool sameHidDevice(const std::string& path, const std::string& parent)
 
 std::int16_t scaled(int value, const input_absinfo& range)
 {
+    if (range.minimum >= range.maximum)
+        return 0;
     const auto offset = static_cast<std::int64_t>(std::clamp(value, range.minimum, range.maximum)) - range.minimum;
     return static_cast<std::int16_t>(offset * 65535 / (static_cast<std::int64_t>(range.maximum) - range.minimum)
                                      - 32768);
+}
+
+int hatDirection(int value, const input_absinfo& range)
+{
+    // Digital hats are usually -1/0/1. Some drivers report 0/1/2 instead.
+    const auto delta = 2 * static_cast<std::int64_t>(value) - range.minimum - range.maximum;
+    const auto halfRange = static_cast<std::int64_t>(range.maximum) - range.minimum;
+    return delta > halfRange / 2 ? 1 : delta < -halfRange / 2 ? -1 : 0;
 }
 
 std::uint8_t hat(int x, int y)
@@ -104,7 +114,7 @@ struct Device {
             state.buttons[index] = keys.has(code);
         for (auto& [code, range] : ranges)
         {
-            if (::ioctl(fd.get(), EVIOCGABS(code), &range) < 0 || range.minimum >= range.maximum)
+            if (::ioctl(fd.get(), EVIOCGABS(code), &range) < 0)
                 return false;
             if (const auto axis = axes.find(code); axis != axes.end())
                 state.axes[axis->second] = scaled(range.value, range);
@@ -112,8 +122,9 @@ struct Device {
         for (const auto& [code, index] : hats)
         {
             auto& [x, y] = hatValues[(code - firstHat) / 2];
-            x = ranges.at(code).value;
-            y = ranges.at(code + 1).value;
+            const auto horizontal = ranges.find(code), vertical = ranges.find(code + 1);
+            x = horizontal == ranges.end() ? 0 : hatDirection(horizontal->second.value, horizontal->second);
+            y = vertical == ranges.end() ? 0 : hatDirection(vertical->second.value, vertical->second);
             state.hats[index] = hat(x, y);
         }
         return true;
@@ -206,10 +217,11 @@ struct Device {
             {
                 if (const auto it = axes.find(event.code); it != axes.end())
                     set(RawKind::Axis, it->second, state.axes[it->second], scaled(event.value, ranges.at(event.code)));
-                else if (event.code >= firstHat && event.code <= lastHat)
+                else if (event.code >= firstHat && event.code <= lastHat && hats.contains(event.code & ~1u))
                 {
                     auto& [x, y] = lastHatValues[(event.code - firstHat) / 2];
-                    (event.code % 2 ? y : x) = event.value;
+                    if (const auto range = ranges.find(event.code); range != ranges.end())
+                        (event.code % 2 ? y : x) = hatDirection(event.value, range->second);
                 }
             }
         }
@@ -274,33 +286,39 @@ void describeControls(Device& pad, const Bits<KEY_MAX>& keys, const Bits<ABS_MAX
             layout.id += "/b" + std::to_string(code);
         }
     };
-    for (unsigned code = BTN_JOYSTICK; code <= KEY_MAX; ++code)
+    for (unsigned code = BTN_JOYSTICK; code < KEY_MAX; ++code)
         addButton(code);
     for (unsigned code = 0; code < BTN_JOYSTICK; ++code)
         addButton(code);
-    for (unsigned code = 0; code <= ABS_MAX; ++code)
+    for (unsigned code = 0; code < ABS_MAX; ++code)
     {
         input_absinfo range{};
-        if (abs.has(code) && ::ioctl(pad.fd.get(), EVIOCGABS(code), &range) >= 0 && range.minimum < range.maximum)
+        if (abs.has(code) && ::ioctl(pad.fd.get(), EVIOCGABS(code), &range) >= 0)
             pad.ranges.emplace(code, range);
     }
-    for (const auto& [code, range] : pad.ranges)
+    const auto qualifies = [&](unsigned code, auto predicate) {
+        const auto axis = pad.ranges.find(code);
+        return axis == pad.ranges.end() || predicate(axis->second);
+    };
+    const auto threeStates = [](const input_absinfo& range) { return range.minimum == -1 && range.maximum == 1; };
+    const auto uncalibrated = [](const input_absinfo& range) { return !range.fuzz && !range.flat && !range.resolution; };
+    for (unsigned code = 0; code < ABS_MAX; ++code)
     {
-        if (code >= firstHat && code <= lastHat && range.minimum == -1 && range.maximum == 1)
+        if (code >= firstHat && code <= lastHat && code % 2 == 0 &&
+            (pad.ranges.contains(code) || pad.ranges.contains(code + 1)) &&
+            ((qualifies(code, threeStates) && qualifies(code + 1, threeStates)) ||
+             (qualifies(code, uncalibrated) && qualifies(code + 1, uncalibrated))))
         {
-            const auto pair = pad.ranges.find(code ^ 1u);
-            if (pair != pad.ranges.end() && pair->second.minimum == -1 && pair->second.maximum == 1)
-            {
-                if (code % 2 == 0)
-                {
-                    pad.hats.emplace(code, layout.hatCount++);
-                    layout.id += "/h" + std::to_string(code);
-                }
-                continue;
-            }
+            pad.hats.emplace(code, layout.hatCount++);
+            layout.id += "/h" + std::to_string(code++);
+            continue;
         }
-        pad.axes.emplace(code, layout.axisCount++);
-        layout.id += "/a" + std::to_string(code);
+        if (const auto axis = pad.ranges.find(code); axis != pad.ranges.end())
+        {
+            pad.axes.emplace(code, layout.axisCount++);
+            layout.axisPresent.push_back(axis->second.minimum < axis->second.maximum);
+            layout.id += "/a" + std::to_string(code);
+        }
     }
     pad.state.buttons.resize(layout.buttonCount);
     pad.state.axes.resize(layout.axisCount);
@@ -367,6 +385,7 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     pad.inode = stat.st_ino;
     auto& descriptor = pad.descriptor;
     descriptor.name = name(fd, EVIOCGNAME(256));
+    descriptor.layout.guid = DeviceGuid::make(id.bustype, id.vendor, id.product, id.version, {}, descriptor.name);
     if (descriptor.name.empty())
         descriptor.name = "Linux Gamepad";
     descriptor.vendor = id.vendor;

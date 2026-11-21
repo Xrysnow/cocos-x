@@ -30,11 +30,34 @@ std::int16_t signedAxis(float value)
     return static_cast<std::int16_t>(std::lround(std::clamp(value, -1.f, 1.f) * (value < 0 ? 32768.f : 32767.f)));
 }
 
+bool isMfiAlias(NSString* name, NSDictionary<NSString*, GCControllerElement*>* elements, bool joyConPair)
+{
+    if (joyConPair && [name isEqualToString:@"Button Home"])
+        return true;
+    for (NSString* prefix in @[@"Left Thumbstick ", @"Right Thumbstick ", @"Direction Pad ", @"Cardinal Direction Pad ",
+                               @"Touchpad 1 ", @"Touchpad 2 "])
+    {
+        if (![name hasPrefix:prefix]) continue;
+        NSString* part = [name substringFromIndex:prefix.length];
+        const bool x = [part isEqualToString:@"X Axis"], y = [part isEqualToString:@"Y Axis"];
+        const bool horizontal = [part isEqualToString:@"Left"] || [part isEqualToString:@"Right"];
+        const bool vertical = [part isEqualToString:@"Up"] || [part isEqualToString:@"Down"];
+        if ([prefix hasPrefix:@"Touchpad"])
+            return x || y || horizontal || vertical;
+        const auto has = [&](NSString* suffix) { return elements[[prefix stringByAppendingString:suffix]] != nil; };
+        if ([prefix hasSuffix:@"Thumbstick "])
+            return (horizontal && has(@"X Axis")) || (vertical && has(@"Y Axis"));
+        return (x && has(@"Left") && has(@"Right")) || (y && has(@"Up") && has(@"Down"));
+    }
+    return false;
+}
+
 struct Device {
     GCController* controller;
     std::array<GCControllerButtonInput*, ButtonCount> buttons{};
     std::array<GCControllerAxisInput*, 4> sticks{};
     std::array<GCControllerButtonInput*, 2> triggers{};
+    std::array<NSString*, ButtonCount> extraButtonNames{};
     std::array<CHHapticEngine*, 2> engines{};
     std::array<id<CHHapticPatternPlayer>, 2> players{};
     std::array<GCHapticsLocality, 2> haptics{};
@@ -120,12 +143,116 @@ struct Device {
         for (unsigned i = 0; i < axisNames.size(); ++i)
             map(layout.axisPresent, i, i < sticks.size() ? sticks[i] != nil : triggers[i - sticks.size()] != nil,
                 axisNames[i], "a");
-        raw.buttons.resize(ButtonCount);
+        if (pad) configureMfi();
+        raw.buttons.resize(layout.buttonCount);
         raw.axes.resize(AxisCount);
         raw.axesKnown = layout.axisPresent;
         sample();
         if (auto value = power())
             descriptor.power = *value;
+    }
+
+    void configureMfi()
+    {
+        if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
+        {
+            auto profile = controller.physicalInputProfile;
+            auto elements = profile.elements;
+            auto category = controller.productCategory;
+            const bool joyConPair = [category isEqualToString:@"Nintendo Switch Joy-Con (L/R)"];
+            std::uint16_t vendor = 0x05ac, product = 4;
+            NSString* name = controller.vendorName ?: (category ?: @"MFi Gamepad");
+            if ([name hasPrefix:@"Backbone One"])
+            {
+                vendor = 0x358a;
+                product = [category isEqualToString:@"DualSense"] ? 0x0104 : 0x0103;
+            }
+            else if ([category isEqualToString:@"DualShock 4"] || [category isEqualToString:@"DualSense"])
+            {
+                vendor = 0x054c;
+                product = [category isEqualToString:@"DualSense"] ? 0x0ce6 : 0x09cc;
+            }
+            else if ([category isEqualToString:@"Xbox One"])
+            {
+                vendor = 0x045e;
+                if (profile.buttons[GCInputXboxPaddleOne]) { product = 0x0b05; name = @"Xbox One Elite 2 Controller"; }
+                else if (profile.buttons[@"Button Share"]) { product = 0x0b13; name = @"Xbox Series X Controller"; }
+                else { product = 0x02e0; name = @"Xbox One Wireless Controller"; }
+            }
+            else if ([category hasPrefix:@"Nintendo Switch Joy-Con"] || [category isEqualToString:@"Switch Pro Controller"])
+            {
+                vendor = 0x057e;
+                product = [category hasSuffix:@"(L)"] ? 0x2006 : [category hasSuffix:@"(R)"] ? 0x2007 :
+                          joyConPair ? 0x2008 : 0x2009;
+            }
+
+            auto& layout = descriptor.layout;
+            const auto extra = [&](Button button, NSString* key) {
+                const auto index = static_cast<unsigned>(button);
+                if (auto input = profile.buttons[key]; !buttons[index] && input)
+                {
+                    buttons[index] = input;
+                    extraButtonNames[index] = key;
+                    layout.buttonPresent[index] = 1;
+                    layout.builtInMapping += std::string(buttonNames[index]) + ":b" + std::to_string(index) + ',';
+                }
+            };
+            if (vendor == 0x054c)
+                extra(Button::TouchpadClick, GCInputDualShockTouchpadButton);
+            if (vendor == 0x045e)
+            {
+                extra(Button::Misc1, @"Button Share");
+                extra(Button::RightPaddle1, GCInputXboxPaddleOne);
+                extra(Button::LeftPaddle1, GCInputXboxPaddleTwo);
+                extra(Button::RightPaddle2, GCInputXboxPaddleThree);
+                extra(Button::LeftPaddle2, GCInputXboxPaddleFour);
+            }
+
+            SdlInputIndices indices;
+            std::vector<std::string> axisKeys, buttonKeys;
+            for (NSString* key in [[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)])
+            {
+                if (isMfiAlias(key, elements, joyConPair)) continue;
+                auto control = elements[key];
+                const bool isButton = [control isKindOfClass:GCControllerButtonInput.class];
+                const auto trigger = std::find(triggers.begin(), triggers.end(), control);
+                const bool isTrigger = trigger != triggers.end();
+                if (isButton)
+                {
+                    buttonKeys.emplace_back(key.UTF8String);
+                    const auto native = std::find(buttons.begin(), buttons.end(), control);
+                    if (native != buttons.end())
+                        indices.buttons.emplace_back(static_cast<unsigned>(native - buttons.begin()));
+                    else if (isTrigger)
+                        indices.buttons.emplace_back(ButtonCount + static_cast<unsigned>(trigger - triggers.begin()));
+                    else
+                        indices.buttons.emplace_back(std::nullopt);
+                }
+                if (control.analog && (isButton || [control isKindOfClass:GCControllerAxisInput.class]))
+                {
+                    axisKeys.emplace_back(key.UTF8String);
+                    const auto stick = std::find(sticks.begin(), sticks.end(), control);
+                    if (stick != sticks.end())
+                    {
+                        const auto index = static_cast<unsigned>(stick - sticks.begin());
+                        indices.axes.emplace_back(SdlAxisIndex{index, index % 2 ? AxisEncoding::Inverted : AxisEncoding::Signed});
+                    }
+                    else if (isTrigger)
+                        indices.axes.emplace_back(SdlAxisIndex{4 + static_cast<unsigned>(trigger - triggers.begin()),
+                            AxisEncoding::PositiveHalf});
+                    else
+                        indices.axes.emplace_back(std::nullopt);
+                }
+            }
+            if (indices.buttons.empty() && indices.axes.empty()) return;
+            auto signature = DeviceGuid::nameChecksum(0, name.UTF8String);
+            for (const auto& key : axisKeys) signature = DeviceGuid::nameChecksum(signature, key);
+            for (const auto& key : buttonKeys) signature = DeviceGuid::nameChecksum(signature, key);
+            layout.guid = DeviceGuid::make(5, vendor, product, signature, {}, name.UTF8String, 'm', 4);
+            layout.sdlIndices = std::move(indices);
+            layout.buttonCount += static_cast<unsigned>(triggers.size());
+            for (const auto& trigger : triggers) layout.buttonPresent.push_back(trigger != nil);
+        }
     }
 
     void sample(id snapshot = nil)
@@ -150,8 +277,8 @@ struct Device {
                     if (buttons[i]) set(RawKind::Button, raw.buttons, i, static_cast<std::uint8_t>(input.pressed));
                 };
                 for (unsigned i = 0; i < names.size(); ++i)
-                    if (names[i])
-                        digital(i, capture.buttons[names[i]].pressedInput);
+                    if (GCInputButtonName name = names[i] ?: (GCInputButtonName)extraButtonNames[i])
+                        digital(i, capture.buttons[name].pressedInput);
                 auto dp = capture.dpads[GCInputDirectionPad];
                 digital(static_cast<unsigned>(Button::DpadUp), dp.up);
                 digital(static_cast<unsigned>(Button::DpadDown), dp.down);
@@ -169,6 +296,13 @@ struct Device {
                     if (triggers[i])
                         set(RawKind::Axis, raw.axes, i + 4,
                             static_cast<std::int16_t>(std::lround(std::clamp(pressure[i], 0.f, 1.f) * 65535.f) - 32768));
+                if (descriptor.layout.sdlIndices)
+                {
+                    set(RawKind::Button, raw.buttons, ButtonCount,
+                        static_cast<std::uint8_t>(capture.buttons[GCInputLeftTrigger].pressedInput.pressed));
+                    set(RawKind::Button, raw.buttons, ButtonCount + 1,
+                        static_cast<std::uint8_t>(capture.buttons[GCInputRightTrigger].pressedInput.pressed));
+                }
                 return;
             }
         for (unsigned i = 0; i < buttons.size(); ++i)
@@ -177,8 +311,12 @@ struct Device {
             set(RawKind::Axis, raw.axes, i, signedAxis(sticks[i].value * (i % 2 ? -1.f : 1.f)));
         for (unsigned i = 0; i < triggers.size(); ++i)
             if (triggers[i])
+            {
                 set(RawKind::Axis, raw.axes, i + 4,
                     static_cast<std::int16_t>(std::lround(std::clamp(triggers[i].value, 0.f, 1.f) * 65535.f) - 32768));
+                if (descriptor.layout.sdlIndices)
+                    set(RawKind::Button, raw.buttons, ButtonCount + i, static_cast<std::uint8_t>(triggers[i].pressed));
+            }
     }
 
     std::optional<Power> power() const
@@ -311,6 +449,23 @@ using Identity = void*;
 Identity identity(GCController* controller) { return (__bridge void*)controller; }
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+std::optional<RawKind> hidKind(unsigned page, unsigned usage)
+{
+    if (page == kHIDPage_Button || page == kHIDPage_Consumer)
+        return RawKind::Button;
+    if (page == kHIDPage_GenericDesktop)
+    {
+        if (usage >= kHIDUsage_GD_X && usage <= kHIDUsage_GD_Wheel) return RawKind::Axis;
+        if (usage == kHIDUsage_GD_Hatswitch) return RawKind::Hat;
+        if ((usage >= kHIDUsage_GD_DPadUp && usage <= kHIDUsage_GD_DPadLeft) || usage == kHIDUsage_GD_Start ||
+            usage == kHIDUsage_GD_Select || usage == kHIDUsage_GD_SystemMainMenu) return RawKind::Button;
+    }
+    if (page == kHIDPage_Simulation && (usage == kHIDUsage_Sim_Rudder || usage == kHIDUsage_Sim_Throttle ||
+        usage == kHIDUsage_Sim_Accelerator || usage == kHIDUsage_Sim_Brake))
+        return RawKind::Axis;
+    return {};
+}
+
 struct HidDevice {
     struct Control {
         IOHIDElementRef element;
@@ -342,11 +497,8 @@ struct HidDevice {
                 continue;
             const auto page = IOHIDElementGetUsagePage(element);
             const auto usage = IOHIDElementGetUsage(element);
-            if (page == kHIDPage_Button)
-                sorted.push_back({element, RawKind::Button, 0});
-            else if (page == kHIDPage_GenericDesktop && usage >= kHIDUsage_GD_X && usage <= kHIDUsage_GD_Hatswitch &&
-                     IOHIDElementGetLogicalMin(element) < IOHIDElementGetLogicalMax(element))
-                sorted.push_back({element, usage == kHIDUsage_GD_Hatswitch ? RawKind::Hat : RawKind::Axis, 0});
+            if (const auto kind = hidKind(page, usage))
+                sorted.push_back({element, *kind, 0});
         }
         std::ranges::sort(sorted, {}, [](const Control& x) {
             return std::tuple{x.kind, IOHIDElementGetUsage(x.element), IOHIDElementGetCookie(x.element)};
@@ -358,14 +510,23 @@ struct HidDevice {
         auto& layout = descriptor.layout;
         layout.id = "macos-iohid-v1";
         const std::array counts{&layout.buttonCount, &layout.axisCount, &layout.hatCount};
+        bool uniqueOrder = true;
+        std::optional<std::pair<RawKind, unsigned>> previous;
         for (auto control : sorted)
         {
             control.index = *counts[static_cast<unsigned>(control.kind)];
             if (result.controls.emplace(IOHIDElementGetCookie(control.element), control).second)
             {
+                const auto usage = IOHIDElementGetUsage(control.element);
+                const auto next = std::pair{control.kind, usage};
+                uniqueOrder &= previous != next;
+                previous = next;
                 ++*counts[static_cast<unsigned>(control.kind)];
                 layout.id += "/" + std::to_string(static_cast<unsigned>(control.kind)) + ":" +
-                    std::to_string(IOHIDElementGetUsage(control.element));
+                    std::to_string(usage);
+                if (control.kind == RawKind::Axis)
+                    layout.axisPresent.push_back(IOHIDElementGetLogicalMin(control.element) <
+                                                 IOHIDElementGetLogicalMax(control.element));
             }
         }
         if (result.controls.empty()) return {};
@@ -378,14 +539,22 @@ struct HidDevice {
                 return std::optional{static_cast<std::uint16_t>(number)};
             return std::optional<std::uint16_t>{};
         };
-        const auto name = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductKey));
-        descriptor.name = "macOS HID Joystick";
-        if (name && CFGetTypeID(name) == CFStringGetTypeID())
-            if (const auto* text = ((__bridge NSString*)name).UTF8String)
-                descriptor.name = text;
+        const auto text = [&](CFStringRef key) -> std::string {
+            const auto property = IOHIDDeviceGetProperty(device, key);
+            if (property && CFGetTypeID(property) == CFStringGetTypeID())
+                if (const auto* utf8 = ((__bridge NSString*)property).UTF8String)
+                    return utf8;
+            return {};
+        };
+        const auto name = text(CFSTR(kIOHIDProductKey));
+        descriptor.name = name.empty() ? "macOS HID Joystick" : name;
         descriptor.vendor = value(CFSTR(kIOHIDVendorIDKey));
         descriptor.product = value(CFSTR(kIOHIDProductIDKey));
         descriptor.version = value(CFSTR(kIOHIDVersionNumberKey));
+        // Equal usages across different collections depend on enumeration order.
+        if (uniqueOrder)
+            layout.guid = DeviceGuid::make(3, descriptor.vendor.value_or(0), descriptor.product.value_or(0),
+                descriptor.version.value_or(0), text(CFSTR(kIOHIDManufacturerKey)), name);
         result.raw.buttons.resize(layout.buttonCount);
         result.raw.axes.resize(layout.axisCount);
         result.raw.axesKnown.resize(layout.axisCount);
@@ -411,6 +580,8 @@ struct HidDevice {
             return set(raw.buttons, static_cast<std::uint8_t>(physical != 0));
         const auto minimum = IOHIDElementGetLogicalMin(element);
         const auto maximum = IOHIDElementGetLogicalMax(element);
+        if (minimum >= maximum)
+            return {};
         if (control.kind == RawKind::Hat)
         {
             constexpr std::array hats{1, 3, 2, 6, 4, 12, 8, 9};
