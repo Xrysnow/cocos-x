@@ -4,6 +4,7 @@
     #define DIRECTINPUT_VERSION 0x0800
 #endif
 #include <dinput.h>
+#include <hidusage.h>
 
 #include <algorithm>
 #include <array>
@@ -310,6 +311,11 @@ void WinDirectInput::refresh(const HidPaths& rawHidPaths)
     HidPaths present;
     for (const auto& instance : list)
     {
+        // DirectInput can enumerate auxiliary HID collections as game controllers.
+        if ((instance.dwDevType & DIDEVTYPE_HID) &&
+            (instance.wUsagePage == HID_USAGE_PAGE_CONSUMER ||
+             (instance.wUsagePage == HID_USAGE_PAGE_GENERIC && instance.wUsage == HID_USAGE_GENERIC_SYSTEM_CTL)))
+            continue;
         IDirectInputDevice8W* created = nullptr;
         if (FAILED(_impl->input->CreateDevice(instance.guidInstance, &created, nullptr)))
             continue;
