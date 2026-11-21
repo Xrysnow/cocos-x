@@ -397,6 +397,20 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeSensor(
     b.sink->report(device->key, {{}, {}, motion, {}, ++device->cursor, {}});
 }
 
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeSensorCapabilities(
+    JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jint mask)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device) return;
+    auto& caps = device->descriptor.capabilities;
+    const auto previous = caps.sensors;
+    caps.sensors.set(static_cast<unsigned>(Sensor::Accel), (mask & 1) != 0);
+    caps.sensors.set(static_cast<unsigned>(Sensor::Gyro), (mask & 2) != 0);
+    if (b.sink && caps.sensors != previous) b.sink->capabilitiesChanged(device->key, caps);
+}
+
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputDone(
     JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jlong generation, jlong command, jint status)
 {

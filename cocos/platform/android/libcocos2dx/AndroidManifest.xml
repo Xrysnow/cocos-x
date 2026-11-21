@@ -2,6 +2,10 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <application>
+        <service
+            android:name="org.cocos.lib.CocosGamepadSensorService"
+            android:process=":gamepad_sensors"
+            android:exported="false" />
         <activity
             android:name="com.jakewharton.processphoenix.ProcessPhoenix"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

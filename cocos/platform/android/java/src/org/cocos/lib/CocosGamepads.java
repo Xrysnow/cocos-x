@@ -1,6 +1,9 @@
 package org.cocos.lib;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -12,7 +15,11 @@ import android.hardware.lights.LightsManager;
 import android.hardware.lights.LightsRequest;
 import android.os.Build;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.SparseArray;
@@ -139,6 +146,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     private static final class DeviceExtras {
         final SensorManager manager;
+        final boolean remoteSensors;
         final Sensor[] sensors = new Sensor[2];
         final SensorEventListener[] listeners = new SensorEventListener[2];
         final LightsManager lights;
@@ -147,9 +155,13 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         int requested;
 
         DeviceExtras(InputDevice device) {
-            manager = device.getSensorManager();
-            sensors[0] = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensors[1] = manager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            boolean hasSensors = device.supportsSource(InputDevice.SOURCE_SENSOR);
+            remoteSensors = hasSensors && Build.VERSION.SDK_INT < 33;
+            manager = hasSensors && !remoteSensors ? device.getSensorManager() : null;
+            if (manager != null) {
+                sensors[0] = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                sensors[1] = manager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            }
             lights = device.getLightsManager();
             Light found = null;
             for (Light light : lights.getLights()) {
@@ -166,6 +178,11 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         }
 
         void updateSensors(CocosGamepads collector, int id, Pad pad) {
+            if (remoteSensors) {
+                collector.sensorClient.update(id, pad);
+                return;
+            }
+            if (manager == null) return;
             for (int i = 0; i < sensors.length; ++i) {
                 boolean enable = collector.resumed && collector.engineActive && (requested & (1 << i)) != 0;
                 if (!enable && listeners[i] != null) {
@@ -204,7 +221,83 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         }
     }
 
+    private final class SensorClient implements ServiceConnection {
+        final Context context;
+        final Messenger replies = new Messenger(new Handler(Looper.getMainLooper(), this::receive));
+        Messenger service;
+        boolean bound;
+
+        SensorClient(Context context) { this.context = context.getApplicationContext(); }
+
+        void update(int id, Pad pad) {
+            if (!bound && resumed) {
+                bound = context.bindService(new Intent(context, CocosGamepadSensorService.class),
+                    this, Context.BIND_AUTO_CREATE);
+            }
+            send(CocosGamepadSensorService.UPDATE, id, pad.generation,
+                resumed && engineActive ? pad.extras.requested : 0);
+        }
+
+        void remove(int id, Pad pad) {
+            send(CocosGamepadSensorService.REMOVE, id, pad.generation, 0);
+        }
+
+        private void send(int what, int id, long endpoint, int request) {
+            if (service == null) return;
+            Message message = Message.obtain(null, what, id, request);
+            message.replyTo = replies;
+            message.getData().putLong(CocosGamepadSensorService.ENDPOINT, endpoint);
+            try { service.send(message); }
+            catch (RemoteException ignored) { service = null; }
+        }
+
+        private boolean receive(Message message) {
+            Pad pad = devices.get(message.arg1);
+            if (current != CocosGamepads.this || pad == null || pad.extras == null || !pad.extras.remoteSensors
+                || pad.generation != message.getData().getLong(CocosGamepadSensorService.ENDPOINT)) return true;
+            if (message.what == CocosGamepadSensorService.CAPABILITIES) {
+                nativeSensorCapabilities(host, message.arg1, pad.generation, message.arg2);
+            } else if (message.what == CocosGamepadSensorService.SAMPLE && message.arg2 >= 0 && message.arg2 < 2
+                && resumed && engineActive && (pad.extras.requested & (1 << message.arg2)) != 0) {
+                float[] values = message.getData().getFloatArray(CocosGamepadSensorService.VALUES);
+                if (values != null && values.length == 3)
+                    nativeSensor(host, message.arg1, pad.generation, message.arg2,
+                        message.getData().getLong(CocosGamepadSensorService.TIMESTAMP), values[0], values[1], values[2]);
+            }
+            return true;
+        }
+
+        @Override public void onServiceConnected(ComponentName name, IBinder binder) {
+            if (!bound || current != CocosGamepads.this) return;
+            service = new Messenger(binder);
+            sync();
+        }
+
+        @Override public void onServiceDisconnected(ComponentName name) { service = null; }
+
+        @Override public void onBindingDied(ComponentName name) {
+            close();
+            handler.postDelayed(() -> {
+                if (current == CocosGamepads.this && resumed) sync();
+            }, 250);
+        }
+
+        private void sync() {
+            for (int i = 0; i < devices.size(); ++i) {
+                Pad pad = devices.valueAt(i);
+                if (pad.extras != null && pad.extras.remoteSensors) update(devices.keyAt(i), pad);
+            }
+        }
+
+        void close() {
+            if (bound) context.unbindService(this);
+            bound = false;
+            service = null;
+        }
+    }
+
     private final InputManager manager;
+    private final SensorClient sensorClient;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final SparseArray<Pad> devices = new SparseArray<>();
     private final long host = next.incrementAndGet();
@@ -212,6 +305,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     CocosGamepads(Context context) {
         manager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
+        sensorClient = Build.VERSION.SDK_INT >= 31 && Build.VERSION.SDK_INT < 33 ? new SensorClient(context) : null;
         current = this;
         nativeHost(host, true);
         manager.registerInputDeviceListener(this, handler);
@@ -235,6 +329,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         nativeAttach(host, id, pad.generation, device.getName(), descriptor, device.getVendorId(), device.getProductId(),
             pad.buttons, pad.layoutMask(), pad.axisMask, pad.axisLayout, pad.ranges.size(), pad.defaultAxes, pad.vibrator != null,
             pad.extras != null ? pad.extras.capabilities() : 0);
+        if (pad.extras != null && pad.extras.remoteSensors) sensorClient.update(id, pad);
     }
 
     @Override public void onInputDeviceRemoved(int id) {
@@ -243,7 +338,8 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         cancel(pad);
         if (pad.extras != null) {
             pad.extras.requested = 0;
-            pad.extras.updateSensors(this, id, pad);
+            if (pad.extras.remoteSensors) sensorClient.remove(id, pad);
+            else pad.extras.updateSensors(this, id, pad);
             pad.extras.clearLight();
         }
         nativeDetach(host, id, pad.generation);
@@ -331,6 +427,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     void close() {
         setResumed(false);
         manager.unregisterInputDeviceListener(this);
+        if (sensorClient != null) sensorClient.close();
         if (current == this) current = null;
         nativeHost(host, false);
         devices.clear();
@@ -394,5 +491,6 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     private static native boolean nativeMotion(long host, int id, long generation, long[] times, short[] values);
     private static native void nativeSensor(long host, int id, long generation, int index, long timestamp,
                                             float x, float y, float z);
+    private static native void nativeSensorCapabilities(long host, int id, long generation, int mask);
     private static native void nativeOutputDone(long host, int id, long endpoint, long generation, long command, int status);
 }
