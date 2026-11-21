@@ -1461,6 +1461,8 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* window, int w, int h)
 
 void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* window, int iconified)
 {
+    Director::getInstance()->setGamepadWindowFocus(
+        this, iconified == GLFW_FALSE && glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE);
     TextInputGLFW::handleGeometry(window);
     if (iconified == GLFW_TRUE)
     {
@@ -1476,6 +1478,8 @@ void GLViewImpl::onGLFWWindowIconifyCallback(GLFWwindow* window, int iconified)
 
 void GLViewImpl::onGLFWWindowFocusCallback(GLFWwindow* window, int focused)
 {
+    Director::getInstance()->setGamepadWindowFocus(
+        this, focused == GLFW_TRUE && glfwGetWindowAttrib(window, GLFW_ICONIFIED) == GLFW_FALSE);
     TextInputGLFW::handleFocus(window, focused == GLFW_TRUE);
     if (focused == GLFW_TRUE)
     {

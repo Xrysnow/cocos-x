@@ -8,6 +8,7 @@ android {
         minSdkVersion PROP_MIN_SDK_VERSION
         targetSdkVersion PROP_TARGET_SDK_VERSION
         consumerProguardFiles '../java/file-dialog.pro', '../java/text-input.pro'
+        consumerProguardFiles '../java/gamepads.pro'
         versionCode 1
         versionName "1.0"
     }
@@ -21,7 +22,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', '../java/text-input.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', '../java/text-input.pro', '../java/gamepads.pro'
         }
     }
 }

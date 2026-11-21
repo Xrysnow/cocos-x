@@ -104,6 +104,7 @@ include(io/CMakeLists.txt)
 include(ui/CMakeLists.txt)
 include(network/CMakeLists.txt)
 include(audio/CMakeLists.txt)
+include(input/gamepad/CMakeLists.txt)
 
 set(COCOS_HEADER cocos2d.h
     ${COCOS_2D_HEADER}
@@ -119,6 +120,7 @@ set(COCOS_HEADER cocos2d.h
     ${COCOS_AUDIO_HEADER}
     ${COCOS_UI_HEADER}
     ${COCOS_NETWORK_HEADER}
+    ${COCOS_GAMEPAD_HEADER}
     )
 
 set(COCOS_SRC cocos2d.cpp
@@ -135,6 +137,7 @@ set(COCOS_SRC cocos2d.cpp
     ${COCOS_AUDIO_SRC}
     ${COCOS_UI_SRC}
     ${COCOS_NETWORK_SRC}
+    ${COCOS_GAMEPAD_SRC}
     )
 
 list(APPEND COCOS_SRC ${COCOS_HEADER})
@@ -173,6 +176,16 @@ target_compile_definitions(${COCOS_CORE_LIB} PRIVATE
     "CC_APP_DIRECTORY_DEFAULT_ID=\"${CC_APP_DIRECTORY_DEFAULT_ID}\"")
 if(WINDOWS)
     target_link_libraries(${COCOS_CORE_LIB} PRIVATE shell32 ole32 imm32 comctl32)
+endif()
+if(COCOS_GAMEPAD_PLATFORM_LIBS)
+    target_link_libraries(${COCOS_CORE_LIB} PRIVATE ${COCOS_GAMEPAD_PLATFORM_LIBS})
+endif()
+if(COCOS_GAMEPAD_PLATFORM_DEFINITIONS)
+    target_compile_definitions(${COCOS_CORE_LIB} PRIVATE ${COCOS_GAMEPAD_PLATFORM_DEFINITIONS})
+endif()
+if(COCOS_GAMEPAD_APPLE)
+    set_source_files_properties(input/gamepad/private/apple/AppleGamepadBackend.mm
+        PROPERTIES COMPILE_OPTIONS "-fobjc-arc;-std=c++20")
 endif()
 
 if(AUDIO_USE_LIBVORBIS)

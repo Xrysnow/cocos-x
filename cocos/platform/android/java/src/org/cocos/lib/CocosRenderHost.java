@@ -265,7 +265,6 @@ final class CocosRenderHost implements Choreographer.FrameCallback {
                 try {
                     if (isCurrent() && resumed && ready && surfaceAlive && generation == current
                             && sizeRevision == revision) {
-                        GameControllerAdapter.onDrawFrameStart();
                         if (nativeRender(session, current) < 0) {
                             failedGeneration = current;
                             ready = false;

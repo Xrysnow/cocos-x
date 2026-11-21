@@ -62,8 +62,7 @@ public:
         MOUSE,
         ACCELERATION,
         FOCUS,
-        GAME_CONTROLLER,
-        CUSTOM
+        CUSTOM = 8
     };
 
     typedef std::string ListenerID;

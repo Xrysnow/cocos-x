@@ -29,6 +29,8 @@ THE SOFTWARE.
 
 // cocos2d includes
 #include "base/Director.h"
+#include "input/gamepad/GamepadService.h"
+#include "input/gamepad/private/PlatformGamepadBackend.h"
 #include "platform/FileDialogInternal.h"
 
 // standard includes
@@ -70,6 +72,14 @@ THE SOFTWARE.
 #include "renderer/backend/ProgramManager.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
 
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+    #include "platform/desktop/GLViewImpl-desktop.h"
+#endif
+
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    #include "input/gamepad/private/win/WinXInput.h"
+#endif
+
 #if CC_ENABLE_SCRIPT_BINDING
     #include "base/ScriptSupport.h"
 #endif
@@ -106,7 +116,19 @@ Director* Director::getInstance()
     return s_SharedDirector;
 }
 
-Director::Director() = default;
+Director::Director()
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+    : _gamepads(new input::GamepadService(input::detail::makeWinGamepadBackend(), 4096, 256))
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+    : _gamepads(new input::GamepadService(input::detail::makeLinuxGamepadBackend(), 4096, 256))
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+    : _gamepads(new input::GamepadService(input::detail::makeAppleGamepadBackend(), 4096, 256))
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    : _gamepads(new input::GamepadService(input::detail::makeAndroidGamepadBackend(), 4096, 256))
+#else
+    : _gamepads(std::make_unique<input::GamepadService>())
+#endif
+{}
 
 bool Director::init()
 {
@@ -157,6 +179,7 @@ bool Director::init()
 
 Director::~Director()
 {
+    _gamepads.reset();
     dialog::stopSession();
     CCLOGINFO("deallocing Director: %p", this);
 
@@ -263,6 +286,9 @@ void Director::setGLDefaultValues()
 // Draw the Scene
 void Director::drawScene()
 {
+    // The console can resume the Director from its own thread. Apply input
+    // reactivation here, before window polling and graphics acquisition.
+    updateGamepadFocus();
     dialog::pump();
 
     // calculate "global" dt
@@ -274,10 +300,12 @@ void Director::drawScene()
     }
 
     const bool canDraw = _renderer->beginFrame();
+    _gamepads->maintain(_paused);
 
     // tick before glClear: issue #533
     if (!_paused)
     {
+        _gamepads->publish();
         _eventDispatcher->dispatchEvent(_eventBeforeUpdate);
         _scheduler->update(_deltaTime);
         _eventDispatcher->dispatchEvent(_eventAfterUpdate);
@@ -409,6 +437,17 @@ void Director::setOpenGLView(GLView* openGLView)
         _openGLView = openGLView;
         _openGLView->retain();
 
+        _gamepadWindowFocused = true;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+        if (auto* desktopView = dynamic_cast<GLViewImpl*>(_openGLView))
+        {
+            auto* window = desktopView->getWindow();
+            _gamepadWindowFocused = window && glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE &&
+                                    glfwGetWindowAttrib(window, GLFW_ICONIFIED) == GLFW_FALSE;
+        }
+#endif
+        updateGamepadFocus();
+
         // set size
         _winSizeInPoints = _openGLView->getDesignResolutionSize();
 
@@ -425,6 +464,25 @@ void Director::setOpenGLView(GLView* openGLView)
         {
             _eventDispatcher->setEnabled(true);
         }
+    }
+}
+
+input::GamepadService& Director::getGamepads() const
+{
+    return *_gamepads;
+}
+
+void Director::updateGamepadFocus()
+{
+    _gamepads->setFocused(_gamepadWindowFocused && !_paused && !_invalid);
+}
+
+void Director::setGamepadWindowFocus(const GLView* view, bool focused)
+{
+    if (view == _openGLView)
+    {
+        _gamepadWindowFocused = focused;
+        updateGamepadFocus();
     }
 }
 
@@ -974,6 +1032,7 @@ void Director::restart()
 
 void Director::reset()
 {
+    _gamepads->setFocused(false);
     dialog::stopSession();
     if (_openGLView)
         _openGLView->getTextInputService().reset();
@@ -1181,6 +1240,7 @@ void Director::pause()
     setAnimationInterval(1 / 4.0, SetIntervalReason::BY_DIRECTOR_PAUSE);
 #endif
     _paused = true;
+    _gamepads->setFocused(false);
 }
 
 void Director::resume()
@@ -1532,6 +1592,10 @@ void Director::mainLoop()
         // release the objects
         PoolManager::getInstance()->getCurrentPool()->clear();
     }
+    else
+    {
+        _gamepads->maintain(true);
+    }
 }
 
 void Director::mainLoop(float dt)
@@ -1544,6 +1608,7 @@ void Director::mainLoop(float dt)
 void Director::stopAnimation()
 {
     _invalid = true;
+    _gamepads->setFocused(false);
 }
 
 void Director::setAnimationInterval(float interval)
@@ -1556,7 +1621,8 @@ void Director::setAnimationInterval(float interval, SetIntervalReason reason)
     _animationInterval = interval;
     if (!_invalid)
     {
-        stopAnimation();
+        // Retiming the active loop does not change input focus.
+        _invalid = true;
         startAnimation(reason);
     }
 }

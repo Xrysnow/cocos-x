@@ -1,0 +1,85 @@
+#pragma once
+
+#include "input/gamepad/GamepadFrame.h"
+#include "input/gamepad/GamepadMapping.h"
+
+#include <functional>
+#include <memory>
+#include <utility>
+
+namespace cc {
+class Director;
+}
+
+namespace cc::input {
+
+namespace detail {
+class GamepadBackend;
+}
+
+// Close or destroy on the engine thread. A lease can outlive its device or service.
+class Subscription {
+public:
+    Subscription(Subscription&& other) noexcept : _onClose(std::exchange(other._onClose, {})) {}
+
+    Subscription& operator=(Subscription&& other) noexcept {
+        if (this != &other) {
+            close();
+            _onClose = std::exchange(other._onClose, {});
+        }
+        return *this;
+    }
+
+    ~Subscription() { close(); }
+
+    void close() noexcept {
+        if (auto callback = std::exchange(_onClose, {})) {
+            callback();
+        }
+    }
+
+private:
+    friend class GamepadService;
+
+    explicit Subscription(std::function<void()> onClose) : _onClose(std::move(onClose)) {}
+
+    std::function<void()> _onClose;
+};
+
+// Director owns the service. Public operations take place on the engine thread.
+class CC_DLL GamepadService {
+public:
+    GamepadService();
+    ~GamepadService();
+
+    GamepadService(const GamepadService&) = delete;
+    GamepadService& operator=(const GamepadService&) = delete;
+
+    const GamepadFrame& frame() const;
+    MappingResult setLocalBindings(DeviceId id, std::string_view layoutId,
+                                   std::string_view bindingFields);
+    MappingResult addGamepadMapping(std::string_view line,
+                                    MappingSource source = MappingSource::Application);
+    ImportReport importMappings(std::string_view utf8,
+                                MappingSource source = MappingSource::Application);
+    Result<std::string> mappingFor(DeviceId id) const;
+    Error assignPlayer(DeviceId id, std::optional<unsigned> slot);
+    Result<Subscription> subscribeSensor(DeviceId id, Sensor type, unsigned depth);
+    Result<Subscription> watchRaw(DeviceId id);
+    Result<CommandId> submit(DeviceId id, const OutputCommand& command);
+
+private:
+    friend class ::cc::Director;
+    friend class GamepadTestAccess;
+
+    GamepadService(std::unique_ptr<detail::GamepadBackend> backend, std::size_t reportCapacity,
+                   std::size_t controlCapacity);
+    void maintain(bool paused);
+    void publish();
+    void setFocused(bool focused);
+
+    class Impl;
+    std::unique_ptr<Impl> _impl;
+};
+
+} // namespace cc::input

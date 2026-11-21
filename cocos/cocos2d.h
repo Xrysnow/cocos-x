@@ -73,11 +73,8 @@ THE SOFTWARE.
 #include "base/EventListenerFocus.h"
 #include "base/EventListenerKeyboard.h"
 #include "base/EventListenerMouse.h"
-#include "base/EventListenerController.h"
 #include "base/EventListenerTouch.h"
 #include "base/EventMouse.h"
-#include "base/EventController.h"
-#include "base/Controller.h"
 #include "base/EventTouch.h"
 #include "base/EventType.h"
 
@@ -179,6 +176,7 @@ THE SOFTWARE.
 #include "platform/PlatformMacros.h"
 #include "platform/SAXParser.h"
 #include "platform/TextInputService.h"
+#include "input/gamepad/GamepadService.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     #include "platform/ios/Application-ios.h"

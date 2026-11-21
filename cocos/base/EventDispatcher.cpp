@@ -32,11 +32,6 @@
 #include "base/EventListenerKeyboard.h"
 #include "base/EventListenerCustom.h"
 #include "base/EventListenerFocus.h"
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS || \
-     CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX ||   \
-     CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    #include "base/EventListenerController.h"
-#endif
 #include "2d/Scene.h"
 #include "base/Director.h"
 #include "base/EventType.h"
@@ -90,13 +85,6 @@ static EventListener::ListenerID __getListenerID(Event* event)
         // EventListenerTouchAllAtOnce. return UNKNOWN instead.
         CCASSERT(false, "Don't call this method if the event is for touch.");
         break;
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS || \
-     CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX ||   \
-     CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    case Event::Type::GAME_CONTROLLER:
-        ret = EventListenerController::LISTENER_ID;
-        break;
-#endif
     default:
         CCASSERT(false, "Invalid type!");
         break;

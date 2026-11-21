@@ -39,6 +39,7 @@ import android.preference.PreferenceManager.OnActivityResultListener;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -59,6 +60,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     // ===========================================================
 
     private CocosGLSurfaceView mGLSurfaceView = null;
+    private CocosGamepads mGamepads;
     private CocosHandler mHandler = null;
     protected static volatile CocosActivity sContext = null;
     private WebViewHelper mWebViewHelper = null;
@@ -170,6 +172,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         this.mHandler = new CocosHandler(this);
 
         CocosEngine.init(this);
+        mGamepads = new CocosGamepads(this);
         CocosFileDialog.bind(this, savedInstanceState);
 
         this.init();
@@ -213,6 +216,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
         if (sContext != this) return;
 
         hideVirtualButton();
+        if (mGamepads != null) mGamepads.setResumed(true);
         CocosFileDialog.setResumed(this, true);
         CocosEngine.onResume();
         if (mGLSurfaceView != null) mGLSurfaceView.handleOnResume();
@@ -226,6 +230,7 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     	Log.i(TAG, "onPause()");
 
         CocosFileDialog.setResumed(this, false);
+        if (mGamepads != null) mGamepads.setResumed(false);
         if (mEditBoxHelper != null) EditBoxHelper.pause(this);
         if (mWebViewHelper != null) WebViewHelper.setResumed(this, false);
         VideoHelper.setResumed(this, false);
@@ -253,6 +258,10 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy()");
+        if (mGamepads != null) {
+            mGamepads.close();
+            mGamepads = null;
+        }
         CocosFileDialog.unbind(this, !isFinishing());
         if (mHandler != null) mHandler.removeCallbacksAndMessages(null);
         if (mWebViewHelper != null) WebViewHelper.unbind(this, !isFinishing());
@@ -270,7 +279,12 @@ public abstract class CocosActivity extends Activity implements CocosEngineListe
             if (event.getAction() == KeyEvent.ACTION_UP) VideoHelper.handleBack(this);
             return true;
         }
-        return super.dispatchKeyEvent(event);
+        return (mGamepads != null && mGamepads.key(event)) || super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        return (mGamepads != null && mGamepads.motion(event)) || super.dispatchGenericMotionEvent(event);
     }
 
     @Override

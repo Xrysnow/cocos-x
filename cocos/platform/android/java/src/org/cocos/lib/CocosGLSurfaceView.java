@@ -411,7 +411,6 @@ public class CocosGLSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     void cancelPendingInput() {
         mRenderHost.cancelInput(() -> {
             if (mRenderer != null) mRenderer.cancelPendingInput();
-            GameControllerAdapter.cancelPendingInput();
         });
     }
 

@@ -8,6 +8,7 @@ set(lua_bindings_manual_headers
     manual/lua_module_register.h
     manual/LuaBridge.h
     manual/LuaBasicConversions.h
+    manual/gamepad/cclua_gamepad.hpp
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
     manual/lua_conversion/detail/base.hpp
@@ -45,7 +46,6 @@ set(lua_bindings_manual_headers
     manual/physics3d/cclua_physics3d_manual.h
     manual/ui/cclua_ui_manual.hpp
     manual/ui/cclua_ui_values.hpp
-    manual/controller/cclua_controller_manual.hpp
     )
 
 set(lua_bindings_manual_files
@@ -55,6 +55,7 @@ set(lua_bindings_manual_files
     manual/LuaValue.cpp
     manual/CcluaLoader.cpp
     manual/LuaBasicConversions.cpp
+    manual/gamepad/cclua_gamepad.cpp
     manual/lua_module_register.cpp
     manual/cclua_file_dialog.cpp
     manual/tolua_fix.cpp
@@ -63,7 +64,6 @@ set(lua_bindings_manual_files
     manual/base/cclua_base_manual.cpp
     manual/physics/cclua_physics_manual.cpp
     manual/3d/cclua_3d_manual.cpp
-    manual/controller/cclua_controller_manual.cpp
     manual/network/cclua_network_manual.cpp
     manual/network/lua_xml_http_request.cpp
     manual/network/lua_downloader.cpp
@@ -75,7 +75,6 @@ set(lua_bindings_manual_files
 set(lua_bindings_auto_headers
     auto/cclua_3d_auto.hpp
     auto/cclua_geometry_auto.hpp
-    auto/cclua_controller_auto.hpp
     auto/cclua_base_auto.hpp
     auto/cclua_navmesh_auto.hpp
     auto/cclua_physics3d_auto.hpp
@@ -96,7 +95,6 @@ set(lua_bindings_auto_files
     auto/cclua_base_auto05.cpp
     auto/cclua_base_auto06.cpp
     auto/cclua_base_retained.cpp
-    auto/cclua_controller_auto.cpp
     auto/cclua_extension_auto.cpp
     auto/cclua_physics_auto.cpp
     auto/cclua_ui_auto.cpp

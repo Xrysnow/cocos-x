@@ -1,19 +1,3 @@
-
-if(APPLE)
-    set(COCOS_BASE_SPECIFIC_SRC
-        base/Controller-apple.mm
-        )
-
-elseif(ANDROID)
-    set(COCOS_BASE_SPECIFIC_SRC
-        base/Controller-android.cpp
-        )
-elseif(LINUX OR WINDOWS)
-    set(COCOS_BASE_SPECIFIC_SRC
-        base/Controller-linux-win32.cpp
-        )
-endif()
-
 set(COCOS_BASE_HEADER
     base/astc.h
     base/pvr.h
@@ -26,14 +10,11 @@ set(COCOS_BASE_HEADER
     base/ccMacros.h
     base/EventAcceleration.h
     base/EventListenerKeyboard.h
-    base/Controller.h
     base/Touch.h
     base/base64.h
-    base/EventListenerController.h
     base/s3tc.h
     base/etc1.h
     base/etc2.h
-    base/GameController.h
     base/Console.h
     base/ccConstants.h
     base/Event.h
@@ -52,7 +33,6 @@ set(COCOS_BASE_HEADER
     base/EventListenerCustom.h
     base/EventDispatcher.h
     base/ccUtils.h
-    base/EventController.h
     base/RefPtr.h
     base/Director.h
     base/EventListenerFocus.h
@@ -85,20 +65,17 @@ set(COCOS_BASE_SRC
     base/AutoreleasePool.cpp
     base/Configuration.cpp
     base/Console.cpp
-    base/Controller.cpp
     base/Data.cpp
     base/NinePatchImageParser.cpp
     base/Director.cpp
     base/Event.cpp
     base/EventAcceleration.cpp
-    base/EventController.cpp
     base/EventCustom.cpp
     base/EventDispatcher.cpp
     base/EventFocus.cpp
     base/EventKeyboard.cpp
     base/EventListener.cpp
     base/EventListenerAcceleration.cpp
-    base/EventListenerController.cpp
     base/EventListenerCustom.cpp
     base/EventListenerFocus.cpp
     base/EventListenerKeyboard.cpp
@@ -131,7 +108,6 @@ set(COCOS_BASE_SRC
     base/pvr.cpp
     base/s3tc.cpp
     base/astc.cpp
-    ${COCOS_BASE_SPECIFIC_SRC}
 
     )
 

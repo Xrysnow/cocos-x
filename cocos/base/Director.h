@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <stack>
 #include <thread>
 #include <chrono>
+#include <memory>
 
 #include "platform/PlatformMacros.h"
 #include "base/Ref.h"
@@ -61,6 +62,11 @@ class Renderer;
 class Camera;
 
 class Console;
+
+namespace input
+{
+class CC_DLL GamepadService;
+}
 
 /**
  @brief Class that creates and handles the main Window and manages how
@@ -426,6 +432,9 @@ public:
      */
     Renderer* getRenderer() const { return _renderer; }
 
+    /** Returns the input service whose frame is published before EVENT_BEFORE_UPDATE. */
+    input::GamepadService& getGamepads() const;
+
     /** Returns the Console associated with this director.
      * @since v3.0
      * @js NA
@@ -650,6 +659,15 @@ protected:
 
     // GLView will recreate stats labels to fit visible rect
     friend class GLView;
+
+private:
+    void updateGamepadFocus();
+    void setGamepadWindowFocus(const GLView* view, bool focused);
+
+    std::unique_ptr<input::GamepadService> _gamepads;
+    bool _gamepadWindowFocused = true;
+
+    friend class GLViewImpl;
 };
 
 // end of base group
