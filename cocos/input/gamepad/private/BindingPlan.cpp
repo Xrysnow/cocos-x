@@ -50,6 +50,9 @@ std::optional<int> rawAxis(const RawState& raw, unsigned index)
 
 bool resolveSdlIndex(Binding& binding, const SdlInputIndices& indices)
 {
+    // Hats use the native indices even when buttons and axes are projected.
+    if (binding.inputKind == RawKind::Hat)
+        return true;
     const auto index = binding.inputIndex;
     if (binding.inputKind == RawKind::Button && index < indices.buttons.size() && indices.buttons[index])
     {

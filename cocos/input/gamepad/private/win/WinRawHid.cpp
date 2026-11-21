@@ -259,31 +259,41 @@ void addValues(Device& device, USHORT count)
     }
 }
 
-bool hasDirectInputOrder(std::span<const Control> controls)
+std::optional<SdlInputIndices> directInputIndices(std::span<const Control> controls)
 {
-    // The Windows database uses DirectInput indices. These HID usages follow
-    // its DIJOYSTATE slot order with no gaps in the buttons and no aliases.
-    unsigned nextButton = 1, lastAxis = 0;
+    // Keep vendor-defined controls in the raw layout. DirectInput mappings use
+    // the standard joystick slots, with no gaps in the buttons or aliases.
+    SdlInputIndices indices;
+    unsigned lastAxis = 0;
     bool hasHat = false;
     for (const auto& control : controls)
     {
+        if (control.page >= HID_USAGE_PAGE_VENDOR_DEFINED_BEGIN)
+            continue;
         switch (control.kind)
         {
         case RawKind::Button:
-            if (control.page != HID_USAGE_PAGE_BUTTON || control.usage != nextButton++) return false;
+            if (control.page != HID_USAGE_PAGE_BUTTON || control.usage != indices.buttons.size() + 1)
+                return {};
+            indices.buttons.emplace_back(control.index);
             break;
         case RawKind::Axis:
             if (control.page != HID_USAGE_PAGE_GENERIC || control.usage < HID_USAGE_GENERIC_X ||
-                control.usage > HID_USAGE_GENERIC_SLIDER || control.usage <= lastAxis) return false;
+                control.usage > HID_USAGE_GENERIC_SLIDER || control.usage <= lastAxis)
+                return {};
             lastAxis = control.usage;
+            indices.axes.emplace_back(SdlAxisIndex{control.index, AxisEncoding::Signed});
             break;
         case RawKind::Hat:
-            if (hasHat) return false;
+            if (hasHat)
+                return {};
             hasHat = true;
             break;
         }
     }
-    return nextButton > 1;
+    if (indices.buttons.empty())
+        return {};
+    return indices;
 }
 
 void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file)
@@ -306,8 +316,14 @@ void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::
         if (HidD_GetSerialNumberString(file, text.data(), sizeof(text)) && text[0])
             descriptor.serial = winUtf8(text.data());
     }
-    if (vendor && product && hasDirectInputOrder(device.controls))
-        descriptor.layout.guid = DeviceGuid::make(3, vendor, product, 0, manufacturer, name);
+    if (vendor && product)
+        if (auto indices = directInputIndices(device.controls))
+        {
+            auto& layout = descriptor.layout;
+            layout.guid = DeviceGuid::make(3, vendor, product, 0, manufacturer, name);
+            if (indices->buttons.size() != layout.buttonCount || indices->axes.size() != layout.axisCount)
+                layout.sdlIndices = std::move(indices);
+        }
 }
 
 bool initialize(Device& device)
