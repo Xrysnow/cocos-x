@@ -319,8 +319,11 @@ uint64_t CommandBufferGFX::getPresentCount() const
 void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor)
 {
     const auto rt = (const RenderTargetGFX*)renderTarget;
+    // Resolve new or changed attachments before selecting and sizing the framebuffer.
+    rt->update();
+    const bool defaultTarget = rt->isDefault();
     uint32_t rtWidth = 0, rtHeight = 0;
-    if (rt->isDefault())
+    if (defaultTarget)
     {
         if (_defaultRT)
         {
@@ -357,9 +360,6 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
         _currentPass = nullptr;
         return;
     }
-    // this may invalidate previous FBOs, so '_currentFBO' shoudld be stored
-    rt->update();
-
     auto clearFlags = gfx::ClearFlagBit::NONE;
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         clearFlags |= gfx::ClearFlagBit::COLOR;
@@ -368,7 +368,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     if (bitmask::any(descriptor.flags.clear, TargetBufferFlags::STENCIL))
         clearFlags |= gfx::ClearFlagBit::STENCIL;
     // NOTE: color is always required
-    if (rt->isDefault())
+    if (defaultTarget)
     {
         if (!swapchains.empty() && swapchains[0]->getGeneration() != _defaultRTGeneration)
         {
@@ -390,6 +390,11 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     rect.y      = _viewPort.top;
     rect.width  = _viewPort.width;
     rect.height = _viewPort.height;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+    // The window clear also initializes pixels outside the camera viewport.
+    if (defaultTarget && bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
+        rect = {0, 0, rtWidth, rtHeight};
+#endif
     /*
     if (clearFlags != gfx::ClearFlagBit::NONE && _scissorEnabled)
     {
@@ -600,12 +605,11 @@ void CommandBufferGFX::setScissorRect(bool isEnabled, float x, float y, float wi
     gfx::Rect rect;
     if (isEnabled)
     {
-        // flip in vulkan
-        const auto api = gfx::Device::getInstance()->getGfxAPI();
-        if (api == gfx::API::VULKAN && _currentFBO)
+        const auto& caps = gfx::Device::getInstance()->getCapabilities();
+        if (_currentFBO && caps.screenSpaceSignY < 0.0f)
         {
-            const auto h = _currentFBOSize.height;
-            y            = h - y - height;
+            // The renderer uses a bottom-left origin for scissor rectangles.
+            y = _currentFBOSize.height - y - height;
         }
         // clamp to avoid error
         const int32_t fboW = static_cast<int32_t>(_currentFBOSize.width);
