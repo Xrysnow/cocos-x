@@ -26,6 +26,11 @@ message(STATUS "PYTHON_COMMAND: ${PYTHON_COMMAND}")
 message(STATUS "HOST_SYSTEM:" ${CMAKE_HOST_SYSTEM_NAME})
 option(BUILD_LUA_LIBS "Build lua libraries" OFF)
 option(CC_BUILD_SHARED_LIBS "Build the cocos core as a shared library with embedded gfx" OFF)
+option(CC_BUILD_APPIMAGE "Enable AppImage packaging targets on native Linux" ON)
+if(CC_BUILD_APPIMAGE AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND
+        CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+    include(CocosAppImage)
+endif()
 
 # AUTO follows cocos' CC_DEBUG > 0 in the binding header. Only explicit
 # overrides are supplied to every target instantiating the templates.

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=cocos-x Demo
+Exec=cocos_demo
+Icon=org.cocos.demo
+Terminal=false
+Categories=Development;

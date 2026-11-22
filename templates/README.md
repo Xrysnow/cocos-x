@@ -37,7 +37,7 @@ An enabled file dialog needs libdbus-1 at build time and a session bus, XDG
 Desktop Portal and a FileChooser backend at runtime. Folder selection needs
 FileChooser v3. Building GLFW with Wayland adds wayland-client, wayland-protocols
 and wayland-scanner. A parented Wayland picker uses compositor xdg-foreign v2.
-The engine's existing Linux rendering path uses X11.
+Native Wayland rendering requires Vulkan.
 
 Install the engine's Linux development dependencies first, then:
 
@@ -51,6 +51,19 @@ The PNG window icon and Lua script are copied to `Resources/` beside the binary.
 Linked shared targets and their runtime modules are copied beside the executable;
 the build RPATH includes `$ORIGIN`.
 Resource deployment runs on every desktop build, including Lua-only edits.
+
+To produce an AppImage, configure from the cocos-x root and explicitly build
+the packaging target:
+
+```sh
+cmake -S . -B build-demo-appimage -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DCC_BUILD_DEMO=ON -DBUILD_LUA_LIBS=ON
+cmake --build build-demo-appimage --target appimage-cocos_demo
+```
+
+The image is written to `build-demo-appimage/packages/Release/`, with
+`Resources/main.lua` and `Resources/icon.png` beside the packaged executable.
+See [packaging tools and configuration](../cmake/README.md#linux-appimage-packaging).
 
 ## macOS
 

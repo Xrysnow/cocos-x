@@ -1,3 +1,28 @@
+# Linux AppImage packaging
+
+On native Linux with CMake 3.28 or newer, `CC_BUILD_APPIMAGE` registers the
+application's `appimage-<target>` build target by default. Set
+`-DCC_BUILD_APPIMAGE=OFF` to omit it. Build the target explicitly to produce
+`<build>/packages/<config>/<target>-<architecture>.AppImage`. With an empty
+single-config build type, the output uses `NoConfig`.
+
+The packaging target looks for `linuxdeploy` and `appimagetool` on `PATH` when
+invoked. Set `CC_APPIMAGE_LINUXDEPLOY` and `CC_APPIMAGE_APPIMAGETOOL` to use
+specific executable paths. For a pinned Type 2 runtime, set
+`CC_APPIMAGE_RUNTIME_FILE` to its local path. Without that
+setting, `appimagetool` uses its default runtime selection. The packaging tools
+can themselves be AppImages and run in extract-and-run mode.
+
+With native packaging tools, make `patchelf`, `file`, `desktop-file-validate`,
+and `mksquashfs` available on `PATH`. On Ubuntu the last two are provided by
+`desktop-file-utils` and `squashfs-tools`.
+
+The target assembles a fresh AppDir on every invocation. It resolves linked ELF
+dependencies from the configured Linux build environment and preserves the app's
+resource layout. Distribution compatibility follows the libraries and symbol
+versions in the resulting package and the host graphics stack. Build on the
+oldest supported distribution and test there before release.
+
 # Standalone Windows x64 libraries
 
 To include the cross-platform Lua application, configure the cocos-x root with

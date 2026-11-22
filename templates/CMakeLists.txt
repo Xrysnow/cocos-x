@@ -52,6 +52,12 @@ if(WINDOWS OR LINUX)
     else()
         set_target_properties(cocos_demo PROPERTIES
             BUILD_RPATH "$ORIGIN" BUILD_RPATH_USE_ORIGIN TRUE)
+        if(CC_BUILD_APPIMAGE AND COMMAND cocos_add_appimage)
+            cocos_add_appimage(cocos_demo
+                DESKTOP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/proj.linux/org.cocos.demo.desktop"
+                ICON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon.png"
+                RESOURCE_FILES ${demo_resources})
+        endif()
     endif()
 elseif(APPLE)
     set_source_files_properties(${demo_resources} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
