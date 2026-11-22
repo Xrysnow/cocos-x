@@ -16,9 +16,10 @@ bool AppDelegate::applicationDidFinishLaunching()
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_LINUX || CC_TARGET_PLATFORM == CC_PLATFORM_MAC
     if (!view)
     {
-        view = GLViewImpl::createWithRect("cocos-x Demo", Rect(0, 0, 960, 540));
-        if (!view)
+        auto newView = GLViewImpl::createWithRect("cocos-x Demo", Rect(0, 0, 960, 540));
+        if (!newView)
             return false;
+        view = newView.get();
         director->setOpenGLView(view);
     }
 #endif
