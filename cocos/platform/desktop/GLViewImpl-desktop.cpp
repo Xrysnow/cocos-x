@@ -843,6 +843,8 @@ void GLViewImpl::refreshRenderSurfaceState(bool polled)
 {
     // All GLFW/AppKit access stays in the main-thread window phase. The renderer
     // consumes these values only after pollEvents(), before queuing an acquire.
+    const auto previousWindowSize = _renderWindowSize;
+    const auto previousFramebufferSize = _renderFramebufferSize;
     int windowWidth = 0, windowHeight = 0;
     int pixelWidth = 0, pixelHeight = 0;
     if (_mainWindow)
@@ -880,6 +882,15 @@ void GLViewImpl::refreshRenderSurfaceState(bool polled)
 #else
     (void)polled;
 #endif
+
+    // A backing change can leave the logical window size unchanged.
+    if (_renderSurfaceAvailable &&
+        (_renderWindowSize != previousWindowSize || _renderFramebufferSize != previousFramebufferSize))
+    {
+        auto* director = Director::getInstance();
+        if (director->getOpenGLView() == this)
+            director->setViewport();
+    }
 }
 #endif
 
@@ -1109,11 +1120,28 @@ void GLViewImpl::setWindowed(int width, int height)
 void GLViewImpl::updateWindowSize()
 {
     int w = 0, h = 0;
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    glfwGetWindowSize(_mainWindow, &w, &h);
+    updateWindowLayout(w, h);
+#else
     glfwGetFramebufferSize(_mainWindow, &w, &h);
     setFrameSize(std::trunc(w / _frameZoomFactor), std::trunc(h / _frameZoomFactor));
     updateDesignResolutionSize();
+#endif
     Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_RESIZED, nullptr);
 }
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+void GLViewImpl::updateWindowLayout(int width, int height)
+{
+    if (width <= 0 || height <= 0)
+        return;
+
+    // GLFW has already changed the window. Update the logical layout without resizing it again.
+    GLView::setFrameSize(std::trunc(width / _frameZoomFactor), std::trunc(height / _frameZoomFactor));
+    updateDesignResolutionSize();
+}
+#endif
 
 int GLViewImpl::getMonitorCount() const
 {
@@ -1190,42 +1218,49 @@ void GLViewImpl::setFrameSize(float width, float height)
     updateFrameSize();
 }
 
+Vec2 GLViewImpl::getFrameToFramebufferScale() const
+{
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    if (_renderWindowSize.x > 0 && _renderWindowSize.y > 0 &&
+        _renderFramebufferSize.x > 0 && _renderFramebufferSize.y > 0)
+    {
+        return {_frameZoomFactor * _renderFramebufferSize.x / _renderWindowSize.x,
+                _frameZoomFactor * _renderFramebufferSize.y / _renderWindowSize.y};
+    }
+#endif
+    const auto scale = _retinaFactor * _frameZoomFactor;
+    return {scale, scale};
+}
+
 void GLViewImpl::setViewPortInPoints(float x, float y, float w, float h)
 {
+    const auto scale = getFrameToFramebufferScale();
     Viewport vp;
-    vp.x = (int)(x * _scaleX * _retinaFactor * _frameZoomFactor +
-                 _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor);
-    vp.y = (int)(y * _scaleY * _retinaFactor * _frameZoomFactor +
-                 _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor);
-    vp.w = (unsigned int)(w * _scaleX * _retinaFactor * _frameZoomFactor);
-    vp.h = (unsigned int)(h * _scaleY * _retinaFactor * _frameZoomFactor);
+    vp.x = static_cast<int>((x * _scaleX + _viewPortRect.origin.x) * scale.x);
+    vp.y = static_cast<int>((y * _scaleY + _viewPortRect.origin.y) * scale.y);
+    vp.w = static_cast<unsigned int>(w * _scaleX * scale.x);
+    vp.h = static_cast<unsigned int>(h * _scaleY * scale.y);
     Camera::setDefaultViewport(vp);
 }
 
 void GLViewImpl::setScissorInPoints(float x, float y, float w, float h)
 {
-    auto x1       = (int)(x * _scaleX * _retinaFactor * _frameZoomFactor +
-                    _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor);
-    auto y1       = (int)(y * _scaleY * _retinaFactor * _frameZoomFactor +
-                    _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor);
-    auto width1   = (unsigned int)(w * _scaleX * _retinaFactor * _frameZoomFactor);
-    auto height1  = (unsigned int)(h * _scaleY * _retinaFactor * _frameZoomFactor);
-    auto renderer = Director::getInstance()->getRenderer();
-    renderer->setScissorRect(x1, y1, width1, height1);
-
+    const auto scale = getFrameToFramebufferScale();
+    const auto pixelX = static_cast<int>((x * _scaleX + _viewPortRect.origin.x) * scale.x);
+    const auto pixelY = static_cast<int>((y * _scaleY + _viewPortRect.origin.y) * scale.y);
+    const auto pixelWidth = static_cast<unsigned int>(w * _scaleX * scale.x);
+    const auto pixelHeight = static_cast<unsigned int>(h * _scaleY * scale.y);
+    Director::getInstance()->getRenderer()->setScissorRect(pixelX, pixelY, pixelWidth, pixelHeight);
 }
 
 Rect GLViewImpl::getScissorRect() const
 {
-    auto renderer = Director::getInstance()->getRenderer();
-    auto& rect    = renderer->getScissorRect();
-
-    float x = (rect.x - _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor) /
-              (_scaleX * _retinaFactor * _frameZoomFactor);
-    float y = (rect.y - _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor) /
-              (_scaleY * _retinaFactor * _frameZoomFactor);
-    float w = rect.width / (_scaleX * _retinaFactor * _frameZoomFactor);
-    float h = rect.height / (_scaleY * _retinaFactor * _frameZoomFactor);
+    const auto scale = getFrameToFramebufferScale();
+    const auto& rect = Director::getInstance()->getRenderer()->getScissorRect();
+    const float x = (rect.x / scale.x - _viewPortRect.origin.x) / _scaleX;
+    const float y = (rect.y / scale.y - _viewPortRect.origin.y) / _scaleY;
+    const float w = rect.width / (scale.x * _scaleX);
+    const float h = rect.height / (scale.y * _scaleY);
     return Rect(x, y, w, h);
 }
 
@@ -1436,6 +1471,9 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* window, int w, int h)
     }
     if (w && h && _resolutionPolicy != ResolutionPolicy::UNKNOWN)
     {
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+        updateWindowLayout(w, h);
+#else
         const float frameWidth  = std::trunc(w / _frameZoomFactor);
         const float frameHeight = std::trunc(h / _frameZoomFactor);
         setFrameSize(frameWidth, frameHeight);
@@ -1453,6 +1491,7 @@ void GLViewImpl::onGLFWWindowSizeCallback(GLFWwindow* window, int w, int h)
          @see also: updateWindowSize (call after enter/exit full screen mode)
         */
         updateDesignResolutionSize();
+#endif
 
         TextInputGLFW::handleGeometry(window);
         Director::getInstance()->getEventDispatcher()->dispatchCustomEvent(GLViewImpl::EVENT_WINDOW_RESIZED, nullptr);

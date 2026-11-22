@@ -167,6 +167,7 @@ protected:
     void updateWindowSize();
 
     void updateFrameSize();
+    Vec2 getFrameToFramebufferScale() const;
 
     // GLFW callbacks
     void onGLFWError(int errorID, const char* errorDesc);
@@ -192,6 +193,7 @@ protected:
     bool _borderlessFullscreen = false;
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    void updateWindowLayout(int width, int height);
     void refreshRenderSurfaceState(bool polled = false);
     detail::MacWindowBridge* _macBridge = nullptr;
     Vec2 _renderWindowSize;
