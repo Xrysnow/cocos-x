@@ -148,12 +148,10 @@ public:
     /** Internal renderer surface; not exposed to Lua. macOS returns NSView*. */
     void* getRenderSurfaceHandle();
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-    // Internal P2 rendering inputs, refreshed on the main thread after polling.
-    // Full public size snapshots and change notifications are introduced in P3.
+    // Main-thread geometry used by the current frame.
+    Vec2 getRenderWindowSize() const { return _renderWindowSize; }
     Vec2 getRenderFramebufferSize() const { return _renderFramebufferSize; }
     bool isRenderSurfaceAvailable() const { return _renderSurfaceAvailable; }
-#endif
 
 protected:
     GLViewImpl(bool initglfw = true);
@@ -163,10 +161,6 @@ protected:
     bool initWithFullScreen(std::string_view viewName);
     bool initWithFullscreen(std::string_view viewname, const GLFWvidmode& videoMode, GLFWmonitor* monitor);
 
-    /* update frame layout when enter/exit full screen mode */
-    void updateWindowSize();
-
-    void updateFrameSize();
     Vec2 getFrameToFramebufferScale() const;
 
     // GLFW callbacks
@@ -177,7 +171,6 @@ protected:
     void onGLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     void onGLFWCharCallback(GLFWwindow* window, unsigned int character);
     void onGLFWWindowPosCallback(GLFWwindow* windows, int x, int y);
-    void onGLFWWindowSizeCallback(GLFWwindow* window, int width, int height);
     void onGLFWWindowIconifyCallback(GLFWwindow* window, int iconified);
     void onGLFWWindowFocusCallback(GLFWwindow* window, int focused);
 
@@ -192,13 +185,12 @@ protected:
     GLFWmonitor* _monitor;
     bool _borderlessFullscreen = false;
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-    void updateWindowLayout(int width, int height);
     void refreshRenderSurfaceState(bool polled = false);
-    detail::MacWindowBridge* _macBridge = nullptr;
     Vec2 _renderWindowSize;
     Vec2 _renderFramebufferSize;
     bool _renderSurfaceAvailable = false;
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    detail::MacWindowBridge* _macBridge = nullptr;
 #if CC_DEBUG
     unsigned long long _p2RenderSurfacePolls = 0;
     unsigned long long _p2ZeroSizeBegin = 0;

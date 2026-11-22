@@ -7,6 +7,9 @@
 #include "platform/PlatformMacros.h"
 #include "base/EventDispatcher.h"
 #include "base/Director.h"
+#ifdef CC_PLATFORM_PC
+#include "platform/desktop/GLViewImpl-desktop.h"
+#endif
 #include "UtilsGFX.h"
 #include "DeviceGFX.h"
 #include "RenderTargetGFX.h"
@@ -74,9 +77,8 @@ bool CommandBufferGFX::beginFrame()
     auto* view = Director::getInstance()->getOpenGLView();
     if (!view)
         return false;
-#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
-    // Main-thread pollEvents publishes this snapshot before beginFrame. Never resize
-    // attachments to zero or ask Metal for a drawable for an iconified/hidden window.
+#ifdef CC_PLATFORM_PC
+    // Desktop window events publish the current drawable's pixel extent before beginFrame.
     auto* desktopView = static_cast<GLViewImpl*>(view);
     const auto outputSize = desktopView->getRenderFramebufferSize();
     if (!desktopView->isRenderSurfaceAvailable())
@@ -112,7 +114,7 @@ bool CommandBufferGFX::beginFrame()
         DeviceGFX::setSwapchainInfo(device->getWindowHandle(), device->getVsync(),
             (uint32_t)outputSize.width, (uint32_t)outputSize.height, device->getNativeRenderSurface());
         _screenResized = false;
-#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+#ifdef CC_PLATFORM_PC
         for (auto* swapchain : swapchains)
         {
             if (swapchain->getWidth() != (uint32_t)outputSize.width ||
@@ -153,7 +155,7 @@ bool CommandBufferGFX::beginFrame()
 
     const auto generationBeforeAcquire = swapchains[0]->getGeneration();
     gfx::Device::getInstance()->acquire(swapchains);
-    // DeviceAgent synchronizes Metal acquire before exposing the result.
+    // DeviceAgent publishes the native drawable result before encoding begins.
     if (!swapchains[0]->hasAcquiredDrawable())
     {
         _deviceLost = hasDeviceLost();
@@ -390,7 +392,7 @@ void CommandBufferGFX::beginRenderPass(const RenderTarget* renderTarget, const R
     rect.y      = _viewPort.top;
     rect.width  = _viewPort.width;
     rect.height = _viewPort.height;
-#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+#ifdef CC_PLATFORM_PC
     // The window clear also initializes pixels outside the camera viewport.
     if (defaultTarget && bitmask::any(descriptor.flags.clear, TargetBufferFlags::COLOR))
         rect = {0, 0, rtWidth, rtHeight};
