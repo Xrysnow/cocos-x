@@ -202,7 +202,8 @@ Result<Subscription> GamepadService::subscribeSensor(DeviceId id, Sensor type, u
     if (!endpoint || !_impl->backend)
         return {{}, Error::Unsupported};
     auto& depths = device->sensorDepths[static_cast<unsigned>(type)];
-    Subscription lease([this, lifetime = std::weak_ptr(_impl->lifetime), id, type, depth]() noexcept {
+    Subscription lease([this, lifetime = std::weak_ptr(_impl->lifetime), id, type, depth,
+                        subscribedEndpoint = *endpoint]() noexcept {
         if (lifetime.expired())
             return;
         if (auto* current = _impl->registry.find(id))
@@ -212,8 +213,11 @@ Result<Subscription> GamepadService::subscribeSensor(DeviceId id, Sensor type, u
             {
                 subscriptions.erase(entry);
                 if (subscriptions.empty())
-                    if (auto owner = _impl->registry.owner(*current, type))
-                        _impl->backend->setSensor(*owner, type, false);
+                {
+                    // The native endpoint can temporarily lose a companion sensor while the pad stays connected.
+                    const auto owner = _impl->registry.owner(*current, type).value_or(subscribedEndpoint);
+                    _impl->backend->setSensor(owner, type, false);
+                }
             }
         }
     });

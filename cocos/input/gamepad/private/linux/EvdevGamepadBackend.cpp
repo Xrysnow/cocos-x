@@ -1,4 +1,5 @@
 #include "../PlatformGamepadBackend.h"
+#include "EvdevGamepadLayout.h"
 #include "LinuxSonyHid.h"
 
 #include <linux/input.h>
@@ -49,12 +50,23 @@ constexpr std::string_view deviceDirectory = "/dev/input";
 constexpr unsigned firstHat = ABS_HAT0X;
 constexpr unsigned lastHat = ABS_HAT3Y;
 
-bool sameHidDevice(const std::string& path, const std::string& parent)
+std::filesystem::path inputNode(const std::string& path)
 {
     std::error_code error;
     const auto file = std::filesystem::path(path).filename();
-    const auto target = std::filesystem::canonical(std::filesystem::path("/sys/class/input") / file / "device", error);
-    return !error && target.native().starts_with(parent + "/");
+    return std::filesystem::canonical(std::filesystem::path("/sys/class/input") / file / "device", error);
+}
+
+bool sameHidDevice(const std::string& path, const std::string& parent)
+{
+    return inputNode(path).native().starts_with(parent + "/");
+}
+
+std::string nodeDriver(const std::filesystem::path& node)
+{
+    if (node.empty()) return {};
+    std::error_code error;
+    return std::filesystem::read_symlink(node.parent_path().parent_path() / "driver", error).filename().native();
 }
 
 std::int16_t scaled(int value, const input_absinfo& range)
@@ -88,10 +100,60 @@ std::string name(int fd, unsigned long request)
     return value.data();
 }
 
+struct InputNodeIdentity {
+    struct stat file{};
+    input_id id{};
+    std::string unique;
+    std::filesystem::path hidParent;
+
+    bool sameFile(const struct stat& current) const
+    {
+        return file.st_rdev == current.st_rdev && file.st_ino == current.st_ino;
+    }
+
+    bool samePad(const InputNodeIdentity& other) const
+    {
+        if (id.bustype != other.id.bustype || id.vendor != other.id.vendor || id.product != other.id.product)
+            return false;
+        if (!hidParent.empty() && !other.hidParent.empty())
+            return hidParent == other.hidParent;
+        return !unique.empty() && unique == other.unique;
+    }
+};
+
+std::optional<InputNodeIdentity> readIdentity(int fd, const std::filesystem::path& node)
+{
+    InputNodeIdentity result;
+    if (::ioctl(fd, EVIOCGID, &result.id) < 0 || ::fstat(fd, &result.file) != 0)
+        return {};
+    result.unique = name(fd, EVIOCGUNIQ(256));
+    if (!node.empty())
+    {
+        const auto parent = node.parent_path().parent_path();
+        std::error_code error;
+        if (std::filesystem::read_symlink(parent / "subsystem", error).filename() == "hid")
+            result.hidParent = parent;
+    }
+    return result;
+}
+
+ReportTime eventTime(const input_event& boundary, bool monotonic)
+{
+    ReportTime time;
+    if (monotonic && boundary.input_event_sec >= 0 && boundary.input_event_usec >= 0)
+    {
+        time.sourceNs = static_cast<std::uint64_t>(boundary.input_event_sec) * 1000000000ULL +
+                        static_cast<std::uint64_t>(boundary.input_event_usec) * 1000ULL;
+        time.quality = TimeQuality::ConvertedOS;
+    }
+    return time;
+}
+
+struct MotionNode;
+
 struct Device {
     File fd;
-    dev_t inodeDevice = 0;
-    ino_t inode = 0;
+    InputNodeIdentity identity;
     EndpointKey key{};
     EndpointDescriptor descriptor;
     RawState state;
@@ -100,6 +162,8 @@ struct Device {
     std::array<std::pair<int, int>, 4> hatValues{};
     std::vector<input_event> pending;
     std::vector<RawChange> changes;
+    MotionNode* motion = nullptr;
+    std::bitset<SensorCount> requestedMotion;
     std::uint64_t cursor = 0;
     bool dropping = false;
     bool monotonic = false;
@@ -185,13 +249,7 @@ struct Device {
 
     void flush(ReportSink& sink, const input_event& boundary)
     {
-        ReportTime time;
-        if (monotonic && boundary.input_event_sec >= 0 && boundary.input_event_usec >= 0)
-        {
-            time.sourceNs = static_cast<std::uint64_t>(boundary.input_event_sec) * 1000000000ULL +
-                            static_cast<std::uint64_t>(boundary.input_event_usec) * 1000ULL;
-            time.quality = TimeQuality::ConvertedOS;
-        }
+        const auto time = eventTime(boundary, monotonic);
         const auto publish = [&] {
             if (!changes.empty())
                 sink.report(key, {changes, {}, {}, {}, ++cursor, time});
@@ -275,7 +333,110 @@ struct Device {
     }
 };
 
-void describeControls(Device& pad, const Bits<KEY_MAX>& keys, const Bits<ABS_MAX>& abs)
+struct MotionNode {
+    static constexpr std::array sensorTypes{Sensor::Accel, Sensor::Gyro};
+    static constexpr std::array firstAxis{ABS_X, ABS_RX};
+
+    std::string path;
+    InputNodeIdentity identity;
+    std::bitset<SensorCount> sensors;
+    std::array<std::array<float, 3>, 2> scale{}, values{};
+    File fd;
+    std::uint64_t retryAfter = 0;
+    bool monotonic = false;
+    bool dropping = false;
+
+    static std::optional<MotionNode> open(const std::string& path)
+    {
+        File probe(::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC));
+        Bits<INPUT_PROP_MAX> properties;
+        if (!probe || ::ioctl(probe.get(), EVIOCGPROP(properties.bytes.size()), properties.bytes.data()) < 0 ||
+            !properties.has(INPUT_PROP_ACCELEROMETER))
+            return {};
+
+        auto identity = readIdentity(probe.get(), inputNode(path));
+        if (!identity || (identity->hidParent.empty() && identity->unique.empty()))
+            return {};
+
+        MotionNode result;
+        result.path = path;
+        result.identity = std::move(*identity);
+        for (unsigned group = 0; group < sensorTypes.size(); ++group)
+        {
+            auto& factors = result.scale[group];
+            for (unsigned axis = 0; axis < factors.size(); ++axis)
+            {
+                input_absinfo info{};
+                if (::ioctl(probe.get(), EVIOCGABS(firstAxis[group] + axis), &info) >= 0)
+                    factors[axis] = evdevMotionScale(sensorTypes[group], info.resolution);
+            }
+            if (std::ranges::all_of(factors, [](float factor) { return factor > 0; }))
+                result.sensors.set(static_cast<unsigned>(sensorTypes[group]));
+        }
+        if (result.sensors.none()) return {};
+        return result;
+    }
+
+    bool sample(int source)
+    {
+        auto next = values;
+        for (unsigned group = 0; group < sensorTypes.size(); ++group)
+            if (sensors.test(static_cast<unsigned>(sensorTypes[group])))
+                for (unsigned axis = 0; axis < next[group].size(); ++axis)
+                {
+                    input_absinfo info{};
+                    if (::ioctl(source, EVIOCGABS(firstAxis[group] + axis), &info) < 0) return false;
+                    next[group][axis] = static_cast<float>(info.value) * scale[group][axis];
+                }
+        values = next;
+        return true;
+    }
+
+    bool read(Device& owner, ReportSink& sink)
+    {
+        std::array<input_event, 64> events{};
+        for (unsigned batch = 0; batch < 8; ++batch)
+        {
+            const auto bytes = ::read(fd.get(), events.data(), sizeof(events));
+            if (bytes < 0) return errno == EAGAIN || errno == EINTR;
+            if (!bytes || bytes % sizeof(input_event) != 0) return false;
+            for (const auto& event : std::span(events).first(static_cast<std::size_t>(bytes) / sizeof(input_event)))
+            {
+                if (event.type == EV_SYN && event.code == SYN_DROPPED)
+                    dropping = true;
+                else if (event.type == EV_SYN && event.code == SYN_REPORT)
+                {
+                    if (std::exchange(dropping, false))
+                    {
+                        if (!sample(fd.get())) return false;
+                        continue;
+                    }
+                    std::array<Motion, 2> motion{};
+                    unsigned count = 0;
+                    for (unsigned group = 0; group < sensorTypes.size(); ++group)
+                    {
+                        const auto index = static_cast<unsigned>(sensorTypes[group]);
+                        if (!sensors.test(index) || !owner.requestedMotion.test(index)) continue;
+                        motion[count++] = {sensorTypes[group], evdevMotionCoordinates(identity.id.vendor, values[group]), {}};
+                    }
+                    if (count)
+                        sink.report(owner.key, {{}, {}, std::span(motion).first(count), {}, ++owner.cursor,
+                                               eventTime(event, monotonic)});
+                }
+                else if (!dropping && event.type == EV_ABS)
+                    for (unsigned group = 0; group < firstAxis.size(); ++group)
+                        if (event.code >= firstAxis[group] && event.code < firstAxis[group] + 3)
+                        {
+                            const auto axis = event.code - firstAxis[group];
+                            values[group][axis] = static_cast<float>(event.value) * scale[group][axis];
+                        }
+            }
+        }
+        return true;
+    }
+};
+
+void describeControls(Device& pad, const Bits<KEY_MAX>& keys, const Bits<ABS_MAX>& abs, bool xpad)
 {
     auto& layout = pad.descriptor.layout;
     layout.id = "linux-evdev-v1";
@@ -296,18 +457,13 @@ void describeControls(Device& pad, const Bits<KEY_MAX>& keys, const Bits<ABS_MAX
         if (abs.has(code) && ::ioctl(pad.fd.get(), EVIOCGABS(code), &range) >= 0)
             pad.ranges.emplace(code, range);
     }
-    const auto qualifies = [&](unsigned code, auto predicate) {
+    const auto rangeFor = [&](unsigned code) -> const input_absinfo* {
         const auto axis = pad.ranges.find(code);
-        return axis == pad.ranges.end() || predicate(axis->second);
+        return axis == pad.ranges.end() ? nullptr : &axis->second;
     };
-    const auto threeStates = [](const input_absinfo& range) { return range.minimum == -1 && range.maximum == 1; };
-    const auto uncalibrated = [](const input_absinfo& range) { return !range.fuzz && !range.flat && !range.resolution; };
     for (unsigned code = 0; code < ABS_MAX; ++code)
     {
-        if (code >= firstHat && code <= lastHat && code % 2 == 0 &&
-            (pad.ranges.contains(code) || pad.ranges.contains(code + 1)) &&
-            ((qualifies(code, threeStates) && qualifies(code + 1, threeStates)) ||
-             (qualifies(code, uncalibrated) && qualifies(code + 1, uncalibrated))))
+        if (code >= firstHat && code <= lastHat && code % 2 == 0 && evdevDigitalHat(rangeFor(code), rangeFor(code + 1)))
         {
             pad.hats.emplace(code, layout.hatCount++);
             layout.id += "/h" + std::to_string(code++);
@@ -323,35 +479,8 @@ void describeControls(Device& pad, const Bits<KEY_MAX>& keys, const Bits<ABS_MAX
     pad.state.buttons.resize(layout.buttonCount);
     pad.state.axes.resize(layout.axisCount);
     pad.state.hats.resize(layout.hatCount);
-
-    constexpr std::pair<unsigned, std::string_view> buttonNames[]{
-        {BTN_SOUTH, "a"}, {BTN_EAST, "b"}, {BTN_WEST, "x"}, {BTN_NORTH, "y"},
-        {BTN_TL, "leftshoulder"}, {BTN_TR, "rightshoulder"}, {BTN_SELECT, "back"},
-        {BTN_START, "start"}, {BTN_MODE, "guide"}, {BTN_THUMBL, "leftstick"}, {BTN_THUMBR, "rightstick"},
-        {BTN_DPAD_UP, "dpup"}, {BTN_DPAD_RIGHT, "dpright"}, {BTN_DPAD_DOWN, "dpdown"}, {BTN_DPAD_LEFT, "dpleft"},
-    };
-    if (!keys.has(BTN_SOUTH) || !keys.has(BTN_EAST))
-        return;
-    const auto bind = [&](std::string_view output, std::string input) {
-        layout.builtInMapping += std::string(output) + ":" + input + ",";
-    };
-    for (const auto& [code, output] : buttonNames)
-        if (const auto index = pad.buttons.find(code); index != pad.buttons.end())
-            bind(output, "b" + std::to_string(index->second));
-    constexpr std::pair<unsigned, std::string_view> axisNames[]{
-        {ABS_X, "leftx"}, {ABS_Y, "lefty"}, {ABS_RX, "rightx"}, {ABS_RY, "righty"},
-        {ABS_Z, "lefttrigger"}, {ABS_RZ, "righttrigger"},
-    };
-    for (const auto& [code, output] : axisNames)
-        if (const auto index = pad.axes.find(code); index != pad.axes.end())
-            bind(output, "a" + std::to_string(index->second));
-    if (const auto index = pad.hats.find(firstHat); index != pad.hats.end())
-    {
-        const auto prefix = "h" + std::to_string(index->second) + ".";
-        for (unsigned i = 0; i < 4; ++i)
-            if (!keys.has(buttonNames[11 + i].first))
-                bind(buttonNames[11 + i].second, prefix + std::to_string(1u << i));
-    }
+    layout.builtInMapping = evdevGamepadMapping(pad.descriptor.vendor.value_or(0), xpad,
+        pad.buttons, pad.axes, pad.hats, pad.ranges);
 }
 
 std::optional<Device> openDevice(const std::string& path, bool joystick)
@@ -377,12 +506,11 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
         if (!hasGameButton)
             return {};
     }
-    input_id id{};
-    struct stat stat{};
-    if (::ioctl(fd, EVIOCGID, &id) < 0 || ::fstat(fd, &stat) != 0)
-        return {};
-    pad.inodeDevice = stat.st_rdev;
-    pad.inode = stat.st_ino;
+    const auto node = inputNode(path);
+    auto identity = readIdentity(fd, node);
+    if (!identity) return {};
+    pad.identity = std::move(*identity);
+    const auto& id = pad.identity.id;
     auto& descriptor = pad.descriptor;
     descriptor.name = name(fd, EVIOCGNAME(256));
     descriptor.layout.guid = DeviceGuid::make(id.bustype, id.vendor, id.product, id.version, {}, descriptor.name);
@@ -391,10 +519,10 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     descriptor.vendor = id.vendor;
     descriptor.product = id.product;
     descriptor.version = id.version;
-    if (auto serial = name(fd, EVIOCGUNIQ(256)); !serial.empty())
-        descriptor.serial = std::move(serial);
+    if (!pad.identity.unique.empty())
+        descriptor.serial = pad.identity.unique;
     descriptor.link = id.bustype == BUS_BLUETOOTH ? Link::Wireless : id.bustype == BUS_USB ? Link::Wired : Link::Unknown;
-    describeControls(pad, keys, abs);
+    describeControls(pad, keys, abs, nodeDriver(node) == "xpad");
     if (pad.buttons.empty() || !pad.sample())
         return {};
     Bits<FF_MAX> feedback;
@@ -406,7 +534,11 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     return pad;
 }
 
-using InputPaths = std::map<std::string, bool>;
+struct InputClass {
+    bool joystick = false;
+    bool probeMotion = true;
+};
+using InputPaths = std::map<std::string, InputClass>;
 
 class Monitor {
 public:
@@ -478,8 +610,11 @@ public:
                     continue;
                 const char* node = udev_device_get_devnode(device);
                 const char* joystick = udev_device_get_property_value(device, "ID_INPUT_JOYSTICK");
+                const char* accelerometer = udev_device_get_property_value(device, "ID_INPUT_ACCELEROMETER");
                 if (node && std::string_view(node).starts_with("/dev/input/event"))
-                    paths.emplace(node, joystick && std::string_view(joystick) == "1");
+                    paths.emplace(node, InputClass{joystick && std::string_view(joystick) == "1",
+                        (accelerometer && std::string_view(accelerometer) == "1") ||
+                        !udev_device_get_property_value(device, "ID_INPUT")});
                 udev_device_unref(device);
             }
             udev_enumerate_unref(scan);
@@ -491,7 +626,7 @@ public:
         std::error_code error;
         for (std::filesystem::directory_iterator it(deviceDirectory, error), done; !error && it != done; it.increment(error))
             if (it->path().filename().native().starts_with("event"))
-                paths.emplace(it->path().native(), false);
+                paths.emplace(it->path().native(), InputClass{});
         return paths;
     }
 
@@ -615,9 +750,79 @@ private:
 
     auto remove(std::map<std::string, Device>::iterator device)
     {
+        if (device->second.motion)
+            device->second.motion->fd = File{};
         device->second.closeOutput();
         _sink->detached(device->second.key);
         return _devices.erase(device);
+    }
+
+    void associateMotion(Device& device, MotionNode* motion)
+    {
+        if (device.motion == motion) return;
+        if (device.motion) device.motion->fd = File{};
+        device.motion = motion;
+        auto& caps = device.descriptor.capabilities;
+        const auto previous = caps.sensors;
+        caps.sensors = motion ? motion->sensors : std::bitset<SensorCount>{};
+        if (caps.sensors != previous)
+            _sink->capabilitiesChanged(device.key, caps);
+    }
+
+    auto removeMotion(std::map<std::string, MotionNode>::iterator motion)
+    {
+        for (auto& [path, device] : _devices)
+            if (device.motion == &motion->second)
+                associateMotion(device, nullptr);
+        return _motion.erase(motion);
+    }
+
+    void reconcileMotion()
+    {
+        for (auto& [path, device] : _devices)
+        {
+            MotionNode* match = nullptr;
+            for (auto& [sensorPath, sensor] : _motion)
+            {
+                if (!device.identity.samePad(sensor.identity)) continue;
+                if (match)
+                {
+                    match = nullptr;
+                    break;
+                }
+                match = &sensor;
+            }
+            // A nonempty identifier may still be shared by two faulty devices.
+            if (match && std::ranges::count_if(_devices, [&](const auto& item) {
+                return item.second.identity.samePad(match->identity);
+            }) != 1)
+                match = nullptr;
+            associateMotion(device, match);
+        }
+    }
+
+    void updateMotion(Device& device, const Monitor& monitor, bool active)
+    {
+        auto* motion = device.motion;
+        if (!motion) return;
+        if (!active || (device.requestedMotion & motion->sensors).none())
+        {
+            motion->fd = File{};
+            return;
+        }
+        if (motion->fd || nowNs() < motion->retryAfter) return;
+        File source(::open(motion->path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC));
+        struct stat current{};
+        if (!source || ::fstat(source.get(), &current) != 0 || !motion->identity.sameFile(current) ||
+            !motion->sample(source.get()) || !monitor.watch(source.get()))
+        {
+            motion->retryAfter = nowNs() + 1000000000ULL;
+            return;
+        }
+        auto clock = CLOCK_MONOTONIC;
+        motion->monotonic = ::ioctl(source.get(), EVIOCSCLOCKID, &clock) == 0;
+        motion->dropping = false;
+        motion->fd = std::move(source);
     }
 
     auto removeHid(std::map<std::string, std::unique_ptr<LinuxSonyHid>>::iterator node)
@@ -661,20 +866,33 @@ private:
             });
         };
         const auto paths = monitor.list();
+        const auto present = [&](const std::string& path, const InputNodeIdentity& identity) {
+            struct stat status{};
+            return paths.contains(path) && !hidden(path) && ::stat(path.c_str(), &status) == 0 && identity.sameFile(status);
+        };
         for (auto it = _devices.begin(); it != _devices.end();)
         {
-            struct stat status{};
-            if (paths.contains(it->first) && !hidden(it->first) && ::stat(it->first.c_str(), &status) == 0 &&
-                status.st_rdev == it->second.inodeDevice && status.st_ino == it->second.inode)
+            if (present(it->first, it->second.identity))
                 ++it;
             else
                 it = remove(it);
         }
-        for (const auto& [path, joystick] : paths)
+        for (auto it = _motion.begin(); it != _motion.end();)
+            if (present(it->first, it->second.identity))
+                ++it;
+            else
+                it = removeMotion(it);
+        for (const auto& [path, input] : paths)
         {
-            if (_devices.contains(path) || hidden(path))
+            if (_devices.contains(path) || _motion.contains(path) || hidden(path))
                 continue;
-            if (auto device = openDevice(path, joystick); device && monitor.watch(device->fd.get()))
+            if (input.probeMotion)
+                if (auto motion = MotionNode::open(path))
+                {
+                    _motion.emplace(path, std::move(*motion));
+                    continue;
+                }
+            if (auto device = openDevice(path, input.joystick); device && monitor.watch(device->fd.get()))
             {
                 device->key = {0x4c4e, ++_nextEndpoint, 1};
                 auto attachment = device->attachment();
@@ -682,6 +900,7 @@ private:
                 _sink->attached(attachment.key, std::move(attachment.descriptor), std::move(attachment.initial));
             }
         }
+        reconcileMotion();
     }
 
     bool process(Monitor& monitor)
@@ -722,6 +941,12 @@ private:
                     device->setSensor(request.second, enabled);
         for (auto& [path, device] : _devices)
         {
+            for (const auto& [request, enabled] : sensors)
+                if (request.first == device.key)
+                    device.requestedMotion.set(static_cast<unsigned>(request.second), enabled);
+            if (topology)
+                device.requestedMotion.reset();
+            updateMotion(device, monitor, active);
             if (reset)
                 device.neutral();
             if (topology || baselines.contains(device.key))
@@ -808,6 +1033,13 @@ private:
                     return item.second.fd.get() == fd;
                 }); it != _devices.end() && !it->second.read(*_sink))
                     remove(it);
+                else if (const auto owner = std::ranges::find_if(_devices, [&](const auto& item) {
+                    return item.second.motion && item.second.motion->fd.get() == fd;
+                }); owner != _devices.end() && !owner->second.motion->read(owner->second, *_sink))
+                {
+                    removeMotion(_motion.find(owner->second.motion->path));
+                    rescan = true;
+                }
             }
             if (rescan)
             {
@@ -818,6 +1050,7 @@ private:
         for (auto& [path, device] : _devices)
             device.closeOutput();
         _devices.clear();
+        _motion.clear();
         _hid.clear();
     }
 
@@ -826,6 +1059,7 @@ private:
     std::thread _worker;
     std::mutex _mutex;
     std::map<std::string, Device> _devices;
+    std::map<std::string, MotionNode> _motion;
     std::map<std::string, std::unique_ptr<LinuxSonyHid>> _hid;
     std::vector<std::pair<EndpointKey, NativeCommand>> _commands;
     std::set<EndpointKey> _baselines;

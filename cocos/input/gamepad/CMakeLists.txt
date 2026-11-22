@@ -62,6 +62,8 @@ elseif(APPLE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND COCOS_GAMEPAD_SRC
         input/gamepad/private/linux/EvdevGamepadBackend.cpp
+        input/gamepad/private/linux/EvdevGamepadLayout.cpp
+        input/gamepad/private/linux/EvdevGamepadLayout.h
         input/gamepad/private/linux/LinuxSonyHid.h
         input/gamepad/private/linux/LinuxSonyHid.cpp
     )
