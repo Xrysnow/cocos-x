@@ -19,6 +19,8 @@ packages=(
     libegl-dev libgles-dev libvulkan-dev vulkan-validationlayers
     # Wayland client tools and protocol definitions.
     libwayland-dev libwayland-bin libxkbcommon-dev wayland-protocols
+    # Native file dialogs through XDG Desktop Portal.
+    libdbus-1-dev
     # OpenAL audio backends.
     libasound2-dev libpulse-dev
     # Text input and fonts.
