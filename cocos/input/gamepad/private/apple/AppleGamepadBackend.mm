@@ -18,6 +18,7 @@ namespace {
 
 constexpr auto appleId = std::uint64_t{0x4743};
 constexpr float gravity = 9.80665f;
+constexpr auto touchpadClick = static_cast<unsigned>(Button::TouchpadClick);
 constexpr std::array buttonNames{
     "a", "b", "x", "y", "back", "guide", "start", "leftstick", "rightstick", "leftshoulder", "rightshoulder",
     "dpup", "dpdown", "dpleft", "dpright", "misc1", "paddle1", "paddle2", "paddle3", "paddle4", "touchpad",
@@ -58,6 +59,11 @@ struct Device {
     std::array<GCControllerAxisInput*, 4> sticks{};
     std::array<GCControllerButtonInput*, 2> triggers{};
     std::array<NSString*, ButtonCount> extraButtonNames{};
+    std::array<GCControllerDirectionPad*, 2> touchpads{};
+    std::array<GCControllerDirectionPadValueChangedHandler, 2> originalTouchHandlers{};
+    std::array<std::optional<Contact>, 2> contacts{};
+    GCControllerButtonValueChangedHandler originalTouchpadClickHandler = nil;
+    bool usesLegacyTouchpadClick = false;
     std::array<CHHapticEngine*, 2> engines{};
     std::array<id<CHHapticPatternPlayer>, 2> players{};
     std::array<GCHapticsLocality, 2> haptics{};
@@ -118,6 +124,14 @@ struct Device {
             {
                 auto dual = (GCDualSenseGamepad*)pad;
                 bind(Button::TouchpadClick, dual.touchpadButton);
+                // DualSense reports total acceleration without separating gravity and user motion.
+                if (controller.motion)
+                    descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Accel));
+                if (dual.touchpadPrimary && dual.touchpadSecondary)
+                {
+                    touchpads = {dual.touchpadPrimary, dual.touchpadSecondary};
+                    descriptor.capabilities.fingersPerPad = {static_cast<unsigned>(touchpads.size())};
+                }
                 for (auto feature : {Feature::AdaptiveLeft, Feature::AdaptiveRight})
                     descriptor.capabilities.features.set(static_cast<unsigned>(feature));
                 descriptor.capabilities.triggerLimits = {TriggerLimits{true, false}, TriggerLimits{true, false}};
@@ -277,14 +291,19 @@ struct Device {
                     if (buttons[i]) set(RawKind::Button, raw.buttons, i, static_cast<std::uint8_t>(input.pressed));
                 };
                 for (unsigned i = 0; i < names.size(); ++i)
+                {
+                    if (i == touchpadClick) continue;
                     if (GCInputButtonName name = names[i] ?: (GCInputButtonName)extraButtonNames[i])
                         digital(i, capture.buttons[name].pressedInput);
+                }
                 auto dp = capture.dpads[GCInputDirectionPad];
                 digital(static_cast<unsigned>(Button::DpadUp), dp.up);
                 digital(static_cast<unsigned>(Button::DpadDown), dp.down);
                 digital(static_cast<unsigned>(Button::DpadLeft), dp.left);
                 digital(static_cast<unsigned>(Button::DpadRight), dp.right);
-                digital(static_cast<unsigned>(Button::TouchpadClick), capture.buttons[GCInputDualShockTouchpadButton].pressedInput);
+                if (!usesLegacyTouchpadClick)
+                    if (auto click = capture.buttons[GCInputDualShockTouchpadButton])
+                        digital(touchpadClick, click.pressedInput);
                 auto left = capture.dpads[GCInputLeftThumbstick];
                 auto right = capture.dpads[GCInputRightThumbstick];
                 const std::array analog{left.xAxis.value, -left.yAxis.value, right.xAxis.value, -right.yAxis.value};
@@ -427,6 +446,10 @@ struct Device {
 
     void clear()
     {
+        for (unsigned i = 0; i < touchpads.size(); ++i)
+            touchpads[i].valueChangedHandler = originalTouchHandlers[i];
+        if (usesLegacyTouchpadClick)
+            buttons[touchpadClick].pressedChangedHandler = originalTouchpadClickHandler;
         if (@available(macOS 14.0, iOS 17.0, tvOS 17.0, *))
             if (buffered)
             {
@@ -704,6 +727,50 @@ struct State : std::enable_shared_from_this<State> {
             sink->report(device.key, {device.changes, {}, std::span(values).first(count), power, ++device.cursor, {}});
     }
 
+    void reportTouchpadClick(Identity identity, bool pressed)
+    {
+        const auto found = devices.find(identity);
+        if (!sink || found == devices.end()) return;
+        auto& device = found->second;
+        auto& value = device.raw.buttons[touchpadClick];
+        if (value == pressed) return;
+        value = pressed;
+        const std::array changes{RawChange{RawKind::Button, touchpadClick, value}};
+        sink->report(device.key, {changes, {}, {}, {}, ++device.cursor, {}});
+    }
+
+    void reportTouch(Device& device, unsigned finger, float x, float y)
+    {
+        if (!active || !std::isfinite(x) || !std::isfinite(y)) return;
+        auto& previous = device.contacts[finger];
+        Contact change;
+        // GameController exposes direction-pad axes for the two finger slots.
+        // A released slot returns to neutral and has no separate touch flag.
+        if (x == 0 && y == 0)
+        {
+            if (!previous) return;
+            change = *previous;
+            change.phase = ContactPhase::Up;
+            previous.reset();
+        }
+        else
+        {
+            change = {0, finger, previous ? ContactPhase::Move : ContactPhase::Down,
+                (std::clamp(x, -1.f, 1.f) + 1.f) * .5f, (1.f - std::clamp(y, -1.f, 1.f)) * .5f, {}};
+            if (previous && previous->x == change.x && previous->y == change.y) return;
+            previous = change;
+        }
+        sink->report(device.key, {{}, std::span(&change, 1), {}, {}, ++device.cursor, {}});
+    }
+
+    void refreshTouch(Device& device)
+    {
+        device.contacts.fill({});
+        for (unsigned finger = 0; finger < device.touchpads.size(); ++finger)
+            if (auto pad = device.touchpads[finger])
+                reportTouch(device, finger, pad.xAxis.value, pad.yAxis.value);
+    }
+
     void attach(GCController* controller)
     {
         if (!sink || (!controller.extendedGamepad && !controller.microGamepad))
@@ -727,6 +794,16 @@ struct State : std::enable_shared_from_this<State> {
                         while (auto state = source.nextInputState)
                             self->report(key, false, state);
                 };
+                if (auto click = device.buttons[touchpadClick]; click && !input.buttons[GCInputDualShockTouchpadButton])
+                {
+                    // Some extended profiles omit the click from their buffered elements.
+                    device.usesLegacyTouchpadClick = true;
+                    auto previous = device.originalTouchpadClickHandler = click.pressedChangedHandler;
+                    click.pressedChangedHandler = ^(GCControllerButtonInput* button, float value, BOOL pressed) {
+                        if (auto self = weak.lock()) self->reportTouchpadClick(key, pressed);
+                        if (previous) previous(button, value, pressed);
+                    };
+                }
             }
         if (!device.buffered)
         {
@@ -740,7 +817,19 @@ struct State : std::enable_shared_from_this<State> {
         controller.motion.valueChangedHandler = ^(GCMotion*) {
             if (auto self = weak.lock()) self->report(key, true);
         };
+        for (unsigned finger = 0; finger < device.touchpads.size(); ++finger)
+            if (auto pad = device.touchpads[finger])
+            {
+                auto previous = device.originalTouchHandlers[finger] = pad.valueChangedHandler;
+                pad.valueChangedHandler = ^(GCControllerDirectionPad* direction, float x, float y) {
+                    if (auto self = weak.lock(); self && self->sink)
+                        if (auto found = self->devices.find(key); found != self->devices.end())
+                            self->reportTouch(found->second, finger, x, y);
+                    if (previous) previous(direction, x, y);
+                };
+            }
         sink->attached(device.key, device.descriptor, {device.raw, device.cursor, {}});
+        refreshTouch(device);
     }
 
     void detach(Identity id)
@@ -844,6 +933,7 @@ public:
                 {
                     device->sample();
                     state->sink->baseline(key, {device->raw, device->cursor, {}});
+                    state->refreshTouch(*device);
                 }
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
                 else if (state->sink)
@@ -878,6 +968,8 @@ public:
                 }
 #endif
                 state->sink->topology(std::move(snapshot));
+                for (auto& [id, device] : state->devices)
+                    state->refreshTouch(device);
             });
     }
 
