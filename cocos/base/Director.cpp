@@ -1380,7 +1380,8 @@ void Director::createStatsLabel()
         return;
     }
 
-    texture = _textureCache->addImage(image.get(), "/cc_fps_images", PixelFormat::RGBA4);
+    // Keep the stats atlas usable on Vulkan devices with limited packed-format support.
+    texture = _textureCache->addImage(image.get(), "/cc_fps_images", PixelFormat::RGBA8);
 
     /*
      We want to use an image which is stored in the file named ccFPSImage.c
