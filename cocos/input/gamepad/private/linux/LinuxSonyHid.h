@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../drivers/DualSenseReports.h"
+#include "../drivers/SonyHidReports.h"
 
 namespace cc::input::detail {
 
-class LinuxDualSense {
+class LinuxSonyHid {
 public:
-    static std::unique_ptr<LinuxDualSense> open(const std::string& path, EndpointKey key);
-    ~LinuxDualSense();
+    static std::unique_ptr<LinuxSonyHid> open(const std::string& path, EndpointKey key);
+    ~LinuxSonyHid();
 
     int fd() const { return _fd; }
     bool attached() const { return _attached; }
@@ -20,23 +20,25 @@ public:
     Error submit(const OutputCommand& command);
     void neutral();
     void expire(std::uint64_t now);
-    bool hasTimedOutput() const { return _timed; }
+    bool hasTimedOutput() const { return _output.hasTimedRumble(); }
 
 private:
-    LinuxDualSense() = default;
-    bool write(DualSenseOutput& state);
+    LinuxSonyHid(int fd, bool writable, SonyHidModel model, DualSenseTransport transport, EndpointKey key);
+    bool write(SonyHidOutput& state, DualSenseOutputKind kind = DualSenseOutputKind::Effects);
 
-    int _fd = -1;
-    bool _writable = false, _attached = false, _timed = false, _hasOutput = false;
+    int _fd;
+    bool _writable, _attached = false, _hasOutput = false, _enableRequested = false;
+    bool _releaseLights;
     std::string _association;
-    DualSenseTransport _transport{};
-    EndpointKey _key{};
+    DualSenseTransport _transport;
+    EndpointKey _key;
     EndpointDescriptor _descriptor;
     RawState _raw;
     std::uint64_t _cursor = 0;
+    std::uint64_t _firstFull = 0, _retryLightsAt = 0;
     std::bitset<SensorCount> _sensors;
-    DualSenseOutput _output;
-    std::optional<DualSenseCalibration> _calibration;
+    SonyHidReports _reports;
+    SonyHidOutput _output;
     std::array<std::optional<Contact>, 2> _fingers{};
 };
 

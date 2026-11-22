@@ -19,16 +19,17 @@ import android.util.Log;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-/** USB Host transport for the standard DualSense. Report semantics live in DualSenseReports. */
-final class CocosDualSenseUsb {
-    private static final String TAG = "CocosDualSenseUsb";
-    private static final int INPUT_BYTES = 64, OUTPUT_BYTES = 63, CALIBRATION_BYTES = 41;
+/** USB Host transport for Sony gamepads. Report semantics live in the native codecs. */
+final class CocosSonyGamepadUsb {
+    private static final String TAG = "CocosSonyGamepadUsb";
+    private static final int INPUT_BYTES = 64;
     private final Context context;
     private final Handler handler;
     private final long host;
@@ -47,14 +48,18 @@ final class CocosDualSenseUsb {
     private boolean resumed;
     private String permissionPath;
 
-    static boolean isDualSense(int vendor, int product) { return vendor == 0x054c && product == 0x0ce6; }
+    static boolean isDualShock4(int product) { return product == 0x05c4 || product == 0x09cc; }
 
-    CocosDualSenseUsb(Context context, Handler handler, long host) {
+    static boolean supports(int vendor, int product) {
+        return vendor == 0x054c && (isDualShock4(product) || product == 0x0ce6 || product == 0x0df2);
+    }
+
+    CocosSonyGamepadUsb(Context context, Handler handler, long host) {
         this.context = context;
         this.handler = handler;
         this.host = host;
         manager = context.getSystemService(UsbManager.class);
-        permissionAction = context.getPackageName() + ".COCOS_DUALSENSE_USB_PERMISSION";
+        permissionAction = context.getPackageName() + ".COCOS_SONY_GAMEPAD_USB_PERMISSION";
         if (manager != null) {
             IntentFilter filter = new IntentFilter(permissionAction);
             if (Build.VERSION.SDK_INT >= 33) context.registerReceiver(permission, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -93,7 +98,7 @@ final class CocosDualSenseUsb {
             if (!connected.containsKey(entry.getKey())) entry.getValue().stop();
         for (UsbDevice device : connected.values()) {
             String path = device.getDeviceName();
-            if (!isDualSense(device.getVendorId(), device.getProductId())
+            if (!supports(device.getVendorId(), device.getProductId())
                 || sessions.containsKey(path) || failed.contains(path)) continue;
             if (!manager.hasPermission(device)) {
                 if (permissionPath == null && requested.add(path)) {
@@ -105,7 +110,7 @@ final class CocosDualSenseUsb {
                             context, device.getDeviceId(), intent, flags));
                         permissionPath = path;
                     } catch (RuntimeException failure) {
-                        Log.w(TAG, "Could not request DualSense USB permission", failure);
+                        Log.w(TAG, "Could not request Sony gamepad USB permission", failure);
                     }
                     // Present at most one permission dialog at a time.
                     break;
@@ -114,14 +119,15 @@ final class CocosDualSenseUsb {
             }
             Session session = new Session(device);
             sessions.put(path, session);
-            new Thread(session::run, "DualSense USB").start();
+            new Thread(session::run, "Sony gamepad USB").start();
         }
         handler.postDelayed(poll, 750);
     }
 
     private final class Session {
         final UsbDevice device;
-        final int id;
+        final int id, product, outputBytes;
+        final boolean dualShock4;
         final long endpoint = CocosGamepads.nextEndpoint();
         volatile boolean stopping;
         UsbRequest inputRequest, outputRequest;
@@ -129,6 +135,9 @@ final class CocosDualSenseUsb {
         Session(UsbDevice device) {
             this.device = device;
             id = -1 - device.getDeviceId();
+            product = device.getProductId();
+            dualShock4 = isDualShock4(product);
+            outputBytes = dualShock4 ? 32 : 63;
         }
 
         synchronized void stop() {
@@ -144,6 +153,8 @@ final class CocosDualSenseUsb {
 
         void run() {
             try {
+                UsbInterface controlInterface = null;
+                UsbEndpoint controlInput = null;
                 for (int i = 0; !stopping && i < device.getInterfaceCount(); ++i) {
                     UsbInterface intf = device.getInterface(i);
                     if (intf.getInterfaceClass() != UsbConstants.USB_CLASS_HID) continue;
@@ -154,15 +165,20 @@ final class CocosDualSenseUsb {
                         if (candidate.getDirection() == UsbConstants.USB_DIR_IN
                             && candidate.getMaxPacketSize() >= INPUT_BYTES) in = candidate;
                         if (candidate.getDirection() == UsbConstants.USB_DIR_OUT
-                            && candidate.getMaxPacketSize() >= OUTPUT_BYTES) out = candidate;
+                            && candidate.getMaxPacketSize() >= outputBytes) out = candidate;
                     }
                     if (in != null && out != null) {
                         open(intf, in, out);
-                        break;
+                        return;
+                    }
+                    if (dualShock4 && in != null && controlInterface == null) {
+                        controlInterface = intf;
+                        controlInput = in;
                     }
                 }
+                if (!stopping && controlInterface != null) open(controlInterface, controlInput, null);
             } catch (RuntimeException failure) {
-                if (!stopping) Log.w(TAG, "DualSense USB transport closed", failure);
+                if (!stopping) Log.w(TAG, "Sony gamepad USB transport closed", failure);
             } finally {
                 nativeClose(host, id, endpoint);
                 handler.post(() -> {
@@ -184,20 +200,18 @@ final class CocosDualSenseUsb {
                 // A denied grant or failed claim leaves Android's normal InputDevice path available.
                 claimed = !stopping && link.claimInterface(intf, true);
                 if (!claimed || stopping) return;
-                byte[] calibration = new byte[CALIBRATION_BYTES];
-                int length = link.controlTransfer(0xa1, 0x01, 0x0305, intf.getId(),
-                    calibration, calibration.length, 500);
-                if (stopping || !nativeOpen(host, id, endpoint, length == calibration.length ? calibration : null)) return;
-                stopped = stream(link, in, out);
+                byte[] calibration = feature(link, intf, dualShock4 ? 0x02 : 0x05, dualShock4 ? 37 : 41);
+                byte[] firmware = dualShock4 || stopping ? null : feature(link, intf, 0x20, 64);
+                if (stopping || !nativeOpen(host, id, endpoint, product, calibration, firmware)) return;
+                stopped = stream(link, intf, in, out);
             } finally {
                 nativeClose(host, id, endpoint);
                 try {
                     if (claimed) {
                         try {
                             if (!stopped) {
-                                byte[] packet = new byte[OUTPUT_BYTES];
-                                nativeNeutral(packet);
-                                link.controlTransfer(0x21, 0x09, 0x0202, intf.getId(), packet, packet.length, 150);
+                                byte[] packet = new byte[outputBytes];
+                                if (nativeNeutral(product, packet)) writeControl(link, intf, packet);
                             }
                         } finally { link.releaseInterface(intf); }
                     }
@@ -206,19 +220,31 @@ final class CocosDualSenseUsb {
             }
         }
 
-        private boolean stream(UsbDeviceConnection link, UsbEndpoint in, UsbEndpoint out) {
-            UsbRequest read = new UsbRequest(), write = new UsbRequest();
+        private byte[] feature(UsbDeviceConnection link, UsbInterface intf, int reportId, int size) {
+            byte[] packet = new byte[size];
+            int read = link.controlTransfer(0xa1, 0x01, 0x0300 | reportId, intf.getId(), packet, size, 500);
+            return read <= 0 ? null : read == size ? packet : Arrays.copyOf(packet, read);
+        }
+
+        private boolean writeControl(UsbDeviceConnection link, UsbInterface intf, byte[] packet) {
+            int report = packet[0] & 0xff;
+            return link.controlTransfer(0x21, 0x09, 0x0200 | report, intf.getId(), packet, packet.length, 150)
+                == packet.length;
+        }
+
+        private boolean stream(UsbDeviceConnection link, UsbInterface intf, UsbEndpoint in, UsbEndpoint out) {
+            UsbRequest read = new UsbRequest(), write = out == null ? null : new UsbRequest();
             boolean reading = false, writing = false;
             try {
-                if (!read.initialize(link, in) || !write.initialize(link, out)) return false;
+                if (!read.initialize(link, in) || (write != null && !write.initialize(link, out))) return false;
                 synchronized (this) {
                     if (stopping) return false;
                     inputRequest = read;
                     outputRequest = write;
                 }
                 ByteBuffer input = ByteBuffer.allocateDirect(INPUT_BYTES);
-                ByteBuffer output = ByteBuffer.allocateDirect(OUTPUT_BYTES);
-                byte[] incoming = new byte[INPUT_BYTES], outgoing = new byte[OUTPUT_BYTES];
+                ByteBuffer output = write == null ? null : ByteBuffer.allocateDirect(outputBytes);
+                byte[] incoming = new byte[INPUT_BYTES], outgoing = new byte[outputBytes];
                 long firstReportDeadline = SystemClock.uptimeMillis() + 1000;
                 long writeDeadline = 0;
                 boolean valid = false;
@@ -229,12 +255,15 @@ final class CocosDualSenseUsb {
                         reading = true;
                     }
                     if (!writing && nativeNextOutput(host, id, endpoint, outgoing)) {
-                        ((Buffer) output).clear();
-                        output.put(outgoing);
-                        ((Buffer) output).flip();
-                        writing = queue(write, output);
-                        if (writing) writeDeadline = SystemClock.uptimeMillis() + 500;
-                        else nativeOutputDone(host, id, endpoint, false);
+                        if (write == null) nativeOutputDone(host, id, endpoint, writeControl(link, intf, outgoing));
+                        else {
+                            ((Buffer) output).clear();
+                            output.put(outgoing);
+                            ((Buffer) output).flip();
+                            writing = queue(write, output);
+                            if (writing) writeDeadline = SystemClock.uptimeMillis() + 500;
+                            else nativeOutputDone(host, id, endpoint, false);
+                        }
                     }
                     UsbRequest completed;
                     try {
@@ -249,21 +278,21 @@ final class CocosDualSenseUsb {
                         ((Buffer) input).flip();
                         input.get(incoming, 0, count);
                         valid |= nativeRead(host, id, endpoint, incoming, count);
-                    } else if (completed == write) {
-                        nativeOutputDone(host, id, endpoint, output.position() == OUTPUT_BYTES);
+                    } else if (write != null && completed == write) {
+                        nativeOutputDone(host, id, endpoint, output.position() == outputBytes);
                         writing = false;
                     }
                     long now = SystemClock.uptimeMillis();
                     if (!valid && now >= firstReportDeadline || writing && now >= writeDeadline) break;
                 }
                 if (writing) nativeOutputDone(host, id, endpoint, false);
-                return writeNeutral(link, read, write, reading, writing, outgoing);
+                return write != null && writeNeutral(link, read, write, reading, writing, outgoing);
             } finally {
                 synchronized (this) {
                     inputRequest = null;
                     outputRequest = null;
                     read.close();
-                    write.close();
+                    if (write != null) write.close();
                 }
             }
         }
@@ -273,7 +302,7 @@ final class CocosDualSenseUsb {
             if (reading) read.cancel();
             if (writing) write.cancel();
             if (Build.VERSION.SDK_INT < 26) return false;
-            nativeNeutral(packet);
+            if (!nativeNeutral(product, packet)) return false;
             try {
                 long deadline = SystemClock.uptimeMillis() + 150;
                 while (reading || writing) {
@@ -285,7 +314,7 @@ final class CocosDualSenseUsb {
                 ByteBuffer bytes = ByteBuffer.wrap(packet);
                 if (!write.queue(bytes)) return false;
                 if (link.requestWait(Math.max(1, deadline - SystemClock.uptimeMillis())) == write)
-                    return bytes.position() == OUTPUT_BYTES;
+                    return bytes.position() == outputBytes;
                 write.cancel();
             } catch (TimeoutException | RuntimeException ignored) {
                 write.cancel();
@@ -294,10 +323,10 @@ final class CocosDualSenseUsb {
         }
     }
 
-    private static native boolean nativeOpen(long host, int id, long endpoint, byte[] calibration);
+    private static native boolean nativeOpen(long host, int id, long endpoint, int product, byte[] calibration, byte[] firmware);
     private static native boolean nativeRead(long host, int id, long endpoint, byte[] packet, int length);
     private static native boolean nativeNextOutput(long host, int id, long endpoint, byte[] packet);
     private static native void nativeOutputDone(long host, int id, long endpoint, boolean success);
     private static native void nativeClose(long host, int id, long endpoint);
-    private static native void nativeNeutral(byte[] packet);
+    private static native boolean nativeNeutral(int product, byte[] packet);
 }

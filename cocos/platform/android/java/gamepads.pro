@@ -1,2 +1,2 @@
 -keep class org.cocos.lib.CocosGamepads { *; }
--keep class org.cocos.lib.CocosDualSenseUsb { *; }
+-keep class org.cocos.lib.CocosSonyGamepadUsb { *; }

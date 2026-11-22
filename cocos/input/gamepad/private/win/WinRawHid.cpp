@@ -1,5 +1,5 @@
 #include "WinLegacyInput.h"
-#include "../drivers/DualSenseReports.h"
+#include "../drivers/SonyHidReports.h"
 
 #include <cfgmgr32.h>
 #include <hidsdi.h>
@@ -62,27 +62,54 @@ HidHandle openHid(std::wstring_view path, DWORD access, DWORD flags)
     return HidHandle(handle != INVALID_HANDLE_VALUE ? handle : nullptr);
 }
 
-class WinDualSense {
+class WinSonyGamepad {
 public:
-    WinDualSense(const std::wstring& path, const HIDP_CAPS& hid, EndpointDescriptor& descriptor,
-                 DualSenseTransport transport)
-        : _transport(transport), _outputLength(hid.OutputReportByteLength)
+    WinSonyGamepad(const std::wstring& path, const HIDP_CAPS& hid, EndpointDescriptor& descriptor,
+                   SonyHidModel model, DualSenseTransport transport, WinHidBus bus)
+        : _model(model), _transport(transport), _outputLength(hid.OutputReportByteLength),
+          _reports(model, transport), _output(model)
     {
-        descriptor.link = bluetooth() ? Link::Wireless : Link::Wired;
+        if (bus != WinHidBus::Unknown)
+            descriptor.link = bluetooth() ? Link::Wireless : Link::Wired;
         // Windows pads feature reads to the collection's longest feature report.
-        constexpr std::size_t calibrationLength = 41;
-        const auto feature = hid.FeatureReportByteLength >= calibrationLength ||
-                             (bluetooth() && hid.FeatureReportByteLength >= 20)
-                                 ? openHid(path, GENERIC_READ, FILE_ATTRIBUTE_NORMAL) : HidHandle{};
-        if (hid.FeatureReportByteLength >= calibrationLength)
-            if (feature)
+        const auto feature = hid.FeatureReportByteLength ? openHid(path, GENERIC_READ, FILE_ATTRIBUTE_NORMAL)
+                                                         : HidHandle{};
+        bool requestedEnhanced = false;
+        std::optional<std::uint16_t> firmware;
+        if (feature)
+        {
+            std::vector<std::uint8_t> buffer(hid.FeatureReportByteLength);
+            const auto readFeature = [&](std::uint8_t id, std::size_t length) {
+                if (buffer.size() < length)
+                    return std::span<const std::uint8_t>{};
+                std::ranges::fill(buffer, std::uint8_t{0});
+                buffer.front() = id;
+                return HidD_GetFeature(feature.get(), buffer.data(), static_cast<ULONG>(buffer.size()))
+                    ? std::span<const std::uint8_t>(buffer).first(length) : std::span<const std::uint8_t>{};
+            };
+            if (isDualShock4())
             {
-                std::vector<std::uint8_t> buffer(hid.FeatureReportByteLength);
-                buffer.front() = 0x05;
-                if (HidD_GetFeature(feature.get(), buffer.data(), static_cast<ULONG>(buffer.size())))
-                    _calibration = decodeDualSenseCalibration(_transport, std::span(buffer).first(calibrationLength));
+                const auto usbCalibration = readFeature(0x02, 37);
+                if (bluetooth())
+                {
+                    requestedEnhanced = !usbCalibration.empty();
+                    _reports.calibrate(readFeature(0x05, 41));
+                }
+                else
+                    _reports.calibrate(usbCalibration);
             }
-        const bool writableReport = bluetooth() ? _outputLength >= 78 : _outputLength >= 48 && _outputLength <= 64;
+            else
+            {
+                _reports.calibrate(readFeature(0x05, 41));
+                firmware = decodeDualSenseFirmware(readFeature(DualSenseFirmwareReportId, 46));
+                if (bluetooth())
+                    requestedEnhanced = !readFeature(0x09, 20).empty();
+            }
+        }
+        _output.configureRumble(model, transport, firmware);
+        const bool writableReport = bluetooth() ? _outputLength >= 78
+            : isDualShock4() ? _outputLength >= 32 && _outputLength <= 64
+                            : _outputLength >= 48 && _outputLength <= 64;
         if (writableReport)
         {
             _writable = openHid(path, GENERIC_WRITE, FILE_FLAG_OVERLAPPED);
@@ -93,19 +120,16 @@ public:
         }
         if (!bluetooth())
             enableCapabilities(descriptor);
-        else if (!enableEnhancedReports() && feature && hid.FeatureReportByteLength >= 20)
-        {
-            // Reading the pairing report can enable full input even for a read-only endpoint.
-            std::vector<std::uint8_t> buffer(hid.FeatureReportByteLength);
-            buffer.front() = 0x09;
-            HidD_GetFeature(feature.get(), buffer.data(), static_cast<ULONG>(buffer.size()));
-        }
+        else if (!requestedEnhanced)
+            enableEnhancedReports();
     }
 
-    ~WinDualSense() { stopOutput(); }
+    ~WinSonyGamepad() { stopOutput(); }
 
     bool bluetooth() const { return _transport == DualSenseTransport::Bluetooth; }
-    bool receivedFullInput() const { return _firstBluetoothReport.has_value(); }
+    bool receivedFullInput() const { return _firstFullReport.has_value(); }
+    bool usesProtocolLayout() const { return _model != SonyHidModel::DualSense; }
+    bool decodesControls() const { return usesProtocolLayout() || bluetooth(); }
 
     void observeSimpleReport(std::uint64_t now)
     {
@@ -113,16 +137,18 @@ public:
             enableEnhancedReports();
     }
 
-    std::optional<DualSenseInput> decode(std::span<const std::uint8_t> bytes) const
+    std::optional<SonyHidInput> decode(std::span<const std::uint8_t> bytes)
     {
-        if (bluetooth() && bytes.size() > 78)
+        if (!isDualShock4() && bluetooth() && bytes.size() > 78)
             bytes = bytes.first(78); // Discard Windows padding after the protocol CRC.
-        return decodeDualSenseInput(_transport, bytes, _calibration);
+        return _reports.decode(bytes);
     }
+
+    std::optional<DualSenseControls> simple(std::span<const std::uint8_t> bytes) const { return _reports.simple(bytes); }
 
     void setSensor(Sensor sensor, bool enabled)
     {
-        if ((_calibration || receivedFullInput()) && (sensor == Sensor::Gyro || sensor == Sensor::Accel))
+        if ((_reports.hasCalibration() || receivedFullInput()) && (sensor == Sensor::Gyro || sensor == Sensor::Accel))
             _sensors.set(static_cast<unsigned>(sensor), enabled);
     }
 
@@ -139,7 +165,7 @@ public:
         _sensors.reset();
     }
 
-    void publish(WinInputEndpoint& endpoint, const std::optional<DualSenseInput>& sample,
+    void publish(WinInputEndpoint& endpoint, const std::optional<SonyHidInput>& sample,
                  std::span<const RawChange> changes,
                  ReportSink& sink, ReportTime time)
     {
@@ -149,19 +175,23 @@ public:
         std::optional<Power> power;
         if (sample)
         {
-            if (bluetooth())
+            if (!_firstFullReport)
             {
-                if (!_firstBluetoothReport)
+                _firstFullReport = time.receivedNs;
+                if (bluetooth() || isDualShock4())
                 {
-                    _firstBluetoothReport = time.receivedNs;
                     enableCapabilities(endpoint.descriptor);
                     sink.capabilitiesChanged(endpoint.key, endpoint.descriptor.capabilities);
                 }
-                // Wait for the controller's Bluetooth connection animation before taking over its lights.
-                _canReleaseLights |= sample->sensorTicks >= 10200000;
             }
-            contacts = dualSenseTouchChanges(_fingers, sample->fingers);
-            _fingers = sample->fingers;
+            // DualSense Bluetooth plays a connection animation before it releases its lights.
+            if (bluetooth() && !isDualShock4())
+                _canReleaseLights |= sample->sensorTicks >= 10200000;
+            if (sample->hasTouchSample)
+            {
+                contacts = dualSenseTouchChanges(_fingers, sample->fingers);
+                _fingers = sample->fingers;
+            }
             for (const auto& value : sample->motion)
                 if (_sensors.test(static_cast<unsigned>(value.sensor)))
                     motion[motionCount++] = value;
@@ -212,7 +242,11 @@ public:
         _resetOutput = _hasOutput;
     }
 
-    bool needsPolling() const { return _resetOutput || _output.hasTimedRumble(); }
+    bool needsPolling() const
+    {
+        return _resetOutput || _output.hasTimedRumble() ||
+            (_written && bluetooth() && !isDualShock4() && _firstFullReport && !_lightsReleased);
+    }
 
     void pollOutput()
     {
@@ -227,10 +261,10 @@ public:
             if (next.expire(nowNs()) && write(next))
                 _output = next;
         }
-        if (_written && !_lightsReleased && _firstBluetoothReport)
+        if (_written && bluetooth() && !isDualShock4() && !_lightsReleased && _firstFullReport)
         {
             const auto now = nowNs();
-            if (now >= _nextLightAttempt && (_canReleaseLights || now - *_firstBluetoothReport >= 3400000000ull))
+            if (now >= _nextLightAttempt && (_canReleaseLights || now - *_firstFullReport >= 3400000000ull))
             {
                 _nextLightAttempt = now + 250000000;
                 if (write(_output, DualSenseOutputKind::ReleaseBluetoothLights))
@@ -240,20 +274,26 @@ public:
     }
 
 private:
+    bool isDualShock4() const { return _model == SonyHidModel::DualShock4; }
+
     void enableCapabilities(EndpointDescriptor& descriptor) const
     {
         auto& caps = descriptor.capabilities;
-        caps.fingersPerPad = {2};
-        // Bluetooth reports carry usable nominal IMU values if feature calibration is unavailable.
-        if (_calibration || bluetooth())
+        if (!isDualShock4() || receivedFullInput())
+            caps.fingersPerPad = {2};
+        // Full DS4 and Bluetooth reports permit nominal conversion if calibration is unavailable.
+        if (_reports.hasCalibration() || (receivedFullInput() && (bluetooth() || isDualShock4())))
         {
             caps.sensors.set(static_cast<unsigned>(Sensor::Gyro));
             caps.sensors.set(static_cast<unsigned>(Sensor::Accel));
         }
         if (!_written)
             return;
-        for (auto feature : {Feature::BodyRumble, Feature::RgbLed, Feature::PlayerLights,
-                             Feature::AdaptiveLeft, Feature::AdaptiveRight})
+        for (auto feature : {Feature::BodyRumble, Feature::RgbLed})
+            caps.features.set(static_cast<unsigned>(feature));
+        if (isDualShock4())
+            return;
+        for (auto feature : {Feature::PlayerLights, Feature::AdaptiveLeft, Feature::AdaptiveRight})
             caps.features.set(static_cast<unsigned>(feature));
         caps.playerLightMask = 31;
         caps.triggerLimits = {TriggerLimits{true, true, 1, 255}, TriggerLimits{true, true, 1, 255}};
@@ -268,9 +308,11 @@ private:
         return write(_output, DualSenseOutputKind::EnableBluetooth);
     }
 
-    bool write(DualSenseOutput& output, DualSenseOutputKind kind = DualSenseOutputKind::Effects)
+    bool write(SonyHidOutput& output, DualSenseOutputKind kind = DualSenseOutputKind::Effects)
     {
         auto report = output.encode(_transport, _outputLength, kind);
+        if (report.empty())
+            return false;
         if (!_outputBuffer.empty())
         {
             std::ranges::copy(report, _outputBuffer.begin());
@@ -296,15 +338,16 @@ private:
     }
 
     HidHandle _writable, _written;
+    SonyHidModel _model;
     DualSenseTransport _transport;
     unsigned _outputLength;
     std::vector<std::uint8_t> _outputBuffer;
-    DualSenseOutput _output;
-    std::optional<DualSenseCalibration> _calibration;
+    SonyHidReports _reports;
+    SonyHidOutput _output;
     std::array<std::optional<Contact>, 2> _fingers{};
     std::bitset<SensorCount> _sensors;
     bool _refreshPower = true, _hasOutput = false, _resetOutput = false;
-    std::optional<std::uint64_t> _firstBluetoothReport;
+    std::optional<std::uint64_t> _firstFullReport;
     std::uint64_t _nextEnable = 0, _nextLightAttempt = 0;
     unsigned _enableAttempts = 0;
     bool _canReleaseLights = false, _lightsReleased = false;
@@ -346,24 +389,24 @@ struct Device : WinInputEndpoint {
     std::vector<RawChange> changes;
     std::bitset<256> seenReports;
     std::bitset<256> reportIds;
-    std::unique_ptr<WinDualSense> dualSense;
+    std::unique_ptr<WinSonyGamepad> sony;
 
     PHIDP_PREPARSED_DATA parser()
     {
         return nativePreparsed ? nativePreparsed.get() : reinterpret_cast<PHIDP_PREPARSED_DATA>(preparsed.data());
     }
 
-    void decodeBluetooth(std::span<const std::uint8_t> bytes, ReportSink& sink, ReportTime time)
+    void decodeSony(std::span<const std::uint8_t> bytes, ReportSink& sink, ReportTime time)
     {
-        const auto full = dualSense->decode(bytes);
-        const auto simple = !full && !dualSense->receivedFullInput() ? decodeDualSenseBluetoothSimple(bytes)
-                                                                    : std::nullopt;
+        const auto full = sony->decode(bytes);
+        const auto simple = !full && !sony->receivedFullInput() ? sony->simple(bytes) : std::nullopt;
         const DualSenseControls* sample = full ? &*full : simple ? &*simple : nullptr;
         if (!sample)
             return;
-        // Keep the DirectInput order used by the Windows SDL database in both report modes.
+        // Preserve the existing DirectInput layout for the standard DualSense over Bluetooth.
         constexpr std::array<unsigned, 15> buttons{2, 0, 1, 3, 9, 10, 13, 14, 4, 6, 7, 8, 5, 11, 12};
         constexpr std::array<unsigned, 6> axes{0, 1, 2, 4, 5, 3};
+        const bool nativeLayout = sony->usesProtocolLayout();
         changes.clear();
         const auto update = [&](RawKind kind, unsigned index, auto& old, auto value) {
             if (old != value)
@@ -372,11 +415,11 @@ struct Device : WinInputEndpoint {
                 changes.push_back({kind, index, value});
             }
         };
-        for (unsigned i = 0; i < buttons.size(); ++i)
-            update(RawKind::Button, i, state.buttons[i], sample->buttons[buttons[i]]);
+        for (unsigned i = 0; i < state.buttons.size(); ++i)
+            update(RawKind::Button, i, state.buttons[i], sample->buttons[nativeLayout ? i : buttons[i]]);
         for (unsigned i = 0; i < axes.size(); ++i)
         {
-            update(RawKind::Axis, i, state.axes[i], sample->axes[axes[i]]);
+            update(RawKind::Axis, i, state.axes[i], sample->axes[nativeLayout ? i : axes[i]]);
             state.axesKnown[i] = 1;
         }
         update(RawKind::Hat, 0, state.hats[0], sample->hat);
@@ -387,9 +430,9 @@ struct Device : WinInputEndpoint {
             sendBaseline(sink, time);
             changes.clear();
         }
-        dualSense->publish(*this, full, changes, sink, time);
+        sony->publish(*this, full, changes, sink, time);
         if (simple)
-            dualSense->observeSimpleReport(time.receivedNs);
+            sony->observeSimpleReport(time.receivedNs);
     }
 
     void decode(std::span<const char> packet, ReportSink& sink, ReportTime time)
@@ -397,9 +440,9 @@ struct Device : WinInputEndpoint {
         if (packet.empty() || packet.size() > buffer.size())
             return;
         const auto bytes = std::span(reinterpret_cast<const std::uint8_t*>(packet.data()), packet.size());
-        if (dualSense && dualSense->bluetooth())
+        if (sony && sony->decodesControls())
         {
-            decodeBluetooth(bytes, sink, time);
+            decodeSony(bytes, sink, time);
             return;
         }
         const auto report = static_cast<unsigned char>(packet.front());
@@ -468,8 +511,8 @@ struct Device : WinInputEndpoint {
             sendBaseline(sink, time);
             changes.clear();
         }
-        if (dualSense)
-            dualSense->publish(*this, dualSense->decode(bytes), changes, sink, time);
+        if (sony)
+            sony->publish(*this, sony->decode(bytes), changes, sink, time);
         else if (!changes.empty())
             sink.report(key, {changes, {}, {}, {}, ++cursor, time});
     }
@@ -611,7 +654,7 @@ std::optional<SdlInputIndices> directInputIndices(std::span<const Control> contr
 }
 
 void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file,
-              bool bluetoothDualSense)
+              std::optional<SonyHidModel> model, bool bluetooth)
 {
     auto& descriptor = device.descriptor;
     descriptor.vendor = vendor;
@@ -631,10 +674,17 @@ void describe(Device& device, std::uint16_t vendor, std::uint16_t product, std::
         if (HidD_GetSerialNumberString(file, text.data(), sizeof(text)) && text[0])
             descriptor.serial = winUtf8(text.data());
     }
-    if (bluetoothDualSense)
+    if (model && name.empty())
+        descriptor.name = sonyHidName(*model);
+    if (model && *model != SonyHidModel::DualSense)
     {
-        if (name.empty())
-            descriptor.name = "DualSense Wireless Controller";
+        // This layout uses the SDL HIDAPI indices, independently of DirectInput.
+        descriptor.layout.guid = DeviceGuid::make(bluetooth ? 5 : 3, vendor, product, version, manufacturer, name, 'h');
+        descriptor.layout.legacyHidapi = true;
+        return;
+    }
+    if (bluetooth)
+    {
         // The Windows database identifies Sony's DirectInput layout with a USB-style GUID.
         descriptor.layout.guid = DeviceGuid::make(3, vendor, product, 0, manufacturer, name);
     }
@@ -680,30 +730,46 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
     if (HidP_GetCaps(device.parser(), &caps) != HIDP_STATUS_SUCCESS ||
         !gamepadUsage(caps.UsagePage, caps.Usage) || caps.InputReportByteLength == 0)
         return false;
-    const auto bus = vendor == 0x054c && product == 0x0ce6 ? hidBus(device.path) : WinHidBus::Unknown;
+    auto model = sonyHidModel(vendor, product);
+    const auto bus = model ? hidBus(device.path) : WinHidBus::Unknown;
     const bool bluetooth = bus == WinHidBus::Bluetooth && caps.InputReportByteLength >= 78;
     auto& descriptor = device.descriptor;
     auto& layout = descriptor.layout;
-    if (bluetooth)
+    if (!bluetooth)
+    {
+        if (!initializeGenericLayout(device, caps))
+            return false;
+        // ViGEm DS4 presents the USB report layout on a software bus. Other
+        // known Sony gamepads require a matching native bus and report shape.
+        if (model && (caps.InputReportByteLength != 64 || !device.reportIds[0x01] ||
+                      (bus != WinHidBus::Usb && !(bus == WinHidBus::Unknown && *model == SonyHidModel::DualShock4))))
+            model.reset();
+    }
+    if (model && *model != SonyHidModel::DualSense)
+    {
+        layout.id = *model == SonyHidModel::DualShock4 ? "win-dualshock4" : "win-dualsense-edge";
+        layout.id += bluetooth ? "-bluetooth-v1" : "-usb-v1";
+        configureSonyHidLayout(layout, *model);
+        device.changes.reserve(layout.buttonCount + layout.axisCount + layout.hatCount);
+    }
+    else if (bluetooth)
     {
         layout.id = "win-dualsense-bluetooth-v1";
-        layout.buttonCount = 15;
+        layout.buttonCount = DualSenseBaseButtonCount;
         layout.axisCount = 6;
         layout.hatCount = 1;
         device.changes.reserve(layout.buttonCount + layout.axisCount + layout.hatCount);
     }
-    else if (!initializeGenericLayout(device, caps))
-        return false;
 
-    describe(device, vendor, product, version, file, bluetooth);
+    describe(device, vendor, product, version, file, model, bluetooth);
     device.buffer.resize(caps.InputReportByteLength);
     device.state.buttons.resize(layout.buttonCount);
     device.state.axes.resize(layout.axisCount);
     device.state.axesKnown.resize(layout.axisCount);
     device.state.hats.resize(layout.hatCount);
-    if (bluetooth || (bus == WinHidBus::Usb && caps.InputReportByteLength == 64 && device.reportIds[0x01]))
-        device.dualSense = std::make_unique<WinDualSense>(device.path, caps, descriptor,
-            bluetooth ? DualSenseTransport::Bluetooth : DualSenseTransport::Usb);
+    if (model)
+        device.sony = std::make_unique<WinSonyGamepad>(device.path, caps, descriptor, *model,
+            bluetooth ? DualSenseTransport::Bluetooth : DualSenseTransport::Usb, bus);
     return true;
 }
 
@@ -1037,14 +1103,14 @@ void WinRawHid::remove(HANDLE handle)
 void WinRawHid::pollReports()
 {
     for (auto& [handle, device] : _impl->devices)
-        if (device.dualSense)
-            device.dualSense->pollOutput();
+        if (device.sony)
+            device.sony->pollOutput();
     for (auto it = _impl->interfaces.begin(); it != _impl->interfaces.end();)
     {
         if (it->second->pollReports(_impl->sink))
         {
-            if (it->second->dualSense)
-                it->second->dualSense->pollOutput();
+            if (it->second->sony)
+                it->second->sony->pollOutput();
             ++it;
         }
         else
@@ -1056,8 +1122,8 @@ void WinRawHid::requestBaseline(EndpointKey key)
 {
     if (const auto device = _impl->find(key))
     {
-        if (device->dualSense)
-            device->dualSense->resetBaseline();
+        if (device->sony)
+            device->sony->resetBaseline();
         device->sendBaseline(_impl->sink);
     }
 }
@@ -1066,15 +1132,15 @@ void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
 {
     for (auto& [handle, device] : _impl->devices)
     {
-        if (device.dualSense)
-            device.dualSense->resetTopology();
+        if (device.sony)
+            device.sony->resetTopology();
         ++device.key.generation;
         endpoints.push_back(device.attachment());
     }
     for (auto& [path, device] : _impl->interfaces)
     {
-        if (device->dualSense)
-            device->dualSense->resetTopology();
+        if (device->sony)
+            device->sony->resetTopology();
         ++device->key.generation;
         endpoints.push_back(device->attachment());
     }
@@ -1082,8 +1148,8 @@ void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
 
 void WinRawHid::setSensor(EndpointKey key, Sensor sensor, bool enabled)
 {
-    if (const auto device = _impl->find(key); device && device->dualSense)
-        device->dualSense->setSensor(sensor, enabled);
+    if (const auto device = _impl->find(key); device && device->sony)
+        device->sony->setSensor(sensor, enabled);
 }
 
 Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
@@ -1091,23 +1157,23 @@ Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
     const auto device = _impl->find(key);
     if (!device)
         return Error::Disconnected;
-    return device->dualSense ? device->dualSense->submit(command) : Error::Unsupported;
+    return device->sony ? device->sony->submit(command) : Error::Unsupported;
 }
 
 void WinRawHid::stopOutputs()
 {
     for (auto& [handle, device] : _impl->devices)
-        if (device.dualSense)
-            device.dualSense->stopOutput();
+        if (device.sony)
+            device.sony->stopOutput();
     for (auto& [path, device] : _impl->interfaces)
-        if (device->dualSense)
-            device->dualSense->stopOutput();
+        if (device->sony)
+            device->sony->stopOutput();
 }
 
 bool WinRawHid::needsPolling() const
 {
     return !_impl->interfaces.empty() || std::ranges::any_of(_impl->devices, [](const auto& item) {
-        return item.second.dualSense && item.second.dualSense->needsPolling();
+        return item.second.sony && item.second.sony->needsPolling();
     });
 }
 

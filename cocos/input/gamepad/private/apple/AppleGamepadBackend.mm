@@ -83,6 +83,15 @@ struct Device {
         auto pad = controller.extendedGamepad;
         auto micro = controller.microGamepad;
         const auto bind = [&](Button name, GCControllerButtonInput* input) { buttons[static_cast<unsigned>(name)] = input; };
+        const auto bindTouchpad = [&](GCControllerButtonInput* click, GCControllerDirectionPad* primary,
+                                      GCControllerDirectionPad* secondary) {
+            bind(Button::TouchpadClick, click);
+            if (primary && secondary)
+            {
+                touchpads = {primary, secondary};
+                descriptor.capabilities.fingersPerPad = {static_cast<unsigned>(touchpads.size())};
+            }
+        };
         bind(Button::South, pad ? pad.buttonA : micro.buttonA);
         bind(Button::East, pad.buttonB);
         bind(Button::West, pad ? pad.buttonX : micro.buttonX);
@@ -99,6 +108,11 @@ struct Device {
             bind(Button::Start, pad ? pad.buttonMenu : micro.buttonMenu);
             bind(Button::LeftStick, pad.leftThumbstickButton);
             bind(Button::RightStick, pad.rightThumbstickButton);
+            if ([pad isKindOfClass:GCDualShockGamepad.class])
+            {
+                auto dual = (GCDualShockGamepad*)pad;
+                bindTouchpad(dual.touchpadButton, dual.touchpadPrimary, dual.touchpadSecondary);
+            }
         }
         if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
         {
@@ -123,15 +137,10 @@ struct Device {
             if ([pad isKindOfClass:GCDualSenseGamepad.class])
             {
                 auto dual = (GCDualSenseGamepad*)pad;
-                bind(Button::TouchpadClick, dual.touchpadButton);
+                bindTouchpad(dual.touchpadButton, dual.touchpadPrimary, dual.touchpadSecondary);
                 // DualSense reports total acceleration without separating gravity and user motion.
                 if (controller.motion)
                     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Accel));
-                if (dual.touchpadPrimary && dual.touchpadSecondary)
-                {
-                    touchpads = {dual.touchpadPrimary, dual.touchpadSecondary};
-                    descriptor.capabilities.fingersPerPad = {static_cast<unsigned>(touchpads.size())};
-                }
                 for (auto feature : {Feature::AdaptiveLeft, Feature::AdaptiveRight})
                     descriptor.capabilities.features.set(static_cast<unsigned>(feature));
                 descriptor.capabilities.triggerLimits = {TriggerLimits{true, false}, TriggerLimits{true, false}};
@@ -176,15 +185,17 @@ struct Device {
             const bool joyConPair = [category isEqualToString:@"Nintendo Switch Joy-Con (L/R)"];
             std::uint16_t vendor = 0x05ac, product = 4;
             NSString* name = controller.vendorName ?: (category ?: @"MFi Gamepad");
+            const bool dualSenseEdge = [category isEqualToString:@"DualSense Edge"] ||
+                [name hasPrefix:@"DualSense Edge"];
             if ([name hasPrefix:@"Backbone One"])
             {
                 vendor = 0x358a;
                 product = [category isEqualToString:@"DualSense"] ? 0x0104 : 0x0103;
             }
-            else if ([category isEqualToString:@"DualShock 4"] || [category isEqualToString:@"DualSense"])
+            else if (dualSenseEdge || [category isEqualToString:@"DualShock 4"] || [category isEqualToString:@"DualSense"])
             {
                 vendor = 0x054c;
-                product = [category isEqualToString:@"DualSense"] ? 0x0ce6 : 0x09cc;
+                product = dualSenseEdge ? 0x0df2 : [category isEqualToString:@"DualSense"] ? 0x0ce6 : 0x09cc;
             }
             else if ([category isEqualToString:@"Xbox One"])
             {
@@ -213,6 +224,15 @@ struct Device {
             };
             if (vendor == 0x054c)
                 extra(Button::TouchpadClick, GCInputDualShockTouchpadButton);
+#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= 140400) || (__IPHONE_OS_VERSION_MAX_ALLOWED >= 170400) || \
+    (__TV_OS_VERSION_MAX_ALLOWED >= 170400) || (__VISION_OS_VERSION_MAX_ALLOWED >= 10100)
+            if (dualSenseEdge)
+                if (@available(macOS 14.4, iOS 17.4, tvOS 17.4, visionOS 1.1, *))
+                {
+                    extra(Button::LeftPaddle1, GCInputBackLeftButton(0));
+                    extra(Button::RightPaddle1, GCInputBackRightButton(0));
+                }
+#endif
             if (vendor == 0x045e)
             {
                 extra(Button::Misc1, @"Button Share");

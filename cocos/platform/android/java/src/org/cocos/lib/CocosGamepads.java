@@ -70,6 +70,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         final long generation = nextEndpoint();
         final String descriptor;
         final boolean touchpad;
+        final int touchpadMaxY;
         int sources;
         final ArrayList<InputDevice.MotionRange> ranges = new ArrayList<>();
         final int[] defaultAxes = new int[AXES.length];
@@ -85,8 +86,9 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
             descriptor = device.getDescriptor();
             sources = device.getSources();
             touchpad = Build.VERSION.SDK_INT >= 26
-                && CocosDualSenseUsb.isDualSense(device.getVendorId(), device.getProductId())
+                && CocosSonyGamepadUsb.supports(device.getVendorId(), device.getProductId())
                 && (device.supportsSource(InputDevice.SOURCE_MOUSE) || device.supportsSource(InputDevice.SOURCE_TOUCHPAD));
+            touchpadMaxY = CocosSonyGamepadUsb.isDualShock4(device.getProductId()) ? 943 : 1079;
             HashSet<Integer> seen = new HashSet<>();
             for (InputDevice.MotionRange range : device.getMotionRanges()) {
                 int axis = range.getAxis();
@@ -309,7 +311,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
 
     private final InputManager manager;
     private final SensorClient sensorClient;
-    private final CocosDualSenseUsb usb;
+    private final CocosSonyGamepadUsb usb;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final SparseArray<Pad> devices = new SparseArray<>();
     private final long host = next.incrementAndGet();
@@ -320,7 +322,7 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     CocosGamepads(Context context) {
         manager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
         sensorClient = Build.VERSION.SDK_INT >= 31 && Build.VERSION.SDK_INT < 33 ? new SensorClient(context) : null;
-        usb = new CocosDualSenseUsb(context, handler, host);
+        usb = new CocosSonyGamepadUsb(context, handler, host);
         current = this;
         nativeHost(host, true);
         manager.registerInputDeviceListener(this, handler);
@@ -442,10 +444,10 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
         nativeTouch(host, id, pad.generation,
             first < 0 ? -1 : event.getPointerId(first),
             first < 0 ? 0 : normalizeTouch(event.getX(first), x, 1919),
-            first < 0 ? 0 : normalizeTouch(event.getY(first), y, 1079),
+            first < 0 ? 0 : normalizeTouch(event.getY(first), y, pad.touchpadMaxY),
             second < 0 ? -1 : event.getPointerId(second),
             second < 0 ? 0 : normalizeTouch(event.getX(second), x, 1919),
-            second < 0 ? 0 : normalizeTouch(event.getY(second), y, 1079), false, event.getEventTime());
+            second < 0 ? 0 : normalizeTouch(event.getY(second), y, pad.touchpadMaxY), false, event.getEventTime());
         return true;
     }
 

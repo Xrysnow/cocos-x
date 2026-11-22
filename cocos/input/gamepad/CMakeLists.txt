@@ -19,8 +19,12 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/FrameBuilder.h
     input/gamepad/private/GamepadBackend.h
     input/gamepad/private/PlatformGamepadBackend.h
+    input/gamepad/private/drivers/DualShock4Reports.h
+    input/gamepad/private/drivers/DualShock4Reports.cpp
     input/gamepad/private/drivers/DualSenseReports.h
     input/gamepad/private/drivers/DualSenseReports.cpp
+    input/gamepad/private/drivers/SonyHidReports.h
+    input/gamepad/private/drivers/SonyReportBits.h
     input/gamepad/private/MappingDatabase.cpp
     input/gamepad/private/MappingDatabase.h
     input/gamepad/private/OutputRouter.cpp
@@ -58,8 +62,8 @@ elseif(APPLE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND COCOS_GAMEPAD_SRC
         input/gamepad/private/linux/EvdevGamepadBackend.cpp
-        input/gamepad/private/linux/LinuxDualSense.h
-        input/gamepad/private/linux/LinuxDualSense.cpp
+        input/gamepad/private/linux/LinuxSonyHid.h
+        input/gamepad/private/linux/LinuxSonyHid.cpp
     )
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)

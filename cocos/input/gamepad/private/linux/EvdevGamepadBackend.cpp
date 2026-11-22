@@ -1,5 +1,5 @@
 #include "../PlatformGamepadBackend.h"
-#include "LinuxDualSense.h"
+#include "LinuxSonyHid.h"
 
 #include <linux/input.h>
 #include <sys/epoll.h>
@@ -620,7 +620,7 @@ private:
         return _devices.erase(device);
     }
 
-    auto removeHid(std::map<std::string, std::unique_ptr<LinuxDualSense>>::iterator node)
+    auto removeHid(std::map<std::string, std::unique_ptr<LinuxSonyHid>>::iterator node)
     {
         if (node->second->attached())
             _sink->detached(node->second->key());
@@ -643,7 +643,7 @@ private:
             const auto& path = it->path();
             if (!path.filename().native().starts_with("hidraw") || _hid.contains(path.native()))
                 continue;
-            auto device = LinuxDualSense::open(path.native(), {0x4c4e, _nextEndpoint + 1, 1});
+            auto device = LinuxSonyHid::open(path.native(), {0x4c4e, _nextEndpoint + 1, 1});
             if (device && monitor.watch(device->fd()))
             {
                 ++_nextEndpoint;
@@ -826,7 +826,7 @@ private:
     std::thread _worker;
     std::mutex _mutex;
     std::map<std::string, Device> _devices;
-    std::map<std::string, std::unique_ptr<LinuxDualSense>> _hid;
+    std::map<std::string, std::unique_ptr<LinuxSonyHid>> _hid;
     std::vector<std::pair<EndpointKey, NativeCommand>> _commands;
     std::set<EndpointKey> _baselines;
     std::map<std::pair<EndpointKey, Sensor>, bool> _sensorRequests;

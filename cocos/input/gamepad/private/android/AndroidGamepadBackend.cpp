@@ -1,5 +1,5 @@
 #include "../PlatformGamepadBackend.h"
-#include "../drivers/DualSenseReports.h"
+#include "../drivers/SonyHidReports.h"
 #include "../DeviceGuid.h"
 
 #include "platform/android/jni/JniHelper.h"
@@ -18,18 +18,20 @@ constexpr std::array buttonNames{"a", "b", "x", "y", "back", "guide", "start", "
                                  "leftshoulder", "rightshoulder", "dpup", "dpdown", "dpleft", "dpright"};
 constexpr std::array axisNames{"leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger"};
 constexpr unsigned rawButtonCount = 36, maxAxes = 64;
-constexpr unsigned usbReportSize = 63;
+constexpr auto usbTransport = DualSenseTransport::Usb;
 
 struct UsbWrite {
-    DualSenseOutput output;
+    SonyHidOutput output;
     CommandId id{};
     std::uint64_t generation = 0;
 };
 
 struct UsbState {
-    std::optional<DualSenseCalibration> calibration;
+    explicit UsbState(SonyHidModel model) : reports(model, usbTransport), output(model) {}
+
+    SonyHidReports reports;
     std::bitset<SensorCount> sensors;
-    DualSenseOutput output;
+    SonyHidOutput output;
     std::deque<NativeCommand> pending;
     std::optional<UsbWrite> writing;
     bool neutral = true;
@@ -133,6 +135,16 @@ std::string utf8(JNIEnv* env, jstring text)
     std::string value(bytes);
     env->ReleaseStringUTFChars(text, bytes);
     return value;
+}
+
+std::span<const std::uint8_t> readUsbFeature(JNIEnv* env, jbyteArray report,
+                                             std::span<std::uint8_t> bytes)
+{
+    if (!report) return {};
+    const auto size = env->GetArrayLength(report);
+    if (size <= 0 || static_cast<std::size_t>(size) > bytes.size()) return {};
+    env->GetByteArrayRegion(report, 0, size, reinterpret_cast<jbyte*>(bytes.data()));
+    return bytes.first(static_cast<std::size_t>(size));
 }
 
 class AndroidBackend final : public GamepadBackend {
@@ -515,50 +527,48 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputDone(
     }
 }
 
-JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOpen(
-    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray calibration)
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeOpen(
+    JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jint product,
+    jbyteArray calibration, jbyteArray firmware)
 {
-    std::optional<DualSenseCalibration> decoded;
-    if (calibration && env->GetArrayLength(calibration) == 41)
-    {
-        std::array<std::uint8_t, 41> bytes;
-        env->GetByteArrayRegion(calibration, 0, bytes.size(), reinterpret_cast<jbyte*>(bytes.data()));
-        decoded = decodeDualSenseCalibration(DualSenseTransport::Usb, bytes);
-    }
+    const auto model = sonyHidModel(0x054c, static_cast<unsigned>(product));
+    if (!model) return false;
     auto& b = bridge();
     std::lock_guard lock(b.mutex);
     if (!b.running || host != b.host || id >= 0 || b.devices.contains(id)) return false;
     Device device{};
     device.id = id;
     device.key = {backendId, static_cast<std::uint64_t>(endpoint), 1};
-    device.usb = std::make_unique<UsbState>();
-    device.usb->calibration = decoded;
+    device.usb = std::make_unique<UsbState>(*model);
+    std::array<std::uint8_t, 64> bytes{};
+    device.usb->reports.calibrate(readUsbFeature(env, calibration, bytes));
+    device.usb->output.configureRumble(*model, usbTransport, decodeDualSenseFirmware(readUsbFeature(env, firmware, bytes)));
     auto& descriptor = device.descriptor;
-    descriptor.name = "DualSense Wireless Controller";
+    const bool ds4 = *model == SonyHidModel::DualShock4;
+    descriptor.name = sonyHidName(*model);
     descriptor.vendor = 0x054c;
-    descriptor.product = 0x0ce6;
+    descriptor.product = static_cast<std::uint16_t>(product);
     descriptor.link = Link::Wired;
     auto& caps = descriptor.capabilities;
     caps.fingersPerPad = {2};
-    caps.sensors.set(static_cast<unsigned>(Sensor::Accel), decoded.has_value());
-    caps.sensors.set(static_cast<unsigned>(Sensor::Gyro), decoded.has_value());
-    for (auto feature : {Feature::BodyRumble, Feature::RgbLed, Feature::PlayerLights,
-                         Feature::AdaptiveLeft, Feature::AdaptiveRight})
-        caps.features.set(static_cast<unsigned>(feature));
-    caps.playerLightMask = 31;
-    caps.triggerLimits = {TriggerLimits{true, true, 1, 255}, TriggerLimits{true, true, 1, 255}};
+    const bool motion = *model != SonyHidModel::DualSense || device.usb->reports.hasCalibration();
+    caps.sensors.set(static_cast<unsigned>(Sensor::Accel), motion);
+    caps.sensors.set(static_cast<unsigned>(Sensor::Gyro), motion);
+    caps.features.set(static_cast<unsigned>(Feature::BodyRumble));
+    caps.features.set(static_cast<unsigned>(Feature::RgbLed));
+    if (!ds4)
+    {
+        for (auto feature : {Feature::PlayerLights, Feature::AdaptiveLeft, Feature::AdaptiveRight})
+            caps.features.set(static_cast<unsigned>(feature));
+        caps.playerLightMask = 31;
+        caps.triggerLimits = {TriggerLimits{true, true, 1, 255}, TriggerLimits{true, true, 1, 255}};
+    }
     auto& layout = descriptor.layout;
-    layout.id = "android-dualsense-usb-v1";
+    layout.id = ds4 ? "android-dualshock4-usb-v1" : *model == SonyHidModel::DualSenseEdge ?
+        "android-dualsense-edge-usb-v1" : "android-dualsense-usb-v1";
     layout.guid = DeviceGuid::make(3, *descriptor.vendor, *descriptor.product, 0, {}, descriptor.name, 'h');
     layout.legacyHidapi = true;
-    layout.buttonCount = 15;
-    layout.axisCount = 6;
-    layout.hatCount = 1;
-    layout.builtInMapping =
-        "a:b0,b:b1,x:b2,y:b3,back:b4,guide:b5,start:b6,leftstick:b7,rightstick:b8,"
-        "leftshoulder:b9,rightshoulder:b10,touchpad:b11,misc1:b12,"
-        "leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,"
-        "dpup:h0.1,dpright:h0.2,dpdown:h0.4,dpleft:h0.8,face:sony";
+    configureSonyHidLayout(layout, *model);
     device.state.buttons.resize(layout.buttonCount);
     device.state.axes.resize(layout.axisCount);
     device.state.axesKnown.assign(layout.axisCount, 1);
@@ -567,20 +577,21 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOpen(
     return true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeRead(
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeRead(
     JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray packet, jint length)
 {
     std::array<std::uint8_t, 64> bytes;
-    if (length != bytes.size()) return false;
+    if (!packet || length <= 0 || static_cast<std::size_t>(length) > bytes.size() || length > env->GetArrayLength(packet))
+        return false;
     env->GetByteArrayRegion(packet, 0, length, reinterpret_cast<jbyte*>(bytes.data()));
     auto& b = bridge();
     std::lock_guard lock(b.mutex);
     auto* device = b.find(host, id, endpoint);
     if (!device || !device->usb) return false;
-    const auto sample = decodeDualSenseInput(DualSenseTransport::Usb, bytes, device->usb->calibration);
+    const auto sample = device->usb->reports.decode(std::span(bytes).first(static_cast<std::size_t>(length)));
     if (!sample) return false;
 
-    std::array<RawChange, 22> changes{};
+    std::array<RawChange, DualSenseEdgeButtonCount + 7> changes{};
     unsigned count = 0;
     const auto update = [&](RawKind kind, auto& previous, unsigned index, auto value) {
         if (previous[index] != value)
@@ -589,7 +600,7 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeRead(
             changes[count++] = {kind, index, value};
         }
     };
-    for (unsigned i = 0; i < sample->buttons.size(); ++i)
+    for (unsigned i = 0; i < device->state.buttons.size(); ++i)
         update(RawKind::Button, device->state.buttons, i, sample->buttons[i]);
     for (unsigned i = 0; i < sample->axes.size(); ++i)
         update(RawKind::Axis, device->state.axes, i, sample->axes[i]);
@@ -612,8 +623,11 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeRead(
     unsigned motionCount = 0;
     if (b.active)
     {
-        contacts = dualSenseTouchChanges(device->fingers, sample->fingers);
-        device->fingers = sample->fingers;
+        if (sample->hasTouchSample)
+        {
+            contacts = dualSenseTouchChanges(device->fingers, sample->fingers);
+            device->fingers = sample->fingers;
+        }
         for (const auto& value : sample->motion)
             if (device->usb->sensors.test(static_cast<unsigned>(value.sensor))) motion[motionCount++] = value;
     }
@@ -623,7 +637,7 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeRead(
     return true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeNextOutput(
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeNextOutput(
     JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jbyteArray packet)
 {
     auto& b = bridge();
@@ -650,13 +664,15 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeNextOutput
         }
     }
     else if (!write.output.expire(nowNs())) return false;
-    const auto bytes = write.output.encode(DualSenseTransport::Usb, usbReportSize);
-    env->SetByteArrayRegion(packet, 0, bytes.size(), reinterpret_cast<const jbyte*>(bytes.data()));
+    const auto bytes = write.output.encode(usbTransport);
+    if (bytes.empty() || !packet || bytes.size() != static_cast<std::size_t>(env->GetArrayLength(packet)))
+        return false;
+    env->SetByteArrayRegion(packet, 0, static_cast<jsize>(bytes.size()), reinterpret_cast<const jbyte*>(bytes.data()));
     usb.writing = std::move(write);
     return true;
 }
 
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOutputDone(
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeOutputDone(
     JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jboolean success)
 {
     auto& b = bridge();
@@ -670,7 +686,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeOutputDone(
     usb.writing.reset();
 }
 
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeClose(
+JNIEXPORT void JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeClose(
     JNIEnv*, jclass, jlong host, jint id, jlong endpoint)
 {
     auto& b = bridge();
@@ -678,12 +694,16 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeClose(
     if (b.find(host, id, endpoint)) b.detach(id);
 }
 
-JNIEXPORT void JNICALL Java_org_cocos_lib_CocosDualSenseUsb_nativeNeutral(
-    JNIEnv* env, jclass, jbyteArray packet)
+JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeNeutral(
+    JNIEnv* env, jclass, jint product, jbyteArray packet)
 {
-    DualSenseOutput output;
+    const auto model = sonyHidModel(0x054c, static_cast<unsigned>(product));
+    if (!model || !packet) return false;
+    SonyHidOutput output(*model);
     output.apply(Stop{}, nowNs());
-    const auto bytes = output.encode(DualSenseTransport::Usb, usbReportSize);
-    env->SetByteArrayRegion(packet, 0, bytes.size(), reinterpret_cast<const jbyte*>(bytes.data()));
+    const auto bytes = output.encode(usbTransport);
+    if (bytes.empty() || bytes.size() != static_cast<std::size_t>(env->GetArrayLength(packet))) return false;
+    env->SetByteArrayRegion(packet, 0, static_cast<jsize>(bytes.size()), reinterpret_cast<const jbyte*>(bytes.data()));
+    return true;
 }
 }

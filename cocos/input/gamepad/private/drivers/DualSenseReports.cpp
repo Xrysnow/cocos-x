@@ -1,7 +1,30 @@
+/*
+ * DualSense Edge input and firmware-dependent output adapted from
+ * SDL 3.4.20 src/joystick/hidapi/SDL_hidapi_ps5.c for cocos-x.
+ *
+ * Simple DirectMedia Layer
+ * Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty.  In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
 #include "DualSenseReports.h"
+#include "SonyReportBits.h"
 
 #include <algorithm>
-#include <bit>
 #include <cmath>
 #include <numbers>
 
@@ -11,43 +34,10 @@ namespace {
 constexpr float radians = std::numbers::pi_v<float> / 180.f;
 constexpr float gravity = 9.80665f;
 
-std::uint32_t crc(std::uint8_t seed, std::span<const std::uint8_t> packet)
-{
-    std::uint32_t value = (0xffffffffu ^ seed);
-    const auto octet = [&] {
-        for (unsigned bit = 0; bit < 8; ++bit)
-            value = (value >> 1) ^ ((value & 1u) ? 0xedb88320u : 0u);
-    };
-    octet();
-    for (auto byte : packet)
-    {
-        value ^= byte;
-        octet();
-    }
-    return ~value;
-}
-
-std::uint32_t little(std::span<const std::uint8_t> bytes)
-{
-    std::uint32_t value = 0;
-    for (unsigned i = 0; i < bytes.size(); ++i)
-        value |= static_cast<std::uint32_t>(bytes[i]) << (i * 8);
-    return value;
-}
-
-void store(std::span<std::uint8_t> bytes, std::uint32_t value)
-{
-    for (auto& byte : bytes)
-    {
-        byte = static_cast<std::uint8_t>(value);
-        value >>= 8;
-    }
-}
-
-int signedSample(std::span<const std::uint8_t> bytes, unsigned offset)
-{
-    return std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(little(bytes.subspan(offset, 2))));
-}
+using playstation::crc;
+using playstation::little;
+using playstation::signedSample;
+using playstation::store;
 
 std::int16_t stick(std::uint8_t value)
 {
@@ -63,13 +53,14 @@ void decodeControls(DualSenseControls& result, std::span<const std::uint8_t, 4> 
     if (dir < positions.size())
         result.hat = static_cast<std::uint8_t>(positions[dir]);
     // Keep the existing canonical indices. Right trigger's digital bit is appended.
-    constexpr std::array<unsigned, 15> offsets{5, 6, 4, 7, 12, 16, 13, 14, 15, 8, 9, 17, 18, 10, 11};
+    constexpr std::array<unsigned, DualSenseBaseButtonCount> offsets{5, 6, 4, 7, 12, 16, 13, 14, 15, 8, 9, 17, 18, 10, 11};
     for (unsigned i = 0; i < offsets.size(); ++i)
         result.buttons[i] = (buttons[offsets[i] / 8] >> (offsets[i] % 8)) & 1u;
     for (unsigned i = 0; i < sticks.size(); ++i)
         result.axes[i] = stick(sticks[i]);
     for (unsigned i = 0; i < triggers.size(); ++i)
-        result.axes[i + sticks.size()] = static_cast<std::int16_t>(triggers[i] * 257 - 32768);
+        result.axes[i + sticks.size()] = triggers[i] == 0 && result.buttons[13 + i] ? std::int16_t{32767}
+            : static_cast<std::int16_t>(triggers[i] * 257 - 32768);
 }
 
 void encodeTrigger(const AdaptiveTrigger& trigger, std::span<std::uint8_t> bytes)
@@ -90,6 +81,26 @@ void encodeTrigger(const AdaptiveTrigger& trigger, std::span<std::uint8_t> bytes
 }
 
 } // namespace
+
+std::optional<DualSenseModel> dualSenseModel(unsigned vendor, unsigned product)
+{
+    if (vendor == 0x054c)
+    {
+        if (product == 0x0ce6) return DualSenseModel::Standard;
+        if (product == 0x0df2) return DualSenseModel::Edge;
+    }
+    return {};
+}
+
+std::optional<std::uint16_t> decodeDualSenseFirmware(std::span<const std::uint8_t> packet)
+{
+    if (packet.size() < 46 || packet.front() != DualSenseFirmwareReportId)
+        return {};
+    const auto version = static_cast<std::uint16_t>(little(packet.subspan(44, 2)));
+    if (version == 0)
+        return {};
+    return version;
+}
 
 std::optional<DualSenseCalibration> decodeDualSenseCalibration(DualSenseTransport transport,
                                                                 std::span<const std::uint8_t> packet)
@@ -120,7 +131,8 @@ std::optional<DualSenseCalibration> decodeDualSenseCalibration(DualSenseTranspor
 }
 
 std::optional<DualSenseInput> decodeDualSenseInput(DualSenseTransport transport, std::span<const std::uint8_t> packet,
-                                                   const std::optional<DualSenseCalibration>& calibration)
+                                                   const std::optional<DualSenseCalibration>& calibration,
+                                                   DualSenseModel model)
 {
     if (packet.size() != (transport == DualSenseTransport::Usb ? 64 : 78) ||
         packet.front() != (transport == DualSenseTransport::Usb ? 0x01 : 0x31))
@@ -130,6 +142,9 @@ std::optional<DualSenseInput> decodeDualSenseInput(DualSenseTransport transport,
     const auto data = packet.subspan(transport == DualSenseTransport::Usb ? 1 : 2);
     DualSenseInput result;
     decodeControls(result, data.first<4>(), data.subspan<4, 2>(), data.subspan<7, 3>());
+    if (model == DualSenseModel::Edge)
+        for (unsigned i = DualSenseBaseButtonCount; i < DualSenseEdgeButtonCount; ++i)
+            result.buttons[i] = (data[9] >> (4 + i - DualSenseBaseButtonCount)) & 1u;
     result.sensorTicks = little(data.subspan(27, 4));
     for (unsigned i = 0; i < result.fingers.size(); ++i)
     {
@@ -165,9 +180,6 @@ std::optional<DualSenseControls> decodeDualSenseBluetoothSimple(std::span<const 
     const std::array buttons{packet[5], packet[6], static_cast<std::uint8_t>(packet[7] & 0x03)};
     DualSenseControls result;
     decodeControls(result, packet.subspan<1, 4>(), packet.subspan<8, 2>(), buttons);
-    for (unsigned i = 0; i < 2; ++i)
-        if (packet[8 + i] == 0 && result.buttons[13 + i])
-            result.axes[4 + i] = 32767;
     return result;
 }
 
@@ -195,6 +207,15 @@ std::vector<Contact> dualSenseTouchChanges(const std::array<std::optional<Contac
             }
         }
     return result;
+}
+
+void DualSenseOutput::configureRumble(DualSenseModel model, DualSenseTransport transport,
+                                      std::optional<std::uint16_t> firmwareVersion)
+{
+    // SDL assumes updated firmware over Bluetooth when the feature read fails.
+    constexpr std::uint16_t enhancedVersion = 0x0224;
+    _enhancedRumble = model == DualSenseModel::Edge ||
+        firmwareVersion.value_or(transport == DualSenseTransport::Bluetooth ? enhancedVersion : 0) >= enhancedVersion;
 }
 
 bool DualSenseOutput::apply(const OutputCommand& command, std::uint64_t now)
@@ -268,12 +289,14 @@ std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transpo
     const auto data = std::span(_packet).subspan(wireless ? 3 : 1);
     if (kind == DualSenseOutputKind::Effects)
     {
-        data[0] = 0x0f; // Enable compatible vibration and independent trigger channels.
+        // Choose one rumble protocol, also writing zero amplitudes to stop it.
+        data[0] = _enhancedRumble ? 0x0e : 0x0f;
         data[1] = 0x14; // RGB and five player indicators.
         data[2] = _high;
         data[3] = _low;
         encodeTrigger(_triggers[1], data.subspan(10, 11));
         encodeTrigger(_triggers[0], data.subspan(21, 11));
+        if (_enhancedRumble) data[38] = 0x04;
         data[43] = static_cast<std::uint8_t>(_lights.mask);
         data[44] = _rgb.r;
         data[45] = _rgb.g;
