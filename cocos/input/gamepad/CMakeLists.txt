@@ -25,6 +25,8 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/drivers/DualSenseReports.cpp
     input/gamepad/private/drivers/SonyHidReports.h
     input/gamepad/private/drivers/SonyReportBits.h
+    input/gamepad/private/drivers/SwitchReports.cpp
+    input/gamepad/private/drivers/SwitchReports.h
     input/gamepad/private/MappingDatabase.cpp
     input/gamepad/private/MappingDatabase.h
     input/gamepad/private/OutputRouter.cpp
@@ -39,9 +41,12 @@ if(WIN32)
     list(APPEND COCOS_GAMEPAD_SRC
         input/gamepad/private/win/WinGamepadBackend.cpp
         input/gamepad/private/win/WinDirectInput.cpp
+        input/gamepad/private/win/WinHidFile.h
         input/gamepad/private/win/WinLegacyInput.cpp
         input/gamepad/private/win/WinLegacyInput.h
         input/gamepad/private/win/WinRawHid.cpp
+        input/gamepad/private/win/WinSwitchGamepad.cpp
+        input/gamepad/private/win/WinSwitchGamepad.h
         input/gamepad/private/win/WinXInput.cpp
         input/gamepad/private/win/WinXInput.h
     )

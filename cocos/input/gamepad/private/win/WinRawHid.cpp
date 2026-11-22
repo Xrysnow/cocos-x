@@ -1,4 +1,4 @@
-#include "WinLegacyInput.h"
+#include "WinSwitchGamepad.h"
 #include "../drivers/SonyHidReports.h"
 
 #include <cfgmgr32.h>
@@ -47,20 +47,6 @@ struct Control {
 struct FreePreparsedData {
     void operator()(PHIDP_PREPARSED_DATA data) const { HidD_FreePreparsedData(data); }
 };
-
-struct CloseHidHandle {
-    void operator()(HANDLE handle) const { CloseHandle(handle); }
-};
-
-using HidHandle = std::unique_ptr<void, CloseHidHandle>;
-
-HidHandle openHid(std::wstring_view path, DWORD access, DWORD flags)
-{
-    const std::wstring terminated(path);
-    const auto handle = CreateFileW(terminated.c_str(), access, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-                                   OPEN_EXISTING, flags, nullptr);
-    return HidHandle(handle != INVALID_HANDLE_VALUE ? handle : nullptr);
-}
 
 class WinSonyGamepad {
 public:
@@ -318,23 +304,7 @@ private:
             std::ranges::copy(report, _outputBuffer.begin());
             report = _outputBuffer;
         }
-        OVERLAPPED operation{};
-        operation.hEvent = _written.get();
-        ResetEvent(operation.hEvent);
-        DWORD count{};
-        if (!WriteFile(_writable.get(), report.data(), static_cast<DWORD>(report.size()), &count, &operation))
-        {
-            if (GetLastError() != ERROR_IO_PENDING)
-                return false;
-            // A stalled write must not hold up input polling or a focus-loss stop.
-            const bool ready = WaitForSingleObject(operation.hEvent, 25) == WAIT_OBJECT_0;
-            if (!ready)
-                CancelIoEx(_writable.get(), &operation);
-            // A completed transfer can win the race with cancellation.
-            if (!GetOverlappedResult(_writable.get(), &operation, &count, ready ? FALSE : TRUE))
-                return false;
-        }
-        return count == report.size();
+        return writeHid(_writable.get(), _written.get(), report);
     }
 
     HidHandle _writable, _written;
@@ -390,6 +360,7 @@ struct Device : WinInputEndpoint {
     std::bitset<256> seenReports;
     std::bitset<256> reportIds;
     std::unique_ptr<WinSonyGamepad> sony;
+    std::unique_ptr<WinSwitchGamepad> nintendo;
 
     PHIDP_PREPARSED_DATA parser()
     {
@@ -440,6 +411,11 @@ struct Device : WinInputEndpoint {
         if (packet.empty() || packet.size() > buffer.size())
             return;
         const auto bytes = std::span(reinterpret_cast<const std::uint8_t*>(packet.data()), packet.size());
+        if (nintendo)
+        {
+            nintendo->decode(*this, bytes, sink, time);
+            return;
+        }
         if (sony && sony->decodesControls())
         {
             decodeSony(bytes, sink, time);
@@ -724,18 +700,44 @@ bool initializeGenericLayout(Device& device, const HIDP_CAPS& caps)
     return true;
 }
 
-bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file)
+bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file,
+                bool directHid = false)
 {
     HIDP_CAPS caps{};
-    if (HidP_GetCaps(device.parser(), &caps) != HIDP_STATUS_SUCCESS ||
-        !gamepadUsage(caps.UsagePage, caps.Usage) || caps.InputReportByteLength == 0)
+    if (HidP_GetCaps(device.parser(), &caps) != HIDP_STATUS_SUCCESS || caps.InputReportByteLength == 0)
+        return false;
+    const auto nintendo = directHid ? switchModel(vendor, product) : std::nullopt;
+    const bool generic = gamepadUsage(caps.UsagePage, caps.Usage);
+    if (!generic && !(nintendo && caps.UsagePage == HID_USAGE_PAGE_GENERIC && caps.Usage == 0x08))
         return false;
     auto model = sonyHidModel(vendor, product);
     const auto bus = model ? hidBus(device.path) : WinHidBus::Unknown;
     const bool bluetooth = bus == WinHidBus::Bluetooth && caps.InputReportByteLength >= 78;
     auto& descriptor = device.descriptor;
     auto& layout = descriptor.layout;
-    if (!bluetooth)
+    if (nintendo && caps.InputReportByteLength >= 49)
+    {
+        const auto transport = hidBus(device.path);
+        auto native = std::make_unique<WinSwitchGamepad>(device.path, *nintendo, transport, caps.OutputReportByteLength);
+        if (native->writable())
+        {
+            const bool wireless = transport == WinHidBus::Bluetooth;
+            describe(device, vendor, product, version, file, {}, false);
+            descriptor.name = switchName(*nintendo);
+            descriptor.link = wireless ? Link::Wireless : Link::Wired;
+            layout.id = wireless ? "win-switch-bluetooth-v1" : "win-switch-usb-v1";
+            layout.id += *nintendo == SwitchModel::Pro ? "/pro" :
+                         *nintendo == SwitchModel::JoyConLeft ? "/left" : "/right";
+            layout.guid = DeviceGuid::make(wireless ? 5 : 3, vendor, product, version, {}, descriptor.name,
+                                           'h', static_cast<std::uint8_t>(*nintendo));
+            layout.legacyHidapi = true;
+            configureSwitchLayout(layout, *nintendo);
+            device.nintendo = std::move(native);
+        }
+    }
+    if (!device.nintendo && !generic)
+        return false;
+    if (!device.nintendo && !bluetooth)
     {
         if (!initializeGenericLayout(device, caps))
             return false;
@@ -761,7 +763,8 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
         device.changes.reserve(layout.buttonCount + layout.axisCount + layout.hatCount);
     }
 
-    describe(device, vendor, product, version, file, model, bluetooth);
+    if (!device.nintendo)
+        describe(device, vendor, product, version, file, model, bluetooth);
     device.buffer.resize(caps.InputReportByteLength);
     device.state.buttons.resize(layout.buttonCount);
     device.state.axes.resize(layout.axisCount);
@@ -818,7 +821,7 @@ std::unique_ptr<DirectHidDevice> openInterface(const std::wstring& path)
     attributes.Size = sizeof(attributes);
     const bool identified = HidD_GetAttributes(device->file, &attributes) != FALSE;
     if (!initialize(*device, attributes.VendorID, attributes.ProductID, attributes.VersionNumber,
-                    identified ? device->file : INVALID_HANDLE_VALUE))
+                    identified ? device->file : INVALID_HANDLE_VALUE, true))
         return {};
     if (!identified)
     {
@@ -952,8 +955,30 @@ struct WinRawHid::Impl {
             return nullptr;
         auto device = openDevice(handle);
         if (device)
+        {
             if (const auto old = interfaces.find(device->path); old != interfaces.end())
+            {
+                if (old->second->nintendo)
+                {
+                    ignored.insert(handle);
+                    return nullptr;
+                }
                 removeInterface(old, true);
+            }
+            const auto& descriptor = device->descriptor;
+            // Use direct overlapped reads for reply reports outside the standard HID controls.
+            if (switchModel(descriptor.vendor.value_or(0), descriptor.product.value_or(0)))
+            {
+                auto native = openInterface(device->path);
+                if (native && native->nintendo && paths.insert(device->path).second)
+                {
+                    auto& added = interfaces.emplace(device->path, std::move(native)).first->second;
+                    publish(*added);
+                    ignored.insert(handle);
+                    return nullptr;
+                }
+            }
+        }
         if (!device || !paths.insert(device->path).second)
         {
             ignored.insert(handle);
@@ -1111,6 +1136,8 @@ void WinRawHid::pollReports()
         {
             if (it->second->sony)
                 it->second->sony->pollOutput();
+            if (it->second->nintendo)
+                it->second->nintendo->poll();
             ++it;
         }
         else
@@ -1141,6 +1168,8 @@ void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
     {
         if (device->sony)
             device->sony->resetTopology();
+        if (device->nintendo)
+            device->nintendo->resetTopology();
         ++device->key.generation;
         endpoints.push_back(device->attachment());
     }
@@ -1148,8 +1177,13 @@ void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
 
 void WinRawHid::setSensor(EndpointKey key, Sensor sensor, bool enabled)
 {
-    if (const auto device = _impl->find(key); device && device->sony)
-        device->sony->setSensor(sensor, enabled);
+    if (const auto device = _impl->find(key))
+    {
+        if (device->sony)
+            device->sony->setSensor(sensor, enabled);
+        if (device->nintendo)
+            device->nintendo->setSensor(sensor, enabled);
+    }
 }
 
 Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
@@ -1157,6 +1191,8 @@ Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
     const auto device = _impl->find(key);
     if (!device)
         return Error::Disconnected;
+    if (device->nintendo)
+        return device->nintendo->submit(command);
     return device->sony ? device->sony->submit(command) : Error::Unsupported;
 }
 
@@ -1166,8 +1202,12 @@ void WinRawHid::stopOutputs()
         if (device.sony)
             device.sony->stopOutput();
     for (auto& [path, device] : _impl->interfaces)
+    {
         if (device->sony)
             device->sony->stopOutput();
+        if (device->nintendo)
+            device->nintendo->stopOutput();
+    }
 }
 
 bool WinRawHid::needsPolling() const
