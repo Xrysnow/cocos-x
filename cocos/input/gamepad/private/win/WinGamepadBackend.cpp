@@ -1,5 +1,6 @@
 #include "WinXInput.h"
 #include "WinLegacyInput.h"
+#include "WinWgi.h"
 
 #include <bit>
 #include <condition_variable>
@@ -81,19 +82,23 @@ private:
 
 class WinGamepadBackend final : public GamepadBackend, private ReportSink {
 public:
-    WinGamepadBackend(std::unique_ptr<GamepadBackend> xinput, std::unique_ptr<GamepadBackend> legacy)
-        : _xinput(std::move(xinput)), _legacy(std::move(legacy)) {}
+    WinGamepadBackend(std::unique_ptr<GamepadBackend> xinput, std::unique_ptr<GamepadBackend> wgi)
+        : _xinput(std::move(xinput)), _wgi(std::move(wgi)) {}
 
     ~WinGamepadBackend() override { stop(); }
 
     Error start(ReportSink& sink) override
     {
-        if (_startedXInput || _startedLegacy)
+        if (_startedXInput || _startedWgi || _startedLegacy)
             return Error::Busy;
         _sink = &sink;
-        _startedXInput = _xinput && _xinput->start(*this) == Error::None;
+        // XInput exposes slots without controller identities. Only one backend
+        // can publish this controller family and own its vibration at a time.
+        _startedWgi = _wgi && _wgi->start(*this) == Error::None;
+        _startedXInput = !_startedWgi && _xinput && _xinput->start(*this) == Error::None;
+        _legacy = makeWinLegacyInput(WinLegacyPaths::Both, _startedWgi);
         _startedLegacy = _legacy && _legacy->start(*this) == Error::None;
-        return _startedXInput || _startedLegacy ? Error::None : Error::Unsupported;
+        return _startedXInput || _startedWgi || _startedLegacy ? Error::None : Error::Unsupported;
     }
 
     void stop() noexcept override
@@ -106,6 +111,8 @@ public:
         _published.notify_all();
         if (std::exchange(_startedXInput, false))
             _xinput->stop();
+        if (std::exchange(_startedWgi, false))
+            _wgi->stop();
         if (std::exchange(_startedLegacy, false))
             _legacy->stop();
         _snapshot.clear();
@@ -116,6 +123,8 @@ public:
     {
         if (_startedXInput)
             _xinput->setActive(active);
+        if (_startedWgi)
+            _wgi->setActive(active);
         if (_startedLegacy)
             _legacy->setActive(active);
     }
@@ -138,11 +147,13 @@ public:
             std::lock_guard lock(_mutex);
             if (_awaiting != 0)
                 return;
-            _awaiting = static_cast<unsigned>(_startedXInput) + static_cast<unsigned>(_startedLegacy);
+            _awaiting = static_cast<unsigned>(_startedXInput || _startedWgi) + static_cast<unsigned>(_startedLegacy);
             _snapshot.clear();
         }
         if (_startedXInput)
             _xinput->requestTopology();
+        if (_startedWgi)
+            _wgi->requestTopology();
         if (_startedLegacy)
             _legacy->requestTopology();
     }
@@ -158,6 +169,8 @@ private:
     {
         if (key.backend == WinXInputId && _startedXInput)
             return _xinput.get();
+        if (key.backend == WinWgiId && _startedWgi)
+            return _wgi.get();
         if ((key.backend == WinRawHidId || key.backend == WinDirectInputId) && _startedLegacy)
             return _legacy.get();
         return nullptr;
@@ -205,9 +218,10 @@ private:
     }
 
     std::unique_ptr<GamepadBackend> _xinput;
+    std::unique_ptr<GamepadBackend> _wgi;
     std::unique_ptr<GamepadBackend> _legacy;
     ReportSink* _sink = nullptr;
-    bool _startedXInput = false, _startedLegacy = false;
+    bool _startedXInput = false, _startedWgi = false, _startedLegacy = false;
     std::mutex _mutex;
     std::condition_variable _published;
     std::vector<AttachedEndpoint> _snapshot;
@@ -221,7 +235,11 @@ std::unique_ptr<GamepadBackend> makeWinGamepadBackend()
 {
     auto api = std::make_unique<SystemXInput>();
     auto xinput = api->load() ? makeXInputBackend(std::move(api)) : nullptr;
-    return std::make_unique<WinGamepadBackend>(std::move(xinput), makeWinLegacyInput(WinLegacyPaths::Both));
+    wchar_t mode[2]{};
+    auto wgi = GetEnvironmentVariableW(L"COCOS_XBOX_WGI", mode, 2) == 1 && mode[0] == L'1'
+                   ? makeWinWgiBackend()
+                   : nullptr;
+    return std::make_unique<WinGamepadBackend>(std::move(xinput), std::move(wgi));
 }
 
 } // namespace cc::input::detail

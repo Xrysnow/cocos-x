@@ -1,4 +1,5 @@
 #include "WinLegacyInput.h"
+#include "WinWgi.h"
 
 #ifndef DIRECTINPUT_VERSION
     #define DIRECTINPUT_VERSION 0x0800
@@ -284,7 +285,7 @@ std::optional<Device> configureDevice(DirectDevice native, HWND window, const DI
 } // namespace
 
 struct WinDirectInput::Impl {
-    Impl(ReportSink& target, HANDLE event) : sink(target), wakeWindow(event) {}
+    Impl(ReportSink& target, HANDLE event, bool wgi) : sink(target), wakeWindow(event), xboxOwnedByWgi(wgi) {}
 
     ~Impl()
     {
@@ -354,6 +355,9 @@ struct WinDirectInput::Impl {
         HidPaths present;
         for (const auto& instance : list)
         {
+            if (xboxOwnedByWgi && (instance.dwDevType & DIDEVTYPE_HID) &&
+                isWinWgiXboxProduct(LOWORD(instance.guidProduct.Data1), HIWORD(instance.guidProduct.Data1)))
+                continue;
             // DirectInput can enumerate auxiliary HID collections as game controllers.
             if ((instance.dwDevType & DIDEVTYPE_HID) &&
                 (instance.wUsagePage == HID_USAGE_PAGE_CONSUMER ||
@@ -500,6 +504,7 @@ struct WinDirectInput::Impl {
 
     ReportSink& sink;
     HANDLE wakeWindow;
+    const bool xboxOwnedByWgi;
     std::thread worker;
     std::mutex mutex;
     std::condition_variable wake;
@@ -515,8 +520,8 @@ struct WinDirectInput::Impl {
     std::map<std::wstring, Device> devices;
 };
 
-WinDirectInput::WinDirectInput(ReportSink& sink, HANDLE wakeWindow)
-    : _impl(std::make_unique<Impl>(sink, wakeWindow)) {}
+WinDirectInput::WinDirectInput(ReportSink& sink, HANDLE wakeWindow, bool xboxOwnedByWgi)
+    : _impl(std::make_unique<Impl>(sink, wakeWindow, xboxOwnedByWgi)) {}
 WinDirectInput::~WinDirectInput() = default;
 
 bool WinDirectInput::start(HWND window)

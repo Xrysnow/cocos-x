@@ -27,6 +27,8 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/drivers/SonyReportBits.h
     input/gamepad/private/drivers/SwitchReports.cpp
     input/gamepad/private/drivers/SwitchReports.h
+    input/gamepad/private/drivers/XboxBluetoothReports.cpp
+    input/gamepad/private/drivers/XboxBluetoothReports.h
     input/gamepad/private/MappingDatabase.cpp
     input/gamepad/private/MappingDatabase.h
     input/gamepad/private/OutputRouter.cpp
@@ -47,6 +49,10 @@ if(WIN32)
         input/gamepad/private/win/WinRawHid.cpp
         input/gamepad/private/win/WinSwitchGamepad.cpp
         input/gamepad/private/win/WinSwitchGamepad.h
+        input/gamepad/private/win/WinWgi.cpp
+        input/gamepad/private/win/WinWgi.h
+        input/gamepad/private/win/WinXboxBluetooth.cpp
+        input/gamepad/private/win/WinXboxBluetooth.h
         input/gamepad/private/win/WinXInput.cpp
         input/gamepad/private/win/WinXInput.h
     )
@@ -74,6 +80,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         input/gamepad/private/linux/LinuxSonyHid.cpp
         input/gamepad/private/linux/LinuxSwitchHid.h
         input/gamepad/private/linux/LinuxSwitchHid.cpp
+        input/gamepad/private/linux/LinuxXboxBluetooth.h
+        input/gamepad/private/linux/LinuxXboxBluetooth.cpp
     )
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)

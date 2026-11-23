@@ -45,7 +45,7 @@ class WinDirectInput;
 
 class WinRawHid {
 public:
-    WinRawHid(ReportSink& sink, WinDirectInput* direct);
+    WinRawHid(ReportSink& sink, WinDirectInput* direct, bool xboxOwnedByWgi);
     ~WinRawHid();
 
     bool start(HWND window);
@@ -67,7 +67,7 @@ private:
 
 class WinDirectInput {
 public:
-    WinDirectInput(ReportSink& sink, HANDLE wakeWindow);
+    WinDirectInput(ReportSink& sink, HANDLE wakeWindow, bool xboxOwnedByWgi);
     ~WinDirectInput();
 
     bool start(HWND window);
@@ -85,6 +85,6 @@ private:
 };
 
 enum class WinLegacyPaths { RawHid, DirectInput, Both };
-std::unique_ptr<GamepadBackend> makeWinLegacyInput(WinLegacyPaths paths);
+std::unique_ptr<GamepadBackend> makeWinLegacyInput(WinLegacyPaths paths, bool xboxOwnedByWgi = false);
 
 } // namespace cc::input::detail

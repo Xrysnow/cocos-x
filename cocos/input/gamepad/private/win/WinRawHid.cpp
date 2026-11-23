@@ -1,4 +1,6 @@
 #include "WinSwitchGamepad.h"
+#include "WinWgi.h"
+#include "WinXboxBluetooth.h"
 #include "../drivers/SonyHidReports.h"
 
 #include <cfgmgr32.h>
@@ -361,6 +363,7 @@ struct Device : WinInputEndpoint {
     std::bitset<256> reportIds;
     std::unique_ptr<WinSonyGamepad> sony;
     std::unique_ptr<WinSwitchGamepad> nintendo;
+    std::unique_ptr<WinXboxBluetooth> xbox;
 
     PHIDP_PREPARSED_DATA parser()
     {
@@ -411,6 +414,11 @@ struct Device : WinInputEndpoint {
         if (packet.empty() || packet.size() > buffer.size())
             return;
         const auto bytes = std::span(reinterpret_cast<const std::uint8_t*>(packet.data()), packet.size());
+        if (xbox)
+        {
+            xbox->decode(*this, bytes, sink, time);
+            return;
+        }
         if (nintendo)
         {
             nintendo->decode(*this, bytes, sink, time);
@@ -700,6 +708,39 @@ bool initializeGenericLayout(Device& device, const HIDP_CAPS& caps)
     return true;
 }
 
+void initializeXboxBluetooth(Device& device, const HIDP_CAPS& caps, std::uint16_t vendor,
+                             std::uint16_t product, std::uint16_t version, HANDLE file)
+{
+    const auto model = xboxBluetoothModel(vendor, product);
+    if (!model || hidBus(device.path) != WinHidBus::Bluetooth)
+        return;
+    const auto minimumInput = *model == XboxBluetoothModel::OneS ? 16 : 17;
+    if (caps.InputReportByteLength < minimumInput || caps.InputReportByteLength > 64)
+        return;
+    const auto hasReport = [&device](HIDP_REPORT_TYPE type, UCHAR id, USHORT length) {
+        std::vector<char> report(length);
+        return HidP_InitializeReportForID(type, id, device.parser(), report.data(), length) == HIDP_STATUS_SUCCESS;
+    };
+    if (!hasReport(HidP_Input, 0x01, caps.InputReportByteLength))
+        return;
+    const auto outputLength = caps.OutputReportByteLength;
+    const bool writable = outputLength >= XboxBluetoothOutputSize && outputLength <= 64 &&
+        hasReport(HidP_Output, 0x03, outputLength);
+    auto& descriptor = device.descriptor;
+    auto& layout = descriptor.layout;
+    describe(device, vendor, product, version, file, {}, false);
+    descriptor.name = xboxBluetoothName(*model);
+    descriptor.link = Link::Wireless;
+    layout.id = "win-xbox-bluetooth-v1";
+    layout.guid = DeviceGuid::make(5, vendor, product, version, {}, descriptor.name, 'h');
+    configureXboxBluetoothLayout(layout, *model);
+    if (*model == XboxBluetoothModel::Elite2 && caps.InputReportByteLength != 20 &&
+        caps.InputReportByteLength != 39 && caps.InputReportByteLength != 55)
+        std::ranges::fill(std::span(layout.buttonPresent).subspan(static_cast<unsigned>(Button::RightPaddle1)),
+                          std::uint8_t{0});
+    device.xbox = std::make_unique<WinXboxBluetooth>(device.path, *model, writable ? outputLength : 0);
+}
+
 bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std::uint16_t version, HANDLE file,
                 bool directHid = false)
 {
@@ -737,7 +778,9 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
     }
     if (!device.nintendo && !generic)
         return false;
-    if (!device.nintendo && !bluetooth)
+    if (directHid && generic)
+        initializeXboxBluetooth(device, caps, vendor, product, version, file);
+    if (!device.nintendo && !device.xbox && !bluetooth)
     {
         if (!initializeGenericLayout(device, caps))
             return false;
@@ -763,7 +806,7 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
         device.changes.reserve(layout.buttonCount + layout.axisCount + layout.hatCount);
     }
 
-    if (!device.nintendo)
+    if (!device.nintendo && !device.xbox)
         describe(device, vendor, product, version, file, model, bluetooth);
     device.buffer.resize(caps.InputReportByteLength);
     device.state.buttons.resize(layout.buttonCount);
@@ -776,13 +819,14 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
     return true;
 }
 
-std::optional<Device> openDevice(HANDLE handle)
+std::optional<Device> openDevice(HANDLE handle, bool xboxOwnedByWgi)
 {
     RID_DEVICE_INFO info{};
     info.cbSize = sizeof(info);
     UINT size = sizeof(info);
     if (GetRawInputDeviceInfoW(handle, RIDI_DEVICEINFO, &info, &size) == errorSize ||
-        info.dwType != RIM_TYPEHID || !gamepadUsage(info.hid.usUsagePage, info.hid.usUsage))
+        info.dwType != RIM_TYPEHID || !gamepadUsage(info.hid.usUsagePage, info.hid.usUsage) ||
+        (xboxOwnedByWgi && isWinWgiXboxProduct(info.hid.dwVendorId, info.hid.dwProductId)))
         return {};
     const auto path = rawDevicePath(handle);
     Device device;
@@ -803,7 +847,7 @@ std::optional<Device> openDevice(HANDLE handle)
     return device;
 }
 
-std::unique_ptr<DirectHidDevice> openInterface(const std::wstring& path)
+std::unique_ptr<DirectHidDevice> openInterface(const std::wstring& path, bool xboxOwnedByWgi)
 {
     if (isXInputMirror(path))
         return {};
@@ -820,6 +864,8 @@ std::unique_ptr<DirectHidDevice> openInterface(const std::wstring& path)
     HIDD_ATTRIBUTES attributes{};
     attributes.Size = sizeof(attributes);
     const bool identified = HidD_GetAttributes(device->file, &attributes) != FALSE;
+    if (identified && xboxOwnedByWgi && isWinWgiXboxProduct(attributes.VendorID, attributes.ProductID))
+        return {};
     if (!initialize(*device, attributes.VendorID, attributes.ProductID, attributes.VersionNumber,
                     identified ? device->file : INVALID_HANDLE_VALUE, true))
         return {};
@@ -908,7 +954,8 @@ std::optional<std::vector<RAWINPUTDEVICE>> registeredDevices()
 } // namespace
 
 struct WinRawHid::Impl {
-    Impl(ReportSink& target, WinDirectInput* fallback) : sink(target), direct(fallback) {}
+    Impl(ReportSink& target, WinDirectInput* fallback, bool xboxInWgi)
+        : sink(target), direct(fallback), xboxOwnedByWgi(xboxInWgi) {}
 
     Device* find(EndpointKey key)
     {
@@ -953,12 +1000,12 @@ struct WinRawHid::Impl {
             return &existing->second;
         if (ignored.contains(handle))
             return nullptr;
-        auto device = openDevice(handle);
+        auto device = openDevice(handle, xboxOwnedByWgi);
         if (device)
         {
             if (const auto old = interfaces.find(device->path); old != interfaces.end())
             {
-                if (old->second->nintendo)
+                if (old->second->nintendo || old->second->xbox)
                 {
                     ignored.insert(handle);
                     return nullptr;
@@ -967,10 +1014,11 @@ struct WinRawHid::Impl {
             }
             const auto& descriptor = device->descriptor;
             // Use direct overlapped reads for reply reports outside the standard HID controls.
-            if (switchModel(descriptor.vendor.value_or(0), descriptor.product.value_or(0)))
+            const auto vendor = descriptor.vendor.value_or(0), product = descriptor.product.value_or(0);
+            if (switchModel(vendor, product) || xboxBluetoothModel(vendor, product))
             {
-                auto native = openInterface(device->path);
-                if (native && native->nintendo && paths.insert(device->path).second)
+                auto native = openInterface(device->path, xboxOwnedByWgi);
+                if (native && (native->nintendo || native->xbox) && paths.insert(device->path).second)
                 {
                     auto& added = interfaces.emplace(device->path, std::move(native)).first->second;
                     publish(*added);
@@ -1005,7 +1053,7 @@ struct WinRawHid::Impl {
         {
             if (paths.contains(path))
                 continue;
-            if (auto device = openInterface(path))
+            if (auto device = openInterface(path, xboxOwnedByWgi))
             {
                 paths.insert(path);
                 auto& added = interfaces.emplace(path, std::move(device)).first->second;
@@ -1016,6 +1064,7 @@ struct WinRawHid::Impl {
 
     ReportSink& sink;
     WinDirectInput* direct;
+    bool xboxOwnedByWgi;
     HWND window = nullptr;
     std::uint64_t nextEndpoint = 0;
     std::map<HANDLE, Device> devices;
@@ -1025,7 +1074,8 @@ struct WinRawHid::Impl {
     std::vector<std::uint64_t> input;
 };
 
-WinRawHid::WinRawHid(ReportSink& sink, WinDirectInput* direct) : _impl(std::make_unique<Impl>(sink, direct)) {}
+WinRawHid::WinRawHid(ReportSink& sink, WinDirectInput* direct, bool xboxOwnedByWgi)
+    : _impl(std::make_unique<Impl>(sink, direct, xboxOwnedByWgi)) {}
 
 WinRawHid::~WinRawHid()
 {
@@ -1138,6 +1188,8 @@ void WinRawHid::pollReports()
                 it->second->sony->pollOutput();
             if (it->second->nintendo)
                 it->second->nintendo->poll();
+            if (it->second->xbox)
+                it->second->xbox->poll();
             ++it;
         }
         else
@@ -1170,6 +1222,8 @@ void WinRawHid::snapshot(std::vector<AttachedEndpoint>& endpoints)
             device->sony->resetTopology();
         if (device->nintendo)
             device->nintendo->resetTopology();
+        if (device->xbox)
+            device->xbox->stop();
         ++device->key.generation;
         endpoints.push_back(device->attachment());
     }
@@ -1191,6 +1245,8 @@ Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
     const auto device = _impl->find(key);
     if (!device)
         return Error::Disconnected;
+    if (device->xbox)
+        return device->xbox->submit(command);
     if (device->nintendo)
         return device->nintendo->submit(command);
     return device->sony ? device->sony->submit(command) : Error::Unsupported;
@@ -1207,6 +1263,8 @@ void WinRawHid::stopOutputs()
             device->sony->stopOutput();
         if (device->nintendo)
             device->nintendo->stopOutput();
+        if (device->xbox)
+            device->xbox->stop();
     }
 }
 

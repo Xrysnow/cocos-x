@@ -2,6 +2,7 @@
 #include "EvdevGamepadLayout.h"
 #include "LinuxSonyHid.h"
 #include "LinuxSwitchHid.h"
+#include "LinuxXboxBluetooth.h"
 
 #include <linux/input.h>
 #include <sys/epoll.h>
@@ -164,10 +165,13 @@ struct Device {
     std::vector<input_event> pending;
     std::vector<RawChange> changes;
     MotionNode* motion = nullptr;
+    std::unique_ptr<LinuxXboxBluetooth> xbox;
     std::bitset<SensorCount> requestedMotion;
     std::uint64_t cursor = 0;
+    std::uint64_t evdevRumbleEnd = 0, xboxRetryAt = 0;
     bool dropping = false;
     bool monotonic = false;
+    bool evdevRumble = false;
     int effect = -1;
 
     bool sample()
@@ -197,39 +201,102 @@ struct Device {
 
     AttachedEndpoint attachment() const { return {key, descriptor, {state, cursor, {}}}; }
 
-    void neutral() const
+    void neutralEvdev()
     {
         if (effect >= 0)
         {
             input_event event{};
             event.type = EV_FF;
             event.code = static_cast<__u16>(effect);
-            ::write(fd.get(), &event, sizeof(event));
+            if (::write(fd.get(), &event, sizeof(event)) == sizeof(event))
+                evdevRumbleEnd = 0;
         }
     }
 
-    void closeOutput() const
+    void neutral()
     {
-        neutral();
-        if (effect >= 0)
-            ::ioctl(fd.get(), EVIOCRMFF, effect);
+        if (xbox && xbox->outputReady())
+            xbox->neutral();
+        else
+            neutralEvdev();
     }
 
-    Error applyOutput(const OutputCommand& command)
+    bool closeEvdevOutput()
     {
+        neutralEvdev();
+        if (effect >= 0)
+        {
+            if (::ioctl(fd.get(), EVIOCRMFF, effect) != 0)
+                return false;
+            effect = -1;
+        }
+        evdevRumbleEnd = 0;
+        return true;
+    }
+
+    void updatePower(ReportSink& sink, const Power& power)
+    {
+        auto& current = descriptor.power;
+        if (dropping || (current.state == power.state && current.percent == power.percent &&
+                         current.level == power.level))
+            return;
+        current = power;
+        sink.report(key, {{}, {}, {}, power, ++cursor, {}});
+    }
+
+    void updateXboxCapabilities(ReportSink& sink)
+    {
+        auto& caps = descriptor.capabilities;
+        const auto body = static_cast<unsigned>(Feature::BodyRumble);
+        const auto triggers = static_cast<unsigned>(Feature::TriggerRumble);
+        const bool rawFeedback = xbox && xbox->outputReady();
+        if (caps.features[body] == (evdevRumble || rawFeedback) && caps.features[triggers] == rawFeedback)
+            return;
+        caps.features.set(body, evdevRumble || rawFeedback);
+        caps.features.set(triggers, rawFeedback);
+        sink.capabilitiesChanged(key, caps);
+    }
+
+    void updateXbox(ReportSink& sink, std::uint64_t now, bool active)
+    {
+        if (!xbox)
+        {
+            if (xboxRetryAt)
+                updatePower(sink, Power{});
+            return;
+        }
+        if (now >= evdevRumbleEnd)
+        {
+            evdevRumbleEnd = 0;
+            if (active && xbox->canProbeOutput())
+                xbox->probeOutput(closeEvdevOutput());
+        }
+        xbox->tick(now);
+        updateXboxCapabilities(sink);
+        updatePower(sink, xbox->power().value_or(Power{}));
+    }
+
+    Error applyOutput(const OutputCommand& command, std::uint64_t now, ReportSink& sink)
+    {
+        if (xbox && xbox->outputReady())
+        {
+            const auto result = xbox->submit(command, now);
+            updateXboxCapabilities(sink);
+            return result;
+        }
         if (const auto* stop = std::get_if<Stop>(&command))
         {
             if (stop->channel != Channel::All && stop->channel != Channel::Body)
                 return Error::Unsupported;
-            neutral();
+            neutralEvdev();
             return Error::None;
         }
         const auto* rumble = std::get_if<Rumble>(&command);
-        if (!rumble || !descriptor.capabilities.features.test(static_cast<unsigned>(Feature::BodyRumble)))
+        if (!rumble || !evdevRumble)
             return Error::Unsupported;
         if (rumble->duration.count() == 0 || (rumble->low == 0.f && rumble->high == 0.f))
         {
-            neutral();
+            neutralEvdev();
             return Error::None;
         }
         ff_effect payload{};
@@ -245,7 +312,11 @@ struct Device {
         event.type = EV_FF;
         event.code = static_cast<__u16>(effect);
         event.value = 1;
-        return ::write(fd.get(), &event, sizeof(event)) == sizeof(event) ? Error::None : Error::BackendFailure;
+        if (::write(fd.get(), &event, sizeof(event)) != sizeof(event))
+            return Error::BackendFailure;
+        evdevRumbleEnd = nowNs() + static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(rumble->duration).count());
+        return Error::None;
     }
 
     void flush(ReportSink& sink, const input_event& boundary)
@@ -529,7 +600,10 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     Bits<FF_MAX> feedback;
     if (writable && ::ioctl(fd, EVIOCGBIT(EV_FF, feedback.bytes.size()), feedback.bytes.data()) >= 0 &&
         feedback.has(FF_RUMBLE))
+    {
+        pad.evdevRumble = true;
         descriptor.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble));
+    }
     auto clock = CLOCK_MONOTONIC;
     pad.monotonic = ::ioctl(fd, EVIOCSCLOCKID, &clock) == 0;
     return pad;
@@ -753,7 +827,8 @@ private:
     {
         if (device->second.motion)
             device->second.motion->fd = File{};
-        device->second.closeOutput();
+        device->second.xbox.reset();
+        device->second.closeEvdevOutput();
         _sink->detached(device->second.key);
         return _devices.erase(device);
     }
@@ -824,6 +899,36 @@ private:
         motion->monotonic = ::ioctl(source.get(), EVIOCSCLOCKID, &clock) == 0;
         motion->dropping = false;
         motion->fd = std::move(source);
+    }
+
+    void dropXbox(Device& device)
+    {
+        device.xbox.reset();
+        device.updateXboxCapabilities(*_sink);
+        device.updatePower(*_sink, Power{});
+        device.xboxRetryAt = nowNs() + 1000000000;
+    }
+
+    void reconcileXbox(const Monitor& monitor)
+    {
+        const auto now = nowNs();
+        for (auto& [path, device] : _devices)
+        {
+            const auto& identity = device.identity;
+            if (identity.id.bustype != BUS_BLUETOOTH || identity.hidParent.empty() ||
+                !xboxBluetoothModel(identity.id.vendor, identity.id.product))
+                continue;
+            const bool unique = std::ranges::count_if(_devices, [&](const auto& item) {
+                return item.second.identity.hidParent == identity.hidParent;
+            }) == 1;
+            if (device.xbox && (!unique || !device.xbox->present()))
+                dropXbox(device);
+            if (!unique || device.xbox || now < device.xboxRetryAt)
+                continue;
+            auto candidate = LinuxXboxBluetooth::open(identity.hidParent, identity.id.vendor, identity.id.product);
+            if (candidate && monitor.watch(candidate->fd()))
+                device.xbox = std::move(candidate);
+        }
     }
 
     using HidDevices = std::map<std::string, std::unique_ptr<LinuxHidGamepad>>;
@@ -922,6 +1027,7 @@ private:
             }
         }
         reconcileMotion();
+        reconcileXbox(monitor);
     }
 
     bool process(Monitor& monitor)
@@ -971,6 +1077,7 @@ private:
             updateMotion(device, monitor, active);
             if (reset)
                 device.neutral();
+            device.updateXbox(*_sink, now, active);
             if (topology || baselines.contains(device.key))
             {
                 device.read(*_sink);
@@ -997,7 +1104,8 @@ private:
             const auto hid = std::ranges::find_if(_hid, [&](const auto& item) { return item.second->key() == key; });
             const bool blocked = (!active || reset) && !std::holds_alternative<Stop>(command.command);
             if (hid != _hid.end()) status = blocked ? Error::Busy : hid->second->submit(command.command);
-            else if (it != _devices.end()) status = blocked ? Error::Busy : it->second.applyOutput(command.command);
+            else if (it != _devices.end()) status = blocked ? Error::Busy :
+                it->second.applyOutput(command.command, now, *_sink);
             if (command.id != CommandId{})
                 _sink->outputCompleted(key, command.id, status);
         }
@@ -1017,6 +1125,15 @@ private:
             auto deadline = nextScan;
             if (std::ranges::any_of(_hid, [](const auto& item) { return item.second->needsPolling(); }))
                 deadline = std::min(deadline, now + 4000000);
+            for (const auto& [path, device] : _devices)
+            {
+                if (!device.xbox)
+                    continue;
+                if (const auto output = device.xbox->nextDeadline())
+                    deadline = std::min(deadline, *output);
+                if (device.evdevRumbleEnd && device.xbox->canProbeOutput())
+                    deadline = std::min(deadline, device.evdevRumbleEnd);
+            }
             const auto timeout = deadline > now ? static_cast<int>((deadline - now + 999999) / 1000000) : 0;
             const auto count = epoll_wait(_epoll.get(), events.data(), static_cast<int>(events.size()), timeout);
             if (count < 0 && errno != EINTR)
@@ -1047,6 +1164,16 @@ private:
                         rescan = true;
                     }
                 }
+                else if (const auto owner = std::ranges::find_if(_devices, [&](const auto& item) {
+                    return item.second.xbox && item.second.xbox->fd() == fd;
+                }); owner != _devices.end())
+                {
+                    if (events[i].events & (EPOLLERR | EPOLLHUP) || !owner->second.xbox->read())
+                    {
+                        dropXbox(owner->second);
+                        rescan = true;
+                    }
+                }
                 else if (const auto it = std::ranges::find_if(_devices, [&](const auto& item) {
                     return item.second.fd.get() == fd;
                 }); it != _devices.end() && !it->second.read(*_sink))
@@ -1066,7 +1193,7 @@ private:
             }
         }
         for (auto& [path, device] : _devices)
-            device.closeOutput();
+            device.closeEvdevOutput();
         _devices.clear();
         _motion.clear();
         _hid.clear();

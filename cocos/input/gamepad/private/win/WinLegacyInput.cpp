@@ -79,7 +79,7 @@ std::optional<HidNode> interfaceNode(std::wstring_view path)
 
 class WinLegacyInput final : public GamepadBackend {
 public:
-    explicit WinLegacyInput(WinLegacyPaths paths) : _paths(paths) {}
+    WinLegacyInput(WinLegacyPaths paths, bool xboxOwnedByWgi) : _paths(paths), _xboxOwnedByWgi(xboxOwnedByWgi) {}
     ~WinLegacyInput() override { stop(); }
 
     Error start(ReportSink& sink) override
@@ -278,13 +278,13 @@ private:
     {
         if (_paths != WinLegacyPaths::RawHid)
         {
-            _direct = std::make_unique<WinDirectInput>(sink, _wake);
+            _direct = std::make_unique<WinDirectInput>(sink, _wake, _xboxOwnedByWgi);
             if (!_direct->start(window))
                 _direct.reset();
         }
         if (_paths != WinLegacyPaths::DirectInput)
         {
-            _raw = std::make_unique<WinRawHid>(sink, _direct.get());
+            _raw = std::make_unique<WinRawHid>(sink, _direct.get(), _xboxOwnedByWgi);
             if (!_raw->start(window))
                 _raw.reset();
         }
@@ -371,6 +371,7 @@ private:
     }
 
     WinLegacyPaths _paths;
+    const bool _xboxOwnedByWgi;
     HANDLE _wake = nullptr;
     std::thread _worker;
     std::mutex _mutex;
@@ -458,9 +459,9 @@ std::uint8_t winHat(unsigned position)
     return position < hats.size() ? hats[position] : 0;
 }
 
-std::unique_ptr<GamepadBackend> makeWinLegacyInput(WinLegacyPaths paths)
+std::unique_ptr<GamepadBackend> makeWinLegacyInput(WinLegacyPaths paths, bool xboxOwnedByWgi)
 {
-    return std::make_unique<WinLegacyInput>(paths);
+    return std::make_unique<WinLegacyInput>(paths, xboxOwnedByWgi);
 }
 
 } // namespace cc::input::detail
