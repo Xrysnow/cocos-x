@@ -20,10 +20,10 @@ void updateController(cc::input::DeviceId id)
 }
 ```
 
-In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed("south")` and `pad:has("bodyRumble")`. Submit the same effect with `cc.gamepad.submit(id, {kind = "rumble", low = 0.25, high = 0.5, durationMs = 120})`. Check the returned command ID or error and use the matching `outputDone` event (`OutputDone` in C++) to observe completion. A queued command may be superseded, cancelled or fail before reaching the controller. [Output commands](../cocos/input/gamepad/GamepadOutput.h)
+In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed(cc.gamepad.Button.South)` and `pad:hasFeature(cc.gamepad.Feature.BodyRumble)`. Submit the same effect with `cc.gamepad.rumble(id, 0.25, 0.5, 120)`. Check the returned command ID or error and use the matching `cc.gamepad.EventKind.OutputDone` event (`OutputDone` in C++) to observe completion. A queued command may be superseded, cancelled or fail before reaching the controller. [Output commands](../cocos/input/gamepad/GamepadOutput.h)
 
-- Use `caps()` in C++ or `pad:has(...)` in Lua to check each control, sensor or feedback feature. Capabilities can change after the first native report or after a backend falls back. A battery reading can be unknown or supply a coarse level from 0 to 3.
-- Use `Rumble` for the low and high body channels, `TriggerRumble` for independent trigger motors, and `AdaptiveTrigger` for supported trigger resistance and vibration modes. Check the corresponding capability for each command. Keep the `subscribeSensor` lease while consuming motion samples and close it when finished.
+- Use `caps()` in C++ or `pad:hasButton/hasAxis/hasSensor/hasFeature` in Lua to check each control, sensor or feedback feature. Capabilities can change after the first native report or after a backend falls back. A battery reading can be unknown or supply a coarse level from 0 to 3.
+- Use `Rumble` for the low and high body channels, `TriggerRumble` for independent trigger motors, and `AdaptiveTrigger` for supported trigger resistance and vibration modes. Check the corresponding capability for each command. Keep the `subscribeSensor` lease while consuming motion samples. In Lua, `subscribeSensor` and `watchRaw` handles release the subscription when collected. Call `:close()` to release it immediately.
 - A device can expose raw buttons, axes and hats before it has a logical mapping. Use `inputLayout()` with `setLocalBindings` to bind that device's raw indices, or import SDL-format mapping text with `importMappings`. Layouts can differ across transports and backends. Mapping import and the native backends work without linking SDL. [Mapping API](../cocos/input/gamepad/GamepadMapping.h)
 - Use `assignPlayer` to associate the current device with a logical player slot. To change physical player LEDs, submit `PlayerLights` when the controller exposes that capability.
 
@@ -35,7 +35,7 @@ Use an `AudioSource` to drive the left and right grips independently. Stereo map
 local gamepad = cc.gamepad
 local function feedback(id, music)
     local pad = gamepad.frame():find(id)
-    if pad and pad:has("bodyHaptics") then
+    if pad and pad:hasFeature(gamepad.Feature.BodyHaptics) then
         local playback = assert(gamepad.createHapticPlayback(id, music:getSource()))
         assert(playback:setIntensity(0.7))
         assert(playback:play())
@@ -48,7 +48,7 @@ end
 
 `setIntensity` takes a value in [0, 1], with a default of 1. The handle also provides `pause`, `resume`, `seekTime`, `setLooping`, `stop`, `snapshot` and `close`. Controls return `true` on acceptance, or `nil` and an error. The snapshot reports state, error, source time and duration, intensity, looping, seekability and stop reason. Use it to observe the first effective audio and natural completion.
 
-Playing claims the grip and can replace body rumble or another waveform. A paused waveform retains the grip. A new rumble can replace it. To release the grip explicitly, use `playback:stop()` or submit `{kind = "stop", channel = "body"}`. Focus loss stops waveform playback. An audio endpoint disconnect ends the handle's connection, and a subsequent connection needs a new handle.
+Playing claims the grip and can replace body rumble or another waveform. A paused waveform retains the grip. A new rumble can replace it. To release the grip explicitly, use `playback:stop()` or call `gamepad.stop(id, gamepad.Channel.Body)`. Focus loss stops waveform playback. An audio endpoint disconnect ends the handle's connection, and a subsequent connection needs a new handle.
 
 The Windows and Linux USB backends expose `bodyHaptics` when the matching controller's four-channel output is verified and its HID output can be opened for writing. On Linux, this requires a running PipeWire session and the `libpipewire-0.3` pkg-config module at build time. Waveform playback stays routed to the paired controller when the default output changes. When the game mixer uses the controller's audio endpoint, ordinary sound uses the front channels and grip waveforms use the rear channels.
 

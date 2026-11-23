@@ -60,6 +60,7 @@ private:
     std::optional<unsigned> _player;
 };
 
+enum class EventKind { Device, Button, Axis, Raw, Contact, Motion, Power, InputGap, OutputDone };
 enum class Change {
     Connected, Disconnected, MappingChanged, CapabilitiesChanged, BaselineReady,
     FocusLost, FocusGained, PlayerChanged

@@ -122,8 +122,9 @@ struct Motion {
     std::optional<std::uint64_t> deviceTimeNs;
 };
 
+enum class PowerState { Unknown, OnBattery, Charging, Charged, External };
 struct Power {
-    enum class State { Unknown, OnBattery, Charging, Charged, External };
+    using State = PowerState;
     State state = State::Unknown;
     std::optional<unsigned> percent;
     std::optional<unsigned> level;  // 0..3 for devices that report a coarse level.
