@@ -132,6 +132,13 @@ namespace lua
 	struct _invoke_helper<0, Checked, RequireSelf, Callable> {
 		template<typename... Fargs>
 		static bool F(lua_State* L, int argTop, int& argCur, int& results, Callable& callable, Fargs&&... args) {
+			if constexpr (sizeof...(Fargs) > 0 && (RequireSelf || std::is_member_function_pointer_v<Callable>)) {
+				// A later argument conversion can run Lua and invalidate a borrowed receiver.
+				if (!_binding_receiver_alive<Fargs...>(L, argTop + 1 - static_cast<int>(sizeof...(Fargs)))) {
+					argCur = 0;
+					return false;
+				}
+			}
 			const int top = lua_gettop(L);
 			if constexpr (std::is_same_v<std::invoke_result_t<Callable&, Fargs...>, void>) {
 				std::invoke(callable, std::forward<Fargs>(args)...);

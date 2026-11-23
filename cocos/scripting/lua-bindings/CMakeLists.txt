@@ -10,7 +10,6 @@ set(lua_bindings_manual_headers
     manual/LuaBasicConversions.h
     manual/gamepad/cclua_gamepad.hpp
     manual/gamepad/cclua_gamepad_conversions.hpp
-    manual/gamepad/cclua_gamepad_views.hpp
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
     manual/lua_conversion/detail/base.hpp

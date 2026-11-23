@@ -92,6 +92,11 @@ Frame GamepadService::frame() const noexcept
     return _impl->builder.frame();
 }
 
+std::weak_ptr<const void> GamepadService::lifetimeToken() const noexcept
+{
+    return _impl->lifetime;
+}
+
 void GamepadService::maintain(bool paused)
 {
     _impl->startBackend();

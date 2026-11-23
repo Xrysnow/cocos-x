@@ -9,6 +9,12 @@ namespace lua
 	template<typename T> struct value_type : std::false_type {};
 	template<typename T> inline constexpr bool is_value_type_v = value_type<std::remove_cv_t<T>>::value;
 
+	// Borrowed objects may validate a lifetime token stored on the userdata.
+	template<typename T> struct value_userdata_lifetime {
+		static constexpr bool guarded = false;
+		static bool valid(lua_State*, int) { return true; }
+	};
+
 	inline const void* _value_owned_key() { static const char key = 0; return &key; }
 	inline const void* _value_const_key() { static const char key = 0; return &key; }
 	inline const void* _value_owner_key() { static const char key = 0; return &key; }
@@ -65,6 +71,22 @@ namespace lua
 		lua_pushvalue(L, ownerIndex);
 	}
 
+	template<typename Self, typename... Args>
+	bool _binding_receiver_alive(lua_State* L, int index) {
+		using T = std::remove_cv_t<std::remove_pointer_t<std::remove_reference_t<Self>>>;
+		if constexpr (!value_userdata_lifetime<T>::guarded) {
+			return true;
+		} else {
+			const int frame = _value_context(L);
+			if (frame)
+				index -= _value_raw_integer(L, frame, _value_context_offset_key());
+			_push_value_owner(L, index);
+			const bool live = value_userdata_lifetime<T>::valid(L, -1);
+			lua_pop(L, 1);
+			return live;
+		}
+	}
+
 	inline bool _value_flag(lua_State* L, int index, const void* key) {
 		index = _absolute_index(L, index);
 		if (!index || !lua_isuserdata(L, index)) return false;
@@ -94,6 +116,7 @@ namespace lua
 			return true;
 		}
 		if (!isusertype(L, index, _getClassNameByType<std::remove_cv_t<T>>())) return false;
+		if (!value_userdata_lifetime<std::remove_cv_t<T>>::valid(L, index)) return false;
 		if constexpr (!std::is_const_v<T>)
 			if (_value_flag(L, index, _value_const_key())) return false;
 		auto* value = static_cast<T*>(_tousertype(L, index));

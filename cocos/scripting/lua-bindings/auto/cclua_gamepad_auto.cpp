@@ -5,6 +5,9 @@
 static_assert(lua::value_type<cc::input::Frame>::value, "ValueTypes requires a shared runtime trait for cc::input::Frame");
 static_assert(lua::value_type<cc::input::Pad>::value, "ValueTypes requires a shared runtime trait for cc::input::Pad");
 static_assert(lua::value_type<cc::input::EventCursor>::value, "ValueTypes requires a shared runtime trait for cc::input::EventCursor");
+static_assert(lua::value_type<cc::input::GamepadService>::value, "ValueTypes requires a shared runtime trait for cc::input::GamepadService");
+static_assert(lua::value_type<cc::input::Subscription>::value, "ValueTypes requires a shared runtime trait for cc::input::Subscription");
+static_assert(lua::value_type<cc::input::HapticPlayback>::value, "ValueTypes requires a shared runtime trait for cc::input::HapticPlayback");
 int luaReg_cc_gamepad_ccgamepadButton(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -232,6 +235,80 @@ int luaReg_cc_gamepad_ccgamepadHapticStopReason(lua_State* lua_S)
 	LUA_ENUM_ENTRY("EndpointLost", cc::input::HapticStopReason::EndpointLost);
 	LUA_ENUM_ENTRY("Disconnected", cc::input::HapticStopReason::Disconnected);
 	LUA_ENUM_END();
+	LUA_ENTRY_END(2);
+	return 0;
+}
+int lua_cc_input_HapticPlayback_close(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:close");
+	LUA_TRY_INVOKE_R(0, static_cast<void(cc::input::HapticPlayback::*)()>(&cc::input::HapticPlayback::close));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_HapticPlayback_pause(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:pause");
+	LUA_TRY_INVOKE_R(0, &cc::input::HapticPlayback::pause);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_HapticPlayback_play(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:play");
+	LUA_TRY_INVOKE_R(0, &cc::input::HapticPlayback::play);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_HapticPlayback_resume(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:resume");
+	LUA_TRY_INVOKE_R(0, &cc::input::HapticPlayback::resume);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_HapticPlayback_seekTime(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:seekTime");
+	LUA_TRY_INVOKE_R(1, &cc::input::HapticPlayback::seekTime);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_HapticPlayback_setIntensity(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:setIntensity");
+	LUA_TRY_INVOKE_R(1, &cc::input::HapticPlayback::setIntensity);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_HapticPlayback_setLooping(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:setLooping");
+	LUA_TRY_INVOKE_R(1, &cc::input::HapticPlayback::setLooping);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_HapticPlayback_snapshot(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:snapshot");
+	LUA_TRY_INVOKE_R(0, &cc::input::HapticPlayback::snapshot);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_HapticPlayback_stop(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:stop");
+	LUA_TRY_INVOKE_R(0, &cc::input::HapticPlayback::stop);
+	LUA_INVOKE_FOOTER("0");
+}
+int luaReg_cc_gamepad_ccgamepadHapticPlayback(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_CLS_DEF(cc::input::HapticPlayback, "HapticPlayback", "cc.gamepad.HapticPlayback",
+		nullptr, lua::value_collect<cc::input::HapticPlayback>);
+	LUA_METHOD("close", lua_cc_input_HapticPlayback_close);
+	LUA_METHOD("pause", lua_cc_input_HapticPlayback_pause);
+	LUA_METHOD("play", lua_cc_input_HapticPlayback_play);
+	LUA_METHOD("resume", lua_cc_input_HapticPlayback_resume);
+	LUA_METHOD("seekTime", lua_cc_input_HapticPlayback_seekTime);
+	LUA_METHOD("setIntensity", lua_cc_input_HapticPlayback_setIntensity);
+	LUA_METHOD("setLooping", lua_cc_input_HapticPlayback_setLooping);
+	LUA_METHOD("snapshot", lua_cc_input_HapticPlayback_snapshot);
+	LUA_METHOD("stop", lua_cc_input_HapticPlayback_stop);
+	LUA_CLS_END();
+	lua::register_value_metatable<cc::input::HapticPlayback>(lua_S, "cc.gamepad.HapticPlayback");
 	LUA_ENTRY_END(2);
 	return 0;
 }
@@ -597,217 +674,162 @@ int luaReg_cc_gamepad_ccgamepadMappingSource(lua_State* lua_S)
 	LUA_ENTRY_END(2);
 	return 0;
 }
-int lua_cc_input_gamepad_lua_LuaSubscription_close(lua_State* lua_S)
+int luaReg_cc_gamepad_ccgamepadMappingChange(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_ENUM_DEF("MappingChange");
+	LUA_ENUM_ENTRY("Added", cc::input::MappingChange::Added);
+	LUA_ENUM_ENTRY("Replaced", cc::input::MappingChange::Replaced);
+	LUA_ENUM_ENTRY("Unchanged", cc::input::MappingChange::Unchanged);
+	LUA_ENUM_ENTRY("Shadowed", cc::input::MappingChange::Shadowed);
+	LUA_ENUM_ENTRY("ConditionSkipped", cc::input::MappingChange::ConditionSkipped);
+	LUA_ENUM_ENTRY("Error", cc::input::MappingChange::Error);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(2);
+	return 0;
+}
+int lua_cc_input_Subscription_close(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.gamepad.Subscription", "cc.gamepad.Subscription:close");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::gamepad_lua::NoResults(cc::input::gamepad_lua::LuaSubscription::*)()>(&cc::input::gamepad_lua::LuaSubscription::close));
+	LUA_TRY_INVOKE_R(0, static_cast<void(cc::input::Subscription::*)()>(&cc::input::Subscription::close));
 	LUA_INVOKE_FOOTER("0");
 }
 int luaReg_cc_gamepad_ccgamepadSubscription(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_ENTRY("gamepad");
-	LUA_CLS_DEF_BASE(cc::input::gamepad_lua::LuaSubscription, "Subscription", "cc.gamepad.Subscription",
-		cc::input::gamepad_lua::LuaSubscription, "",
-		nullptr, nullptr);
-	LUA_METHOD("close", lua_cc_input_gamepad_lua_LuaSubscription_close);
+	LUA_CLS_DEF(cc::input::Subscription, "Subscription", "cc.gamepad.Subscription",
+		nullptr, lua::value_collect<cc::input::Subscription>);
+	LUA_METHOD("close", lua_cc_input_Subscription_close);
 	LUA_CLS_END();
+	lua::register_value_metatable<cc::input::Subscription>(lua_S, "cc.gamepad.Subscription");
 	LUA_ENTRY_END(2);
 	return 0;
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_close(lua_State* lua_S)
+int lua_cc_input_GamepadService_adaptiveTrigger(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:close");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Error(cc::input::gamepad_lua::LuaHapticPlayback::*)()>(&cc::input::gamepad_lua::LuaHapticPlayback::close));
-	LUA_INVOKE_FOOTER("0");
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:adaptiveTrigger");
+	LUA_TRY_INVOKE_R(6, &cc::input::GamepadService::adaptiveTrigger);
+	LUA_INVOKE_FOOTER("6");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_pause(lua_State* lua_S)
+int lua_cc_input_GamepadService_addGamepadMapping(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:pause");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::LuaHapticPlayback::pause);
-	LUA_INVOKE_FOOTER("0");
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:addGamepadMapping");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::addGamepadMapping);
+	LUA_TRY_INVOKE_R(1, ([](cc::input::GamepadService* obj,std::string_view arg0){{return obj->addGamepadMapping(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_play(lua_State* lua_S)
+int lua_cc_input_GamepadService_assignPlayer(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:play");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::LuaHapticPlayback::play);
-	LUA_INVOKE_FOOTER("0");
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:assignPlayer");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::assignPlayer);
+	LUA_INVOKE_FOOTER("2");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_resume(lua_State* lua_S)
+int lua_cc_input_GamepadService_clearPlayer(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:resume");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::LuaHapticPlayback::resume);
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_seekTime(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:seekTime");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::LuaHapticPlayback::seekTime);
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:clearPlayer");
+	LUA_TRY_INVOKE_R(1, &cc::input::GamepadService::clearPlayer);
 	LUA_INVOKE_FOOTER("1");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_setIntensity(lua_State* lua_S)
+int lua_cc_input_GamepadService_createHapticPlayback(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:setIntensity");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::LuaHapticPlayback::setIntensity);
-	LUA_INVOKE_FOOTER("1");
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:createHapticPlayback");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::createHapticPlayback);
+	LUA_INVOKE_FOOTER("2");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_setLooping(lua_State* lua_S)
+int lua_cc_input_GamepadService_frame(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:setLooping");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::LuaHapticPlayback::setLooping);
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_snapshot(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:snapshot");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::LuaHapticPlayback::snapshot);
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:frame");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Frame(cc::input::GamepadService::*)()const>(&cc::input::GamepadService::frame));
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_cc_input_gamepad_lua_LuaHapticPlayback_stop(lua_State* lua_S)
+int lua_cc_input_GamepadService_importMappings(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("cc.gamepad.HapticPlayback", "cc.gamepad.HapticPlayback:stop");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::LuaHapticPlayback::stop);
-	LUA_INVOKE_FOOTER("0");
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:importMappings");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::importMappings);
+	LUA_TRY_INVOKE_R(1, ([](cc::input::GamepadService* obj,std::string_view arg0){{return obj->importMappings(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2");
 }
-int luaReg_cc_gamepad_ccgamepadHapticPlayback(lua_State* lua_S)
+int lua_cc_input_GamepadService_mappingFor(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:mappingFor");
+	LUA_TRY_INVOKE_R(1, &cc::input::GamepadService::mappingFor);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_GamepadService_playerLights(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:playerLights");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::playerLights);
+	LUA_INVOKE_FOOTER("2");
+}
+int lua_cc_input_GamepadService_rgb(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:rgb");
+	LUA_TRY_INVOKE_R(4, &cc::input::GamepadService::rgb);
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cc_input_GamepadService_rumble(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:rumble");
+	LUA_TRY_INVOKE_R(4, &cc::input::GamepadService::rumble);
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cc_input_GamepadService_setLocalBindings(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:setLocalBindings");
+	LUA_TRY_INVOKE_R(3, &cc::input::GamepadService::setLocalBindings);
+	LUA_INVOKE_FOOTER("3");
+}
+int lua_cc_input_GamepadService_stop(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:stop");
+	LUA_TRY_INVOKE_R(2, &cc::input::GamepadService::stop);
+	LUA_TRY_INVOKE_R(1, ([](cc::input::GamepadService* obj,cc::input::DeviceId arg0){{return obj->stop(std::move(arg0));}}));
+	LUA_INVOKE_FOOTER("1,2");
+}
+int lua_cc_input_GamepadService_subscribeSensor(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:subscribeSensor");
+	LUA_TRY_INVOKE_R(3, &cc::input::GamepadService::subscribeSensor);
+	LUA_INVOKE_FOOTER("3");
+}
+int lua_cc_input_GamepadService_triggerRumble(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:triggerRumble");
+	LUA_TRY_INVOKE_R(4, &cc::input::GamepadService::triggerRumble);
+	LUA_INVOKE_FOOTER("4");
+}
+int lua_cc_input_GamepadService_watchRaw(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.GamepadService", "cc.gamepad.GamepadService:watchRaw");
+	LUA_TRY_INVOKE_R(1, &cc::input::GamepadService::watchRaw);
+	LUA_INVOKE_FOOTER("1");
+}
+int luaReg_cc_gamepad_ccgamepadGamepadService(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
 	LUA_ENTRY("gamepad");
-	LUA_CLS_DEF_BASE(cc::input::gamepad_lua::LuaHapticPlayback, "HapticPlayback", "cc.gamepad.HapticPlayback",
-		cc::input::gamepad_lua::LuaHapticPlayback, "",
-		nullptr, nullptr);
-	LUA_METHOD("close", lua_cc_input_gamepad_lua_LuaHapticPlayback_close);
-	LUA_METHOD("pause", lua_cc_input_gamepad_lua_LuaHapticPlayback_pause);
-	LUA_METHOD("play", lua_cc_input_gamepad_lua_LuaHapticPlayback_play);
-	LUA_METHOD("resume", lua_cc_input_gamepad_lua_LuaHapticPlayback_resume);
-	LUA_METHOD("seekTime", lua_cc_input_gamepad_lua_LuaHapticPlayback_seekTime);
-	LUA_METHOD("setIntensity", lua_cc_input_gamepad_lua_LuaHapticPlayback_setIntensity);
-	LUA_METHOD("setLooping", lua_cc_input_gamepad_lua_LuaHapticPlayback_setLooping);
-	LUA_METHOD("snapshot", lua_cc_input_gamepad_lua_LuaHapticPlayback_snapshot);
-	LUA_METHOD("stop", lua_cc_input_gamepad_lua_LuaHapticPlayback_stop);
+	LUA_CLS_DEF(cc::input::GamepadService, "GamepadService", "cc.gamepad.GamepadService",
+		nullptr, lua::value_collect<cc::input::GamepadService>);
+	LUA_METHOD("adaptiveTrigger", lua_cc_input_GamepadService_adaptiveTrigger);
+	LUA_METHOD("addGamepadMapping", lua_cc_input_GamepadService_addGamepadMapping);
+	LUA_METHOD("assignPlayer", lua_cc_input_GamepadService_assignPlayer);
+	LUA_METHOD("clearPlayer", lua_cc_input_GamepadService_clearPlayer);
+	LUA_METHOD("createHapticPlayback", lua_cc_input_GamepadService_createHapticPlayback);
+	LUA_METHOD("frame", lua_cc_input_GamepadService_frame);
+	LUA_METHOD("importMappings", lua_cc_input_GamepadService_importMappings);
+	LUA_METHOD("mappingFor", lua_cc_input_GamepadService_mappingFor);
+	LUA_METHOD("playerLights", lua_cc_input_GamepadService_playerLights);
+	LUA_METHOD("rgb", lua_cc_input_GamepadService_rgb);
+	LUA_METHOD("rumble", lua_cc_input_GamepadService_rumble);
+	LUA_METHOD("setLocalBindings", lua_cc_input_GamepadService_setLocalBindings);
+	LUA_METHOD("stop", lua_cc_input_GamepadService_stop);
+	LUA_METHOD("subscribeSensor", lua_cc_input_GamepadService_subscribeSensor);
+	LUA_METHOD("triggerRumble", lua_cc_input_GamepadService_triggerRumble);
+	LUA_METHOD("watchRaw", lua_cc_input_GamepadService_watchRaw);
 	LUA_CLS_END();
-	LUA_ENTRY_END(2);
-	return 0;
-}
-int lua_cc_input_gamepad_lua_adaptiveTrigger(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.adaptiveTrigger");
-	LUA_TRY_INVOKE_R(6, &cc::input::gamepad_lua::adaptiveTrigger);
-	LUA_GINVOKE_FOOTER("6");
-}
-int lua_cc_input_gamepad_lua_addGamepadMapping(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.addGamepadMapping");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::addGamepadMapping);
-	LUA_TRY_INVOKE_R(1, [](std::string_view arg0){{return cc::input::gamepad_lua::addGamepadMapping(std::move(arg0));}});
-	LUA_GINVOKE_FOOTER("1,2");
-}
-int lua_cc_input_gamepad_lua_assignPlayer(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.assignPlayer");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::assignPlayer);
-	LUA_GINVOKE_FOOTER("2");
-}
-int lua_cc_input_gamepad_lua_clearPlayer(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.clearPlayer");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::clearPlayer);
-	LUA_GINVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_createHapticPlayback(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.createHapticPlayback");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::createHapticPlayback);
-	LUA_GINVOKE_FOOTER("2");
-}
-int lua_cc_input_gamepad_lua_frame(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.frame");
-	LUA_TRY_INVOKE_R(0, &cc::input::gamepad_lua::frame);
-	LUA_GINVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_importMappings(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.importMappings");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::importMappings);
-	LUA_TRY_INVOKE_R(1, [](std::string_view arg0){{return cc::input::gamepad_lua::importMappings(std::move(arg0));}});
-	LUA_GINVOKE_FOOTER("1,2");
-}
-int lua_cc_input_gamepad_lua_mappingFor(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.mappingFor");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::mappingFor);
-	LUA_GINVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_playerLights(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.playerLights");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::playerLights);
-	LUA_GINVOKE_FOOTER("2");
-}
-int lua_cc_input_gamepad_lua_rgb(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.rgb");
-	LUA_TRY_INVOKE_R(4, &cc::input::gamepad_lua::rgb);
-	LUA_GINVOKE_FOOTER("4");
-}
-int lua_cc_input_gamepad_lua_rumble(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.rumble");
-	LUA_TRY_INVOKE_R(4, &cc::input::gamepad_lua::rumble);
-	LUA_GINVOKE_FOOTER("4");
-}
-int lua_cc_input_gamepad_lua_setLocalBindings(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.setLocalBindings");
-	LUA_TRY_INVOKE_R(3, &cc::input::gamepad_lua::setLocalBindings);
-	LUA_GINVOKE_FOOTER("3");
-}
-int lua_cc_input_gamepad_lua_stop(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.stop");
-	LUA_TRY_INVOKE_R(2, &cc::input::gamepad_lua::stop);
-	LUA_TRY_INVOKE_R(1, [](cc::input::DeviceId arg0){{return cc::input::gamepad_lua::stop(std::move(arg0));}});
-	LUA_GINVOKE_FOOTER("1,2");
-}
-int lua_cc_input_gamepad_lua_subscribeSensor(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.subscribeSensor");
-	LUA_TRY_INVOKE_R(3, &cc::input::gamepad_lua::subscribeSensor);
-	LUA_GINVOKE_FOOTER("3");
-}
-int lua_cc_input_gamepad_lua_triggerRumble(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.triggerRumble");
-	LUA_TRY_INVOKE_R(4, &cc::input::gamepad_lua::triggerRumble);
-	LUA_GINVOKE_FOOTER("4");
-}
-int lua_cc_input_gamepad_lua_watchRaw(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("cc.gamepad", "cc.gamepad.watchRaw");
-	LUA_TRY_INVOKE_R(1, &cc::input::gamepad_lua::watchRaw);
-	LUA_GINVOKE_FOOTER("1");
-}
-int luaReg_cc_gamepad_ccgamepad_global_functions(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_ENTRY("gamepad");
-	LUA_METHOD("adaptiveTrigger", lua_cc_input_gamepad_lua_adaptiveTrigger);
-	LUA_METHOD("addGamepadMapping", lua_cc_input_gamepad_lua_addGamepadMapping);
-	LUA_METHOD("assignPlayer", lua_cc_input_gamepad_lua_assignPlayer);
-	LUA_METHOD("clearPlayer", lua_cc_input_gamepad_lua_clearPlayer);
-	LUA_METHOD("createHapticPlayback", lua_cc_input_gamepad_lua_createHapticPlayback);
-	LUA_METHOD("frame", lua_cc_input_gamepad_lua_frame);
-	LUA_METHOD("importMappings", lua_cc_input_gamepad_lua_importMappings);
-	LUA_METHOD("mappingFor", lua_cc_input_gamepad_lua_mappingFor);
-	LUA_METHOD("playerLights", lua_cc_input_gamepad_lua_playerLights);
-	LUA_METHOD("rgb", lua_cc_input_gamepad_lua_rgb);
-	LUA_METHOD("rumble", lua_cc_input_gamepad_lua_rumble);
-	LUA_METHOD("setLocalBindings", lua_cc_input_gamepad_lua_setLocalBindings);
-	LUA_METHOD("stop", lua_cc_input_gamepad_lua_stop);
-	LUA_METHOD("subscribeSensor", lua_cc_input_gamepad_lua_subscribeSensor);
-	LUA_METHOD("triggerRumble", lua_cc_input_gamepad_lua_triggerRumble);
-	LUA_METHOD("watchRaw", lua_cc_input_gamepad_lua_watchRaw);
+	lua::register_value_metatable<cc::input::GamepadService>(lua_S, "cc.gamepad.GamepadService");
 	LUA_ENTRY_END(2);
 	return 0;
 }
@@ -830,6 +852,7 @@ int register_all_cc_gamepad(lua_State* lua_S)
 	luaReg_cc_gamepad_ccgamepadLink(lua_S);
 	luaReg_cc_gamepad_ccAudioPlaybackState(lua_S);
 	luaReg_cc_gamepad_ccgamepadHapticStopReason(lua_S);
+	luaReg_cc_gamepad_ccgamepadHapticPlayback(lua_S);
 	luaReg_cc_gamepad_ccgamepadTriggerMode(lua_S);
 	luaReg_cc_gamepad_ccgamepadChannel(lua_S);
 	luaReg_cc_gamepad_ccgamepadCompletion(lua_S);
@@ -841,8 +864,8 @@ int register_all_cc_gamepad(lua_State* lua_S)
 	luaReg_cc_gamepad_ccgamepadEventCursor(lua_S);
 	luaReg_cc_gamepad_ccgamepadFrame(lua_S);
 	luaReg_cc_gamepad_ccgamepadMappingSource(lua_S);
+	luaReg_cc_gamepad_ccgamepadMappingChange(lua_S);
 	luaReg_cc_gamepad_ccgamepadSubscription(lua_S);
-	luaReg_cc_gamepad_ccgamepadHapticPlayback(lua_S);
-	luaReg_cc_gamepad_ccgamepad_global_functions(lua_S);
+	luaReg_cc_gamepad_ccgamepadGamepadService(lua_S);
 	return register_cc_gamepad_manual(lua_S);
 }

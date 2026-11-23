@@ -136,6 +136,15 @@ namespace lua
 		}
 	};
 
+	template<typename T>
+	struct binding_argument<T&, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {
+		T* value = nullptr;
+		template<bool Checked> bool read(lua_State* L, int index) {
+			return binding_read<T*>::template F<Checked>(L, index, &value) && value;
+		}
+		T& get() const { return *value; }
+	};
+
 	// Transparent RefPtr ownership and conversion contract: see ../../README.md (RefPtr conversion).
 	template<typename T>
 	struct to_native<cc::IntrusivePtr<T>, std::enable_if_t<std::is_convertible_v<T*, const cc::RefCounted*>>> {

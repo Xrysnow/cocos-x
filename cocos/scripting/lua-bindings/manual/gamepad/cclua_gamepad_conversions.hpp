@@ -1,14 +1,8 @@
 #pragma once
 
 #include "audio/AudioSource.h"
-#include "cclua_gamepad_views.hpp"
+#include "input/gamepad/GamepadService.h"
 #include "lua_conversion/lua_conversion_tolua.hpp"
-
-namespace cc::input::gamepad_lua {
-
-int fail(lua_State* L, Error error);
-
-} // namespace cc::input::gamepad_lua
 
 namespace lua {
 
@@ -23,8 +17,13 @@ LUA_TO_LUA_STRUCT(cc::input::ButtonEdge, button, down)
 LUA_TO_LUA_STRUCT(cc::input::AxisChange, axis, value)
 LUA_TO_LUA_STRUCT(cc::input::RawChange, kind, index, value)
 LUA_TO_LUA_STRUCT(cc::input::InputGap, cause, lostCount)
+LUA_TO_LUA_STRUCT(cc::input::OutputDone, command, status, error)
 LUA_TO_LUA_STRUCT(cc::input::DeviceInfo, id, name, mappingGuid, layout, mappingName,
                   vendor, product, version, serial, controllerType)
+LUA_TO_LUA_STRUCT(cc::input::MappingResult, change, diagnostics)
+LUA_TO_LUA_STRUCT(cc::input::ImportReport, added, replaced, unchanged, skipped, failed, diagnostics, batchError)
+LUA_TO_LUA_STRUCT(cc::input::HapticPlaybackSnapshot, state, error, positionSeconds, durationSeconds,
+                  intensity, looping, seekable, stopReason)
 
 template<> struct to_lua<const cc::input::DeviceInfo*> {
     static void F(lua_State* L, const cc::input::DeviceInfo* info)
@@ -37,28 +36,36 @@ template<> struct to_lua<const cc::input::DeviceInfo*> {
     }
 };
 
-template<> struct to_lua<cc::input::MappingResult> {
-    static void F(lua_State* L, const cc::input::MappingResult& value);
-};
-
-template<> struct to_lua<cc::input::ImportReport> {
-    static void F(lua_State* L, const cc::input::ImportReport& value);
-};
-
-template<> struct to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>> {
-    static void F(lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>&& value);
-};
-
-template<> struct to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>> {
-    static void F(lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>&& value);
-};
-
 template<> struct value_type<cc::input::Frame> : std::true_type {};
 template<> struct value_type<cc::input::Pad> : std::true_type {};
 template<> struct value_type<cc::input::EventCursor> : std::true_type {};
+template<> struct value_type<cc::input::GamepadService> : std::true_type {};
+template<> struct value_type<cc::input::Subscription> : std::true_type {};
+template<> struct value_type<cc::input::HapticPlayback> : std::true_type {};
 
-template<> struct to_lua<cc::input::OutputDone> {
-    static void F(lua_State* L, const cc::input::OutputDone& value);
+template<> struct to_lua<borrowed_value<cc::input::GamepadService>> {
+    static void F(lua_State* L, borrowed_value<cc::input::GamepadService> value);
+};
+
+template<> struct value_userdata_lifetime<cc::input::GamepadService> {
+    static constexpr bool guarded = true;
+    static bool valid(lua_State* L, int index);
+};
+
+template<> struct to_lua<cc::input::Subscription> {
+    static void F(lua_State* L, cc::input::Subscription&& value)
+    {
+        if (L)
+            push_value_owned(L, new cc::input::Subscription(std::move(value)));
+    }
+};
+
+template<> struct to_lua<cc::input::HapticPlayback> {
+    static void F(lua_State* L, cc::input::HapticPlayback&& value)
+    {
+        if (L)
+            push_value_owned(L, new cc::input::HapticPlayback(std::move(value)));
+    }
 };
 
 template<> struct to_lua<cc::input::GamepadEvent> {
@@ -71,21 +78,11 @@ struct to_lua<cc::input::Result<T>> {
     {
         if (result)
             native_to_luaval(L, std::move(*result.value));
-        else
-            cc::input::gamepad_lua::fail(L, result.error);
+        else {
+            lua_pushnil(L);
+            native_to_luaval(L, result.error);
+        }
     }
-};
-
-template<> struct to_lua<cc::input::gamepad_lua::NoResults> {
-    static void F(lua_State*, cc::input::gamepad_lua::NoResults) {}
-};
-
-template<> struct to_lua<cc::input::Error> {
-    static void F(lua_State* L, cc::input::Error error);
-};
-
-template<> struct to_lua<cc::input::HapticPlaybackSnapshot> {
-    static void F(lua_State* L, const cc::input::HapticPlaybackSnapshot& snapshot);
 };
 
 } // namespace lua

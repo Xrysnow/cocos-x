@@ -1,6 +1,6 @@
 # Gamepad input and feedback
 
-Use `cc::input::GamepadService` for controller input, mappings, motion and feedback. Get the service from `cc::Director::getInstance()->getGamepads()` in C++, or use `cc.gamepad` in Lua. The Director owns the service and publishes one frame for each logical update. Call the service on the engine thread. [Public API](../cocos/input/gamepad/GamepadService.h) · [Lua binding](../cocos/scripting/lua-bindings/manual/gamepad/cclua_gamepad.cpp)
+Use `cc::input::GamepadService` for controller input, mappings, motion and feedback. Get the service from `cc::Director::getInstance()->getGamepads()` in C++ or `cc.Director:getInstance():getGamepads()` in Lua. The Director owns the service and publishes one frame for each logical update. Lua service userdata expires when the Director destroys the service. Call the service on the engine thread. [Public API](../cocos/input/gamepad/GamepadService.h) · [Lua binding](../cocos/scripting/lua-bindings/manual/gamepad/cclua_gamepad.cpp)
 
 ## Read a frame and send feedback
 
@@ -24,9 +24,11 @@ void updateController(cc::input::DeviceId id)
 }
 ```
 
-In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed(cc.gamepad.Button.South)` and `pad:hasFeature(cc.gamepad.Feature.BodyRumble)`. Submit the same effect with `cc.gamepad.rumble(id, 0.25, 0.5, 120)`. Check the returned command ID or error and use the matching `cc.gamepad.EventKind.OutputDone` event (`OutputDone` in C++) to observe completion. A queued command may be superseded, cancelled or fail before reaching the controller. [Output commands](../cocos/input/gamepad/GamepadOutput.h)
+In Lua, use `service:frame():find(id)`, `pad:pressed(cc.gamepad.Button.South)` and `pad:hasFeature(cc.gamepad.Feature.BodyRumble)`. Submit the same effect with `service:rumble(id, 0.25, 0.5, 120)`. Check the returned command ID or error and use the matching `cc.gamepad.EventKind.OutputDone` event (`OutputDone` in C++) to observe completion. A queued command may be superseded, cancelled or fail before reaching the controller. [Output commands](../cocos/input/gamepad/GamepadOutput.h)
 
-In both languages, `frame.events()` creates an independent `EventCursor`. The cursor's `next()` returns an event, an empty value at the end, or `StaleFrame`. Lua also supports `for event in frame:events() do`. Events have a one-based `order` and a signed `offsetUs` from the frame cutoff. Read variant-specific fields from `event.payload`, for example `event.payload.command` for an output completion. An event already returned by a cursor can be kept across frames.
+In both languages, the frame's `events()` method creates an independent `EventCursor`. The cursor's `next()` returns an event, an empty value at the end, or `StaleFrame`. Events have a one-based `order` and a signed `offsetUs` from the frame cutoff. Read variant-specific fields from `event.payload`, for example `event.payload.command` for an output completion. An event already returned by a cursor can be kept across frames.
+
+LuaSTG-x scripts can require `cocos.cocos2d.Gamepad` for the module-level shortcuts, SDL-style mapping return values and `for event in Gamepad.events(frame) do`. The native Lua service returns mapping records with `change` and `diagnostics`, and methods returning a native `Error` return the enum value in Lua.
 
 - Use `hasButton`, `hasAxis`, `hasSensor` and `hasFeature` on the `Pad` to check controls, sensors and feedback. Capabilities can change after the first native report or after a backend falls back. A battery reading can be unknown or supply a coarse level from 0 to 3.
 - Use `Rumble` for the low and high body channels, `TriggerRumble` for independent trigger motors, and `AdaptiveTrigger` for supported trigger resistance and vibration modes. Check the corresponding capability for each command. Keep the `subscribeSensor` lease while consuming motion samples. In Lua, `subscribeSensor` and `watchRaw` handles release the subscription when collected. Call `:close()` to release it immediately.
@@ -35,16 +37,17 @@ In both languages, `frame.events()` creates an independent `EventCursor`. The cu
 
 ## Play a DualSense haptic waveform
 
-Use an `AudioSource` to drive the left and right grips independently. Stereo maps left and right samples to the corresponding grips. Mono drives both. Use `GamepadService::createHapticPlayback(id, source)` in C++ or `cc.gamepad.createHapticPlayback(id, source)` in Lua. Both accept static sources and independently reopenable file sources. [Playback handle](../cocos/input/gamepad/GamepadOutput.h)
+Use an `AudioSource` to drive the left and right grips independently. Stereo maps left and right samples to the corresponding grips. Mono drives both. Use `GamepadService::createHapticPlayback(id, source)` in C++ or `service:createHapticPlayback(id, source)` in Lua. Both accept static sources and independently reopenable file sources. [Playback handle](../cocos/input/gamepad/GamepadOutput.h)
 
 ```lua
 local gamepad = cc.gamepad
+local service = cc.Director:getInstance():getGamepads()
 local function feedback(id, music)
-    local pad = gamepad.frame():find(id)
+    local pad = service:frame():find(id)
     if pad and pad:hasFeature(gamepad.Feature.BodyHaptics) then
-        local playback = assert(gamepad.createHapticPlayback(id, music:getSource()))
-        assert(playback:setIntensity(0.7))
-        assert(playback:play())
+        local playback = assert(service:createHapticPlayback(id, music:getSource()))
+        assert(playback:setIntensity(0.7) == gamepad.Error.None)
+        assert(playback:play() == gamepad.Error.None)
         return playback
     end
 end
@@ -52,9 +55,9 @@ end
 -- Keep the returned handle while it plays and call playback:close() on scene exit.
 ```
 
-`setIntensity` takes a value in [0, 1], with a default of 1. The handle also provides `pause`, `resume`, `seekTime`, `setLooping`, `stop`, `snapshot` and `close`. Controls return `true` on acceptance, or `nil` and an error. The snapshot reports state, error, source time and duration, intensity, looping, seekability and stop reason. Use it to observe the first effective audio and natural completion.
+`setIntensity` takes a value in [0, 1], with a default of 1. The handle also provides `pause`, `resume`, `seekTime`, `setLooping`, `stop`, `snapshot` and `close`. Compare control results with `Error.None` to check acceptance. The `close()` method returns zero Lua values. The snapshot reports state, error, source time and duration, intensity, looping, seekability and stop reason.
 
-Playing claims the grip and can replace body rumble or another waveform. A paused waveform retains the grip. A new rumble can replace it. To release the grip explicitly, use `playback:stop()` or call `gamepad.stop(id, gamepad.Channel.Body)`. Focus loss stops waveform playback. An audio endpoint disconnect ends the handle's connection, and a subsequent connection needs a new handle.
+Playing claims the grip and can replace body rumble or another waveform. A paused waveform retains the grip. A new rumble can replace it. To release the grip explicitly, use `playback:stop()` or call `service:stop(id, gamepad.Channel.Body)`. Focus loss stops waveform playback. An audio endpoint disconnect ends the handle's connection, and a subsequent connection needs a new handle.
 
 The Windows and Linux USB backends expose `bodyHaptics` when the matching controller's four-channel output is verified and its HID output can be opened for writing. On Linux, this requires a running PipeWire session and the `libpipewire-0.3` pkg-config module at build time. Waveform playback stays routed to the paired controller when the default output changes. When the game mixer uses the controller's audio endpoint, ordinary sound uses the front channels and grip waveforms use the rear channels.
 

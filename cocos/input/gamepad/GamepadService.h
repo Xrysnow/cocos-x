@@ -56,6 +56,7 @@ public:
     GamepadService& operator=(const GamepadService&) = delete;
 
     Frame frame() const noexcept;
+    std::weak_ptr<const void> lifetimeToken() const noexcept;
     MappingResult setLocalBindings(DeviceId id, std::string_view layoutId,
                                    std::string_view bindingFields);
     MappingResult addGamepadMapping(std::string_view line,
