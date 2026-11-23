@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <Xinput.h>
 
+#include <functional>
 #include <memory>
 
 namespace cc::input::detail {
@@ -21,6 +22,6 @@ public:
 };
 
 std::unique_ptr<GamepadBackend> makeXInputBackend(std::unique_ptr<XInputApi> api);
-std::unique_ptr<GamepadBackend> makeWinGamepadBackend();
+std::unique_ptr<GamepadBackend> makeWinGamepadBackend(std::function<bool()> enableWgi = {});
 
 } // namespace cc::input::detail

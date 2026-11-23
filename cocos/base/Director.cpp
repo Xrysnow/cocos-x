@@ -118,7 +118,10 @@ Director* Director::getInstance()
 
 Director::Director()
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-    : _gamepads(new input::GamepadService(input::detail::makeWinGamepadBackend(), 4096, 256))
+    : _gamepads(new input::GamepadService(input::detail::makeWinGamepadBackend([] {
+          const auto& value = Configuration::getInstance()->getValue("cocos.gamepad.windows.wgi");
+          return value.getType() == Value::Type::BOOLEAN && value.asBool();
+      }), 4096, 256, input::GamepadService::StartMode::FirstFrame))
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
     : _gamepads(new input::GamepadService(input::detail::makeLinuxGamepadBackend(), 4096, 256))
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_IOS

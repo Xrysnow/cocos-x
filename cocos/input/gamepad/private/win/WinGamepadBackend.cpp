@@ -82,8 +82,8 @@ private:
 
 class WinGamepadBackend final : public GamepadBackend, private ReportSink {
 public:
-    WinGamepadBackend(std::unique_ptr<GamepadBackend> xinput, std::unique_ptr<GamepadBackend> wgi)
-        : _xinput(std::move(xinput)), _wgi(std::move(wgi)) {}
+    WinGamepadBackend(std::unique_ptr<GamepadBackend> xinput, std::function<bool()> enableWgi)
+        : _xinput(std::move(xinput)), _enableWgi(std::move(enableWgi)) {}
 
     ~WinGamepadBackend() override { stop(); }
 
@@ -94,6 +94,7 @@ public:
         _sink = &sink;
         // XInput exposes slots without controller identities. Only one backend
         // can publish this controller family and own its vibration at a time.
+        _wgi = _enableWgi && _enableWgi() ? makeWinWgiBackend() : nullptr;
         _startedWgi = _wgi && _wgi->start(*this) == Error::None;
         _startedXInput = !_startedWgi && _xinput && _xinput->start(*this) == Error::None;
         _legacy = makeWinLegacyInput(WinLegacyPaths::Both, _startedWgi);
@@ -220,6 +221,7 @@ private:
     std::unique_ptr<GamepadBackend> _xinput;
     std::unique_ptr<GamepadBackend> _wgi;
     std::unique_ptr<GamepadBackend> _legacy;
+    std::function<bool()> _enableWgi;
     ReportSink* _sink = nullptr;
     bool _startedXInput = false, _startedWgi = false, _startedLegacy = false;
     std::mutex _mutex;
@@ -231,15 +233,11 @@ private:
 
 } // namespace
 
-std::unique_ptr<GamepadBackend> makeWinGamepadBackend()
+std::unique_ptr<GamepadBackend> makeWinGamepadBackend(std::function<bool()> enableWgi)
 {
     auto api = std::make_unique<SystemXInput>();
     auto xinput = api->load() ? makeXInputBackend(std::move(api)) : nullptr;
-    wchar_t mode[2]{};
-    auto wgi = GetEnvironmentVariableW(L"COCOS_XBOX_WGI", mode, 2) == 1 && mode[0] == L'1'
-                   ? makeWinWgiBackend()
-                   : nullptr;
-    return std::make_unique<WinGamepadBackend>(std::move(xinput), std::move(wgi));
+    return std::make_unique<WinGamepadBackend>(std::move(xinput), std::move(enableWgi));
 }
 
 } // namespace cc::input::detail

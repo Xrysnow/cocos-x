@@ -72,8 +72,9 @@ private:
     friend class ::cc::Director;
     friend class GamepadTestAccess;
 
+    enum class StartMode { Immediate, FirstFrame };
     GamepadService(std::unique_ptr<detail::GamepadBackend> backend, std::size_t reportCapacity,
-                   std::size_t controlCapacity);
+                   std::size_t controlCapacity, StartMode startMode = StartMode::Immediate);
     void maintain(bool paused);
     void publish();
     void setFocused(bool focused);

@@ -7,23 +7,36 @@ using namespace detail;
 
 class GamepadService::Impl {
 public:
-    Impl(std::unique_ptr<GamepadBackend> backend, std::size_t reports, std::size_t controls)
+    Impl(std::unique_ptr<GamepadBackend> backend, std::size_t reports, std::size_t controls, StartMode startMode)
         : queue(reports, controls), backend(std::move(backend)),
-          output(registry, queue, this->backend.get()), builder(registry, output, this->backend.get())
+          output(registry, queue, this->backend.get()), builder(registry, output, this->backend.get()),
+          pendingStart(this->backend != nullptr)
     {
-        if (this->backend && this->backend->start(queue) != Error::None)
-            this->backend->stop();
+        if (startMode == StartMode::Immediate)
+            startBackend();
     }
 
     ~Impl()
     {
         lifetime.reset();
         queue.close();
-        if (backend)
+        if (backend && !pendingStart)
         {
             backend->setActive(false);
             backend->stop();
         }
+    }
+
+    void startBackend()
+    {
+        if (!pendingStart)
+            return;
+        std::lock_guard lock(focusMutex);
+        pendingStart = false;
+        if (backend->start(queue) != Error::None)
+            backend->stop();
+        else if (!focused)
+            backend->setActive(false);
     }
 
     void drain()
@@ -50,6 +63,7 @@ public:
     std::shared_ptr<int> lifetime = std::make_shared<int>(0);
     std::mutex focusMutex;
     bool focused = true;
+    bool pendingStart;
 };
 
 namespace {
@@ -62,8 +76,8 @@ MappingResult mappingError(std::string code, std::string message)
 GamepadService::GamepadService() : GamepadService(nullptr, 0, 256) {}
 
 GamepadService::GamepadService(std::unique_ptr<GamepadBackend> backend, std::size_t reports,
-                               std::size_t controls)
-    : _impl(std::make_unique<Impl>(std::move(backend), reports, controls)) {}
+                               std::size_t controls, StartMode startMode)
+    : _impl(std::make_unique<Impl>(std::move(backend), reports, controls, startMode)) {}
 
 GamepadService::~GamepadService() = default;
 
@@ -74,6 +88,7 @@ const GamepadFrame& GamepadService::frame() const
 
 void GamepadService::maintain(bool paused)
 {
+    _impl->startBackend();
     if (paused)
         _impl->drain();
     _impl->output.expire(nowNs());
@@ -92,7 +107,7 @@ void GamepadService::setFocused(bool focused)
         return;
     _impl->focused = focused;
     _impl->queue.focus(focused);
-    if (_impl->backend)
+    if (_impl->backend && !_impl->pendingStart)
         _impl->backend->setActive(focused);
 }
 
