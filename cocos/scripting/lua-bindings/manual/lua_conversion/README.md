@@ -5,6 +5,23 @@ Include `lua_conversion.hpp` for cocos conversions, or
 collects conversion contracts and lifetime notes; headers keep local implementation
 invariants next to the code they constrain.
 
+## Optional values
+
+An empty `std::optional<T>` pushes one Lua `nil`. An engaged optional forwards
+its value to the usual output converter for `T`, which must push exactly one Lua
+value. A `nil` field is absent from the resulting Lua table.
+
+On input, an explicit `nil` resets the optional. Other values use checked input
+conversion for `T` into a default-constructed temporary. If conversion rejects
+the value or the stack index is invalid, the destination is unchanged.
+
+## Span results
+
+A C++20 `std::span<T, Extent>` produces a new 1-based Lua table, including an
+empty table for an empty span. Each element uses its usual output conversion
+and must produce one Lua value. The table does not retain the span. Elements
+that convert to userdata follow their own ownership rules.
+
 ## Arguments and invocation
 
 The public `to_native` conversion stays checked. Binding invocation may skip

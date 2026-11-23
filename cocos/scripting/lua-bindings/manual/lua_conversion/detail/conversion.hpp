@@ -2,6 +2,10 @@
 #include "containers.hpp"
 #include <cstddef>
 #include <limits>
+#include <optional>
+#if __cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
+#include <span>
+#endif
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -98,6 +102,45 @@ namespace lua
 	}
 
 	template<typename T>
+	struct to_native<std::optional<T>> {
+		static bool F(lua_State* L, int lo, std::optional<T>* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (lua_isnil(L, lo)) {
+				outValue->reset();
+				return true;
+			}
+			T value{};
+			if (!to_native<T>::F(L, lo, &value, fName))
+				return false;
+			outValue->emplace(_move_local_value(value));
+			return true;
+		}
+	};
+
+	template<typename T>
+	struct to_lua<std::optional<T>> {
+		template<typename Optional>
+		static void F(lua_State* L, Optional&& inValue) {
+			if (!L) return;
+			if (!inValue) {
+				lua_pushnil(L);
+				return;
+			}
+			const int top = lua_gettop(L);
+			try {
+				native_to_luaval(L, *std::forward<Optional>(inValue));
+			} catch (...) {
+				lua_settop(L, top);
+				throw;
+			}
+			if (lua_gettop(L) != top + 1) {
+				lua_settop(L, top);
+				luaL_error(L, "optional conversion must produce one Lua value");
+			}
+		}
+	};
+
+	template<typename T>
 	void native_to_luaval_field(lua_State* L, int lo, const char* field, T&& inValue) {
 		if (!field) return;
 		if (!L || !(lo = _absolute_index(L, lo))) return;
@@ -155,15 +198,27 @@ namespace lua
 		lua_createtable(L, static_cast<int>(size), 0);
 		try {
 			for (size_t i = 0; i < size; ++i) {
-				lua_pushinteger(L, i + 1);
 				to_lua<T>::F(L, inValue[i]);
-				lua_settable(L, -3);
+				if (lua_gettop(L) != top + 2) {
+					lua_settop(L, top);
+					luaL_error(L, "native_array_to_luaval: element must produce one Lua value");
+					return;
+				}
+				lua_rawseti(L, top + 1, static_cast<int>(i + 1));
 			}
 		} catch (...) {
 			lua_settop(L, top);
 			throw;
 		}
 	}
+#ifdef __cpp_lib_span
+	template<typename T, size_t Extent>
+	struct to_lua<std::span<T, Extent>> {
+		static void F(lua_State* L, std::span<T, Extent> values) {
+			native_array_to_luaval(L, values.data(), values.size());
+		}
+	};
+#endif
 }
 
 // Rescan forwarded variadic arguments for the traditional MSVC preprocessor.
@@ -171,9 +226,9 @@ namespace lua
 #define LUA_PP_CAT(a, b) LUA_PP_CAT_I(a, b)
 #define LUA_PP_CAT_I(a, b) a##b
 
-// Struct converters require 1-9 field names.
-#define LUA_PP_NARG(...) LUA_PP_EXPAND(LUA_PP_NARG_I(__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
-#define LUA_PP_NARG_I(_1, _2, _3, _4, _5, _6, _7, _8, _9, N, ...) N
+// Struct converters require 1-10 field names.
+#define LUA_PP_NARG(...) LUA_PP_EXPAND(LUA_PP_NARG_I(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
+#define LUA_PP_NARG_I(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 
 #define LUA_FOR_EACH(m, ...) LUA_PP_EXPAND(LUA_PP_CAT(LUA_FOR_EACH_, LUA_PP_NARG(__VA_ARGS__))(m, __VA_ARGS__))
 
@@ -186,6 +241,7 @@ namespace lua
 #define LUA_FOR_EACH_7(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_6(m, __VA_ARGS__))
 #define LUA_FOR_EACH_8(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_7(m, __VA_ARGS__))
 #define LUA_FOR_EACH_9(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_8(m, __VA_ARGS__))
+#define LUA_FOR_EACH_10(m, a, ...) m(a) LUA_PP_EXPAND(LUA_FOR_EACH_9(m, __VA_ARGS__))
 
 #define LUA_FIELD_CHECK(field) \
 	ok = ok && luaval_field_to_native(L, lo, #field, &v.field, fName);
@@ -207,12 +263,16 @@ namespace lua
 #define LUA_FIELD_TO_LUA(field) \
 	native_to_luaval_field(L, -1, #field, inValue.field);
 
+// write_fields also supports adding the record's fields to an existing table on top.
 #define LUA_TO_LUA_STRUCT(T, ...) \
 	template<>\
 	struct to_lua<T> {\
 		static void F(lua_State* L, const T& inValue) {\
 			if (!L) return;\
 			lua_createtable(L, 0, LUA_PP_NARG(__VA_ARGS__));\
+			write_fields(L, inValue);\
+		}\
+		static void write_fields(lua_State* L, const T& inValue) {\
 			LUA_FOR_EACH(LUA_FIELD_TO_LUA, __VA_ARGS__)\
 		}\
 	};
