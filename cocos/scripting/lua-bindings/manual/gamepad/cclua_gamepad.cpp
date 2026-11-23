@@ -3,7 +3,6 @@
 
 #include "base/Director.h"
 #include "scripting/lua-bindings/auto/cclua_gamepad_auto.hpp"
-#include "lua_conversion/lua_conversion.hpp"
 #include "lua.hpp"
 #include "tolua++.h"
 
@@ -22,38 +21,10 @@ GamepadService& pads()
     return cc::Director::getInstance()->getGamepads();
 }
 
-void push(lua_State* L, std::string_view value) { lua_pushlstring(L, value.data() ? value.data() : "", value.size()); }
-void push(lua_State* L, bool value) { lua_pushboolean(L, value); }
-void push(lua_State* L, const std::string& value) { push(L, std::string_view(value)); }
-template<class T> requires (std::is_arithmetic_v<T> || std::is_enum_v<T>)
-void push(lua_State* L, T value) { lua_pushnumber(L, static_cast<lua_Number>(value)); }
-
-template<class T>
-void push(lua_State* L, const std::optional<T>& value)
-{
-    if (value)
-        push(L, *value);
-    else
-        lua_pushnil(L);
-}
-
 template<class T>
 void field(lua_State* L, const char* name, const T& value)
 {
-    push(L, value);
-    lua_setfield(L, -2, name);
-}
-
-template<class T>
-void list(lua_State* L, std::span<const T> values)
-{
-    lua_createtable(L, static_cast<int>(values.size()), 0);
-    int index = 1;
-    for (const auto& value : values)
-    {
-        push(L, value);
-        lua_rawseti(L, -2, index++);
-    }
+    lua::native_to_luaval_field(L, -1, name, value);
 }
 
 // Standard Ref userdata borrows from the engine. These two types give Lua one
@@ -62,6 +33,13 @@ void list(lua_State* L, std::span<const T> values)
 template<class T>
 void pushOwnedRef(lua_State* L, cc::IntrusivePtr<T>&& owner, const char* type)
 {
+    if (!L)
+        return;
+    if (!owner)
+    {
+        lua_pushnil(L);
+        return;
+    }
     auto* ref = static_cast<cc::Ref*>(cc::transferToAutoreleasePool(std::move(owner)));
     luaL_getmetatable(L, type);
     auto** slot = static_cast<void**>(lua_newuserdata(L, sizeof(void*)));
@@ -93,40 +71,15 @@ void registerOwnedRef(lua_State* L, const char* type)
     lua_pop(L, 1);
 }
 
-template<class T>
-auto current(lua_State* L, int index, const char* type)
+const GamepadFrame* currentFrame(lua_State* L, int index)
 {
-    const T* view = nullptr;
+    const Frame* view = nullptr;
     if (lua_type(L, index) != LUA_TUSERDATA || !lua::read_value_pointer(L, index, &view))
     {
-        luaL_argerror(L, index, type);
-        return decltype(view->current()){};
+        luaL_argerror(L, index, frameType);
+        return nullptr;
     }
     return view->current();
-}
-
-void addContact(lua_State* L, const Contact& contact)
-{
-    field(L, "pad", contact.pad);
-    field(L, "finger", contact.finger);
-    field(L, "phase", contact.phase);
-    field(L, "x", contact.x);
-    field(L, "y", contact.y);
-    field(L, "pressure", contact.pressure);
-}
-
-void addMotion(lua_State* L, const Motion& motion)
-{
-    field(L, "sensor", motion.sensor);
-    list(L, std::span<const float>(motion.xyz));
-    lua_setfield(L, -2, "xyz");
-}
-
-void addPower(lua_State* L, const Power& power)
-{
-    field(L, "state", power.state);
-    field(L, "percent", power.percent);
-    field(L, "level", power.level);
 }
 
 void event(lua_State* L, const GamepadEvent& e, std::uint64_t cutoff, std::size_t sequence)
@@ -169,17 +122,17 @@ void event(lua_State* L, const GamepadEvent& e, std::uint64_t cutoff, std::size_
         else if constexpr (std::is_same_v<T, Contact>)
         {
             field(L, "kind", EventKind::Contact);
-            addContact(L, payload);
+            lua::to_lua<T>::write_fields(L, payload);
         }
         else if constexpr (std::is_same_v<T, Motion>)
         {
             field(L, "kind", EventKind::Motion);
-            addMotion(L, payload);
+            lua::to_lua<T>::write_fields(L, payload);
         }
         else if constexpr (std::is_same_v<T, Power>)
         {
             field(L, "kind", EventKind::Power);
-            addPower(L, payload);
+            lua::to_lua<T>::write_fields(L, payload);
         }
         else if constexpr (std::is_same_v<T, InputGap>)
         {
@@ -192,20 +145,20 @@ void event(lua_State* L, const GamepadEvent& e, std::uint64_t cutoff, std::size_
             field(L, "kind", EventKind::OutputDone);
             field(L, "command", payload.command);
             field(L, "status", payload.status);
-            field(L, "error", payload.error);
+            field(L, "error", static_cast<int>(payload.error));
         }
     }, e.payload);
 }
 
 int nextEvent(lua_State* L)
 {
-    const auto* f = current<Frame>(L, lua_upvalueindex(1), frameType);
+    const auto* f = currentFrame(L, lua_upvalueindex(1));
     if (!f)
         return fail(L, Error::StaleFrame);
     const auto index = static_cast<std::size_t>(lua_tointeger(L, lua_upvalueindex(2)));
     if (index >= f->events().size())
         return 0;
-    push(L, index + 1);
+    lua::native_to_luaval(L, index + 1);
     lua_replace(L, lua_upvalueindex(2));
     event(L, f->events()[index], f->cutoffNs(), index + 1);
     return 1;
@@ -213,7 +166,7 @@ int nextEvent(lua_State* L)
 
 int events(lua_State* L)
 {
-    if (!current<Frame>(L, 1, frameType))
+    if (!currentFrame(L, 1))
         return fail(L, Error::StaleFrame);
     lua_pushvalue(L, 1);
     lua_pushinteger(L, 0);
@@ -221,41 +174,17 @@ int events(lua_State* L)
     return 1;
 }
 
-void diagnostics(lua_State* L, const std::vector<Diagnostic>& values)
-{
-    lua_createtable(L, static_cast<int>(values.size()), 0);
-    int index = 1;
-    for (const auto& value : values)
-    {
-        lua_createtable(L, 0, 4);
-        field(L, "line", value.line);
-        field(L, "column", value.column);
-        field(L, "code", value.code);
-        field(L, "message", value.message);
-        lua_rawseti(L, -2, index++);
-    }
-}
-
-
 }
 
 namespace cc::input::gamepad_lua {
 
 namespace {
-template<auto Getter, class T>
-auto query(const T* view) noexcept -> Result<decltype((view->*Getter)())>
+template<auto Getter, class T, class... Args>
+auto query(const T* view, Args... args) noexcept -> Result<decltype((view->*Getter)(args...))>
 {
     if (!view)
         return {{}, Error::StaleFrame};
-    return {(view->*Getter)()};
-}
-
-template<auto Getter, class T, class Key>
-auto query(const T* view, Key key) noexcept -> Result<decltype((view->*Getter)(key))>
-{
-    if (!view)
-        return {{}, Error::StaleFrame};
-    return {(view->*Getter)(key)};
+    return {(view->*Getter)(args...)};
 }
 
 template<class LuaHandle, class Handle>
@@ -507,74 +436,19 @@ Result<CommandId> stop(DeviceId id, Channel channel)
 int fail(lua_State* L, Error error)
 {
     lua_pushnil(L);
-    push(L, error);
+    lua::native_to_luaval(L, static_cast<int>(error));
     return 2;
 }
 
-void pushResult(lua_State* L, const DeviceInfo* value)
+} // namespace cc::input::gamepad_lua
+
+void lua::to_lua<cc::input::MappingResult>::F(lua_State* L, const MappingResult& value)
 {
-    const auto& info = *value;
-    lua_createtable(L, 0, 10);
-    field(L, "id", info.id);
-    field(L, "name", info.name);
-    field(L, "mappingGuid", info.mappingGuid);
-    field(L, "layout", info.layout);
-    field(L, "mappingName", info.mappingName);
-    field(L, "vendor", info.vendor);
-    field(L, "product", info.product);
-    field(L, "version", info.version);
-    field(L, "serial", info.serial);
-    lua::native_to_luaval(L, info.controllerType);
-    lua_setfield(L, -2, "controllerType");
+    native_to_luaval(L, value.sdlCode());
+    native_to_luaval(L, value.diagnostics);
 }
 
-void pushResult(lua_State* L, std::span<const DeviceId> value)
-{
-    list(L, value);
-}
-
-void pushResult(lua_State* L, const RawView& value)
-{
-    lua_createtable(L, 0, 3);
-    list(L, value.buttons);
-    lua_setfield(L, -2, "buttons");
-    list(L, value.axes);
-    lua_setfield(L, -2, "axes");
-    list(L, value.hats);
-    lua_setfield(L, -2, "hats");
-}
-
-void pushResult(lua_State* L, std::span<const Contact> values)
-{
-    lua_createtable(L, static_cast<int>(values.size()), 0);
-    int index = 1;
-    for (const auto& contact : values)
-    {
-        lua_createtable(L, 0, 6);
-        addContact(L, contact);
-        lua_rawseti(L, -2, index++);
-    }
-}
-
-void pushResult(lua_State* L, const Motion& value)
-{
-    lua_createtable(L, 0, 2);
-    addMotion(L, value);
-}
-
-void pushResult(lua_State* L, const Power& value)
-{
-    lua_createtable(L, 0, 3);
-    addPower(L, value);
-}
-
-void pushResult(lua_State* L, const MappingResult& value)
-{
-    push(L, value.sdlCode());
-    diagnostics(L, value.diagnostics);
-}
-
-void pushResult(lua_State* L, const ImportReport& value)
+void lua::to_lua<cc::input::ImportReport>::F(lua_State* L, const ImportReport& value)
 {
     lua_createtable(L, 0, 7);
     field(L, "added", value.added);
@@ -582,22 +456,21 @@ void pushResult(lua_State* L, const ImportReport& value)
     field(L, "unchanged", value.unchanged);
     field(L, "skipped", value.skipped);
     field(L, "failed", value.failed);
-    field(L, "batchError", value.batchError);
-    diagnostics(L, value.diagnostics);
-    lua_setfield(L, -2, "diagnostics");
+    field(L, "batchError", static_cast<int>(value.batchError));
+    field(L, "diagnostics", value.diagnostics);
 }
 
-void pushResult(lua_State* L, IntrusivePtr<LuaSubscription>&& value)
+void lua::to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>>::F(
+    lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>&& value)
 {
     pushOwnedRef(L, std::move(value), leaseType);
 }
 
-void pushResult(lua_State* L, IntrusivePtr<LuaHapticPlayback>&& value)
+void lua::to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>>::F(
+    lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>&& value)
 {
     pushOwnedRef(L, std::move(value), hapticType);
 }
-
-} // namespace cc::input::gamepad_lua
 
 void lua::to_lua<cc::input::Error>::F(lua_State* L, cc::input::Error error)
 {
@@ -612,7 +485,7 @@ void lua::to_lua<cc::input::HapticPlaybackSnapshot>::F(lua_State* L,
 {
     lua_createtable(L, 0, 8);
     field(L, "state", snapshot.state);
-    field(L, "error", snapshot.error);
+    field(L, "error", static_cast<int>(snapshot.error));
     field(L, "positionSeconds", snapshot.positionSeconds);
     field(L, "durationSeconds", snapshot.durationSeconds);
     field(L, "intensity", snapshot.intensity);

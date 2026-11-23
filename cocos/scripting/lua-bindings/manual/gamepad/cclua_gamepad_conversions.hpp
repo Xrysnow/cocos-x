@@ -9,35 +9,45 @@
 namespace cc::input::gamepad_lua {
 
 int fail(lua_State* L, Error error);
-void pushResult(lua_State* L, const DeviceInfo* value);
-void pushResult(lua_State* L, std::span<const DeviceId> value);
-void pushResult(lua_State* L, const RawView& value);
-void pushResult(lua_State* L, std::span<const Contact> value);
-void pushResult(lua_State* L, const Motion& value);
-void pushResult(lua_State* L, const Power& value);
-void pushResult(lua_State* L, const MappingResult& value);
-void pushResult(lua_State* L, const ImportReport& value);
-void pushResult(lua_State* L, IntrusivePtr<LuaSubscription>&& value);
-void pushResult(lua_State* L, IntrusivePtr<LuaHapticPlayback>&& value);
-
-template<class T>
-void pushResult(lua_State* L, const T& value)
-{
-    lua::native_to_luaval(L, value);
-}
-
-template<class T>
-void pushResult(lua_State* L, const std::optional<T>& value)
-{
-    if (value)
-        pushResult(L, *value);
-    else
-        lua_pushnil(L);
-}
 
 } // namespace cc::input::gamepad_lua
 
 namespace lua {
+
+LUA_TO_LUA_STRUCT(cc::input::RawView, buttons, axes, hats)
+LUA_TO_LUA_STRUCT(cc::input::Diagnostic, line, column, code, message)
+LUA_TO_LUA_STRUCT(cc::input::Contact, pad, finger, phase, x, y, pressure)
+LUA_TO_LUA_STRUCT(cc::input::Motion, sensor, xyz)
+LUA_TO_LUA_STRUCT(cc::input::Power, state, percent, level)
+LUA_TO_LUA_STRUCT(cc::input::DeviceInfo, id, name, mappingGuid, layout, mappingName,
+                  vendor, product, version, serial, controllerType)
+
+template<> struct to_lua<const cc::input::DeviceInfo*> {
+    static void F(lua_State* L, const cc::input::DeviceInfo* info)
+    {
+        if (!L) return;
+        if (info)
+            native_to_luaval(L, *info);
+        else
+            lua_pushnil(L);
+    }
+};
+
+template<> struct to_lua<cc::input::MappingResult> {
+    static void F(lua_State* L, const cc::input::MappingResult& value);
+};
+
+template<> struct to_lua<cc::input::ImportReport> {
+    static void F(lua_State* L, const cc::input::ImportReport& value);
+};
+
+template<> struct to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>> {
+    static void F(lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaSubscription>&& value);
+};
+
+template<> struct to_lua<cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>> {
+    static void F(lua_State* L, cc::IntrusivePtr<cc::input::gamepad_lua::LuaHapticPlayback>&& value);
+};
 
 template<> struct value_type<cc::input::gamepad_lua::Frame> : std::true_type {};
 template<> struct value_type<cc::input::gamepad_lua::Pad> : std::true_type {};
@@ -72,7 +82,7 @@ struct to_lua<cc::input::Result<T>> {
     static void F(lua_State* L, cc::input::Result<T>&& result)
     {
         if (result)
-            cc::input::gamepad_lua::pushResult(L, std::move(*result.value));
+            native_to_luaval(L, std::move(*result.value));
         else
             cc::input::gamepad_lua::fail(L, result.error);
     }
