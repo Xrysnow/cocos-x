@@ -69,8 +69,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         input/gamepad/private/linux/EvdevGamepadBackend.cpp
         input/gamepad/private/linux/EvdevGamepadLayout.cpp
         input/gamepad/private/linux/EvdevGamepadLayout.h
+        input/gamepad/private/linux/LinuxHidGamepad.h
         input/gamepad/private/linux/LinuxSonyHid.h
         input/gamepad/private/linux/LinuxSonyHid.cpp
+        input/gamepad/private/linux/LinuxSwitchHid.h
+        input/gamepad/private/linux/LinuxSwitchHid.cpp
     )
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)

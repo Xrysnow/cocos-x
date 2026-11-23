@@ -122,7 +122,7 @@ LinuxSonyHid::~LinuxSonyHid()
         ::close(_fd);
 }
 
-bool LinuxSonyHid::read(ReportSink& sink)
+bool LinuxSonyHid::read(ReportSink& sink, const std::function<void()>& beforeAttach)
 {
     std::array<std::uint8_t, 256> buffer{};
     for (unsigned iteration = 0; iteration < 64; ++iteration)
@@ -187,6 +187,7 @@ bool LinuxSonyHid::read(ReportSink& sink)
                 motion[motionCount++] = value;
         if (!_attached)
         {
+            beforeAttach();
             _attached = true;
             sink.attached(_key, _descriptor, baseline());
             count = 0;
@@ -242,7 +243,7 @@ void LinuxSonyHid::neutral()
     _fingers = {};
 }
 
-void LinuxSonyHid::expire(std::uint64_t now)
+void LinuxSonyHid::tick(std::uint64_t now, bool)
 {
     auto candidate = _output;
     if (candidate.expire(now) && write(candidate))

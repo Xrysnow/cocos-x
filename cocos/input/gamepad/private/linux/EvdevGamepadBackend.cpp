@@ -1,6 +1,7 @@
 #include "../PlatformGamepadBackend.h"
 #include "EvdevGamepadLayout.h"
 #include "LinuxSonyHid.h"
+#include "LinuxSwitchHid.h"
 
 #include <linux/input.h>
 #include <sys/epoll.h>
@@ -825,19 +826,36 @@ private:
         motion->fd = std::move(source);
     }
 
-    auto removeHid(std::map<std::string, std::unique_ptr<LinuxSonyHid>>::iterator node)
+    using HidDevices = std::map<std::string, std::unique_ptr<LinuxHidGamepad>>;
+
+    auto removeHid(HidDevices::iterator node)
     {
         if (node->second->attached())
             _sink->detached(node->second->key());
         return _hid.erase(node);
     }
 
+    void hideMirrors(const std::string& association)
+    {
+        for (auto it = _devices.begin(); it != _devices.end();)
+            if (sameHidDevice(it->first, association))
+                it = remove(it);
+            else
+                ++it;
+        for (auto it = _motion.begin(); it != _motion.end();)
+            if (sameHidDevice(it->first, association))
+                it = removeMotion(it);
+            else
+                ++it;
+    }
+
     void refreshHid(const Monitor& monitor)
     {
         for (auto it = _hid.begin(); it != _hid.end();)
         {
-            std::error_code error;
-            if (!std::filesystem::exists(it->first, error))
+            struct stat path{}, handle{};
+            if (::stat(it->first.c_str(), &path) != 0 || ::fstat(it->second->fd(), &handle) != 0 ||
+                path.st_ino != handle.st_ino || path.st_rdev != handle.st_rdev)
                 it = removeHid(it);
             else
                 ++it;
@@ -848,7 +866,10 @@ private:
             const auto& path = it->path();
             if (!path.filename().native().starts_with("hidraw") || _hid.contains(path.native()))
                 continue;
-            auto device = LinuxSonyHid::open(path.native(), {0x4c4e, _nextEndpoint + 1, 1});
+            const EndpointKey key{0x4c4e, _nextEndpoint + 1, 1};
+            std::unique_ptr<LinuxHidGamepad> device = LinuxSonyHid::open(path.native(), key);
+            if (!device)
+                device = LinuxSwitchHid::open(path.native(), key);
             if (device && monitor.watch(device->fd()))
             {
                 ++_nextEndpoint;
@@ -923,22 +944,23 @@ private:
         if (topology)
             refresh(monitor);
         std::vector<AttachedEndpoint> snapshot;
+        const auto now = nowNs();
         for (auto& [path, device] : _hid)
         {
-            if (!device->attached())
-                continue;
-            if (reset)
-                device->neutral();
-            if (topology)
-                snapshot.push_back(device->snapshot());
-            else if (baselines.contains(device->key()))
-                _sink->baseline(device->key(), device->baseline());
-            device->expire(nowNs());
+            if (device->attached())
+            {
+                if (reset)
+                    device->neutral();
+                if (topology)
+                    snapshot.push_back(device->snapshot());
+                else if (baselines.contains(device->key()))
+                    _sink->baseline(device->key(), device->baseline());
+                for (const auto& [request, enabled] : sensors)
+                    if (device->key() == request.first)
+                        device->setSensor(request.second, enabled);
+            }
+            device->tick(now, active);
         }
-        for (const auto& [request, enabled] : sensors)
-            for (auto& [path, device] : _hid)
-                if (device->key() == request.first)
-                    device->setSensor(request.second, enabled);
         for (auto& [path, device] : _devices)
         {
             for (const auto& [request, enabled] : sensors)
@@ -986,12 +1008,17 @@ private:
     {
         Monitor monitor(_epoll.get());
         refresh(monitor);
-        auto nextScan = nowNs() + 1000000000ULL;
+        constexpr std::uint64_t scanInterval = 1000000000;
+        auto nextScan = nowNs() + scanInterval;
         while (process(monitor))
         {
             std::array<epoll_event, 16> events{};
-            const bool timed = std::ranges::any_of(_hid, [](const auto& item) { return item.second->hasTimedOutput(); });
-            const auto count = epoll_wait(_epoll.get(), events.data(), static_cast<int>(events.size()), timed ? 4 : 1000);
+            const auto now = nowNs();
+            auto deadline = nextScan;
+            if (std::ranges::any_of(_hid, [](const auto& item) { return item.second->needsPolling(); }))
+                deadline = std::min(deadline, now + 4000000);
+            const auto timeout = deadline > now ? static_cast<int>((deadline - now + 999999) / 1000000) : 0;
+            const auto count = epoll_wait(_epoll.get(), events.data(), static_cast<int>(events.size()), timeout);
             if (count < 0 && errno != EINTR)
                 break;
             bool rescan = nowNs() >= nextScan;
@@ -1012,21 +1039,12 @@ private:
                     return item.second->fd() == fd;
                 }); it != _hid.end())
                 {
-                    const auto attached = it->second->attached();
-                    if (!it->second->read(*_sink))
+                    if (events[i].events & (EPOLLERR | EPOLLHUP) || !it->second->read(*_sink, [&] {
+                        hideMirrors(it->second->association());
+                    }))
                     {
                         removeHid(it);
                         rescan = true;
-                    }
-                    else if (!attached && it->second->attached())
-                    {
-                        for (auto mirror = _devices.begin(); mirror != _devices.end();)
-                        {
-                            if (sameHidDevice(mirror->first, it->second->association()))
-                                mirror = remove(mirror);
-                            else
-                                ++mirror;
-                        }
                     }
                 }
                 else if (const auto it = std::ranges::find_if(_devices, [&](const auto& item) {
@@ -1044,7 +1062,7 @@ private:
             if (rescan)
             {
                 refresh(monitor);
-                nextScan = nowNs() + 1000000000ULL;
+                nextScan = nowNs() + scanInterval;
             }
         }
         for (auto& [path, device] : _devices)
@@ -1060,7 +1078,7 @@ private:
     std::mutex _mutex;
     std::map<std::string, Device> _devices;
     std::map<std::string, MotionNode> _motion;
-    std::map<std::string, std::unique_ptr<LinuxSonyHid>> _hid;
+    HidDevices _hid;
     std::vector<std::pair<EndpointKey, NativeCommand>> _commands;
     std::set<EndpointKey> _baselines;
     std::map<std::pair<EndpointKey, Sensor>, bool> _sensorRequests;

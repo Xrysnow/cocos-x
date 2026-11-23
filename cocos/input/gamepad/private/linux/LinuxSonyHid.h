@@ -1,26 +1,27 @@
 #pragma once
 
+#include "LinuxHidGamepad.h"
 #include "../drivers/SonyHidReports.h"
 
 namespace cc::input::detail {
 
-class LinuxSonyHid {
+class LinuxSonyHid final : public LinuxHidGamepad {
 public:
     static std::unique_ptr<LinuxSonyHid> open(const std::string& path, EndpointKey key);
-    ~LinuxSonyHid();
+    ~LinuxSonyHid() override;
 
-    int fd() const { return _fd; }
-    bool attached() const { return _attached; }
-    const std::string& association() const { return _association; }
-    EndpointKey key() const { return _key; }
-    bool read(ReportSink& sink);
-    RawBaseline baseline() const { return {_raw, _cursor, {}}; }
-    AttachedEndpoint snapshot();
-    void setSensor(Sensor sensor, bool enabled);
-    Error submit(const OutputCommand& command);
-    void neutral();
-    void expire(std::uint64_t now);
-    bool hasTimedOutput() const { return _output.hasTimedRumble(); }
+    int fd() const override { return _fd; }
+    bool attached() const override { return _attached; }
+    const std::string& association() const override { return _association; }
+    EndpointKey key() const override { return _key; }
+    bool read(ReportSink& sink, const std::function<void()>& beforeAttach) override;
+    RawBaseline baseline() const override { return {_raw, _cursor, {}}; }
+    AttachedEndpoint snapshot() override;
+    void setSensor(Sensor sensor, bool enabled) override;
+    Error submit(const OutputCommand& command) override;
+    void neutral() override;
+    void tick(std::uint64_t now, bool active) override;
+    bool needsPolling() const override { return _output.hasTimedRumble(); }
 
 private:
     LinuxSonyHid(int fd, bool writable, SonyHidModel model, DualSenseTransport transport, EndpointKey key);
