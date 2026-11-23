@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SdlMappingParser.h"
+#include "mapping/SdlMappingParser.h"
 #include "input/gamepad/GamepadFrame.h"
 
 #include <bitset>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GamepadBackend.h"
+#include "../GamepadBackend.h"
 
 namespace cc::input {
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GamepadBackend.h"
-#include "BindingPlan.h"
-#include "MappingDatabase.h"
+#include "../GamepadBackend.h"
+#include "../mapping/BindingPlan.h"
+#include "../mapping/MappingDatabase.h"
 
 #include <map>
 #include <set>

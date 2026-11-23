@@ -1,6 +1,6 @@
 #include "OutputRouter.h"
 #include "HapticPlaybackSession.h"
-#include "PlatformGamepadBackend.h"
+#include "../PlatformGamepadBackend.h"
 #include "audio/output/AudioOutputIntegration.h"
 
 #include <algorithm>

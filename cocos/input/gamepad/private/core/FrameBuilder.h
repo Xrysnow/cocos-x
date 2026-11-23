@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OutputRouter.h"
+#include "../output/OutputRouter.h"
 
 namespace cc::input::detail {
 

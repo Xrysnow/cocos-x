@@ -1,5 +1,5 @@
-#include "private/HapticPlaybackSession.h"
-#include "private/OutputRouter.h"
+#include "HapticPlaybackSession.h"
+#include "OutputRouter.h"
 
 #include <cmath>
 

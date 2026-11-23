@@ -7,19 +7,29 @@ set(COCOS_GAMEPAD_HEADER
 )
 
 set(COCOS_GAMEPAD_SRC
-    input/gamepad/GamepadFrame.cpp
-    input/gamepad/GamepadService.cpp
-    input/gamepad/HapticPlayback.cpp
-    input/gamepad/private/BindingPlan.cpp
-    input/gamepad/private/BindingPlan.h
-    input/gamepad/private/DeviceGuid.cpp
-    input/gamepad/private/DeviceGuid.h
-    input/gamepad/private/DeviceRegistry.cpp
-    input/gamepad/private/DeviceRegistry.h
-    input/gamepad/private/FrameBuilder.cpp
-    input/gamepad/private/FrameBuilder.h
     input/gamepad/private/GamepadBackend.h
     input/gamepad/private/PlatformGamepadBackend.h
+    input/gamepad/private/core/GamepadFrame.cpp
+    input/gamepad/private/core/GamepadService.cpp
+    input/gamepad/private/core/DeviceRegistry.cpp
+    input/gamepad/private/core/DeviceRegistry.h
+    input/gamepad/private/core/FrameBuilder.cpp
+    input/gamepad/private/core/FrameBuilder.h
+    input/gamepad/private/core/ReportQueue.cpp
+    input/gamepad/private/core/ReportQueue.h
+    input/gamepad/private/mapping/BindingPlan.cpp
+    input/gamepad/private/mapping/BindingPlan.h
+    input/gamepad/private/mapping/DeviceGuid.cpp
+    input/gamepad/private/mapping/DeviceGuid.h
+    input/gamepad/private/mapping/MappingDatabase.cpp
+    input/gamepad/private/mapping/MappingDatabase.h
+    input/gamepad/private/mapping/SdlMappingParser.cpp
+    input/gamepad/private/mapping/SdlMappingParser.h
+    input/gamepad/private/output/HapticPlayback.cpp
+    input/gamepad/private/output/HapticPlaybackSession.h
+    input/gamepad/private/output/OutputRouter.cpp
+    input/gamepad/private/output/OutputRouter.h
+    input/gamepad/private/output/OutputRouterHaptics.cpp
     input/gamepad/private/drivers/DualShock4Reports.h
     input/gamepad/private/drivers/DualShock4Reports.cpp
     input/gamepad/private/drivers/DualSenseReports.h
@@ -30,16 +40,6 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/drivers/SwitchReports.h
     input/gamepad/private/drivers/XboxBluetoothReports.cpp
     input/gamepad/private/drivers/XboxBluetoothReports.h
-    input/gamepad/private/MappingDatabase.cpp
-    input/gamepad/private/MappingDatabase.h
-    input/gamepad/private/HapticPlaybackSession.h
-    input/gamepad/private/OutputRouter.cpp
-    input/gamepad/private/OutputRouter.h
-    input/gamepad/private/OutputRouterHaptics.cpp
-    input/gamepad/private/ReportQueue.cpp
-    input/gamepad/private/ReportQueue.h
-    input/gamepad/private/SdlMappingParser.cpp
-    input/gamepad/private/SdlMappingParser.h
 )
 
 if(WIN32)

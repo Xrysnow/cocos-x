@@ -1,7 +1,7 @@
 #include "../PlatformGamepadBackend.h"
 #include "../drivers/SonyHidReports.h"
 #include "../drivers/XboxBluetoothReports.h"
-#include "../DeviceGuid.h"
+#include "../mapping/DeviceGuid.h"
 
 #include "platform/android/jni/JniHelper.h"
 

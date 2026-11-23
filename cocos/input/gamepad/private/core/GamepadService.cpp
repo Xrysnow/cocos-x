@@ -1,6 +1,6 @@
-#include "GamepadService.h"
+#include "input/gamepad/GamepadService.h"
 
-#include "private/FrameBuilder.h"
+#include "FrameBuilder.h"
 
 namespace cc::input {
 using namespace detail;

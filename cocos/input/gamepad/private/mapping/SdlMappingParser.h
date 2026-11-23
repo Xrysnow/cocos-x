@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../GamepadFrame.h"
-#include "../GamepadMapping.h"
+#include "input/gamepad/GamepadFrame.h"
+#include "input/gamepad/GamepadMapping.h"
 #include "DeviceGuid.h"
 
 #include <unordered_map>

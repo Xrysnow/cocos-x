@@ -1,7 +1,7 @@
 #pragma once
 
-#include "DeviceRegistry.h"
-#include "ReportQueue.h"
+#include "../core/DeviceRegistry.h"
+#include "../core/ReportQueue.h"
 
 #include <set>
 

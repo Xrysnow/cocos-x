@@ -1,6 +1,6 @@
 #include "MappingDatabase.h"
 
-#include "GamepadBackend.h"
+#include "../GamepadBackend.h"
 
 #include <algorithm>
 #include <iterator>
