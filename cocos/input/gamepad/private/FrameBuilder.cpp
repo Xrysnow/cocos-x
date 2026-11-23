@@ -205,6 +205,7 @@ void FrameBuilder::apply(Attach& attach)
     const auto prior = _registry.previousGeneration(key);
     if (!_registry.acceptGeneration(key))
         return;
+    _output.rescanHaptics();
     auto* associated = _registry.associated(key, descriptor);
     auto* previous = prior ? _registry.find(*prior) : nullptr;
     if (previous && previous != associated)
@@ -355,9 +356,23 @@ void FrameBuilder::apply(CapabilityUpdate& update)
 {
     if (auto* device = _registry.find(update.key))
     {
-        for (auto notice : _output.cancel(device->view._info.id, update.key))
+        for (auto notice : _output.cancel(device->view._info.id, update.key, HapticStopReason::None))
             apply(notice);
         device->endpoints.at(update.key).descriptor.capabilities = std::move(update.capabilities);
+        _registry.refreshCapabilities(*device);
+        deviceChange(*device, Change::CapabilitiesChanged, Reason::Configuration);
+    }
+}
+
+void FrameBuilder::apply(HapticCapabilityUpdate& update)
+{
+    if (auto* device = _registry.find(update.device))
+    {
+        if (update.owner && !device->endpoints.contains(*update.owner))
+            return;
+        if (device->hapticOwner == update.owner)
+            return;
+        device->hapticOwner = update.owner;
         _registry.refreshCapabilities(*device);
         deviceChange(*device, Change::CapabilitiesChanged, Reason::Configuration);
     }
@@ -432,7 +447,7 @@ void FrameBuilder::apply(Focus& focus)
         {
             device.view._pressed.reset();
             release(device, reason);
-            for (auto notice : _output.cancel(id))
+            for (auto notice : _output.cancel(id, {}, HapticStopReason::FocusLost))
                 apply(notice);
         }
         deviceChange(device, _active ? Change::FocusGained : Change::FocusLost, reason);

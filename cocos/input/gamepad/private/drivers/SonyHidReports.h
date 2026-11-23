@@ -143,6 +143,15 @@ public:
         return std::visit([&](auto& output) { return output.expire(now); }, _state);
     }
 
+    bool setHapticsMode(bool enabled)
+    {
+        auto* output = std::get_if<DualSenseOutput>(&_state);
+        if (!output)
+            return false;
+        output->setHapticsMode(enabled);
+        return true;
+    }
+
     bool hasTimedRumble() const
     {
         return std::visit([](const auto& output) { return output.hasTimedRumble(); }, _state);

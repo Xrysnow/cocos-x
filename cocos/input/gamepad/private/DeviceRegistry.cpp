@@ -99,6 +99,8 @@ void DeviceRegistry::removeEndpoint(Device& device, EndpointKey key)
 {
     _routes.erase(key);
     device.endpoints.erase(key);
+    if (device.hapticOwner == key)
+        device.hapticOwner.reset();
     refreshCapabilities(device);
 }
 
@@ -173,10 +175,13 @@ void DeviceRegistry::refreshCapabilities(Device& device)
         caps._sensors |= source.sensors;
         caps._features |= source.features;
     }
+    caps._features.set(static_cast<unsigned>(Feature::BodyHaptics), device.hapticOwner.has_value());
 }
 
 std::optional<EndpointKey> DeviceRegistry::owner(const Device& device, Feature feature) const
 {
+    if (feature == Feature::BodyHaptics)
+        return device.hapticOwner;
     for (const auto& [key, endpoint] : device.endpoints)
         if (endpoint.descriptor.capabilities.features.test(static_cast<std::size_t>(feature)))
             return key;

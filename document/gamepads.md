@@ -27,6 +27,31 @@ In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed("south")` and `pad:has("
 - A device can expose raw buttons, axes and hats before it has a logical mapping. Use `inputLayout()` with `setLocalBindings` to bind that device's raw indices, or import SDL-format mapping text with `importMappings`. Layouts can differ across transports and backends. Mapping import and the native backends work without linking SDL. [Mapping API](../cocos/input/gamepad/GamepadMapping.h)
 - Use `assignPlayer` to associate the current device with a logical player slot. To change physical player LEDs, submit `PlayerLights` when the controller exposes that capability.
 
+## Play a DualSense haptic waveform
+
+Use an `AudioSource` to drive the left and right grips independently. Stereo maps left and right samples to the corresponding grips. Mono drives both. Use `GamepadService::createHapticPlayback(id, source)` in C++ or `cc.gamepad.createHapticPlayback(id, source)` in Lua. Both accept static sources and independently reopenable file sources. [Playback handle](../cocos/input/gamepad/GamepadOutput.h)
+
+```lua
+local gamepad = cc.gamepad
+local function feedback(id, music)
+    local pad = gamepad.frame():find(id)
+    if pad and pad:has("bodyHaptics") then
+        local playback = assert(gamepad.createHapticPlayback(id, music:getSource()))
+        assert(playback:setIntensity(0.7))
+        assert(playback:play())
+        return playback
+    end
+end
+
+-- Keep the returned handle while it plays and call playback:close() on scene exit.
+```
+
+`setIntensity` takes a value in [0, 1], with a default of 1. The handle also provides `pause`, `resume`, `seekTime`, `setLooping`, `stop`, `snapshot` and `close`. Controls return `true` on acceptance, or `nil` and an error. The snapshot reports state, error, source time and duration, intensity, looping, seekability and stop reason. Use it to observe the first effective audio and natural completion.
+
+Playing claims the grip and can replace body rumble or another waveform. A paused waveform retains the grip. A new rumble can replace it. To release the grip explicitly, use `playback:stop()` or submit `{kind = "stop", channel = "body"}`. Focus loss stops waveform playback. An audio endpoint disconnect ends the handle's connection, and a subsequent connection needs a new handle.
+
+The Windows and Linux USB backends expose `bodyHaptics` when the matching controller's four-channel output is verified and its HID output can be opened for writing. On Linux, this requires a running PipeWire session and the `libpipewire-0.3` pkg-config module at build time. Waveform playback stays routed to the paired controller when the default output changes. When the game mixer uses the controller's audio endpoint, ordinary sound uses the front channels and grip waveforms use the rear channels.
+
 ## Platform input paths
 
 | Platform | Base backend | Limits and fallback |
@@ -44,7 +69,7 @@ In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed("south")` and `pad:has("
 | Xbox One, Series and Elite | Windows.Gaming.Input (WGI) on Windows, selected at launch. The controller must be exposed by Windows as a supported Xbox `Gamepad`. | Body and trigger motors, battery information and Elite paddles where WGI exposes them. The WGI mapping omits Guide and Share. Some controllers visible only through XInput can be absent in WGI mode. |
 | Xbox One S, Series and Elite Series 2 | Native Bluetooth reports on Windows and Linux. | Windows uses a directly readable, supported Bluetooth HID gamepad interface outside the XInput mirror path. It can expose Guide, Series Share and independent Elite Series 2 paddles on supported report formats and profiles. Linux keeps evdev input, including the keys exported by the kernel, and uses hidraw only for a uniquely matched controller. Bluetooth battery reports provide a coarse level. Four-motor feedback requires a valid output report and a successful write probe. Linux returns body feedback to `FF_RUMBLE` when hidraw output becomes unavailable. Linux USB and Xbox Wireless Adapter input and feedback remain with the kernel. |
 | DualShock 4 | Sony HID over USB or Bluetooth on Windows and Linux. Sony USB Host on Android. | Two touch contacts, motion, battery, body rumble and RGB where reports and transport allow. Expect reduced capabilities when enhanced reports, calibration or writes are unavailable. The Sony USB Host path requires a user grant and a successful HID interface claim. Android Bluetooth uses the OS path. |
-| DualSense and DualSense Edge | Sony HID over USB or Bluetooth on Windows and Linux. Sony USB Host on Android. | Touchpad, motion, battery, body rumble, RGB, player lights and adaptive triggers where available. Edge extra controls depend on the report layout. Bluetooth can start with a simpler input report and may need protocol initialization before full features appear. The Android USB Host path requires a grant and a successful claim. |
+| DualSense and DualSense Edge | Sony HID over USB or Bluetooth on Windows and Linux. Sony USB Host on Android. | Touchpad, motion, battery, body rumble, RGB, player lights and adaptive triggers where available. USB grip waveforms on Windows and Linux require the matching four-channel controller audio endpoint. Edge extra controls depend on the report layout. Bluetooth can start with a simpler input report and may need protocol initialization before full features appear. The Android USB Host path requires a grant and a successful claim. |
 | Switch Pro Controller and first-generation Joy-Con | Nintendo HID on Windows and Linux over supported USB and Bluetooth interfaces. | Full reports provide battery and motion. The driver sends body rumble with independent low and high frequency components and sets player LEDs where supported. Left and right Joy-Con are separate devices. The driver targets the first-generation Pro Controller and Joy-Con. On Linux, the dedicated path takes over after valid input, otherwise evdev remains available. On Windows, a device that cannot open the dedicated path can still use the generic HID stack. |
 | Platform-managed controllers on Apple | GameController and Core Haptics. | Supported profiles can supply battery, motion, touch, paddles, RGB, body haptics and DualSense adaptive triggers. RGB, battery and haptics use APIs introduced in macOS 11 and iOS 14. DualSense adaptive triggers require macOS 11.3 or iOS 14.5. The native profile decides which features are exposed. |
 

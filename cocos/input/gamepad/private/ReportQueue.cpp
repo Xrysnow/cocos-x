@@ -39,6 +39,14 @@ void ReportQueue::focus(bool active)
         _overflow.push_back({++_seq, time, Focus{active}});
 }
 
+void ReportQueue::hapticCapability(HapticCapabilityUpdate update)
+{
+    const ReportTime time;
+    std::lock_guard lock(_mutex);
+    if (!_closed)
+        _overflow.push_back({++_seq, time, std::move(update)});
+}
+
 bool ReportQueue::pushControl(RecordData data, ReportTime time, bool backend)
 {
     std::lock_guard lock(_mutex);

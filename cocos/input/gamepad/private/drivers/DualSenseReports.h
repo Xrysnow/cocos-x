@@ -54,6 +54,7 @@ public:
     bool apply(const OutputCommand& command, std::uint64_t now);
     bool expire(std::uint64_t now);
     bool hasTimedRumble() const noexcept { return _expires.has_value(); }
+    void setHapticsMode(bool enabled);
     std::span<const std::uint8_t> encode(DualSenseTransport transport, unsigned usbLength = 63,
                                          DualSenseOutputKind kind = DualSenseOutputKind::Effects);
 
@@ -63,7 +64,7 @@ private:
     Rgb _rgb{};
     PlayerLights _lights{};
     std::uint8_t _low = 0, _high = 0, _sequence = 0;
-    bool _enhancedRumble = false;
+    bool _enhancedRumble = false, _hapticsMode = false;
     std::optional<std::uint64_t> _expires;
 };
 

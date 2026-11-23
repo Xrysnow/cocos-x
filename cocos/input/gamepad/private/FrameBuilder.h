@@ -16,6 +16,7 @@ private:
     void apply(Report&);
     void apply(Baseline&);
     void apply(CapabilityUpdate&);
+    void apply(HapticCapabilityUpdate&);
     void apply(Detach&);
     void apply(Desync&);
     void apply(Focus&);

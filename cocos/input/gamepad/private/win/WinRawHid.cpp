@@ -1,6 +1,7 @@
 #include "WinSwitchGamepad.h"
 #include "WinWgi.h"
 #include "WinXboxBluetooth.h"
+#include "../PlatformGamepadBackend.h"
 #include "../drivers/SonyHidReports.h"
 
 #include <cfgmgr32.h>
@@ -49,6 +50,7 @@ struct Control {
 struct FreePreparsedData {
     void operator()(PHIDP_PREPARSED_DATA data) const { HidD_FreePreparsedData(data); }
 };
+
 
 class WinSonyGamepad {
 public:
@@ -105,6 +107,12 @@ public:
                 _written.reset(CreateEventW(nullptr, TRUE, FALSE, nullptr));
             if (bluetooth() && _outputLength > 78)
                 _outputBuffer.resize(_outputLength);
+        }
+        if (bus == WinHidBus::Usb && !isDualShock4())
+        {
+            descriptor.hapticAudio.containerId = sonyUsbHapticContainer(path);
+            descriptor.hapticAudio.writable = static_cast<bool>(_written);
+            _waveformAvailable = _written && !descriptor.hapticAudio.containerId.empty();
         }
         if (!bluetooth())
             enableCapabilities(descriptor);
@@ -205,6 +213,8 @@ public:
         if (_resetOutput && !stopAll)
             return Error::Busy;
         auto next = _output;
+        if (std::holds_alternative<Rumble>(command) || stopAll || (stop && stop->channel == Channel::Body))
+            next.setHapticsMode(false);
         if (!next.apply(command, nowNs()))
             return Error::Unsupported;
         if (!write(next))
@@ -220,6 +230,7 @@ public:
         if (_hasOutput)
         {
             auto neutral = _output;
+            neutral.setHapticsMode(false);
             neutral.apply(Stop{}, nowNs());
             if (write(neutral))
             {
@@ -229,6 +240,21 @@ public:
         }
         _resetOutput = _hasOutput;
     }
+
+    Error startWaveform()
+    {
+        if (!_waveformAvailable)
+            return Error::Unsupported;
+        if (_resetOutput)
+            return Error::Busy;
+        auto next = _output;
+        if (!next.setHapticsMode(true) || !write(next))
+            return Error::BackendFailure;
+        _output = next;
+        _hasOutput = true;
+        return Error::None;
+    }
+
 
     bool needsPolling() const
     {
@@ -316,6 +342,7 @@ private:
     std::vector<std::uint8_t> _outputBuffer;
     SonyHidReports _reports;
     SonyHidOutput _output;
+    bool _waveformAvailable = false;
     std::array<std::optional<Contact>, 2> _fingers{};
     std::bitset<SensorCount> _sensors;
     bool _refreshPower = true, _hasOutput = false, _resetOutput = false;
@@ -953,6 +980,22 @@ std::optional<std::vector<RAWINPUTDEVICE>> registeredDevices()
 
 } // namespace
 
+
+std::vector<HapticAudioIdentity> connectedHapticAudioIdentities()
+{
+    std::set<std::string> containers;
+    if (const auto paths = hidInterfaces())
+        for (const auto& path : *paths)
+            if (auto id = sonyUsbHapticContainer(path); !id.empty())
+                containers.insert(std::move(id));
+
+    std::vector<HapticAudioIdentity> result;
+    result.reserve(containers.size());
+    for (const auto& id : containers)
+        result.push_back({id, {}, false});
+    return result;
+}
+
 struct WinRawHid::Impl {
     Impl(ReportSink& target, WinDirectInput* fallback, bool xboxInWgi)
         : sink(target), direct(fallback), xboxOwnedByWgi(xboxInWgi) {}
@@ -1061,6 +1104,7 @@ struct WinRawHid::Impl {
             }
         }
     }
+
 
     ReportSink& sink;
     WinDirectInput* direct;
@@ -1250,6 +1294,14 @@ Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
     if (device->nintendo)
         return device->nintendo->submit(command);
     return device->sony ? device->sony->submit(command) : Error::Unsupported;
+}
+
+Error WinRawHid::startWaveform(EndpointKey key)
+{
+    const auto* device = _impl->find(key);
+    if (!device)
+        return Error::Disconnected;
+    return device->sony ? device->sony->startWaveform() : Error::Unsupported;
 }
 
 void WinRawHid::stopOutputs()

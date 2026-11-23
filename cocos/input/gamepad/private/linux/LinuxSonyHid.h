@@ -19,6 +19,7 @@ public:
     AttachedEndpoint snapshot() override;
     void setSensor(Sensor sensor, bool enabled) override;
     Error submit(const OutputCommand& command) override;
+    Error startWaveform() override;
     void neutral() override;
     void tick(std::uint64_t now, bool active) override;
     bool needsPolling() const override { return _output.hasTimedRumble(); }
@@ -30,6 +31,7 @@ private:
     int _fd;
     bool _writable, _attached = false, _hasOutput = false, _enableRequested = false;
     bool _releaseLights;
+    bool _waveformMode = false;
     std::string _association;
     DualSenseTransport _transport;
     EndpointKey _key;

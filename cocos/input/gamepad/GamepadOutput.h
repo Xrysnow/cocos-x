@@ -1,16 +1,59 @@
 #pragma once
 
 #include "input/gamepad/GamepadTypes.h"
+#include "audio/AudioDirectPlayback.h"
 
 #include <chrono>
+#include <memory>
 #include <variant>
 
+namespace cc { class AudioSource; }
+
 namespace cc::input {
+
+namespace detail { class OutputRouter; }
 
 struct Rumble {
     float low = 0;
     float high = 0;
     std::chrono::milliseconds duration{};
+};
+
+enum class HapticStopReason { None, Requested, Replaced, FocusLost, EndpointLost, Disconnected };
+
+struct HapticPlaybackSnapshot {
+    AudioPlaybackState state = AudioPlaybackState::Closed;
+    Error error = Error::None;
+    double positionSeconds = 0;
+    std::optional<double> durationSeconds;
+    float intensity = 1;
+    bool looping = false;
+    bool seekable = false;
+    HapticStopReason stopReason = HapticStopReason::None;
+};
+
+// An owning handle. Call its methods and destroy it on the engine thread.
+class CC_DLL HapticPlayback {
+public:
+    HapticPlayback(HapticPlayback&&) noexcept;
+    HapticPlayback& operator=(HapticPlayback&&) noexcept;
+    ~HapticPlayback();
+
+    Error play();
+    Error pause();
+    Error resume();
+    Error stop();
+    Error seekTime(double seconds);
+    Error setLooping(bool enabled);
+    Error setIntensity(float intensity);
+    HapticPlaybackSnapshot snapshot() const;
+    void close() noexcept;
+
+private:
+    friend class detail::OutputRouter;
+    struct Session;
+    explicit HapticPlayback(std::shared_ptr<Session> session);
+    std::shared_ptr<Session> _session;
 };
 
 struct TriggerRumble {

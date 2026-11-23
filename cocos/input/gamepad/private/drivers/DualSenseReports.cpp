@@ -273,6 +273,16 @@ bool DualSenseOutput::expire(std::uint64_t now)
     return true;
 }
 
+void DualSenseOutput::setHapticsMode(bool enabled)
+{
+    _hapticsMode = enabled;
+    if (enabled)
+    {
+        _low = _high = 0;
+        _expires.reset();
+    }
+}
+
 std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transport, unsigned usbLength,
                                                        DualSenseOutputKind kind)
 {
@@ -290,13 +300,13 @@ std::span<const std::uint8_t> DualSenseOutput::encode(DualSenseTransport transpo
     if (kind == DualSenseOutputKind::Effects)
     {
         // Choose one rumble protocol, also writing zero amplitudes to stop it.
-        data[0] = _enhancedRumble ? 0x0e : 0x0f;
+        data[0] = _hapticsMode ? 0x0c : _enhancedRumble ? 0x0e : 0x0f;
         data[1] = 0x14; // RGB and five player indicators.
         data[2] = _high;
         data[3] = _low;
         encodeTrigger(_triggers[1], data.subspan(10, 11));
         encodeTrigger(_triggers[0], data.subspan(21, 11));
-        if (_enhancedRumble) data[38] = 0x04;
+        if (_enhancedRumble && !_hapticsMode) data[38] = 0x04;
         data[43] = static_cast<std::uint8_t>(_lights.mask);
         data[44] = _rgb.r;
         data[45] = _rgb.g;

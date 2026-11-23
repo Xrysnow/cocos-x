@@ -19,6 +19,7 @@ public:
     ~Impl()
     {
         lifetime.reset();
+        output.shutdownHaptics();
         queue.close();
         if (backend && !pendingStart)
         {
@@ -43,6 +44,11 @@ public:
     {
         queue.drain(batch);
         builder.consume(batch);
+        if (output.refreshHaptics())
+        {
+            queue.drain(batch);
+            builder.consume(batch);
+        }
     }
 
     bool stage(std::shared_ptr<MappingDatabase> database)
@@ -107,6 +113,7 @@ void GamepadService::setFocused(bool focused)
         return;
     _impl->focused = focused;
     _impl->queue.focus(focused);
+    _impl->output.setFocused(focused);
     if (_impl->backend && !_impl->pendingStart)
         _impl->backend->setActive(focused);
 }
@@ -258,6 +265,11 @@ Result<CommandId> GamepadService::submit(DeviceId id, const OutputCommand& comma
     if (!_impl->focused)
         return {{}, Error::Busy};
     return _impl->output.submit(id, command);
+}
+
+Result<HapticPlayback> GamepadService::createHapticPlayback(DeviceId id, AudioSource& source)
+{
+    return _impl->output.createHapticPlayback(id, source);
 }
 
 } // namespace cc::input

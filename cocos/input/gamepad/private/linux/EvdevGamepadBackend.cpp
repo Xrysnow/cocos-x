@@ -796,7 +796,8 @@ public:
     {
         {
             std::lock_guard lock(_mutex);
-            if (_commands.size() >= 256 && !std::holds_alternative<Stop>(command.command))
+            if (_commands.size() >= 256 &&
+                (command.waveformMode || !std::holds_alternative<Stop>(command.command)))
                 return Error::QueueFull;
             _commands.emplace_back(key, command);
         }
@@ -1102,8 +1103,11 @@ private:
             const auto it = std::ranges::find_if(_devices, [&](const auto& item) { return item.second.key == key; });
             Error status = Error::Disconnected;
             const auto hid = std::ranges::find_if(_hid, [&](const auto& item) { return item.second->key() == key; });
-            const bool blocked = (!active || reset) && !std::holds_alternative<Stop>(command.command);
-            if (hid != _hid.end()) status = blocked ? Error::Busy : hid->second->submit(command.command);
+            const bool blocked = !command.canApply() || ((!active || reset) &&
+                (command.waveformMode || !std::holds_alternative<Stop>(command.command)));
+            if (hid != _hid.end())
+                status = blocked ? Error::Busy : command.waveformMode ? hid->second->startWaveform() :
+                    hid->second->submit(command.command);
             else if (it != _devices.end()) status = blocked ? Error::Busy :
                 it->second.applyOutput(command.command, now, *_sink);
             if (command.id != CommandId{})

@@ -32,7 +32,7 @@ enum class Axis { LeftX, LeftY, RightX, RightY, LeftTrigger, RightTrigger };
 enum class Sensor { Accel, Gyro, AccelLeft, GyroLeft, AccelRight, GyroRight };
 enum class Side { Left, Right };
 enum class Feature {
-    BodyRumble, TriggerRumble, MonoLed, RgbLed, PlayerLights, AdaptiveLeft, AdaptiveRight
+    BodyRumble, TriggerRumble, MonoLed, RgbLed, PlayerLights, AdaptiveLeft, AdaptiveRight, BodyHaptics
 };
 enum class Reason {
     Physical, Connect, Disconnect, FocusLost, FocusGained, Remap, Resync, Configuration, Command
@@ -46,7 +46,7 @@ enum class TimeQuality { ReceiveOnly, ConvertedOS, CalibratedDevice };
 inline constexpr unsigned ButtonCount = static_cast<unsigned>(Button::Misc6) + 1;
 inline constexpr unsigned AxisCount = static_cast<unsigned>(Axis::RightTrigger) + 1;
 inline constexpr unsigned SensorCount = static_cast<unsigned>(Sensor::GyroRight) + 1;
-inline constexpr unsigned FeatureCount = static_cast<unsigned>(Feature::AdaptiveRight) + 1;
+inline constexpr unsigned FeatureCount = static_cast<unsigned>(Feature::BodyHaptics) + 1;
 
 template<class T>
 struct Result {
@@ -72,6 +72,7 @@ struct TriggerLimits {
     bool vibration = false;
     float minHz = 0;
     float maxHz = 0;
+    bool operator==(const TriggerLimits&) const = default;
 };
 
 class CC_DLL Capabilities {

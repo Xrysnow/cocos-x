@@ -67,6 +67,7 @@ public:
     Result<Subscription> subscribeSensor(DeviceId id, Sensor type, unsigned depth);
     Result<Subscription> watchRaw(DeviceId id);
     Result<CommandId> submit(DeviceId id, const OutputCommand& command);
+    Result<HapticPlayback> createHapticPlayback(DeviceId id, AudioSource& source);
 
 private:
     friend class ::cc::Director;

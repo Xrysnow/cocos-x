@@ -187,9 +187,9 @@ public:
             std::lock_guard lock(_mutex);
             if (!_wake || _quit)
                 return Error::Disconnected;
-            if (!_active && !std::holds_alternative<Stop>(command.command))
+            if (!_active && (command.waveformMode || !std::holds_alternative<Stop>(command.command)))
                 return Error::Busy;
-            if (_commands.size() >= maxOutputCommands)
+            if (_commands.size() >= maxOutputCommands && command.id != CommandId{})
                 return Error::QueueFull;
             _commands.push_back({key, command, _outputEpoch});
             SetEvent(_wake);
@@ -206,6 +206,7 @@ private:
 
     void send(ReportSink& sink, const Command& command)
     {
+        const bool ready = command.effect.canApply();
         bool blocked;
         {
             std::lock_guard lock(_mutex);
@@ -214,8 +215,11 @@ private:
         auto result = Error::Disconnected;
         if (_raw)
         {
-            if (blocked && !std::holds_alternative<Stop>(command.effect.command))
+            if (!ready || (blocked && (command.effect.waveformMode ||
+                                       !std::holds_alternative<Stop>(command.effect.command))))
                 result = Error::Busy;
+            else if (command.effect.waveformMode)
+                result = _raw->startWaveform(command.key);
             else
                 result = _raw->submit(command.key, command.effect.command);
         }
@@ -433,6 +437,33 @@ WinHidBus hidBus(std::wstring_view path)
         child = parent;
     }
     return WinHidBus::Unknown;
+}
+
+std::string sonyUsbHapticContainer(std::wstring_view hidPath)
+{
+    const auto node = interfaceNode(hidPath);
+    if (!node)
+        return {};
+    const auto hardware = std::wstring_view(node->instance).substr(0, node->instance.find(L'\\', 4));
+    constexpr std::array models{std::wstring_view{L"hid\\vid_054c&pid_0ce6"},
+                                std::wstring_view{L"hid\\vid_054c&pid_0df2"}};
+    if (std::ranges::none_of(models, [&](auto model) {
+            return hardware.starts_with(model) && (hardware.size() == model.size() || hardware[model.size()] == L'&');
+        }) || hidBus(hidPath) != WinHidBus::Usb)
+        return {};
+
+    GUID container{};
+    ULONG size = sizeof(container);
+    DEVPROPTYPE type{};
+    constexpr GUID systemContainer{0, 0, 0, {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+    if (CM_Get_DevNode_PropertyW(node->device, &DEVPKEY_Device_ContainerId, &type,
+            reinterpret_cast<PBYTE>(&container), &size, 0) != CR_SUCCESS || type != DEVPROP_TYPE_GUID ||
+        size != sizeof(container) || IsEqualGUID(container, GUID{}) || IsEqualGUID(container, systemContainer))
+        return {};
+    std::array<wchar_t, 39> id{};
+    if (!StringFromGUID2(container, id.data(), static_cast<int>(id.size())))
+        return {};
+    return winUtf8(lowerAscii(id.data()));
 }
 
 std::string winUtf8(std::wstring_view value)

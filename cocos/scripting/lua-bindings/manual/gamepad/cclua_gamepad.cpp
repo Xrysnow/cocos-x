@@ -3,9 +3,11 @@
 #include "base/Director.h"
 #include "input/gamepad/GamepadService.h"
 #include "lua.hpp"
+#include "tolua++.h"
 
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <type_traits>
 
 namespace {
@@ -15,6 +17,8 @@ using namespace std::string_view_literals;
 constexpr const char* frameType = "cc.gamepad.Frame";
 constexpr const char* padType = "cc.gamepad.Pad";
 constexpr const char* leaseType = "cc.gamepad.Subscription";
+constexpr const char* hapticType = "cc.gamepad.HapticPlayback";
+using HapticHandle = std::optional<HapticPlayback>;
 constexpr std::array buttons{
     "south"sv, "east"sv, "west"sv, "north"sv, "back"sv, "guide"sv, "start"sv, "leftstick"sv, "rightstick"sv,
     "leftshoulder"sv, "rightshoulder"sv, "dpup"sv, "dpdown"sv, "dpleft"sv, "dpright"sv,
@@ -24,7 +28,7 @@ constexpr std::array buttons{
 constexpr std::array axes{"leftx"sv, "lefty"sv, "rightx"sv, "righty"sv, "lefttrigger"sv, "righttrigger"sv};
 constexpr std::array sensors{"accel"sv, "gyro"sv, "accelLeft"sv, "gyroLeft"sv, "accelRight"sv, "gyroRight"sv};
 constexpr std::array features{"bodyRumble"sv, "triggerRumble"sv, "monoLed"sv, "rgbLed"sv,
-                              "playerLights"sv, "adaptiveLeft"sv, "adaptiveRight"sv};
+                              "playerLights"sv, "adaptiveLeft"sv, "adaptiveRight"sv, "bodyHaptics"sv};
 constexpr std::array reasons{"physical"sv, "connect"sv, "disconnect"sv, "focusLost"sv, "focusGained"sv,
                              "remap"sv, "resync"sv, "configuration"sv, "command"sv};
 constexpr std::array errors{"None"sv, "Unsupported"sv, "Disconnected"sv, "Busy"sv, "PermissionDenied"sv,
@@ -35,6 +39,10 @@ constexpr std::array sides{"left"sv, "right"sv};
 constexpr std::array modes{"off"sv, "resistance"sv, "vibration"sv};
 constexpr std::array channels{"all"sv, "body"sv, "triggers"sv, "adaptiveLeft"sv, "adaptiveRight"sv, "lights"sv};
 constexpr std::array sources{"builtIn"sv, "application"sv, "user"sv};
+constexpr std::array playbackStates{"ready"sv, "buffering"sv, "playing"sv, "paused"sv,
+                                    "stopped"sv, "ended"sv, "failed"sv, "closed"sv};
+constexpr std::array stopReasons{"none"sv, "requested"sv, "replaced"sv, "focusLost"sv,
+                                 "endpointLost"sv, "disconnected"sv};
 static_assert(buttons.size() == ButtonCount && axes.size() == AxisCount &&
               sensors.size() == SensorCount && features.size() == FeatureCount);
 
@@ -542,6 +550,82 @@ int subscribeSensor(lua_State* L)
     return lease(L, pads().subscribeSensor(static_cast<DeviceId>(*id), *sensor, *depth));
 }
 
+int createHapticPlayback(lua_State* L)
+{
+    const auto id = number<std::uint32_t>(L, 1);
+    tolua_Error typeError{};
+    if (!id || !tolua_isusertype(L, 2, "cc.AudioSource", 0, &typeError))
+        return fail(L, Error::InvalidArgument);
+    auto* source = static_cast<cc::AudioSource*>(tolua_tousertype(L, 2, nullptr));
+    if (!source)
+        return fail(L, Error::InvalidArgument);
+    userdata(L, hapticType, HapticHandle{});
+    auto result = pads().createHapticPlayback(static_cast<DeviceId>(*id), *source);
+    if (!result)
+        return fail(L, result.error);
+    *static_cast<HapticHandle*>(lua_touserdata(L, -1)) = std::move(result.value);
+    return 1;
+}
+
+HapticPlayback& haptic(lua_State* L)
+{
+    return **static_cast<HapticHandle*>(luaL_checkudata(L, 1, hapticType));
+}
+
+int hapticResult(lua_State* L, Error error)
+{
+    if (error != Error::None)
+        return fail(L, error);
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+template<auto Method>
+int controlHaptics(lua_State* L)
+{
+    return hapticResult(L, (haptic(L).*Method)());
+}
+
+int closeHaptics(lua_State* L)
+{
+    haptic(L).close();
+    return hapticResult(L, Error::None);
+}
+
+int seekHaptics(lua_State* L)
+{
+    const auto seconds = number<double>(L, 2);
+    return seconds ? hapticResult(L, haptic(L).seekTime(*seconds)) : fail(L, Error::InvalidArgument);
+}
+
+int loopHaptics(lua_State* L)
+{
+    if (!lua_isboolean(L, 2))
+        return fail(L, Error::InvalidArgument);
+    return hapticResult(L, haptic(L).setLooping(lua_toboolean(L, 2) != 0));
+}
+
+int setHapticIntensity(lua_State* L)
+{
+    const auto intensity = number<float>(L, 2);
+    return intensity ? hapticResult(L, haptic(L).setIntensity(*intensity)) : fail(L, Error::InvalidArgument);
+}
+
+int hapticsSnapshot(lua_State* L)
+{
+    const auto snapshot = haptic(L).snapshot();
+    lua_createtable(L, 0, 8);
+    field(L, "state", playbackStates[static_cast<unsigned>(snapshot.state)]);
+    field(L, "error", errors[static_cast<unsigned>(snapshot.error)]);
+    field(L, "positionSeconds", snapshot.positionSeconds);
+    field(L, "durationSeconds", snapshot.durationSeconds);
+    field(L, "intensity", snapshot.intensity);
+    field(L, "looping", snapshot.looping);
+    field(L, "seekable", snapshot.seekable);
+    field(L, "stopReason", stopReasons[static_cast<unsigned>(snapshot.stopReason)]);
+    return 1;
+}
+
 template<class T>
 std::optional<T> parameter(lua_State* L, const char* name)
 {
@@ -664,14 +748,22 @@ int register_cc_gamepad(lua_State* L)
         {"axis", padControl<Axis, axes, &PadView::axis>}, {"axisValue", padControl<Axis, axes, &PadView::axisValue>}, {}
     };
     const luaL_Reg leaseMethods[]{{"close", close}, {}};
+    const luaL_Reg hapticMethods[]{
+        {"play", controlHaptics<&HapticPlayback::play>}, {"pause", controlHaptics<&HapticPlayback::pause>},
+        {"resume", controlHaptics<&HapticPlayback::resume>}, {"stop", controlHaptics<&HapticPlayback::stop>},
+        {"seekTime", seekHaptics}, {"setLooping", loopHaptics}, {"setIntensity", setHapticIntensity},
+        {"snapshot", hapticsSnapshot}, {"close", closeHaptics}, {}
+    };
     const luaL_Reg functions[]{
         {"frame", frame}, {"addGamepadMapping", addMapping}, {"importMappings", importMappings},
         {"setLocalBindings", setLocal}, {"mappingFor", mappingFor}, {"assignPlayer", assignPlayer},
-        {"watchRaw", watchRaw}, {"subscribeSensor", subscribeSensor}, {"submit", submit}, {}
+        {"watchRaw", watchRaw}, {"subscribeSensor", subscribeSensor}, {"createHapticPlayback", createHapticPlayback},
+        {"submit", submit}, {}
     };
     metatable(L, frameType, finalize<View<GamepadFrame>>, frameMethods);
     metatable(L, padType, finalize<View<PadView>>, padMethods);
     metatable(L, leaseType, finalize<Subscription>, leaseMethods);
+    metatable(L, hapticType, finalize<HapticHandle>, hapticMethods);
     luaL_register(L, "cc.gamepad", functions);
     lua_pop(L, 1);
     lua_pushboolean(L, 1);

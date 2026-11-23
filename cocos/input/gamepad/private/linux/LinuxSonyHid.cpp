@@ -1,4 +1,5 @@
 #include "LinuxSonyHid.h"
+#include "../PlatformGamepadBackend.h"
 
 #include <linux/hidraw.h>
 #include <linux/input.h>
@@ -8,6 +9,7 @@
 
 #include <cerrno>
 #include <filesystem>
+#include <fstream>
 
 namespace cc::input::detail {
 namespace {
@@ -20,7 +22,54 @@ std::span<const std::uint8_t> readFeature(int fd, std::array<std::uint8_t, Size>
     return std::span(buffer).first(static_cast<std::size_t>(length));
 }
 
+std::optional<unsigned> usbProperty(const std::filesystem::path& path, const char* name)
+{
+    unsigned value = 0;
+    if (std::ifstream(path / name) >> std::hex >> value)
+        return value;
+    return {};
+}
+
+bool isSonyUsbController(const std::filesystem::path& path, unsigned vendor)
+{
+    if (vendor != 0x054c)
+        return false;
+    const auto product = usbProperty(path, "idProduct");
+    return product == 0x0ce6 || product == 0x0df2;
+}
+
+std::string usbParent(std::filesystem::path path)
+{
+    const auto root = path.root_path();
+    while (!path.empty() && path != root)
+    {
+        if (const auto vendor = usbProperty(path, "idVendor"))
+            return isSonyUsbController(path, *vendor) ? path.string() : std::string{};
+        path = path.parent_path();
+    }
+    return {};
+}
+
 } // namespace
+
+std::vector<HapticAudioIdentity> connectedHapticAudioIdentities()
+{
+    namespace fs = std::filesystem;
+    std::vector<HapticAudioIdentity> result;
+    std::error_code error;
+    for (fs::directory_iterator device("/sys/bus/usb/devices", error), end;
+         !error && device != end; device.increment(error))
+    {
+        const auto vendor = usbProperty(device->path(), "idVendor");
+        if (!vendor || !isSonyUsbController(device->path(), *vendor))
+            continue;
+        std::error_code resolveError;
+        const auto path = fs::canonical(device->path(), resolveError);
+        if (!resolveError)
+            result.push_back({{}, path.string(), false});
+    }
+    return result;
+}
 
 LinuxSonyHid::LinuxSonyHid(int fd, bool writable, SonyHidModel model, DualSenseTransport transport, EndpointKey key)
     : _fd(fd), _writable(writable),
@@ -63,6 +112,11 @@ std::unique_ptr<LinuxSonyHid> LinuxSonyHid::open(const std::string& path, Endpoi
         if (serial.front()) descriptor.serial = serial.data();
     }
     descriptor.physicalAssociation = device->_association;
+    if (!ds4 && transport == DualSenseTransport::Usb)
+    {
+        descriptor.hapticAudio.usbPath = usbParent(device->_association);
+        descriptor.hapticAudio.writable = writable;
+    }
     auto& layout = descriptor.layout;
     layout.id = ds4 ? "linux-dualshock4-hid-v1" : edge ? "linux-dualsense-edge-hid-v1" : "linux-dualsense-hid-v1";
     layout.guid = DeviceGuid::make(info.bustype, *descriptor.vendor, *descriptor.product, 0, {}, descriptor.name, 'h');
@@ -200,6 +254,8 @@ bool LinuxSonyHid::read(ReportSink& sink, const std::function<void()>& beforeAtt
 
 AttachedEndpoint LinuxSonyHid::snapshot()
 {
+    if (_waveformMode)
+        submit(Stop{Channel::Body});
     ++_key.generation;
     _fingers = {};
     _sensors.reset();
@@ -223,12 +279,32 @@ Error LinuxSonyHid::submit(const OutputCommand& command)
     if (!_writable || !_attached)
         return Error::Unsupported;
     auto candidate = _output;
+    const auto* stop = std::get_if<Stop>(&command);
+    const bool stopsWaveform = std::holds_alternative<Rumble>(command) ||
+        (stop && (stop->channel == Channel::All || stop->channel == Channel::Body));
+    if (stopsWaveform)
+        candidate.setHapticsMode(false);
     if (!candidate.apply(command, nowNs()))
         return Error::Unsupported;
     if (!write(candidate))
         return Error::BackendFailure;
     _output = candidate;
     _hasOutput = true;
+    if (stopsWaveform)
+        _waveformMode = false;
+    return Error::None;
+}
+
+Error LinuxSonyHid::startWaveform()
+{
+    if (!_attached || !_writable || _descriptor.hapticAudio.usbPath.empty())
+        return Error::Unsupported;
+    auto next = _output;
+    if (!next.setHapticsMode(true) || !write(next))
+        return Error::BackendFailure;
+    _output = next;
+    _hasOutput = true;
+    _waveformMode = true;
     return Error::None;
 }
 
@@ -236,12 +312,15 @@ void LinuxSonyHid::neutral()
 {
     if (_hasOutput)
     {
+        _output.setHapticsMode(false);
         _output.apply(Stop{}, nowNs());
         write(_output);
         _hasOutput = false;
+        _waveformMode = false;
     }
     _fingers = {};
 }
+
 
 void LinuxSonyHid::tick(std::uint64_t now, bool)
 {

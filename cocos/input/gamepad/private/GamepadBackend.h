@@ -6,6 +6,7 @@
 #include <bitset>
 #include <chrono>
 #include <compare>
+#include <future>
 
 namespace cc::input::detail {
 
@@ -53,6 +54,11 @@ struct EndpointCapabilities {
     std::uint32_t playerLightMask = 0;
 };
 
+struct HapticAudioIdentity {
+    std::string containerId, usbPath;
+    bool writable = false;
+};
+
 struct EndpointDescriptor {
     RawLayout layout;
     std::string name;
@@ -64,6 +70,7 @@ struct EndpointDescriptor {
     EndpointCapabilities capabilities;
     Power power{};
     Link link = Link::Unknown;
+    HapticAudioIdentity hapticAudio;
 };
 
 inline std::uint64_t nowNs()
@@ -105,6 +112,14 @@ struct ReportView {
 struct NativeCommand {
     CommandId id; // Zero for housekeeping stops, which do not complete.
     OutputCommand command;
+    bool waveformMode = false;
+    std::shared_future<bool> bodyReady{};
+
+    bool canApply() const noexcept
+    {
+        try { return !bodyReady.valid() || bodyReady.get(); }
+        catch (const std::future_error&) { return false; }
+    }
 };
 
 class ReportSink {

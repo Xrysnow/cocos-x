@@ -50,6 +50,7 @@ struct Report {
 };
 struct Baseline { EndpointKey key; RawBaseline snapshot; };
 struct CapabilityUpdate { EndpointKey key; EndpointCapabilities capabilities; };
+struct HapticCapabilityUpdate { DeviceId device; std::optional<EndpointKey> owner; };
 struct Desync { EndpointKey key; InputGap gap; };
 struct Detach { EndpointKey key; };
 struct Focus { bool active; };
@@ -61,7 +62,7 @@ struct OutputNotice { DeviceId device; OutputDone done; };
 struct TopologyLoss {};
 struct TopologySnapshot { std::vector<AttachedEndpoint> endpoints; };
 
-using RecordData = std::variant<Attach, Report, Baseline, CapabilityUpdate, Desync, Detach,
+using RecordData = std::variant<Attach, Report, Baseline, CapabilityUpdate, HapticCapabilityUpdate, Desync, Detach,
     Focus, MappingFence, LocalFence, PlayerFence, NativeCompletion, OutputNotice, TopologyLoss,
     TopologySnapshot>;
 
@@ -83,6 +84,7 @@ public:
     void close();
     bool control(RecordData);
     void outputNotice(OutputNotice);
+    void hapticCapability(HapticCapabilityUpdate);
     void focus(bool);
     void drain(ReportBatch&);
 

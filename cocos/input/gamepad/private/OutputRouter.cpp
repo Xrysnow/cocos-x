@@ -1,4 +1,5 @@
 #include "OutputRouter.h"
+#include "HapticPlaybackSession.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,7 +15,10 @@ std::optional<EndpointKey> owner(const DeviceRegistry& registry, const Device& d
 {
     switch (channel)
     {
-    case Channel::Body: return registry.owner(device, Feature::BodyRumble);
+    case Channel::Body:
+        if (auto rumble = registry.owner(device, Feature::BodyRumble))
+            return rumble;
+        return registry.owner(device, Feature::BodyHaptics);
     case Channel::Triggers: return registry.owner(device, Feature::TriggerRumble);
     case Channel::AdaptiveLeft: return registry.owner(device, Feature::AdaptiveLeft);
     case Channel::AdaptiveRight: return registry.owner(device, Feature::AdaptiveRight);
@@ -129,19 +133,34 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
     const bool stopping = isStop(command);
     const auto commandId = static_cast<CommandId>(++_commandId);
     std::map<Channel, EndpointKey> routes;
+    const auto haptics = _haptics.find(id);
+    auto activeOwner = [&](Channel channel) -> std::optional<EndpointKey> {
+        if (channel == Channel::Body && haptics != _haptics.end())
+            return haptics->second.session->hid;
+        const auto effect = _effects.find({id, channel});
+        if (effect != _effects.end())
+            return effect->second.endpoint;
+        return owner(_registry, *device, channel);
+    };
     if (request.channel == Channel::All)
     {
         for (const auto channel : channels)
-            if (auto endpoint = owner(_registry, *device, channel))
+            if (auto endpoint = activeOwner(channel))
                 routes.emplace(channel, *endpoint);
     }
     else
     {
         auto endpoint = request.feature ? _registry.owner(*device, *request.feature)
                                         : owner(_registry, *device, request.channel);
-        if (const auto effect = _effects.find({id, request.channel}); effect != _effects.end() &&
-            std::holds_alternative<Stop>(command))
-            endpoint = effect->second.endpoint;
+        if (request.feature == Feature::BodyRumble)
+        {
+            const auto paired = _hapticRoutes.find(id);
+            if (paired != _hapticRoutes.end() && device->endpoints.at(paired->second.hid).descriptor.capabilities
+                .features.test(static_cast<unsigned>(Feature::BodyRumble)))
+                endpoint = paired->second.hid;
+        }
+        if (std::holds_alternative<Stop>(command) || (stopping && request.channel == Channel::Body))
+            endpoint = activeOwner(request.channel);
         if (endpoint)
             routes.emplace(request.channel, *endpoint);
     }
@@ -149,13 +168,19 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
         return {{}, Error::Unsupported};
 
     const OutputCommand operation = stopping ? OutputCommand{Stop{request.channel}} : command;
+    const auto body = routes.find(Channel::Body);
+    std::optional<std::promise<bool>> ready;
+    std::shared_future<bool> bodyReady;
+    if (haptics != _haptics.end() && body != routes.end())
+        bodyReady = ready.emplace().get_future().share();
     std::set<EndpointKey> accepted, rejected;
     Error error = Error::None;
     for (const auto& [channel, endpoint] : routes)
     {
         if (accepted.contains(endpoint) || rejected.contains(endpoint))
             continue;
-        const auto status = _backend->submit(endpoint, {commandId, operation});
+        const auto status = _backend->submit(endpoint, {commandId, operation, false,
+            ready && endpoint == body->second ? bodyReady : std::shared_future<bool>{}});
         if (status == Error::None)
             accepted.insert(endpoint);
         else
@@ -166,6 +191,14 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
     }
     if (accepted.empty())
         return {{}, error};
+
+    if (ready && accepted.contains(body->second))
+    {
+        const auto session = haptics->second.session;
+        const auto stopped = stopHaptics(*session, stopping ? HapticStopReason::Requested :
+            HapticStopReason::Replaced, body->second != session->hid);
+        ready->set_value(stopped == Error::None || stopped == Error::Disconnected);
+    }
 
     std::set<Channel> replaced;
     for (const auto& [channel, endpoint] : routes)
@@ -193,6 +226,8 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
 
 std::optional<OutputNotice> OutputRouter::complete(const NativeCompletion& completion)
 {
+    if (completeHaptics(completion))
+        return std::nullopt;
     const auto entry = _pending.find(completion.id);
     if (entry == _pending.end() || !entry->second.endpoints.erase(completion.key))
         return std::nullopt;
@@ -228,8 +263,20 @@ std::vector<OutputNotice> OutputRouter::finish(DeviceId id, Completion status,
     return notices;
 }
 
-std::vector<OutputNotice> OutputRouter::cancel(DeviceId id, std::optional<EndpointKey> endpoint)
+std::vector<OutputNotice> OutputRouter::cancel(DeviceId id, std::optional<EndpointKey> endpoint,
+                                               HapticStopReason reason)
 {
+    if (reason == HapticStopReason::Disconnected)
+    {
+        const auto paired = _hapticRoutes.find(id);
+        if (paired != _hapticRoutes.end() && (!endpoint || paired->second.hid == *endpoint))
+        {
+            invalidateHaptics(id, paired->second, reason);
+            _hapticRoutes.erase(paired);
+            _queue.hapticCapability({id, {}});
+            rescanHaptics();
+        }
+    }
     for (auto it = _effects.begin(); it != _effects.end();)
     {
         if (it->first.first == id && (!endpoint || *endpoint == it->second.endpoint))
@@ -246,9 +293,10 @@ std::vector<OutputNotice> OutputRouter::cancel(DeviceId id, std::optional<Endpoi
 
 void OutputRouter::expire(std::uint64_t now)
 {
+    pollHaptics();
     for (auto it = _effects.begin(); it != _effects.end();)
     {
-        const auto [endpoint, deadline] = it->second;
+        const auto& [endpoint, deadline] = it->second;
         if (deadline != 0 && deadline <= now)
         {
             const auto result = _backend->submit(endpoint, {CommandId{}, Stop{it->first.second}});

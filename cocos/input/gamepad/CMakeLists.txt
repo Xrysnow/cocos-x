@@ -9,6 +9,7 @@ set(COCOS_GAMEPAD_HEADER
 set(COCOS_GAMEPAD_SRC
     input/gamepad/GamepadFrame.cpp
     input/gamepad/GamepadService.cpp
+    input/gamepad/HapticPlayback.cpp
     input/gamepad/private/BindingPlan.cpp
     input/gamepad/private/BindingPlan.h
     input/gamepad/private/DeviceGuid.cpp
@@ -31,8 +32,10 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/drivers/XboxBluetoothReports.h
     input/gamepad/private/MappingDatabase.cpp
     input/gamepad/private/MappingDatabase.h
+    input/gamepad/private/HapticPlaybackSession.h
     input/gamepad/private/OutputRouter.cpp
     input/gamepad/private/OutputRouter.h
+    input/gamepad/private/OutputRouterHaptics.cpp
     input/gamepad/private/ReportQueue.cpp
     input/gamepad/private/ReportQueue.h
     input/gamepad/private/SdlMappingParser.cpp

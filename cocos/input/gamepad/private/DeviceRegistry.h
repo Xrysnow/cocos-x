@@ -25,6 +25,7 @@ struct Device {
     std::shared_ptr<const MappingSelection> local;
     std::shared_ptr<const MappingSelection> requestedLocal;
     std::optional<unsigned> reservedPlayer;
+    std::optional<EndpointKey> hapticOwner;
     std::bitset<ButtonCount> suppressedButtons;
     LogicalState logical;
     unsigned rawWatchers = 0;
