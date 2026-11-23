@@ -27,7 +27,6 @@ FrameBuilder::FrameBuilder(DeviceRegistry& registry, OutputRouter& output, Gamep
     : _registry(registry), _output(output), _backend(backend),
       _mapping(std::make_shared<MappingDatabase>())
 {
-    _frame._epoch = _epoch;
     _events.reserve(256);
     _frame._events.reserve(256);
 }
@@ -46,7 +45,6 @@ void FrameBuilder::consume(ReportBatch& batch)
 void FrameBuilder::publish(std::uint64_t cutoff)
 {
     ++*_epoch;
-    _frame._tick = *_epoch;
     _frame._cutoffNs = cutoff;
     _frame._events.swap(_events);
     _events.clear();

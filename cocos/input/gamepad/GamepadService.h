@@ -55,7 +55,7 @@ public:
     GamepadService(const GamepadService&) = delete;
     GamepadService& operator=(const GamepadService&) = delete;
 
-    const GamepadFrame& frame() const;
+    Frame frame() const noexcept;
     MappingResult setLocalBindings(DeviceId id, std::string_view layoutId,
                                    std::string_view bindingFields);
     MappingResult addGamepadMapping(std::string_view line,
@@ -64,9 +64,16 @@ public:
                                 MappingSource source = MappingSource::Application);
     Result<std::string> mappingFor(DeviceId id) const;
     Error assignPlayer(DeviceId id, std::optional<unsigned> slot);
+    Error clearPlayer(DeviceId id);
     Result<Subscription> subscribeSensor(DeviceId id, Sensor type, unsigned depth);
     Result<Subscription> watchRaw(DeviceId id);
     Result<CommandId> submit(DeviceId id, const OutputCommand& command);
+    Result<CommandId> rumble(DeviceId id, float low, float high, unsigned durationMs);
+    Result<CommandId> triggerRumble(DeviceId id, float left, float right, unsigned durationMs);
+    Result<CommandId> rgb(DeviceId id, std::uint8_t r, std::uint8_t g, std::uint8_t b);
+    Result<CommandId> playerLights(DeviceId id, unsigned mask);
+    Result<CommandId> adaptiveTrigger(DeviceId id, Side side, TriggerMode mode, float start, float strength, float hz);
+    Result<CommandId> stop(DeviceId id, Channel channel = Channel::All);
     Result<HapticPlayback> createHapticPlayback(DeviceId id, AudioSource& source);
 
 private:

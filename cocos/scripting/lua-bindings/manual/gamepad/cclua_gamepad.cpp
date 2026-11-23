@@ -6,14 +6,11 @@
 #include "lua.hpp"
 #include "tolua++.h"
 
-#include <type_traits>
-
 namespace {
 using namespace cc::input;
 using cc::input::gamepad_lua::fail;
-using cc::input::gamepad_lua::Frame;
 
-constexpr const char* frameType = "cc.gamepad.Frame";
+constexpr const char* cursorType = "cc.gamepad.EventCursor";
 constexpr const char* leaseType = "cc.gamepad.Subscription";
 constexpr const char* hapticType = "cc.gamepad.HapticPlayback";
 GamepadService& pads()
@@ -71,107 +68,15 @@ void registerOwnedRef(lua_State* L, const char* type)
     lua_pop(L, 1);
 }
 
-const GamepadFrame* currentFrame(lua_State* L, int index)
+int callCursor(lua_State* L)
 {
-    const Frame* view = nullptr;
-    if (lua_type(L, index) != LUA_TUSERDATA || !lua::read_value_pointer(L, index, &view))
-    {
-        luaL_argerror(L, index, frameType);
-        return nullptr;
-    }
-    return view->current();
-}
+    EventCursor* cursor = nullptr;
+    if (lua_type(L, 1) != LUA_TUSERDATA || !lua::read_value_pointer(L, 1, &cursor))
+        return luaL_argerror(L, 1, cursorType);
 
-void event(lua_State* L, const GamepadEvent& e, std::uint64_t cutoff, std::size_t sequence)
-{
-    lua_createtable(L, 0, 10);
-    field(L, "device", e.device);
-    field(L, "order", sequence);
-    field(L, "reason", e.reason);
-    field(L, "timeQuality", e.timeQuality);
-    const auto delta = e.receivedNs >= cutoff ? static_cast<double>(e.receivedNs - cutoff)
-                                              : -static_cast<double>(cutoff - e.receivedNs);
-    field(L, "offsetUs", delta / 1000.0);
-    std::visit([&](const auto& payload) {
-        using T = std::decay_t<decltype(payload)>;
-        if constexpr (std::is_same_v<T, DeviceChange>)
-        {
-            field(L, "kind", EventKind::Device);
-            field(L, "change", payload.kind);
-            field(L, "revision", payload.revision);
-        }
-        else if constexpr (std::is_same_v<T, ButtonEdge>)
-        {
-            field(L, "kind", EventKind::Button);
-            field(L, "button", payload.button);
-            field(L, "down", payload.down);
-        }
-        else if constexpr (std::is_same_v<T, AxisChange>)
-        {
-            field(L, "kind", EventKind::Axis);
-            field(L, "axis", payload.axis);
-            field(L, "value", payload.value);
-        }
-        else if constexpr (std::is_same_v<T, RawChange>)
-        {
-            field(L, "kind", EventKind::Raw);
-            field(L, "control", payload.kind);
-            field(L, "index", payload.index);
-            field(L, "value", payload.value);
-        }
-        else if constexpr (std::is_same_v<T, Contact>)
-        {
-            field(L, "kind", EventKind::Contact);
-            lua::to_lua<T>::write_fields(L, payload);
-        }
-        else if constexpr (std::is_same_v<T, Motion>)
-        {
-            field(L, "kind", EventKind::Motion);
-            lua::to_lua<T>::write_fields(L, payload);
-        }
-        else if constexpr (std::is_same_v<T, Power>)
-        {
-            field(L, "kind", EventKind::Power);
-            lua::to_lua<T>::write_fields(L, payload);
-        }
-        else if constexpr (std::is_same_v<T, InputGap>)
-        {
-            field(L, "kind", EventKind::InputGap);
-            field(L, "cause", payload.cause);
-            field(L, "lostCount", payload.lostCount);
-        }
-        else if constexpr (std::is_same_v<T, OutputDone>)
-        {
-            field(L, "kind", EventKind::OutputDone);
-            field(L, "command", payload.command);
-            field(L, "status", payload.status);
-            field(L, "error", static_cast<int>(payload.error));
-        }
-    }, e.payload);
-}
-
-int nextEvent(lua_State* L)
-{
-    const auto* f = currentFrame(L, lua_upvalueindex(1));
-    if (!f)
-        return fail(L, Error::StaleFrame);
-    const auto index = static_cast<std::size_t>(lua_tointeger(L, lua_upvalueindex(2)));
-    if (index >= f->events().size())
-        return 0;
-    lua::native_to_luaval(L, index + 1);
-    lua_replace(L, lua_upvalueindex(2));
-    event(L, f->events()[index], f->cutoffNs(), index + 1);
-    return 1;
-}
-
-int events(lua_State* L)
-{
-    if (!currentFrame(L, 1))
-        return fail(L, Error::StaleFrame);
-    lua_pushvalue(L, 1);
-    lua_pushinteger(L, 0);
-    lua_pushcclosure(L, nextEvent, 2);
-    return 1;
+    const int top = lua_gettop(L);
+    lua::native_to_luaval(L, cursor->next());
+    return lua_gettop(L) - top;
 }
 
 }
@@ -179,14 +84,6 @@ int events(lua_State* L)
 namespace cc::input::gamepad_lua {
 
 namespace {
-template<auto Getter, class T, class... Args>
-auto query(const T* view, Args... args) noexcept -> Result<decltype((view->*Getter)(args...))>
-{
-    if (!view)
-        return {{}, Error::StaleFrame};
-    return {(view->*Getter)(args...)};
-}
-
 template<class LuaHandle, class Handle>
 Result<IntrusivePtr<LuaHandle>> own(Result<Handle> result)
 {
@@ -194,138 +91,6 @@ Result<IntrusivePtr<LuaHandle>> own(Result<Handle> result)
         return {{}, result.error};
     return {IntrusivePtr<LuaHandle>(new LuaHandle(std::move(*result.value)))};
 }
-}
-
-Result<double> Frame::tick() const noexcept
-{
-    if (const auto* frame = current())
-        return {static_cast<double>(frame->tick())};
-    return {{}, Error::StaleFrame};
-}
-
-Result<std::span<const DeviceId>> Frame::devices() const noexcept
-{
-    return query<&GamepadFrame::devices>(current());
-}
-
-Result<std::optional<Pad>> Frame::find(DeviceId id) const noexcept
-{
-    const auto* frame = current();
-    if (!frame)
-        return {{}, Error::StaleFrame};
-    if (const auto* pad = frame->find(id))
-        return {std::optional<Pad>(std::in_place, *frame, *pad)};
-    return {std::optional<Pad>{}};
-}
-
-Result<const DeviceInfo*> Pad::info() const noexcept
-{
-    if (const auto* pad = current())
-        return {&pad->info()};
-    return {{}, Error::StaleFrame};
-}
-
-Result<bool> Pad::mapped() const noexcept
-{
-    return query<&PadView::mapped>(current());
-}
-
-Result<std::string_view> Pad::inputLayout() const noexcept
-{
-    return query<&PadView::inputLayout>(current());
-}
-
-Result<std::string_view> Pad::mappingStatus() const noexcept
-{
-    return query<&PadView::mappingStatus>(current());
-}
-
-Result<std::uint32_t> Pad::mappingRevision() const noexcept
-{
-    return query<&PadView::mappingRevision>(current());
-}
-
-Result<std::optional<unsigned>> Pad::player() const noexcept
-{
-    return query<&PadView::player>(current());
-}
-
-Result<bool> Pad::down(Button key) const noexcept
-{
-    return query<&PadView::down>(current(), key);
-}
-
-Result<bool> Pad::pressed(Button key) const noexcept
-{
-    return query<&PadView::pressed>(current(), key);
-}
-
-Result<bool> Pad::released(Button key) const noexcept
-{
-    return query<&PadView::released>(current(), key);
-}
-
-Result<std::string_view> Pad::label(Button key) const noexcept
-{
-    return query<&PadView::label>(current(), key);
-}
-
-Result<std::optional<float>> Pad::axis(Axis key) const noexcept
-{
-    return query<&PadView::axis>(current(), key);
-}
-
-Result<std::optional<std::int16_t>> Pad::axisValue(Axis key) const noexcept
-{
-    return query<&PadView::axisValue>(current(), key);
-}
-
-Result<bool> Pad::hasButton(Button key) const noexcept
-{
-    if (const auto* pad = current())
-        return {pad->caps().has(key)};
-    return {{}, Error::StaleFrame};
-}
-
-Result<bool> Pad::hasAxis(Axis key) const noexcept
-{
-    if (const auto* pad = current())
-        return {pad->caps().has(key)};
-    return {{}, Error::StaleFrame};
-}
-
-Result<bool> Pad::hasSensor(Sensor key) const noexcept
-{
-    if (const auto* pad = current())
-        return {pad->caps().has(key)};
-    return {{}, Error::StaleFrame};
-}
-
-Result<bool> Pad::hasFeature(Feature key) const noexcept
-{
-    if (const auto* pad = current())
-        return {pad->caps().has(key)};
-    return {{}, Error::StaleFrame};
-}
-
-Result<RawView> Pad::raw() const noexcept
-{
-    return query<&PadView::raw>(current());
-}
-
-Result<std::span<const Contact>> Pad::contacts() const noexcept
-{
-    return query<&PadView::contacts>(current());
-}
-
-Result<std::optional<Motion>> Pad::latest(Sensor sensor) const noexcept
-{
-    return query<&PadView::latest>(current(), sensor);
-}
-
-Result<Power> Pad::power() const noexcept
-{
-    return query<&PadView::power>(current());
 }
 
 Error LuaHapticPlayback::seekTime(double seconds)
@@ -351,7 +116,7 @@ Error LuaHapticPlayback::close() noexcept
 
 Frame frame()
 {
-    return Frame(pads().frame());
+    return pads().frame();
 }
 
 Result<MappingResult> addGamepadMapping(std::string_view line, MappingSource source)
@@ -377,10 +142,10 @@ Result<std::string> mappingFor(DeviceId id)
 
 Error clearPlayer(DeviceId id)
 {
-    return pads().assignPlayer(id, std::nullopt);
+    return pads().clearPlayer(id);
 }
 
-Error assignPlayer(DeviceId id, unsigned slot)
+Error assignPlayer(DeviceId id, std::optional<unsigned> slot)
 {
     return pads().assignPlayer(id, slot);
 }
@@ -405,32 +170,32 @@ Result<IntrusivePtr<LuaHapticPlayback>> createHapticPlayback(DeviceId id, AudioS
 
 Result<CommandId> rumble(DeviceId id, float low, float high, unsigned durationMs)
 {
-    return pads().submit(id, Rumble{low, high, std::chrono::milliseconds(durationMs)});
+    return pads().rumble(id, low, high, durationMs);
 }
 
 Result<CommandId> triggerRumble(DeviceId id, float left, float right, unsigned durationMs)
 {
-    return pads().submit(id, TriggerRumble{left, right, std::chrono::milliseconds(durationMs)});
+    return pads().triggerRumble(id, left, right, durationMs);
 }
 
 Result<CommandId> rgb(DeviceId id, std::uint8_t r, std::uint8_t g, std::uint8_t b)
 {
-    return pads().submit(id, Rgb{r, g, b});
+    return pads().rgb(id, r, g, b);
 }
 
 Result<CommandId> playerLights(DeviceId id, unsigned mask)
 {
-    return pads().submit(id, PlayerLights{mask});
+    return pads().playerLights(id, mask);
 }
 
 Result<CommandId> adaptiveTrigger(DeviceId id, Side side, TriggerMode mode, float start, float strength, float hz)
 {
-    return pads().submit(id, AdaptiveTrigger{side, mode, start, strength, hz});
+    return pads().adaptiveTrigger(id, side, mode, start, strength, hz);
 }
 
 Result<CommandId> stop(DeviceId id, Channel channel)
 {
-    return pads().submit(id, Stop{channel});
+    return pads().stop(id, channel);
 }
 
 int fail(lua_State* L, Error error)
@@ -441,6 +206,30 @@ int fail(lua_State* L, Error error)
 }
 
 } // namespace cc::input::gamepad_lua
+
+void lua::to_lua<cc::input::OutputDone>::F(lua_State* L, const OutputDone& value)
+{
+    lua_createtable(L, 0, 3);
+    field(L, "command", value.command);
+    field(L, "status", value.status);
+    field(L, "error", static_cast<int>(value.error));
+}
+
+void lua::to_lua<cc::input::GamepadEvent>::F(lua_State* L, const GamepadEvent& value)
+{
+    lua_createtable(L, 0, 11);
+    field(L, "device", value.device);
+    field(L, "reportSeq", value.reportSeq);
+    field(L, "receivedNs", value.receivedNs);
+    field(L, "subIndex", value.subIndex);
+    field(L, "sourceNs", value.sourceNs);
+    field(L, "timeQuality", value.timeQuality);
+    field(L, "reason", value.reason);
+    field(L, "kind", value.kind);
+    field(L, "order", value.order);
+    field(L, "offsetUs", value.offsetUs);
+    std::visit([L](const auto& payload) { field(L, "payload", payload); }, value.payload);
+}
 
 void lua::to_lua<cc::input::MappingResult>::F(lua_State* L, const MappingResult& value)
 {
@@ -500,9 +289,10 @@ int register_cc_gamepad_manual(lua_State* L)
     registerOwnedRef(L, hapticType);
     const luaL_Reg functions[]{{}};
     luaL_register(L, "cc.gamepad", functions);
-    tolua_beginmodule(L, "Frame");
-    tolua_function(L, "events", events);
-    tolua_endmodule(L);
+    lua_pop(L, 1);
+    luaL_getmetatable(L, cursorType);
+    lua_pushcfunction(L, callCursor);
+    lua_setfield(L, -2, "__call");
     lua_pop(L, 1);
     return 0;
 }

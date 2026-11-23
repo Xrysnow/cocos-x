@@ -87,7 +87,7 @@ GamepadService::GamepadService(std::unique_ptr<GamepadBackend> backend, std::siz
 
 GamepadService::~GamepadService() = default;
 
-const GamepadFrame& GamepadService::frame() const
+Frame GamepadService::frame() const noexcept
 {
     return _impl->builder.frame();
 }
@@ -149,7 +149,7 @@ MappingResult GamepadService::setLocalBindings(DeviceId id, std::string_view lay
     const auto& layout = device->endpoints.at(device->primary).descriptor.layout;
     if (layout.id != layoutId)
         return mappingError("layout-mismatch", "Use the current device layout for local bindings");
-    auto selected = _impl->mappings->local(layout, bindingFields, device->view.info().name);
+    auto selected = _impl->mappings->local(layout, bindingFields, device->view._info.name);
     if (selected.result.change == MappingChange::Unchanged)
     {
         if (!device->requestedLocal)
@@ -177,12 +177,15 @@ MappingResult GamepadService::setLocalBindings(DeviceId id, std::string_view lay
 
 Result<std::string> GamepadService::mappingFor(DeviceId id) const
 {
-    const auto* pad = frame().find(id);
-    if (!pad)
+    const auto result = frame().find(id);
+    if (!result)
+        return {{}, result.error};
+    if (!*result.value)
         return {{}, Error::Disconnected};
-    if (pad->_exportedMapping.empty())
+    const auto& mapping = (*result.value)->_data->_exportedMapping;
+    if (mapping.empty())
         return {{}, Error::NoMapping};
-    return {pad->_exportedMapping, Error::None};
+    return {mapping, Error::None};
 }
 
 Error GamepadService::assignPlayer(DeviceId id, std::optional<unsigned> slot)
@@ -197,6 +200,11 @@ Error GamepadService::assignPlayer(DeviceId id, std::optional<unsigned> slot)
         return Error::QueueFull;
     device.reservedPlayer = slot;
     return Error::None;
+}
+
+Error GamepadService::clearPlayer(DeviceId id)
+{
+    return assignPlayer(id, std::nullopt);
 }
 
 Result<Subscription> GamepadService::watchRaw(DeviceId id)
@@ -265,6 +273,36 @@ Result<CommandId> GamepadService::submit(DeviceId id, const OutputCommand& comma
     if (!_impl->focused)
         return {{}, Error::Busy};
     return _impl->output.submit(id, command);
+}
+
+Result<CommandId> GamepadService::rumble(DeviceId id, float low, float high, unsigned durationMs)
+{
+    return submit(id, Rumble{low, high, std::chrono::milliseconds(durationMs)});
+}
+
+Result<CommandId> GamepadService::triggerRumble(DeviceId id, float left, float right, unsigned durationMs)
+{
+    return submit(id, TriggerRumble{left, right, std::chrono::milliseconds(durationMs)});
+}
+
+Result<CommandId> GamepadService::rgb(DeviceId id, std::uint8_t r, std::uint8_t g, std::uint8_t b)
+{
+    return submit(id, Rgb{r, g, b});
+}
+
+Result<CommandId> GamepadService::playerLights(DeviceId id, unsigned mask)
+{
+    return submit(id, PlayerLights{mask});
+}
+
+Result<CommandId> GamepadService::adaptiveTrigger(DeviceId id, Side side, TriggerMode mode, float start, float strength, float hz)
+{
+    return submit(id, AdaptiveTrigger{side, mode, start, strength, hz});
+}
+
+Result<CommandId> GamepadService::stop(DeviceId id, Channel channel)
+{
+    return submit(id, Stop{channel});
 }
 
 Result<HapticPlayback> GamepadService::createHapticPlayback(DeviceId id, AudioSource& source)

@@ -15,6 +15,7 @@ set(COCOS_GAMEPAD_SRC
     input/gamepad/private/core/DeviceRegistry.h
     input/gamepad/private/core/FrameBuilder.cpp
     input/gamepad/private/core/FrameBuilder.h
+    input/gamepad/private/core/FrameData.h
     input/gamepad/private/core/ReportQueue.cpp
     input/gamepad/private/core/ReportQueue.h
     input/gamepad/private/mapping/BindingPlan.cpp

@@ -2,8 +2,9 @@
 #include "lua_conversion/lua_conversion.hpp"
 #include "scripting/lua-bindings/manual/gamepad/cclua_gamepad_conversions.hpp"
 
-static_assert(lua::value_type<cc::input::gamepad_lua::Frame>::value, "ValueTypes requires a shared runtime trait for cc::input::gamepad_lua::Frame");
-static_assert(lua::value_type<cc::input::gamepad_lua::Pad>::value, "ValueTypes requires a shared runtime trait for cc::input::gamepad_lua::Pad");
+static_assert(lua::value_type<cc::input::Frame>::value, "ValueTypes requires a shared runtime trait for cc::input::Frame");
+static_assert(lua::value_type<cc::input::Pad>::value, "ValueTypes requires a shared runtime trait for cc::input::Pad");
+static_assert(lua::value_type<cc::input::EventCursor>::value, "ValueTypes requires a shared runtime trait for cc::input::EventCursor");
 int luaReg_cc_gamepad_ccgamepadButton(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -191,6 +192,18 @@ int luaReg_cc_gamepad_ccgamepadPowerState(lua_State* lua_S)
 	LUA_ENTRY_END(2);
 	return 0;
 }
+int luaReg_cc_gamepad_ccgamepadLink(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_ENUM_DEF("Link");
+	LUA_ENUM_ENTRY("Unknown", cc::input::Link::Unknown);
+	LUA_ENUM_ENTRY("Wired", cc::input::Link::Wired);
+	LUA_ENUM_ENTRY("Wireless", cc::input::Link::Wireless);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(2);
+	return 0;
+}
 int luaReg_cc_gamepad_ccAudioPlaybackState(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -322,6 +335,256 @@ int luaReg_cc_gamepad_ccgamepadGapCause(lua_State* lua_S)
 	LUA_ENTRY_END(2);
 	return 0;
 }
+int lua_cc_input_Pad_axis(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:axis");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<float>>(cc::input::Pad::*)(cc::input::Axis)const>(&cc::input::Pad::axis));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_axisValue(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:axisValue");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<short>>(cc::input::Pad::*)(cc::input::Axis)const>(&cc::input::Pad::axisValue));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_contacts(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:contacts");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::span<const cc::input::Contact>>(cc::input::Pad::*)()const>(&cc::input::Pad::contacts));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_down(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:down");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Button)const>(&cc::input::Pad::down));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_fingersPerPad(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:fingersPerPad");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::span<const unsigned int>>(cc::input::Pad::*)()const>(&cc::input::Pad::fingersPerPad));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_hasAxis(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasAxis");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Axis)const>(&cc::input::Pad::hasAxis));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_hasButton(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasButton");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Button)const>(&cc::input::Pad::hasButton));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_hasFeature(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasFeature");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Feature)const>(&cc::input::Pad::hasFeature));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_hasSensor(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasSensor");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Sensor)const>(&cc::input::Pad::hasSensor));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_info(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:info");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<const cc::input::DeviceInfo *>(cc::input::Pad::*)()const>(&cc::input::Pad::info));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_inputLayout(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:inputLayout");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::string_view>(cc::input::Pad::*)()const>(&cc::input::Pad::inputLayout));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_label(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:label");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::string_view>(cc::input::Pad::*)(cc::input::Button)const>(&cc::input::Pad::label));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_latest(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:latest");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<cc::input::Motion>>(cc::input::Pad::*)(cc::input::Sensor)const>(&cc::input::Pad::latest));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_link(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:link");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::Link>(cc::input::Pad::*)()const>(&cc::input::Pad::link));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_mapped(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mapped");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<bool>(cc::input::Pad::*)()const>(&cc::input::Pad::mapped));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_mappingRevision(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mappingRevision");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<unsigned int>(cc::input::Pad::*)()const>(&cc::input::Pad::mappingRevision));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_mappingStatus(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mappingStatus");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::string_view>(cc::input::Pad::*)()const>(&cc::input::Pad::mappingStatus));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_nominalHz(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:nominalHz");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<float>>(cc::input::Pad::*)(cc::input::Sensor)const>(&cc::input::Pad::nominalHz));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_player(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:player");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::optional<unsigned int>>(cc::input::Pad::*)()const>(&cc::input::Pad::player));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_playerLightMask(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:playerLightMask");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<unsigned int>(cc::input::Pad::*)()const>(&cc::input::Pad::playerLightMask));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_power(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:power");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::Power>(cc::input::Pad::*)()const>(&cc::input::Pad::power));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_pressed(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:pressed");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Button)const>(&cc::input::Pad::pressed));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_raw(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:raw");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::RawView>(cc::input::Pad::*)()const>(&cc::input::Pad::raw));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Pad_released(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:released");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::Pad::*)(cc::input::Button)const>(&cc::input::Pad::released));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Pad_triggerLimits(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:triggerLimits");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<cc::input::TriggerLimits>>(cc::input::Pad::*)(cc::input::Side)const>(&cc::input::Pad::triggerLimits));
+	LUA_INVOKE_FOOTER("1");
+}
+int luaReg_cc_gamepad_ccgamepadPad(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_CLS_DEF(cc::input::Pad, "Pad", "cc.gamepad.Pad",
+		nullptr, lua::value_collect<cc::input::Pad>);
+	LUA_METHOD("axis", lua_cc_input_Pad_axis);
+	LUA_METHOD("axisValue", lua_cc_input_Pad_axisValue);
+	LUA_METHOD("contacts", lua_cc_input_Pad_contacts);
+	LUA_METHOD("down", lua_cc_input_Pad_down);
+	LUA_METHOD("fingersPerPad", lua_cc_input_Pad_fingersPerPad);
+	LUA_METHOD("hasAxis", lua_cc_input_Pad_hasAxis);
+	LUA_METHOD("hasButton", lua_cc_input_Pad_hasButton);
+	LUA_METHOD("hasFeature", lua_cc_input_Pad_hasFeature);
+	LUA_METHOD("hasSensor", lua_cc_input_Pad_hasSensor);
+	LUA_METHOD("info", lua_cc_input_Pad_info);
+	LUA_METHOD("inputLayout", lua_cc_input_Pad_inputLayout);
+	LUA_METHOD("label", lua_cc_input_Pad_label);
+	LUA_METHOD("latest", lua_cc_input_Pad_latest);
+	LUA_METHOD("link", lua_cc_input_Pad_link);
+	LUA_METHOD("mapped", lua_cc_input_Pad_mapped);
+	LUA_METHOD("mappingRevision", lua_cc_input_Pad_mappingRevision);
+	LUA_METHOD("mappingStatus", lua_cc_input_Pad_mappingStatus);
+	LUA_METHOD("nominalHz", lua_cc_input_Pad_nominalHz);
+	LUA_METHOD("player", lua_cc_input_Pad_player);
+	LUA_METHOD("playerLightMask", lua_cc_input_Pad_playerLightMask);
+	LUA_METHOD("power", lua_cc_input_Pad_power);
+	LUA_METHOD("pressed", lua_cc_input_Pad_pressed);
+	LUA_METHOD("raw", lua_cc_input_Pad_raw);
+	LUA_METHOD("released", lua_cc_input_Pad_released);
+	LUA_METHOD("triggerLimits", lua_cc_input_Pad_triggerLimits);
+	LUA_CLS_END();
+	lua::register_value_metatable<cc::input::Pad>(lua_S, "cc.gamepad.Pad");
+	LUA_ENTRY_END(2);
+	return 0;
+}
+int lua_cc_input_EventCursor_next(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.EventCursor", "cc.gamepad.EventCursor:next");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::optional<cc::input::GamepadEvent>>(cc::input::EventCursor::*)()>(&cc::input::EventCursor::next));
+	LUA_INVOKE_FOOTER("0");
+}
+int luaReg_cc_gamepad_ccgamepadEventCursor(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_CLS_DEF(cc::input::EventCursor, "EventCursor", "cc.gamepad.EventCursor",
+		nullptr, lua::value_collect<cc::input::EventCursor>);
+	LUA_METHOD("next", lua_cc_input_EventCursor_next);
+	LUA_CLS_END();
+	lua::register_value_metatable<cc::input::EventCursor>(lua_S, "cc.gamepad.EventCursor");
+	LUA_ENTRY_END(2);
+	return 0;
+}
+int lua_cc_input_Frame_cutoffNs(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:cutoffNs");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Frame::TimeResult(cc::input::Frame::*)()const>(&cc::input::Frame::cutoffNs));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Frame_devices(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:devices");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::span<const cc::input::DeviceId>>(cc::input::Frame::*)()const>(&cc::input::Frame::devices));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Frame_events(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:events");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::EventCursor>(cc::input::Frame::*)()const>(&cc::input::Frame::events));
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_input_Frame_find(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:find");
+	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<cc::input::Pad>>(cc::input::Frame::*)(cc::input::DeviceId)const>(&cc::input::Frame::find));
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_input_Frame_tick(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:tick");
+	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Frame::TimeResult(cc::input::Frame::*)()const>(&cc::input::Frame::tick));
+	LUA_INVOKE_FOOTER("0");
+}
+int luaReg_cc_gamepad_ccgamepadFrame(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENTRY("gamepad");
+	LUA_CLS_DEF(cc::input::Frame, "Frame", "cc.gamepad.Frame",
+		nullptr, lua::value_collect<cc::input::Frame>);
+	LUA_METHOD("cutoffNs", lua_cc_input_Frame_cutoffNs);
+	LUA_METHOD("devices", lua_cc_input_Frame_devices);
+	LUA_METHOD("events", lua_cc_input_Frame_events);
+	LUA_METHOD("find", lua_cc_input_Frame_find);
+	LUA_METHOD("tick", lua_cc_input_Frame_tick);
+	LUA_CLS_END();
+	lua::register_value_metatable<cc::input::Frame>(lua_S, "cc.gamepad.Frame");
+	LUA_ENTRY_END(2);
+	return 0;
+}
 int luaReg_cc_gamepad_ccgamepadMappingSource(lua_State* lua_S)
 {
 	LUA_ENTRY("cc");
@@ -331,189 +594,6 @@ int luaReg_cc_gamepad_ccgamepadMappingSource(lua_State* lua_S)
 	LUA_ENUM_ENTRY("Application", cc::input::MappingSource::Application);
 	LUA_ENUM_ENTRY("User", cc::input::MappingSource::User);
 	LUA_ENUM_END();
-	LUA_ENTRY_END(2);
-	return 0;
-}
-int lua_cc_input_gamepad_lua_Pad_axis(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:axis");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<float>>(cc::input::gamepad_lua::Pad::*)(cc::input::Axis)const>(&cc::input::gamepad_lua::Pad::axis));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_axisValue(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:axisValue");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<short>>(cc::input::gamepad_lua::Pad::*)(cc::input::Axis)const>(&cc::input::gamepad_lua::Pad::axisValue));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_contacts(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:contacts");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::span<const cc::input::Contact>>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::contacts));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_down(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:down");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Button)const>(&cc::input::gamepad_lua::Pad::down));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_hasAxis(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasAxis");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Axis)const>(&cc::input::gamepad_lua::Pad::hasAxis));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_hasButton(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasButton");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Button)const>(&cc::input::gamepad_lua::Pad::hasButton));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_hasFeature(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasFeature");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Feature)const>(&cc::input::gamepad_lua::Pad::hasFeature));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_hasSensor(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:hasSensor");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Sensor)const>(&cc::input::gamepad_lua::Pad::hasSensor));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_info(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:info");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<const cc::input::DeviceInfo *>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::info));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_inputLayout(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:inputLayout");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::string_view>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::inputLayout));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_label(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:label");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::string_view>(cc::input::gamepad_lua::Pad::*)(cc::input::Button)const>(&cc::input::gamepad_lua::Pad::label));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_latest(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:latest");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<cc::input::Motion>>(cc::input::gamepad_lua::Pad::*)(cc::input::Sensor)const>(&cc::input::gamepad_lua::Pad::latest));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_mapped(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mapped");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::mapped));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_mappingRevision(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mappingRevision");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<unsigned int>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::mappingRevision));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_mappingStatus(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:mappingStatus");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::string_view>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::mappingStatus));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_player(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:player");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::optional<unsigned int>>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::player));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_power(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:power");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::Power>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::power));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_pressed(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:pressed");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Button)const>(&cc::input::gamepad_lua::Pad::pressed));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Pad_raw(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:raw");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<cc::input::RawView>(cc::input::gamepad_lua::Pad::*)()const>(&cc::input::gamepad_lua::Pad::raw));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Pad_released(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Pad", "cc.gamepad.Pad:released");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<bool>(cc::input::gamepad_lua::Pad::*)(cc::input::Button)const>(&cc::input::gamepad_lua::Pad::released));
-	LUA_INVOKE_FOOTER("1");
-}
-int luaReg_cc_gamepad_ccgamepadPad(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_ENTRY("gamepad");
-	LUA_CLS_DEF(cc::input::gamepad_lua::Pad, "Pad", "cc.gamepad.Pad",
-		nullptr, lua::value_collect<cc::input::gamepad_lua::Pad>);
-	LUA_METHOD("axis", lua_cc_input_gamepad_lua_Pad_axis);
-	LUA_METHOD("axisValue", lua_cc_input_gamepad_lua_Pad_axisValue);
-	LUA_METHOD("contacts", lua_cc_input_gamepad_lua_Pad_contacts);
-	LUA_METHOD("down", lua_cc_input_gamepad_lua_Pad_down);
-	LUA_METHOD("hasAxis", lua_cc_input_gamepad_lua_Pad_hasAxis);
-	LUA_METHOD("hasButton", lua_cc_input_gamepad_lua_Pad_hasButton);
-	LUA_METHOD("hasFeature", lua_cc_input_gamepad_lua_Pad_hasFeature);
-	LUA_METHOD("hasSensor", lua_cc_input_gamepad_lua_Pad_hasSensor);
-	LUA_METHOD("info", lua_cc_input_gamepad_lua_Pad_info);
-	LUA_METHOD("inputLayout", lua_cc_input_gamepad_lua_Pad_inputLayout);
-	LUA_METHOD("label", lua_cc_input_gamepad_lua_Pad_label);
-	LUA_METHOD("latest", lua_cc_input_gamepad_lua_Pad_latest);
-	LUA_METHOD("mapped", lua_cc_input_gamepad_lua_Pad_mapped);
-	LUA_METHOD("mappingRevision", lua_cc_input_gamepad_lua_Pad_mappingRevision);
-	LUA_METHOD("mappingStatus", lua_cc_input_gamepad_lua_Pad_mappingStatus);
-	LUA_METHOD("player", lua_cc_input_gamepad_lua_Pad_player);
-	LUA_METHOD("power", lua_cc_input_gamepad_lua_Pad_power);
-	LUA_METHOD("pressed", lua_cc_input_gamepad_lua_Pad_pressed);
-	LUA_METHOD("raw", lua_cc_input_gamepad_lua_Pad_raw);
-	LUA_METHOD("released", lua_cc_input_gamepad_lua_Pad_released);
-	LUA_CLS_END();
-	lua::register_value_metatable<cc::input::gamepad_lua::Pad>(lua_S, "cc.gamepad.Pad");
-	LUA_ENTRY_END(2);
-	return 0;
-}
-int lua_cc_input_gamepad_lua_Frame_devices(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:devices");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<std::span<const cc::input::DeviceId>>(cc::input::gamepad_lua::Frame::*)()const>(&cc::input::gamepad_lua::Frame::devices));
-	LUA_INVOKE_FOOTER("0");
-}
-int lua_cc_input_gamepad_lua_Frame_find(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:find");
-	LUA_TRY_INVOKE_R(1, static_cast<cc::input::Result<std::optional<cc::input::gamepad_lua::Pad>>(cc::input::gamepad_lua::Frame::*)(cc::input::DeviceId)const>(&cc::input::gamepad_lua::Frame::find));
-	LUA_INVOKE_FOOTER("1");
-}
-int lua_cc_input_gamepad_lua_Frame_tick(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("cc.gamepad.Frame", "cc.gamepad.Frame:tick");
-	LUA_TRY_INVOKE_R(0, static_cast<cc::input::Result<double>(cc::input::gamepad_lua::Frame::*)()const>(&cc::input::gamepad_lua::Frame::tick));
-	LUA_INVOKE_FOOTER("0");
-}
-int luaReg_cc_gamepad_ccgamepadFrame(lua_State* lua_S)
-{
-	LUA_ENTRY("cc");
-	LUA_ENTRY("gamepad");
-	LUA_CLS_DEF(cc::input::gamepad_lua::Frame, "Frame", "cc.gamepad.Frame",
-		nullptr, lua::value_collect<cc::input::gamepad_lua::Frame>);
-	LUA_METHOD("devices", lua_cc_input_gamepad_lua_Frame_devices);
-	LUA_METHOD("find", lua_cc_input_gamepad_lua_Frame_find);
-	LUA_METHOD("tick", lua_cc_input_gamepad_lua_Frame_tick);
-	LUA_CLS_END();
-	lua::register_value_metatable<cc::input::gamepad_lua::Frame>(lua_S, "cc.gamepad.Frame");
 	LUA_ENTRY_END(2);
 	return 0;
 }
@@ -747,6 +827,7 @@ int register_all_cc_gamepad(lua_State* lua_S)
 	luaReg_cc_gamepad_ccgamepadGamepadType(lua_S);
 	luaReg_cc_gamepad_ccgamepadContactPhase(lua_S);
 	luaReg_cc_gamepad_ccgamepadPowerState(lua_S);
+	luaReg_cc_gamepad_ccgamepadLink(lua_S);
 	luaReg_cc_gamepad_ccAudioPlaybackState(lua_S);
 	luaReg_cc_gamepad_ccgamepadHapticStopReason(lua_S);
 	luaReg_cc_gamepad_ccgamepadTriggerMode(lua_S);
@@ -756,9 +837,10 @@ int register_all_cc_gamepad(lua_State* lua_S)
 	luaReg_cc_gamepad_ccgamepadChange(lua_S);
 	luaReg_cc_gamepad_ccgamepadRawKind(lua_S);
 	luaReg_cc_gamepad_ccgamepadGapCause(lua_S);
-	luaReg_cc_gamepad_ccgamepadMappingSource(lua_S);
 	luaReg_cc_gamepad_ccgamepadPad(lua_S);
+	luaReg_cc_gamepad_ccgamepadEventCursor(lua_S);
 	luaReg_cc_gamepad_ccgamepadFrame(lua_S);
+	luaReg_cc_gamepad_ccgamepadMappingSource(lua_S);
 	luaReg_cc_gamepad_ccgamepadSubscription(lua_S);
 	luaReg_cc_gamepad_ccgamepadHapticPlayback(lua_S);
 	luaReg_cc_gamepad_ccgamepad_global_functions(lua_S);

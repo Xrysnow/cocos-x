@@ -3,6 +3,7 @@
 #include "../GamepadBackend.h"
 #include "../mapping/BindingPlan.h"
 #include "../mapping/MappingDatabase.h"
+#include "FrameData.h"
 
 #include <map>
 #include <set>
@@ -17,7 +18,7 @@ struct Endpoint {
 };
 
 struct Device {
-    PadView view;
+    PadState view;
     EndpointKey primary;
     std::map<EndpointKey, Endpoint> endpoints;
     RawState raw;

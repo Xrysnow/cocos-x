@@ -7,7 +7,7 @@ namespace cc::input::detail {
 class FrameBuilder {
 public:
     FrameBuilder(DeviceRegistry&, OutputRouter&, GamepadBackend*);
-    const GamepadFrame& frame() const { return _frame; }
+    Frame frame() const noexcept { return {&_frame, {_epoch, *_epoch}}; }
     void consume(ReportBatch&);
     void publish(std::uint64_t cutoff);
 
@@ -43,8 +43,8 @@ private:
     OutputRouter& _output;
     GamepadBackend* _backend;
     std::shared_ptr<const MappingDatabase> _mapping;
+    FrameData _frame;
     std::shared_ptr<std::uint64_t> _epoch = std::make_shared<std::uint64_t>(0);
-    GamepadFrame _frame;
     std::vector<GamepadEvent> _events;
     const Record* _record = nullptr;
     std::uint32_t _subIndex = 0;

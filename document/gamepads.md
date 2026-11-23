@@ -4,7 +4,7 @@ Use `cc::input::GamepadService` for controller input, mappings, motion and feedb
 
 ## Read a frame and send feedback
 
-Read the current frame during your update. Use `pressed` and `released` for edges and `down` for held state. A short tap can produce both edges in one frame. Keep the `DeviceId` while the controller is connected and look up its view again each tick. The frame, pad views and their spans expire at the next publish. [Frame and events](../cocos/input/gamepad/GamepadFrame.h)
+Read the current `Frame` during your update. Use `pressed` and `released` for edges and `down` for held state. A short tap can produce both edges in one frame. Keep the `DeviceId` while the controller is connected and look up its `Pad` again each tick. Views and cursors report `StaleFrame` after publication or service destruction. Borrowed C++ data shares the view's lifetime. [Frame and events](../cocos/input/gamepad/GamepadFrame.h)
 
 ```cpp
 #include "base/Director.h"
@@ -14,15 +14,21 @@ void updateController(cc::input::DeviceId id)
 {
     using namespace cc::input;
     auto& gamepads = cc::Director::getInstance()->getGamepads();
-    const auto* pad = gamepads.frame().find(id);
-    if (pad && pad->pressed(Button::South) && pad->caps().has(Feature::BodyRumble))
-        gamepads.submit(id, Rumble{0.25f, 0.5f, std::chrono::milliseconds(120)});
+    const auto found = gamepads.frame().find(id);
+    if (!found || !*found.value)
+        return;
+    const auto& pad = **found.value;
+    if (pad.pressed(Button::South).value.value_or(false) &&
+        pad.hasFeature(Feature::BodyRumble).value.value_or(false))
+        gamepads.rumble(id, 0.25f, 0.5f, 120);
 }
 ```
 
 In Lua, use `cc.gamepad.frame():find(id)`, `pad:pressed(cc.gamepad.Button.South)` and `pad:hasFeature(cc.gamepad.Feature.BodyRumble)`. Submit the same effect with `cc.gamepad.rumble(id, 0.25, 0.5, 120)`. Check the returned command ID or error and use the matching `cc.gamepad.EventKind.OutputDone` event (`OutputDone` in C++) to observe completion. A queued command may be superseded, cancelled or fail before reaching the controller. [Output commands](../cocos/input/gamepad/GamepadOutput.h)
 
-- Use `caps()` in C++ or `pad:hasButton/hasAxis/hasSensor/hasFeature` in Lua to check each control, sensor or feedback feature. Capabilities can change after the first native report or after a backend falls back. A battery reading can be unknown or supply a coarse level from 0 to 3.
+In both languages, `frame.events()` creates an independent `EventCursor`. The cursor's `next()` returns an event, an empty value at the end, or `StaleFrame`. Lua also supports `for event in frame:events() do`. Events have a one-based `order` and a signed `offsetUs` from the frame cutoff. Read variant-specific fields from `event.payload`, for example `event.payload.command` for an output completion. An event already returned by a cursor can be kept across frames.
+
+- Use `hasButton`, `hasAxis`, `hasSensor` and `hasFeature` on the `Pad` to check controls, sensors and feedback. Capabilities can change after the first native report or after a backend falls back. A battery reading can be unknown or supply a coarse level from 0 to 3.
 - Use `Rumble` for the low and high body channels, `TriggerRumble` for independent trigger motors, and `AdaptiveTrigger` for supported trigger resistance and vibration modes. Check the corresponding capability for each command. Keep the `subscribeSensor` lease while consuming motion samples. In Lua, `subscribeSensor` and `watchRaw` handles release the subscription when collected. Call `:close()` to release it immediately.
 - A device can expose raw buttons, axes and hats before it has a logical mapping. Use `inputLayout()` with `setLocalBindings` to bind that device's raw indices, or import SDL-format mapping text with `importMappings`. Layouts can differ across transports and backends. Mapping import and the native backends work without linking SDL. [Mapping API](../cocos/input/gamepad/GamepadMapping.h)
 - Use `assignPlayer` to associate the current device with a logical player slot. To change physical player LEDs, submit `PlayerLights` when the controller exposes that capability.

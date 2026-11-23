@@ -1,6 +1,7 @@
-#include "input/gamepad/GamepadFrame.h"
+#include "FrameData.h"
 
 #include <algorithm>
+#include <type_traits>
 
 namespace cc::input {
 namespace {
@@ -17,6 +18,19 @@ constexpr std::array<std::string_view, ButtonCount> positionLabels{
     "Misc 1", "Right Paddle 1", "Left Paddle 1", "Right Paddle 2", "Left Paddle 2", "Touchpad Click",
     "Misc 2", "Misc 3", "Misc 4", "Misc 5", "Misc 6"
 };
+
+std::optional<std::int16_t> readAxis(const detail::PadState& state, Axis axis) noexcept {
+    if (!state._caps.has(axis))
+        return std::nullopt;
+    return state._axes[static_cast<std::size_t>(axis)];
+}
+
+// Entries follow the alternatives in Payload.
+constexpr std::array eventKinds{
+    EventKind::Device, EventKind::Button, EventKind::Axis, EventKind::Raw,
+    EventKind::Contact, EventKind::Motion, EventKind::Power, EventKind::InputGap, EventKind::OutputDone
+};
+static_assert(eventKinds.size() == std::variant_size_v<Payload>);
 
 } // namespace
 
@@ -54,119 +68,179 @@ std::uint32_t Capabilities::playerLightMask() const noexcept {
     return _playerLightMask;
 }
 
-const DeviceInfo& PadView::info() const noexcept {
-    return _info;
+template<class Read>
+auto Pad::query(Read read) const noexcept {
+    using Value = std::invoke_result_t<Read, const detail::PadState&>;
+    if (!_stamp.current())
+        return Result<Value>{{}, Error::StaleFrame};
+    return Result<Value>{read(*_data)};
 }
 
-const Capabilities& PadView::caps() const noexcept {
-    return _caps;
+Result<const DeviceInfo*> Pad::info() const noexcept {
+    return query([](const detail::PadState& state) { return &state._info; });
 }
 
-bool PadView::mapped() const noexcept {
-    return _mapped;
+Result<bool> Pad::mapped() const noexcept {
+    return query([](const detail::PadState& state) { return state._mapped; });
 }
 
-std::string_view PadView::inputLayout() const noexcept {
-    return _info.layout;
+Result<std::string_view> Pad::inputLayout() const noexcept {
+    return query([](const detail::PadState& state) { return std::string_view{state._info.layout}; });
 }
 
-std::string_view PadView::mappingStatus() const noexcept {
-    return _mappingStatus;
+Result<std::string_view> Pad::mappingStatus() const noexcept {
+    return query([](const detail::PadState& state) { return state._mappingStatus; });
 }
 
-std::uint32_t PadView::mappingRevision() const noexcept {
-    return _mappingRevision;
+Result<std::uint32_t> Pad::mappingRevision() const noexcept {
+    return query([](const detail::PadState& state) { return state._mappingRevision; });
 }
 
-bool PadView::down(Button button) const noexcept {
-    return contains(_down, button);
+Result<bool> Pad::down(Button button) const noexcept {
+    return query([button](const detail::PadState& state) { return contains(state._down, button); });
 }
 
-bool PadView::pressed(Button button) const noexcept {
-    return contains(_pressed, button);
+Result<bool> Pad::pressed(Button button) const noexcept {
+    return query([button](const detail::PadState& state) { return contains(state._pressed, button); });
 }
 
-bool PadView::released(Button button) const noexcept {
-    return contains(_released, button);
+Result<bool> Pad::released(Button button) const noexcept {
+    return query([button](const detail::PadState& state) { return contains(state._released, button); });
 }
 
-std::optional<std::int16_t> PadView::axisValue(Axis axis) const noexcept {
-    if (!_caps.has(axis)) {
-        return std::nullopt;
-    }
-    return _axes[static_cast<std::size_t>(axis)];
+Result<RawView> Pad::raw() const noexcept {
+    return query([](const detail::PadState& state) { return RawView{state._rawButtons, state._rawHats, state._rawAxes}; });
 }
 
-std::optional<float> PadView::axis(Axis axis) const noexcept {
-    const auto value = axisValue(axis);
-    if (!value) {
-        return std::nullopt;
-    }
-    const float scale = *value < 0 ? 32768.f : 32767.f;
-    return *value / scale;
+Result<std::span<const Contact>> Pad::contacts() const noexcept {
+    return query([](const detail::PadState& state) { return std::span<const Contact>{state._contacts}; });
 }
 
-std::string_view PadView::label(Button button) const noexcept {
-    const auto index = static_cast<std::size_t>(button);
-    if (index >= _labels.size()) {
-        return {};
-    }
-    if (!_labels[index].empty()) {
-        return _labels[index];
-    }
-    return positionLabels[index];
+Result<Power> Pad::power() const noexcept {
+    return query([](const detail::PadState& state) { return state._power; });
 }
 
-RawView PadView::raw() const noexcept {
-    return {_rawButtons, _rawHats, _rawAxes};
+Result<Link> Pad::link() const noexcept {
+    return query([](const detail::PadState& state) { return state._link; });
 }
 
-std::span<const Contact> PadView::contacts() const noexcept {
-    return _contacts;
+Result<std::optional<unsigned>> Pad::player() const noexcept {
+    return query([](const detail::PadState& state) { return state._player; });
 }
 
-std::optional<Motion> PadView::latest(Sensor sensor) const noexcept {
-    const auto index = static_cast<std::size_t>(sensor);
-    return index < _motion.size() ? _motion[index] : std::nullopt;
+Result<bool> Pad::hasButton(Button key) const noexcept {
+    return query([key](const detail::PadState& state) { return state._caps.has(key); });
 }
 
-Power PadView::power() const noexcept {
-    return _power;
+Result<bool> Pad::hasAxis(Axis key) const noexcept {
+    return query([key](const detail::PadState& state) { return state._caps.has(key); });
 }
 
-Link PadView::link() const noexcept {
-    return _link;
+Result<bool> Pad::hasSensor(Sensor key) const noexcept {
+    return query([key](const detail::PadState& state) { return state._caps.has(key); });
 }
 
-std::optional<unsigned> PadView::player() const noexcept {
-    return _player;
+Result<bool> Pad::hasFeature(Feature key) const noexcept {
+    return query([key](const detail::PadState& state) { return state._caps.has(key); });
 }
 
-std::uint64_t GamepadFrame::tick() const noexcept {
-    return _tick;
+Result<std::span<const unsigned>> Pad::fingersPerPad() const noexcept {
+    return query([](const detail::PadState& state) { return state._caps.fingersPerPad(); });
 }
 
-std::uint64_t GamepadFrame::cutoffNs() const noexcept {
-    return _cutoffNs;
+Result<std::optional<float>> Pad::nominalHz(Sensor sensor) const noexcept {
+    return query([sensor](const detail::PadState& state) { return state._caps.nominalHz(sensor); });
 }
 
-std::span<const DeviceId> GamepadFrame::devices() const noexcept {
-    return _devices;
+Result<std::optional<TriggerLimits>> Pad::triggerLimits(Side side) const noexcept {
+    return query([side](const detail::PadState& state) { return state._caps.triggerLimits(side); });
 }
 
-const PadView* GamepadFrame::find(DeviceId id) const noexcept {
-    const auto pad = std::find_if(_pads.begin(), _pads.end(), [id](const PadView& candidate) {
-        return candidate.info().id == id;
+Result<std::uint32_t> Pad::playerLightMask() const noexcept {
+    return query([](const detail::PadState& state) { return state._caps.playerLightMask(); });
+}
+
+Result<std::optional<std::int16_t>> Pad::axisValue(Axis axis) const noexcept {
+    return query([axis](const detail::PadState& state) { return readAxis(state, axis); });
+}
+
+Result<std::optional<float>> Pad::axis(Axis axis) const noexcept {
+    return query([axis](const detail::PadState& state) -> std::optional<float> {
+        const auto value = readAxis(state, axis);
+        if (!value)
+            return std::nullopt;
+        const float scale = *value < 0 ? 32768.f : 32767.f;
+        return *value / scale;
     });
-    return pad != _pads.end() ? &*pad : nullptr;
 }
 
-std::span<const GamepadEvent> GamepadFrame::events() const noexcept {
-    return _events;
+Result<std::string_view> Pad::label(Button button) const noexcept {
+    return query([button](const detail::PadState& state) -> std::string_view {
+        const auto index = static_cast<std::size_t>(button);
+        if (index >= state._labels.size())
+            return {};
+        if (!state._labels[index].empty())
+            return state._labels[index];
+        return positionLabels[index];
+    });
 }
 
-FrameStamp GamepadFrame::stamp() const noexcept {
-    return {_epoch, _tick};
+Result<std::optional<Motion>> Pad::latest(Sensor sensor) const noexcept {
+    return query([sensor](const detail::PadState& state) {
+        const auto index = static_cast<std::size_t>(sensor);
+        return index < state._motion.size() ? state._motion[index] : std::nullopt;
+    });
+}
+
+Frame::TimeResult Frame::tick() const noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    return {_stamp.tick};
+}
+
+Frame::TimeResult Frame::cutoffNs() const noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    return {_data->_cutoffNs};
+}
+
+Result<std::span<const DeviceId>> Frame::devices() const noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    return {std::span<const DeviceId>{_data->_devices}};
+}
+
+Result<std::optional<Pad>> Frame::find(DeviceId id) const noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    const auto pad = std::ranges::find(_data->_pads, id, [](const detail::PadState& state) {
+        return state._info.id;
+    });
+    if (pad == _data->_pads.end())
+        return {std::optional<Pad>{}};
+    return {std::optional{Pad(&*pad, _stamp)}};
+}
+
+Result<EventCursor> Frame::events() const noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    return {EventCursor(_data, _stamp)};
+}
+
+Result<std::optional<GamepadEvent>> EventCursor::next() noexcept {
+    if (!_stamp.current())
+        return {{}, Error::StaleFrame};
+    if (_index == _data->_events.size())
+        return {std::optional<GamepadEvent>{}};
+
+    auto event = _data->_events[_index++];
+    event.kind = eventKinds[event.payload.index()];
+    event.order = _index;
+    const auto cutoff = _data->_cutoffNs;
+    const double delta = event.receivedNs >= cutoff ? static_cast<double>(event.receivedNs - cutoff)
+                                                  : -static_cast<double>(cutoff - event.receivedNs);
+    event.offsetUs = delta / 1000.0;
+    return {std::optional{std::move(event)}};
 }
 
 } // namespace cc::input

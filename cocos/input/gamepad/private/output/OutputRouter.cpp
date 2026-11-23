@@ -124,7 +124,7 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
         return {{}, Error::Disconnected};
     if (!_backend)
         return {{}, Error::Unsupported};
-    const auto request = validate(command, device->view.caps());
+    const auto request = validate(command, device->view._caps);
     if (request.error != Error::None)
         return {{}, request.error};
     if (_commandId == std::numeric_limits<std::uint32_t>::max())
