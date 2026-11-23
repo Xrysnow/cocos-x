@@ -66,6 +66,7 @@ std::unique_ptr<LinuxSwitchHid> LinuxSwitchHid::open(const std::string& path, En
     }
     EndpointDescriptor descriptor;
     descriptor.name = switchName(*model);
+    descriptor.controllerType = switchGamepadType(*model);
     descriptor.vendor = static_cast<std::uint16_t>(info.vendor);
     descriptor.product = static_cast<std::uint16_t>(info.product);
     descriptor.link = info.bustype == BUS_USB ? Link::Wired : Link::Wireless;

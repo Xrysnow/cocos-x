@@ -71,6 +71,7 @@ struct EndpointDescriptor {
     Power power{};
     Link link = Link::Unknown;
     HapticAudioIdentity hapticAudio;
+    GamepadType controllerType = GamepadType::Unknown;
 };
 
 inline std::uint64_t nowNs()

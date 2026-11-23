@@ -129,6 +129,17 @@ std::optional<SwitchModel> switchModel(unsigned vendor, unsigned product)
     return {};
 }
 
+GamepadType switchGamepadType(SwitchModel model)
+{
+    switch (model)
+    {
+    case SwitchModel::JoyConLeft: return GamepadType::JoyConLeft;
+    case SwitchModel::JoyConRight: return GamepadType::JoyConRight;
+    case SwitchModel::Pro: return GamepadType::SwitchPro;
+    }
+    return GamepadType::Unknown;
+}
+
 const char* switchName(SwitchModel model)
 {
     switch (model)

@@ -1,5 +1,6 @@
 #include "../PlatformGamepadBackend.h"
 #include "../drivers/SonyHidReports.h"
+#include "../drivers/XboxBluetoothReports.h"
 #include "../DeviceGuid.h"
 
 #include "platform/android/jni/JniHelper.h"
@@ -351,6 +352,8 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
     if (descriptor.name.empty()) descriptor.name = "Android Gamepad";
     if (vendor > 0 && vendor <= 65535) descriptor.vendor = static_cast<std::uint16_t>(vendor);
     if (product > 0 && product <= 65535) descriptor.product = static_cast<std::uint16_t>(product);
+    if (descriptor.vendor && descriptor.product && isKnownXboxProduct(*descriptor.vendor, *descriptor.product))
+        descriptor.controllerType = GamepadType::XboxCompatible;
     descriptor.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble), feedback);
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Accel), (additional & 1) != 0);
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Gyro), (additional & 2) != 0);
@@ -546,6 +549,7 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeOpen(
     auto& descriptor = device.descriptor;
     const bool ds4 = *model == SonyHidModel::DualShock4;
     descriptor.name = sonyHidName(*model);
+    descriptor.controllerType = sonyGamepadType(*model);
     descriptor.vendor = 0x054c;
     descriptor.product = static_cast<std::uint16_t>(product);
     descriptor.link = Link::Wired;

@@ -32,7 +32,7 @@ namespace cc::input::detail {
 
 bool isWinWgiXboxProduct(unsigned vendor, unsigned product)
 {
-    return isMicrosoftXboxGamepad(vendor, product) || (vendor == 0x045e && product == 0x028e);
+    return isKnownXboxProduct(vendor, product);
 }
 
 #ifdef CC_GAMEPAD_WGI_ABI
@@ -341,6 +341,7 @@ std::optional<Device> openDevice(const WgiRuntime& runtime, ComPtr<wgi::IGamepad
     auto& descriptor = result.descriptor;
     descriptor.vendor = vendor;
     descriptor.product = product;
+    descriptor.controllerType = GamepadType::XboxCompatible;
     descriptor.name = runtime.deviceName(raw.Get());
     if (descriptor.name.empty()) descriptor.name = "Xbox Controller";
     boolean wireless = false;

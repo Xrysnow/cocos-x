@@ -594,7 +594,10 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     if (!pad.identity.unique.empty())
         descriptor.serial = pad.identity.unique;
     descriptor.link = id.bustype == BUS_BLUETOOTH ? Link::Wireless : id.bustype == BUS_USB ? Link::Wired : Link::Unknown;
-    describeControls(pad, keys, abs, nodeDriver(node) == "xpad");
+    const bool xpad = nodeDriver(node) == "xpad";
+    if (xpad || isKnownXboxProduct(id.vendor, id.product))
+        descriptor.controllerType = GamepadType::XboxCompatible;
+    describeControls(pad, keys, abs, xpad);
     if (pad.buttons.empty() || !pad.sample())
         return {};
     Bits<FF_MAX> feedback;

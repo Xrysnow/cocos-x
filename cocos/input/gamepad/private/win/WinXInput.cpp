@@ -77,6 +77,7 @@ EndpointDescriptor describe(XInputApi& api, DWORD index)
     const bool hasCaps = api.capabilities(index, caps) == ERROR_SUCCESS;
     EndpointDescriptor result;
     result.name = makeName(caps.SubType);
+    result.controllerType = GamepadType::XboxCompatible;
     auto& layout = result.layout;
     layout.id = "win-xinput-sdl3-v1";
     layout.buttonCount = static_cast<unsigned>(buttonMasks.size()); // Public XInput has no Guide.

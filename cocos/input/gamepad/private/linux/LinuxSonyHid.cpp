@@ -103,6 +103,7 @@ std::unique_ptr<LinuxSonyHid> LinuxSonyHid::open(const std::string& path, Endpoi
     const bool ds4 = *model == SonyHidModel::DualShock4;
     const bool edge = *model == SonyHidModel::DualSenseEdge;
     descriptor.name = sonyHidName(*model);
+    descriptor.controllerType = sonyGamepadType(*model);
     descriptor.vendor = static_cast<std::uint16_t>(info.vendor);
     descriptor.product = static_cast<std::uint16_t>(info.product);
     descriptor.link = info.bustype == BUS_USB ? Link::Wired : Link::Wireless;

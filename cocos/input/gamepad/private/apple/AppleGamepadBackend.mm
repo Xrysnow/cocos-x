@@ -187,19 +187,23 @@ struct Device {
             NSString* name = controller.vendorName ?: (category ?: @"MFi Gamepad");
             const bool dualSenseEdge = [category isEqualToString:@"DualSense Edge"] ||
                 [name hasPrefix:@"DualSense Edge"];
+            const bool dualSense = [category isEqualToString:@"DualSense"];
             if ([name hasPrefix:@"Backbone One"])
             {
                 vendor = 0x358a;
-                product = [category isEqualToString:@"DualSense"] ? 0x0104 : 0x0103;
+                product = dualSense ? 0x0104 : 0x0103;
             }
-            else if (dualSenseEdge || [category isEqualToString:@"DualShock 4"] || [category isEqualToString:@"DualSense"])
+            else if (dualSenseEdge || dualSense || [category isEqualToString:@"DualShock 4"])
             {
                 vendor = 0x054c;
-                product = dualSenseEdge ? 0x0df2 : [category isEqualToString:@"DualSense"] ? 0x0ce6 : 0x09cc;
+                product = dualSenseEdge ? 0x0df2 : dualSense ? 0x0ce6 : 0x09cc;
+                descriptor.controllerType = dualSenseEdge ? GamepadType::DualSenseEdge :
+                    dualSense ? GamepadType::DualSense : GamepadType::DualShock4;
             }
             else if ([category isEqualToString:@"Xbox One"])
             {
                 vendor = 0x045e;
+                descriptor.controllerType = GamepadType::XboxCompatible;
                 if (profile.buttons[GCInputXboxPaddleOne]) { product = 0x0b05; name = @"Xbox One Elite 2 Controller"; }
                 else if (profile.buttons[@"Button Share"]) { product = 0x0b13; name = @"Xbox Series X Controller"; }
                 else { product = 0x02e0; name = @"Xbox One Wireless Controller"; }
@@ -207,8 +211,11 @@ struct Device {
             else if ([category hasPrefix:@"Nintendo Switch Joy-Con"] || [category isEqualToString:@"Switch Pro Controller"])
             {
                 vendor = 0x057e;
-                product = [category hasSuffix:@"(L)"] ? 0x2006 : [category hasSuffix:@"(R)"] ? 0x2007 :
-                          joyConPair ? 0x2008 : 0x2009;
+                const bool left = [category hasSuffix:@"(L)"];
+                const bool right = [category hasSuffix:@"(R)"];
+                product = left ? 0x2006 : right ? 0x2007 : joyConPair ? 0x2008 : 0x2009;
+                descriptor.controllerType = left ? GamepadType::JoyConLeft : right ? GamepadType::JoyConRight :
+                    joyConPair ? GamepadType::JoyConPair : GamepadType::SwitchPro;
             }
 
             auto& layout = descriptor.layout;

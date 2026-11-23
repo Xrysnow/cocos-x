@@ -7,6 +7,7 @@ namespace cc::input::detail {
 enum class SwitchModel : std::uint8_t { JoyConLeft = 1, JoyConRight = 2, Pro = 3 };
 std::optional<SwitchModel> switchModel(unsigned vendor, unsigned product);
 const char* switchName(SwitchModel model);
+GamepadType switchGamepadType(SwitchModel model);
 void configureSwitchLayout(RawLayout& layout, SwitchModel model);
 
 struct SwitchInput {

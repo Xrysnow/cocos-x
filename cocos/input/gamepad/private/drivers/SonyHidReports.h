@@ -16,6 +16,17 @@ inline std::optional<SonyHidModel> sonyHidModel(unsigned vendor, unsigned produc
     return {};
 }
 
+inline GamepadType sonyGamepadType(SonyHidModel model)
+{
+    switch (model)
+    {
+    case SonyHidModel::DualShock4: return GamepadType::DualShock4;
+    case SonyHidModel::DualSense: return GamepadType::DualSense;
+    case SonyHidModel::DualSenseEdge: return GamepadType::DualSenseEdge;
+    }
+    return GamepadType::Unknown;
+}
+
 inline const char* sonyHidName(SonyHidModel model)
 {
     switch (model)

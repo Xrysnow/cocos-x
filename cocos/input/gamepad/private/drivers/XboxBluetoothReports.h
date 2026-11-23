@@ -7,6 +7,7 @@ namespace cc::input::detail {
 enum class XboxBluetoothModel { OneS, Series, Elite2 };
 std::optional<XboxBluetoothModel> xboxBluetoothModel(unsigned vendor, unsigned product);
 bool isMicrosoftXboxGamepad(unsigned vendor, unsigned product);
+bool isKnownXboxProduct(unsigned vendor, unsigned product);
 const char* xboxBluetoothName(XboxBluetoothModel model);
 void configureXboxBluetoothLayout(RawLayout& layout, XboxBluetoothModel model);
 bool xboxBluetoothHasRumbleOutput(std::span<const std::uint8_t> hidDescriptor);

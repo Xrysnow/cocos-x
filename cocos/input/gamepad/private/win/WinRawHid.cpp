@@ -757,6 +757,7 @@ void initializeXboxBluetooth(Device& device, const HIDP_CAPS& caps, std::uint16_
     auto& layout = descriptor.layout;
     describe(device, vendor, product, version, file, {}, false);
     descriptor.name = xboxBluetoothName(*model);
+    descriptor.controllerType = GamepadType::XboxCompatible;
     descriptor.link = Link::Wireless;
     layout.id = "win-xbox-bluetooth-v1";
     layout.guid = DeviceGuid::make(5, vendor, product, version, {}, descriptor.name, 'h');
@@ -792,6 +793,7 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
             const bool wireless = transport == WinHidBus::Bluetooth;
             describe(device, vendor, product, version, file, {}, false);
             descriptor.name = switchName(*nintendo);
+            descriptor.controllerType = switchGamepadType(*nintendo);
             descriptor.link = wireless ? Link::Wireless : Link::Wired;
             layout.id = wireless ? "win-switch-bluetooth-v1" : "win-switch-usb-v1";
             layout.id += *nintendo == SwitchModel::Pro ? "/pro" :
@@ -841,8 +843,11 @@ bool initialize(Device& device, std::uint16_t vendor, std::uint16_t product, std
     device.state.axesKnown.resize(layout.axisCount);
     device.state.hats.resize(layout.hatCount);
     if (model)
+    {
         device.sony = std::make_unique<WinSonyGamepad>(device.path, caps, descriptor, *model,
             bluetooth ? DualSenseTransport::Bluetooth : DualSenseTransport::Usb, bus);
+        descriptor.controllerType = sonyGamepadType(*model);
+    }
     return true;
 }
 

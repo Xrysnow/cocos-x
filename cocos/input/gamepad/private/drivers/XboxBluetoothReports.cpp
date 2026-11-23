@@ -156,6 +156,11 @@ bool isMicrosoftXboxGamepad(unsigned vendor, unsigned product)
     }
 }
 
+bool isKnownXboxProduct(unsigned vendor, unsigned product)
+{
+    return isMicrosoftXboxGamepad(vendor, product) || (vendor == microsoftVendor && product == 0x028e);
+}
+
 const char* xboxBluetoothName(XboxBluetoothModel model)
 {
     switch (model)

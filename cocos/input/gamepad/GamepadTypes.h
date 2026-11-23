@@ -42,6 +42,10 @@ enum class Error {
     NoMapping, BackendFailure, QueueFull, StaleFrame
 };
 enum class TimeQuality { ReceiveOnly, ConvertedOS, CalibratedDevice };
+enum class GamepadType : std::uint8_t {
+    Unknown, XboxCompatible, DualShock4, DualSense, DualSenseEdge,
+    SwitchPro, JoyConLeft, JoyConRight, JoyConPair
+};
 
 inline constexpr unsigned ButtonCount = static_cast<unsigned>(Button::Misc6) + 1;
 inline constexpr unsigned AxisCount = static_cast<unsigned>(Axis::RightTrigger) + 1;
@@ -65,6 +69,7 @@ struct DeviceInfo {
     std::optional<std::uint16_t> product;
     std::optional<std::uint16_t> version;
     std::optional<std::string> serial;
+    GamepadType controllerType = GamepadType::Unknown; // Reported by the primary input endpoint.
 };
 
 struct TriggerLimits {

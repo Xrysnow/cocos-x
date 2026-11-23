@@ -129,6 +129,7 @@ void DeviceRegistry::setPrimary(Device& device, EndpointKey key, RawBaseline bas
     info.product = descriptor.product;
     info.version = descriptor.version;
     info.serial = descriptor.serial;
+    info.controllerType = descriptor.controllerType;
     device.raw = std::move(baseline.state);
     device.view._power = descriptor.power;
     device.view._link = descriptor.link;
