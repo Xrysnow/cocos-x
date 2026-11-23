@@ -1,5 +1,5 @@
-#include "AudioPool.h"
-#include "AudioSource.h"
+#include "audio/AudioPool.h"
+#include "audio/AudioSource.h"
 #include <new>
 
 NS_CC_BEGIN
@@ -17,7 +17,7 @@ AudioPool::~AudioPool()
 {
 }
 
-bool AudioPool::init()
+bool AudioPool::init(bool frontStereo)
 {
 	// Reset state so it can be called again
 	totalSources = 0;
@@ -50,24 +50,32 @@ bool AudioPool::init()
 		return false;
 	}
 
-#ifdef AL_SOFT_direct_channels
-	ALboolean hasext = alIsExtensionPresent("AL_SOFT_direct_channels");
-#endif
-
 	// Make all sources available initially.
 	for (int i = 0; i < totalSources; i++)
-	{
-#ifdef AL_SOFT_direct_channels
-		if (hasext)
-		{
-			// Bypass virtualization of speakers for multi-channel sources in OpenAL Soft.
-			alSourcei(sources[i], AL_DIRECT_CHANNELS_SOFT, AL_TRUE);
-		}
-#endif
-
 		available.push(sources[i]);
-	}
+	setFrontStereo(frontStereo);
 	return true;
+}
+
+void AudioPool::setFrontStereo(bool enabled)
+{
+#ifdef AL_SOFT_direct_channels
+	if (!alIsExtensionPresent("AL_SOFT_direct_channels"))
+		return;
+	ALint mode = AL_TRUE;
+	if (enabled)
+	{
+		mode = AL_FALSE;
+#ifdef AL_SOFT_direct_channels_remix
+		if (alIsExtensionPresent("AL_SOFT_direct_channels_remix"))
+			mode = AL_REMIX_UNMATCHED_SOFT;
+#endif
+	}
+	for (int i = 0; i < totalSources; ++i)
+		alSourcei(sources[i], AL_DIRECT_CHANNELS_SOFT, mode);
+#else
+	(void)enabled;
+#endif
 }
 
 void AudioPool::end()

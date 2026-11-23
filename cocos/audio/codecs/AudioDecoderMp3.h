@@ -1,7 +1,7 @@
 #pragma once
 #include "platform/PlatformMacros.h"
-#include "AudioDecoder.h"
-#include "dr_mp3.h"
+#include "audio/AudioDecoder.h"
+#include "third_party/dr_mp3.h"
 
 NS_CC_BEGIN
 	class CC_DLL AudioDecoderMp3 : public AudioDecoder

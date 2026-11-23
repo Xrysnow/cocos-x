@@ -7,8 +7,12 @@
 #include <vector>
 
 NS_CC_BEGIN
+	class AudioSource;
+	struct AudioDirectInput;
+
 	class CC_DLL AudioDecoder : public cc::Ref
 	{
+		friend AudioDirectInput captureAudioDirectInput(const AudioSource& source);
 	public:
 		enum class DecoderType
 		{
@@ -49,6 +53,9 @@ NS_CC_BEGIN
 		static DecoderType getDecoderTypeFromPath(const std::string& path);
 
 		static cc::IntrusivePtr<AudioDecoder> createFromStream(AudioStream* s, size_t bufferSize, DecoderType type);
+		// The initial stream and each independent reader must represent the same input.
+		static cc::IntrusivePtr<AudioDecoder> createFromReopenableStream(AudioStream* s, size_t bufferSize,
+			DecoderType type, AudioStream::ReopenFactory reopen);
 		static cc::IntrusivePtr<AudioDecoder> createFromFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
 		static cc::IntrusivePtr<AudioDecoder> createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type = DecoderType::UNKNOWN);
 
@@ -142,6 +149,7 @@ NS_CC_BEGIN
 		 * @return False if there is more data, true on EOF.
 		 **/
 		virtual bool isFinished();
+		bool hasIoError() const noexcept { return stream && stream->hasIoError(); }
 
 		/**
 		 * Gets the number of channels in a stream. Supported values are 1 (mono) or 2 (stereo).
@@ -197,5 +205,8 @@ NS_CC_BEGIN
 		uint64_t loopEnd = 0;
 		// Set this to true when eof has been reached.
 		bool eof = false;
+
+	private:
+		AudioStream::ReopenFactory reopen;
 	};
 NS_CC_END

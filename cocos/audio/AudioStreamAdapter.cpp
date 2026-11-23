@@ -6,13 +6,22 @@
 NS_CC_BEGIN
 
 AudioStreamAdapter::AudioStreamAdapter(RefConstructionToken token, io::StreamPtr stream)
-    : AudioStream(token), _stream(std::move(stream))
+    : AudioStreamAdapter(token, std::move(stream), {})
+{}
+
+AudioStreamAdapter::AudioStreamAdapter(RefConstructionToken token, io::StreamPtr stream, ReopenFactory reopen)
+    : AudioStream(token), _stream(std::move(stream)), _reopen(std::move(reopen))
 {
     if (!_stream || getReferenceThreading() != RefThreading::Atomic)
         throw std::invalid_argument("AudioStreamAdapter requires Atomic ownership and a stream");
 }
 
 io::Result<ThreadSafeRefPtr<AudioStreamAdapter>> AudioStreamAdapter::create(io::StreamPtr stream)
+{
+    return create(std::move(stream), {});
+}
+
+io::Result<ThreadSafeRefPtr<AudioStreamAdapter>> AudioStreamAdapter::create(io::StreamPtr stream, ReopenFactory reopen)
 {
     using Output = io::Result<ThreadSafeRefPtr<AudioStreamAdapter>>;
     if (!stream || !stream->isOpen())
@@ -28,7 +37,7 @@ io::Result<ThreadSafeRefPtr<AudioStreamAdapter>> AudioStreamAdapter::create(io::
         return Output::failure({io::ErrorCode::OutOfRange});
     try
     {
-        return Output::success(makeThreadSafeRef<AudioStreamAdapter>(std::move(stream)));
+        return Output::success(makeThreadSafeRef<AudioStreamAdapter>(std::move(stream), std::move(reopen)));
     }
     catch (const std::bad_alloc&) { return Output::failure({io::ErrorCode::OutOfMemory}); }
 }

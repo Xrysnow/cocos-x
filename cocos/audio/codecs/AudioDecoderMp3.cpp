@@ -1,5 +1,7 @@
 #define DR_MP3_IMPLEMENTATION
 #include "AudioDecoderMp3.h"
+#include <algorithm>
+#include <mutex>
 
 NS_CC_BEGIN
 
@@ -75,9 +77,10 @@ uint32_t getID3v2HeaderSize(const ID3v2Header& h)
 /* big endian extract */
 static uint32_t ExtractI4(AudioStream* stream)
 {
-	uint8_t buf[4];
-	stream->read(buf, 4);
-	int x;
+	uint8_t buf[4]{};
+	if (!stream->read(buf, sizeof(buf)))
+		return 0;
+	uint32_t x;
 	x = buf[0];
 	x <<= 8;
 	x |= buf[1];
@@ -88,20 +91,21 @@ static uint32_t ExtractI4(AudioStream* stream)
 	return x;
 }
 
-void GetVbrTag(AudioStream* stream, int& frames, int& bytes, int& enc_delay, int& enc_padding)
+static void GetVbrTag(AudioStream* stream, uint32_t& frames, int& enc_delay, int& enc_padding)
 {
 	int head_flags = ExtractI4(stream);
 	if (head_flags & 0x0001)
 		frames = ExtractI4(stream);
 	if (head_flags & 0x0002)
-		bytes = ExtractI4(stream);
+		stream->seek(AudioStream::SeekOrigin::CURRENT, 4);
 	if (head_flags & 0x0004)
 		stream->seek(AudioStream::SeekOrigin::CURRENT, 100);
 	if (head_flags & 0x0008)
 		stream->seek(AudioStream::SeekOrigin::CURRENT, 4);
 	stream->seek(AudioStream::SeekOrigin::CURRENT, 21);
-	uint8_t buf[3];
-	stream->read(buf, 3);
+	uint8_t buf[3]{};
+	if (!stream->read(buf, sizeof(buf)))
+		return;
 	enc_delay = buf[0] << 4;
 	enc_delay += buf[1] >> 4;
 	enc_padding = (buf[1] & 0x0F) << 8;
@@ -154,64 +158,60 @@ bool AudioDecoderMp3::init(AudioStream* src)
 	//audioInfo.bytesPerFrame = flac->bitsPerSample / 8;
 	audioInfo.bytesPerFrame = 2 * mp3->channels;
 	audioInfo.channelCount = mp3->channels;
+	std::unique_lock streamLock(*stream);
 	audioInfo.totalFrames = drmp3_get_pcm_frame_count(mp3);
+	if (stream->hasIoError())
+		return false;
 
-	ID3v2Header h;
-	uint8_t hdr[4];
-	bool findFrame = true;
-	stream->lock();
+	ID3v2Header h{};
+	uint8_t hdr[4]{};
 	stream->seek(AudioStream::SeekOrigin::BEGINNING, 0);
 	stream->read((uint8_t*)&h, sizeof(h));
 	auto hsize = getID3v2HeaderSize(h);
-	stream->seek(AudioStream::SeekOrigin::BEGINNING, hsize);
-	stream->read(hdr, sizeof(hdr));
-	if (!drmp3_hdr_valid(hdr))
+	const auto readHeader = [&] {
+		return stream->seek(AudioStream::SeekOrigin::BEGINNING, hsize) &&
+			stream->read(hdr, sizeof(hdr)) && drmp3_hdr_valid(hdr);
+	};
+	bool findFrame = readHeader();
+	if (!findFrame)
 	{
 		hsize += 10;
-		stream->seek(AudioStream::SeekOrigin::BEGINNING, hsize);
-		stream->read(hdr, sizeof(hdr));
-		if (!drmp3_hdr_valid(hdr))
-			findFrame = false;
+		findFrame = readHeader();
 	}
 	if (findFrame)
 	{
 		static const uint8_t info_hdr_offset[2][2] = {{21, 13}, {36, 21}};
 		const auto offset = hsize + info_hdr_offset[!!DRMP3_HDR_TEST_MPEG1(hdr)][!!DRMP3_HDR_IS_MONO(hdr)];
 		stream->seek(AudioStream::SeekOrigin::BEGINNING, offset);
-		uint8_t k[4];
+		uint8_t k[4]{};
 		stream->read(k, 4);
 		const std::string key{ (const char*)k,4 };
 		if (key == "Info" || key == "Xing")
 		{
-			int frames, bytes, enc_delay, enc_padding;
-			GetVbrTag(stream, frames, bytes, enc_delay, enc_padding);
+			uint32_t frames = 0;
+			int enc_delay = -1;
+			int enc_padding = -1;
+			GetVbrTag(stream, frames, enc_delay, enc_padding);
 			if (frames > 0 && enc_delay >= 0 && enc_padding >= 0)
 			{
-				// should be CBR
 				const auto begin = enc_delay + 529;
-				const auto fullend = frames * drmp3_hdr_frame_samples(hdr);
+				const auto fullend = static_cast<int64_t>(frames) * drmp3_hdr_frame_samples(hdr);
 				const auto end = fullend - enc_padding + 529;
-				auto x = fullend;
-				if (x > end)
+				const auto count = std::min(fullend, end) - begin;
+				if (count > 0 && count <= audioInfo.totalFrames)
 				{
-					if (x < fullend)
-						x = end - begin;
-					else
-						x = x - (fullend - end + begin);
+					audioInfo.totalFrames = count;
+					frameBegin = begin;
+					frameEnd = begin + count;
 				}
-				else
-					x = x - begin;
-				audioInfo.totalFrames = x;
-				frameBegin = begin;
-				frameEnd = begin + x;
 			}
 		}
 	}
 	// Header probing moves the underlying stream independently of drmp3's
 	// compressed-data cache. Reset both before seeking past encoder delay.
 	const auto reset = drmp3_seek_to_pcm_frame(mp3, 0);
-	stream->unlock();
-	return reset && seek(0);
+	streamLock.unlock();
+	return reset && !stream->hasIoError() && seek(0);
 }
 
 cc::IntrusivePtr<AudioDecoderMp3> AudioDecoderMp3::create(AudioStream* src, size_t bufferSize)

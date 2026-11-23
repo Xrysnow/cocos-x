@@ -1,12 +1,12 @@
 #include "AudioDecoder.h"
 #include "AudioStream.h"
-#include "AudioDecoderWav.h"
+#include "codecs/AudioDecoderWav.h"
 #ifdef AUDIO_USE_LIBVORBIS
-#include "AudioDecoderVorbis.h"
+#include "codecs/AudioDecoderVorbis.h"
 #endif
-#include "AudioDecoderVorbisStb.h"
-#include "AudioDecoderFlac.h"
-#include "AudioDecoderMp3.h"
+#include "codecs/AudioDecoderVorbisStb.h"
+#include "codecs/AudioDecoderFlac.h"
+#include "codecs/AudioDecoderMp3.h"
 #include "AudioCommon.h"
 #include "platform/FileUtils.h"
 #include <algorithm>
@@ -82,14 +82,25 @@ cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromFile(const std::string& p
 {
 	if (type == DecoderType::UNKNOWN)
 		type = getDecoderTypeFromPath(path);
-	return createFromStream(AudioStream::createFromFile(path).get(), bufferSize, type);
+	const auto input = AudioStream::createFromFile(path);
+	return input ? createFromReopenableStream(input.get(), bufferSize, type, input->getReopenFactory()) : nullptr;
 }
 
 cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromLocalFile(const std::string& path, size_t bufferSize, DecoderType type)
 {
 	if (type == DecoderType::UNKNOWN)
 		type = getDecoderTypeFromPath(path);
-	return createFromStream(AudioStream::createFromLocalFile(path).get(), bufferSize, type);
+	const auto input = AudioStream::createFromLocalFile(path);
+	return input ? createFromReopenableStream(input.get(), bufferSize, type, input->getReopenFactory()) : nullptr;
+}
+
+cc::IntrusivePtr<AudioDecoder> AudioDecoder::createFromReopenableStream(AudioStream* input, size_t bufferSize,
+	DecoderType type, AudioStream::ReopenFactory reopen)
+{
+	auto decoder = createFromStream(input, bufferSize, type);
+	if (decoder)
+		decoder->reopen = std::move(reopen);
+	return decoder;
 }
 
 const uint8_t* AudioDecoder::getBuffer() const
@@ -104,7 +115,12 @@ bool AudioDecoder::seekTime(double seconds)
 
 cc::IntrusivePtr<AudioDecoder> AudioDecoder::clone()
 {
-	//BUG: current implementation dose not support play from the same stream
+	if (reopen)
+	{
+		const auto input = reopen();
+		return createFromReopenableStream(input.get(), bufferSize, decoderType, reopen);
+	}
+	// A bare legacy stream has one shared cursor.
 	return createFromStream(stream, bufferSize, decoderType);
 }
 

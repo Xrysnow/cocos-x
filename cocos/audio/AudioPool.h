@@ -15,7 +15,8 @@ NS_CC_BEGIN
 		friend class AudioSource;
 		AudioPool();
 		virtual ~AudioPool();
-		bool init();
+		bool init(bool frontStereo);
+		void setFrontStereo(bool enabled);
 		void end();
 	public:
 

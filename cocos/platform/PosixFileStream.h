@@ -15,6 +15,7 @@
 #endif
 #include <fcntl.h>
 #include <functional>
+#include <optional>
 
 #include "platform/PlatformMacros.h"
 
@@ -134,6 +135,20 @@ public:
     bool canSync() const noexcept override;
     int resize(int64_t length) override;
     int sync() override;
+
+    struct Identity
+    {
+        uint64_t volume;
+        uint64_t fileLow;
+        uint64_t fileHigh;
+        int64_t length;
+        int64_t modified;
+        int64_t modifiedFraction;
+        int64_t changed;
+        int64_t changedFraction;
+        bool operator==(const Identity&) const = default;
+    };
+    std::optional<Identity> getIdentity() const noexcept;
 
 private:
     int internalClose();

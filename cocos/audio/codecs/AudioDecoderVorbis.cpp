@@ -1,5 +1,5 @@
 #include "AudioDecoderVorbis.h"
-#include "AudioCommon.h"
+#include "audio/AudioCommon.h"
 #include <string>
 
 NS_CC_BEGIN

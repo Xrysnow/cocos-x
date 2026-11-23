@@ -1,6 +1,9 @@
 #include "AudioEngine.h"
 #include "AudioALSupport.h"
-#include "AudioPlatform.h"
+#include "platform/AudioPlatform.h"
+#include "output/AudioOutputEndpoints.h"
+#include "output/AudioOutputIntegration.h"
+#include <array>
 #include <exception>
 #include <atomic>
 #include <chrono>
@@ -36,6 +39,9 @@ namespace
 	bool sAppBackground = false;
 	bool sSessionInterrupted = false;
 	std::atomic<bool> sSuspended{ false };
+	bool sMainFrontStereo = false;
+	std::atomic<bool> sMainMuted{ false };
+	std::atomic<float> sMainVolume{ 1.f };
 #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS && defined(ALC_SOFT_pause_device)
 	LPALCDEVICEPAUSESOFT sPauseDevice = nullptr;
 	LPALCDEVICERESUMESOFT sResumeDevice = nullptr;
@@ -52,6 +58,67 @@ static std::string getDefaultDeviceName()
 	if (!name || name[0] == '\0')
 		name = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
 	return name ? std::string(name) : std::string();
+}
+
+namespace
+{
+	std::string openedDeviceName(ALCdevice* device)
+	{
+		const ALCchar* name = nullptr;
+		if (alcIsExtensionPresent(device, "ALC_ENUMERATE_ALL_EXT") == ALC_TRUE)
+			name = alcGetString(device, ALC_ALL_DEVICES_SPECIFIER);
+		if (!name || !*name)
+			name = alcGetString(device, ALC_DEVICE_SPECIFIER);
+		return name ? name : "";
+	}
+
+	bool supportsFrontStereo(ALCdevice* device)
+	{
+#ifdef ALC_SOFT_output_mode
+		return alcIsExtensionPresent(device, "ALC_SOFT_output_mode") == ALC_TRUE;
+#else
+		(void)device;
+		return false;
+#endif
+	}
+
+	bool isFrontStereo(ALCdevice* device)
+	{
+#ifdef ALC_SOFT_output_mode
+		if (supportsFrontStereo(device))
+		{
+			ALCint mode = 0;
+			alcGetIntegerv(device, ALC_OUTPUT_MODE_SOFT, 1, &mode);
+			return mode == ALC_STEREO_BASIC_SOFT;
+		}
+#endif
+		(void)device;
+		return false;
+	}
+
+	void setMainMuted(bool muted)
+	{
+		sMainMuted = muted;
+		alListenerf(AL_GAIN, muted ? 0.f : sMainVolume.load());
+	}
+
+	std::array<ALCint, 5> playbackAttributes(const ALCint* base, bool frontStereo)
+	{
+		std::array<ALCint, 5> attributes{};
+		auto output = attributes.begin();
+		if (base)
+			output = std::copy_n(base, 2, output);
+#ifdef ALC_SOFT_output_mode
+		if (frontStereo)
+		{
+			*output++ = ALC_OUTPUT_MODE_SOFT;
+			*output = ALC_STEREO_BASIC_SOFT;
+		}
+#else
+		(void)frontStereo;
+#endif
+		return attributes;
+	}
 }
 
 #ifdef ALC_SOFT_system_events
@@ -225,14 +292,15 @@ std::vector<AudioSource*> AudioEngine::pause()
 void AudioEngine::setVolume(float volume)
 {
 	volume = std::max(0.f, std::min(volume, 1.f));
-	alListenerf(AL_GAIN, volume);
+	auto lock = pool ? pool->lock() : std::unique_lock<std::mutex>();
+	sMainVolume = volume;
+	if (!sMainMuted)
+		alListenerf(AL_GAIN, volume);
 }
 
 float AudioEngine::getVolume()
 {
-	ALfloat volume;
-	alGetListenerf(AL_GAIN, &volume);
-	return volume;
+	return sMainVolume;
 }
 
 cc::Vec3 AudioEngine::getPosition()
@@ -614,8 +682,11 @@ bool AudioEngine::init()
 	// Check permission before opening new device
 	requestRecordAudioPermission();
 
-	// Passing null for default device.
-	device = alcOpenDevice(nullptr);
+	// Use the verified selector when the registered default needs a restricted mix.
+	const auto defaultSelector = audio::detail::managedDefaultDeviceName();
+	device = alcOpenDevice(defaultSelector.empty() ? nullptr : defaultSelector.c_str());
+	if (!device && !defaultSelector.empty())
+		device = alcOpenDevice(nullptr);
 
 	if (device == nullptr)
 	{
@@ -641,7 +712,11 @@ bool AudioEngine::init()
 	ALint *attribs = nullptr;
 #endif
 
-	context = alcCreateContext(device, attribs);
+	const auto actualName = openedDeviceName(device);
+	const bool restricted = audio::detail::requiresFrontStereo(actualName, true) ||
+		audio::detail::requiresFrontStereo(actualName, false);
+	const auto playbackAttribs = playbackAttributes(attribs, restricted && supportsFrontStereo(device));
+	context = alcCreateContext(device, playbackAttribs.data());
 
 	if (context == nullptr)
 	{
@@ -656,6 +731,8 @@ bool AudioEngine::init()
 		end();
 		return false;
 	}
+	sMainFrontStereo = restricted && isFrontStereo(device);
+	setMainMuted(restricted && !sMainFrontStereo);
 
 	// New context => new AL object namespace: bump the device generation
 	// (Sources detect stale ids via it, see overview in AudioEngine.h).
@@ -669,7 +746,7 @@ bool AudioEngine::init()
 	createEffectSlots();
 
 	pool = AudioPool::getInstance();
-	if (!pool || !pool->init())
+	if (!pool || !pool->init(sMainFrontStereo))
 	{
 		lastError = "Could not initialize source pool.";
 		end();
@@ -690,7 +767,7 @@ bool AudioEngine::init()
 	initializeDeviceEvents();
 
 	lastDefaultName = getDefaultDeviceName();
-	lastAppliedDevice = lastDefaultName;
+	lastAppliedDevice = actualName;
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS && defined(ALC_SOFT_pause_device)
 	if (alcIsExtensionPresent(device, "ALC_SOFT_pause_device") == ALC_TRUE)
@@ -726,6 +803,7 @@ void AudioEngine::end()
 		delete AudioPoolThread::Instance;
 		AudioPoolThread::Instance = nullptr;
 	}
+	audio::detail::shutdownDirectOutput();
 
 	// Drain the pool while the OpenAL context is still current (valid AL
 	// calls): stops all playing Sources and frees the pool's OpenAL sources.
@@ -786,6 +864,9 @@ void AudioEngine::end()
 	lastAppliedDevice.clear();
 	lastDefaultName.clear();
 	devicePinned = false;
+	sMainFrontStereo = false;
+	sMainMuted = false;
+	sMainVolume = 1.f;
 	alcReopenDeviceSoft = nullptr;
 	hasInitAttribs = false;
 	sRecoveryFailures = 0;
@@ -932,6 +1013,8 @@ void AudioEngine::checkDeviceChange()
 
 	if (disconnected)
 	{
+		if (audio::detail::hasManagedOutputEndpoints())
+			audio::detail::refreshOutputEndpoints();
 		// The opened device is physically gone - in-place reopening cannot
 		// revive it (see the overview in AudioEngine.h), so the recreation
 		// path is used. It keeps retrying (~1/s) until some device exists.
@@ -988,53 +1071,75 @@ bool AudioEngine::reopenDevice(const std::string& name)
 		AWARN("ALC_SOFT_reopen_device not supported; cannot switch the audio device");
 		return false;
 	}
+	if (audio::detail::hasManagedOutputEndpoints())
+		audio::detail::refreshOutputEndpoints();
 	auto outputLock = pool->lock();
 	if (!valid || !device)
 		return false;
 
-	if (name.empty())
+	// NULL re-resolves the default in OpenAL. A managed default may instead
+	// supply its verified platform selector to pin the isolation decision.
+	const auto selector = name.empty() ? audio::detail::managedDefaultDeviceName() : name;
+	const bool restricted = audio::detail::requiresFrontStereo(name, name.empty());
+	if (!name.empty() && name == lastAppliedDevice && restricted == sMainFrontStereo && !sMainMuted)
 	{
-		// Follow the current default: pass deviceName = NULL so the
-		// implementation re-resolves it at call time. NEVER pre-resolve via
-		// alcGetString(NULL, ALC_DEFAULT*_DEVICE_SPECIFIER) - those are cached
-		// snapshots on Windows/OpenAL Soft and still name the OLD endpoint
-		// right after a change.
-		const ALCboolean ok = alcReopenDeviceSoft(device, nullptr,
-			hasInitAttribs ? initAttribs : nullptr);
-		if (ok == ALC_TRUE)
-		{
-			devicePinned = false;
-			const ALCchar* actual = alcGetString(device, ALC_DEVICE_SPECIFIER);
-			lastAppliedDevice = actual ? actual : std::string();
-			AINFO("switched to default device: \"%s\"",
-				lastAppliedDevice.empty() ? "<unknown>" : lastAppliedDevice.c_str());
-			AudioALSupport::refresh();
-			++sOutputRevision;
-			return true;
-		}
-		AWARN("alcReopenDeviceSOFT(NULL) failed (%s)", getErrorString(alcGetError(device)));
+		devicePinned = true;
+		return true;
+	}
+	const bool switched = switchOutput(selector.empty() ? nullptr : selector.c_str(), restricted);
+	if (!switched && (selector.empty() || !name.empty() || !switchOutput(nullptr, restricted)))
+		return false;
+	devicePinned = !name.empty();
+	return !sMainMuted;
+}
+
+bool AudioEngine::switchOutput(const char* selector, bool restricted)
+{
+	const bool wasMuted = sMainMuted;
+	setMainMuted(true);
+	const auto attributes = playbackAttributes(hasInitAttribs ? initAttribs : nullptr,
+		restricted && supportsFrontStereo(device));
+	if (alcReopenDeviceSoft(device, selector, attributes.data()) != ALC_TRUE)
+	{
+		AWARN("could not reopen audio output (%s)", getErrorString(alcGetError(device)));
+		setMainMuted(wasMuted);
 		return false;
 	}
-
-	// Switch to an explicitly named device and pin it.
-	devicePinned = true;
-	// already on that device
-	if (name == lastAppliedDevice)
-		return true;
-
-	const ALCboolean ok = alcReopenDeviceSoft(device, name.c_str(),
-		hasInitAttribs ? initAttribs : nullptr);
-	if (ok == ALC_TRUE)
+	lastAppliedDevice = openedDeviceName(device);
+	const bool actualRestricted = audio::detail::requiresFrontStereo(lastAppliedDevice, false);
+	if (actualRestricted && !restricted && supportsFrontStereo(device))
 	{
-		const ALCchar* actual = alcGetString(device, ALC_DEVICE_SPECIFIER);
-		lastAppliedDevice = actual ? actual : name;
-		AINFO("device reopened: \"%s\"", lastAppliedDevice.c_str());
-		AudioALSupport::refresh();
-		++sOutputRevision;
-		return true;
+		const auto stereoAttributes = playbackAttributes(hasInitAttribs ? initAttribs : nullptr, true);
+		const auto actual = lastAppliedDevice;
+		if (alcReopenDeviceSoft(device, actual.c_str(), stereoAttributes.data()) == ALC_TRUE)
+			lastAppliedDevice = openedDeviceName(device);
 	}
-	AWARN("alcReopenDeviceSOFT(\"%s\") failed (%s)", name.c_str(), getErrorString(alcGetError(device)));
-	return false;
+	restricted |= actualRestricted;
+	sMainFrontStereo = restricted && isFrontStereo(device);
+	AudioALSupport::refresh();
+	pool->setFrontStereo(sMainFrontStereo);
+	setMainMuted(restricted && !sMainFrontStereo);
+	++sOutputRevision;
+	return true;
+}
+
+bool AudioEngine::applyManagedOutputPolicy(const std::string& mainName, const std::string& selector, bool isDefault)
+{
+	if (!valid)
+		return true;
+	auto lock = pool->lock();
+	const bool current = !lastAppliedDevice.empty() && (lastAppliedDevice == mainName || lastAppliedDevice == selector);
+	if (!current && (!isDefault || devicePinned))
+		return true;
+	if (current && sMainFrontStereo && !sMainMuted)
+		return true;
+	setMainMuted(true);
+	if (!alcReopenDeviceSoft || !supportsFrontStereo(device))
+		return false;
+	const char* target = selector.empty() ? (devicePinned ? lastAppliedDevice.c_str() : nullptr) : selector.c_str();
+	const bool switched = switchOutput(target, true) ||
+		(target && !devicePinned && isDefault && switchOutput(nullptr, true));
+	return switched && sMainFrontStereo;
 }
 
 bool AudioEngine::recoverDisconnectedDevice()
@@ -1058,8 +1163,6 @@ bool AudioEngine::recoverDisconnectedDevice()
 	alGetListenerfv(AL_POSITION, pos);
 	alGetListenerfv(AL_VELOCITY, vel);
 	alGetListenerfv(AL_ORIENTATION, orient);
-	ALfloat volume = 1.0f;
-	alGetListenerf(AL_GAIN, &volume);
 	const ALfloat doppler = alGetFloat(AL_DOPPLER_FACTOR);
 
 	// Capture the currently assigned Sources (playing or paused) before the
@@ -1069,13 +1172,21 @@ bool AudioEngine::recoverDisconnectedDevice()
 
 	// Open the replacement device+context FIRST. if no device exists,
 	// the caller retries automatically once something is plugged in.
-	ALCdevice* newDevice = alcOpenDevice(nullptr);
+	const auto defaultSelector = audio::detail::managedDefaultDeviceName();
+	ALCdevice* newDevice = alcOpenDevice(defaultSelector.empty() ? nullptr : defaultSelector.c_str());
+	if (!newDevice && !defaultSelector.empty())
+		newDevice = alcOpenDevice(nullptr);
 	if (!newDevice)
 	{
 		lastError = "Could not open audio device while recovering.";
 		return false;
 	}
-	ALCcontext* newContext = alcCreateContext(newDevice, hasInitAttribs ? initAttribs : nullptr);
+	const auto actualName = openedDeviceName(newDevice);
+	const bool restricted = audio::detail::requiresFrontStereo(actualName, true) ||
+		audio::detail::requiresFrontStereo(actualName, false);
+	const auto attributes = playbackAttributes(hasInitAttribs ? initAttribs : nullptr,
+		restricted && supportsFrontStereo(newDevice));
+	ALCcontext* newContext = alcCreateContext(newDevice, attributes.data());
 	if (!newContext)
 	{
 		alcCloseDevice(newDevice);
@@ -1125,7 +1236,8 @@ bool AudioEngine::recoverDisconnectedDevice()
 
 	// Rebuild context-owned objects
 	createEffectSlots();
-	if (!pool->init())
+	sMainFrontStereo = restricted && isFrontStereo(newDevice);
+	if (!pool->init(sMainFrontStereo))
 	{
 		lastError = "Could not rebuild source pool after device recovery.";
 		// This is the worker thread, so end() cannot join itself here.
@@ -1138,7 +1250,7 @@ bool AudioEngine::recoverDisconnectedDevice()
 	alListenerfv(AL_POSITION, pos);
 	alListenerfv(AL_VELOCITY, vel);
 	alListenerfv(AL_ORIENTATION, orient);
-	alListenerf(AL_GAIN, volume);
+	setMainMuted(restricted && !sMainFrontStereo);
 	alDopplerFactor(doppler);
 	setDistanceModel(distanceModel);
 
@@ -1166,8 +1278,7 @@ bool AudioEngine::recoverDisconnectedDevice()
 	}
 
 	// Re-base the tracking state on the fresh device
-	const ALCchar* actual = alcGetString(device, ALC_DEVICE_SPECIFIER);
-	lastAppliedDevice = actual ? actual : std::string();
+	lastAppliedDevice = actualName;
 	devicePinned = false;
 	lastDefaultName = getDefaultDeviceName();
 	sDeviceEventPending.store(false, std::memory_order_release);

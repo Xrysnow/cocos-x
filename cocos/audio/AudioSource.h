@@ -3,12 +3,14 @@
 #include "AudioPool.h"
 #include "AudioFilter.h"
 #include "AudioCommon.h"
+#include "AudioDecoder.h"
 #include "base/Ref.h"
 #include "math/Vec3.h"
 #include <array>
 #include <map>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <stack>
 #include <vector>
 
@@ -24,11 +26,11 @@ NS_CC_BEGIN
 	class CC_DLL AudioEngine;
 	class CC_DLL AudioPool;
 	class CC_DLL AudioSoundData;
-	class CC_DLL AudioDecoder;
 
 	// Basically just a reference-counted non-streaming OpenAL buffer object.
 	class CC_DLL AudioStaticDataBuffer : public cc::Ref
 	{
+		friend AudioDirectInput captureAudioDirectInput(const AudioSource& source);
 	public:
 		AudioStaticDataBuffer(ALenum format, const ALvoid *data, ALsizei size, ALsizei freq);
 		virtual ~AudioStaticDataBuffer();
@@ -60,7 +62,7 @@ NS_CC_BEGIN
 		ALuint buffer;
 		ALsizei size;
 		// Retained data copy for re-uploading after a context recreation
-		std::vector<uint8_t> data;
+		std::shared_ptr<const std::vector<uint8_t>> data;
 		ALenum format;
 		ALsizei freq;
 		int generation;
@@ -79,6 +81,7 @@ NS_CC_BEGIN
 	{
 		friend class AudioPool;
 		friend class AudioEngine;
+		friend AudioDirectInput captureAudioDirectInput(const AudioSource& source);
 	public:
 
 		enum class Type
@@ -133,6 +136,9 @@ NS_CC_BEGIN
 		 * Creates AudioSource from a AudioDecoder. The audio is decoded in chunks when needed.
 		 */
 		static cc::IntrusivePtr<AudioSource> createFromDecoder(AudioDecoder* decoder);
+		/** Opens the original reader now and permits independent readers on playback workers. */
+		static cc::IntrusivePtr<AudioSource> createFromReopenableStream(AudioStream::ReopenFactory reopen,
+			size_t bufferSize, AudioDecoder::DecoderType type);
 		/**
 		 * Creates AudioSource from without data source. The audio data must be manually queued by the user.
 		 */
@@ -583,6 +589,7 @@ NS_CC_BEGIN
 		int bitDepth = 0;
 
 		AudioDecoder* decoder = nullptr;
+		bool directSeekable = false;
 
 		uint64_t toLoop = 0;
 		int64_t bufferedBytes = 0;

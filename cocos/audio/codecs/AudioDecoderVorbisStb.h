@@ -1,9 +1,9 @@
 #pragma once
 #include "platform/PlatformMacros.h"
-#include "AudioDecoder.h"
-#include "AudioStream.h"
+#include "audio/AudioDecoder.h"
+#include "audio/AudioStream.h"
 #define STB_VORBIS_HEADER_ONLY
-#include "stb_vorbis.c"
+#include "third_party/stb_vorbis.c"
 #include <cstdint>
 
 NS_CC_BEGIN

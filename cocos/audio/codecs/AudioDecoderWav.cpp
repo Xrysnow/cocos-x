@@ -1,6 +1,6 @@
-#include "AudioCommon.h"
+#include "audio/AudioCommon.h"
 #include "AudioDecoderWav.h"
-#include "NqrRiffUtils.h"
+#include "third_party/NqrRiffUtils.h"
 #include <algorithm>
 #include <new>
 #include <vector>

@@ -1,6 +1,6 @@
 #pragma once
 #include "platform/PlatformMacros.h"
-#include "AudioDecoder.h"
+#include "audio/AudioDecoder.h"
 
 NS_CC_BEGIN
 	class CC_DLL AudioDecoderWav : public AudioDecoder

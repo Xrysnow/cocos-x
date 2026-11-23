@@ -4,6 +4,7 @@
 #include "AudioEffect.h"
 #include "AudioPool.h"
 #include "AudioDecoder.h"
+#include "AudioDirectPlayback.h"
 #include "AudioRecordingDevice.h"
 #include "base/Vector.h"
 #include <functional>
@@ -260,6 +261,12 @@ NS_CC_BEGIN
 		/** Changes on an in-context endpoint switch; invalidates latency samples. */
 		static int getOutputRevision();
 
+		/** Enumerate direct-output endpoints. IDs are valid for one connection. */
+		static AudioResult<std::vector<AudioOutputEndpoint>> getOutputEndpoints();
+		/** Capture the input and channel map without starting playback. */
+		static AudioResult<AudioDirectPlayback> createDirectPlayback(AudioSource& source, AudioEndpointId endpoint,
+			const std::vector<AudioChannelRoute>& channelMap);
+
 		// ---------------------------------------------------------------------
 		// Audio device management overview
 		// ---------------------------------------------------------------------
@@ -316,6 +323,9 @@ NS_CC_BEGIN
 		static void checkDeviceChange();
 
 	private:
+		friend struct audio::detail::DirectPlaybackAccess;
+		static bool applyManagedOutputPolicy(const std::string& mainName, const std::string& selector, bool isDefault);
+		static bool switchOutput(const char* selector, bool restricted);
 
 		static void initializeEFX();
 		static void resetEFX();

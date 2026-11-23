@@ -1,13 +1,15 @@
 #include "AudioStream.h"
 #include "AudioCommon.h"
 #include "platform/FileUtils.h"
-#include "platform/FileStream.h"
+#include "platform/PosixFileStream.h"
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <new>
+#include <typeinfo>
 #include <utility>
 
 NS_CC_BEGIN
@@ -19,8 +21,8 @@ namespace
 	class AudioFileStream final : public AudioStream
 	{
 	public:
-		explicit AudioFileStream(std::unique_ptr<FileStream> file)
-			: file(std::move(file))
+		explicit AudioFileStream(std::unique_ptr<FileStream> file, ReopenFactory reopen = {})
+			: file(std::move(file)), reopen(std::move(reopen))
 		{
 		}
 
@@ -101,6 +103,8 @@ namespace
 
 		void lock() override { mutex.lock(); }
 		void unlock() override { mutex.unlock(); }
+		ReopenFactory getReopenFactory() const override { return reopen; }
+		bool hasIoError() const noexcept override { return failed; }
 
 	private:
 		bool fail(const char* operation)
@@ -114,9 +118,38 @@ namespace
 		}
 
 		std::unique_ptr<FileStream> file;
+		ReopenFactory reopen;
 		std::mutex mutex;
 		bool failed = false;
 	};
+
+	AudioStream::ReopenFactory nativeFileReopener(const FileStream& file, const std::string& fullPath)
+	{
+		// Only native streams can prove the identity of both opened handles.
+		if (typeid(file) != typeid(PosixFileStream))
+			return {};
+		const auto identity = static_cast<const PosixFileStream&>(file).getIdentity();
+		if (!identity)
+			return {};
+		std::string path;
+		try
+		{
+			std::error_code error;
+			const auto absolute = std::filesystem::absolute(std::filesystem::u8path(fullPath), error);
+			if (error)
+				return {};
+			const auto encoded = absolute.u8string();
+			path.assign(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+		}
+		catch (const std::filesystem::filesystem_error&) { return {}; }
+		return [path = std::move(path), expected = *identity]() -> cc::IntrusivePtr<AudioStream>
+		{
+			auto reader = std::make_unique<PosixFileStream>();
+			if (!reader->open(path, FileStream::Mode::READ) || reader->getIdentity() != expected)
+				return nullptr;
+			return cc::IntrusivePtr{new (std::nothrow) AudioFileStream(std::move(reader))};
+		};
+	}
 }
 
 void AudioStream::setFileOpener(FileOpener opener)
@@ -150,7 +183,8 @@ cc::IntrusivePtr<AudioStream> AudioStream::createFromLocalFile(const std::string
 		return nullptr;
 	if (position != 0 && (file->seek(0, SEEK_SET) != 0 || file->tell() != 0))
 		return nullptr;
-	cc::IntrusivePtr result{new (std::nothrow) AudioFileStream(std::move(file))};
+	auto reopen = nativeFileReopener(*file, fullPath);
+	cc::IntrusivePtr result{new (std::nothrow) AudioFileStream(std::move(file), std::move(reopen))};
 	if (!result)
 		return nullptr;
 	return result;

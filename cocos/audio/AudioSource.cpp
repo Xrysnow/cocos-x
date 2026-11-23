@@ -3,6 +3,7 @@
 #include "AudioDecoder.h"
 #include "AudioEngine.h"
 #include "AudioFilter.h"
+#include "audio/output/AudioDirectInput.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -15,6 +16,35 @@ using namespace AudioInternal;
 
 namespace
 {
+	class DirectReadStream final : public AudioStream
+	{
+	public:
+		DirectReadStream(IntrusivePtr<AudioStream> input, std::stop_token stop)
+			: input(std::move(input)), stop(std::move(stop)) {}
+
+		uint64_t size() override { return stop.stop_requested() ? 0 : input->size(); }
+		uint64_t tell() override { return stop.stop_requested() ? 0 : input->tell(); }
+		bool seek(SeekOrigin origin, int64_t offset) override
+		{
+			return !stop.stop_requested() && input->seek(origin, offset);
+		}
+		bool read(uint8_t* destination, uint64_t length, uint64_t* transferred) override
+		{
+			if (!stop.stop_requested())
+				return input->read(destination, length, transferred);
+			if (transferred)
+				*transferred = 0;
+			return false;
+		}
+		void lock() override { input->lock(); }
+		void unlock() override { input->unlock(); }
+		bool hasIoError() const noexcept override { return stop.stop_requested() || input->hasIoError(); }
+
+	private:
+		IntrusivePtr<AudioStream> input;
+		std::stop_token stop;
+	};
+
 	double queueSteadySeconds()
 	{
 		return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -35,6 +65,44 @@ constexpr double TODEG_ = 180.0 / PI;
 #define TORAD(x)	(float)(x*TORAD_)
 #define TODEG(x)	(float)(x*TODEG_)
 
+AudioDirectInput captureAudioDirectInput(const AudioSource& source)
+{
+	AudioDirectInput input;
+	input.channels = source.channels;
+	input.sampleRate = source.sampleRate;
+	input.bitDepth = source.bitDepth;
+	if ((input.channels != 1 && input.channels != 2) ||
+		(input.bitDepth != 8 && input.bitDepth != 16) || input.sampleRate <= 0)
+		return input;
+
+	if (source.sourceType == AudioSource::Type::STATIC && source.staticBuffer)
+	{
+		input.pcm = source.staticBuffer->data;
+		input.totalFrames = input.pcm->size() / (input.channels * (input.bitDepth / 8));
+		input.seekable = true;
+	}
+	else if (source.sourceType == AudioSource::Type::STREAM && source.decoder && source.decoder->reopen)
+	{
+		const auto& decoder = *source.decoder;
+		if (const auto frames = decoder.getTotalFrames(); frames > 0 ||
+			(frames == 0 && decoder.decoderType == AudioDecoder::DecoderType::WAV))
+			input.totalFrames = static_cast<uint64_t>(frames);
+		input.seekable = source.directSeekable;
+		input.openDecoder = [reopen = decoder.reopen, type = decoder.decoderType, size = decoder.bufferSize]
+			(std::stop_token stop) -> IntrusivePtr<AudioDecoder>
+		{
+			if (stop.stop_requested())
+				return nullptr;
+			auto stream = reopen();
+			if (!stream || stop.stop_requested())
+				return nullptr;
+			IntrusivePtr cancellable{new DirectReadStream(std::move(stream), std::move(stop))};
+			return AudioDecoder::createFromStream(cancellable.get(), size, type);
+		};
+	}
+	return input;
+}
+
 AudioStaticDataBuffer::AudioStaticDataBuffer(ALenum format, const ALvoid *data, ALsizei size, ALsizei freq)
 	: buffer(0)
 	, size(size)
@@ -47,9 +115,11 @@ AudioStaticDataBuffer::AudioStaticDataBuffer(ALenum format, const ALvoid *data, 
 	// context recreation (the AudioSource does not hold the original AudioSoundData).
 	if (size > 0 && data)
 	{
-		this->data.resize(size);
-		memcpy(this->data.data(), data, size);
+		const auto first = static_cast<const uint8_t*>(data);
+		this->data = std::make_shared<const std::vector<uint8_t>>(first, first + size);
 	}
+	else
+		this->data = std::make_shared<const std::vector<uint8_t>>();
 	alGenBuffers(1, &buffer);
 	alBufferData(buffer, format, data, size, freq);
 }
@@ -72,7 +142,7 @@ void AudioStaticDataBuffer::reload()
 	// replace it and re-upload the retained PCM.
 	buffer = 0;
 	alGenBuffers(1, &buffer);
-	alBufferData(buffer, format, data.data(), size, freq);
+	alBufferData(buffer, format, data->data(), size, freq);
 	generation = AudioEngine::getDeviceGeneration();
 }
 
@@ -134,6 +204,7 @@ bool AudioSource::initWithDecoder(AudioDecoder* _decoder)
 	sampleRate = decoder->getSampleRate();
 	channels = decoder->getChannelCount();
 	bitDepth = decoder->getBitDepth();
+	directSeekable = decoder->isSeekable();
 	buffers = DEFAULT_BUFFERS;
 	if (AudioEngine::getFormat(decoder->getBitDepth(), decoder->getChannelCount()) == AL_NONE)
 	{
@@ -234,6 +305,7 @@ bool AudioSource::initWithOther(const AudioSource &s)
 	channels = s.channels;
 	bitDepth = s.bitDepth;
 	decoder = nullptr;
+	directSeekable = s.directSeekable;
 	toLoop = 0;
 	buffers = s.buffers;
 
@@ -243,6 +315,8 @@ bool AudioSource::initWithOther(const AudioSource &s)
 	{
 		if (s.decoder)
 			decoder = s.decoder->clone().detach();
+		if (!decoder)
+			return false;
 	}
 	if (sourceType != Type::STATIC)
 	{
@@ -348,6 +422,16 @@ cc::IntrusivePtr<AudioSource> AudioSource::createFromDecoder(AudioDecoder* decod
 		return ret;
 	}
 	return nullptr;
+}
+
+cc::IntrusivePtr<AudioSource> AudioSource::createFromReopenableStream(AudioStream::ReopenFactory reopen,
+	size_t bufferSize, AudioDecoder::DecoderType type)
+{
+	if (!AudioEngine::isValid() || !reopen)
+		return nullptr;
+	const auto input = reopen();
+	const auto decoder = AudioDecoder::createFromReopenableStream(input.get(), bufferSize, type, std::move(reopen));
+	return decoder ? createFromDecoder(decoder.get()) : nullptr;
 }
 
 cc::IntrusivePtr<AudioSource> AudioSource::create(int sampleRate, int bitDepth, int channels, int buffers)

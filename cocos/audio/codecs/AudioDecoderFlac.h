@@ -1,11 +1,11 @@
 #pragma once
 #include "platform/PlatformMacros.h"
-#include "AudioDecoder.h"
+#include "audio/AudioDecoder.h"
 #include "base/Macros.h"
 #if CC_64BITS
 #define DRFLAC_64BIT
 #endif
-#include "dr_flac.h"
+#include "third_party/dr_flac.h"
 
 NS_CC_BEGIN
 	class CC_DLL AudioDecoderFlac : public AudioDecoder

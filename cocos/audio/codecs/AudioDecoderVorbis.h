@@ -1,7 +1,7 @@
 #pragma once
 #include "platform/PlatformMacros.h"
-#include "AudioDecoder.h"
-#include "AudioStream.h"
+#include "audio/AudioDecoder.h"
+#include "audio/AudioStream.h"
 #define OV_EXCLUDE_STATIC_CALLBACKS
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"

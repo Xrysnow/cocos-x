@@ -8,6 +8,7 @@
 
 #include <sys/stat.h>
 #include <assert.h>
+#include <cstring>
 #include <limits>
 #include <algorithm>
 
@@ -181,6 +182,40 @@ static PXIoF pfs_obb_iof = {pfs_obb_read, pfs_obb_seek, pfs_obb_close, pfs_obb_s
 PosixFileStream::~PosixFileStream()
 {
     internalClose();
+}
+
+std::optional<PosixFileStream::Identity> PosixFileStream::getIdentity() const noexcept
+{
+    if (_iof != &pfs_posix_iof)
+        return {};
+#if defined(_WIN32)
+    FILE_ID_INFO identity{};
+    FILE_STANDARD_INFO info{};
+    FILE_BASIC_INFO timestamps{};
+    const auto handle = posix_fd2fh(_handle._fd);
+    if (!GetFileInformationByHandleEx(handle, FileIdInfo, &identity, sizeof(identity)) ||
+        !GetFileInformationByHandleEx(handle, FileStandardInfo, &info, sizeof(info)) || info.Directory ||
+        !GetFileInformationByHandleEx(handle, FileBasicInfo, &timestamps, sizeof(timestamps)))
+        return {};
+    Identity result{identity.VolumeSerialNumber, 0, 0, info.EndOfFile.QuadPart,
+        timestamps.LastWriteTime.QuadPart, 0, timestamps.ChangeTime.QuadPart, 0};
+    std::memcpy(&result.fileLow, identity.FileId.Identifier, sizeof(result.fileLow));
+    std::memcpy(&result.fileHigh, identity.FileId.Identifier + sizeof(result.fileLow), sizeof(result.fileHigh));
+    return result;
+#else
+    struct stat info{};
+    if (::fstat(_handle._fd, &info) != 0 || !S_ISREG(info.st_mode))
+        return {};
+#if defined(__APPLE__)
+    const auto modified = info.st_mtimespec;
+    const auto changed = info.st_ctimespec;
+#else
+    const auto modified = info.st_mtim;
+    const auto changed = info.st_ctim;
+#endif
+    return Identity{static_cast<uint64_t>(info.st_dev), static_cast<uint64_t>(info.st_ino), 0,
+        static_cast<int64_t>(info.st_size), modified.tv_sec, modified.tv_nsec, changed.tv_sec, changed.tv_nsec};
+#endif
 }
 
 bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
