@@ -63,6 +63,7 @@ set(lua_bindings_manual_files
     manual/ComponentLua.cpp
     manual/base/LuaScriptHandlerMgr.cpp
     manual/base/cclua_base_manual.cpp
+    manual/base/cclua_font_manual.cpp
     manual/physics/cclua_physics_manual.cpp
     manual/3d/cclua_3d_manual.cpp
     manual/network/cclua_network_manual.cpp

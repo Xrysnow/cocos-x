@@ -5,6 +5,8 @@
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 
+void register_cc_font_manual(lua_State* L);
+
 // Platform registration and merged aliases.
 
 int lua_cc_base_GLViewImpl_create(lua_State* lua_S)
@@ -59,5 +61,6 @@ int register_all_cc_base_retained(lua_State* L)
 		tolua_function(L, "createWithRect", lua_cc_base_GLViewImpl_createWithRect);
 	}
 	lua_pop(L, 1);
+	register_cc_font_manual(L);
 	return 0;
 }

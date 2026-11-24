@@ -502,6 +502,127 @@ int luaReg_Core_ccDrawNode(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
+static_assert(lua::value_type<cc::GlyphTicket>::value, "ValueTypes requires a shared runtime trait for cc::GlyphTicket");
+int luaReg_Core_ccFontAtlas(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF_BASE(cc::FontAtlas, "FontAtlas", "cc.FontAtlas",
+		cc::FontAtlas, "cc.Ref",
+		nullptr, nullptr);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_Core_ccFontRasterMode(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENUM_DEF("FontRasterMode");
+	LUA_ENUM_ENTRY("Bitmap", cc::FontRasterMode::Bitmap);
+	LUA_ENUM_ENTRY("Sdf", cc::FontRasterMode::Sdf);
+	LUA_ENUM_ENTRY("Msdf", cc::FontRasterMode::Msdf);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_Core_ccGlyphRenderPolicy(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENUM_DEF("GlyphRenderPolicy");
+	LUA_ENUM_ENTRY("Async", cc::GlyphRenderPolicy::Async);
+	LUA_ENUM_ENTRY("Synchronous", cc::GlyphRenderPolicy::Synchronous);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_Core_ccGlyphStatus(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_ENUM_DEF("GlyphStatus");
+	LUA_ENUM_ENTRY("Pending", cc::GlyphStatus::Pending);
+	LUA_ENUM_ENTRY("Ready", cc::GlyphStatus::Ready);
+	LUA_ENUM_ENTRY("Cancelled", cc::GlyphStatus::Cancelled);
+	LUA_ENUM_ENTRY("InvalidInput", cc::GlyphStatus::InvalidInput);
+	LUA_ENUM_ENTRY("FileNotFound", cc::GlyphStatus::FileNotFound);
+	LUA_ENUM_ENTRY("UnsupportedFont", cc::GlyphStatus::UnsupportedFont);
+	LUA_ENUM_ENTRY("UnsupportedColorFont", cc::GlyphStatus::UnsupportedColorFont);
+	LUA_ENUM_ENTRY("NotFileFont", cc::GlyphStatus::NotFileFont);
+	LUA_ENUM_ENTRY("TooLarge", cc::GlyphStatus::TooLarge);
+	LUA_ENUM_ENTRY("CacheFull", cc::GlyphStatus::CacheFull);
+	LUA_ENUM_ENTRY("Busy", cc::GlyphStatus::Busy);
+	LUA_ENUM_ENTRY("DeviceUnavailable", cc::GlyphStatus::DeviceUnavailable);
+	LUA_ENUM_ENTRY("RasterError", cc::GlyphStatus::RasterError);
+	LUA_ENUM_ENTRY("UploadError", cc::GlyphStatus::UploadError);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cc_GlyphTicket_cancel(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.GlyphTicket", "cc.GlyphTicket:cancel");
+	LUA_TRY_INVOKE_R(0, &cc::GlyphTicket::cancel);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_GlyphTicket_poll(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.GlyphTicket", "cc.GlyphTicket:poll");
+	LUA_TRY_INVOKE_R(0, &cc::GlyphTicket::poll);
+	LUA_INVOKE_FOOTER("0");
+}
+int luaReg_Core_ccGlyphTicket(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF(cc::GlyphTicket, "GlyphTicket", "cc.GlyphTicket",
+		nullptr, lua::value_collect<cc::GlyphTicket>);
+	LUA_METHOD("cancel", lua_cc_GlyphTicket_cancel);
+	LUA_METHOD("poll", lua_cc_GlyphTicket_poll);
+	LUA_CLS_END();
+	lua::register_value_metatable<cc::GlyphTicket>(lua_S, "cc.GlyphTicket");
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int lua_cc_Label_createWithFont(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Label", "cc.Label:createWithFont");
+	LUA_TRY_INVOKE_R(3, &cc::Label::createWithFont);
+	LUA_TRY_INVOKE_R(2, ([](const cc::FontConfig& arg0,std::string_view arg1){{return cc::Label::createWithFont(arg0,std::move(arg1));}}));
+	LUA_SINVOKE_FOOTER("2,3");
+}
+int lua_cc_Label_getRasterMode(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:getRasterMode");
+	LUA_TRY_INVOKE_R(0, &cc::Label::getRasterMode);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_Label_setFontConfig(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:setFontConfig");
+	LUA_TRY_INVOKE_R(1, &cc::Label::setFontConfig);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_Label_setGlyphRenderPolicy(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:setGlyphRenderPolicy");
+	LUA_TRY_INVOKE(1, &cc::Label::setGlyphRenderPolicy);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_Label_getGlyphRenderPolicy(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:getGlyphRenderPolicy");
+	LUA_TRY_INVOKE_R(0, &cc::Label::getGlyphRenderPolicy);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_cc_Label_prefetchGlyphs(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:prefetchGlyphs");
+	LUA_TRY_INVOKE_R(1, &cc::Label::prefetchGlyphs);
+	LUA_INVOKE_FOOTER("1");
+}
+int lua_cc_Label_prepareGlyphsNow(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.Label", "cc.Label:prepareGlyphsNow");
+	LUA_TRY_INVOKE_R(0, &cc::Label::prepareGlyphsNow);
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_cc_Label_disableEffect(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Label", "cc.Label:disableEffect");
@@ -1059,6 +1180,13 @@ int luaReg_Core_ccLabel(lua_State* lua_S)
 	LUA_METHOD("createWithBMFont", lua_cc_Label_createWithBMFont);
 	LUA_METHOD("createWithCharMap", lua_cc_Label_createWithCharMap);
 	LUA_METHOD("createWithSystemFont", lua_cc_Label_createWithSystemFont);
+	LUA_METHOD("createWithFont", lua_cc_Label_createWithFont);
+	LUA_METHOD("getRasterMode", lua_cc_Label_getRasterMode);
+	LUA_METHOD("setFontConfig", lua_cc_Label_setFontConfig);
+	LUA_METHOD("setGlyphRenderPolicy", lua_cc_Label_setGlyphRenderPolicy);
+	LUA_METHOD("getGlyphRenderPolicy", lua_cc_Label_getGlyphRenderPolicy);
+	LUA_METHOD("prefetchGlyphs", lua_cc_Label_prefetchGlyphs);
+	LUA_METHOD("prepareGlyphsNow", lua_cc_Label_prepareGlyphsNow);
 	LUA_METHOD("createWithTTF", lua_cc_Label_createWithTTF);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);

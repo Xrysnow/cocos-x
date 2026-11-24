@@ -10,6 +10,7 @@
 namespace lua
 {
 	template<> struct value_type<cc::backend::VertexLayout> : std::true_type {};
+	template<> struct value_type<cc::GlyphTicket> : std::true_type {};
 	template<>
 	struct to_native<cc::Vec2> {
 		static bool F(lua_State* L, int lo, cc::Vec2* outValue, const char* fName = "") {
@@ -272,6 +273,28 @@ namespace lua
 	};
 
 	LUA_TO_LUA_STRUCT6(cc::TTFConfig, fontFilePath, fontSize, glyphs, customGlyphs, distanceFieldEnabled, outlineSize);
+
+	template<>
+	struct to_native<cc::FontConfig> {
+		static bool F(lua_State* L, int lo, cc::FontConfig* outValue, const char* fName = "") {
+			LUA_CHECK_TO_NATIVE;
+			if (!lua_istable(L, lo)) return false;
+			if (lo < 0 && lo > LUA_REGISTRYINDEX) lo += lua_gettop(L) + 1;
+			cc::FontConfig value;
+			if (!luaval_field_to_native(L, lo, "name", &value.name, fName)) return false;
+			lua_pushliteral(L, "size");
+			lua_rawget(L, lo);
+			const bool validSize = lua_isnil(L, -1) || luaval_to_native(L, -1, &value.size, fName);
+			lua_pop(L, 1);
+			if (!validSize) return false;
+			*outValue = std::move(value);
+			return true;
+		}
+	};
+	LUA_TO_LUA_STRUCT(cc::FontMetrics, ascent, descent, lineHeight);
+	LUA_TO_LUA_STRUCT(cc::GlyphProgress, status, total, ready, failed);
+	LUA_TO_LUA_STRUCT(cc::FontCacheStats, livePages, retiringPages, queuedGlyphs, runningGlyphs,
+		textureBytes, stagingBytes, cacheHits, deduplicatedRequests, evictions, capacityMisses);
 
 	template<>
 	struct to_native<cc::Mat4> {
