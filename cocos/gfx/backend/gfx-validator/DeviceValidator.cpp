@@ -159,6 +159,14 @@ void DeviceValidator::present() {
     ++_currentFrame;
 }
 
+void DeviceValidator::markGpuCompletion(const GpuCompletion &completion) {
+    _actor->markGpuCompletion(completion);
+}
+
+void DeviceValidator::pollGpuCompletions(bool wait) {
+    _actor->pollGpuCompletions(wait);
+}
+
 CommandBuffer *DeviceValidator::createCommandBuffer(const CommandBufferInfo &info, bool hasAgent) {
     CommandBuffer *actor = _actor->createCommandBuffer(info, hasAgent);
     CommandBuffer *result = ccnew CommandBufferValidator(actor);

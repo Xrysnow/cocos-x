@@ -69,6 +69,8 @@ public:
 
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override;
+    void pollGpuCompletions(bool wait) override;
 
     void onPresentCompleted(uint32_t index);
     void notifySubmitted(CCMTLCommandBuffer *commandBuffer);
@@ -142,6 +144,7 @@ protected:
 
     ccstd::vector<CCMTLSwapchain *> _swapchains;
     ccstd::vector<CCMTLCommandBuffer *> _pendingSubmissions;
+    ccstd::vector<GpuCompletion> _gpuCompletions;
     uint64_t _presentCount = 0;
     dispatch_group_t _presentCompletionGroup = nullptr;
     dispatch_group_t _frameCompletionGroups[MAX_FRAMES_IN_FLIGHT] = {nullptr};

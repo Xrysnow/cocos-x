@@ -29,6 +29,9 @@
 #include <stack>
 #include <array>
 #include <deque>
+#include <atomic>
+#include <memory>
+#include <unordered_map>
 
 #include "platform/PlatformMacros.h"
 #include "renderer/RenderCommand.h"
@@ -154,6 +157,25 @@ public:
 
     /** Adds a `RenderComamnd` into the renderer specifying a particular render queue ID */
     void addCommand(RenderCommand* command, int renderQueueID);
+
+    // The owner keeps the command, its draw data and any texture-region lease alive.
+    void addOwnedCommand(RenderCommand* command, std::shared_ptr<void> lifetime);
+
+    // Pixels are tightly packed in the texture's native format. Accepted uploads
+    // are encoded before the next batch of render commands. The result callback
+    // runs on the engine thread and receives false if the queued upload is discarded.
+    bool queueTextureUpload(backend::TextureBackend* texture, uint32_t x, uint32_t y, uint32_t width,
+                            uint32_t height, std::vector<uint8_t> pixels, std::shared_ptr<void> lifetime = {},
+                            std::function<void(bool)> onEncoded = {});
+
+    bool isRendering() const { return _isRendering; }
+    // Encodes queued transfers before a synchronous producer waits for staging credit.
+    bool flushTextureUploads();
+    bool isFrameActive() const;
+
+    // The caller has released all draw/upload leases for the texture. The page
+    // counts against its pool until the engine-thread callback runs.
+    void retireTexture(cc::IntrusivePtr<Texture2D> page, std::function<void()> done);
 
     /** Get a `GroupCommand` from a GroupCommand pool or creates a new command if the pool is empty */
     GroupCommand* getNextGroupCommand();
@@ -447,6 +469,8 @@ protected:
     void flushTriangles();
 
     void processRenderCommand(RenderCommand* command);
+    void discardTextureUploads();
+    void collectTextureRetirements();
     void processGroupCommand(GroupCommand*);
     void visitRenderQueue(RenderQueue& queue);
     void doVisitRenderQueue(const std::vector<RenderCommand*>&);
@@ -464,6 +488,23 @@ protected:
     std::stack<int> _commandGroupStack;
 
     std::vector<RenderQueue> _renderGroups;
+
+    struct TextureUpload
+    {
+        cc::IntrusivePtr<backend::TextureBackend> texture;
+        uint32_t x, y, width, height;
+        std::vector<uint8_t> pixels;
+        std::shared_ptr<void> lifetime;
+        std::function<void(bool)> onEncoded;
+    };
+    std::vector<TextureUpload> _textureUploads;
+    std::unordered_map<RenderCommand*, std::shared_ptr<void>> _ownedCommands;
+    struct TextureRetirement
+    {
+        std::shared_ptr<std::atomic_bool> completed;
+        std::function<void()> callback;
+    };
+    std::vector<TextureRetirement> _textureRetirements;
 
     std::vector<TrianglesCommand*> _queuedTriangleCommands;
 
@@ -499,6 +540,7 @@ protected:
     size_t _drawnVertices = 0;
     // the flag for checking whether renderer is rendering
     bool _isRendering      = false;
+    bool _recordOwnedCommands = false;
     bool _isDepthTestFor2D = false;
 
     GroupCommandManager* _groupCommandManager = nullptr;

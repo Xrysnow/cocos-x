@@ -53,6 +53,7 @@ public:
     void updateTextureDescriptor(const TextureDescriptor& descriptor, int index = 0) override;
 
     cc::gfx::Texture* getHandler() const { return _texture; }
+    cc::gfx::Texture* prepareForUpload();
     cc::gfx::Sampler* getSampler() const { return _sampler; }
 
 private:

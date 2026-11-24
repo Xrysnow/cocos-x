@@ -1671,6 +1671,17 @@ void cmdFuncCCVKCopyTextureToBuffers(CCVKDevice *device, CCVKGPUTexture *srcText
     vkCmdCopyImageToBuffer(gpuCommandBuffer->vkCommandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                            destBuffer->gpuBuffer->vkBuffer, utils::toUint(stagingRegions.size()), stagingRegions.data());
 
+    VkBufferMemoryBarrier hostRead{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+    hostRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    hostRead.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    hostRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    hostRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    hostRead.buffer = destBuffer->gpuBuffer->vkBuffer;
+    hostRead.offset = destBuffer->offset;
+    hostRead.size = offset;
+    vkCmdPipelineBarrier(gpuCommandBuffer->vkCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1, &hostRead, 0, nullptr);
+
     // Mirror of the upload tail: after the readback the image must not remain in
     // TRANSFER_SRC for the rest of the frame/submission (descriptor-write-time layout
     // tracking; VUID-vkCmdDraw-None-09600).

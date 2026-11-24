@@ -245,6 +245,14 @@ void CCMTLDevice::notifySubmitted(CCMTLCommandBuffer *commandBuffer) {
     _pendingSubmissions.push_back(commandBuffer);
 }
 
+void CCMTLDevice::markGpuCompletion(const GpuCompletion &completion) {
+    _gpuCompletions.push_back(completion);
+}
+
+void CCMTLDevice::pollGpuCompletions(bool wait) {
+    if (wait) waitForIdle();
+}
+
 void CCMTLDevice::waitForIdle() {
     if (!_queue) return;
     @autoreleasepool {
@@ -252,7 +260,7 @@ void CCMTLDevice::waitForIdle() {
         // marker behind it, otherwise that marker could wait forever.
         if (_cmdBuff) static_cast<CCMTLCommandBuffer *>(_cmdBuff)->drainUnsubmitted();
         // Submitted work still owes its fence even if its drawable was lost.
-        if (!_pendingSubmissions.empty()) present();
+        if (!_pendingSubmissions.empty() || !_gpuCompletions.empty()) present();
         auto *queue = static_cast<CCMTLQueue *>(_queue);
         if (!queue->gpuQueueObj()) return;
         id<MTLCommandBuffer> marker = [queue->gpuQueueObj()->mtlCommandQueue commandBuffer];
@@ -266,7 +274,7 @@ void CCMTLDevice::waitForIdle() {
 
 void CCMTLDevice::present() {
     CC_PROFILE(CCMTLDevicePresent);
-    if (_pendingSubmissions.empty()) {
+    if (_pendingSubmissions.empty() && _gpuCompletions.empty()) {
         // A canceled acquisition has never consumed an in-flight quota.
         for (auto *swapchain : _swapchains) swapchain->release();
         return;
@@ -282,6 +290,8 @@ void CCMTLDevice::present() {
         const auto nextIndex = (_currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
         ccstd::vector<CCMTLCommandBuffer *> submitted;
         submitted.swap(_pendingSubmissions);
+        ccstd::vector<GpuCompletion> completions;
+        completions.swap(_gpuCompletions);
         const auto presentCount = ++_presentCount;
         bool trace = false;
 
@@ -306,6 +316,7 @@ void CCMTLDevice::present() {
         [cmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
             onPresentCompleted(tempIndex);
             for (auto *buffer : submitted) buffer->signalFence();
+            for (const auto &completion : completions) completion->store(true, std::memory_order_release);
             if (trace && (presentCount == 1 || presentCount == 120)) {
                 CC_LOG_INFO("P2 Metal present completed: frame=%llu submitted=%zu dropDrawable=%d status=%lu",
                             static_cast<unsigned long long>(presentCount), submitted.size(), dropDrawable,

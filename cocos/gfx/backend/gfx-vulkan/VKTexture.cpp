@@ -101,6 +101,9 @@ void CCVKTexture::createTextureView(bool initGPUTextureView) {
 }
 
 void CCVKTexture::doDestroy() {
+    if (_retirementSignal && _gpuTexture && !_isTextureView && !_gpuTexture->swapchain &&
+        !hasAnyFlags(_gpuTexture->flags, TextureFlagBit::EXTERNAL_NORMAL | TextureFlagBit::EXTERNAL_OES))
+        _gpuTexture->retirementSignal = std::move(_retirementSignal);
     _gpuTexture = nullptr;
     _gpuTextureView = nullptr;
 }
@@ -137,9 +140,18 @@ void CCVKGPUTexture::shutdown() {
         CC_PROFILE_MEMORY_DEC(Texture, size);
     }
 
-    CCVKDevice::getInstance()->gpuBarrierManager()->cancel(this);
+    auto *device = CCVKDevice::getInstance();
+    device->gpuBarrierManager()->cancel(this);
+    if (retirementSignal) {
+        // All uses of this texture already passed their submission fence. A
+        // hidden window may never advance the recycler to another frame slot.
+        if (vkImage != VK_NULL_HANDLE && vmaAllocation != VK_NULL_HANDLE)
+            vmaDestroyImage(device->gpuDevice()->memoryAllocator, vkImage, vmaAllocation);
+        retirementSignal->store(true, std::memory_order_release);
+        return;
+    }
     if (!hasFlag(flags, TextureFlagBit::EXTERNAL_NORMAL)) {
-        CCVKDevice::getInstance()->gpuRecycleBin()->collect(this);
+        device->gpuRecycleBin()->collect(this);
     }
 }
 
@@ -148,8 +160,14 @@ void CCVKGPUTextureView::init() {
 }
 
 void CCVKGPUTextureView::shutdown() {
-    CCVKDevice::getInstance()->gpuDescriptorHub()->disengage(this);
-    CCVKDevice::getInstance()->gpuRecycleBin()->collect(this);
+    auto *device = CCVKDevice::getInstance();
+    device->gpuDescriptorHub()->disengage(this);
+    if (gpuTexture->retirementSignal) {
+        if (vkImageView != VK_NULL_HANDLE)
+            vkDestroyImageView(device->gpuDevice()->vkDevice, vkImageView, nullptr);
+    } else {
+        device->gpuRecycleBin()->collect(this);
+    }
 }
 
 } // namespace gfx

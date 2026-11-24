@@ -35,7 +35,10 @@ Texture::Texture()
 : GFXObject(ObjectType::TEXTURE) {
 }
 
-Texture::~Texture() = default;
+Texture::~Texture() {
+    // Immediate backends have already destroyed their native objects here.
+    if (_retirementSignal) _retirementSignal->store(true, std::memory_order_release);
+}
 
 ccstd::hash_t Texture::computeHash(const TextureInfo &info) {
     return Hasher<TextureInfo>()(info);

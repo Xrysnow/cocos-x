@@ -28,6 +28,7 @@
 #include "base/std/any.h"
 #include "gfx-base/GFXDevice.h"
 #include "gfx-gles-common/GLESCommandPool.h"
+#include "gfx-gles-common/gles3w.h"
 
 namespace cc {
 namespace gfx {
@@ -69,6 +70,8 @@ public:
     void frameSync() override{};
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override;
+    void pollGpuCompletions(bool wait) override;
 
     inline const GLESBindingMapping &bindingMappings() const { return _bindingMappings; }
 
@@ -141,6 +144,7 @@ protected:
 
     ccstd::vector<GLES3GPUSwapchain *> _swapchains;
     ccstd::vector<GLES3Swapchain *> _acquiredSwapchains;
+    ccstd::vector<std::pair<GLsync, GpuCompletion>> _gpuCompletions;
 
     GLESBindingMapping _bindingMappings;
 

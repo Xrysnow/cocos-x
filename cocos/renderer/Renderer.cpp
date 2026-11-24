@@ -51,6 +51,8 @@
 #include "renderer/backend/RenderTarget.h"
 #include "gfx-base/GFXDef-common.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
+#include "renderer/backend/gfx/CommandBufferGFX.h"
+#include "renderer/backend/gfx/UtilsGFX.h"
 #include "backend/gfx/BufferGFX.h"
 
 using DepthStencilFlags = cc::backend::DepthStencilFlags;
@@ -397,6 +399,8 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+    clean();
+    discardTextureUploads();
     _renderGroups.clear();
 
     for (auto&& clearCommand : _callbackCommandsPool)
@@ -465,6 +469,118 @@ void Renderer::addCommand(RenderCommand* command, int renderQueueID)
     _renderGroups[renderQueueID].emplace_back(command);
 }
 
+void Renderer::addOwnedCommand(RenderCommand* command, std::shared_ptr<void> lifetime)
+{
+    if (!command || !lifetime || _isRendering ||
+        (command->getType() != RenderCommand::Type::CUSTOM_COMMAND &&
+         command->getType() != RenderCommand::Type::TRIANGLES_COMMAND))
+    {
+        CCASSERT(false, "Invalid owned render command");
+        return;
+    }
+    if (_ownedCommands.try_emplace(command, std::move(lifetime)).second)
+        addCommand(command);
+}
+
+bool Renderer::queueTextureUpload(backend::TextureBackend* texture, uint32_t x, uint32_t y, uint32_t width,
+                                  uint32_t height, std::vector<uint8_t> pixels, std::shared_ptr<void> lifetime,
+                                  std::function<void(bool)> onEncoded)
+{
+    auto* commands = static_cast<backend::CommandBufferGFX*>(_commandBuffer);
+    if (_isRendering || !commands || !commands->canUploadTexture(texture, x, y, width, height, pixels.size()))
+        return false;
+    _textureUploads.push_back({cc::IntrusivePtr{texture}, x, y, width, height, std::move(pixels),
+                               std::move(lifetime), std::move(onEncoded)});
+    return true;
+}
+
+bool Renderer::isFrameActive() const
+{
+    return _commandBuffer && static_cast<const backend::CommandBufferGFX*>(_commandBuffer)->isFrameActive();
+}
+
+void Renderer::retireTexture(cc::IntrusivePtr<Texture2D> page, std::function<void()> done)
+{
+    auto* texture = page ? backend::UtilsGFX::getTexture(page->getBackendTexture()) : nullptr;
+    if (!texture)
+    {
+        if (done)
+            done();
+        return;
+    }
+    const auto completed = std::make_shared<std::atomic_bool>(false);
+    texture->setRetirementSignal(completed);
+    page = nullptr;
+    if (done)
+        _textureRetirements.push_back({completed, std::move(done)});
+    collectTextureRetirements();
+}
+
+void Renderer::collectTextureRetirements()
+{
+    if (_textureRetirements.empty())
+        return;
+    std::vector<std::function<void()>> ready;
+    std::erase_if(_textureRetirements, [&ready](auto& retirement) {
+        if (!retirement.completed->load(std::memory_order_acquire))
+            return false;
+        ready.push_back(std::move(retirement.callback));
+        return true;
+    });
+    for (auto& callback : ready)
+        callback();
+}
+
+bool Renderer::flushTextureUploads()
+{
+    auto* commands = static_cast<backend::CommandBufferGFX*>(_commandBuffer);
+    auto uploads = std::move(_textureUploads);
+    constexpr size_t maxRegionsPerCopy = 64;
+    std::array<backend::CommandBufferGFX::TextureCopyRegion, maxRegionsPerCopy> regions;
+    bool allEncoded = true;
+    for (size_t first = 0; first < uploads.size();)
+    {
+        auto* texture = uploads[first].texture.get();
+        size_t count = 0;
+        while (count < regions.size() && first + count < uploads.size())
+        {
+            const auto& upload = uploads[first + count];
+            if (upload.texture.get() != texture)
+                break;
+            // Overlapping writes require a separate transfer and its WAW barrier.
+            const auto overlaps = [&upload](const auto& region) {
+                return upload.x < region.x + region.width && region.x < upload.x + upload.width &&
+                       upload.y < region.y + region.height && region.y < upload.y + upload.height;
+            };
+            if (std::any_of(regions.begin(), regions.begin() + count, overlaps))
+                break;
+            regions[count++] = {upload.x, upload.y, upload.width, upload.height, upload.pixels.data()};
+        }
+        const bool encoded = commands->encodeTextureUploads(texture, {regions.data(), count});
+        allEncoded &= encoded;
+        for (size_t index = first; index < first + count; ++index)
+        {
+            auto& upload = uploads[index];
+            if (encoded)
+                commands->keepAliveForSubmission(std::move(upload.lifetime));
+            if (upload.onEncoded)
+                upload.onEncoded(encoded);
+        }
+        first += count;
+    }
+    return allEncoded;
+}
+
+void Renderer::discardTextureUploads()
+{
+    auto uploads = std::move(_textureUploads);
+    for (auto& upload : uploads)
+    {
+        if (upload.onEncoded)
+            upload.onEncoded(false);
+    }
+}
+
 GroupCommand* Renderer::getNextGroupCommand()
 {
     if (_groupCommandPool.empty())
@@ -515,6 +631,13 @@ void Renderer::processGroupCommand(GroupCommand* command)
 
 void Renderer::processRenderCommand(RenderCommand* command)
 {
+    if (const auto owned = _ownedCommands.find(command); owned != _ownedCommands.end())
+    {
+        if (!_recordOwnedCommands)
+            return;
+        static_cast<backend::CommandBufferGFX*>(_commandBuffer)->keepAliveForSubmission(owned->second);
+    }
+
     auto commandType = command->getType();
     switch (commandType)
     {
@@ -614,6 +737,8 @@ void Renderer::render()
 {
     // TODO: setup camera or MVP
     _isRendering = true;
+    const bool uploadsEncoded = flushTextureUploads();
+    _recordOwnedCommands = uploadsEncoded && isFrameActive();
     //    if (_glViewAssigned)
     {
         // Process render commands
@@ -630,12 +755,15 @@ void Renderer::render()
 
 bool Renderer::beginFrame()
 {
-    return _commandBuffer->beginFrame();
+    const bool active = _commandBuffer->beginFrame();
+    collectTextureRetirements();
+    return active;
 }
 
 void Renderer::endFrame()
 {
     _commandBuffer->endFrame();
+    collectTextureRetirements();
 
     _queuedTotalIndexCount  = 0;
     _queuedTotalVertexCount = 0;
@@ -663,7 +791,15 @@ void Renderer::discardFrame()
         }
     }
     clean();
+    discardTextureUploads();
     clearDrawStats();
+    const bool canPollRetirements = !_textureRetirements.empty() && gfx::Device::getInstance();
+    if (canPollRetirements)
+    {
+        gfx::Device::getInstance()->pollGpuCompletions(false);
+        collectTextureRetirements();
+    }
+    static_cast<backend::CommandBufferGFX*>(_commandBuffer)->collectGpuCompletions(!canPollRetirements);
     _queuedTotalIndexCount = 0;
     _queuedTotalVertexCount = 0;
     GlobalTriangleBufferPool.reuse();
@@ -684,6 +820,7 @@ void Renderer::clean()
 
     // Clear batch commands
     _queuedTriangleCommands.clear();
+    _ownedCommands.clear();
 }
 
 void Renderer::setDepthTest(bool value)

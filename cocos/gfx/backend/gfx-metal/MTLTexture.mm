@@ -253,6 +253,13 @@ void CCMTLTexture::doDestroy() {
         _mtlTexture = nil;
     }
 
+    if (_retirementSignal) {
+        // The last submission using this texture has already finished.
+        [mtlTexure release];
+        std::exchange(_retirementSignal, {})->store(true, std::memory_order_release);
+        return;
+    }
+
     std::function<void(void)> destroyFunc = [mtlTexure]() {
         if (mtlTexure) {
             //TODO_Zeqiang: [mac12 | ios15, ...) validate here

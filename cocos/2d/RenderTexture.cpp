@@ -529,6 +529,17 @@ void RenderTexture::draw(Renderer* renderer, const Mat4& transform, uint32_t fla
     }
 }
 
+static void setTargetProjection(Director* director, const Vec2& targetSize)
+{
+    director->setProjection(director->getProjection());
+    const Vec2 window = director->getWinSizeInPixels();
+    // The projection already contains the backend's clip-space conversion.
+    // Resizing the viewport only scales scene coordinates in X and Y.
+    Mat4 scale;
+    Mat4::createScale(window.width / targetSize.width, window.height / targetSize.height, 1.0f, &scale);
+    director->multiplyMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, scale);
+}
+
 void RenderTexture::onBegin()
 {
     _oldProjMatrix = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
@@ -538,20 +549,7 @@ void RenderTexture::onBegin()
     _director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _transformMatrix);
 
     if (!_keepMatrix)
-    {
-        _director->setProjection(_director->getProjection());
-        const Vec2& texSize = _texture2D->getContentSizeInPixels();
-
-        // Calculate the adjustment ratios based on the old and new projections
-        Vec2 size         = _director->getWinSizeInPixels();
-        float widthRatio  = size.width / texSize.width;
-        float heightRatio = size.height / texSize.height;
-
-        Mat4 orthoMatrix;
-        Mat4::createOrthographicOffCenter((float)-1.0 / widthRatio, (float)1.0 / widthRatio, (float)-1.0 / heightRatio,
-                                          (float)1.0 / heightRatio, -1, 1, &orthoMatrix);
-        _director->multiplyMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, orthoMatrix);
-    }
+        setTargetProjection(_director, _texture2D->getContentSizeInPixels());
 
     Rect viewport;
     viewport.size.width           = _fullviewPort.size.width;
@@ -590,22 +588,7 @@ void RenderTexture::begin()
     _transformMatrix = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 
     if (!_keepMatrix)
-    {
-        _director->setProjection(_director->getProjection());
-
-        const Vec2& texSize = _texture2D->getContentSizeInPixels();
-
-        // Calculate the adjustment ratios based on the old and new projections
-        Vec2 size = _director->getWinSizeInPixels();
-
-        float widthRatio  = size.width / texSize.width;
-        float heightRatio = size.height / texSize.height;
-
-        Mat4 orthoMatrix;
-        Mat4::createOrthographicOffCenter((float)-1.0 / widthRatio, (float)1.0 / widthRatio, (float)-1.0 / heightRatio,
-                                          (float)1.0 / heightRatio, -1, 1, &orthoMatrix);
-        _director->multiplyMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, orthoMatrix);
-    }
+        setTargetProjection(_director, _texture2D->getContentSizeInPixels());
 
 
     Renderer* renderer = _director->getRenderer();

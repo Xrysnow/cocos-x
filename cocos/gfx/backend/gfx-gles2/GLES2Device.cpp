@@ -273,6 +273,12 @@ void GLES2Device::acquire(Swapchain *const *swapchains, uint32_t count) {
     }
 }
 
+void GLES2Device::markGpuCompletion(const GpuCompletion &completion) {
+    // Core GLES2 has no sync objects. Only frames with managed resources wait.
+    glFinish();
+    completion->store(true, std::memory_order_release);
+}
+
 void GLES2Device::present() {
     CC_PROFILE(GLES2DevicePresent);
     auto *queue = static_cast<GLES2Queue *>(_queue);

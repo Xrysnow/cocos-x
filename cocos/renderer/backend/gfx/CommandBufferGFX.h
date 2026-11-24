@@ -7,6 +7,7 @@
 #include "gfx/backend/GFXDeviceManager.h"
 #include "base/RefMap.h"
 #include "math/Math.h"
+#include <span>
 #include <vector>
 
 CC_BACKEND_BEGIN
@@ -32,6 +33,18 @@ public:
     bool hasSurfaceFailed() const;
     bool hasDeviceLost() const;
     uint64_t getPresentCount() const;
+    bool isFrameActive() const { return _frameStarted && !hasDeviceLost(); }
+
+    bool canUploadTexture(TextureBackend* texture, uint32_t x, uint32_t y, uint32_t width,
+                          uint32_t height, size_t byteCount);
+    struct TextureCopyRegion
+    {
+        uint32_t x, y, width, height;
+        const uint8_t* pixels;
+    };
+    bool encodeTextureUploads(TextureBackend* texture, std::span<const TextureCopyRegion> regions);
+    void keepAliveForSubmission(std::shared_ptr<void> lifetime);
+    void collectGpuCompletions(bool poll = false, bool wait = false);
 
     void beginRenderPass(const RenderTarget* renderTarget, const RenderPassDescriptor& descriptor) override;
 
@@ -89,6 +102,15 @@ private:
     void setUniforms(ProgramGFX* program);
     void cleanResources();
     void resetDefaultFBO();
+
+    struct SubmissionResources
+    {
+        gfx::GpuCompletion completed;
+        std::vector<std::shared_ptr<void>> lifetimes;
+        std::vector<cc::IntrusivePtr<TextureBackend>> textures;
+    };
+    SubmissionResources _recordedResources;
+    std::vector<SubmissionResources> _inFlightResources;
 
     std::vector<cc::gfx::Swapchain*> swapchains;
 

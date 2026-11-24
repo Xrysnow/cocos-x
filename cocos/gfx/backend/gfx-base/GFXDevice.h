@@ -66,6 +66,10 @@ public:
     virtual void acquire(Swapchain *const *swapchains, uint32_t count) = 0;
     virtual void present() = 0;
 
+    // Called on the graphics actor after the primary queue submission.
+    virtual void markGpuCompletion(const GpuCompletion &completion) = 0;
+    virtual void pollGpuCompletions(bool wait) = 0;
+
     virtual void flushCommands(CommandBuffer *const *cmdBuffs, uint32_t count) {}
 
     virtual MemoryStatus &getMemoryStatus() { return _memoryStatus; }

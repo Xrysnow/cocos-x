@@ -167,6 +167,27 @@ void DeviceAgent::present() {
     _frameBoundarySemaphore.wait();
 }
 
+void DeviceAgent::markGpuCompletion(const GpuCompletion &completion) {
+    ENQUEUE_MESSAGE_2(
+        _mainMessageQueue, DeviceMarkGpuCompletion,
+        actor, _actor,
+        completion, completion,
+        {
+            actor->markGpuCompletion(completion);
+        });
+}
+
+void DeviceAgent::pollGpuCompletions(bool wait) {
+    ENQUEUE_MESSAGE_2(
+        _mainMessageQueue, DevicePollGpuCompletions,
+        actor, _actor,
+        wait, wait,
+        {
+            actor->pollGpuCompletions(wait);
+        });
+    _mainMessageQueue->kickAndWait();
+}
+
 void DeviceAgent::setMultithreaded(bool multithreaded) {
     if (multithreaded == _multithreaded) return;
     _multithreaded = multithreaded;

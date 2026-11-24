@@ -781,13 +781,13 @@ void CCVKDevice::present() {
     }
     _gpuDevice->curBackBufferIndex = (_gpuDevice->curBackBufferIndex + 1) % _gpuDevice->backBufferCount;
 
+    VkResult fenceResult = VK_SUCCESS;
     uint32_t fenceCount = gpuFencePool()->size();
     if (fenceCount) {
-        const auto waitResult = vkWaitForFences(_gpuDevice->vkDevice, fenceCount,
-                                                gpuFencePool()->data(), VK_TRUE, UINT64_MAX);
-        if (waitResult != VK_SUCCESS) {
-            CC_LOG_ERROR("Vulkan present fence wait failed: %d", waitResult);
-            for (auto *swapchain : acquiredSwapchains) swapchain->setPresentResult(waitResult);
+        fenceResult = vkWaitForFences(_gpuDevice->vkDevice, fenceCount, gpuFencePool()->data(), VK_TRUE, UINT64_MAX);
+        if (fenceResult != VK_SUCCESS) {
+            CC_LOG_ERROR("Vulkan present fence wait failed: %d", fenceResult);
+            for (auto *swapchain : acquiredSwapchains) swapchain->setPresentResult(fenceResult);
         }
     }
     acquiredSwapchains.clear();
@@ -795,6 +795,18 @@ void CCVKDevice::present() {
     gpuSwapchains.clear();
     vkSwapchainIndices.clear();
 
+    if (fenceResult != VK_SUCCESS) {
+        if (fenceResult == VK_ERROR_DEVICE_LOST) pollGpuCompletions(false);
+        return;
+    }
+
+    // Resolve this slot before resetting the fences used as completion evidence.
+    if (_gpuDevice->curBackBufferIndex < _gpuCompletions.size()) {
+        auto &completed = _gpuCompletions[_gpuDevice->curBackBufferIndex];
+        for (const auto &completion : completed) completion->store(true, std::memory_order_release);
+        completed.clear();
+    }
+    pollGpuCompletions(false);
     gpuFencePool()->reset();
     gpuRecycleBin()->clear();
     gpuStagingBufferPool()->reset();
@@ -817,6 +829,33 @@ void CCVKDevice::present() {
 void CCVKDevice::frameSync() {
 }
 
+void CCVKDevice::markGpuCompletion(const GpuCompletion &completion) {
+    CC_ASSERT(gpuFencePool()->size());
+    _gpuCompletions.resize(_gpuFencePools.size());
+    _gpuCompletions[_gpuDevice->curBackBufferIndex].push_back(completion);
+}
+
+void CCVKDevice::pollGpuCompletions(bool wait) {
+    if (wait) {
+        waitAllFences();
+        return;
+    }
+    for (size_t i = 0; i < _gpuCompletions.size(); ++i) {
+        auto &completions = _gpuCompletions[i];
+        if (completions.empty()) continue;
+        auto *pool = _gpuFencePools[i].get();
+        if (!pool->size()) continue;
+        const auto *fences = pool->data();
+        const bool complete = std::all_of(fences, fences + pool->size(), [this](VkFence fence) {
+            const auto status = vkGetFenceStatus(_gpuDevice->vkDevice, fence);
+            return status == VK_SUCCESS || status == VK_ERROR_DEVICE_LOST;
+        });
+        if (!complete) continue;
+        for (const auto &completion : completions) completion->store(true, std::memory_order_release);
+        completions.clear();
+    }
+}
+
 CCVKGPUFencePool *CCVKDevice::gpuFencePool() { return _gpuFencePools[_gpuDevice->curBackBufferIndex].get(); }
 CCVKGPUSemaphorePool *CCVKDevice::gpuSemaphorePool() const { return _gpuSemaphorePools[_gpuDevice->curBackBufferIndex].get(); }
 CCVKGPURecycleBin *CCVKDevice::gpuRecycleBin() { return _gpuRecycleBins[_gpuDevice->curBackBufferIndex].get(); }
@@ -831,9 +870,16 @@ void CCVKDevice::waitAllFences() {
     }
 
     if (!fences.empty()) {
-        const auto waitResult = vkWaitForFences(_gpuDevice->vkDevice, utils::toUint(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
+        auto waitResult = vkWaitForFences(_gpuDevice->vkDevice, utils::toUint(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
         if (waitResult != VK_SUCCESS) CC_LOG_ERROR("Vulkan waitAllFences failed: %d", waitResult);
+        if (waitResult != VK_SUCCESS && waitResult != VK_ERROR_DEVICE_LOST)
+            waitResult = vkDeviceWaitIdle(_gpuDevice->vkDevice);
+        if (waitResult != VK_SUCCESS && waitResult != VK_ERROR_DEVICE_LOST) return;
 
+        for (const auto &slot : _gpuCompletions)
+            for (const auto &completion : slot) completion->store(true, std::memory_order_release);
+        _gpuCompletions.clear();
+        if (waitResult == VK_ERROR_DEVICE_LOST) return;
         for (auto &fencePool : _gpuFencePools) {
             fencePool->reset();
         }

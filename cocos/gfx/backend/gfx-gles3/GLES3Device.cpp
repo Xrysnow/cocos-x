@@ -250,6 +250,7 @@ bool GLES3Device::doInit(const DeviceInfo & /*info*/) {
 }
 
 void GLES3Device::doDestroy() {
+    pollGpuCompletions(true);
     CC_SAFE_DELETE(_gpuFramebufferCacheMap);
     CC_SAFE_DELETE(_gpuConstantRegistry);
     CC_SAFE_DELETE(_gpuFramebufferHub);
@@ -278,6 +279,49 @@ void GLES3Device::acquire(Swapchain *const *swapchains, uint32_t count) {
     if (_onAcquire) _onAcquire->execute();
 }
 
+void GLES3Device::markGpuCompletion(const GpuCompletion &completion) {
+    if (glFenceSync && glClientWaitSync && glDeleteSync) {
+        if (auto fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)) {
+            _gpuCompletions.emplace_back(fence, completion);
+            glFlush();
+            return;
+        }
+    }
+    glFinish();
+    completion->store(true, std::memory_order_release);
+}
+
+void GLES3Device::pollGpuCompletions(bool wait) {
+    if (_gpuCompletions.empty()) return;
+    if (eglGetCurrentContext() == EGL_NO_CONTEXT) {
+        if (!wait) return;
+        if (!_gpuContext->bindContext(true)) {
+            if (_gpuContext->lastError == EGL_CONTEXT_LOST) {
+                for (const auto &entry : _gpuCompletions)
+                    entry.second->store(true, std::memory_order_release);
+                _gpuCompletions.clear();
+            }
+            return;
+        }
+    }
+    if (wait) glFinish();
+    _gpuCompletions.erase(
+        std::remove_if(_gpuCompletions.begin(), _gpuCompletions.end(), [&wait](const auto &entry) {
+            if (!wait) {
+                const auto status = glClientWaitSync(entry.first, 0, 0);
+                if (status == GL_TIMEOUT_EXPIRED) return false;
+                if (status == GL_WAIT_FAILED) {
+                    glFinish();
+                    wait = true;
+                }
+            }
+            glDeleteSync(entry.first);
+            entry.second->store(true, std::memory_order_release);
+            return true;
+        }),
+        _gpuCompletions.end());
+}
+
 void GLES3Device::present() {
     CC_PROFILE(GLES3DevicePresent);
     auto *queue = static_cast<GLES3Queue *>(_queue);
@@ -288,6 +332,7 @@ void GLES3Device::present() {
     for (auto *swapchain : _acquiredSwapchains) swapchain->presentDrawable();
     _acquiredSwapchains.clear();
     _swapchains.clear();
+    pollGpuCompletions(false);
 
     // Clear queue stats
     queue->_numDrawCalls = 0;

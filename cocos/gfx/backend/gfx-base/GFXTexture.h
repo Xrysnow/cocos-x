@@ -26,9 +26,13 @@
 
 #include "GFXObject.h"
 #include "base/RefCounted.h"
+#include <atomic>
+#include <memory>
 
 namespace cc {
 namespace gfx {
+
+using GpuCompletion = std::shared_ptr<std::atomic_bool>;
 
 class CC_DLL Texture : public GFXObject, public RefCounted {
 public:
@@ -58,6 +62,9 @@ public:
     virtual const Texture *getRaw() const { return this; }
 
     virtual uint32_t getGLTextureHandle() const noexcept { return 0; }
+    // Only for resources whose queued and in-flight uses have finished. Signals
+    // when the last owner releases the native resource.
+    virtual void setRetirementSignal(const GpuCompletion &signal) { _retirementSignal = signal; }
 
 protected:
     friend class Swapchain;
@@ -79,6 +86,7 @@ protected:
     bool _isTextureView{false};
     uint32_t _size{0U};
     ccstd::hash_t _hash{0U};
+    GpuCompletion _retirementSignal;
 };
 
 } // namespace gfx

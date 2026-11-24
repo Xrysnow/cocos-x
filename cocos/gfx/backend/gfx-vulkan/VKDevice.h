@@ -79,6 +79,8 @@ public:
     void frameSync() override;
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override;
+    void pollGpuCompletions(bool wait) override;
 
     inline bool checkExtension(const ccstd::string &extension) const {
         return std::any_of(_extensions.begin(), _extensions.end(), [&extension](auto &ext) {
@@ -145,6 +147,7 @@ protected:
     std::unique_ptr<CCVKGPUContext> _gpuContext;
 
     ccstd::vector<std::unique_ptr<CCVKGPUFencePool>> _gpuFencePools;
+    ccstd::vector<ccstd::vector<GpuCompletion>> _gpuCompletions;
     ccstd::vector<std::unique_ptr<CCVKGPURecycleBin>> _gpuRecycleBins;
     ccstd::vector<std::unique_ptr<CCVKGPUStagingBufferPool>> _gpuStagingBufferPools;
 

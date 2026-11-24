@@ -13,6 +13,7 @@
 #include "UtilsGFX.h"
 #include "DeviceGFX.h"
 #include "RenderTargetGFX.h"
+#include "TextureGFX.h"
 #include "renderer/backend/RenderTarget.h"
 #include <algorithm>
 
@@ -55,6 +56,7 @@ void CommandBufferGFX::shutdownSurface()
     if (_surfaceClosed)
         return;
     detachSurface();
+    collectGpuCompletions(true, true);
     _surfaceClosed = true;
     for (auto* swapchain : swapchains)
     {
@@ -70,6 +72,7 @@ void CommandBufferGFX::shutdownSurface()
 
 bool CommandBufferGFX::beginFrame()
 {
+    collectGpuCompletions();
     if (_surfaceClosed || _surfaceDetached || hasSurfaceFailed())
         return false;
 
@@ -551,11 +554,20 @@ void CommandBufferGFX::endFrame()
     _frameStarted = false;
     CC_ASSERT(!_currentPass);
     _cb->end();
-    gfx::Device::getInstance()->flushCommands({_cb});
-    gfx::Device::getInstance()->getQueue()->submit({_cb});
+    auto* device = gfx::Device::getInstance();
+    device->flushCommands({_cb});
+    device->getQueue()->submit({_cb});
+    if (!_recordedResources.lifetimes.empty() || !_recordedResources.textures.empty())
+    {
+        _recordedResources.completed = std::make_shared<std::atomic_bool>(false);
+        device->markGpuCompletion(_recordedResources.completed);
+        _inFlightResources.push_back(std::move(_recordedResources));
+        _recordedResources = {};
+    }
     // present will wait
-    gfx::Device::getInstance()->present();
+    device->present();
     _usedProgramStates.clear();
+    collectGpuCompletions();
 
     _inputAssemblers     = _usedInputAssemblers;
     _usedInputAssemblers = {};
@@ -572,6 +584,65 @@ void CommandBufferGFX::endFrame()
     _currentFBO = _defaultRT->getFramebuffer();
     _tmpTextures.clear();
     _usedFBOs.clear();
+}
+
+bool CommandBufferGFX::canUploadTexture(TextureBackend* texture, uint32_t x, uint32_t y,
+                                       uint32_t width, uint32_t height, size_t byteCount)
+{
+    auto* device = gfx::Device::getInstance();
+    if (!texture || !device || device->getGfxAPI() == gfx::API::UNKNOWN || _surfaceClosed ||
+        _surfaceDetached || hasSurfaceFailed() || !width || !height || x >= texture->getWidth() ||
+        y >= texture->getHeight() || width > texture->getWidth() - x || height > texture->getHeight() - y)
+        return false;
+
+    auto* texture2d = dynamic_cast<Texture2DGFX*>(texture);
+    auto* target = texture2d ? texture2d->prepareForUpload() : UtilsGFX::getTexture(texture);
+    return target && target->getInfo().type == gfx::TextureType::TEX2D &&
+           gfx::hasAllFlags(target->getInfo().usage, gfx::TextureUsageBit::TRANSFER_DST) &&
+           !gfx::GFX_FORMAT_INFOS[gfx::toNumber(target->getFormat())].isCompressed &&
+           gfx::formatSize(target->getFormat(), width, height, 1) == byteCount;
+}
+
+bool CommandBufferGFX::encodeTextureUploads(TextureBackend* texture, std::span<const TextureCopyRegion> regions)
+{
+    if (!_frameStarted || _currentPass || hasDeviceLost())
+        return false;
+
+    auto* target = UtilsGFX::getTexture(texture);
+    if (!target)
+        return false;
+    gfx::BufferTextureCopyList copies;
+    gfx::BufferDataList buffers;
+    copies.reserve(regions.size());
+    buffers.reserve(regions.size());
+    for (const auto& region : regions)
+    {
+        auto& copy = copies.emplace_back();
+        copy.texOffset.x = static_cast<int32_t>(region.x);
+        copy.texOffset.y = static_cast<int32_t>(region.y);
+        copy.texExtent = {region.width, region.height, 1};
+        buffers.push_back(region.pixels);
+    }
+    _cb->copyBuffersToTexture(buffers, target, copies);
+    _recordedResources.textures.emplace_back(texture);
+    return true;
+}
+
+void CommandBufferGFX::keepAliveForSubmission(std::shared_ptr<void> lifetime)
+{
+    if (lifetime)
+        _recordedResources.lifetimes.push_back(std::move(lifetime));
+}
+
+void CommandBufferGFX::collectGpuCompletions(bool poll, bool wait)
+{
+    if (_inFlightResources.empty())
+        return;
+    if (auto* device = gfx::Device::getInstance(); poll && device)
+        device->pollGpuCompletions(wait);
+    std::erase_if(_inFlightResources, [](const auto& submission) {
+        return submission.completed->load(std::memory_order_acquire);
+    });
 }
 
 void CommandBufferGFX::setDepthStencilState(DepthStencilState* depthStencilState)

@@ -30,6 +30,7 @@
 #include "base/std/container/unordered_set.h"
 #include "base/CachedArray.h"
 #include "gfx-base/GFXDeviceObject.h"
+#include "gfx-base/GFXTexture.h"
 #if defined(USE_JOB_SYSTEM_TBB) && (USE_JOB_SYSTEM_TBB > 0)
 #define TBB_USE_EXCEPTIONS 0 // no-rtti for now
 #include "tbb/concurrent_unordered_map.h"
@@ -146,6 +147,7 @@ struct CCVKGPUTexture : public CCVKGPUDeviceObject {
     void shutdown() override;
     void init();
 
+    GpuCompletion retirementSignal;
     TextureType type = TextureType::TEX2D;
     Format format = Format::UNKNOWN;
     TextureUsage usage = TextureUsageBit::NONE;

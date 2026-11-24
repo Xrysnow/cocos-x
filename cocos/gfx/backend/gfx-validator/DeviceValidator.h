@@ -59,6 +59,8 @@ public:
     void frameSync() override;
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override;
+    void pollGpuCompletions(bool wait) override;
 
     CommandBuffer *createCommandBuffer(const CommandBufferInfo &info, bool hasAgent) override;
     Queue *createQueue() override;

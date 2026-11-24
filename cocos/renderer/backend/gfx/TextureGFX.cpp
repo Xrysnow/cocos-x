@@ -109,6 +109,13 @@ void Texture2DGFX::resetTexture()
     _texture = gfx::Device::getInstance()->createTexture(_info);
 }
 
+gfx::Texture* Texture2DGFX::prepareForUpload()
+{
+    if (!_texture && isParameterValid())
+        resetTexture();
+    return _texture;
+}
+
 void Texture2DGFX::updateTextureDescriptor(const TextureDescriptor& descriptor, int index)
 {
     TextureBackend::updateTextureDescriptor(descriptor);
@@ -140,8 +147,9 @@ void Texture2DGFX::updateTextureDescriptor(const TextureDescriptor& descriptor, 
     {
         if (_textureFormat == PixelFormat::D24S8)
             _info.usage = gfx::TextureUsageBit::TRANSFER_DST | gfx::TextureUsageBit::DEPTH_STENCIL_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
-        else  // should be RGBA8
-            _info.usage = gfx::TextureUsageBit::TRANSFER_DST | gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
+        else
+            _info.usage = gfx::TextureUsageBit::TRANSFER_SRC | gfx::TextureUsageBit::TRANSFER_DST |
+                          gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED;
     }
     else
     {

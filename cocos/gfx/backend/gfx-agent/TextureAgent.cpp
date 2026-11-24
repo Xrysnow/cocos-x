@@ -78,6 +78,17 @@ void TextureAgent::doInit(const SwapchainTextureInfo &info) {
     // the actor is already initialized
 }
 
+void TextureAgent::setRetirementSignal(const GpuCompletion &signal) {
+    ENQUEUE_MESSAGE_2(
+        DeviceAgent::getInstance()->getMessageQueue(),
+        TextureRetirementSignal,
+        actor, getActor(),
+        signal, signal,
+        {
+            actor->setRetirementSignal(signal);
+        });
+}
+
 void TextureAgent::doDestroy() {
     ENQUEUE_MESSAGE_1(
         DeviceAgent::getInstance()->getMessageQueue(),

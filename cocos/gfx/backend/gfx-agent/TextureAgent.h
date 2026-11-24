@@ -38,6 +38,7 @@ public:
     inline void renounceOwnership() { _ownTheActor = false; }
 
     const Texture *getRaw() const override { return _actor->getRaw(); }
+    void setRetirementSignal(const GpuCompletion &signal) override;
 
     uint32_t getGLTextureHandle() const noexcept override { return _actor->getGLTextureHandle(); }
 

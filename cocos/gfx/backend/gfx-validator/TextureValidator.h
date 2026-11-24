@@ -41,6 +41,7 @@ public:
     inline bool isInited() const { return _inited; }
 
     const Texture *getRaw() const override { return _actor->getRaw(); }
+    void setRetirementSignal(const GpuCompletion &signal) override { _actor->setRetirementSignal(signal); }
 
     uint32_t getGLTextureHandle() const noexcept override { return _actor->getGLTextureHandle(); }
 

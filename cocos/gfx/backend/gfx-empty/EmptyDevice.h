@@ -57,6 +57,10 @@ public:
     void frameSync() override {};
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override {
+        completion->store(true, std::memory_order_release);
+    }
+    void pollGpuCompletions(bool) override {}
 
     CommandBuffer *createCommandBuffer(const CommandBufferInfo &info, bool emptyhas) override;
     Queue *createQueue() override;

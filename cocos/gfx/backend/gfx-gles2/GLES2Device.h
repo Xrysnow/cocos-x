@@ -67,6 +67,8 @@ public:
     void frameSync() override{};
     void acquire(Swapchain *const *swapchains, uint32_t count) override;
     void present() override;
+    void markGpuCompletion(const GpuCompletion &completion) override;
+    void pollGpuCompletions(bool) override {}
 
     inline const GLESBindingMapping &bindingMappings() const { return _bindingMappings; }
 
