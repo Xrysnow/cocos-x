@@ -614,7 +614,7 @@ static constexpr ccstd::array<uint32_t, static_cast<size_t>(Type::COUNT)> GFX_TY
 
 /**
  * @en Get the memory size of the specified type.
- * @zh µÃµ½ GFX Êı¾İÀàĞÍµÄ´óĞ¡¡£
+ * @zh å¾—åˆ° GFX æ•°æ®ç±»å‹çš„å¤§å°ã€‚
  * @param type The target type.
  */
 uint32_t getTypeSize(Type type) {

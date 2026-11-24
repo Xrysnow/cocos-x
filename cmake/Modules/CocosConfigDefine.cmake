@@ -63,6 +63,8 @@ if(WINDOWS)
             message(FATAL_ERROR "cocos-x requires MSVC 1930 or newer. Found ${MSVC_VERSION}.")
         endif()
         message(STATUS "MSVC version: ${MSVC_VERSION}")
+        # Sources are UTF-8; never decode them with the system ANSI code page.
+        add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
     else()
         message(FATAL_ERROR "Building cocos-x on Windows requires MSVC.")
     endif()
