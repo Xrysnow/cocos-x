@@ -24,8 +24,6 @@
  
 const char* CC3D_skybox_frag = R"(
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_color;
@@ -38,24 +36,8 @@ layout(location=0) in vec3 v_reflect;
 #endif
 layout(location=0) out vec4 cc_FragColor;
 
-#else
-
-uniform vec4 u_color;
-uniform samplerCube u_Env;
-#ifdef GL_ES
-varying mediump vec3 v_reflect;
-#else
-varying vec3 v_reflect;
-#endif
-
-#endif
-
 void main(void)
 {
-#if __VERSION__ >= 300
     cc_FragColor = texture(u_Env, v_reflect) * u_color;
-#else
-    gl_FragColor = textureCube(u_Env, v_reflect) * u_color;
-#endif
 }
 )";

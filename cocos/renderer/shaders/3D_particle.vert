@@ -25,7 +25,6 @@
 
 const char* CC3D_particle_vert = R"(
 
-#if __VERSION__ >= 300
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec4 a_color;
 layout(location=2) in vec2 a_texCoord;
@@ -35,14 +34,6 @@ layout(std140, binding=0) uniform VSBlock
 };
 layout(location=0) out vec2 TextureCoordOut;
 layout(location=1) out vec4 ColorOut;
-#else
-attribute vec4 a_position;
-attribute vec4 a_color;
-attribute vec2 a_texCoord;
-uniform mat4 u_PMatrix;
-varying vec2 TextureCoordOut;
-varying vec4 ColorOut;
-#endif
 
 void main()
 {

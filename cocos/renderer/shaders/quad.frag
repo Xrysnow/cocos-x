@@ -25,8 +25,6 @@
 
 const char* CC2D_quadTexture_frag = R"(
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_color;
@@ -43,20 +41,6 @@ layout(location=0) out vec4 cc_FragColor;
 #define texture2D texture
 #define gl_FragColor cc_FragColor
 
-#else
-
-#ifdef GL_ES
-    varying mediump vec2 TextureCoordOut;
-    varying mediump vec4 ColorOut;
-#else
-    varying vec4 ColorOut;
-    varying vec2 TextureCoordOut;
-#endif
-uniform vec4 u_color;
-uniform sampler2D u_texture;
-
-#endif
-
 void main(void)
 {
     gl_FragColor = texture2D(u_texture, TextureCoordOut) * ColorOut * u_color;
@@ -64,8 +48,6 @@ void main(void)
 )";
 
 const char* CC2D_quadColor_frag = R"(
-
-#if __VERSION__ >= 300
 
 layout(std140, binding=1) uniform FSBlock
 {
@@ -78,17 +60,6 @@ layout(std140, binding=1) uniform FSBlock
 #endif
 layout(location=0) out vec4 cc_FragColor;
 #define gl_FragColor cc_FragColor
-
-#else
-
-#ifdef GL_ES
-    varying mediump vec4 ColorOut;
-#else
-    varying vec4 ColorOut;
-#endif
-uniform vec4 u_color;
-
-#endif
 
 void main(void)
 {

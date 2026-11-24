@@ -30,8 +30,6 @@ const char* labelOutline_frag = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_effectColor;
@@ -48,35 +46,14 @@ layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(location=0) out vec4 cc_FragColor;
 
-#else
-
-uniform vec4 u_effectColor;
-uniform vec4 u_textColor;
-#ifdef GL_ES
-uniform lowp int u_effectType; // 0: None (Draw text), 1: Outline, 2: Shadow
-#else
-uniform int u_effectType;
-#endif
-uniform sampler2D u_texture;
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-#endif
-
 
 void main()
 {
     // fontAlpha == 1 means the area of solid text (without edge)
     // fontAlpha == 0 means the area outside text, including outline area
     // fontAlpha == (0, 1) means the edge of text
-#if __VERSION__ >= 300
     vec4 sample_ = texture(u_texture, v_texCoord);
     float fontAlpha = sample_.g;
-#else
-    vec4 sample_ = texture2D(u_texture, v_texCoord);
-    float fontAlpha = sample_.a;
-#endif
 
     // outlineAlpha == 1 means the area of 'solid text' and 'solid outline'
     // outlineAlpha == 0 means the transparent area outside text and outline
@@ -97,10 +74,6 @@ void main()
     {
         fragColor = v_fragmentColor * vec4(u_effectColor.rgb, u_effectColor.a * outlineAlpha);
     }
-#if __VERSION__ >= 300
     cc_FragColor = fragColor;
-#else
-    gl_FragColor = fragColor;
-#endif
 }
 )";

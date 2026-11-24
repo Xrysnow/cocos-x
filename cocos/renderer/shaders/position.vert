@@ -24,8 +24,6 @@
 
 const char* position_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 
 layout(std140, binding=0) uniform VSBlock
@@ -37,20 +35,6 @@ layout(std140, binding=0) uniform VSBlock
 layout(location=0) out lowp vec4 v_position;
 #else
 layout(location=0) out vec4 v_position;
-#endif
-
-#else
-
-attribute vec4 a_position;
-
-uniform mat4 u_MVPMatrix;
-
-#ifdef GL_ES
-varying lowp vec4 v_position;
-#else
-varying vec4 v_position;
-#endif
-
 #endif
 
 void main()

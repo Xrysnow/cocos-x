@@ -25,7 +25,6 @@
 
 const char* CC3D_particleTexture_frag = R"(
 
-#if __VERSION__ >= 300
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_color;
@@ -34,43 +33,24 @@ layout(location=0) in mediump vec2 TextureCoordOut;
 layout(location=1) in mediump vec4 ColorOut;
 layout(binding=2) uniform sampler2D u_texture;
 layout(location = 0) out vec4 cc_FragColor;
-#else
-uniform vec4 u_color;
-varying mediump vec2 TextureCoordOut;
-varying mediump vec4 ColorOut;
-uniform sampler2D u_texture;
-#endif
 
 void main(void)
 {
-#if __VERSION__ >= 300
     cc_FragColor = texture(u_texture, TextureCoordOut) * ColorOut * u_color;
-#else
-    gl_FragColor = texture2D(u_texture, TextureCoordOut) * ColorOut * u_color;
-#endif
 }
 )";
 
 const char* CC3D_particleColor_frag = R"(
 
-#if __VERSION__ >= 300
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_color;
 };
 layout(location=1) in mediump vec4 ColorOut;
 layout(location=0) out vec4 cc_FragColor;
-#else
-uniform vec4 u_color;
-varying mediump vec4 ColorOut;
-#endif
 
 void main(void)
 {
-#if __VERSION__ >= 300
     cc_FragColor = ColorOut * u_color;
-#else
-    gl_FragColor = ColorOut * u_color;
-#endif
 }
 )";

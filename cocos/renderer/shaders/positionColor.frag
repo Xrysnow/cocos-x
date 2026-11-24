@@ -28,19 +28,11 @@ const char* positionColor_frag = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
 layout(location=0) in vec4 v_fragmentColor;
 layout(location=0) out vec4 cc_FragColor;
-#else
-varying vec4 v_fragmentColor;
-#endif
 
 void main()
 {
-#if __VERSION__ >= 300
     cc_FragColor = v_fragmentColor;
-#else
-    gl_FragColor = v_fragmentColor;
-#endif
 }
 )";

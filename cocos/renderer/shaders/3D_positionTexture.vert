@@ -25,8 +25,6 @@
 
 const char* CC3D_positionTexture_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec2 a_texCoord;
 
@@ -36,17 +34,6 @@ layout(std140, binding=0) uniform VSBlock
 };
 
 layout(location=0) out vec2 TextureCoordOut;
-
-#else
-
-attribute vec4 a_position;
-attribute vec2 a_texCoord;
-
-uniform mat4 u_MVPMatrix;
-
-varying vec2 TextureCoordOut;
-
-#endif
 
 void main(void)
 {
@@ -60,8 +47,6 @@ const char* CC3D_skinPositionTexture_vert = R"(
 
 const int SKINNING_JOINT_COUNT = 60;
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec3 a_position;
 layout(location=1) in vec4 a_blendWeight;
 layout(location=2) in vec4 a_blendIndex;
@@ -74,19 +59,6 @@ layout(std140, binding=0) uniform VSBlock
 };
 
 layout(location=0) out vec2 TextureCoordOut;
-
-#else
-
-attribute vec3 a_position;
-attribute vec4 a_blendWeight;
-attribute vec4 a_blendIndex;
-attribute vec2 a_texCoord;
-
-uniform vec4 u_matrixPalette[SKINNING_JOINT_COUNT * 3];
-uniform mat4 u_MVPMatrix;
-
-varying vec2 TextureCoordOut;
-#endif
 
 vec4 getPosition()
 {

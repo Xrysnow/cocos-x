@@ -25,24 +25,15 @@
 
 const char* CC3D_color_frag = R"(
 
-#if __VERSION__ >= 300
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_color;
 };
 layout(location=0) in lowp vec4 DestinationColor;
 layout(location=0) out vec4 cc_FragColor;
-#else
-uniform vec4 u_color;
-varying lowp vec4 DestinationColor;
-#endif
 
 void main(void)
 {
-#if __VERSION__ >= 300
     cc_FragColor = u_color;
-#else
-    gl_FragColor = u_color;
-#endif
 }
 )";

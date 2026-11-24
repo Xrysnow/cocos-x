@@ -25,8 +25,6 @@
 
 const char* CC2D_quadTexture_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec4 a_color;
 layout(location=2) in vec2 a_texCoord;
@@ -36,17 +34,6 @@ layout(std140, binding=0) uniform VSBlock
 };
 layout(location=0) out vec4 ColorOut;
 layout(location=1) out vec2 TextureCoordOut;
-
-#else
-
-attribute vec4 a_position;
-attribute vec4 a_color;
-attribute vec2 a_texCoord;
-varying vec2 TextureCoordOut;
-varying vec4 ColorOut;
-uniform mat4 u_MVPMatrix;
-
-#endif
 
 void main()
 {
@@ -59,8 +46,6 @@ void main()
 
 const char* CC2D_quadColor_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec4 a_color;
 layout(std140, binding=0) uniform VSBlock
@@ -68,15 +53,6 @@ layout(std140, binding=0) uniform VSBlock
     mat4 u_MVPMatrix;
 };
 layout(location=0) out vec4 ColorOut;
-
-#else
-                                     
-attribute vec4 a_position;
-attribute vec4 a_color;
-varying vec4 ColorOut;
-uniform mat4 u_MVPMatrix;
-
-#endif
 
 void main()
 {

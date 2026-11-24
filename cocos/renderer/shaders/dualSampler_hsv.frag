@@ -4,8 +4,6 @@ const char* dualSampler_hsv_frag = R"(
 precision mediump float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     mat3 u_mix_hsv;
@@ -18,19 +16,6 @@ layout(location=1) in vec2 v_texCoord;
 layout(location=0) out vec4 cc_FragColor;
 #define texture2D texture
 #define gl_FragColor cc_FragColor
-
-#else
-
-varying vec2 v_texCoord;  
-varying vec4 v_fragmentColor;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture1;
-// HSV matrix
-uniform mat3 u_mix_hsv;
-// filter color RGB values
-uniform vec3 u_filter_rgb;
-
-#endif
 
 vec3 rgb2hsv(vec3 c)
 {

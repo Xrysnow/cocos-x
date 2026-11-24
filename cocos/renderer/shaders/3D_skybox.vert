@@ -24,18 +24,12 @@
  
 const char* CC3D_skybox_vert = R"(
 
-#if __VERSION__ >= 300
 layout(location=0) in vec3 a_position;
 layout(std140, binding=0) uniform VSBlock
 {
     mat4 u_cameraRot;
 };
 layout(location=0) out vec3 v_reflect;
-#else
-attribute vec3 a_position;
-uniform mat4 u_cameraRot;
-varying vec3 v_reflect;
-#endif
 
 void main(void)
 {

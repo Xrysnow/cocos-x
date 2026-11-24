@@ -24,24 +24,11 @@
 
 const char* positionNoMVP_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 #ifdef GL_ES
 layout(location=0) out lowp vec4 v_position;
 #else
 layout(location=0) out vec4 v_position;
-#endif
-
-#else
-
-attribute vec4 a_position;
-#ifdef GL_ES
-varying lowp vec4 v_position;
-#else
-varying vec4 v_position;
-#endif
-
 #endif
 
 void main()

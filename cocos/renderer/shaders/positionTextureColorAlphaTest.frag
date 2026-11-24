@@ -27,8 +27,6 @@ const char* positionTextureColorAlphaTest_frag = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     float u_alpha_value;
@@ -39,30 +37,11 @@ layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(location=0) out vec4 cc_FragColor;
 
-#else
-
-uniform float u_alpha_value;
-uniform sampler2D u_texture;
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-#endif
-
 void main()
 {
-#if __VERSION__ >= 300
     vec4 texColor = texture(u_texture, v_texCoord);
     if ( texColor.a <= u_alpha_value )
         discard;
     cc_FragColor = texColor * v_fragmentColor;
-#else
-    vec4 texColor = texture2D(u_texture, v_texCoord);
-// mimic: glAlphaFunc(GL_GREATER)
-// pass if ( incoming_pixel >= u_alpha_value ) => fail if incoming_pixel < u_alpha_value
-    if ( texColor.a <= u_alpha_value )
-        discard;
-    gl_FragColor = texColor * v_fragmentColor;
-#endif
 }
 )";

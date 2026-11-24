@@ -28,8 +28,6 @@ const char* label_distanceNormal_frag = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=1) uniform FSBlock
 {
     vec4 u_textColor;
@@ -39,34 +37,16 @@ layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(location=0) out vec4 cc_FragColor;
 
-#else
-
-uniform vec4 u_textColor;
-uniform sampler2D u_texture;
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-#endif
-
 void main()
 {
     // the texture use single channel 8-bit output for distance_map
-#if __VERSION__ >= 300
     vec4 color = texture(u_texture, v_texCoord);
     float dist = color.r; // R8_NORM
-#else
-    vec4 color = texture2D(u_texture, v_texCoord);
-    float dist = color.a;
-#endif
     //TODO: Implementation 'fwidth' for glsl 1.0
     //float width = fwidth(dist);
     //assign width for constant will lead to a little bit fuzzy,it's temporary measure.
     float width = 0.04;
     float alpha = smoothstep(0.5-width, 0.5+width, dist) * u_textColor.a;
-#if __VERSION__ >= 300
     cc_FragColor = v_fragmentColor * vec4(u_textColor.rgb,alpha);
-#else
-    gl_FragColor = v_fragmentColor * vec4(u_textColor.rgb,alpha);
-#endif
 }
 )";

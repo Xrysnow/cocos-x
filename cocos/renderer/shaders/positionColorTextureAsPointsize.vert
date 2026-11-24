@@ -24,8 +24,6 @@
 
 const char* positionColorTextureAsPointsize_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec4 a_color;
 layout(location=2) in vec2 a_texCoord;
@@ -40,23 +38,6 @@ layout(std140, binding=0) uniform VSBlock
 layout(location=0) out lowp vec4 v_fragmentColor;
 #else
 layout(location=0) out vec4 v_fragmentColor;
-#endif
-
-#else
-
-attribute vec4 a_position;
-attribute vec4 a_color;
-attribute vec2 a_texCoord;
-
-uniform float u_alpha;
-uniform mat4 u_MVPMatrix;
-
-#ifdef GL_ES
-varying lowp vec4 v_fragmentColor;
-#else
-varying vec4 v_fragmentColor;
-#endif
-
 #endif
 
 void main()

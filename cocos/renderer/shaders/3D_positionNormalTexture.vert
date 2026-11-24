@@ -25,8 +25,6 @@
 
 const char* CC3D_positionNormalTexture_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec2 a_texCoord;
 layout(location=2) in vec3 a_normal;
@@ -76,59 +74,6 @@ layout(location=0) out vec2 TextureCoordOut;
     #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
         layout(location=5) out vec3 v_normal;
     #endif
-#endif
-
-#else
-
-attribute vec4 a_position;
-attribute vec2 a_texCoord;
-attribute vec3 a_normal;
-#ifdef USE_NORMAL_MAPPING
-attribute vec3 a_tangent;
-attribute vec3 a_binormal;
-#endif
-
-#ifdef USE_NORMAL_MAPPING
-#if (MAX_DIRECTIONAL_LIGHT_NUM > 0)
-uniform vec3 u_DirLightSourceDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-#endif
-#endif
-#if (MAX_POINT_LIGHT_NUM > 0)
-uniform vec3 u_PointLightSourcePosition[MAX_POINT_LIGHT_NUM];
-#endif
-#if (MAX_SPOT_LIGHT_NUM > 0)
-uniform vec3 u_SpotLightSourcePosition[MAX_SPOT_LIGHT_NUM];
-#ifdef USE_NORMAL_MAPPING
-uniform vec3 u_SpotLightSourceDirection[MAX_SPOT_LIGHT_NUM];
-#endif
-#endif
-uniform mat4 u_MVPMatrix;
-uniform mat4 u_MVMatrix;
-uniform mat4 u_PMatrix;
-uniform mat3 u_NormalMatrix;
-
-varying vec2 TextureCoordOut;
-
-#ifdef USE_NORMAL_MAPPING
-    #if MAX_DIRECTIONAL_LIGHT_NUM
-        varying vec3 v_dirLightDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-    #endif
-#endif
-#if MAX_POINT_LIGHT_NUM
-    varying vec3 v_vertexToPointLightDirection[MAX_POINT_LIGHT_NUM];
-#endif
-#if MAX_SPOT_LIGHT_NUM
-    varying vec3 v_vertexToSpotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #ifdef USE_NORMAL_MAPPING
-        varying vec3 v_spotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #endif
-#endif
-#ifndef USE_NORMAL_MAPPING
-    #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
-        varying vec3 v_normal;
-    #endif
-#endif
-
 #endif
 
 
@@ -203,8 +148,6 @@ const char* CC3D_skinPositionNormalTexture_vert = R"(
 
 const int SKINNING_JOINT_COUNT = 60;
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec3 a_position;
 layout(location=1) in vec4 a_blendWeight;
 layout(location=2) in vec4 a_blendIndex;
@@ -256,61 +199,6 @@ layout(location=0) out vec2 TextureCoordOut;
     #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
         layout(location=5) out vec3 v_normal;
     #endif
-#endif
-
-#else
-
-attribute vec3 a_position;
-attribute vec4 a_blendWeight;
-attribute vec4 a_blendIndex;
-attribute vec2 a_texCoord;
-attribute vec3 a_normal;
-#ifdef USE_NORMAL_MAPPING
-attribute vec3 a_tangent;
-attribute vec3 a_binormal;
-#endif
-
-#ifdef USE_NORMAL_MAPPING
-#if (MAX_DIRECTIONAL_LIGHT_NUM > 0)
-uniform vec3 u_DirLightSourceDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-#endif
-#endif
-#if (MAX_POINT_LIGHT_NUM > 0)
-uniform vec3 u_PointLightSourcePosition[MAX_POINT_LIGHT_NUM];
-#endif
-#if (MAX_SPOT_LIGHT_NUM > 0)
-uniform vec3 u_SpotLightSourcePosition[MAX_SPOT_LIGHT_NUM];
-#ifdef USE_NORMAL_MAPPING
-uniform vec3 u_SpotLightSourceDirection[MAX_SPOT_LIGHT_NUM];
-#endif
-#endif
-uniform vec4 u_matrixPalette[SKINNING_JOINT_COUNT * 3];
-uniform mat4 u_MVMatrix;
-uniform mat4 u_PMatrix;
-uniform mat3 u_NormalMatrix;
-
-varying vec2 TextureCoordOut;
-
-#ifdef USE_NORMAL_MAPPING
-    #if MAX_DIRECTIONAL_LIGHT_NUM
-        varying vec3 v_dirLightDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-    #endif
-#endif
-#if MAX_POINT_LIGHT_NUM
-    varying vec3 v_vertexToPointLightDirection[MAX_POINT_LIGHT_NUM];
-#endif
-#if MAX_SPOT_LIGHT_NUM
-    varying vec3 v_vertexToSpotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #ifdef USE_NORMAL_MAPPING
-        varying vec3 v_spotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #endif
-#endif
-#ifndef USE_NORMAL_MAPPING
-    #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
-        varying vec3 v_normal;
-    #endif
-#endif
-
 #endif
 
 void getPositionAndNormal(out vec4 position, out vec3 normal, out vec3 tangent, out vec3 binormal)

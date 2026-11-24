@@ -27,29 +27,16 @@ const char* grayScale_frag = R"(
 precision mediump float;
 #endif
 
-#if __VERSION__ >= 300
 layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(binding=2) uniform sampler2D u_texture;
 layout(location=0) out vec4 cc_FragColor;
-#else
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-uniform sampler2D u_texture;
-#endif
 
 void main(void)
 {
-#if __VERSION__ >= 300
     vec4 c = texture(u_texture, v_texCoord);
     c = v_fragmentColor * c;
     cc_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
     cc_FragColor.w = c.w;
-#else
-    vec4 c = texture2D(u_texture, v_texCoord);
-    c = v_fragmentColor * c;
-    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
-    gl_FragColor.w = c.w;
-#endif
 }
 )";

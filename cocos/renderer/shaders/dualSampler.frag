@@ -28,8 +28,6 @@ const char* dualSampler_frag = R"(
     precision mediump float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(binding=2) uniform sampler2D u_texture;
@@ -37,15 +35,6 @@ layout(binding=3) uniform sampler2D u_texture1;
 layout(location=0) out vec4 cc_FragColor;
 #define texture2D texture
 #define gl_FragColor cc_FragColor
-
-#else
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture1;
-
-#endif
 
 void main()
 {

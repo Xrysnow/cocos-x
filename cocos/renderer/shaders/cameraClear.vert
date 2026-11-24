@@ -25,8 +25,6 @@
 
 const char * cameraClear_vert = R"(
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 a_position;
 layout(location=1) in vec4 a_color;
 layout(location=2) in vec2 a_texCoord;
@@ -40,22 +38,6 @@ layout(location=1) out mediump vec4 v_color;
 #else
 layout(location=0) out vec2 v_texCoord;
 layout(location=1) out vec4 v_color;
-#endif
-
-#else
-
-attribute vec4 a_position;
-attribute vec4 a_color;
-attribute vec2 a_texCoord;
-uniform float depth;
-#ifdef GL_ES
-varying mediump vec2 v_texCoord;
-varying mediump vec4 v_color;
-#else
-varying vec2 v_texCoord;
-varying vec4 v_color;
-#endif
-
 #endif
 
 void main()

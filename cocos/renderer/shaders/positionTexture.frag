@@ -29,21 +29,12 @@ const char* positionTexture_frag = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
 layout(location=0) in vec2 v_texCoord;
 layout(binding=2) uniform sampler2D u_texture;
 layout(location=0) out vec4 cc_FragColor;
-#else
-varying vec2 v_texCoord;
-uniform sampler2D u_texture;
-#endif
 
 void main()
 {
-#if __VERSION__ >= 300
     cc_FragColor =  texture(u_texture, v_texCoord);
-#else
-    gl_FragColor =  texture2D(u_texture, v_texCoord);
-#endif
 }
 )";

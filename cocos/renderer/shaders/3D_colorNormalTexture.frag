@@ -25,8 +25,6 @@
 
 const char* CC3D_colorNormalTexture_frag = R"(
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=2) uniform CommonLightBlock
 {
 #if (MAX_DIRECTIONAL_LIGHT_NUM > 0)
@@ -87,55 +85,6 @@ layout(location=0) in mediump vec2 TextureCoordOut;
 #endif
 layout(location=0) out vec4 cc_FragColor;
 
-#else
-
-#if (MAX_DIRECTIONAL_LIGHT_NUM > 0)
-uniform vec3 u_DirLightSourceColor[MAX_DIRECTIONAL_LIGHT_NUM];
-uniform vec3 u_DirLightSourceDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-#endif
-#if (MAX_POINT_LIGHT_NUM > 0)
-uniform vec3 u_PointLightSourceColor[MAX_POINT_LIGHT_NUM];
-uniform float u_PointLightSourceRangeInverse[MAX_POINT_LIGHT_NUM];
-#endif
-#if (MAX_SPOT_LIGHT_NUM > 0)
-uniform vec3 u_SpotLightSourceColor[MAX_SPOT_LIGHT_NUM];
-uniform vec3 u_SpotLightSourceDirection[MAX_SPOT_LIGHT_NUM];
-uniform float u_SpotLightSourceInnerAngleCos[MAX_SPOT_LIGHT_NUM];
-uniform float u_SpotLightSourceOuterAngleCos[MAX_SPOT_LIGHT_NUM];
-uniform float u_SpotLightSourceRangeInverse[MAX_SPOT_LIGHT_NUM];
-#endif
-uniform vec3 u_AmbientLightSourceColor;
-uniform vec4 u_color;
-
-uniform sampler2D u_texture;
-#ifdef USE_NORMAL_MAPPING
-uniform sampler2D u_normalTex;
-#endif
-
-varying mediump vec2 TextureCoordOut;
-
-#ifdef USE_NORMAL_MAPPING
-    #if MAX_DIRECTIONAL_LIGHT_NUM
-        varying mediump vec3 v_dirLightDirection[MAX_DIRECTIONAL_LIGHT_NUM];
-    #endif
-#endif
-#if MAX_POINT_LIGHT_NUM
-    varying mediump vec3 v_vertexToPointLightDirection[MAX_POINT_LIGHT_NUM];
-#endif
-#if MAX_SPOT_LIGHT_NUM
-    varying mediump vec3 v_vertexToSpotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #ifdef USE_NORMAL_MAPPING
-        varying mediump vec3 v_spotLightDirection[MAX_SPOT_LIGHT_NUM];
-    #endif
-#endif
-#ifndef USE_NORMAL_MAPPING
-    #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
-        varying mediump vec3 v_normal;
-    #endif
-#endif
-
-#endif
-
 vec3 computeLighting(vec3 normalVector, vec3 lightDirection, vec3 lightColor, float attenuation)
 {
     float diffuse = max(dot(normalVector, lightDirection), 0.0);
@@ -149,11 +98,7 @@ void main(void)
 
 #ifdef USE_NORMAL_MAPPING
     #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
-        #if __VERSION__ >= 300
         vec3 normal  = normalize(2.0 * texture(u_normalTex, TextureCoordOut).xyz - 1.0);
-        #else
-        vec3 normal  = normalize(2.0 * texture2D(u_normalTex, TextureCoordOut).xyz - 1.0);
-        #endif
     #endif
 #else
     #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
@@ -211,18 +156,10 @@ void main(void)
     }
 #endif
 
-#if __VERSION__ >= 300
     #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
         cc_FragColor = texture(u_texture, TextureCoordOut) * u_color * combinedColor;
     #else
         cc_FragColor = texture(u_texture, TextureCoordOut) * u_color;
     #endif
-#else
-    #if ((MAX_DIRECTIONAL_LIGHT_NUM > 0) || (MAX_POINT_LIGHT_NUM > 0) || (MAX_SPOT_LIGHT_NUM > 0))
-        gl_FragColor = texture2D(u_texture, TextureCoordOut) * u_color * combinedColor;
-    #else
-        gl_FragColor = texture2D(u_texture, TextureCoordOut) * u_color;
-    #endif
-#endif
 }
 )";

@@ -24,8 +24,6 @@ const char* positionColorLengthTexture_vert = R"(
 precision lowp float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(std140, binding=0) uniform VSBlock
 {
     float u_alpha;
@@ -44,27 +42,6 @@ layout(location=1) in vec2 a_texCoord;
 layout(location=2) in vec4 a_color;
 layout(location=0) out vec4 v_color;
 layout(location=1) out vec2 v_texcoord;
-#endif
-
-#else
-
-uniform float u_alpha;
-uniform mat4 u_MVPMatrix;
-
-#ifdef GL_ES
-attribute mediump vec4 a_position;
-attribute mediump vec2 a_texCoord;
-attribute mediump vec4 a_color;
-varying mediump vec4 v_color;
-varying mediump vec2 v_texcoord;
-#else
-attribute vec4 a_position;
-attribute vec2 a_texCoord;
-attribute vec4 a_color;
-varying vec4 v_color;
-varying vec2 v_texcoord;
-#endif
-
 #endif
 
 void main()

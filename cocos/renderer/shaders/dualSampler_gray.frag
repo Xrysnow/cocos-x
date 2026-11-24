@@ -28,8 +28,6 @@ const char* dualSampler_gray_frag = R"(
     precision mediump float;
 #endif
 
-#if __VERSION__ >= 300
-
 layout(location=0) in vec4 v_fragmentColor;
 layout(location=1) in vec2 v_texCoord;
 layout(binding=2) uniform sampler2D u_texture;
@@ -45,21 +43,4 @@ void main()
     cc_FragColor.a = texColor.a;
 }
 
-#else
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture1;
-void main()
-{
-    vec4 texColor = texture2D(u_texture, v_texCoord);
-    texColor.a = texture2D(u_texture1, v_texCoord).r;
-    texColor.rgb *= texColor.a; // premultiply alpha channel
-    texColor = v_fragmentColor * texColor;
-    gl_FragColor.rgb = vec3(0.2126*texColor.r + 0.7152*texColor.g + 0.0722*texColor.b);
-    gl_FragColor.a = texColor.a;
-}
-
-#endif
 )";
