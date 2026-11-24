@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../FontTypes.h"
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -7,29 +8,14 @@
 
 namespace cc::font
 {
-enum class FontRasterMode
-{
-    Bitmap,
-    Sdf,
-    Msdf
-};
+using cc::FontRasterMode;
+using cc::GlyphStatus;
 enum class RasterEncoding
 {
     Coverage,
     Sdf,
     Msdf
 };
-enum class GlyphStatus
-{
-    Ready,
-    InvalidInput,
-    UnsupportedFont,
-    UnsupportedColorFont,
-    TooLarge,
-    RasterError,
-    Cancelled
-};
-
 using FontBytes = std::vector<uint8_t>;
 
 // Sizes use FreeType's 26.6 pixels per em. Zero denotes an invalid request.

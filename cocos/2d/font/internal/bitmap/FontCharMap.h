@@ -1,5 +1,8 @@
 /****************************************************************************
+ Copyright (c) 2013      Zynga Inc.
+ Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+ Copyright (c) 2021 Bytedance Inc.
 
  https://axmolengine.github.io/
 
@@ -21,3 +24,46 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+
+#ifndef _CCFontCharMap_h_
+#define _CCFontCharMap_h_
+
+/// @cond DO_NOT_SHOW
+
+#include "2d/Font.h"
+
+NS_CC_BEGIN
+
+class Texture2D;
+class FontCharMap : public Font
+{
+public:
+    static cc::IntrusivePtr<FontCharMap> create(std::string_view charMapFile, int itemWidth, int itemHeight, int startCharMap);
+    static cc::IntrusivePtr<FontCharMap> create(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap);
+    static cc::IntrusivePtr<FontCharMap> create(std::string_view plistFile);
+
+    virtual int* getHorizontalKerningForTextUTF32(const std::u32string& text, int& outNumLetters) const override;
+    virtual FontAtlas* newFontAtlas() override;
+
+protected:
+    FontCharMap(Texture2D* texture, int itemWidth, int itemHeight, int startCharMap)
+        : _texture(texture), _mapStartChar(startCharMap), _itemWidth(itemWidth), _itemHeight(itemHeight)
+    {}
+    /**
+     * @js NA
+     * @lua NA
+     */
+    virtual ~FontCharMap();
+
+private:
+    Texture2D* _texture;
+    int _mapStartChar;
+    int _itemWidth;
+    int _itemHeight;
+};
+
+/// @endcond
+
+NS_CC_END
+
+#endif /* defined(_CCFontCharMap_h_) */

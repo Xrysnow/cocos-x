@@ -233,6 +233,7 @@ bool ProgramManager::init()
                            VertexLayoutHelper::setupSprite);
     registerProgramFactory(ProgramType::DUAL_SAMPLER, positionTextureColor_vert, dualSampler_frag,
                            VertexLayoutHelper::setupSprite);
+    registerProgramFactory(ProgramType::FONT_GLYPH, positionTextureColor_vert, fontGlyph_frag, VertexLayoutHelper::setupSprite);
     registerProgramFactory(ProgramType::LABEL_DISTANCE_NORMAL, positionTextureColor_vert, label_distanceNormal_frag,
                            VertexLayoutHelper::setupSprite);
     registerProgramFactory(ProgramType::LABEL_NORMAL, positionTextureColor_vert, label_normal_frag,

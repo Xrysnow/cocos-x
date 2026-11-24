@@ -111,7 +111,7 @@ THE SOFTWARE.
 #include "2d/ClippingRectangleNode.h"
 #include "2d/DrawNode.h"
 #include "2d/FontFNT.h"
-#include "2d/FontFreeType.h"
+#include "2d/font/FontRendering.h"
 #include "2d/Label.h"
 #include "2d/LabelAtlas.h"
 #include "2d/Layer.h"

@@ -44,6 +44,7 @@ extern CC_DLL const char* positionTexture_frag;
 extern CC_DLL const char* positionTextureColor_vert;
 extern CC_DLL const char* positionTextureColor_frag;
 extern CC_DLL const char* positionTextureColorAlphaTest_frag;
+extern CC_DLL const char* fontGlyph_frag;
 extern CC_DLL const char* label_normal_frag;
 extern CC_DLL const char* label_distanceNormal_frag;
 extern CC_DLL const char* labelOutline_frag;

@@ -1541,12 +1541,16 @@ void RichText::formatText(bool force)
                     cc::IntrusivePtr<Label> label;
                     if (FileUtils::getInstance()->isFileExist(elmtText->_fontName))
                     {
-                        label = Label::createWithTTF(elmtText->_text, elmtText->_fontName, elmtText->_fontSize);
+                        const auto mode = elmtText->_flags & RichElementText::OUTLINE_FLAG
+                            ? FontRasterMode::Sdf : FontRasterMode::Bitmap;
+                        label = Label::createWithFont({elmtText->_fontName, elmtText->_fontSize}, elmtText->_text, mode);
                     }
                     else
                     {
                         label = Label::createWithSystemFont(elmtText->_text, elmtText->_fontName, elmtText->_fontSize);
                     }
+                    if (!label)
+                        break;
                     if (elmtText->_flags & RichElementText::ITALICS_FLAG)
                         label->enableItalics();
                     if (elmtText->_flags & RichElementText::BOLD_FLAG)
@@ -1868,8 +1872,11 @@ void RichText::handleTextRenderer(std::string_view text,
             }
             ++splitParts;
 
-            auto textRenderer = fileExist ? Label::createWithTTF(currentText, fontName, fontSize)
-                                            : Label::createWithSystemFont(currentText, fontName, fontSize);
+            const auto mode = flags & RichElementText::OUTLINE_FLAG ? FontRasterMode::Sdf : FontRasterMode::Bitmap;
+            auto textRenderer = fileExist ? Label::createWithFont({std::string(fontName), fontSize}, currentText, mode)
+                                          : Label::createWithSystemFont(currentText, fontName, fontSize);
+            if (!textRenderer)
+                break;
 
             if (flags & RichElementText::ITALICS_FLAG)
                 textRenderer->enableItalics();

@@ -33,6 +33,7 @@
 #include "renderer/QuadCommand.h"
 #include "renderer/backend/ProgramState.h"
 #include "2d/FontAtlas.h"
+#include "2d/font/FontRendering.h"
 #include "base/ccTypes.h"
 
 NS_CC_BEGIN
@@ -114,6 +115,7 @@ class TextureAtlas;
  * - http://www.angelcode.com/products/bmfont/ (Free, Windows only)
  * @js NA
  */
+struct FontLabelState;
 class CC_DLL Label : public Node, public LabelProtocol, public BlendProtocol
 {
 public:
@@ -706,6 +708,18 @@ public:
      * @js NA
      */
     Label(TextHAlignment hAlignment = TextHAlignment::LEFT, TextVAlignment vAlignment = TextVAlignment::TOP);
+    explicit Label(FontRasterMode mode, TextHAlignment h = TextHAlignment::LEFT,
+                   TextVAlignment v = TextVAlignment::TOP);
+    static cc::IntrusivePtr<Label> createWithFont(const FontConfig& font, std::string_view text,
+                                                  FontRasterMode mode = FontRasterMode::Bitmap);
+    FontRasterMode getRasterMode() const { return _rasterMode; }
+    bool setFontConfig(const FontConfig& font);
+    void setGlyphRenderPolicy(GlyphRenderPolicy policy) { _glyphPolicy = policy; }
+    GlyphRenderPolicy getGlyphRenderPolicy() const { return _glyphPolicy; }
+    GlyphTicket prefetchGlyphs(std::string_view utf8) const;
+    GlyphStatus prepareGlyphsNow();
+    bool getFontMetrics(FontMetrics& out) const;
+    bool measureText(std::string_view utf8, Size& out) const;
 
     /**
      * Destructor of Label.
@@ -814,6 +828,8 @@ protected:
     void updateBatchCommand(BatchCommand& batch);
 
     LabelType _currentLabelType;
+    const FontRasterMode _rasterMode;
+    GlyphRenderPolicy _glyphPolicy{GlyphRenderPolicy::Async};
     bool _contentDirty;
     std::u32string _utf32Text;
     std::string _utf8Text;
@@ -898,8 +914,11 @@ protected:
 
     std::unordered_map<int, Sprite*> _letters;
 
-    EventListenerCustom* _purgeTextureListener;
-    EventListenerCustom* _resetTextureListener;
+    std::unique_ptr<FontLabelState> _fileState;
+    bool alignFileText();
+    Sprite* fileLetter(int index);
+    void drawFileText(Renderer*,const Mat4&,uint32_t);
+    void positionFileLetter(int index,Sprite*);
 
 #if CC_LABEL_DEBUG_DRAW
     DrawNode* _debugDrawNode;

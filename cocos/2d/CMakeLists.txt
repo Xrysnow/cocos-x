@@ -17,7 +17,7 @@ set(COCOS_2D_HEADER
     2d/TweenFunction.h
     2d/Light.h
     2d/AutoPolygon.h
-    2d/FontAtlas.h
+    2d/font/FontAtlas.h
     2d/AtlasNode.h
     2d/ClippingNode.h
     2d/RenderTexture.h
@@ -37,26 +37,33 @@ set(COCOS_2D_HEADER
     2d/TextFieldTTF.h
     2d/AnimationCache.h
     2d/FastTMXLayer.h
-    2d/FontAtlasCache.h
-    2d/Font.h
+    2d/font/internal/bitmap/FontAtlasCache.h
+    2d/font/internal/bitmap/Font.h
     2d/ParticleSystemQuad.h
     2d/ActionGrid3D.h
     2d/CameraBackgroundBrush.h
     2d/FastTMXTiledMap.h
-    2d/LabelTextFormatter.h
     2d/MenuItem.h
-    2d/FontFNT.h
+    2d/font/internal/bitmap/FontFNT.h
     2d/SpriteBatchNode.h
     2d/TransitionProgress.h
     2d/SpriteFrame.h
     2d/TMXObjectGroup.h
     2d/Animation.h
     2d/NodeGrid.h
-    2d/FontFreeType.h
+    2d/font/FontTypes.h
+    2d/font/FontRendering.h
+    2d/font/internal/FontFace.h
+    2d/font/internal/FontService.h
+    2d/font/internal/GlyphAtlas.h
+    2d/font/internal/GlyphUpload.h
+    2d/font/internal/GlyphScheduler.h
+    2d/label/FontLabelState.h
+    2d/label/LabelLetter.h
     2d/Action.h
     2d/Transition.h
     2d/TransitionPageTurn.h
-    2d/FontCharMap.h
+    2d/font/internal/bitmap/FontCharMap.h
     2d/ParticleSystem.h
     2d/ProgressTimer.h
     2d/TileMapAtlas.h
@@ -106,16 +113,22 @@ set(COCOS_2D_SRC
     2d/DrawNode.cpp
     2d/FastTMXLayer.cpp
     2d/FastTMXTiledMap.cpp
-    2d/FontAtlasCache.cpp
-    2d/FontAtlas.cpp
-    2d/FontCharMap.cpp
-    2d/Font.cpp
-    2d/FontFNT.cpp
-    2d/FontFreeType.cpp
+    2d/font/internal/bitmap/FontAtlasCache.cpp
+    2d/font/FontAtlas.cpp
+    2d/font/internal/bitmap/FontCharMap.cpp
+    2d/font/internal/bitmap/Font.cpp
+    2d/font/internal/bitmap/FontFNT.cpp
+    2d/font/FontRendering.cpp
+    2d/font/internal/FontFace.cpp
+    2d/font/internal/GlyphAtlas.cpp
+    2d/font/internal/GlyphUpload.cpp
+    2d/font/internal/GlyphScheduler.cpp
+    2d/label/FontLabelLayout.cpp
+    2d/label/FontLabelDraw.cpp
     2d/Grid.cpp
     2d/LabelAtlas.cpp
     2d/Label.cpp
-    2d/LabelTextFormatter.cpp
+    2d/label/LabelLayout.cpp
     2d/Layer.cpp
     2d/Light.cpp
     2d/Menu.cpp

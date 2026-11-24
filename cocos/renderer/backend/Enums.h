@@ -367,6 +367,7 @@ struct ProgramType
         HSV_DUAL_SAMPLER,
         HSV_ETC1 = HSV_DUAL_SAMPLER,
 
+        FONT_GLYPH,
         BUILTIN_COUNT,
 
         CUSTOM_PROGRAM = 0x1000,  // user-define program, used by engine

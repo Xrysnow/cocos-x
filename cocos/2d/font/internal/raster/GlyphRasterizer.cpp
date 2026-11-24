@@ -27,7 +27,7 @@ static bool hasTable(FT_Face face, FT_ULong tag)
     return FT_Load_Sfnt_Table(face, tag, 0, nullptr, &length) == 0 && length != 0;
 }
 
-static GlyphStatus validateFace(FT_Face face)
+GlyphStatus detail::validateFace(FT_Face face)
 {
     if (FT_HAS_COLOR(face))
         return GlyphStatus::UnsupportedColorFont;
@@ -71,7 +71,7 @@ struct RasterContext::Impl
         FT_Face next{};
         if (FT_New_Memory_Face(library, font->data(), static_cast<FT_Long>(font->size()), 0, &next))
             return GlyphStatus::UnsupportedFont;
-        auto status = validateFace(next);
+        auto status = detail::validateFace(next);
         if (status != GlyphStatus::Ready)
         {
             FT_Done_Face(next);
@@ -106,6 +106,7 @@ RasterResult GlyphRasterizer::render(RasterContext& context, const RasterRequest
         return {GlyphStatus::InvalidInput};
     if (worker.size != req.rasterPpem26_6)
     {
+        worker.size = 0;
         if (FT_Set_Char_Size(worker.face, 0, req.rasterPpem26_6, 72, 72))
             return {GlyphStatus::TooLarge};
         worker.size = req.rasterPpem26_6;

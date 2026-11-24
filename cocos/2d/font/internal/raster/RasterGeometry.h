@@ -85,6 +85,7 @@ inline float median(Channels v)
     return std::max(std::min(v[0], v[1]), std::min(std::max(v[0], v[1]), v[2]));
 }
 
+GlyphStatus validateFace(FT_Face face);
 GlyphStatus prepareBoundary(FT_Outline&, const RasterRequest&, Outline&);
 void colorEdges(Contour&);
 RasterResult rasterBitmap(FT_GlyphSlot, const RasterRequest&);

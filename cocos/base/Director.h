@@ -59,6 +59,7 @@ class EventCustom;
 class EventListenerCustom;
 class TextureCache;
 class Renderer;
+class FontRendering;
 class Camera;
 
 class Console;
@@ -430,6 +431,7 @@ public:
     /** Returns the Renderer associated with this director.
      * @since v3.0
      */
+    FontRendering& getFontRendering();
     Renderer* getRenderer() const { return _renderer; }
 
     /** Returns the input service whose frame is published before EVENT_BEFORE_UPDATE. */
@@ -640,6 +642,7 @@ protected:
     Node* _notificationNode = nullptr;
 
     /* Renderer for the Director */
+    FontRendering* _fontRendering = nullptr;
     Renderer* _renderer = nullptr;
 
     Color4F _clearColor = {0, 0, 0, 1};

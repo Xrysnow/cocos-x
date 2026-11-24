@@ -28,7 +28,6 @@
 
 #include "base/Director.h"
 #include "2d/FontFNT.h"
-#include "2d/FontFreeType.h"
 #include "2d/FontAtlas.h"
 #include "2d/FontCharMap.h"
 #include "2d/Label.h"
@@ -44,49 +43,9 @@ void FontAtlasCache::purgeCachedData()
     auto atlasMapCopy = _atlasMap;
     for (auto&& atlas : atlasMapCopy)
     {
-        auto refCount = atlas.second->getReferenceCount();
         atlas.second->release();
-        if (refCount != 1)
-            atlas.second->purgeTexturesAtlas();
     }
     _atlasMap.clear();
-}
-
-FontAtlas* FontAtlasCache::getFontAtlasTTF(const _ttfConfig* config)
-{
-    auto realFontFilename = config->fontFilePath;  // resolves real file path, to prevent storing multiple atlases for the same file.
-    bool useDistanceField = config->distanceFieldEnabled;
-    if (config->outlineSize > 0)
-    {
-        useDistanceField = false;
-    }
-
-    std::string key;
-    char keyPrefix[ATLAS_MAP_KEY_PREFIX_BUFFER_SIZE];
-    snprintf(keyPrefix, ATLAS_MAP_KEY_PREFIX_BUFFER_SIZE, useDistanceField ? "df %.2f %d " : "%.2f %d ",
-             config->fontSize, config->outlineSize);
-    std::string atlasName(keyPrefix);
-    atlasName += realFontFilename;
-
-    auto it = _atlasMap.find(atlasName);
-
-    if (it == _atlasMap.end())
-    {
-        auto font = FontFreeType::create(realFontFilename, config->fontSize, config->glyphs, config->customGlyphs,
-                                         useDistanceField, (float)config->outlineSize);
-        if (font)
-        {
-            auto tempAtlas = font->newFontAtlas();
-            if (tempAtlas)
-            {
-                return _atlasMap.emplace(atlasName, tempAtlas).first->second;
-            }
-        }
-    }
-    else
-        return it->second;
-
-    return nullptr;
 }
 
 FontAtlas* FontAtlasCache::getFontAtlasFNT(std::string_view fontFileName)
@@ -288,21 +247,6 @@ void FontAtlasCache::reloadFontAtlasFNT(std::string_view fontFileName, const Rec
 void FontAtlasCache::reloadFontAtlasFNT(std::string_view fontFileName, const Vec2& imageOffset)
 {
     reloadFontAtlasFNT(fontFileName, Rect(imageOffset.x, imageOffset.y, 0, 0), false);
-}
-
-void FontAtlasCache::unloadFontAtlasTTF(std::string_view fontFileName)
-{
-    auto item = _atlasMap.begin();
-    while (item != _atlasMap.end())
-    {
-        if (item->first.find(fontFileName) != std::string::npos)
-        {
-            CC_SAFE_RELEASE_NULL(item->second);
-            item = _atlasMap.erase(item);
-        }
-        else
-            item++;
-    }
 }
 
 NS_CC_END

@@ -13,7 +13,7 @@ static Color3B toGrayed(const Color3B& source)
     return c;
 }
 
-FUILabel::FUILabel() : _fontSize(-1),
+FUILabel::FUILabel() : Label(FontRasterMode::Sdf), _fontSize(-1),
 _bmFontCanTint(false),
 _textFormat(new TextFormat()),
 _grayed(false)
@@ -38,7 +38,7 @@ void FUILabel::applyTextFormat()
     if (_fontSize < 0 /**first time**/ || _fontName != _textFormat->face)
     {
         _fontName = _textFormat->face;
-        Label::LabelType oldType = _currentLabelType;
+        Label::LabelType oldType = getLabelType();
 
         if (_fontName.find("ui://") != -1)
         {
@@ -67,11 +67,11 @@ void FUILabel::applyTextFormat()
     if (_fontSize != _textFormat->fontSize)
     {
         _fontSize = _textFormat->fontSize;
-        if (_currentLabelType == LabelType::STRING_TEXTURE)
+        if (getLabelType() == LabelType::STRING_TEXTURE)
         {
             setSystemFontSize(_fontSize);
         }
-        else if (_currentLabelType == LabelType::BMFONT)
+        else if (getLabelType() == LabelType::BMFONT)
         {
             setBMFontSize(_fontSize);
         }
@@ -82,7 +82,7 @@ void FUILabel::applyTextFormat()
         }
     }
 
-    if (_currentLabelType != LabelType::BMFONT || _bmFontCanTint)
+    if (getLabelType() != LabelType::BMFONT || _bmFontCanTint)
     {
         //setTextColor((Color4B)(_grayed ? toGrayed(_textFormat->color) : _textFormat->color));
         setColor(_grayed ? toGrayed(_textFormat->color) : _textFormat->color);
@@ -161,7 +161,7 @@ void FUILabel::setGrayed(bool value)
     {
         _grayed = value;
 
-        if (_currentLabelType != LabelType::BMFONT)
+        if (getLabelType() != LabelType::BMFONT)
             setTextColor((Color4B)(_grayed ? toGrayed(_textFormat->color) : _textFormat->color));
         else if (_bmFontCanTint)
             setColor(_grayed ? toGrayed(_textFormat->color) : _textFormat->color);
@@ -176,9 +176,9 @@ void FUILabel::setGrayed(bool value)
 
 void FUILabel::updateBMFontScale()
 {
-    auto font = _fontAtlas->getFont();
-    if (_currentLabelType == LabelType::BMFONT)
+    if (getLabelType() == LabelType::BMFONT)
     {
+        auto font = getFontAtlas()->getFont();
         BitmapFont* bmFont = (BitmapFont*)font;
         float originalFontSize = bmFont->getOriginalFontSize();
         _bmfontScale = _bmFontSize * CC_CONTENT_SCALE_FACTOR() / originalFontSize;

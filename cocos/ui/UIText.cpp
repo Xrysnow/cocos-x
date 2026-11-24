@@ -98,8 +98,8 @@ bool Text::init(std::string_view textContent, std::string_view fontName, float f
 
 void Text::initRenderer()
 {
-    cc::IntrusivePtr<Label> labelRenderer;
-    _labelRenderer = (labelRenderer = Label::create()).get();
+    cc::IntrusivePtr labelRenderer{new Label(FontRasterMode::Sdf)};
+    _labelRenderer = labelRenderer.get();
     addProtectedChild(_labelRenderer, LABEL_RENDERER_Z, -1);
 }
 

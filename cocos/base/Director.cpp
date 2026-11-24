@@ -47,7 +47,7 @@ THE SOFTWARE.
 #include "3d/MeshRenderer.h"
 #include "3d/MeshMaterial.h"
 #include "2d/Transition.h"
-#include "2d/FontFreeType.h"
+#include "2d/font/internal/FontService.h"
 #include "2d/LabelAtlas.h"
 #include "renderer/TextureCache.h"
 #include "renderer/Renderer.h"
@@ -61,6 +61,7 @@ THE SOFTWARE.
 #include "platform/PlatformMacros.h"
 #include "platform/StdC.h"
 #include "base/EventDispatcher.h"
+#include "base/EventType.h"
 #include "base/EventCustom.h"
 #include "base/Console.h"
 #include "base/AutoreleasePool.h"
@@ -175,9 +176,18 @@ bool Director::init()
     initTextureCache();
     initMatrixStack();
 
+    _eventDispatcher->addCustomEventListener(EVENT_RENDERER_RECREATED,[this](EventCustom*) {
+        if (_fontRendering) _fontRendering->_service->invalidate();
+    });
     _renderer = new Renderer;
 
     return true;
+}
+
+FontRendering& Director::getFontRendering()
+{
+    if (!_fontRendering) _fontRendering = new FontRendering;
+    return *_fontRendering;
 }
 
 Director::~Director()
@@ -205,6 +215,7 @@ Director::~Director()
     CC_SAFE_RELEASE(_eventProjectionChanged);
     CC_SAFE_RELEASE(_eventResetDirector);
 
+    delete _fontRendering;
     delete _renderer;
     delete _console;
 
@@ -326,11 +337,17 @@ void Director::drawScene()
     if (_runningScene)
         _runningScene->stepPhysicsAndNavigation(_deltaTime);
 #endif
+    if (_fontRendering)
+    {
+        if (!canDraw && backend::DeviceGFX::hasDeviceLost()) _fontRendering->_service->invalidate();
+        else _fontRendering->_service->frame(*_renderer,canDraw);
+    }
     if (!canDraw)
     {
         // Window events and existing logical updates continue without an output
         // drawable. Do not dispatch an unpaired draw event or retain queued commands.
         _renderer->discardFrame();
+        if (_fontRendering) _fontRendering->_service->finishFrame();
         return;
     }
 
@@ -380,6 +397,7 @@ void Director::drawScene()
     }
 
     _renderer->endFrame();
+    if (_fontRendering) _fontRendering->_service->finishFrame();
 
     if (_statsDisplay)
     {
@@ -1114,7 +1132,8 @@ void Director::reset()
     FontFNT::purgeCachedData();
     FontAtlasCache::purgeCachedData();
 
-    FontFreeType::shutdownFreeType();
+    CC_SAFE_DELETE(_fontRendering);
+    _fontRendering = nullptr;
 
     // purge all managed caches
     AnimationCache::destroyInstance();

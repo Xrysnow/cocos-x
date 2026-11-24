@@ -500,6 +500,7 @@ void DeviceGFX::initBuiltinShaderInfo()
         .name("positionTextureColorAlphaTest_frag")
         .uniform("u_alpha_value", Type::FLOAT)
         .texture();
+    helper.set(fontGlyph_frag).name("fontGlyph_frag").uniform("u_textColor", Type::FLOAT4).uniform("u_glyphParams", Type::FLOAT4).texture();
     helper.set(label_normal_frag).name("label_normal_frag").uniform("u_textColor", Type::FLOAT4).texture();
     helper.set(label_distanceNormal_frag)
         .name("label_distanceNormal_frag")
