@@ -1,4 +1,6 @@
 set(COCOS_2D_HEADER
+    2d/font/internal/raster/GlyphRasterizer.h
+    2d/font/internal/raster/RasterGeometry.h
 
     2d/ActionPageTurn3D.h
     2d/ActionTween.h
@@ -71,6 +73,13 @@ set(COCOS_2D_HEADER
     )
 
 set(COCOS_2D_SRC
+    2d/font/internal/raster/GlyphRasterizer.cpp
+    2d/font/internal/raster/BitmapRasterizer.cpp
+    2d/font/internal/raster/RasterGeometry.cpp
+    2d/font/internal/raster/OutlineBoundary.cpp
+    2d/font/internal/raster/DistanceField.cpp
+    2d/font/internal/raster/EdgeColoring.cpp
+    2d/font/internal/raster/MsdfCorrection.cpp
 
     2d/ActionCamera.cpp
     2d/ActionCatmullRom.cpp

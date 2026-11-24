@@ -1,0 +1,266 @@
+#include "RasterGeometry.h"
+#include FT_BBOX_H
+
+namespace cc::font::detail
+{
+namespace
+{
+constexpr int tileSize    = 8;
+constexpr double infinity = std::numeric_limits<double>::infinity();
+
+struct Selector
+{
+    double nearest{infinity}, alignment{infinity}, pseudo{infinity};
+    double negative{-infinity}, positive{infinity};
+
+    void consider(Edge::Hit hit)
+    {
+        if (std::abs(hit.distance) < std::abs(nearest) ||
+            (std::abs(hit.distance) == std::abs(nearest) && hit.alignment < alignment))
+        {
+            nearest   = hit.distance;
+            alignment = hit.alignment;
+            pseudo    = hit.pseudo;
+        }
+    }
+    void extend(double d)
+    {
+        if (d >= 0)
+            positive = std::min(positive, d);
+        if (d <= 0)
+            negative = std::max(negative, d);
+    }
+    double value() const
+    {
+        const double extra = nearest < 0 ? negative : positive;
+        return std::abs(extra) < std::abs(pseudo) ? extra : pseudo;
+    }
+};
+
+double upperBound2(Point p, const Bounds& tile)
+{
+    const double x = std::max(std::abs(p.x - tile.lo.x), std::abs(p.x - tile.hi.x));
+    const double y = std::max(std::abs(p.y - tile.lo.y), std::abs(p.y - tile.hi.y));
+    return x * x + y * y;
+}
+
+bool extensionInRange(Point point, Point direction, Point bisector, const Bounds& tile, double limit)
+{
+    const double cosine = direction.dot(bisector);
+    Bounds endpoint{point, point};
+    return cosine <= 0 || endpoint.distance2(tile) * cosine * cosine <= limit;
+}
+
+void selectTile(std::vector<size_t>& indices, std::span<const Edge> edges, const Bounds& tile, bool multi)
+{
+    indices.clear();
+    std::array<double, 3> upper{infinity, infinity, infinity};
+    const int channels = multi ? 3 : 1;
+    for (const auto& edge : edges)
+    {
+        const double bound = std::min(upperBound2(edge.curve.start(), tile), upperBound2(edge.curve.end(), tile));
+        for (int c = 0; c < channels; ++c)
+            if (!multi || (edge.curve.color & (1u << c)))
+                upper[c] = std::min(upper[c], bound);
+    }
+    for (size_t i = 0; i < edges.size(); ++i)
+    {
+        const auto& e = edges[i];
+        double limit  = 0;
+        for (int c = 0; c < channels; ++c)
+            if (!multi || (e.curve.color & (1u << c)))
+                limit = std::max(limit, upper[c]);
+        limit = limit * (1 + 1e-10) + 1e-12;
+        if (e.bounds.distance2(tile) <= limit ||
+            (multi && (extensionInRange(e.curve.start(), e.startDir, e.startBisector, tile, limit) ||
+                       extensionInRange(e.curve.end(), e.endDir, e.endBisector, tile, limit))))
+            indices.push_back(i);
+    }
+}
+
+Channels sampleField(std::span<const Edge> edges, std::span<const size_t> candidates, Point p, bool multi)
+{
+    double best = infinity;
+    std::array<Selector, 3> selectors;
+    for (size_t i : candidates)
+    {
+        const Edge& edge = edges[i];
+        const auto hit   = edge.nearest(p);
+        best             = std::min(best, std::abs(hit.distance));
+        if (!multi)
+            continue;
+        const Point a = p - edge.curve.start(), b = p - edge.curve.end();
+        const bool before = a.dot(edge.startBisector) > 0 && a.dot(edge.startDir) < 0;
+        const bool after  = b.dot(edge.endBisector) < 0 && b.dot(edge.endDir) > 0;
+        for (int c = 0; c < 3; ++c)
+        {
+            if (!(edge.curve.color & (1u << c)))
+                continue;
+            selectors[c].consider(hit);
+            if (before && std::abs(a.cross(edge.startDir)) < std::abs(hit.distance))
+                selectors[c].extend(a.cross(edge.startDir));
+            if (after && std::abs(b.cross(edge.endDir)) < std::abs(hit.distance))
+                selectors[c].extend(b.cross(edge.endDir));
+        }
+    }
+    if (!multi)
+        return {float(best), 0, 0};
+    return {float(selectors[0].value()), float(selectors[1].value()), float(selectors[2].value())};
+}
+
+uint8_t encode(float distance, double range)
+{
+    return uint8_t(std::lround(std::clamp(0.5 + distance / range, 0., 1.) * 255));
+}
+
+void makeInsideRow(
+    std::span<const Edge> edges,
+    const Frame& frame,
+    int y,
+    std::vector<std::pair<double, int>>& crossings,
+    uint8_t* inside)
+{
+    crossings.clear();
+    for (const auto& edge : edges)
+        edge.crossings(frame.sample(0, y).y, crossings);
+    std::sort(crossings.begin(), crossings.end());
+    int winding = 0;
+    size_t next = 0;
+    for (int x = 0; x < frame.width; ++x)
+    {
+        const double center = frame.sample(x, y).x;
+        while (next < crossings.size() && crossings[next].first <= center)
+            winding += crossings[next++].second;
+        inside[x] = winding != 0;
+    }
+}
+
+void flip(Channels& v)
+{
+    for (float& d : v)
+        d = -d;
+}
+}  // namespace
+
+RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi)
+{
+    GlyphImage image;
+    image.encoding        = multi ? RasterEncoding::Msdf : RasterEncoding::Sdf;
+    image.distanceRangePx = req.rasterPpem26_6 / (64.f * 4);
+    if (!slot->outline.n_points)
+        return {GlyphStatus::Ready, std::move(image)};
+    Outline outline;
+    auto status = prepareBoundary(slot->outline, req, outline);
+    if (status != GlyphStatus::Ready)
+        return {status};
+    std::vector<Edge> edges;
+    Bounds box;
+    for (auto& contour : outline)
+    {
+        if (multi)
+            colorEdges(contour);
+        for (size_t i = 0; i < contour.size(); ++i)
+        {
+            const Edge& e = edges.emplace_back(
+                contour[i], contour[(i + contour.size() - 1) % contour.size()], contour[(i + 1) % contour.size()]);
+            box.add(e.bounds.lo);
+            box.add(e.bounds.hi);
+        }
+    }
+    if (edges.empty())
+        return {GlyphStatus::Ready, std::move(image)};
+    const int pad     = int(std::ceil(image.distanceRangePx / 2)) + 1;
+    const double left = std::floor(box.lo.x) - pad, top = std::ceil(box.hi.y) + pad;
+    const double width = std::ceil(box.hi.x) + pad - left, height = top - std::floor(box.lo.y) + pad;
+    if (width > maxImageSide || height > maxImageSide || width <= 0 || height <= 0 || left < INT32_MIN ||
+        left > INT32_MAX || top < INT32_MIN || top > INT32_MAX)
+        return {GlyphStatus::TooLarge};
+    const Frame frame{int(left), int(top), int(width), int(height), image.distanceRangePx};
+    const size_t count = size_t(frame.width) * frame.height;
+    if (count * (multi ? sizeof(Channels) + 5 : 1) + edges.size() * sizeof(Edge) > maxWorkBytes)
+        return {GlyphStatus::TooLarge};
+    image.width    = frame.width;
+    image.height   = frame.height;
+    image.leftPx   = frame.left;
+    image.topPx    = frame.top;
+    image.rowBytes = frame.width * (multi ? 3 : 1);
+    image.pixels.resize(size_t(image.rowBytes) * frame.height);
+    std::vector<Channels> field(multi ? count : 0);
+    std::vector<int8_t> signMatches(multi ? count : 0);
+    std::vector<uint8_t> inside(tileSize * frame.width);
+    std::vector<std::pair<double, int>> crossings;
+    std::vector<size_t> candidates;
+    bool signChanged = false;
+    for (int y0 = 0; y0 < frame.height; y0 += tileSize)
+    {
+        const int y1 = std::min(y0 + tileSize, frame.height);
+        for (int y = y0; y < y1; ++y)
+            makeInsideRow(edges, frame, y, crossings, inside.data() + (y - y0) * frame.width);
+        for (int x0 = 0; x0 < frame.width; x0 += tileSize)
+        {
+            if (stopped(req))
+                return {GlyphStatus::Cancelled};
+            const int x1 = std::min(x0 + tileSize, frame.width);
+            Bounds tile;
+            tile.add(frame.sample(x0, y0));
+            tile.add(frame.sample(x1 - 1, y1 - 1));
+            selectTile(candidates, edges, tile, multi);
+            for (int y = y0; y < y1; ++y)
+                for (int k = 0; k < x1 - x0; ++k)
+                {
+                    const int x       = (y % 2) ? x1 - 1 - k : x0 + k;
+                    const auto index  = size_t(y) * frame.width + x;
+                    const bool filled = inside[(y - y0) * frame.width + x] != 0;
+                    auto values       = sampleField(edges, candidates, frame.sample(x, y), multi);
+                    if (!multi)
+                        image.pixels[index] = encode(filled ? values[0] : -values[0], frame.range);
+                    else
+                    {
+                        const float center = median(values);
+                        if (center != 0)
+                        {
+                            const bool agrees  = (center > 0) == filled;
+                            signMatches[index] = agrees ? 1 : -1;
+                            if (!agrees)
+                            {
+                                flip(values);
+                                signChanged = true;
+                            }
+                        }
+                        field[index] = values;
+                    }
+                }
+        }
+    }
+    if (multi)
+    {
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (signMatches[i])
+                continue;
+            const size_t x = i % frame.width;
+            int votes      = 0;
+            if (x)
+                votes += signMatches[i - 1];
+            if (x + 1 < image.width)
+                votes += signMatches[i + 1];
+            if (i >= image.width)
+                votes += signMatches[i - image.width];
+            if (i + image.width < count)
+                votes += signMatches[i + image.width];
+            if (votes < 0)
+            {
+                flip(field[i]);
+                signChanged = true;
+            }
+        }
+        status = correctMsdf(field, frame, edges, req, signChanged);
+        if (status != GlyphStatus::Ready)
+            return {status};
+        for (size_t i = 0; i < count; ++i)
+            for (int c = 0; c < 3; ++c)
+                image.pixels[3 * i + c] = encode(field[i][c], frame.range);
+    }
+    return {GlyphStatus::Ready, std::move(image)};
+}
+}  // namespace cc::font::detail
