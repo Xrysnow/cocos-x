@@ -1,21 +1,5 @@
-set(COCOS_IO_HEADER
-    io/Document.h
-    io/StreamTypes.h
-    io/Stream.h
-    io/MemoryBuffer.h
-    io/MemoryStream.h
-    io/FileStream.h
-    io/BufferedStream.h
-    io/HttpStream.h
-)
-set(COCOS_IO_SRC
-    io/Document.cpp
-    io/DocumentTransfer.cpp
-    io/DocumentStaging.cpp
-    io/Stream.cpp
-    io/MemoryBuffer.cpp
-    io/MemoryStream.cpp
-    io/FileStream.cpp
-    io/BufferedStream.cpp
-    io/HttpStream.cpp
-)
+include(io/core/CMakeLists.txt)
+include(io/zip/CMakeLists.txt)
+
+set(COCOS_IO_HEADER ${COCOS_IO_CORE_HEADER} ${COCOS_IO_ZIP_HEADER})
+set(COCOS_IO_SRC ${COCOS_IO_CORE_SRC} ${COCOS_IO_ZIP_SRC})

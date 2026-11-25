@@ -61,6 +61,7 @@ public:
                                             std::string_view searchPath) const override;
 
 protected:
+    PhysicalLookup physicalLookup() const override;
     bool queryDefaultWritablePath(std::string& path) const override;
 
 private:

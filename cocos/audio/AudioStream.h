@@ -43,7 +43,7 @@ public:
 	static void setFileOpener(FileOpener opener);
 	static cc::IntrusivePtr<AudioStream> createFromFile(const std::string& path);
 
-	// Bypasses the audio callback, while retaining FileUtils path/delegate behavior.
+	// Reads from a platform source directly, bypassing the audio callback and ZIP mounts.
 	// Uses a new file handle/cursor; the returned pointer owns the stream.
 	static cc::IntrusivePtr<AudioStream> createFromLocalFile(const std::string& path);
 protected:

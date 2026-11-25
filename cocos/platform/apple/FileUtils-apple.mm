@@ -57,9 +57,28 @@ FileUtilsApple::~FileUtilsApple() = default;
 #if CC_FILEUTILS_APPLE_ENABLE_OBJC
 void FileUtilsApple::setBundle(NSBundle* bundle)
 {
+    std::lock_guard lock(_mutex);
     pimpl_->setBundle(bundle);
+    refreshPhysicalAdapter();
+    purgeCachedEntries();
 }
 #endif
+
+FileUtils::PhysicalLookup FileUtilsApple::physicalLookup() const
+{
+    const char* bundlePath = [[[pimpl_->getBundle() bundlePath] stringByStandardizingPath] UTF8String];
+    return [path = std::string(bundlePath ? bundlePath : "")](std::string_view relative) -> std::string {
+        @autoreleasepool {
+            NSBundle* bundle = [NSBundle bundleWithPath:[NSString stringWithUTF8String:path.c_str()]];
+            NSString* file = [NSString stringWithUTF8String:std::string(relative).c_str()];
+            if (!file || !bundle) return {};
+            NSString* resolved = [bundle pathForResource:[file lastPathComponent] ofType:nil
+                inDirectory:[file stringByDeletingLastPathComponent]];
+            const char* text = [resolved UTF8String];
+            return text ? std::string(text) : std::string{};
+        }
+    };
+}
 
 #pragma mark - FileUtils
 

@@ -2,10 +2,6 @@
 // Copyright (c) 2020 C4games Ltd
 #include "platform/PosixFileStream.h"
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-    #include "base/ZipUtils.h"
-#endif
-
 #include <sys/stat.h>
 #include <assert.h>
 #include <cstring>
@@ -133,50 +129,17 @@ static long long pfs_asset_size(PXFileHandle& handle)
 }
 static PXIoF pfs_asset_iof = {pfs_asset_read, pfs_asset_seek, pfs_asset_close, pfs_asset_size};
 
-// android obb
-static int pfs_obb_read(PXFileHandle& handle, void* buf, unsigned int size)
+bool PosixFileStream::openAsset(AAssetManager* manager, const char* name)
 {
-    return FileUtilsAndroid::getObbFile()->zfread(&handle._zfs, buf, size);
+    internalClose();
+    if (!manager || !name) return false;
+    auto* asset = AAssetManager_open(manager, name, AASSET_MODE_RANDOM);
+    if (!asset) return false;
+    _handle._asset = asset;
+    _iof = &pfs_asset_iof;
+    _options = {};
+    return true;
 }
-static int64_t pfs_obb_seek(PXFileHandle& handle, int64_t offset, int origin)
-{
-    auto obb = FileUtilsAndroid::getObbFile();
-    int64_t base = 0;
-    switch (origin)
-    {
-    case SEEK_SET:
-        break;
-    case SEEK_CUR:
-        base = handle._zfs.offset;
-        break;
-    case SEEK_END:
-        base = obb->zfsize(&handle._zfs);
-        break;
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-
-    // ZipFileStream and zfseek still use signed 32-bit positions. Calculate
-    // the absolute target before narrowing, including SEEK_END's file size.
-    const int64_t maxOffset = std::numeric_limits<int32_t>::max();
-    if (base < 0 || base > maxOffset || offset < -base || offset > maxOffset - base)
-    {
-        errno = EOVERFLOW;
-        return -1;
-    }
-    return obb->zfseek(&handle._zfs, static_cast<int32_t>(base + offset), SEEK_SET);
-}
-static int pfs_obb_close(PXFileHandle& handle)
-{
-    FileUtilsAndroid::getObbFile()->zfclose(&handle._zfs);
-    return 0;
-}
-static long long pfs_obb_size(PXFileHandle& handle)
-{
-    return FileUtilsAndroid::getObbFile()->zfsize(&handle._zfs);
-}
-static PXIoF pfs_obb_iof = {pfs_obb_read, pfs_obb_seek, pfs_obb_close, pfs_obb_size};
 #endif
 
 PosixFileStream::~PosixFileStream()
@@ -229,70 +192,7 @@ bool PosixFileStream::open(std::string_view path, FileStream::Mode mode)
         return false;
     }
 
-    bool ok = false;
-#if CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
-    ok = pfs_posix_open(path, mode, _handle) != -1;
-#else  // Android
-    if (path[0] != '/')
-    {  // from package, always readonly
-        if (options.access != FileStream::Access::Read)
-        {
-            errno = EACCES;
-            return false;
-        }
-        std::string relativePath;
-        size_t position = path.find("assets/");
-        if (0 == position)
-        {
-            // "assets/" is at the beginning of the path and we don't want it
-            relativePath = path.substr(sizeof("assets/") - 1);
-        }
-        else
-        {
-            relativePath = path;
-        }
-
-        auto obb = FileUtilsAndroid::getObbFile();
-        ok       = obb != nullptr && obb->zfopen(relativePath, &_handle._zfs);
-        if (ok)
-        {
-            // Reject entries whose cursor would overflow inside zfread/zfseek.
-            const auto entrySize = obb->zfsize(&_handle._zfs);
-            if (entrySize < 0 || entrySize > std::numeric_limits<int32_t>::max())
-            {
-                obb->zfclose(&_handle._zfs);
-                reset();
-                errno = EOVERFLOW;
-                return false;
-            }
-            this->_iof = &pfs_obb_iof;
-        }
-        else
-        {
-            AAssetManager* asMgr = FileUtilsAndroid::getAssetManager();
-            if (!asMgr)
-            {
-                errno = ENODEV;
-                return false;
-            }
-            AAsset* asset        = AAssetManager_open(asMgr, relativePath.c_str(), AASSET_MODE_UNKNOWN);
-            ok                   = !!asset;
-            if (!ok)
-                errno = ENOENT;
-            if (ok)
-            {
-                _handle._asset = asset;
-                // setup file read/seek/close at here
-                this->_iof = &pfs_asset_iof;
-            }
-        }
-    }
-    else
-    {  // otherwise, as a absolutely path
-        ok = pfs_posix_open(path, mode, _handle) != -1;
-    }
-#endif
-
+    bool ok = pfs_posix_open(path, mode, _handle) != -1;
     if (ok && !_iof)
         _iof = &pfs_posix_iof;
     if (ok)

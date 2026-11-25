@@ -8,6 +8,7 @@
 
 NS_CC_BEGIN
 
+class FileHit;
 class PlistSpriteSheetLoader : public SpriteSheetLoader
 {
 public:
@@ -26,12 +27,13 @@ protected:
     void addSpriteFramesWithDictionary(ValueMap& dictionary,
                                        Texture2D* texture,
                                        std::string_view plist,
-                                       SpriteFrameCache& cache);
+                                       SpriteFrameCache& cache,
+                                       const FileHit* textureHit = nullptr);
 
     /*Adds multiple Sprite Frames with a dictionary. The texture will be associated with the created sprite frames.
      */
     void addSpriteFramesWithDictionary(ValueMap& dict,
-                                       std::string_view texturePath,
+                                       const FileHit& textureHit,
                                        std::string_view plist,
                                        SpriteFrameCache& cache);
 

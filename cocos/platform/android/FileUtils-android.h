@@ -36,7 +36,7 @@ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
 NS_CC_BEGIN
 
-class ZipFile;
+namespace archive { class ZipReader; }
 
 /**
  * @addtogroup platform
@@ -57,7 +57,6 @@ public:
 
     static void setAssetManagerFromJava(jobject a);
     static AAssetManager* getAssetManager() { return assetmanager; }
-    static ZipFile* getObbFile() { return obbfile; }
 
     // Platform bootstrap publishes this snapshot; FileUtils queries never call storage APIs.
     static bool usesExternalWritablePath();
@@ -68,7 +67,6 @@ public:
 
     virtual bool isAbsolutePath(std::string_view strPath) const override;
 
-    virtual int64_t getFileSize(std::string_view filepath) const override;
     virtual std::vector<std::string> listFiles(std::string_view dirPath) const override;
 
 protected:
@@ -78,7 +76,7 @@ protected:
     virtual bool isDirectoryExistInternal(std::string_view dirPath) const override;
 
     static AAssetManager* assetmanager;
-    static ZipFile* obbfile;
+    std::shared_ptr<archive::ZipReader> _obb;
 };
 
 // end of platform group

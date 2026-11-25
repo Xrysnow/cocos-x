@@ -29,6 +29,7 @@ if(ANDROID)
         platform/android/Common-android.cpp
         platform/android/GLViewImpl-android.cpp
         platform/android/TextInput-android.cpp
+        platform/android/AndroidPackageReadAdapter.cpp
         platform/android/FileUtils-android.cpp
     )
 elseif(WINDOWS)
@@ -152,6 +153,8 @@ set(COCOS_PLATFORM_HEADER
     platform/ApplicationProtocol.h
     platform/Common.h
     platform/Device.h
+    platform/FileReadAdapter.h
+    platform/PhysicalReadAdapter.h
     platform/FileUtils.h
     platform/AppDirectories.h
     platform/FileStream.h
@@ -174,6 +177,9 @@ set(COCOS_PLATFORM_HEADER
 set(COCOS_PLATFORM_SRC
     platform/FileDialog.cpp
     ${COCOS_PLATFORM_SPECIFIC_SRC}
+    platform/FileReadAdapter.cpp
+    platform/FileReadRegistry.cpp
+    platform/PhysicalReadAdapter.cpp
     platform/FileUtils.cpp
     platform/AppDirectories.cpp
     platform/FileStream.cpp
@@ -203,7 +209,7 @@ if(CC_ENABLE_FILE_DIALOG)
         else()
             set(_cc_picker platform/mac/FileDialog-mac.mm)
         endif()
-        list(APPEND COCOS_PLATFORM_SRC ${_cc_picker} io/Document-apple.mm)
-        set_property(SOURCE ${_cc_picker} io/Document-apple.mm APPEND PROPERTY COMPILE_OPTIONS -fobjc-arc)
+        list(APPEND COCOS_PLATFORM_SRC ${_cc_picker} io/core/Document-apple.mm)
+        set_property(SOURCE ${_cc_picker} io/core/Document-apple.mm APPEND PROPERTY COMPILE_OPTIONS -fobjc-arc)
     endif()
 endif()

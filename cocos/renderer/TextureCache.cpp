@@ -50,6 +50,34 @@ using namespace std;
 
 NS_CC_BEGIN
 
+namespace
+{
+std::string textureKey(const FileHit& hit)
+{
+    if (hit.name() == "physical" && hit.entry().nativePath)
+        return *hit.entry().nativePath;
+    return std::string(1, '\0') + std::to_string(hit.adapterId()) + ':' + hit.entry().entryKey;
+}
+
+std::string textureKeyForPath(std::string_view path)
+{
+    const auto hit = FileUtils::getInstance()->findFile(path);
+    return hit ? textureKey(hit.value) : std::string{};
+}
+
+bool readAlpha(const FileHit& parent, std::string_view suffix, Image& image)
+{
+    if (suffix.empty())
+        return false;
+    auto key = std::string_view(parent.entry().entryKey);
+    if (parent.kind() == "android-package" && (key.starts_with("apk:") || key.starts_with("obb:")))
+        key.remove_prefix(4);
+    const auto filename = std::string(key.substr(key.find_last_of("/\\") + 1));
+    const auto alpha = FileUtils::getInstance()->findSibling(parent, filename + std::string(suffix));
+    return alpha && image.initWithImageHit(alpha.value);
+}
+}
+
 std::string TextureCache::s_etc1AlphaFileSuffix = "@alpha";
 
 // implementation TextureCache
@@ -74,17 +102,21 @@ std::string TextureCache::getDescription() const
 struct TextureCache::AsyncStruct
 {
 public:
-    AsyncStruct(std::string_view fn, const std::function<void(Texture2D*)>& f, std::string_view key)
-        : filename(fn)
+    AsyncStruct(FileHit source, const std::function<void(Texture2D*)>& f, std::string_view callbackName)
+        : hit(std::move(source))
+        , key(textureKey(hit))
         , callback(f)
-        , callbackKey(key)
+        , callbackKey(callbackName)
+        , alphaSuffix(TextureCache::getETC1AlphaFileSuffix())
         , pixelFormat(Texture2D::getDefaultAlphaPixelFormat())
         , loadSuccess(false)
     {}
 
-    std::string filename;
+    FileHit hit;
+    std::string key;
     std::function<void(Texture2D*)> callback;
     std::string callbackKey;
+    std::string alphaSuffix;
     Image image;
     Image imageAlpha;
     backend::PixelFormat pixelFormat;
@@ -187,26 +219,17 @@ void TextureCache::addImageAsync(std::string_view path,
                                  const std::function<void(Texture2D*)>& callback,
                                  std::string_view callbackKey)
 {
-    Texture2D* texture = nullptr;
-
-    std::string fullpath = FileUtils::getInstance()->fullPathForFilename(path);
-
-    auto it = _textures.find(fullpath);
-    if (it != _textures.end())
-        texture = it->second;
-
-    if (texture != nullptr)
-    {
-        if (callback)
-            callback(texture);
-        return;
-    }
-
-    // check if file exists
-    if (fullpath.empty() || !FileUtils::getInstance()->isFileExist(fullpath))
+    auto hit = FileUtils::getInstance()->findFile(path);
+    if (!hit)
     {
         if (callback)
             callback(nullptr);
+        return;
+    }
+    if (const auto cached = _textures.find(textureKey(hit.value)); cached != _textures.end())
+    {
+        if (callback)
+            callback(cached->second);
         return;
     }
 
@@ -227,7 +250,7 @@ void TextureCache::addImageAsync(std::string_view path,
     ++_asyncRefCount;
 
     // generate async struct
-    AsyncStruct* data = new AsyncStruct(fullpath, callback, callbackKey);
+    AsyncStruct* data = new AsyncStruct(std::move(hit.value), callback, callbackKey);
 
     // add async struct into queue
     _asyncStructQueue.emplace_back(data);
@@ -295,16 +318,11 @@ void TextureCache::loadImage()
         ul.unlock();
 
         // load image
-        asyncStruct->loadSuccess = asyncStruct->image.initWithImageFileThreadSafe(asyncStruct->filename);
+        asyncStruct->loadSuccess = asyncStruct->image.initWithImageHit(asyncStruct->hit);
 
         // ETC1 ALPHA supports.
-        if (asyncStruct->loadSuccess && asyncStruct->image.getFileType() == Image::Format::ETC1 &&
-            !s_etc1AlphaFileSuffix.empty())
-        {  // check whether alpha texture exists & load it
-            auto alphaFile = asyncStruct->filename + s_etc1AlphaFileSuffix;
-            if (FileUtils::getInstance()->isFileExist(alphaFile))
-                asyncStruct->imageAlpha.initWithImageFileThreadSafe(alphaFile);
-        }
+        if (asyncStruct->loadSuccess && asyncStruct->image.getFileType() == Image::Format::ETC1)
+            readAlpha(asyncStruct->hit, asyncStruct->alphaSuffix, asyncStruct->imageAlpha);
         // push the asyncStruct to response queue
         _responseMutex.lock();
         _responseQueue.emplace_back(asyncStruct);
@@ -341,7 +359,7 @@ void TextureCache::addImageAsyncCallBack(float /*dt*/)
         }
 
         // check the image has been convert to texture or not
-        auto it = _textures.find(asyncStruct->filename);
+        auto it = _textures.find(asyncStruct->key);
         if (it != _textures.end())
         {
             texture = it->second;
@@ -355,27 +373,25 @@ void TextureCache::addImageAsyncCallBack(float /*dt*/)
                 // generate texture in render thread
                 cc::IntrusivePtr newTexture{new Texture2D()};
 
-                newTexture->initWithImage(image, asyncStruct->pixelFormat);
-                // parse 9-patch info
-                this->parseNinePatchImage(image, newTexture.get(), asyncStruct->filename);
-#if CC_ENABLE_CACHE_TEXTURE_DATA
-                // cache the texture file name
-                VolatileTextureMgr::addImageTexture(newTexture.get(), asyncStruct->filename);
-#endif
-                // The raw cache takes this reference after initialization.
-                _textures.emplace(asyncStruct->filename, newTexture.get());
-
-                // ETC1 ALPHA supports.
-                if (asyncStruct->imageAlpha.getFileType() == Image::Format::ETC1)
+                if (newTexture->initWithImage(image, asyncStruct->pixelFormat))
                 {
-                    newTexture->updateWithImage(&asyncStruct->imageAlpha, asyncStruct->pixelFormat, 1);
+                    this->parseNinePatchImage(image, newTexture.get(), asyncStruct->hit.entry().entryKey);
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+                    VolatileTextureMgr::addImageTexture(newTexture.get(), asyncStruct->hit);
+#endif
+                    _textures.emplace(asyncStruct->key, newTexture.get());
+
+                    if (asyncStruct->imageAlpha.getFileType() == Image::Format::ETC1)
+                        newTexture->updateWithImage(&asyncStruct->imageAlpha, asyncStruct->pixelFormat, 1);
+                    texture = newTexture.detach();
                 }
-                texture = newTexture.detach();
+                else
+                    texture = nullptr;
             }
             else
             {
                 texture = nullptr;
-                CCLOG("cocos2d: failed to call TextureCache::addImageAsync(%s)", asyncStruct->filename.c_str());
+                CCLOG("cocos2d: failed to call TextureCache::addImageAsync(%s)", asyncStruct->hit.entry().entryKey.c_str());
             }
         }
 
@@ -402,70 +418,47 @@ Texture2D* TextureCache::addImage(std::string_view path)
     return addImage(path, Texture2D::getDefaultAlphaPixelFormat());
 }
 
-Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
+Texture2D* TextureCache::addImage(const FileHit& hit)
 {
-    Texture2D* texture = nullptr;
-    cc::IntrusivePtr<Image> image;
-    // Split up directory and filename
-    // MUTEX:
-    // Needed since addImageAsync calls this method from a different thread
+    return addImage(hit, Texture2D::getDefaultAlphaPixelFormat());
+}
 
-    std::string fullpath = FileUtils::getInstance()->fullPathForFilename(path);
-    if (fullpath.empty())
+Texture2D* TextureCache::addImage(const FileHit& hit, PixelFormat format)
+{
+    if (!hit.adapterId())
+        return nullptr;
+    const auto key = textureKey(hit);
+    const auto cached = _textures.find(key);
+    if (cached != _textures.end())
+        return cached->second;
+
+    cc::IntrusivePtr image{new Image()};
+    if (!image->initWithImageHit(hit))
+        return nullptr;
+    cc::IntrusivePtr texture{new Texture2D()};
+    if (!texture->initWithImage(image, format))
     {
+        CCLOG("cocos2d: Couldn't create texture for file:%s in TextureCache", hit.entry().entryKey.c_str());
         return nullptr;
     }
-    auto it = _textures.find(fullpath);
-    if (it != _textures.end())
-        texture = it->second;
-
-    if (!texture)
+    if (image->getFileType() == Image::Format::ETC1)
     {
-        // all images are handled by UIImage except PVR extension that is handled by our own handler
-        do
-        {
-            image = cc::IntrusivePtr{new Image()};
-
-            bool bRet = image->initWithImageFile(fullpath);
-            CC_BREAK_IF(!bRet);
-
-            cc::IntrusivePtr newTexture{new Texture2D()};
-
-            if (newTexture->initWithImage(image, format))
-            {
-#if CC_ENABLE_CACHE_TEXTURE_DATA
-                // cache the texture file name
-                VolatileTextureMgr::addImageTexture(newTexture.get(), fullpath);
-#endif
-                // The raw cache takes this reference after initialization.
-                _textures.emplace(fullpath, newTexture.get());
-
-                //-- ANDROID ETC1 ALPHA SUPPORTS.
-                std::string alphaFullPath{path};
-                alphaFullPath += s_etc1AlphaFileSuffix;
-                if (image->getFileType() == Image::Format::ETC1 && !s_etc1AlphaFileSuffix.empty() &&
-                    FileUtils::getInstance()->isFileExist(alphaFullPath))
-                {
-                    Image imageAlpha;
-                    if (imageAlpha.initWithImageFile(alphaFullPath))
-                    {
-                        newTexture->updateWithImage(&imageAlpha, format, 1);
-                    }
-                }
-
-                // parse 9-patch info
-                this->parseNinePatchImage(image, newTexture.get(), path);
-                texture = newTexture.detach();
-            }
-            else
-            {
-                CCLOG("cocos2d: Couldn't create texture for file:%s in TextureCache", path.data());
-                texture = nullptr;
-            }
-        } while (0);
+        Image alpha;
+        if (readAlpha(hit, s_etc1AlphaFileSuffix, alpha))
+            texture->updateWithImage(&alpha, format, 1);
     }
+    parseNinePatchImage(image, texture, hit.entry().entryKey);
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+    VolatileTextureMgr::addImageTexture(texture.get(), hit);
+#endif
+    _textures.emplace(key, texture.get());
+    return texture.detach();
+}
 
-    return texture;
+Texture2D* TextureCache::addImage(std::string_view path, PixelFormat format)
+{
+    const auto hit = FileUtils::getInstance()->findFile(path);
+    return hit ? addImage(hit.value, format) : nullptr;
 }
 
 void TextureCache::parseNinePatchImage(cc::Image* image, cc::Texture2D* texture, std::string_view path)
@@ -522,40 +515,26 @@ Texture2D* TextureCache::addImage(Image* image, std::string_view key, PixelForma
 
 bool TextureCache::reloadTexture(std::string_view fileName)
 {
-    Texture2D* texture = nullptr;
+    const auto hit = FileUtils::getInstance()->findFile(fileName);
+    return hit && reloadTexture(hit.value);
+}
 
-    std::string fullpath = FileUtils::getInstance()->fullPathForFilename(fileName);
-    if (fullpath.empty())
+Texture2D* TextureCache::reloadTexture(const FileHit& hit)
+{
+    const auto cached = _textures.find(textureKey(hit));
+    if (cached == _textures.end())
+        return addImage(hit);
+    auto texture = cached->second;
+    Image image;
+    if (!image.initWithImageHit(hit) || !texture->initWithImage(&image))
+        return nullptr;
+    if (image.getFileType() == Image::Format::ETC1)
     {
-        return false;
+        Image alpha;
+        if (readAlpha(hit, s_etc1AlphaFileSuffix, alpha))
+            texture->updateWithImage(&alpha, texture->getPixelFormat(), 1);
     }
-
-    auto it = _textures.find(fullpath);
-    if (it != _textures.end())
-    {
-        texture = it->second;
-    }
-
-    bool ret = false;
-    if (!texture)
-    {
-        texture = this->addImage(fullpath);
-        ret     = (texture != nullptr);
-    }
-    else
-    {
-        do
-        {
-            Image image;
-
-            bool bRet = image.initWithImageFile(fullpath);
-            CC_BREAK_IF(!bRet);
-
-            ret = texture->initWithImage(&image);
-        } while (0);
-    }
-
-    return ret;
+    return texture;
 }
 
 // TextureCache - Remove
@@ -576,7 +555,7 @@ void TextureCache::removeUnusedTextures()
         Texture2D* tex = it->second;
         if (tex->getReferenceCount() == 1)
         {
-            CCLOG("cocos2d: TextureCache: removing unused texture: %s", it->first.c_str());
+            CCLOG("cocos2d: TextureCache: removing unused texture: %s", tex->getPath().c_str());
 
             tex->release();
             it = _textures.erase(it);
@@ -614,8 +593,9 @@ void TextureCache::removeTextureForKey(std::string_view textureKeyName)
 
     if (it == _textures.end())
     {
-        auto key = FileUtils::getInstance()->fullPathForFilename(textureKeyName);
-        it       = _textures.find(key);
+        const auto key = textureKeyForPath(textureKeyName);
+        if (!key.empty())
+            it = _textures.find(key);
     }
 
     if (it != _textures.end())
@@ -631,8 +611,9 @@ Texture2D* TextureCache::getTextureForKey(std::string_view textureKeyName) const
 
     if (it == _textures.end())
     {
-        auto key = FileUtils::getInstance()->fullPathForFilename(textureKeyName);
-        it       = _textures.find(key);
+        const auto key = textureKeyForPath(textureKeyName);
+        if (!key.empty())
+            it = _textures.find(key);
     }
 
     if (it != _textures.end())
@@ -646,8 +627,7 @@ std::string TextureCache::getTextureFilePath(cc::Texture2D* texture) const
     {
         if (item.second == texture)
         {
-            return item.first;
-            break;
+            return !item.first.empty() && item.first[0] == '\0' ? texture->getPath() : item.first;
         }
     }
     return "";
@@ -684,7 +664,8 @@ std::string TextureCache::getCachedTextureInfo() const
         auto bytes = tex->getPixelsWide() * tex->getPixelsHigh() * bpp / 8;
         totalBytes += bytes;
         count++;
-        snprintf(buftmp, sizeof(buftmp) - 1, "\"%s\" rc=%d id=%p %d x %d @ %d bpp => %d KB\n", texture.first.c_str(),
+        const auto name = !texture.first.empty() && texture.first[0] == '\0' ? tex->getPath() : texture.first;
+        snprintf(buftmp, sizeof(buftmp) - 1, "\"%s\" rc=%d id=%p %d x %d @ %d bpp => %d KB\n", name.c_str(),
                  (int32_t)tex->getReferenceCount(), tex->getBackendTexture(), (int32_t)tex->getPixelsWide(),
                  (int32_t)tex->getPixelsHigh(), (int32_t)bpp, (int32_t)bytes / 1024);
 
@@ -704,22 +685,32 @@ void TextureCache::renameTextureWithKey(std::string_view srcName, std::string_vi
 
     if (it == _textures.end())
     {
-        auto key = FileUtils::getInstance()->fullPathForFilename(srcName);
-        it       = _textures.find(key);
+        const auto key = textureKeyForPath(srcName);
+        if (!key.empty())
+            it = _textures.find(key);
     }
 
     if (it != _textures.end())
     {
-        std::string fullpath = FileUtils::getInstance()->fullPathForFilename(dstName);
-        Texture2D* tex       = it->second;
-
+        const auto hit = FileUtils::getInstance()->findFile(dstName);
+        if (!hit)
+            return;
+        auto key = textureKey(hit.value);
+        if (const auto match = _textures.find(key); match != _textures.end() && match != it)
+            return;
+        auto texture = it->second;
+        const auto oldKey = it->first;
         Image image;
-        bool ret = image.initWithImageFile(dstName);
-        if (ret)
+        if (image.initWithImageHit(hit.value) && texture->initWithImage(&image))
         {
-            tex->initWithImage(&image);
-            _textures.emplace(fullpath, tex);
-            _textures.erase(it);
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+            VolatileTextureMgr::addImageTexture(texture, hit.value);
+#endif
+            if (key != oldKey)
+            {
+                _textures.emplace(std::move(key), texture);
+                _textures.erase(oldKey);
+            }
         }
     }
 }
@@ -755,7 +746,19 @@ void VolatileTextureMgr::addImageTexture(Texture2D* tt, std::string_view imageFi
 
     vt->_cashedImageType = VolatileTexture::kImageFile;
     vt->_fileName        = imageFileName;
+    vt->_fileHit.reset();
     vt->_pixelFormat     = tt->getPixelFormat();
+}
+
+void VolatileTextureMgr::addImageTexture(Texture2D* texture, const FileHit& hit)
+{
+    if (_isReloading)
+        return;
+    auto* entry = findVolotileTexture(texture);
+    entry->_fileHit = std::make_shared<FileHit>(hit);
+    entry->_cashedImageType = VolatileTexture::kImageFile;
+    entry->_fileName.clear();
+    entry->_pixelFormat = texture->getPixelFormat();
 }
 
 void VolatileTextureMgr::addImage(Texture2D* tt, Image* image)
@@ -853,6 +856,18 @@ void VolatileTextureMgr::reloadAllTextures()
         {
         case VolatileTexture::kImageFile:
         {
+            if (vt->_fileHit)
+            {
+                Image image;
+                if (image.initWithImageHit(*vt->_fileHit) && vt->_texture->initWithImage(&image, vt->_pixelFormat) &&
+                    image.getFileType() == Image::Format::ETC1)
+                {
+                    Image alpha;
+                    if (readAlpha(*vt->_fileHit, TextureCache::getETC1AlphaFileSuffix(), alpha))
+                        vt->_texture->updateWithImage(&alpha, vt->_pixelFormat, 1);
+                }
+                break;
+            }
             reloadTexture(vt->_texture, vt->_fileName, vt->_pixelFormat);
 
             // etc1 support check whether alpha texture exists & load it

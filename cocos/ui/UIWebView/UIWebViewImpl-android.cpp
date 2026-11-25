@@ -169,7 +169,7 @@ int createWebViewJNI()
 std::string getUrlStringByFileName(std::string_view fileName)
 {
     // LOGD("error: %s,%d",__func__,__LINE__);
-    std::string urlString = cc::FileUtils::getInstance()->fullPathForFilename(fileName);
+    std::string urlString(fileName);
     if (urlString.empty())
         return urlString;
 

@@ -562,7 +562,7 @@ struct DirectHidDevice : Device {
             else
             {
                 operation = {};
-                if (!ReadFile(file, input.data(), static_cast<DWORD>(input.size()), &size, &operation))
+                if (!::ReadFile(file, input.data(), static_cast<DWORD>(input.size()), &size, &operation))
                 {
                     pending = GetLastError() == ERROR_IO_PENDING;
                     return pending;

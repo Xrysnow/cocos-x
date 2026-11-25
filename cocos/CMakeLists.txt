@@ -204,6 +204,7 @@ if(CC_ENABLE_FILE_DIALOG AND LINUX)
     include(platform/linux/FileDialog-deps.cmake)
 endif()
 target_link_libraries(${COCOS_CORE_LIB} ${_cc_core_link_scope} external OpenAL ogg)
+target_link_libraries(${COCOS_CORE_LIB} PRIVATE libzip::zip)
 if(CC_BUILD_SHARED_LIBS)
     # Preserve external's public header requirements across the core DLL boundary.
     # Its implementation libraries remain private to cocos2d.dll.

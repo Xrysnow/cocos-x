@@ -668,6 +668,38 @@ bool Label::setBMFontFilePath(std::string_view bmfontFilePath, float fontSize)
     return true;
 }
 
+bool Label::setBMFontData(const FileHit& source, std::string_view data)
+{
+    const auto font = FontFNT::createFromData(source, data);
+    if (!font)
+        return false;
+    cc::IntrusivePtr<FontAtlas> atlas{font->newFontAtlas(), cc::adopt_ref};
+    if (!atlas)
+        return false;
+    _bmFontSize = font->getOriginalFontSize() / CC_CONTENT_SCALE_FACTOR();
+    _bmFontPath = source.entry().entryKey;
+    _bmSubTextureKey.clear();
+    _bmRect = Rect::ZERO;
+    _bmRotated = false;
+    _currentLabelType = LabelType::BMFONT;
+    setFontAtlas(atlas);
+    return true;
+}
+
+bool Label::copyBMFontFrom(const Label& source)
+{
+    if (source._currentLabelType != LabelType::BMFONT || !source._fontAtlas)
+        return false;
+    _bmFontPath = source._bmFontPath;
+    _bmSubTextureKey = source._bmSubTextureKey;
+    _bmRect = source._bmRect;
+    _bmRotated = source._bmRotated;
+    _bmFontSize = source._bmFontSize;
+    _currentLabelType = LabelType::BMFONT;
+    setFontAtlas(source._fontAtlas);
+    return true;
+}
+
 bool Label::setBMFontFilePath(std::string_view bmfontFilePath, const Rect& imageRect, bool imageRotated, float fontSize)
 {
     FontAtlas* newAtlas = FontAtlasCache::getFontAtlasFNT(bmfontFilePath, imageRect, imageRotated);
@@ -1087,16 +1119,13 @@ bool Label::updateQuads()
 
 void Label::setBMFontSizeInternal(float fontSize)
 {
-    if (_currentLabelType == LabelType::BMFONT)
+    if (_currentLabelType == LabelType::BMFONT && _fontAtlas)
     {
-        if (!_bmSubTextureKey.empty())
-        {
-            this->setBMFontFilePath(_bmFontPath, _bmSubTextureKey, fontSize);
-        }
-        else
-        {
-            this->setBMFontFilePath(_bmFontPath, _bmRect, _bmRotated, fontSize);
-        }
+        const auto font = static_cast<const FontFNT*>(_fontAtlas->getFont());
+        if (std::abs(fontSize) < FLT_EPSILON && font)
+            _bmFontSize = font->getOriginalFontSize() / CC_CONTENT_SCALE_FACTOR();
+        else if (fontSize > 0)
+            _bmFontSize = fontSize;
         _contentDirty = true;
     }
 }

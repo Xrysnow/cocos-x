@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "FFInfo.h"
 #include "base/Ref.h"
-#include "io/Stream.h"
+#include "io/core/Stream.h"
 #include "math/Vec2.h"
 #include <atomic>
 #include <cstddef>

@@ -1,0 +1,21 @@
+set(COCOS_IO_CORE_HEADER
+    io/core/Document.h
+    io/core/StreamTypes.h
+    io/core/Stream.h
+    io/core/MemoryBuffer.h
+    io/core/MemoryStream.h
+    io/core/FileStream.h
+    io/core/BufferedStream.h
+    io/core/HttpStream.h
+)
+set(COCOS_IO_CORE_SRC
+    io/core/Document.cpp
+    io/core/DocumentTransfer.cpp
+    io/core/DocumentStaging.cpp
+    io/core/Stream.cpp
+    io/core/MemoryBuffer.cpp
+    io/core/MemoryStream.cpp
+    io/core/FileStream.cpp
+    io/core/BufferedStream.cpp
+    io/core/HttpStream.cpp
+)

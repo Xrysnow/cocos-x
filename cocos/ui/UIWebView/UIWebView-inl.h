@@ -89,7 +89,22 @@ void WebView::loadURL(std::string_view url, bool cleanCachedData)
 
 void WebView::loadFile(std::string_view fileName)
 {
-    _impl->loadFile(fileName);
+    auto hit = FileUtils::getInstance()->findFile(fileName);
+    if (hit) {
+        const auto& entry = hit.value.entry();
+        if (entry.nativePath) {
+            _impl->loadFile(*entry.nativePath);
+            return;
+        }
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+        if (hit.value.kind() == "android-package" && entry.entryKey.starts_with("apk:")) {
+            _impl->loadFile("assets/" + entry.entryKey.substr(4));
+            return;
+        }
+#endif
+    }
+    // The native browser needs an addressable document and a base for relative URLs.
+    if (auto failed = getOnDidFailLoading()) failed(this, std::string(fileName));
 }
 
 void WebView::stopLoading()

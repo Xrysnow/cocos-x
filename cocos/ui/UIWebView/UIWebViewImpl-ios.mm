@@ -487,8 +487,7 @@ void WebViewImpl::loadURL(std::string_view url, bool cleanCachedData)
 
 void WebViewImpl::loadFile(std::string_view fileName)
 {
-    auto fullPath = cc::FileUtils::getInstance()->fullPathForFilename(fileName);
-    [_uiWebViewWrapper loadFile:fullPath];
+    [_uiWebViewWrapper loadFile:fileName];
 }
 
 void WebViewImpl::stopLoading()

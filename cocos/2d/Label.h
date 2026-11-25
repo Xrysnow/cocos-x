@@ -98,6 +98,7 @@ class SpriteBatchNode;
 class DrawNode;
 class EventListenerCustom;
 class TextureAtlas;
+class FileHit;
 
 /**
  * @brief Label is a subclass of Node that knows how to render text labels.
@@ -336,6 +337,8 @@ public:
 
     /** Sets a new bitmap font to Label */
     virtual bool setBMFontFilePath(std::string_view bmfontFilePath, float fontSize = 0);
+    bool setBMFontData(const FileHit& source, std::string_view data);
+    bool copyBMFontFrom(const Label& source);
 
     /** Sets a new bitmap font to Label */
     virtual bool setBMFontFilePath(std::string_view bmfontFilePath,

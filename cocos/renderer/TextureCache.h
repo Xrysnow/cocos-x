@@ -38,6 +38,7 @@ THE SOFTWARE.
 #include <string>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 
 #include "base/Ref.h"
 #include "renderer/Texture2D.h"
@@ -48,6 +49,8 @@ THE SOFTWARE.
 #endif
 
 NS_CC_BEGIN
+
+class FileHit;
 
 /**
  * @addtogroup _2d
@@ -96,6 +99,8 @@ public:
     */
     Texture2D* addImage(std::string_view filepath);
     Texture2D* addImage(std::string_view filepath, PixelFormat format);
+    Texture2D* addImage(const FileHit& hit);
+    Texture2D* addImage(const FileHit& hit, PixelFormat format);
 
     /** Returns a Texture2D object given a file image.
     * If the file image was not previously loaded, it will create a new Texture2D object and it will return it.
@@ -150,6 +155,7 @@ public:
      * @return True if the reloading is succeed, otherwise return false.
      */
     bool reloadTexture(std::string_view fileName);
+    Texture2D* reloadTexture(const FileHit& hit);
 
     /** Purges the dictionary of loaded textures.
      * Call this method if you receive the "Memory Warning".
@@ -269,6 +275,7 @@ protected:
     backend::PixelFormat _pixelFormat;
 
     std::string _fileName;
+    std::shared_ptr<const FileHit> _fileHit;
 
     std::string _text;
     FontDefinition _fontDefinition;
@@ -278,6 +285,7 @@ class CC_DLL VolatileTextureMgr
 {
 public:
     static void addImageTexture(Texture2D* tt, std::string_view imageFileName);
+    static void addImageTexture(Texture2D* tt, const FileHit& hit);
     static void addStringTexture(Texture2D* tt, const char* text, const FontDefinition& fontDefinition);
     static void addDataTexture(Texture2D* tt,
                                void* data,

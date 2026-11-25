@@ -2,7 +2,7 @@
 #include "VideoCommon.h"
 #include "ffmpeg/FFDemuxer.h"
 #include "ffmpeg/FFFrameQueue.h"
-#include "io/FileStream.h"
+#include "io/core/FileStream.h"
 #include <climits>
 #include <cmath>
 #include <limits>

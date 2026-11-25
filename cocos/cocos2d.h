@@ -54,13 +54,20 @@ THE SOFTWARE.
 #include "base/UserDefault.h"
 #include "base/Value.h"
 #include "base/Vector.h"
-#include "base/ZipUtils.h"
 #include "base/base64.h"
 #include "base/ccConfig.h"
 #include "base/Macros.h"
 #include "base/ccTypes.h"
 #include "base/ccUTF8.h"
 #include "base/ccUtils.h"
+
+#include "io/zip/ZipExtract.h"
+#include "io/zip/ZipReadAdapter.h"
+#include "io/zip/ZipReader.h"
+#include "io/zip/ZipWriter.h"
+#include "io/zip/codecs/Ccz.h"
+#include "io/zip/codecs/Gzip.h"
+#include "io/zip/codecs/Zlib.h"
 
 // EventDispatcher
 #include "base/EventAcceleration.h"

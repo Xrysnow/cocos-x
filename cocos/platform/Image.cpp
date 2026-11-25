@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "renderer/backend/PixelFormatUtils.h"
 
 #include <string>
+#include <limits>
 #include <ctype.h>
 
 #include "base/ccstd.h"
@@ -127,7 +128,7 @@ struct dirent* readdir$INODE64(DIR* dir)
 #include "platform/FileUtils.h"
 #include "base/Configuration.h"
 #include "base/ccUtils.h"
-#include "base/ZipUtils.h"
+#include "io/zip/codecs/Gzip.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
     #include "platform/android/FileUtils-android.h"
     #include "platform/GL.h"
@@ -566,6 +567,7 @@ Image::Image()
     , _unpack(false)
     , _fileType(Format::UNKNOWN)
     , _pixelFormat(backend::PixelFormat::NONE)
+    , _mipmaps{}
     , _numberOfMipmaps(0)
     , _hasPremultipliedAlpha(false)
 {}
@@ -585,114 +587,113 @@ Image::~Image()
 
 bool Image::initWithImageFile(std::string_view path)
 {
-    bool ret  = false;
-    _filePath = FileUtils::getInstance()->fullPathForFilename(path);
+    return initWithImageFile(path, {});
+}
 
-    Data data = FileUtils::getInstance()->getDataFromFile(_filePath);
+bool Image::initWithImageFile(std::string_view path, const compression::CczReadOptions& options)
+{
+    auto hit = FileUtils::getInstance()->findFile(path);
+    return hit && initWithImageHit(hit.value, options);
+}
 
-    if (!data.isNull())
-    {
-        ssize_t n = 0;
-        auto buf  = data.takeBuffer(&n);
-        ret       = initWithImageData(buf, n, true);
-    }
+bool Image::initWithImageHit(const FileHit& hit, const compression::CczReadOptions& options)
+{
+    _filePath = hit.entry().nativePath.value_or(hit.entry().entryKey);
+    if (hit.kind() == "android-package" && (_filePath.starts_with("apk:") || _filePath.starts_with("obb:")))
+        _filePath.replace(0, 4, "assets/");
+    Data data;
+    if (FileUtils::getContents(hit, &data) != FileUtils::Status::OK || data.isNull())
+        return false;
 
-    return ret;
+    ssize_t len = 0;
+    auto* buffer = data.takeBuffer(&len);
+    return decodeImageData(buffer, len, true, options);
 }
 
 bool Image::initWithImageFileThreadSafe(std::string_view fullpath)
 {
-    bool ret  = false;
-    _filePath = fullpath;
-
-    Data data = FileUtils::getInstance()->getDataFromFile(_filePath);
-
-    if (!data.isNull())
-    {
-        ssize_t n = 0;
-        auto buf  = data.takeBuffer(&n);
-        ret       = initWithImageData(buf, n, true);
-    }
-
-    return ret;
+    return initWithImageFile(fullpath);
 }
 
 bool Image::initWithImageData(const uint8_t* data, ssize_t dataLen)
 {
-    return initWithImageData(const_cast<uint8_t*>(data), dataLen, false);
+    return decodeImageData(const_cast<uint8_t*>(data), dataLen, false, {});
 }
 
 bool Image::initWithImageData(uint8_t* data, ssize_t dataLen, bool ownData)
 {
+    return decodeImageData(data, dataLen, ownData, {});
+}
+
+bool Image::initWithImageData(const uint8_t* data, ssize_t dataLen, const compression::CczReadOptions& options)
+{
+    return decodeImageData(const_cast<uint8_t*>(data), dataLen, false, options);
+}
+
+bool Image::decodeImageData(uint8_t* data, ssize_t dataLen, bool ownData, const compression::CczReadOptions& options)
+{
     bool ret = false;
+    std::unique_ptr<uint8_t, decltype(&free)> owned(ownData ? data : nullptr, &free);
+    if (!data || dataLen <= 0)
+        return false;
+
+    compression::DecodedBuffer decoded;
+    std::span<const uint8_t> bytes(data, static_cast<size_t>(dataLen));
+    const bool ccz = compression::hasCczSignature(bytes);
+    if (ccz || compression::hasGzipSignature(bytes))
+    {
+        auto result = ccz ? compression::decodeCcz(bytes, options) : compression::decodeGzip(bytes, options.limits);
+        if (!result || !result.value->size() ||
+            result.value->size() > static_cast<size_t>(std::numeric_limits<ssize_t>::max()))
+            return false;
+        decoded = std::move(result.value);
+        data = const_cast<uint8_t*>(decoded->data());
+        dataLen = static_cast<ssize_t>(decoded->size());
+        owned.reset();
+        ownData = false;
+    }
 
     do
     {
-        CC_BREAK_IF(!data || dataLen == 0);
-
-        uint8_t* unpackedData = nullptr;
-        ssize_t unpackedLen   = 0;
-
-        // detect and unzip the compress file
-        if (ZipUtils::isCCZBuffer(data, dataLen))
-        {
-            unpackedLen = ZipUtils::inflateCCZBuffer(data, dataLen, &unpackedData);
-        }
-        else if (ZipUtils::isGZipBuffer(data, dataLen))
-        {
-            unpackedLen = ZipUtils::inflateMemory(const_cast<uint8_t*>(data), dataLen, &unpackedData);
-        }
-        else
-        {
-            unpackedData = const_cast<uint8_t*>(data);
-            unpackedLen  = dataLen;
-        }
-
-        if (unpackedData != data)
-        {  // free old data and own the unpackedData
-            if (ownData)
-                free((void*)data);
-            ownData = true;
-        }
-
-        _fileType = detectFormat(unpackedData, unpackedLen);
+        _fileType = detectFormat(data, dataLen);
 
         switch (_fileType)
         {
         case Format::PNG:
-            ret = initWithPngData(unpackedData, unpackedLen);
+            ret = initWithPngData(data, dataLen);
             break;
         case Format::JPG:
-            ret = initWithJpgData(unpackedData, unpackedLen);
+            ret = initWithJpgData(data, dataLen);
             break;
         case Format::WEBP:
-            ret = initWithWebpData(unpackedData, unpackedLen);
+            ret = initWithWebpData(data, dataLen);
             break;
         case Format::PVR:
-            ret = initWithPVRData(unpackedData, unpackedLen, ownData);
+            ret = initWithPVRData(data, dataLen, ownData);
             break;
         case Format::ETC1:
-            ret = initWithETCData(unpackedData, unpackedLen, ownData);
+            ret = initWithETCData(data, dataLen, ownData);
             break;
         case Format::ETC2:
-            ret = initWithETC2Data(unpackedData, unpackedLen, ownData);
+            ret = initWithETC2Data(data, dataLen, ownData);
             break;
         case Format::S3TC:
-            ret = initWithS3TCData(unpackedData, unpackedLen, ownData);
+            ret = initWithS3TCData(data, dataLen, ownData);
             break;
         case Format::ATITC:
-            ret = initWithATITCData(unpackedData, unpackedLen, ownData);
+            ret = initWithATITCData(data, dataLen, ownData);
             break;
         case Format::ASTC:
-            ret = initWithASTCData(unpackedData, unpackedLen, ownData);
+            ret = initWithASTCData(data, dataLen, ownData);
             break;
         case Format::BMP:
-            ret = initWithBmpData(unpackedData, unpackedLen);
+            ret = initWithBmpData(data, dataLen);
             break;
         default:
         {
             // load and detect image format
-            tImageTGA* tgaData = tgaLoadBuffer(unpackedData, static_cast<int32_t>(unpackedLen));
+            auto* tgaData = dataLen >= 18 && dataLen <= std::numeric_limits<int32_t>::max()
+                                ? tgaLoadBuffer(data, static_cast<int32_t>(dataLen)) : nullptr;
 
             if (tgaData != nullptr && tgaData->status == TGA_OK)
             {
@@ -708,9 +709,8 @@ bool Image::initWithImageData(uint8_t* data, ssize_t dataLen, bool ownData)
         }
         }
 
-        if (_data != unpackedData && ownData)
-            free(unpackedData);
-        // else, the hardware texture decoder used, the compressed data was stored directly
+        if (owned && _data == owned.get())
+            owned.release();
     } while (0);
 
     return ret;
@@ -763,26 +763,29 @@ bool Image::isBmp(const uint8_t* data, ssize_t dataLen)
     return dataLen > 54 && data[0] == 'B' && data[1] == 'M';
 }
 
-bool Image::isEtc1(const uint8_t* data, ssize_t /*dataLen*/)
+bool Image::isEtc1(const uint8_t* data, ssize_t dataLen)
 {
-    return !!etc1_pkm_is_valid((etc1_byte*)data);
+    return dataLen >= ETC_PKM_HEADER_SIZE && !!etc1_pkm_is_valid((etc1_byte*)data);
 }
 
 bool Image::isEtc2(const uint8_t* data, ssize_t dataLen)
 {
-    return !!etc2_pkm_is_valid((etc2_byte*)data);
+    return dataLen >= ETC2_PKM_HEADER_SIZE && !!etc2_pkm_is_valid((etc2_byte*)data);
 }
 
-bool Image::isS3TC(const uint8_t* data, ssize_t /*dataLen*/)
+bool Image::isS3TC(const uint8_t* data, ssize_t dataLen)
 {
-
+    if (dataLen < static_cast<ssize_t>(sizeof(S3TCTexHeader)))
+        return false;
     S3TCTexHeader* header = (S3TCTexHeader*)data;
 
     return (strncmp(header->fileCode, "DDS", 3) == 0);
 }
 
-bool Image::isASTC(const uint8_t* data, ssize_t /*dataLen*/)
+bool Image::isASTC(const uint8_t* data, ssize_t dataLen)
 {
+    if (dataLen < static_cast<ssize_t>(sizeof(astc_header)))
+        return false;
     astc_header* hdr = (astc_header*)data;
 
     uint32_t magicval = astc_unpack_bytes(hdr->magic[0], hdr->magic[1], hdr->magic[2], hdr->magic[3]);
@@ -1506,7 +1509,7 @@ bool Image::initWithPVRv2Data(uint8_t* data, ssize_t dataLen, bool ownData)
 
     if (!_unpack)
     {  // hardware decoder, hold data directly
-        forwardPixels(data, dataLen, pixelOffset, ownData);
+        return forwardPixels(data, dataLen, pixelOffset, ownData);
     }
     else
     {
@@ -1688,7 +1691,7 @@ bool Image::initWithPVRv3Data(uint8_t* data, ssize_t dataLen, bool ownData)
 
     if (!_unpack)
     {
-        forwardPixels(data, dataLen, pixelOffset, ownData);
+        return forwardPixels(data, dataLen, pixelOffset, ownData);
     }
     else
     {
@@ -1737,8 +1740,7 @@ bool Image::initWithETCData(uint8_t* data, ssize_t dataLen, bool ownData)
     if (compressedFormat != backend::PixelFormat::NONE)
     {
         _pixelFormat = compressedFormat;
-        forwardPixels(data, dataLen, pixelOffset, ownData);
-        return true;
+        return forwardPixels(data, dataLen, pixelOffset, ownData);
     }
     else
     {
@@ -1803,7 +1805,7 @@ bool Image::initWithETC2Data(uint8_t* data, ssize_t dataLen, bool ownData)
             _pixelFormat =
                 format == ETC2_RGBA_NO_MIPMAPS ? backend::PixelFormat::ETC2_RGBA : backend::PixelFormat::ETC2_RGB;
 
-            forwardPixels(data, dataLen, pixelOffset, ownData);
+            CC_BREAK_IF(!forwardPixels(data, dataLen, pixelOffset, ownData));
         }
         else
         {
@@ -1890,7 +1892,7 @@ bool Image::initWithASTCData(uint8_t* data, ssize_t dataLen, bool ownData)
                 _pixelFormat = backend::PixelFormat::ASTC10x5;
             }
 
-            forwardPixels(data, dataLen, ASTC_HEAD_SIZE, ownData);
+            CC_BREAK_IF(!forwardPixels(data, dataLen, ASTC_HEAD_SIZE, ownData));
         }
         else
         {
@@ -2039,7 +2041,7 @@ bool Image::initWithS3TCData(uint8_t* data, ssize_t dataLen, bool ownData)
 
     if (hardware)
     {
-        forwardPixels(data, dataLen, pixelOffset, ownData);
+        return forwardPixels(data, dataLen, pixelOffset, ownData);
     }
 
     return true;
@@ -2177,7 +2179,7 @@ bool Image::initWithATITCData(uint8_t* data, ssize_t dataLen, bool ownData)
 
     if (hardware)
     {
-        forwardPixels(data, dataLen, pixelOffset, ownData);
+        return forwardPixels(data, dataLen, pixelOffset, ownData);
     }
 
     return true;
@@ -2188,20 +2190,37 @@ bool Image::initWithPVRData(uint8_t* data, ssize_t dataLen, bool ownData)
     return initWithPVRv2Data(data, dataLen, ownData) || initWithPVRv3Data(data, dataLen, ownData);
 }
 
-void Image::forwardPixels(uint8_t* data, ssize_t dataLen, int offset, bool ownData)
+bool Image::forwardPixels(uint8_t* data, ssize_t dataLen, size_t offset, bool ownData)
 {
+    if (dataLen <= 0 || offset >= static_cast<size_t>(dataLen))
+        return false;
     if (ownData)
     {
         _data    = data;
         _dataLen = dataLen;
-        _offset  = offset;
+        _offset  = static_cast<ssize_t>(offset);
     }
     else
     {
-        _dataLen = dataLen - offset;
-        _data    = (uint8_t*)malloc(_dataLen);
-        memcpy(_data, data + offset, _dataLen);
+        const auto* pixels = data + offset;
+        const auto length = static_cast<size_t>(dataLen) - offset;
+        auto* copy = static_cast<uint8_t*>(malloc(length));
+        if (!copy)
+            return false;
+        memcpy(copy, pixels, length);
+        const auto first = reinterpret_cast<uintptr_t>(pixels);
+        for (int i = 0; i < _numberOfMipmaps && i < MIPMAP_MAX; ++i)
+        {
+            auto& mipmap = _mipmaps[i];
+            const auto address = reinterpret_cast<uintptr_t>(mipmap.address);
+            if (address >= first && address - first < length)
+                mipmap.address = copy + (address - first);
+        }
+        _data = copy;
+        _dataLen = static_cast<ssize_t>(length);
+        _offset = 0;
     }
+    return true;
 }
 
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS)

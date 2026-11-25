@@ -45,9 +45,6 @@ endif()
 
 if(CC_ENABLE_EXT_ASSETMANAGER)
   add_subdirectory(assets-manager)
-  if(CC_BUILD_SHARED_LIBS)
-    target_link_libraries(assets-manager PUBLIC unzip dep_zlib)
-  endif()
 endif()
 
 if(CC_ENABLE_EXT_PARTICLE3D)

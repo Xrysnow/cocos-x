@@ -1,0 +1,24 @@
+set(COCOS_IO_ZIP_HEADER
+    io/zip/ZipTypes.h
+    io/zip/ZipReader.h
+    io/zip/ZipWriter.h
+    io/zip/ZipExtract.h
+    io/zip/ZipReadAdapter.h
+    io/zip/detail/ZipSource.h
+    io/zip/codecs/CompressionTypes.h
+    io/zip/codecs/Gzip.h
+    io/zip/codecs/Zlib.h
+    io/zip/codecs/Ccz.h
+    io/zip/codecs/CodecDetail.h
+)
+set(COCOS_IO_ZIP_SRC
+    io/zip/ZipReader.cpp
+    io/zip/ZipWriter.cpp
+    io/zip/ZipExtract.cpp
+    io/zip/ZipReadAdapter.cpp
+    io/zip/detail/ZipDirectory.cpp
+    io/zip/detail/ZipSource.cpp
+    io/zip/codecs/Gzip.cpp
+    io/zip/codecs/Zlib.cpp
+    io/zip/codecs/Ccz.cpp
+)

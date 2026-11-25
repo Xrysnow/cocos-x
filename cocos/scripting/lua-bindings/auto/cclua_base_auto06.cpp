@@ -480,7 +480,7 @@ int lua_cc_TextureCache_getTextureForKey(lua_State* lua_S)
 int lua_cc_TextureCache_reloadTexture(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.TextureCache", "cc.TextureCache:reloadTexture");
-	LUA_TRY_INVOKE_R(1, &cc::TextureCache::reloadTexture);
+	LUA_TRY_INVOKE_R(1, static_cast<bool(cc::TextureCache::*)(std::string_view)>(&cc::TextureCache::reloadTexture));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cc_TextureCache_removeAllTextures(lua_State* lua_S)

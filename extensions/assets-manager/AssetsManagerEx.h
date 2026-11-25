@@ -41,8 +41,6 @@
 #include "extensions/ExtensionExport.h"
 #include "rapidjson/document-wrapper.h"
 
-struct zlib_filefunc_def_s;
-
 NS_CC_EXT_BEGIN
 
 /**
@@ -226,11 +224,10 @@ protected:
     virtual void onSuccess(std::string_view srcUrl, std::string_view storagePath, std::string_view customId);
 
 private:
-    void batchDownload();
+    bool batchDownload();
 
     // Called when one DownloadUnits finished
     void onDownloadUnitsFinished();
-    void fillZipFunctionOverrides(zlib_filefunc_def_s& zipFunctionOverrides);
 
     //! The event of the current AssetsManagerEx in event dispatcher
     std::string _eventName;
@@ -251,6 +248,7 @@ private:
 
     //! The path to store successfully downloaded version.
     std::string _storagePath;
+    std::string _activeStoragePath;
 
     //! The path to store downloading version.
     std::string _tempStoragePath;

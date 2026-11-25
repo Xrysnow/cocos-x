@@ -39,7 +39,6 @@ set(COCOS_BASE_HEADER
     base/UserDefault.h
     base/ccConfig.h
     base/ccFPSImages.h
-    base/ZipUtils.h
     base/Map.h
     base/ccUTF8.h
     base/ScriptSupport.h
@@ -95,7 +94,6 @@ set(COCOS_BASE_SRC
     base/ObjectFactory.cpp
     base/StencilStateManager.cpp
     base/TGAlib.cpp
-    base/ZipUtils.cpp
     base/atitc.cpp
     base/base64.cpp
     base/ccFPSImages.cpp

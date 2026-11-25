@@ -1,6 +1,6 @@
 #pragma once
 #include "audio/AudioStream.h"
-#include "io/Stream.h"
+#include "io/core/Stream.h"
 
 NS_CC_BEGIN
 

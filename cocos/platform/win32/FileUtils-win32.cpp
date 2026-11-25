@@ -187,53 +187,7 @@ bool FileUtilsWin32::isFileExistInternal(std::string_view strFilePath) const
     return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-FileUtils::Status FileUtilsWin32::getContents(std::string_view filename, ResizableBuffer* buffer) const
-{
-    if (filename.empty())
-        return FileUtils::Status::NotExists;
 
-    // read the file from hardware
-    std::string fullPath = FileUtils::getInstance()->fullPathForFilename(filename);
-
-    HANDLE fileHandle = ::CreateFileW(ntcvt::from_chars(fullPath).c_str(), GENERIC_READ,
-                                      FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, nullptr);
-    if (fileHandle == INVALID_HANDLE_VALUE)
-        return FileUtils::Status::OpenFailed;
-
-    // ResizableBuffer::resize can throw; never leak the handle on that path.
-    struct CloseFile
-    {
-        HANDLE handle;
-        ~CloseFile() { ::CloseHandle(handle); }
-    } closeFile{fileHandle};
-    DWORD hi = 0;
-    auto size = ::GetFileSize(fileHandle, &hi);
-    if (size == INVALID_FILE_SIZE && ::GetLastError() != NO_ERROR)
-        return FileUtils::Status::ObtainSizeFailed;
-    if (hi > 0)
-    {
-        return FileUtils::Status::TooLarge;
-    }
-    // don't read file content if it is empty
-    if (size == 0)
-    {
-        buffer->resize(0);
-        return FileUtils::Status::OK;
-    }
-
-    buffer->resize(size);
-    DWORD sizeRead = 0;
-    BOOL successed = ::ReadFile(fileHandle, buffer->buffer(), size, &sizeRead, nullptr);
-
-    if (!successed || sizeRead != size)
-    {
-        CCLOG("Get data from file(%s) failed, error code is %s", filename.data(),
-              std::to_string(::GetLastError()).data());
-        buffer->resize(sizeRead);
-        return FileUtils::Status::ReadFailed;
-    }
-    return FileUtils::Status::OK;
-}
 
 std::string FileUtilsWin32::getPathForFilename(std::string_view filename,
                                                std::string_view searchPath) const
@@ -253,16 +207,7 @@ std::string FileUtilsWin32::getFullPathForFilenameWithinDirectory(std::string_vi
     return FileUtils::getFullPathForFilenameWithinDirectory(unixDirectory, unixFilename);
 }
 
-int64_t FileUtilsWin32::getFileSize(std::string_view filepath) const
-{
-    if (filepath.empty())
-        return -1;
-    WIN32_FILE_ATTRIBUTE_DATA attrs = {0};
-    if (GetFileAttributesExW(ntcvt::from_chars(filepath).c_str(), GetFileExInfoStandard, &attrs) &&
-        !(attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-        return static_cast<long long>(attrs.nFileSizeHigh) << 32 | static_cast<unsigned long long>(attrs.nFileSizeLow);
-    return -1;
-}
+
 
 bool FileUtilsWin32::queryDefaultWritablePath(std::string& path) const
 {

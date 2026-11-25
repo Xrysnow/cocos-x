@@ -28,10 +28,14 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "2d/TMXXMLParser.h"
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <unordered_map>
 #include <sstream>
 //  #include "2d/CCTMXTiledMap.h"
-#include "base/ZipUtils.h"
+#include "io/zip/codecs/Gzip.h"
+#include "io/zip/codecs/Zlib.h"
 #include "base/Director.h"
 #include "platform/FileUtils.h"
 
@@ -128,6 +132,7 @@ void TMXMapInfo::internalInit(std::string_view tmxFileName, std::string_view res
     // tmp vars
     _currentString     = "";
     _storingCharacters = false;
+    _layerDataError    = false;
     _layerAttribs      = TMXLayerAttribNone;
     _parentElement     = TMXPropertyNone;
     _currentFirstGID   = -1;
@@ -181,7 +186,7 @@ bool TMXMapInfo::parseXMLString(std::string_view xmlString)
 
     parser.setDelegator(this);
 
-    return parser.parse(xmlString.data(), len);
+    return parser.parse(xmlString.data(), len) && !_layerDataError;
 }
 
 bool TMXMapInfo::parseXMLFile(std::string_view xmlFilename)
@@ -195,7 +200,7 @@ bool TMXMapInfo::parseXMLFile(std::string_view xmlFilename)
 
     parser.setDelegator(this);
 
-    return parser.parse(FileUtils::getInstance()->fullPathForFilename(xmlFilename));
+    return parser.parse(FileUtils::getInstance()->fullPathForFilename(xmlFilename)) && !_layerDataError;
 }
 
 // the XML parser calls here with all the elements
@@ -428,6 +433,7 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
     {
         std::string encoding    = attributeDict["encoding"].asString();
         std::string compression = attributeDict["compression"].asString();
+        tmxMapInfo->setLayerAttribs(TMXLayerAttribNone);
 
         if (encoding == "")
         {
@@ -445,22 +451,19 @@ void TMXMapInfo::startElement(void* /*ctx*/, const char* name, const char** atts
         }
         else if (encoding == "base64")
         {
-            int layerAttribs = tmxMapInfo->getLayerAttribs();
-            tmxMapInfo->setLayerAttribs(layerAttribs | TMXLayerAttribBase64);
-            tmxMapInfo->setStoringCharacters(true);
-
+            int layerAttribs = TMXLayerAttribBase64;
             if (compression == "gzip")
-            {
-                layerAttribs = tmxMapInfo->getLayerAttribs();
-                tmxMapInfo->setLayerAttribs(layerAttribs | TMXLayerAttribGzip);
-            }
+                layerAttribs |= TMXLayerAttribGzip;
             else if (compression == "zlib")
+                layerAttribs |= TMXLayerAttribZlib;
+            else if (!compression.empty())
             {
-                layerAttribs = tmxMapInfo->getLayerAttribs();
-                tmxMapInfo->setLayerAttribs(layerAttribs | TMXLayerAttribZlib);
+                _layerDataError = true;
+                CCLOG("cocos2d: TiledMap: unsupported compression method %s", compression.c_str());
+                return;
             }
-            CCASSERT(compression == "" || compression == "gzip" || compression == "zlib",
-                     "TMX: unsupported compression method");
+            tmxMapInfo->setLayerAttribs(layerAttribs);
+            tmxMapInfo->setStoringCharacters(true);
         }
         else if (encoding == "csv")
         {
@@ -681,41 +684,67 @@ void TMXMapInfo::endElement(void* /*ctx*/, const char* name)
             TMXLayerInfo* layer = tmxMapInfo->getLayers().back();
 
             auto currentString = tmxMapInfo->getCurrentString();
-            unsigned char* buffer;
-            auto len =
-                utils::base64Decode((unsigned char*)currentString.data(), (unsigned int)currentString.length(), &buffer);
-            if (!buffer)
+            auto invalidLayer = [this]() {
+                setCurrentString("");
+                _layerDataError = true;
+                CCLOG("cocos2d: TiledMap: invalid base64 layer data");
+            };
+            compression::DecodeLimits limits;
+            const auto size = layer->_layerSize;
+            const auto maxTiles = std::min<uint64_t>(limits.maxOutputBytes, std::numeric_limits<size_t>::max()) /
+                                  sizeof(uint32_t);
+            if (!(size.width >= 1 && size.width <= maxTiles && std::floor(size.width) == size.width &&
+                  size.height >= 1 && size.height <= maxTiles && std::floor(size.height) == size.height) ||
+                currentString.size() > std::numeric_limits<int>::max())
             {
-                CCLOG("cocos2d: TiledMap: decode data error");
+                invalidLayer();
+                return;
+            }
+            const auto width = static_cast<size_t>(size.width);
+            const auto height = static_cast<size_t>(size.height);
+            if (width > maxTiles / height)
+            {
+                invalidLayer();
+                return;
+            }
+            const auto expected = width * height * sizeof(uint32_t);
+
+            unsigned char* buffer = nullptr;
+            const auto len = utils::base64Decode(reinterpret_cast<const unsigned char*>(currentString.data()),
+                                                 static_cast<unsigned int>(currentString.size()), &buffer);
+            std::unique_ptr<unsigned char, decltype(&free)> bytes(buffer, &free);
+            if (!buffer || len <= 0)
+            {
+                invalidLayer();
                 return;
             }
 
             if (tmxMapInfo->getLayerAttribs() & (TMXLayerAttribGzip | TMXLayerAttribZlib))
             {
-                unsigned char* deflated = nullptr;
-                Vec2 s                  = layer->_layerSize;
-                // int sizeHint = s.width * s.height * sizeof(uint32_t);
-                ssize_t sizeHint = s.width * s.height * sizeof(unsigned int);
-
-                ssize_t CC_UNUSED inflatedLen = ZipUtils::inflateMemoryWithHint(buffer, len, &deflated, sizeHint);
-                CCASSERT(inflatedLen == sizeHint, "inflatedLen should be equal to sizeHint!");
-
-                free(buffer);
-                buffer = nullptr;
-
-                if (!deflated)
+                limits.maxOutputBytes = expected;
+                std::span<const uint8_t> encoded(buffer, static_cast<size_t>(len));
+                auto decoded = tmxMapInfo->getLayerAttribs() & TMXLayerAttribGzip
+                                   ? compression::decodeGzip(encoded, limits)
+                                   : compression::decodeZlib(encoded, limits);
+                if (!decoded || decoded.value->size() != expected)
                 {
-                    CCLOG("cocos2d: TiledMap: inflate data error");
+                    invalidLayer();
                     return;
                 }
-
-                layer->_tiles = reinterpret_cast<uint32_t*>(deflated);
+                bytes.reset(static_cast<unsigned char*>(malloc(expected)));
+                if (!bytes)
+                {
+                    invalidLayer();
+                    return;
+                }
+                memcpy(bytes.get(), decoded.value->data(), expected);
             }
-            else
+            else if (static_cast<size_t>(len) != expected)
             {
-                layer->_tiles = reinterpret_cast<uint32_t*>(buffer);
+                invalidLayer();
+                return;
             }
-
+            layer->_tiles = reinterpret_cast<uint32_t*>(bytes.release());
             tmxMapInfo->setCurrentString("");
         }
         else if (tmxMapInfo->getLayerAttribs() & TMXLayerAttribCSV)

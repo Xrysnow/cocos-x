@@ -1,6 +1,6 @@
 #pragma once
 #include "VideoAsync.h"
-#include "io/Stream.h"
+#include "io/core/Stream.h"
 #include <atomic>
 #include <functional>
 #include <memory>

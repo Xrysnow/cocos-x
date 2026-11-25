@@ -390,6 +390,7 @@ protected:
     int _layerAttribs;
     /// is storing characters?
     bool _storingCharacters;
+    bool _layerDataError = false;
     /// properties
     ValueMap _properties;
     //! xml format tile index

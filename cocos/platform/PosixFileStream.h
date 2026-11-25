@@ -20,11 +20,9 @@
 #include "platform/PlatformMacros.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-    #include "platform/android/FileUtils-android.h"
     #include <jni.h>
     #include <android/asset_manager.h>
     #include <android/asset_manager_jni.h>
-    #include "base/ZipUtils.h"
 #endif
 
 #if defined(_WIN32)
@@ -70,13 +68,11 @@ extern int _ftruncate(int fd, int64_t size);
 
 NS_CC_BEGIN
 
-struct UnzFileStream;
 union PXFileHandle
 {
     int _fd = -1;
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
     AAsset* _asset;
-    ZipFileStream _zfs;
 #endif
 };
 
@@ -121,6 +117,9 @@ public:
     };
 
     bool open(std::string_view path, FileStream::Mode mode) override;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    bool openAsset(AAssetManager* manager, const char* name);
+#endif
     int close() override;
 
     int seek(int64_t offset, int origin) override;

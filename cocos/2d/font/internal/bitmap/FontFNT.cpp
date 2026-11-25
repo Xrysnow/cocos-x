@@ -58,7 +58,21 @@ struct _FontDefHashElement;
 //
 static StringMap<BMFontConfiguration*>* s_configurations = nullptr;
 
-BMFontConfiguration* FNTConfigLoadFile(std::string_view fntFile)
+namespace
+{
+std::string fontSourceKey(const FileHit& hit)
+{
+    return std::to_string(hit.adapterId()) + ':' + hit.entry().entryKey;
+}
+
+cc::IntrusivePtr<BMFontConfiguration> readFontConfig(const FileHit& source)
+{
+    std::string data;
+    return FileUtils::getContents(source, &data) == FileUtils::Status::OK
+        ? BMFontConfiguration::create(source, data) : nullptr;
+}
+
+BMFontConfiguration* FNTConfigLoadFile(const FileHit& source)
 {
     cc::IntrusivePtr<BMFontConfiguration> ret = nullptr;
 
@@ -67,17 +81,19 @@ BMFontConfiguration* FNTConfigLoadFile(std::string_view fntFile)
         s_configurations = new StringMap<BMFontConfiguration*>();
     }
 
-    ret = s_configurations->at(fntFile);
+    const auto key = fontSourceKey(source);
+    ret = s_configurations->at(key);
     if (ret == nullptr)
     {
-        ret = BMFontConfiguration::create(fntFile);
+        ret = readFontConfig(source);
         if (ret)
         {
-            s_configurations->insert(fntFile, ret);
+            s_configurations->insert(key, ret);
         }
     }
 
     return ret.get();
+}
 }
 
 //
@@ -92,6 +108,24 @@ cc::IntrusivePtr<BMFontConfiguration> BMFontConfiguration::create(std::string_vi
         return ret;
     }
     return nullptr;
+}
+
+cc::IntrusivePtr<BMFontConfiguration> BMFontConfiguration::create(const FileHit& source, std::string_view data)
+{
+    cc::IntrusivePtr config{new BMFontConfiguration()};
+    config->_characterSet = config->parseConfigData(data, {});
+    if (!config->_characterSet || !config->resolveAtlas(source))
+        return nullptr;
+    return config;
+}
+
+bool BMFontConfiguration::resolveAtlas(const FileHit& source)
+{
+    auto atlas = FileUtils::getInstance()->findSibling(source, _atlasName);
+    if (!atlas)
+        return false;
+    _atlasHit = std::move(atlas.value);
+    return true;
 }
 
 bool BMFontConfiguration::initWithFNTfile(std::string_view FNTfile)
@@ -142,6 +176,12 @@ void BMFontConfiguration::purgeFontDefDictionary()
 std::set<unsigned int>* BMFontConfiguration::parseConfigFile(std::string_view controlFile)
 {
     std::string data = FileUtils::getInstance()->getStringFromFile(controlFile);
+    return parseConfigData(data, controlFile);
+}
+
+std::set<unsigned int>* BMFontConfiguration::parseConfigData(std::string_view input, std::string_view controlFile)
+{
+    std::string data(input);
     if (data.empty())
     {
         return nullptr;
@@ -157,66 +197,43 @@ std::set<unsigned int>* BMFontConfiguration::parseConfigFile(std::string_view co
         CCLOG("cocos2d: Error parsing FNTfile %s", controlFile.data());
         return nullptr;
     }
-    auto contents = data.c_str();
-
-    std::set<unsigned int>* validCharsString = new std::set<unsigned int>();
-
-    auto contentsLen = strlen(contents);
-    char line[512]   = {0};
-
-    auto next         = strchr(contents, '\n');
-    auto base         = contents;
-    size_t parseCount = 0;
-    while (next)
+    auto validChars = std::make_unique<std::set<unsigned int>>();
+    size_t start = 0;
+    while (start < data.size())
     {
-        size_t lineLength = ((int)(next - base));
-        memcpy(line, contents + parseCount, lineLength);
-        line[lineLength] = 0;
+        const auto next = data.find('\n', start);
+        const auto end = next == std::string::npos ? data.size() : next;
+        std::string line = data.substr(start, end - start);
+        start = end + 1;
 
-        parseCount += lineLength + 1;
-        if (parseCount < contentsLen)
-        {
-            base = next + 1;
-            next = strchr(base, '\n');
-        }
-        else
-        {
-            next = nullptr;
-        }
-
-        if (memcmp(line, "info face", 9) == 0)
+        if (line.starts_with("info face"))
         {
             // FIXME: info parsing is incomplete
             // Not needed for the Hiero editors, but needed for the AngelCode editor
             //            [self parseInfoArguments:line];
-            this->parseInfoArguments(line);
+            this->parseInfoArguments(line.c_str());
         }
         // Check to see if the start of the line is something we are interested in
-        else if (memcmp(line, "common lineHeight", 17) == 0)
+        else if (line.starts_with("common lineHeight"))
         {
-            this->parseCommonArguments(line);
+            this->parseCommonArguments(line.c_str());
         }
-        else if (memcmp(line, "page id", 7) == 0)
+        else if (line.starts_with("page id"))
         {
-            this->parseImageFileName(line, controlFile);
+            this->parseImageFileName(line.c_str(), controlFile);
         }
-        else if (memcmp(line, "chars c", 7) == 0)
-        {
-            // Ignore this line
-        }
-        else if (memcmp(line, "char", 4) == 0)
+        else if (line.starts_with("char id"))
         {
             // Parse the current line and create a new CharDef
-            unsigned int charID = this->parseCharacterDefinition(line);
-            validCharsString->insert(charID);
+            validChars->insert(this->parseCharacterDefinition(line.c_str()));
         }
-        else if (memcmp(line, "kerning first", 13) == 0)
+        else if (line.starts_with("kerning first"))
         {
-            this->parseKerningEntry(line);
+            this->parseKerningEntry(line.c_str());
         }
     }
 
-    return validCharsString;
+    return validChars.release();
 }
 
 std::set<unsigned int>* BMFontConfiguration::parseBinaryConfigFile(unsigned char* pData,
@@ -308,7 +325,9 @@ std::set<unsigned int>* BMFontConfiguration::parseBinaryConfigFile(unsigned char
             const char* value = (const char*)pData;
             CCASSERT(strlen(value) < blockSize, "Block size should be less then string");
 
-            _atlasName = FileUtils::getInstance()->fullPathFromRelativeFile(value, controlFile);
+            _atlasName = controlFile.empty()
+                ? value
+                : FileUtils::getInstance()->fullPathFromRelativeFile(value, controlFile);
         }
         else if (blockId == 4)
         {
@@ -405,14 +424,18 @@ void BMFontConfiguration::parseImageFileName(const char* line, std::string_view 
     //////////////////////////////////////////////////////////////////////////
 
     // page ID. Sanity check
-    int pageId;
-    sscanf(line, "page id=%d", &pageId);
-    CCASSERT(pageId == 0, "LabelBMFont file could not be found");
-
-    // file
-    char fileName[255];
-    sscanf(strstr(line, "file=\"") + 6, "%[^\"]", fileName);
-    _atlasName = FileUtils::getInstance()->fullPathFromRelativeFile(fileName, fntFile);
+    int pageId = -1;
+    if (sscanf(line, "page id=%d", &pageId) != 1 || pageId != 0)
+        return;
+    const auto file = strstr(line, "file=\"");
+    if (!file)
+        return;
+    const auto end = strchr(file + 6, '"');
+    if (!end)
+        return;
+    const std::string_view name(file + 6, end - (file + 6));
+    _atlasName = fntFile.empty() ? std::string(name)
+        : FileUtils::getInstance()->fullPathFromRelativeFile(name, fntFile);
 }
 
 void BMFontConfiguration::parseInfoArguments(const char* line)
@@ -528,7 +551,13 @@ void BMFontConfiguration::parseKerningEntry(const char* line)
 
 cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated)
 {
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
+    const auto hit = FileUtils::getInstance()->findFile(fntFilePath);
+    return hit ? create(hit.value, imageRect, imageRotated) : nullptr;
+}
+
+cc::IntrusivePtr<FontFNT> FontFNT::create(const FileHit& source, const Rect& imageRect, bool imageRotated)
+{
+    const auto newConf = FNTConfigLoadFile(source);
     if (!newConf)
         return nullptr;
 
@@ -544,7 +573,13 @@ cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Re
 
 cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, std::string_view subTextureKey)
 {
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
+    const auto hit = FileUtils::getInstance()->findFile(fntFilePath);
+    return hit ? create(hit.value, subTextureKey) : nullptr;
+}
+
+cc::IntrusivePtr<FontFNT> FontFNT::create(const FileHit& source, std::string_view subTextureKey)
+{
+    const auto newConf = FNTConfigLoadFile(source);
     if (!newConf)
         return nullptr;
 
@@ -565,29 +600,22 @@ cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, std::str
 
 cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath)
 {
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
-    if (!newConf)
-        return nullptr;
-
-    // add the texture
-    const auto tempTexture = Director::getInstance()->getTextureCache()->addImage(newConf->getAtlasName());
-    if (!tempTexture)
-    {
-        return nullptr;
-    }
-    cc::IntrusivePtr tempFont{new FontFNT(newConf)};
-
-    tempFont->setFontSize((float)newConf->_fontSize);
-    if (!tempFont)
-    {
-        return nullptr;
-    }
-    return tempFont;
+    return create(fntFilePath, Rect::ZERO, false);
 }
 
 cc::IntrusivePtr<FontFNT> FontFNT::create(std::string_view fntFilePath, const Vec2& imageOffset)
 {
     return create(fntFilePath, Rect(imageOffset.x, imageOffset.y, 0, 0), false);
+}
+
+cc::IntrusivePtr<FontFNT> FontFNT::createFromData(const FileHit& source, std::string_view data)
+{
+    const auto config = BMFontConfiguration::create(source, data);
+    if (!config)
+        return nullptr;
+    cc::IntrusivePtr font{new FontFNT(config, Rect::ZERO, false)};
+    font->setFontSize(static_cast<float>(config->_fontSize));
+    return font;
 }
 
 FontFNT::FontFNT(BMFontConfiguration* theContfig, const Rect& imageRect, bool imageRotated)
@@ -597,7 +625,7 @@ FontFNT::FontFNT(BMFontConfiguration* theContfig, const Rect& imageRect, bool im
 }
 
 FontFNT::FontFNT(BMFontConfiguration* theContfig)
-    : _configuration(theContfig), _imageRectInPoints(Rect::ZERO), _imageRotated(false)
+    : FontFNT(theContfig, Rect::ZERO, false)
 {}
 
 FontFNT::~FontFNT()
@@ -668,7 +696,7 @@ FontAtlas* FontFNT::newFontAtlas()
     if (numGlyphs == 0)
         return nullptr;
 
-    if (_configuration->_commonHeight == 0)
+    if (_configuration->_commonHeight == 0 || _configuration->_fontSize == 0)
         return nullptr;
 
     cc::IntrusivePtr tempAtlas{new FontAtlas(this)};
@@ -743,7 +771,9 @@ FontAtlas* FontFNT::newFontAtlas()
 
     // add the texture (only one texture for now)
 
-    Texture2D* tempTexture = Director::getInstance()->getTextureCache()->addImage(_configuration->getAtlasName());
+    auto cache = Director::getInstance()->getTextureCache();
+    const auto& hit = _configuration->getAtlasHit();
+    auto tempTexture = hit.adapterId() ? cache->addImage(hit) : cache->addImage(_configuration->getAtlasName());
     if (!tempTexture)
     {
         return nullptr;
@@ -758,22 +788,25 @@ FontAtlas* FontFNT::newFontAtlas()
 
 void FontFNT::reloadBMFontResource(std::string_view fntFilePath)
 {
+    const auto hit = FileUtils::getInstance()->findFile(fntFilePath);
+    if (hit)
+        reloadBMFontResource(hit.value);
+}
+
+void FontFNT::reloadBMFontResource(const FileHit& source)
+{
     if (s_configurations == nullptr)
     {
         s_configurations = new StringMap<BMFontConfiguration*>();
     }
 
-    cc::IntrusivePtr<BMFontConfiguration> ret = s_configurations->at(fntFilePath);
-    if (ret != nullptr)
-    {
-        s_configurations->erase(fntFilePath);
-    }
-
-    ret = BMFontConfiguration::create(fntFilePath);
+    const auto key = fontSourceKey(source);
+    s_configurations->erase(key);
+    const auto ret = readFontConfig(source);
     if (ret)
     {
-        s_configurations->insert(fntFilePath, ret);
-        Director::getInstance()->getTextureCache()->reloadTexture(ret->getAtlasName());
+        s_configurations->insert(key, ret);
+        Director::getInstance()->getTextureCache()->reloadTexture(ret->getAtlasHit());
     }
 }
 

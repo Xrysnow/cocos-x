@@ -43,6 +43,12 @@ int lua_cc_FileUtils_fullPathForFilename(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(1, &cc::FileUtils::fullPathForFilename);
 	LUA_INVOKE_FOOTER("1");
 }
+int lua_cc_FileUtils_fullPathForDirectory(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:fullPathForDirectory");
+	LUA_TRY_INVOKE_R(1, &cc::FileUtils::fullPathForDirectory);
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_cc_FileUtils_fullPathFromRelativeFile(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.FileUtils", "cc.FileUtils:fullPathFromRelativeFile");
@@ -304,6 +310,7 @@ int luaReg_Core_ccFileUtils(lua_State* lua_S)
 	LUA_METHOD("createDirectory", lua_cc_FileUtils_createDirectory);
 	LUA_METHOD("ensureAppDirectory", lua_cc_FileUtils_ensureAppDirectory);
 	LUA_METHOD("fullPathForFilename", lua_cc_FileUtils_fullPathForFilename);
+	LUA_METHOD("fullPathForDirectory", lua_cc_FileUtils_fullPathForDirectory);
 	LUA_METHOD("fullPathFromRelativeFile", lua_cc_FileUtils_fullPathFromRelativeFile);
 	LUA_METHOD("getDefaultResourceRootPath", lua_cc_FileUtils_getDefaultResourceRootPath);
 	LUA_METHOD("getFileExtension", lua_cc_FileUtils_getFileExtension);

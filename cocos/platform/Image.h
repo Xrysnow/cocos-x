@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include "base/Ref.h"
 #include "renderer/Texture2D.h"
 #include "base/Data.h"
+#include "io/zip/codecs/Ccz.h"
 
 // premultiply alpha, or the effect will be wrong when using other pixel formats in Texture2D,
 // such as RGB888, RGB5A1
@@ -41,6 +42,8 @@ THE SOFTWARE.
                ((unsigned)((uint8_t)(vb) * ((uint8_t)(va) + 1) >> 8) << 16) | ((unsigned)(uint8_t)(va) << 24))
 
 NS_CC_BEGIN
+
+class FileHit;
 
 /**
  * @addtogroup platform
@@ -140,6 +143,8 @@ public:
     @return true if loaded correctly.
     */
     bool initWithImageFile(std::string_view path);
+    bool initWithImageFile(std::string_view path, const compression::CczReadOptions& options);
+    bool initWithImageHit(const FileHit& hit, const compression::CczReadOptions& options = {});
 
     /**
     @brief Load image from stream buffer.
@@ -152,6 +157,7 @@ public:
     */
     bool initWithImageData(const uint8_t* data, ssize_t dataLen);
     bool initWithImageData(uint8_t* data, ssize_t dataLen, bool ownData);
+    bool initWithImageData(const uint8_t* data, ssize_t dataLen, const compression::CczReadOptions& options);
 
     // @warning kFmtRawData only support RGBA8888
     bool initWithRawData(const uint8_t* data,
@@ -187,6 +193,8 @@ public:
     void reversePremultipliedAlpha();
 
 protected:
+    bool decodeImageData(uint8_t* data, ssize_t dataLen, bool ownData, const compression::CczReadOptions& options);
+
     typedef struct sImageTGA tImageTGA;
 
     bool initWithJpgData(uint8_t* data, ssize_t dataLen);
@@ -207,7 +215,7 @@ protected:
     bool initWithATITCData(uint8_t* data, ssize_t dataLen, bool ownData);
 
     // fast forward pixels to GPU if ownData
-    void forwardPixels(uint8_t* data, ssize_t dataLen, int offset, bool ownData);
+    bool forwardPixels(uint8_t* data, ssize_t dataLen, size_t offset, bool ownData);
 
     bool saveImageToPNG(std::string_view filePath, bool isToRGB = true);
     bool saveImageToJPG(std::string_view filePath);

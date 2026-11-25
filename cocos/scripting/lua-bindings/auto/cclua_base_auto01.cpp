@@ -1195,7 +1195,7 @@ int lua_cc_Image_hasPremultipliedAlpha(lua_State* lua_S)
 int lua_cc_Image_initWithImageFile(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.Image", "cc.Image:initWithImageFile");
-	LUA_TRY_INVOKE_R(1, &cc::Image::initWithImageFile);
+	LUA_TRY_INVOKE_R(1, static_cast<bool (cc::Image::*)(std::string_view)>(&cc::Image::initWithImageFile));
 	LUA_INVOKE_FOOTER("1");
 }
 int lua_cc_Image_isCompressed(lua_State* lua_S)

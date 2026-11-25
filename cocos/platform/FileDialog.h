@@ -1,6 +1,6 @@
 #pragma once
 
-#include "io/Document.h"
+#include "io/core/Document.h"
 
 namespace cc {
 class GLView;

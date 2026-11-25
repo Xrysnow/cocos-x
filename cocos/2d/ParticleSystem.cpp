@@ -47,10 +47,12 @@ THE SOFTWARE.
 #include "2d/ParticleSystem.h"
 
 #include <string>
+#include <limits>
 
 #include "2d/ParticleBatchNode.h"
 #include "renderer/TextureAtlas.h"
-#include "base/ZipUtils.h"
+#include "io/zip/codecs/Gzip.h"
+#include "io/zip/codecs/Zlib.h"
 #include "base/Director.h"
 #include "base/Profiling.h"
 #include "base/ccUTF8.h"
@@ -433,7 +435,6 @@ bool ParticleSystem::initWithDictionary(const ValueMap& dictionary, std::string_
 {
     bool ret              = false;
     unsigned char* buffer = nullptr;
-    Image* image          = nullptr;
     do
     {
         int maxParticles = optValue(dictionary, "maxParticles").asInt();
@@ -630,27 +631,23 @@ bool ParticleSystem::initWithDictionary(const ValueMap& dictionary, std::string_
                     auto dataLen = textureData.size();
                     if (dataLen != 0)
                     {
+                        CC_BREAK_IF(dataLen > std::numeric_limits<int>::max());
                         // if it fails, try to get it from the base64-gzipped data
                         int decodeLen =
                             utils::base64Decode((unsigned char*)textureData.c_str(), (unsigned int)dataLen, &buffer);
-                        CCASSERT(buffer != nullptr, "CCParticleSystem: error decoding textureImageData");
-                        CC_BREAK_IF(!buffer);
+                        CC_BREAK_IF(!buffer || decodeLen <= 0);
 
-                        unsigned char* deflated = nullptr;
-                        ssize_t deflatedLen     = ZipUtils::inflateMemory(buffer, decodeLen, &deflated);
-                        CCASSERT(deflated != nullptr, "CCParticleSystem: error ungzipping textureImageData");
-                        CC_BREAK_IF(!deflated);
+                        std::span<const uint8_t> encoded(buffer, static_cast<size_t>(decodeLen));
+                        const bool gzip = compression::hasGzipSignature(encoded);
+                        CC_BREAK_IF(!gzip && !compression::hasZlibHeader(encoded));
+                        auto decoded = gzip ? compression::decodeGzip(encoded) : compression::decodeZlib(encoded);
+                        CC_BREAK_IF(!decoded || decoded.value->size() > static_cast<size_t>(std::numeric_limits<ssize_t>::max()));
 
                         // For android, we should retain it in VolatileTexture::addImage which invoked in
                         // Director::getInstance()->getTextureCache()->addUIImage()
-                        image     = cc::IntrusivePtr{new Image()}.detach();
-                        bool isOK = image->initWithImageData(deflated, deflatedLen, true);
-                        CCASSERT(isOK, "CCParticleSystem: error init image with Data");
-                        CC_BREAK_IF(!isOK);
-
-                        setTexture(_director->getTextureCache()->addImage(image, _plistFile + textureName));
-
-                        image->release();
+                        auto image = cc::IntrusivePtr{new Image()};
+                        CC_BREAK_IF(!image->initWithImageData(decoded.value->data(), static_cast<ssize_t>(decoded.value->size())));
+                        setTexture(_director->getTextureCache()->addImage(image.get(), _plistFile + textureName));
                     }
                 }
 

@@ -27,6 +27,8 @@ THE SOFTWARE.
 
 #include "platform/FileUtils.h"
 #include "platform/FileUtilsDirectory.h"
+#include "platform/PhysicalReadAdapter.h"
+#include <climits>
 
 #include <stack>
 #include <sstream>
@@ -42,11 +44,6 @@ THE SOFTWARE.
 #include "platform/SAXParser.h"
 #include "platform/PosixFileStream.h"
 
-#ifdef MINIZIP_FROM_SYSTEM
-    #include <minizip/unzip.h>
-#else  // from our embedded sources
-    #include "unzip.h"
-#endif
 #include <sys/stat.h>
 
 #if defined(_WIN32)
@@ -262,18 +259,6 @@ public:
 
     ~DictMaker() {}
 
-    ValueMap dictionaryWithContentsOfFile(std::string_view fileName)
-    {
-        _resultType = SAX_RESULT_DICT;
-        SAXParser parser;
-
-        CCASSERT(parser.init("UTF-8"), "The file format isn't UTF-8");
-        parser.setDelegator(this);
-
-        parser.parse(fileName);
-        return _rootDict;
-    }
-
     ValueMap dictionaryWithDataOfFile(const char* filedata, int filesize)
     {
         _resultType = SAX_RESULT_DICT;
@@ -286,7 +271,7 @@ public:
         return _rootDict;
     }
 
-    ValueVector arrayWithContentsOfFile(std::string_view fileName)
+    ValueVector arrayWithData(const char* data, int size)
     {
         _resultType = SAX_RESULT_ARRAY;
         SAXParser parser;
@@ -294,7 +279,7 @@ public:
         CCASSERT(parser.init("UTF-8"), "The file format isn't UTF-8");
         parser.setDelegator(this);
 
-        parser.parse(fileName);
+        parser.parse(data, size);
         return _rootArray;
     }
 
@@ -493,9 +478,15 @@ public:
 
 ValueMap FileUtils::getValueMapFromFile(std::string_view filename) const
 {
-    const std::string fullPath = fullPathForFilename(filename);
-    DictMaker tMaker;
-    return tMaker.dictionaryWithContentsOfFile(fullPath);
+    auto hit = findFile(filename);
+    return hit ? getValueMapFromHit(hit.value) : ValueMap{};
+}
+
+ValueMap FileUtils::getValueMapFromHit(const FileHit& hit) const
+{
+    Data data;
+    if (getContents(hit, &data) != Status::OK || data.isNull() || data.getSize() > INT_MAX) return {};
+    return getValueMapFromData(reinterpret_cast<const char*>(data.getBytes()), static_cast<int>(data.getSize()));
 }
 
 ValueMap FileUtils::getValueMapFromData(const char* filedata, int filesize) const
@@ -506,9 +497,10 @@ ValueMap FileUtils::getValueMapFromData(const char* filedata, int filesize) cons
 
 ValueVector FileUtils::getValueVectorFromFile(std::string_view filename) const
 {
-    const std::string fullPath = fullPathForFilename(filename);
+    Data data;
+    if (getContents(filename, &data) != Status::OK || data.isNull() || data.getSize() > INT_MAX) return {};
     DictMaker tMaker;
-    return tMaker.arrayWithContentsOfFile(fullPath);
+    return tMaker.arrayWithData(reinterpret_cast<const char*>(data.getBytes()), static_cast<int>(data.getSize()));
 }
 
 /*
@@ -694,13 +686,23 @@ bool FileUtils::init()
     if (haveDefault)
         _defaultWritablePath = std::move(candidate);
     _searchPathArray.emplace_back(_defaultResRootPath);
+    auto physical = registerReadAdapter("physical",
+        std::make_shared<PhysicalReadAdapter>(
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+            "",
+#else
+            _defaultResRootPath,
+#endif
+            std::vector<std::string>{}, physicalLookup()), -20.f);
+    if (!physical) return false;
+    _physicalId = physical.value;
+    syncPlatformRoots();
     return true;
 }
 
 void FileUtils::purgeCachedEntries()
 {
     DECLARE_GUARD;
-    _fullPathCache.clear();
     _fullPathCacheDir.clear();
 }
 
@@ -713,12 +715,12 @@ std::string FileUtils::getStringFromFile(std::string_view filename) const
 
 void FileUtils::getStringFromFile(std::string_view path, std::function<void(std::string)> callback) const
 {
-    // Get the full path on the main thread, to avoid the issue that FileUtil's is not
-    // thread safe, and accessing the fullPath cache and searching the search paths is not thread safe
-    auto fullPath = fullPathForFilename(path);
-    performOperationOffthread(
-        [path = std::string{fullPath}]() -> std::string { return FileUtils::getInstance()->getStringFromFile(path); },
-        std::move(callback));
+    auto hit = findFile(path);
+    performOperationOffthread([hit = std::move(hit)]() {
+        std::string result;
+        if (hit) FileUtils::getContents(hit.value, &result);
+        return result;
+    }, std::move(callback));
 }
 
 Data FileUtils::getDataFromFile(std::string_view filename) const
@@ -728,49 +730,49 @@ Data FileUtils::getDataFromFile(std::string_view filename) const
     return d;
 }
 
-void FileUtils::getDataFromFile(std::string_view filename, std::function<void(Data)> callback) const
+void FileUtils::getDataFromFile(std::string_view path, std::function<void(Data)> callback) const
 {
-    auto fullPath = fullPathForFilename(filename);
-    performOperationOffthread(
-        [path = std::string{fullPath}]() -> Data { return FileUtils::getInstance()->getDataFromFile(path); },
-        std::move(callback));
+    auto hit = findFile(path);
+    performOperationOffthread([hit = std::move(hit)]() {
+        Data result;
+        if (hit) FileUtils::getContents(hit.value, &result);
+        return result;
+    }, std::move(callback));
 }
 
-FileUtils::Status FileUtils::getContents(std::string_view filename, ResizableBuffer* buffer) const
+FileUtils::Status FileUtils::getContents(std::string_view name, ResizableBuffer* buffer) const
 {
-    if (filename.empty())
-        return Status::NotExists;
+    auto hit = findFile(name);
+    if (!hit) return hit.error.code == io::ErrorCode::NotFound || name.empty() ? Status::NotExists : Status::OpenFailed;
+    return getContents(hit.value, buffer);
+}
 
-    auto fileUtils = FileUtils::getInstance();
-
-    const auto fullPath = fileUtils->fullPathForFilename(filename);
-
-    auto fileStream = fileUtils->openFileStream(fullPath, FileStream::Mode::READ);
-    if (!fileStream)
-        return Status::OpenFailed;
-
-    const auto size = fileStream->size();
-    if (size < 0)
-    {
-        return Status::ObtainSizeFailed;
+FileUtils::Status FileUtils::getContents(const FileHit& hit, ResizableBuffer* buffer)
+{
+    if (!buffer) return Status::ReadFailed;
+    auto stream = openRead(hit);
+    if (!stream) return Status::OpenFailed;
+    auto length = stream.value->size();
+    if (length < 0) return Status::ObtainSizeFailed;
+    if (static_cast<uint64_t>(length) > std::min<uint64_t>(UINT32_MAX, SIZE_MAX)) return Status::TooLarge;
+    auto size = static_cast<size_t>(length);
+    buffer->resize(size);
+    if (buffer->size() < size || (size && !buffer->buffer())) return Status::ReadFailed;
+    size_t offset = 0;
+    while (offset < size) {
+        auto want = static_cast<unsigned>(std::min<size_t>(INT_MAX, size - offset));
+        int n = stream.value->read(static_cast<uint8_t*>(buffer->buffer()) + offset, want);
+        if (n <= 0 || static_cast<unsigned>(n) > want) {
+            buffer->resize(0);
+            return Status::ReadFailed;
+        }
+        offset += static_cast<size_t>(n);
     }
-
-    if (size > ULONG_MAX)
-    {
-        return Status::TooLarge;
-    }
-
-    buffer->resize((size_t)size);
-
-    fileStream->seek(0, SEEK_SET);
-
-    const auto sizeRead = fileStream->read(buffer->buffer(), (unsigned)size);
-    if (sizeRead < size)
-    {
-        buffer->resize(sizeRead);
+    uint8_t tail;
+    if (stream.value->read(&tail, 1) != 0 || stream.value->close() != 0) {
+        buffer->resize(0);
         return Status::ReadFailed;
     }
-
     return Status::OK;
 }
 
@@ -822,55 +824,19 @@ std::string FileUtils::getPathForDirectory(std::string_view dir,
     return std::string{searchPath}.append(dir);
 }
 
-std::string FileUtils::fullPathForFilename(std::string_view filename) const
+std::string FileUtils::fullPathForFilename(std::string_view name) const
 {
-
-    DECLARE_GUARD;
-
-    if (filename.empty())
-    {
-        return "";
+    if (name.empty() || name.find('\0') != name.npos) return {};
+    if (isAbsolutePath(name)) return std::string(name);
+    if (name.ends_with('/')) return fullPathForDirectory(name);
+    auto hit = findFile(name);
+    if (!hit) return {};
+    if (hit.value.entry().nativePath) return *hit.value.entry().nativePath;
+    if (hit.value.kind() == "android-package") {
+        auto& key = hit.value.entry().entryKey;
+        return "assets/" + key.substr(key.find(':') + 1);
     }
-
-    /*
-     * As we know, this function 'fullPathForFilename' will be calling when load any file, how to ensure this thread
-     * safe Step: a. call this function at main-thread always b. use the really fullPath to call
-     * getStringFromFile/getDataFromFile at sub-thread c. then this function will call again with really fullPath d.
-     * then isAbsolutePath avoid to access _fullPathCache _fullPathCache concurrent
-     */
-    if (isAbsolutePath(filename))
-    {
-        return std::string{filename};
-    }
-
-    // Already Cached ?
-    auto cacheIter = _fullPathCache.find(filename);
-    if (cacheIter != _fullPathCache.end())
-    {
-        return cacheIter->second;
-    }
-
-    std::string fullpath;
-
-    for (const auto& searchIt : _searchPathArray)
-    {
-        fullpath = this->getPathForFilename(filename, searchIt);
-
-        if (!fullpath.empty())
-        {
-            // Using the filename passed in as key.
-            _fullPathCache.emplace(filename, fullpath);
-            return fullpath;
-        }
-    }
-
-    if (isPopupNotify())
-    {
-        CCLOG("cocos2d: fullPathForFilename: No file found at %s. Possible missing file.", filename.data());
-    }
-
-    // The file wasn't found, return empty string.
-    return std::string{};
+    return std::string(name);
 }
 
 std::string FileUtils::fullPathForDirectory(std::string_view dir) const
@@ -1022,7 +988,6 @@ void FileUtils::setDefaultResourceRootPath(std::string_view path)
     DECLARE_GUARD;
     if (_defaultResRootPath != path)
     {
-        _fullPathCache.clear();
         _fullPathCacheDir.clear();
         _defaultResRootPath = path;
         if (!_defaultResRootPath.empty() && _defaultResRootPath[_defaultResRootPath.length() - 1] != '/')
@@ -1030,6 +995,7 @@ void FileUtils::setDefaultResourceRootPath(std::string_view path)
             _defaultResRootPath += '/';
         }
 
+        refreshPhysicalAdapter();
         // Updates search paths
         setSearchPaths(_originalSearchPaths);
     }
@@ -1041,7 +1007,6 @@ void FileUtils::setSearchPaths(const std::vector<std::string>& searchPaths)
     bool existDefaultRootPath = false;
     _originalSearchPaths      = searchPaths;
 
-    _fullPathCache.clear();
     _fullPathCacheDir.clear();
     _searchPathArray.clear();
 
@@ -1071,6 +1036,7 @@ void FileUtils::setSearchPaths(const std::vector<std::string>& searchPaths)
         // CCLOG("Default root path doesn't exist, adding it.");
         _searchPathArray.emplace_back(_defaultResRootPath);
     }
+    syncPlatformRoots();
 }
 
 void FileUtils::addSearchPath(std::string_view searchpath, const bool front)
@@ -1110,6 +1076,8 @@ void FileUtils::addSearchPath(std::string_view searchpath, const bool front)
         _originalSearchPaths.emplace_back(std::string{searchpath});
         _searchPathArray.emplace_back(std::move(path));
     }
+    _fullPathCacheDir.clear();
+    syncPlatformRoots();
 }
 
 std::string FileUtils::getFullPathForFilenameWithinDirectory(std::string_view directory,
@@ -1132,23 +1100,13 @@ std::string FileUtils::getFullPathForFilenameWithinDirectory(std::string_view di
 
 bool FileUtils::isFileExist(std::string_view filename) const
 {
-    if (isAbsolutePath(filename))
-    {
-        return isFileExistInternal(filename);
-    }
-    else
-    {
-        std::string fullpath = fullPathForFilename(filename);
-        return !fullpath.empty();
-    }
+    return static_cast<bool>(findFile(filename));
 }
 
 void FileUtils::isFileExist(std::string_view filename, std::function<void(bool)> callback) const
 {
-    auto fullPath = fullPathForFilename(filename);
-    performOperationOffthread(
-        [path = std::string{fullPath}]() -> bool { return FileUtils::getInstance()->isFileExist(path); },
-        std::move(callback));
+    const bool found = static_cast<bool>(findFile(filename));
+    performOperationOffthread([found]() { return found; }, std::move(callback));
 }
 
 bool FileUtils::isAbsolutePath(std::string_view path) const
@@ -1158,11 +1116,12 @@ bool FileUtils::isAbsolutePath(std::string_view path) const
 
 bool FileUtils::isAbsolutePathInternal(std::string_view path)
 {
+    if (path.empty()) return false;
     const char* raw = path.data();
 #if defined(_WIN32)
     // see also: https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN
     return ((path.length() > 2 && ((raw[0] >= 'a' && raw[0] <= 'z') || (raw[0] >= 'A' && raw[0] <= 'Z')) &&
-             raw[1] == ':')                         // Normal absolute path
+             raw[1] == ':' && (raw[2] == '/' || raw[2] == '\\'))                         // Normal absolute path
             || path.starts_with(R"(\\?\)")  // Win32 File Namespaces for Long Path
             || path.starts_with(R"(\\.\)")  // Win32 Device Namespaces for device
             || (raw[0] == '/' || raw[0] == '\\')    // Current disk drive
@@ -1213,10 +1172,9 @@ void FileUtils::removeDirectory(std::string_view dirPath, std::function<void(boo
 
 void FileUtils::removeFile(std::string_view filepath, std::function<void(bool)> callback) const
 {
-    auto fullPath = fullPathForFilename(filepath);
-    performOperationOffthread(
-        [path = std::string{fullPath}]() -> bool { return FileUtils::getInstance()->removeFile(path); },
-        std::move(callback));
+    performOperationOffthread([path = std::string(filepath)]() {
+        return FileUtils::getInstance()->removeFile(path);
+    }, std::move(callback));
 }
 
 void FileUtils::renameFile(std::string_view path,
@@ -1242,11 +1200,14 @@ void FileUtils::renameFile(std::string_view oldfullpath,
         std::move(callback));
 }
 
-void FileUtils::getFileSize(std::string_view filepath, std::function<void(int64_t)> callback) const
+void FileUtils::getFileSize(std::string_view filename, std::function<void(int64_t)> callback) const
 {
-    auto fullPath = fullPathForFilename(filepath);
-    performOperationOffthread([path = std::string{fullPath}]() { return FileUtils::getInstance()->getFileSize(path); },
-                              std::move(callback));
+    auto hit = findFile(filename);
+    performOperationOffthread([hit = std::move(hit)]() -> int64_t {
+        if (!hit) return -1;
+        auto length = fileSize(hit.value);
+        return length ? length.value : -1;
+    }, std::move(callback));
 }
 
 void FileUtils::listFilesAsync(std::string_view dirPath, std::function<void(std::vector<std::string>)> callback) const
@@ -1271,6 +1232,18 @@ void FileUtils::listFilesRecursivelyAsync(std::string_view dirPath,
 
 std::unique_ptr<FileStream> FileUtils::openFileStream(std::string_view filePath, FileStream::Mode mode)
 {
+    FileStream::OpenOptions options;
+    if (!FileStream::decodeOpenOptions(mode, options)) return nullptr;
+    if (options.access == FileStream::Access::Read) {
+        auto hit = findFile(filePath);
+        if (!hit) { errno = hit.error.code == io::ErrorCode::NotFound ? ENOENT : EIO; return nullptr; }
+        auto stream = openRead(hit.value);
+        if (!stream) { errno = EIO; return nullptr; }
+        return std::move(stream.value);
+    }
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    if (!filePath.starts_with('/')) { errno = EACCES; return nullptr; }
+#endif
     PosixFileStream fs;
     return fs.open(filePath, mode) ? std::make_unique<PosixFileStream>(std::move(fs)) : nullptr;
 }
@@ -1379,11 +1352,7 @@ bool FileUtils::renameFile(std::string_view path, std::string_view oldname, std:
     return false;
 }
 
-int64_t FileUtils::getFileSize(std::string_view filepath) const
-{
-    CCASSERT(false, "getFileSize should be override by platform FileUtils");
-    return 0;
-}
+
 
 #else
 // default implements for unix like os
@@ -1488,43 +1457,21 @@ bool FileUtils::renameFile(std::string_view path, std::string_view oldname, std:
     return this->renameFile(oldPath, newPath);
 }
 
-int64_t FileUtils::getFileSize(std::string_view filepath) const
-{
-    CCASSERT(!filepath.empty(), "Invalid path");
 
-    std::string_view path;
-    std::string fullpath;
-    if (!isAbsolutePath(filepath))
-    {
-        fullpath = fullPathForFilename(filepath);
-        if (fullpath.empty())
-            return 0;
-        path = fullpath;
-    }
-    else
-        path = filepath;
-
-    struct stat info;
-    // Get data associated with "crt_stat.c":
-    int result = ::stat(path.data(), &info);
-
-    // Check if statistics are valid:
-    if (result != 0)
-    {
-        // Failed
-        return -1;
-    }
-    else
-    {
-        return info.st_size;
-    }
-}
 
 #endif
 
 //////////////////////////////////////////////////////////////////////////
 // Notification support when getFileData from invalid file path.
 //////////////////////////////////////////////////////////////////////////
+int64_t FileUtils::getFileSize(std::string_view name) const
+{
+    auto hit = findFile(name);
+    if (!hit) return -1;
+    auto size = fileSize(hit.value);
+    return size ? size.value : -1;
+}
+
 static bool s_popupNotify = true;
 
 void FileUtils::setPopupNotify(bool notify)

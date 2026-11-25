@@ -42,6 +42,7 @@ set(lua_bindings_manual_headers
     manual/tolua_fix.h
     manual/base/LuaScriptHandlerMgr.h
     manual/base/cclua_base_manual.hpp
+    manual/base/cclua_file_read.hpp
     manual/CcluaLoader.h
     manual/LuaValue.h
     manual/physics3d/cclua_physics3d_manual.h
@@ -64,6 +65,8 @@ set(lua_bindings_manual_files
     manual/base/LuaScriptHandlerMgr.cpp
     manual/base/cclua_base_manual.cpp
     manual/base/cclua_font_manual.cpp
+    manual/base/cclua_file_read.cpp
+    manual/base/cclua_zip.cpp
     manual/physics/cclua_physics_manual.cpp
     manual/3d/cclua_3d_manual.cpp
     manual/network/cclua_network_manual.cpp

@@ -53,7 +53,9 @@ extern "C" {
 #include "scripting/lua-bindings/auto/cclua_physics_auto.hpp"
 #include "scripting/lua-bindings/manual/physics/cclua_physics_manual.hpp"
 #include "scripting/lua-bindings/auto/cclua_backend_auto.hpp"
-#include "base/ZipUtils.h"
+#include "io/core/FileStream.h"
+#include "io/zip/ZipReader.h"
+#include <limits>
 #include "platform/FileUtils.h"
 
 void register_file_dialog(lua_State* L);
@@ -652,96 +654,86 @@ int LuaStack::loadChunksFromZIP(const char* zipFilePath)
 
 int LuaStack::luaLoadChunksFromZIP(lua_State* L)
 {
-    if (lua_gettop(L) < 1)
+    const char* filename = lua_tostring(L, -1);
+    if (!filename)
     {
         CCLOG("luaLoadChunksFromZIP() - invalid arguments");
         return 0;
     }
-
-    using namespace std::literals;
-    const auto BYTECODE_FILE_EXT     = ".luac"sv;
-    const auto NOT_BYTECODE_FILE_EXT = ".lua"sv;
-
-    const char* zipFilename = lua_tostring(L, -1);
+    const std::string zipPath(filename);
     lua_settop(L, 0);
-    FileUtils* utils        = FileUtils::getInstance();
-    std::string zipFilePath = utils->fullPathForFilename(zipFilename);
 
-    LuaStack* stack = this;
-
-    do
+    auto stream = io::FileStream::open(zipPath);
+    auto zip = stream ? archive::ZipReader::openStream(std::move(stream.value))
+                      : io::Result<archive::ZipReader::Ptr>::failure(stream.error);
+    if (!zip)
     {
-        void* buffer = nullptr;
-        ZipFile* zip = nullptr;
-        Data zipFileData(utils->getDataFromFile(zipFilePath));
-        unsigned char* bytes = zipFileData.getBytes();
-        ssize_t size         = zipFileData.getSize();
+        CCLOG("luaLoadChunksFromZIP() - cannot open %s", zipPath.c_str());
+        lua_pushboolean(L, 0);
+        return 1;
+    }
 
-        if (size > 0)
+    lua_newtable(L);
+    const int chunks = lua_gettop(L);
+    archive::EntryReadOptions options;
+    options.maxBytes = options.maxMemoryBytes;
+    int count = 0;
+    for (const auto& entry : zip.value->entries())
+    {
+        if (entry.type != archive::EntryType::File)
+            continue;
+
+        const auto bytes = zip.value->readEntry(entry.id, options);
+        if (!bytes || bytes.value->size() > static_cast<size_t>(std::numeric_limits<int>::max()))
         {
-            zip = ZipFile::createWithBuffer(bytes, (unsigned long)size);
+            CCLOG("luaLoadChunksFromZIP() - cannot read %s from %s", entry.name.c_str(), zipPath.c_str());
+            lua_settop(L, 0);
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+        if (bytes.value->empty())
+            continue;
+
+        std::string module = entry.name;
+        const auto pos = module.find_last_of('.');
+        if (pos != std::string::npos)
+        {
+            const auto extension = std::string_view(module).substr(pos);
+            if (extension == ".lua" || extension == ".luac")
+                module.erase(pos);
+        }
+        for (auto& character : module)
+        {
+            if (character == '/' || character == '\\')
+                character = '.';
         }
 
-        if (zip)
+        if (luaLoadBuffer(L, reinterpret_cast<const char*>(bytes.value->data()), static_cast<int>(bytes.value->size()),
+                          module.c_str()) == 0)
         {
-            CCLOG("lua_loadChunksFromZIP() - load zip file: %s", zipFilePath.c_str());
-            lua_getglobal(L, "package");
-            lua_getfield(L, -1, "preload");
-
-            int count            = 0;
-            std::string filename = zip->getFirstFilename();
-            while (filename.length())
-            {
-                ssize_t bufferSize     = 0;
-                unsigned char* zbuffer = zip->getFileData(filename.c_str(), &bufferSize);
-                if (bufferSize)
-                {
-                    // remove .lua or .luac extension
-                    size_t pos = filename.find_last_of('.');
-                    if (pos != std::string::npos)
-                    {
-                        std::string suffix = filename.substr(pos, filename.length());
-                        if (std::string_view{suffix} == NOT_BYTECODE_FILE_EXT ||
-                            std::string_view{suffix} == BYTECODE_FILE_EXT)
-                        {
-                            filename.erase(pos);
-                        }
-                    }
-                    // replace path separator '/' '\' to '.'
-                    for (auto& character : filename)
-                    {
-                        if (character == '/' || character == '\\')
-                        {
-                            character = '.';
-                        }
-                    }
-                    CCLOG("[luaLoadChunksFromZIP] add %s to preload", filename.c_str());
-                    if (stack->luaLoadBuffer(L, (char*)zbuffer, (int)bufferSize, filename.c_str()) == 0)
-                    {
-                        lua_setfield(L, -2, filename.c_str());
-                        ++count;
-                    }
-                    free(zbuffer);
-                }
-                filename = zip->getNextFilename();
-            }
-            CCLOG("lua_loadChunksFromZIP() - loaded chunks count: %d", count);
-            lua_pop(L, 2);
-            lua_pushboolean(L, 1);
-
-            delete zip;
+            lua_setfield(L, chunks, module.c_str());
+            ++count;
         }
         else
         {
-            CCLOG("lua_loadChunksFromZIP() - not found or invalid zip file: %s", zipFilePath.c_str());
-            lua_pushboolean(L, 0);
+            lua_pop(L, 1);
         }
+    }
 
-        if (buffer)
-        {
-            free(buffer);
-        }
-    } while (0);
+    lua_getglobal(L, "package");
+    lua_getfield(L, -1, "preload");
+    const int preload = lua_gettop(L);
+    lua_pushnil(L);
+    while (lua_next(L, chunks))
+    {
+        lua_pushvalue(L, -2);
+        lua_pushvalue(L, -2);
+        lua_rawset(L, preload);
+        lua_pop(L, 1);
+    }
+    lua_settop(L, 0);
+    CCLOG("luaLoadChunksFromZIP() - loaded %d chunks from %s", count, zipPath.c_str());
+    lua_pushboolean(L, 1);
 
     return 1;
 }

@@ -6,6 +6,8 @@
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 
 void register_cc_font_manual(lua_State* L);
+void register_cc_file_read_manual(lua_State* L);
+void register_cc_zip_manual(lua_State* L);
 
 // Platform registration and merged aliases.
 
@@ -62,5 +64,7 @@ int register_all_cc_base_retained(lua_State* L)
 	}
 	lua_pop(L, 1);
 	register_cc_font_manual(L);
+	register_cc_file_read_manual(L);
+	register_cc_zip_manual(L);
 	return 0;
 }

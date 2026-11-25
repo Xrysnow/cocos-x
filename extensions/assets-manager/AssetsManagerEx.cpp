@@ -28,13 +28,9 @@
 #include "base/Director.h"
 
 #include <stdio.h>
+#include <unordered_set>
 
-#ifdef MINIZIP_FROM_SYSTEM
-    #include <minizip/unzip.h>
-#else  // from our embedded sources
-    #include "unzip.h"
-#endif
-#include <ioapi.h>
+#include "AssetVersionStorage.h"
 #include "base/AsyncTaskPool.h"
 
 NS_CC_EXT_BEGIN
@@ -44,9 +40,6 @@ NS_CC_EXT_BEGIN
 #define TEMP_MANIFEST_FILENAME "project.manifest.temp"
 #define MANIFEST_FILENAME "project.manifest"
 
-#define BUFFER_SIZE 8192
-#define MAX_FILENAME 512
-
 #define DEFAULT_CONNECTION_TIMEOUT 45
 
 #define SAVE_POINT_INTERVAL 0.1
@@ -54,119 +47,41 @@ NS_CC_EXT_BEGIN
 const std::string AssetsManagerEx::VERSION_ID  = "@version";
 const std::string AssetsManagerEx::MANIFEST_ID = "@manifest";
 
-class AssetManagerExZipFileInfo
+namespace
 {
-public:
-    std::string zipFileName{};
-};
+constexpr auto VersionStoreName = ".cocos-assets-ex";
+constexpr auto ExtractedDirectory = ".cocos-extracted";
 
-// unzip overrides to support FileStream
-long AssetManagerEx_tell_file_func(voidpf opaque, voidpf stream)
+asset_storage::fs::path updateAssetPath(std::string_view name)
 {
-    if (stream == nullptr)
-        return -1;
-
-    auto* fs = (FileStream*)stream;
-
-    return fs->tell();
-}
-
-long AssetManagerEx_seek_file_func(voidpf opaque, voidpf stream, uint32_t offset, int origin)
-{
-    if (stream == nullptr)
-        return -1;
-
-    auto* fs = (FileStream*)stream;
-
-    return fs->seek((long)offset, origin);  // must return 0 for success or -1 for error
-}
-
-voidpf AssetManagerEx_open_file_func(voidpf opaque, const char* filename, int mode)
-{
-    FileStream::Mode fsMode;
-    if ((mode & ZLIB_FILEFUNC_MODE_READWRITEFILTER) == ZLIB_FILEFUNC_MODE_READ)
-        fsMode = FileStream::Mode::READ;
-    else if (mode & ZLIB_FILEFUNC_MODE_EXISTING)
-        fsMode = FileStream::Mode::APPEND;
-    else if (mode & ZLIB_FILEFUNC_MODE_CREATE)
-        fsMode = FileStream::Mode::WRITE;
-    else
-        return nullptr;
-
-    return FileUtils::getInstance()->openFileStream(filename, fsMode).release();
-}
-
-voidpf AssetManagerEx_opendisk_file_func(voidpf opaque, voidpf stream, uint32_t number_disk, int mode)
-{
-    if (stream == nullptr)
-        return nullptr;
-
-    const auto zipFileInfo   = static_cast<AssetManagerExZipFileInfo*>(opaque);
-    std::string diskFilename = zipFileInfo->zipFileName;
-
-    const auto pos = diskFilename.rfind('.', std::string::npos);
-
-    if (pos != std::string::npos && pos != 0)
+    auto path = asset_storage::relativeAssetPath(name);
+    if (path.empty())
+        return {};
+    auto first = asset_storage::utf8(*path.begin());
+    for (auto& character : first)
     {
-        const size_t bufferSize = 5;
-        char extensionBuffer[bufferSize];
-        snprintf(&extensionBuffer[0], bufferSize, ".z%02u", number_disk + 1);
-        diskFilename.replace(pos, std::min((size_t)4, zipFileInfo->zipFileName.size() - pos), extensionBuffer);
-        return AssetManagerEx_open_file_func(opaque, diskFilename.c_str(), mode);
+        if (character >= 'A' && character <= 'Z')
+            character += 'a' - 'A';
     }
-
-    return nullptr;
+    if (first == ExtractedDirectory || first == VERSION_FILENAME ||
+        first == TEMP_MANIFEST_FILENAME || first == MANIFEST_FILENAME)
+        return {};
+    return path;
 }
 
-uint32_t AssetManagerEx_read_file_func(voidpf opaque, voidpf stream, void* buf, uint32_t size)
+asset_storage::fs::path downloadAssetPath(std::string_view path, std::string_view root)
 {
-    if (stream == nullptr)
-        return (uint32_t)-1;
-
-    auto* fs = (FileStream*)stream;
-    return fs->read(buf, size);
-}
-
-uint32_t AssetManagerEx_write_file_func(voidpf opaque, voidpf stream, const void* buf, uint32_t size)
-{
-    if (stream == nullptr)
-        return (uint32_t)-1;
-
-    auto* fs = (FileStream*)stream;
-    return fs->write(buf, size);
-}
-
-int AssetManagerEx_close_file_func(voidpf opaque, voidpf stream)
-{
-    if (stream == nullptr)
-        return -1;
-
-    auto* fs          = (FileStream*)stream;
-    const auto result = fs->close();  // 0 for success, -1 for error
-    delete fs;
-    return result;
-}
-
-// THis isn't supported by FileStream, so just check if the stream is null and open
-int AssetManagerEx_error_file_func(voidpf opaque, voidpf stream)
-{
-    if (stream == nullptr)
+    try
     {
-        return -1;
+        namespace fs = asset_storage::fs;
+        return updateAssetPath(asset_storage::utf8(fs::u8path(path).lexically_relative(fs::u8path(root))));
     }
-
-    auto* fs = (FileStream*)stream;
-
-    if (fs->isOpen())
+    catch (const asset_storage::fs::filesystem_error&)
     {
-        return 0;
+        return {};
     }
-
-    return -1;
 }
-// End of Overrides
-
-// Implementation of AssetsManagerEx
+}
 
 AssetsManagerEx::AssetsManagerEx(std::string_view manifestUrl, std::string_view storagePath) : _manifestUrl(manifestUrl)
 {
@@ -189,7 +104,6 @@ AssetsManagerEx::AssetsManagerEx(std::string_view manifestUrl, std::string_view 
     };
     setStoragePath(storagePath);
     _tempVersionPath   = _tempStoragePath + VERSION_FILENAME;
-    _cacheManifestPath = _storagePath + MANIFEST_FILENAME;
     _tempManifestPath  = _tempStoragePath + TEMP_MANIFEST_FILENAME;
 
     initManifests(manifestUrl);
@@ -305,9 +219,11 @@ void AssetsManagerEx::loadLocalManifest(std::string_view /*manifestUrl*/)
             bool localNewer = _localManifest->versionGreater(cachedManifest, _versionCompareHandle);
             if (localNewer)
             {
-                // Recreate storage, to empty the content
-                _fileUtils->removeDirectory(_storagePath);
-                _fileUtils->createDirectory(_storagePath);
+                if (_activeStoragePath == _storagePath)
+                    _fileUtils->removeFile(_cacheManifestPath);
+                else
+                    _fileUtils->removeFile(_storagePath + VersionStoreName + "/active");
+                _activeStoragePath.clear();
                 CC_SAFE_RELEASE(cachedManifest);
             }
             else
@@ -346,7 +262,8 @@ std::string AssetsManagerEx::get(std::string_view key) const
     auto it = _assets->find(key);
     if (it != _assets->cend())
     {
-        return _storagePath + it->second.path;
+        const auto& root = _activeStoragePath.empty() ? _storagePath : _activeStoragePath;
+        return root + it->second.path;
     }
     else
         return "";
@@ -372,6 +289,9 @@ void AssetsManagerEx::setStoragePath(std::string_view storagePath)
     _storagePath = storagePath;
     adjustPath(_storagePath);
     _fileUtils->createDirectory(_storagePath);
+    const auto current = asset_storage::selectedVersion(asset_storage::fs::u8path(_storagePath) / VersionStoreName);
+    _activeStoragePath = current.empty() ? _storagePath : asset_storage::searchPath(current);
+    _cacheManifestPath = _activeStoragePath + MANIFEST_FILENAME;
 
     _tempStoragePath = _storagePath;
     _tempStoragePath.append(TEMP_FOLDERNAME);
@@ -389,145 +309,24 @@ void AssetsManagerEx::adjustPath(std::string& path)
 
 bool AssetsManagerEx::decompress(std::string_view zip)
 {
-    // Find root path for zip file
-    size_t pos = zip.find_last_of("/\\");
-    if (pos == std::string::npos)
-    {
-        CCLOG("AssetsManagerEx : no root path specified for zip file %s\n", zip.data());
+    namespace fs = asset_storage::fs;
+    const auto downloads = fs::u8path(_tempStoragePath);
+    const auto relative = downloadAssetPath(zip, _tempStoragePath);
+    if (relative.empty())
         return false;
-    }
-    const std::string_view rootPath = zip.substr(0, pos + 1);
-
-    zlib_filefunc_def_s zipFunctionOverrides;
-    fillZipFunctionOverrides(zipFunctionOverrides);
-
-    AssetManagerExZipFileInfo zipFileInfo;
-    zipFileInfo.zipFileName = zip;
-
-    zipFunctionOverrides.opaque = &zipFileInfo;
-
-    // Open the zip file
-    unzFile zipfile = unzOpen2(zip.data(), &zipFunctionOverrides);
-    if (!zipfile)
-    {
-        CCLOG("AssetsManagerEx : can not open downloaded zip file %s\n", zip.data());
+    const auto extracted = downloads / ExtractedDirectory / relative;
+    std::error_code ec;
+    fs::create_directories(extracted.parent_path(), ec);
+    if (ec)
         return false;
-    }
-
-    // Get info about the zip file
-    unz_global_info global_info;
-    if (unzGetGlobalInfo(zipfile, &global_info) != UNZ_OK)
-    {
-        CCLOG("AssetsManagerEx : can not read file global info of %s\n", zip.data());
-        unzClose(zipfile);
+    fs::remove_all(extracted, ec);
+    if (ec)
         return false;
-    }
-
-    // Buffer to hold data read from the zip file
-    char readBuffer[BUFFER_SIZE];
-    // Loop to extract all files.
-    uLong i;
-    for (i = 0; i < global_info.number_entry; ++i)
-    {
-        // Get info about current file.
-        unz_file_info fileInfo;
-        char fileName[MAX_FILENAME];
-        if (unzGetCurrentFileInfo(zipfile, &fileInfo, fileName, MAX_FILENAME, NULL, 0, NULL, 0) != UNZ_OK)
-        {
-            CCLOG("AssetsManagerEx : can not read compressed file info\n");
-            unzClose(zipfile);
-            return false;
-        }
-        std::string fullPath{rootPath};
-        fullPath += fileName;
-
-        // Check if this entry is a directory or a file.
-        const size_t filenameLength = strlen(fileName);
-        if (fileName[filenameLength - 1] == '/')
-        {
-            // There are not directory entry in some case.
-            // So we need to create directory when decompressing file entry
-            if (!_fileUtils->createDirectory(basename(fullPath)))
-            {
-                // Failed to create directory
-                CCLOG("AssetsManagerEx : can not create directory %s\n", fullPath.c_str());
-                unzClose(zipfile);
-                return false;
-            }
-        }
-        else
-        {
-            // Create all directories in advance to avoid issue
-            std::string_view dir = basename(fullPath);
-            if (!_fileUtils->isDirectoryExist(dir))
-            {
-                if (!_fileUtils->createDirectory(dir))
-                {
-                    // Failed to create directory
-                    CCLOG("AssetsManagerEx : can not create directory %s\n", fullPath.c_str());
-                    unzClose(zipfile);
-                    return false;
-                }
-            }
-            // Entry is a file, so extract it.
-            // Open current file.
-            if (unzOpenCurrentFile(zipfile) != UNZ_OK)
-            {
-                CCLOG("AssetsManagerEx : can not extract file %s\n", fileName);
-                unzClose(zipfile);
-                return false;
-            }
-
-            // Create a file to store current file.
-            auto fsOut = FileUtils::getInstance()->openFileStream(fullPath, FileStream::Mode::WRITE);
-            if (!fsOut)
-            {
-                CCLOG("AssetsManagerEx : can not create decompress destination file %s (errno: %d)\n", fullPath.c_str(),
-                      errno);
-                unzCloseCurrentFile(zipfile);
-                unzClose(zipfile);
-                return false;
-            }
-
-            // Write current file content to destinate file.
-            int error = UNZ_OK;
-            do
-            {
-                error = unzReadCurrentFile(zipfile, readBuffer, BUFFER_SIZE);
-                if (error < 0)
-                {
-                    CCLOG("AssetsManagerEx : can not read zip file %s, error code is %d\n", fileName, error);
-                    fsOut.reset();
-                    unzCloseCurrentFile(zipfile);
-                    unzClose(zipfile);
-                    return false;
-                }
-
-                if (error > 0)
-                {
-                    fsOut->write(readBuffer, error);
-                }
-            } while (error > 0);
-
-            fsOut.reset();
-        }
-
-        unzCloseCurrentFile(zipfile);
-
-        // Goto next entry listed in the zip file.
-        if ((i + 1) < global_info.number_entry)
-        {
-            if (unzGoToNextFile(zipfile) != UNZ_OK)
-            {
-                CCLOG("AssetsManagerEx : can not read next file for decompressing\n");
-                unzClose(zipfile);
-                return false;
-            }
-        }
-    }
-
-    unzClose(zipfile);
-    return true;
+    const auto result = asset_storage::extractDownload(zip, extracted);
+    if (!result)
+        CCLOG("AssetsManagerEx: cannot extract %.*s (error %d, native %d)", static_cast<int>(zip.size()), zip.data(),
+              static_cast<int>(result.error.code), result.error.nativeCode);
+    return static_cast<bool>(result);
 }
 
 void AssetsManagerEx::decompressDownloadedZip(std::string_view customId, std::string_view storagePath)
@@ -761,7 +560,8 @@ void AssetsManagerEx::startUpdate()
         _tempManifest->saveToFile(_tempManifestPath);
         _tempManifest->genResumeAssetsList(&_downloadUnits);
         _totalWaitToDownload = _totalToDownload = (int)_downloadUnits.size();
-        this->batchDownload();
+        if (!batchDownload())
+            return;
 
         std::string msg = StringUtils::format(
             "Resuming from previous unfinished update, %d files remains to be finished.", _totalToDownload);
@@ -814,7 +614,8 @@ void AssetsManagerEx::startUpdate()
                 }
             }
             _totalWaitToDownload = _totalToDownload = (int)_downloadUnits.size();
-            this->batchDownload();
+            if (!batchDownload())
+                return;
 
             std::string msg = StringUtils::format("Start to update %d files from remote package.", _totalToDownload);
             dispatchUpdateEvent(EventAssetsManagerEx::EventCode::UPDATE_PROGRESSION, "", msg);
@@ -824,48 +625,76 @@ void AssetsManagerEx::startUpdate()
 
 void AssetsManagerEx::updateSucceed()
 {
-    // Every thing is correctly downloaded, do the following
-    // 1. rename temporary manifest to valid manifest
-    std::string tempFileName = TEMP_MANIFEST_FILENAME;
-    std::string fileName     = MANIFEST_FILENAME;
-    _fileUtils->renameFile(_tempStoragePath, tempFileName, fileName);
-    // 2. merge temporary storage path to storage path so that temporary version turns to cached version
-    if (_fileUtils->isDirectoryExist(_tempStoragePath))
-    {
-        // Merging all files in temp storage path to storage path
-        std::vector<std::string> files;
-        _fileUtils->listFilesRecursively(_tempStoragePath, &files);
-        int baseOffset = (int)_tempStoragePath.length();
-        std::string relativePath, dstPath;
-        for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it)
+    namespace fs = asset_storage::fs;
+    const auto downloads = fs::u8path(_tempStoragePath);
+    asset_storage::StagedVersion version(_storagePath.empty() ? fs::path{} : fs::u8path(_storagePath) / VersionStoreName);
+    const auto assemble = [&] {
+        if (_storagePath.empty() || !version)
+            return false;
+        const auto content = version.content();
+        std::error_code ec;
+        if (!fs::create_directory(content, ec) || ec)
+            return false;
+
+        if (!_activeStoragePath.empty())
         {
-            relativePath.assign((*it).substr(baseOffset));
-            dstPath.assign(_storagePath + relativePath);
-            // Create directory
-            if (relativePath.back() == '/')
-            {
-                _fileUtils->createDirectory(dstPath);
-            }
-            // Copy file
-            else
-            {
-                if (_fileUtils->isFileExist(dstPath))
-                {
-                    _fileUtils->removeFile(dstPath);
-                }
-                _fileUtils->renameFile(*it, dstPath);
-            }
+            const auto previous = fs::u8path(_activeStoragePath);
+            const bool legacy = _activeStoragePath == _storagePath;
+            if (!asset_storage::overlayTree(previous, content, legacy ? fs::path(TEMP_FOLDERNAME) : fs::path{},
+                                            legacy ? fs::path(VersionStoreName) : fs::path{}))
+                return false;
         }
-        // Remove temp storage path
-        _fileUtils->removeDirectory(_tempStoragePath);
+
+        for (const auto& [id, asset] : _tempManifest->getAssets())
+        {
+            if (asset.downloadState != Manifest::DownloadState::SUCCESSED)
+                continue;
+            const auto path = updateAssetPath(asset.path);
+            if (path.empty())
+                return false;
+            if (asset.compressed)
+            {
+                if (!asset_storage::overlayTree(downloads / ExtractedDirectory / path, content / path.parent_path()))
+                    return false;
+            }
+            else if (!asset_storage::copyAsset(downloads / path, content / path))
+                return false;
+        }
+        return asset_storage::copyAsset(fs::u8path(_tempManifestPath), content / MANIFEST_FILENAME) &&
+               version.publish();
+    };
+
+    if (!assemble())
+    {
+        _tempManifest->saveToFile(_tempManifestPath);
+        _updateState = State::FAIL_TO_UPDATE;
+        dispatchUpdateEvent(EventAssetsManagerEx::EventCode::UPDATE_FAILED, "", "Unable to install the downloaded version");
+        return;
     }
-    // 3. swap the localManifest
+
+    auto searchPaths = _fileUtils->getSearchPaths();
+    if (_localManifest->_manifestRoot == _activeStoragePath)
+    {
+        for (const auto& old : _localManifest->getSearchPaths())
+            searchPaths.erase(std::remove(searchPaths.begin(), searchPaths.end(), old), searchPaths.end());
+    }
+    _activeStoragePath = asset_storage::searchPath(version.content());
+    _cacheManifestPath = _activeStoragePath + MANIFEST_FILENAME;
+    _fileUtils->removeDirectory(_tempStoragePath);
+    if (_tempManifest != _localManifest && _tempManifest != _remoteManifest)
+        CC_SAFE_RELEASE(_tempManifest);
+    _tempManifest = nullptr;
     CC_SAFE_RELEASE(_localManifest);
     _localManifest = _remoteManifest;
-    _localManifest->setManifestRoot(_storagePath);
+    _localManifest->setManifestRoot(_activeStoragePath);
     _remoteManifest = nullptr;
-    // 4. make local manifest take effect
-    prepareLocalManifest();
+    _assets = &_localManifest->getAssets();
+    for (const auto& path : _localManifest->getSearchPaths())
+    {
+        searchPaths.erase(std::remove(searchPaths.begin(), searchPaths.end(), path), searchPaths.end());
+        searchPaths.insert(searchPaths.begin(), path);
+    }
+    _fileUtils->setSearchPaths(searchPaths);
     // 5. Set update state
     _updateState = State::UP_TO_DATE;
     // 6. Notify finished event
@@ -1002,7 +831,7 @@ void AssetsManagerEx::updateAssets(const DownloadUnits& assets)
         return;
     }
 
-    if (_updateState != State::UPDATING && _localManifest->isLoaded() && _remoteManifest->isLoaded())
+    if (_updateState != State::UPDATING && _localManifest->isLoaded() && _remoteManifest && _remoteManifest->isLoaded())
     {
         _updateState = State::UPDATING;
         _downloadUnits.clear();
@@ -1218,12 +1047,27 @@ void AssetsManagerEx::destroyDownloadedVersion()
     _fileUtils->removeDirectory(_tempStoragePath);
 }
 
-void AssetsManagerEx::batchDownload()
+bool AssetsManagerEx::batchDownload()
 {
     _queue.clear();
+    std::unordered_set<std::string> destinations;
     for (const auto& iter : _downloadUnits)
     {
         const DownloadUnit& unit = iter.second;
+        const auto path = downloadAssetPath(unit.storagePath, _tempStoragePath);
+        auto key = asset_storage::utf8(path);
+        for (auto& character : key)
+        {
+            if (character >= 'A' && character <= 'Z')
+                character += 'a' - 'A';
+        }
+        if (path.empty() || !destinations.emplace(std::move(key)).second)
+        {
+            _queue.clear();
+            _updateState = State::FAIL_TO_UPDATE;
+            dispatchUpdateEvent(EventAssetsManagerEx::EventCode::UPDATE_FAILED, unit.customId, "Invalid asset destination");
+            return false;
+        }
         if (unit.size > 0)
         {
             _totalSize += unit.size;
@@ -1239,6 +1083,7 @@ void AssetsManagerEx::batchDownload()
     }
 
     queueDowload();
+    return true;
 }
 
 void AssetsManagerEx::queueDowload()
@@ -1286,17 +1131,5 @@ void AssetsManagerEx::onDownloadUnitsFinished()
     }
 }
 
-void AssetsManagerEx::fillZipFunctionOverrides(zlib_filefunc_def_s& zipFunctionOverrides)
-{
-    zipFunctionOverrides.zopen_file     = AssetManagerEx_open_file_func;
-    zipFunctionOverrides.zopendisk_file = AssetManagerEx_opendisk_file_func;
-    zipFunctionOverrides.zread_file     = AssetManagerEx_read_file_func;
-    zipFunctionOverrides.zwrite_file    = AssetManagerEx_write_file_func;
-    zipFunctionOverrides.ztell_file     = AssetManagerEx_tell_file_func;
-    zipFunctionOverrides.zseek_file     = AssetManagerEx_seek_file_func;
-    zipFunctionOverrides.zclose_file    = AssetManagerEx_close_file_func;
-    zipFunctionOverrides.zerror_file    = AssetManagerEx_error_file_func;
-    zipFunctionOverrides.opaque         = nullptr;
-}
 
 NS_CC_EXT_END

@@ -35,6 +35,7 @@ THE SOFTWARE.
 #include <memory>
 
 #include "platform/FileStream.h"
+#include "platform/FileReadAdapter.h"
 #include "platform/AppDirectories.h"
 #include "platform/PlatformMacros.h"
 #include "base/ccTypes.h"
@@ -107,6 +108,24 @@ public:
      *  Gets the instance of FileUtils.
      */
     static FileUtils* getInstance();
+
+    // Lookup visits higher priorities first and newer registrations first on ties.
+    // A hit retains the adapter and its roots, including after replacement or removal.
+    io::Result<AdapterId> registerReadAdapter(std::string name, AdapterPtr adapter, float priority);
+    io::Result<AdapterId> replaceReadAdapter(AdapterId id, std::string name, AdapterPtr adapter, float priority);
+    io::Status unregisterReadAdapter(AdapterId id);
+    io::Status setAdapterPriority(AdapterId id, float priority);
+    io::Status setAdapterSearchPaths(AdapterId id, const std::vector<std::string>& roots);
+    io::Status addAdapterSearchPath(AdapterId id, std::string root, bool front = false);
+    std::vector<AdapterInfo> getReadAdapters() const;
+    io::Result<FileHit> findFile(std::string_view path) const;
+    io::Result<FileHit> findFileIn(AdapterId id, std::string_view path) const;
+    io::Result<FileHit> findPlatformFile(std::string_view path) const;
+    io::Result<std::vector<FileHit>> findAllFiles(std::string_view path) const;
+    io::Result<FileHit> findSibling(const FileHit& parent, std::string_view name) const;
+    static io::Result<ReadFile> openRead(const FileHit& hit);
+    static io::Result<int64_t> fileSize(const FileHit& hit);
+    virtual std::string fullPathForDirectory(std::string_view dirname) const;
 
     /**
      *  Destroys the instance of FileUtils.
@@ -244,52 +263,16 @@ public:
         return getContents(filename, static_cast<ResizableBuffer*>(&buf));
     }
     virtual Status getContents(std::string_view filename, ResizableBuffer* buffer) const;
+    static Status getContents(const FileHit& hit, ResizableBuffer* buffer);
+    template<class T, typename = std::enable_if_t<is_resizable_container_v<T>>>
+    static Status getContents(const FileHit& hit, T* buffer) {
+        ResizableBufferAdapter<T> wrapper(buffer);
+        return getContents(hit, static_cast<ResizableBuffer*>(&wrapper));
+    }
 
-    /** Returns the fullpath for a given filename.
-
-     First it will try to get a new filename from the "filenameLookup" dictionary.
-     If a new filename can't be found on the dictionary, it will use the original filename.
-     Then it will try to obtain the full path of the filename using the FileUtils search rules: resolutions, and search
-     paths. The file search is based on the array element order of search paths and resolution directories.
-
-     For instance:
-
-         We set two elements("/mnt/sdcard/", "internal_dir/") to search paths vector by setSearchPaths,
-
-        If we have a file named 'sprite.png', the mapping in fileLookup dictionary contains `key: sprite.png -> value:
-     sprite.pvr.gz`. Firstly, it will replace 'sprite.png' with 'sprite.pvr.gz', then searching the file sprite.pvr.gz
-     as follows:
-
-             /mnt/sdcard/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
-             /mnt/sdcard/resources-ipad/sprite.pvr.gz        (if not found, search next)
-             /mnt/sdcard/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
-             /mnt/sdcard/sprite.pvr.gz                       (if not found, search next)
-             internal_dir/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
-             internal_dir/resources-ipad/sprite.pvr.gz       (if not found, search next)
-             internal_dir/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
-             internal_dir/sprite.pvr.gz                      (if not found, return "sprite.png")
-
-        If the filename contains relative path like "gamescene/uilayer/sprite.png",
-        and the mapping in fileLookup dictionary contains `key: gamescene/uilayer/sprite.png -> value:
-     gamescene/uilayer/sprite.pvr.gz`. The file search order will be:
-
-             /mnt/sdcard/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/resources-ipad/sprite.pvr.gz        (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/sprite.pvr.gz                       (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-ipad/sprite.pvr.gz       (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
-             internal_dir/gamescene/uilayer/sprite.pvr.gz                      (if not found, return
-     "gamescene/uilayer/sprite.png")
-
-     If the new file can't be found on the file system, it will return the parameter filename directly.
-
-     This method was added to simplify multiplatform support. Whether you are using cocos2d-js or any cross-compilation
-     toolchain like StellaSDK or Apportable, you might need to load different resources for a given file in the
-     different platforms.
-
-     @since v2.1
+    /** Resolves a legacy display path. Native absolute input passes through.
+     *  ZIP results are logical names and Android package results use the assets/ prefix.
+     *  Keep a FileHit to reopen a particular source after mount changes.
      */
     virtual std::string fullPathForFilename(std::string_view filename) const;
 
@@ -434,6 +417,7 @@ public:
      *  @return ValueMap of the file contents.
      *  @note This method is used internally.
      */
+    ValueMap getValueMapFromHit(const FileHit& hit) const;
     virtual ValueMap getValueMapFromFile(std::string_view filename) const;
 
     /** Converts the contents of a file to a ValueMap.
@@ -785,13 +769,6 @@ public:
     virtual void listFilesRecursivelyAsync(std::string_view dirPath,
                                            std::function<void(std::vector<std::string>)> callback) const;
 
-    /** Returns the full path cache. */
-    const hlookup::string_map<std::string> getFullPathCache() const
-    {
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
-        return _fullPathCache;
-    }
-
     /**
      *  Checks whether a file exists without considering search paths and resolution orders.
      *  @param filename The file (with absolute path) to look up for
@@ -825,6 +802,23 @@ protected:
      *  The default constructor.
      */
     FileUtils();
+    using PhysicalLookup = std::function<std::string(std::string_view)>;
+    virtual PhysicalLookup physicalLookup() const { return {}; }
+    io::Status updateAdapterSearchPaths(AdapterId id,
+        const std::function<io::Result<AdapterPtr>(const FileReadAdapter&)>& update);
+    void refreshPhysicalAdapter();
+    AdapterId _physicalId{}, _packageId{};
+    void syncPlatformRoots();
+private:
+    struct ReadMount { AdapterId id; std::string name; AdapterPtr adapter; float priority; };
+    using Mounts = std::vector<ReadMount>;
+    std::shared_ptr<const Mounts> _mounts = std::make_shared<Mounts>();
+    void publishMounts(Mounts mounts);
+    io::Status visitHits(std::string_view path, AdapterId only, bool platformOnly,
+                         const std::function<Visit(FileHit)>& visitor) const;
+    io::Result<FileHit> firstHit(std::string_view path, AdapterId only, bool platformOnly) const;
+    void syncDirectoryRoots();
+protected:
 
     /**
      *  Initializes the instance of FileUtils. It will set _searchPathArray.
@@ -868,7 +862,7 @@ protected:
      * Returns the fullpath for a given dirname.
      * @since 3.17.1
      */
-    virtual std::string fullPathForDirectory(std::string_view dirname) const;
+
 
     /**
      * mutex used to protect fields.
@@ -894,12 +888,6 @@ protected:
      *  Similarly on Blackberry, we assign "app/native/Resources/" to this variable in FileUtilsBlackberry::init().
      */
     std::string _defaultResRootPath;
-
-    /**
-     *  The full path cache for normal files. When a file is found, it will be added into this cache.
-     *  This variable is used for improving the performance of file search.
-     */
-    mutable hlookup::string_map<std::string> _fullPathCache;
 
     /**
      *  The full path cache for directories. When a diretory is found, it will be added into this cache.

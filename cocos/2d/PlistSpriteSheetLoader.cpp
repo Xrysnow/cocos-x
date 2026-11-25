@@ -19,68 +19,45 @@ using namespace std;
 
 NS_CC_BEGIN
 
+namespace {
+io::Result<FileHit> sheetTexture(FileUtils& files, const FileHit& sheet, std::string_view path, const ValueMap& dict)
+{
+    std::string name;
+    auto metadata = dict.find("metadata");
+    if (metadata != dict.end()) name = optValue(metadata->second.asValueMap(), "textureFileName"sv).asString();
+    if (name.empty()) {
+        auto slash = path.find_last_of("/\\\\");
+        name = path.substr(slash == path.npos ? 0 : slash + 1);
+        auto dot = name.find_last_of('.');
+        if (dot != name.npos) name.resize(dot);
+        name += ".png";
+    }
+    return files.isAbsolutePath(name) ? files.findFile(name) : files.findSibling(sheet, name);
+}
+}
+
 void PlistSpriteSheetLoader::load(std::string_view filePath, SpriteFrameCache& cache)
 {
-    CCASSERT(!filePath.empty(), "plist filename should not be nullptr");
-
-    const auto fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
-    if (fullPath.empty())
-    {
-        // return if plist file doesn't exist
-        CCLOG("cocos2d: SpriteFrameCache: can not find %s", filePath.data());
-        return;
-    }
-
-    auto dict = FileUtils::getInstance()->getValueMapFromFile(fullPath);
-
-    std::string texturePath;
-
-    if (dict.find("metadata") != dict.end())
-    {
-        auto& metadataDict = dict["metadata"].asValueMap();
-        // try to read  texture file name from meta data
-        texturePath = metadataDict["textureFileName"].asString();
-    }
-
-    if (!texturePath.empty())
-    {
-        // build texture path relative to plist file
-        texturePath = FileUtils::getInstance()->fullPathFromRelativeFile(texturePath, filePath);
-    }
-    else
-    {
-        // build texture path by replacing file extension
-        texturePath = filePath;
-
-        // remove .xxx
-        const auto startPos = texturePath.find_last_of('.');
-        if (startPos != string::npos)
-        {
-            texturePath = texturePath.erase(startPos);
-        }
-
-        // append .png
-        texturePath = texturePath.append(".png");
-
-        CCLOG("cocos2d: SpriteFrameCache: Trying to use file %s as texture", texturePath.c_str());
-    }
-    addSpriteFramesWithDictionary(dict, texturePath, filePath, cache);
+    auto& files = *FileUtils::getInstance();
+    auto sheet = files.findFile(filePath);
+    if (!sheet) return;
+    auto dict = files.getValueMapFromHit(sheet.value);
+    auto texture = sheetTexture(files, sheet.value, filePath, dict);
+    if (texture) addSpriteFramesWithDictionary(dict, texture.value, filePath, cache);
 }
 
 void PlistSpriteSheetLoader::load(std::string_view filePath, Texture2D* texture, SpriteFrameCache& cache)
 {
-    const auto fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
-    auto dict           = FileUtils::getInstance()->getValueMapFromFile(fullPath);
-
+    auto dict = FileUtils::getInstance()->getValueMapFromFile(filePath);
     addSpriteFramesWithDictionary(dict, texture, filePath, cache);
 }
 
 void PlistSpriteSheetLoader::load(std::string_view filePath, std::string_view textureFileName, SpriteFrameCache& cache)
 {
-    CCASSERT(!textureFileName.empty(), "texture name should not be null");
-    const auto fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
-    auto dict           = FileUtils::getInstance()->getValueMapFromFile(fullPath);
-    addSpriteFramesWithDictionary(dict, textureFileName, filePath, cache);
+    auto& files = *FileUtils::getInstance();
+    auto dict = files.getValueMapFromFile(filePath);
+    auto texture = files.findFile(textureFileName);
+    if (texture) addSpriteFramesWithDictionary(dict, texture.value, filePath, cache);
 }
 
 void PlistSpriteSheetLoader::load(const Data& content, Texture2D* texture, SpriteFrameCache& cache)
@@ -99,59 +76,21 @@ void PlistSpriteSheetLoader::load(const Data& content, Texture2D* texture, Sprit
 
 void PlistSpriteSheetLoader::reload(std::string_view filePath, SpriteFrameCache& cache)
 {
-    const auto fullPath = FileUtils::getInstance()->fullPathForFilename(filePath);
-    auto dict           = FileUtils::getInstance()->getValueMapFromFile(fullPath);
-
-    std::string texturePath;
-
-    if (dict.find("metadata") != dict.end())
-    {
-        auto& metadataDict = dict["metadata"].asValueMap();
-        // try to read  texture file name from meta data
-        texturePath = metadataDict["textureFileName"].asString();
-    }
-
-    if (!texturePath.empty())
-    {
-        // build texture path relative to plist file
-        texturePath = FileUtils::getInstance()->fullPathFromRelativeFile(texturePath, filePath);
-    }
-    else
-    {
-        // build texture path by replacing file extension
-        texturePath = filePath;
-
-        // remove .xxx
-        const auto startPos = texturePath.find_last_of('.');
-        if (startPos != string::npos)
-        {
-            texturePath = texturePath.erase(startPos);
-        }
-
-        // append .png
-        texturePath = texturePath.append(".png");
-    }
-
-    Texture2D* texture = nullptr;
-    if (Director::getInstance()->getTextureCache()->reloadTexture(texturePath))
-    {
-        texture = Director::getInstance()->getTextureCache()->getTextureForKey(texturePath);
-    }
-
-    if (texture)
-    {
+    auto& files = *FileUtils::getInstance();
+    auto sheet = files.findFile(filePath);
+    if (!sheet) return;
+    auto dict = files.getValueMapFromHit(sheet.value);
+    auto hit = sheetTexture(files, sheet.value, filePath, dict);
+    if (!hit) return;
+    if (auto* texture = Director::getInstance()->getTextureCache()->reloadTexture(hit.value))
         reloadSpriteFramesWithDictionary(dict, texture, filePath, cache);
-    }
-    else
-    {
-        CCLOG("cocos2d: SpriteFrameCache: Couldn't load texture");
-    }
 }
 
 void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
                                                            Texture2D* texture,
                                                            std::string_view plist,
-                                                           SpriteFrameCache& cache)
+                                                           SpriteFrameCache& cache,
+                                                           const FileHit* textureHit)
 {
     /*
     Supported Zwoptex Formats:
@@ -301,11 +240,13 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
             if (image == nullptr)
             {
                 image = cc::IntrusivePtr{new Image()}.detach();
-                image->initWithImageFile(textureFileName);
+                const bool loaded = textureHit ? image->initWithImageHit(*textureHit) : image->initWithImageFile(textureFileName);
+                if (!loaded) { CC_SAFE_DELETE(image); }
             }
-            parser.setSpriteFrameInfo(image, spriteFrame->getRectInPixels(), spriteFrame->isRotated());
-            // texture->addSpriteFrameCapInset(spriteFrame, parser.parseCapInset());
-            cache.addSpriteFrameCapInset(spriteFrame, parser.parseCapInset(), texture);
+            if (image) {
+                parser.setSpriteFrameInfo(image, spriteFrame->getRectInPixels(), spriteFrame->isRotated());
+                cache.addSpriteFrameCapInset(spriteFrame, parser.parseCapInset(), texture);
+            }
         }
 
         // add sprite frame
@@ -322,7 +263,7 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dictionary,
 }
 
 void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dict,
-                                                           std::string_view texturePath,
+                                                           const FileHit& textureHit,
                                                            std::string_view plist,
                                                            SpriteFrameCache& cache)
 {
@@ -355,16 +296,16 @@ void PlistSpriteSheetLoader::addSpriteFramesWithDictionary(ValueMap& dict,
     if (pixelFormatIt != pixelFormats.end())
     {
         const backend::PixelFormat pixelFormat        = (*pixelFormatIt).second;
-        texture = Director::getInstance()->getTextureCache()->addImage(texturePath, pixelFormat);
+        texture = Director::getInstance()->getTextureCache()->addImage(textureHit, pixelFormat);
     }
     else
     {
-        texture = Director::getInstance()->getTextureCache()->addImage(texturePath);
+        texture = Director::getInstance()->getTextureCache()->addImage(textureHit);
     }
 
     if (texture)
     {
-        addSpriteFramesWithDictionary(dict, texture, plist, cache);
+        addSpriteFramesWithDictionary(dict, texture, plist, cache, &textureHit);
     }
     else
     {

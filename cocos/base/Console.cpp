@@ -1696,22 +1696,13 @@ void Console::printFileUtils(socket_native_type fd)
 {
     FileUtils* fu = FileUtils::getInstance();
 
-    Console::Utility::mydprintf(fd, "\nSearch Paths:\n");
-    auto& list = fu->getSearchPaths();
-    for (const auto& item : list)
-    {
-        Console::Utility::mydprintf(fd, "%s\n", item.c_str());
+    for (const auto& mount : fu->getReadAdapters()) {
+        Console::Utility::mydprintf(fd, "%s (%s, priority %g)\\n",
+            mount.name.c_str(), mount.kind.c_str(), static_cast<double>(mount.priority));
+        for (const auto& root : mount.roots)
+            Console::Utility::mydprintf(fd, "  %s\\n", root.empty() ? "." : root.c_str());
     }
-
-    Console::Utility::mydprintf(fd, "\nWritable Path:\n");
-    Console::Utility::mydprintf(fd, "%s\n", fu->getWritablePath().c_str());
-
-    Console::Utility::mydprintf(fd, "\nFull Path Cache:\n");
-    auto& cache = fu->getFullPathCache();
-    for (const auto& item : cache)
-    {
-        Console::Utility::mydprintf(fd, "%s -> %s\n", item.first.c_str(), item.second.c_str());
-    }
+    Console::Utility::mydprintf(fd, "Writable path: %s\\n", fu->getWritablePath().c_str());
     Console::Utility::sendPrompt(fd);
 }
 

@@ -355,7 +355,7 @@ public:
     }
     void loadFile(std::string_view file)
     {
-        auto path = FileUtils::getInstance()->fullPathForFilename(file);
+        std::string path(file);
         if (path.find("file:///") != 0)
             path = (path.empty() || path.front() != '/' ? "file:///" : "file://") + path;
         loadURL(path, false);

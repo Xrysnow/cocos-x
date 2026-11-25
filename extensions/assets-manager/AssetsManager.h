@@ -34,8 +34,6 @@
 #include "extensions/ExtensionMacros.h"
 #include "extensions/ExtensionExport.h"
 
-struct zlib_filefunc_def_s;
-
 NS_CC_BEGIN
 
 namespace network
@@ -180,11 +178,11 @@ protected:
     bool uncompress();
     void setSearchPath();
     void downloadAndUncompress();
-    void fillZipFunctionOverrides(zlib_filefunc_def_s& zipFunctionOverrides);
 
 private:
     //! The path to store downloaded resources.
     std::string _storagePath;
+    std::string _installedSearchPath;
 
     //! The version of downloaded resources.
     std::string _version;

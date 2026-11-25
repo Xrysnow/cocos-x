@@ -150,6 +150,34 @@ namespace
 			return cc::IntrusivePtr{new (std::nothrow) AudioFileStream(std::move(reader))};
 		};
 	}
+
+	cc::IntrusivePtr<AudioStream> openAudioHit(const FileHit& hit)
+	{
+		auto stream = FileUtils::openRead(hit);
+		if (!stream || !stream.value || !stream.value->isOpen())
+			return nullptr;
+		auto& file = stream.value;
+		const auto length = file->size();
+		const auto position = file->tell();
+		if (length < 0 || position < 0 || position > length)
+			return nullptr;
+		if (position != 0 && (file->seek(0, SEEK_SET) != 0 || file->tell() != 0))
+			return nullptr;
+		AudioStream::ReopenFactory reopen;
+		if (hit.entry().nativePath)
+			reopen = nativeFileReopener(*file, *hit.entry().nativePath);
+		else
+		{
+			reopen = [hit]() -> cc::IntrusivePtr<AudioStream>
+			{
+				auto reopened = FileUtils::openRead(hit);
+				if (!reopened || !reopened.value || !reopened.value->isOpen())
+					return nullptr;
+				return cc::IntrusivePtr{new (std::nothrow) AudioFileStream(std::move(reopened.value))};
+			};
+		}
+		return cc::IntrusivePtr{new (std::nothrow) AudioFileStream(std::move(file), std::move(reopen))};
+	}
 }
 
 void AudioStream::setFileOpener(FileOpener opener)
@@ -161,7 +189,13 @@ cc::IntrusivePtr<AudioStream> AudioStream::createFromFile(const std::string& pat
 {
 	if (path.empty())
 		return nullptr;
-	return fileOpener ? fileOpener(path) : createFromLocalFile(path);
+	if (fileOpener)
+		return fileOpener(path);
+	auto fileUtils = FileUtils::getInstance();
+	if (!fileUtils)
+		return nullptr;
+	const auto hit = fileUtils->findFile(path);
+	return hit ? openAudioHit(hit.value) : nullptr;
 }
 
 cc::IntrusivePtr<AudioStream> AudioStream::createFromLocalFile(const std::string& path)
@@ -171,23 +205,8 @@ cc::IntrusivePtr<AudioStream> AudioStream::createFromLocalFile(const std::string
 	auto fileUtils = FileUtils::getInstance();
 	if (!fileUtils)
 		return nullptr;
-	const auto fullPath = fileUtils->fullPathForFilename(path);
-	if (fullPath.empty() || fileUtils->isDirectoryExist(fullPath))
-		return nullptr;
-	auto file = fileUtils->openFileStream(fullPath, FileStream::Mode::READ);
-	if (!file || !file->isOpen())
-		return nullptr;
-	const auto length = file->size();
-	const auto position = file->tell();
-	if (length < 0 || position < 0 || position > length)
-		return nullptr;
-	if (position != 0 && (file->seek(0, SEEK_SET) != 0 || file->tell() != 0))
-		return nullptr;
-	auto reopen = nativeFileReopener(*file, fullPath);
-	cc::IntrusivePtr result{new (std::nothrow) AudioFileStream(std::move(file), std::move(reopen))};
-	if (!result)
-		return nullptr;
-	return result;
+	const auto hit = fileUtils->findPlatformFile(path);
+	return hit ? openAudioHit(hit.value) : nullptr;
 }
 
 NS_CC_END

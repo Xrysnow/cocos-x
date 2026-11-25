@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "base/Ref.h"
 #include "base/Map.h"
-#include "io/Stream.h"
+#include "io/core/Stream.h"
 #include <atomic>
 #include <memory>
 #include "video/VideoCommon.h"

@@ -31,6 +31,7 @@
 /// @cond DO_NOT_SHOW
 
 #include "2d/Font.h"
+#include "platform/FileReadAdapter.h"
 #include <set>
 #include <unordered_map>
 
@@ -116,6 +117,7 @@ public:
 
     /** allocates a BMFontConfiguration with a FNT file */
     static cc::IntrusivePtr<BMFontConfiguration> create(std::string_view FNTfile);
+    static cc::IntrusivePtr<BMFontConfiguration> create(const FileHit& source, std::string_view data);
 
     /** initializes a BitmapFontConfiguration with a FNT file */
     bool initWithFNTfile(std::string_view FNTfile);
@@ -124,6 +126,7 @@ public:
     void setAtlasName(std::string_view atlasName) { _atlasName = atlasName; }
 
     std::set<unsigned int>* getCharacterSet() const;
+    const FileHit& getAtlasHit() const { return _atlasHit; }
 
 protected:
     virtual std::set<unsigned int>* parseConfigFile(std::string_view controlFile);
@@ -132,6 +135,9 @@ protected:
                                                           std::string_view controlFile);
 
 private:
+    std::set<unsigned int>* parseConfigData(std::string_view data, std::string_view controlFile);
+    bool resolveAtlas(const FileHit& source);
+    FileHit _atlasHit;
     unsigned int parseCharacterDefinition(const char* line);
     void parseInfoArguments(const char* line);
     void parseCommonArguments(const char* line);
@@ -148,6 +154,9 @@ public:
     static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, const Rect& imageRect, bool imageRotated);
     static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, std::string_view subTextureKey);
     static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath);
+    static cc::IntrusivePtr<FontFNT> create(const FileHit& source, const Rect& imageRect, bool imageRotated);
+    static cc::IntrusivePtr<FontFNT> create(const FileHit& source, std::string_view subTextureKey);
+    static cc::IntrusivePtr<FontFNT> createFromData(const FileHit& source, std::string_view data);
 
     CC_DEPRECATED_ATTRIBUTE static cc::IntrusivePtr<FontFNT> create(std::string_view fntFilePath, const Vec2& imageOffset = Vec2::ZERO);
 
@@ -164,6 +173,7 @@ public:
     int getOriginalFontSize() const;
 
     static void reloadBMFontResource(std::string_view fntFilePath);
+    static void reloadBMFontResource(const FileHit& source);
 
 protected:
     FontFNT(BMFontConfiguration* theContfig, const Rect& imageRect, bool imageRotated);
