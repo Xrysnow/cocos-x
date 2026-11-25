@@ -15,6 +15,8 @@ public:
     static ValueMap getUptime();
     static ValueMap getMemoryUsage();
     static ValueMap getDiskSpace(std::string_view path);
+    static ValueMap getNetworkInterfaces(bool addresses = false);
+    static ValueMap getNetworkState();
 };
 
 } // namespace cc

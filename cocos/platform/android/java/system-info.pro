@@ -5,3 +5,10 @@
     static java.lang.String[] memory();
     static java.lang.String[] uptime();
 }
+
+-keep class org.cocos.lib.CocosSystemNetwork {
+    static java.lang.String[] read();
+    static void startEvents();
+    static void stopEvents();
+    static native void networkChanged();
+}

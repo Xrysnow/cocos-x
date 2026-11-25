@@ -26,6 +26,7 @@ macro(cocos2dx_depend)
         include_directories(/System/Library/Frameworks)
         find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
         find_library(FOUNDATION_LIBRARY Foundation)
+        find_library(NETWORK_LIBRARY Network REQUIRED)
         find_library(OPENAL_LIBRARY OpenAL)
         find_library(QUARTZCORE_LIBRARY QuartzCore)
         find_library(GAMECONTROLLER_LIBRARY GameController)
@@ -35,6 +36,7 @@ macro(cocos2dx_depend)
             ${AUDIOTOOLBOX_LIBRARY}
             ${QUARTZCORE_LIBRARY}
             ${FOUNDATION_LIBRARY}
+            ${NETWORK_LIBRARY}
             ${GAMECONTROLLER_LIBRARY}
             ${METAL_LIBRARY}
             )
@@ -67,6 +69,7 @@ macro(cocos2dx_depend)
             find_library(CORE_TEXT_LIBRARY CoreText)
             find_library(SECURITY_LIBRARY Security)
             find_library(CORE_GRAPHICS_LIBRARY CoreGraphics)
+            find_library(CORE_TELEPHONY_LIBRARY CoreTelephony REQUIRED)
             find_library(AV_FOUNDATION_LIBRARY AVFoundation)
             find_library(WEBKIT_LIBRARY WebKit)
             list(APPEND PLATFORM_SPECIFIC_LIBS
@@ -78,6 +81,7 @@ macro(cocos2dx_depend)
                  ${CORE_TEXT_LIBRARY}
                  ${SECURITY_LIBRARY}
                  ${CORE_GRAPHICS_LIBRARY}
+                 ${CORE_TELEPHONY_LIBRARY}
                  ${AV_FOUNDATION_LIBRARY}
                  ${WEBKIT_LIBRARY}
                  ${COCOS_APPLE_LIBS}

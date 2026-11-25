@@ -12,4 +12,8 @@ ValueMap readOs();
 ValueMap readCpu();
 ValueMap readMemory();
 ValueMap readUptime();
+ValueMap readNetwork();
+void startNetworkEvents();
+void stopNetworkEvents();
+void networkChanged();
 } // namespace cc::system_info
