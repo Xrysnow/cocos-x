@@ -26,7 +26,7 @@
  ****************************************************************************/
 // Audio-session responsibilities migrated from the retired AudioEngineImpl.
 #include "AudioPlatform.h"
-#include "AudioEngine.h"
+#include "audio/AudioEngine.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
 #import <AVFoundation/AVFoundation.h>
