@@ -91,7 +91,7 @@ RasterContext::RasterContext() : _impl(std::make_unique<Impl>())
 }
 RasterContext::~RasterContext() = default;
 
-RasterResult GlyphRasterizer::render(RasterContext& context, const RasterRequest& req, FontRasterMode mode)
+RasterResult GlyphRasterizer::render(RasterContext& context, const RasterRequest& req, FontRasterMode mode, bool boundsOnly)
 {
     if (detail::stopped(req))
         return {GlyphStatus::Cancelled};
@@ -123,7 +123,7 @@ RasterResult GlyphRasterizer::render(RasterContext& context, const RasterRequest
     {
         if (mode == FontRasterMode::Bitmap)
             return detail::rasterBitmap(slot, req);
-        return detail::rasterField(slot, req, mode == FontRasterMode::Msdf);
+        return detail::rasterField(slot, req, mode == FontRasterMode::Msdf, boundsOnly);
     }
     catch (const std::bad_alloc&)
     {

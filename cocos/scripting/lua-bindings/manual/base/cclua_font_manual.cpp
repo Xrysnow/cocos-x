@@ -87,7 +87,15 @@ int fontSetWorkerCount(lua_State* L)
 int fontGetStats(lua_State* lua_S)
 {
     LUA_SINVOKE_HEADER("cc.FontRendering", "cc.FontRendering:getStats");
-    LUA_TRY_INVOKE_R(0, [] { return cc::FontRendering::getInstance().getStats(); });
+    if (lua_gettop(lua_S) == 1)
+    {
+        const auto& fonts = cc::FontRendering::getInstance();
+        lua::native_to_luaval(lua_S, fonts.getStats());
+        const auto uploads = fonts.getUploadStats();
+        lua::native_to_luaval_field(lua_S, -1, "uploadedGlyphs", uploads.glyphs);
+        lua::native_to_luaval_field(lua_S, -1, "uploadedBytes", uploads.bytes);
+        return 1;
+    }
     LUA_SINVOKE_FOOTER("0");
 }
 

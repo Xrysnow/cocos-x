@@ -1,7 +1,9 @@
 #include "FontRendering.h"
 #include "internal/FontService.h"
 #include "base/Director.h"
+#include "platform/FileUtils.h"
 #include "renderer/Renderer.h"
+#include <algorithm>
 
 namespace cc
 {
@@ -74,6 +76,10 @@ FontCacheStats FontRendering::getStats() const
 {
     return _service->stats();
 }
+FontUploadStats FontRendering::getUploadStats() const
+{
+    return _service->uploadStats();
+}
 void FontRendering::trim()
 {
     _service->trim(*Director::getInstance()->getRenderer());
@@ -112,14 +118,43 @@ std::shared_ptr<FontFace> FontService::face(std::string_view name, Status& statu
     status = Status::Ready;
     if (auto it = _faces.find(name); it != _faces.end())
         return it->second;
-    auto face = std::make_shared<FontFace>();
-    status    = face->open(name);
-    if (status != Status::Ready)
+    if (name.empty())
+    {
+        status = Status::InvalidInput;
+        return {};
+    }
+    auto* files = FileUtils::getInstance();
+    auto data = files->getDataFromFile(name);
+    if (data.isNull() || !data.getSize())
+    {
+        status = files->isFileExist(name) ? Status::UnsupportedFont : Status::FileNotFound;
+        return {};
+    }
+    auto face = this->face({data.getBytes(), size_t(data.getSize())}, status);
+    if (!face)
         return {};
     if (_faces.size() >= 32)
         std::erase_if(
             _faces, [](const auto& item) { return item.second.use_count() == 1 && item.second->sourceIdle(); });
     _faces.emplace(name, face);
+    return face;
+}
+std::shared_ptr<FontFace> FontService::face(std::span<const uint8_t> data, Status& status)
+{
+    // Registration is cold. Compare the immutable bytes, so aliases share a
+    // glyph key and replacing a file cannot change an already registered face.
+    std::erase_if(_memoryFaces, [](const auto& entry) { return entry.expired(); });
+    for (auto& entry : _memoryFaces)
+        if (auto face = entry.lock(); face && std::ranges::equal(data, *face->bytes()))
+        {
+            status = Status::Ready;
+            return face;
+        }
+    auto face = std::make_shared<FontFace>();
+    status = face->open(data);
+    if (status != Status::Ready)
+        return {};
+    _memoryFaces.emplace_back(face);
     return face;
 }
 FontCacheStats FontService::stats() const
@@ -201,9 +236,8 @@ GlyphTicket FontService::submit(const std::vector<GlyphKey>& keys, Priority prio
         if (!seen.insert(key).second)
             continue;
         auto& d = ticket._state->demands.emplace_back();
-        if (auto slot = _atlas.find(key))
+        if (auto slot = lookupRequest(key))
         {
-            ++_hits;
             d              = std::make_shared<Demand>(key);
             d->status      = Status::Ready;
             d->publication = slot->publication;
@@ -294,7 +328,7 @@ void FontService::trim(Renderer& renderer)
     _atlas.collect(renderer, std::chrono::milliseconds(0));
     prune();
 }
-Status FontService::prepare(Renderer& renderer, const std::vector<GlyphKey>& keys)
+Status FontService::prepare(Renderer& renderer, const std::vector<GlyphKey>& keys, bool allowPartial)
 {
     std::set<GlyphAtlas::Lease> pins;
     if (keys.empty())
@@ -310,8 +344,10 @@ Status FontService::prepare(Renderer& renderer, const std::vector<GlyphKey>& key
     GlyphScheduler::Result result;
     const auto& demands = ticket._state->demands;
     auto waiting        = demands.begin();
-    while ((waiting = std::find_if(waiting, demands.end(), [](const auto& d) { return d->status != Status::Ready; })) !=
-               demands.end() &&
+    const auto unfinished = [allowPartial](const auto& d) {
+        return allowPartial ? d->status == Status::Pending : d->status != Status::Ready;
+    };
+    while ((waiting = std::find_if(waiting, demands.end(), unfinished)) != demands.end() &&
            (*waiting)->status == Status::Pending)
     {
         if (!_scheduler.take(result, false))
@@ -324,6 +360,13 @@ Status FontService::prepare(Renderer& renderer, const std::vector<GlyphKey>& key
         publish(renderer, result);
         result = {};
         dispatchDeferred();
+    }
+    if (allowPartial)
+    {
+        // A full page or an unsupported glyph must not hide the successful
+        // uploads in the same batch. Callers inspect individual publications.
+        renderer.flushTextureUploads();
+        return ticket.poll().status;
     }
     auto status = waiting == demands.end() ? Status::Ready : (*waiting)->status;
     if (status == Status::Ready)

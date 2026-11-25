@@ -1,5 +1,5 @@
 #include "RasterGeometry.h"
-#include FT_BBOX_H
+#include FT_OUTLINE_H
 
 namespace cc::font::detail
 {
@@ -140,51 +140,80 @@ void flip(Channels& v)
     for (float& d : v)
         d = -d;
 }
+
+bool setFieldBounds(const Bounds& box, GlyphImage& image)
+{
+    const int pad = int(std::ceil(image.distanceRangePx / 2)) + 1;
+    const double left = std::floor(box.lo.x) - pad, top = std::ceil(box.hi.y) + pad;
+    const double width = std::ceil(box.hi.x) + pad - left, height = top - std::floor(box.lo.y) + pad;
+    if (width > maxImageSide || height > maxImageSide || width <= 0 || height <= 0 ||
+        left < INT32_MIN || left > INT32_MAX || top < INT32_MIN || top > INT32_MAX)
+        return false;
+    image.leftPx = int32_t(left);
+    image.topPx  = int32_t(top);
+    image.width  = uint32_t(width);
+    image.height = uint32_t(height);
+    return true;
+}
 }  // namespace
 
-RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi)
+RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi, bool boundsOnly)
 {
     GlyphImage image;
     image.encoding        = multi ? RasterEncoding::Msdf : RasterEncoding::Sdf;
     image.distanceRangePx = req.rasterPpem26_6 / (64.f * 4);
     if (!slot->outline.n_points)
         return {GlyphStatus::Ready, std::move(image)};
+    // Single-channel SDF layout and rasterization use the same unhinted control box.
+    // If distant control points exceed a page, try the normalized ink bounds below.
+    if (!multi)
+    {
+        if (FT_Outline_Check(&slot->outline))
+            return {GlyphStatus::RasterError};
+        FT_BBox box;
+        FT_Outline_Get_CBox(&slot->outline, &box);
+        const Bounds controls{{box.xMin / 64., box.yMin / 64.}, {box.xMax / 64., box.yMax / 64.}};
+        const bool fits = setFieldBounds(controls, image);
+        if (fits && boundsOnly)
+            return {GlyphStatus::Ready, std::move(image)};
+    }
     Outline outline;
     auto status = prepareBoundary(slot->outline, req, outline);
     if (status != GlyphStatus::Ready)
         return {status};
     std::vector<Edge> edges;
-    Bounds box;
     for (auto& contour : outline)
     {
         if (multi)
             colorEdges(contour);
         for (size_t i = 0; i < contour.size(); ++i)
-        {
-            const Edge& e = edges.emplace_back(
+            edges.emplace_back(
                 contour[i], contour[(i + contour.size() - 1) % contour.size()], contour[(i + 1) % contour.size()]);
-            box.add(e.bounds.lo);
-            box.add(e.bounds.hi);
-        }
     }
-    if (edges.empty())
-        return {GlyphStatus::Ready, std::move(image)};
-    const int pad     = int(std::ceil(image.distanceRangePx / 2)) + 1;
-    const double left = std::floor(box.lo.x) - pad, top = std::ceil(box.hi.y) + pad;
-    const double width = std::ceil(box.hi.x) + pad - left, height = top - std::floor(box.lo.y) + pad;
-    if (width > maxImageSide || height > maxImageSide || width <= 0 || height <= 0 || left < INT32_MIN ||
-        left > INT32_MAX || top < INT32_MIN || top > INT32_MAX)
-        return {GlyphStatus::TooLarge};
-    const Frame frame{int(left), int(top), int(width), int(height), image.distanceRangePx};
+    if (!image.width)
+    {
+        if (edges.empty())
+            return {GlyphStatus::Ready, std::move(image)};
+        Bounds box;
+        for (const auto& edge : edges)
+        {
+            box.add(edge.bounds.lo);
+            box.add(edge.bounds.hi);
+        }
+        if (!setFieldBounds(box, image))
+            return {GlyphStatus::TooLarge};
+    }
+    const Frame frame{image.leftPx, image.topPx, int(image.width), int(image.height), image.distanceRangePx};
     const size_t count = size_t(frame.width) * frame.height;
     if (count * (multi ? sizeof(Channels) + 5 : 1) + edges.size() * sizeof(Edge) > maxWorkBytes)
         return {GlyphStatus::TooLarge};
-    image.width    = frame.width;
-    image.height   = frame.height;
-    image.leftPx   = frame.left;
-    image.topPx    = frame.top;
+    if (boundsOnly)
+        return {GlyphStatus::Ready, std::move(image)};
     image.rowBytes = frame.width * (multi ? 3 : 1);
     image.pixels.resize(size_t(image.rowBytes) * frame.height);
+    // Nonempty source contours can cancel completely. Keep the measured rectangle transparent.
+    if (edges.empty())
+        return {GlyphStatus::Ready, std::move(image)};
     std::vector<Channels> field(multi ? count : 0);
     std::vector<int8_t> signMatches(multi ? count : 0);
     std::vector<uint8_t> inside(tileSize * frame.width);

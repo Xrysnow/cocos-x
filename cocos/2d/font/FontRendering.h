@@ -32,6 +32,10 @@ struct FontCacheStats
     size_t textureBytes{}, stagingBytes{};
     uint64_t cacheHits{}, deduplicatedRequests{}, evictions{}, capacityMisses{};
 };
+struct FontUploadStats
+{
+    uint64_t glyphs{}, bytes{}; // Successfully encoded glyph rectangles, including guard texels.
+};
 struct GlyphProgress
 {
     GlyphStatus status{GlyphStatus::Ready};
@@ -64,6 +68,7 @@ public:
     GlyphStatus configure(const FontCacheConfig&);
     GlyphStatus setWorkerCount(uint32_t count);
     FontCacheStats getStats() const;
+    FontUploadStats getUploadStats() const;
     void trim();
 
 private:
@@ -72,5 +77,6 @@ private:
     std::unique_ptr<font::FontService> _service;
     friend class Director;
     friend class Label;
+    friend class SdfFontSource;
 };
 }  // namespace cc

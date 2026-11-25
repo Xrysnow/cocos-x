@@ -5,6 +5,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <map>
+#include <span>
 
 namespace cc::font
 {
@@ -22,7 +23,9 @@ class FontFace
 {
 public:
     ~FontFace();
-    cc::GlyphStatus open(std::string_view name);
+    FT_Face nativeFace() const { return _face; }
+    const auto& bytes() const { return _bytes; }
+    cc::GlyphStatus open(std::span<const uint8_t> data);
     bool setSize(int32_t size);
     FontMetrics metrics() const;
     uint32_t glyph(char32_t cp) const;

@@ -46,6 +46,7 @@ public:
         Renderer&, const GlyphKey&, GlyphImage&&, const FontCacheConfig&, std::shared_ptr<void> staging);
     void collect(Renderer&, std::chrono::milliseconds ttl);
     void stats(FontCacheStats&) const;
+    FontUploadStats uploads() const { return _account->uploads; }
     bool reduceTo(Renderer&, size_t pages);
     void invalidate();
 
@@ -53,12 +54,13 @@ private:
     using Entries = std::map<GlyphKey, Lease>;
     Entries _entries;
     std::vector<std::shared_ptr<AtlasPage>> _pages;
-    struct Retirement
+    struct Accounting
     {
-        uint32_t count{};
-        size_t bytes{};
+        uint32_t retiringPages{};
+        size_t retiringBytes{};
+        FontUploadStats uploads;
     };
-    std::shared_ptr<Retirement> _retirement = std::make_shared<Retirement>();
+    std::shared_ptr<Accounting> _account = std::make_shared<Accounting>();
     uint64_t _evictions{}, _misses{};
     Entries::iterator evict(Entries::iterator);
     void retireEmpty(Renderer&);

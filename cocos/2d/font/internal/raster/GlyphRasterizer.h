@@ -66,7 +66,7 @@ public:
     virtual RasterResult rasterize(RasterContext&, const RasterRequest&) const = 0;
 
 protected:
-    static RasterResult render(RasterContext&, const RasterRequest&, FontRasterMode);
+    static RasterResult render(RasterContext&, const RasterRequest&, FontRasterMode, bool boundsOnly = false);
 };
 
 class BitmapRasterizer final : public GlyphRasterizer
@@ -77,6 +77,10 @@ public:
 class SdfRasterizer final : public GlyphRasterizer
 {
 public:
+    static RasterResult measure(RasterContext& ctx, const RasterRequest& req)
+    {
+        return render(ctx, req, FontRasterMode::Sdf, true);
+    }
     RasterResult rasterize(RasterContext&, const RasterRequest&) const override;
 };
 class MsdfRasterizer final : public GlyphRasterizer

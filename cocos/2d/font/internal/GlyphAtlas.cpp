@@ -75,11 +75,11 @@ void GlyphAtlas::retireEmpty(Renderer& renderer)
         if (p->used)
             return false;
         const size_t bytes = (p->rgba ? 4u : 1u) * 2048 * 2048;
-        ++_retirement->count;
-        _retirement->bytes += bytes;
-        renderer.retireTexture(std::move(p->texture), [r = _retirement, bytes] {
-            --r->count;
-            r->bytes -= bytes;
+        ++_account->retiringPages;
+        _account->retiringBytes += bytes;
+        renderer.retireTexture(std::move(p->texture), [r = _account, bytes] {
+            --r->retiringPages;
+            r->retiringBytes -= bytes;
         });
         return true;
     });
@@ -98,7 +98,7 @@ void GlyphAtlas::collect(Renderer& renderer, std::chrono::milliseconds ttl)
 }
 bool GlyphAtlas::reduceTo(Renderer& renderer, size_t limit)
 {
-    if (_pages.size() + _retirement->count <= limit)
+    if (_pages.size() + _account->retiringPages <= limit)
         return true;
     // A page can be retired only when every live slot is unleased.
     std::map<AtlasPage*, std::chrono::steady_clock::time_point> cold;
@@ -129,7 +129,7 @@ bool GlyphAtlas::reduceTo(Renderer& renderer, size_t limit)
         cold.erase(chosen);
     }
     retireEmpty(renderer);
-    return _pages.size() + _retirement->count <= limit;
+    return _pages.size() + _account->retiringPages <= limit;
 }
 void GlyphAtlas::invalidate()
 {
@@ -139,10 +139,10 @@ void GlyphAtlas::invalidate()
 void GlyphAtlas::stats(FontCacheStats& s) const
 {
     s.livePages      = uint32_t(_pages.size());
-    s.retiringPages  = _retirement->count;
+    s.retiringPages  = _account->retiringPages;
     s.evictions      = _evictions;
     s.capacityMisses = _misses;
-    s.textureBytes   = _retirement->bytes;
+    s.textureBytes   = _account->retiringBytes;
     for (const auto& p : _pages)
         s.textureBytes += (p->rgba ? 4u : 1u) * 2048 * 2048;
 }
@@ -185,7 +185,7 @@ cc::GlyphStatus GlyphAtlas::publish(
     };
     while (!allocate())
     {
-        if (_pages.size() + _retirement->count < config.maxPages)
+        if (_pages.size() + _account->retiringPages < config.maxPages)
         {
             auto page  = std::make_shared<AtlasPage>();
             page->rgba = rgba;
@@ -225,6 +225,7 @@ cc::GlyphStatus GlyphAtlas::publish(
     slot->top           = image.topPx;
     slot->range         = image.distanceRangePx;
     *slot->publication  = Status::Pending;
+    const size_t uploadBytes = image.pixels.size();
     const bool accepted = renderer.queueTextureUpload(
         slot->page->texture->getBackendTexture(),
         slot->rect.x,
@@ -233,7 +234,12 @@ cc::GlyphStatus GlyphAtlas::publish(
         h,
         std::move(image.pixels),
         slot,
-        [published = slot->publication, staging = std::move(staging)](bool ok) {
+        [published = slot->publication, staging = std::move(staging), account = _account, uploadBytes](bool ok) {
+            if (ok)
+            {
+                ++account->uploads.glyphs;
+                account->uploads.bytes += uploadBytes;
+            }
             *published = ok ? Status::Ready : Status::UploadError;
         });
     if (!accepted)

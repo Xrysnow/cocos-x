@@ -90,7 +90,7 @@ GlyphStatus prepareBoundary(FT_Outline&, const RasterRequest&, Outline&);
 void colorEdges(Contour&);
 RasterResult rasterBitmap(FT_GlyphSlot, const RasterRequest&);
 RasterResult copyBitmap(const FT_Bitmap&, int left, int top);
-RasterResult rasterField(FT_GlyphSlot, const RasterRequest&, bool multiChannel);
+RasterResult rasterField(FT_GlyphSlot, const RasterRequest&, bool multiChannel, bool boundsOnly = false);
 GlyphStatus correctMsdf(
     std::vector<Channels>&, const Frame&, std::span<const Edge>, const RasterRequest&, bool signChanged);
 }  // namespace cc::font::detail

@@ -1,6 +1,5 @@
 #include "FontFace.h"
 #include "raster/RasterGeometry.h"
-#include "platform/FileUtils.h"
 #include FT_FONT_FORMATS_H
 #include <climits>
 #include <cstring>
@@ -19,19 +18,15 @@ FontFace::~FontFace()
     if (_library)
         FT_Done_FreeType(_library);
 }
-cc::GlyphStatus FontFace::open(std::string_view name)
+cc::GlyphStatus FontFace::open(std::span<const uint8_t> data)
 {
-    if (name.empty())
-        return cc::GlyphStatus::InvalidInput;
-    auto* files = FileUtils::getInstance();
-    auto data   = files->getDataFromFile(name);
-    if (data.isNull() || !data.getSize())
-        return files->isFileExist(name) ? cc::GlyphStatus::UnsupportedFont : cc::GlyphStatus::FileNotFound;
-    if (data.getSize() > LONG_MAX)
+    if (data.empty())
+        return cc::GlyphStatus::UnsupportedFont;
+    if (data.size() > LONG_MAX)
         return cc::GlyphStatus::TooLarge;
     if (FT_Init_FreeType(&_library))
         return cc::GlyphStatus::RasterError;
-    _bytes = std::make_shared<FontBytes>(data.getBytes(), data.getBytes() + data.getSize());
+    _bytes = std::make_shared<FontBytes>(data.begin(), data.end());
     if (FT_New_Memory_Face(_library, _bytes->data(), static_cast<FT_Long>(_bytes->size()), 0, &_face))
         return cc::GlyphStatus::UnsupportedFont;
     return detail::validateFace(_face);

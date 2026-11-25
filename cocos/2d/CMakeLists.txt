@@ -53,6 +53,7 @@ set(COCOS_2D_HEADER
     2d/NodeGrid.h
     2d/font/FontTypes.h
     2d/font/FontRendering.h
+    2d/font/SdfFontSource.h
     2d/font/internal/FontFace.h
     2d/font/internal/FontService.h
     2d/font/internal/GlyphAtlas.h
@@ -119,6 +120,7 @@ set(COCOS_2D_SRC
     2d/font/internal/bitmap/Font.cpp
     2d/font/internal/bitmap/FontFNT.cpp
     2d/font/FontRendering.cpp
+    2d/font/SdfFontSource.cpp
     2d/font/internal/FontFace.cpp
     2d/font/internal/GlyphAtlas.cpp
     2d/font/internal/GlyphUpload.cpp
