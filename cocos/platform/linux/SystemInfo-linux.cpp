@@ -350,6 +350,7 @@ ValueMap readOs()
     result["name"] = "Linux";
     result["kernel"] = system.release;
     result["architecture"] = system.machine;
+    result["architectureScope"] = "system";
     result["source"] = "uname";
     if (auto bits = architectureBits(system.machine))
         result["bits"] = bits;

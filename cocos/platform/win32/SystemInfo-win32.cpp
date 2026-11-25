@@ -167,7 +167,15 @@ ValueMap readComputer(bool identifiers) {
                               {"version", L"SystemVersion"}, {"sku", L"SystemSKU"}, {"family", L"SystemFamily"}})
         registryString(out, key, path, name);
     if (identifiers) readIdentifiers(out);
-    out["source"] = "Windows registry / WMI";
+    switch (PowerDeterminePlatformRoleEx(POWER_PLATFORM_ROLE_V2)) {
+    case PlatformRoleDesktop: case PlatformRoleWorkstation: out["chassis"] = "desktop"; break;
+    case PlatformRoleMobile: out["chassis"] = "laptop"; break;
+    case PlatformRoleSlate: out["chassis"] = "tablet"; break;
+    case PlatformRoleEnterpriseServer: case PlatformRoleSOHOServer: case PlatformRolePerformanceServer:
+        out["chassis"] = "server"; break;
+    default: break;
+    }
+    out["source"] = "Windows registry / platform role";
     return out;
 }
 

@@ -13,12 +13,20 @@ void missing(ValueMap& data, const char* field, const char* reason) {
     it->second.asValueMap()[field] = reason;
 }
 
-ValueMap failure(const char* code, const char* context, int64_t nativeCode) {
+ValueMap failure(const char* code, const char* context, int64_t nativeCode, const char* nativeDomain) {
     ValueMap result;
     result["ok"] = false;
     result["error"] = code;
     result["context"] = context;
     result["nativeCode"] = nativeCode;
+    if (nativeDomain) result["nativeDomain"] = nativeDomain;
+    else if (nativeCode) {
+#ifdef _WIN32
+        result["nativeDomain"] = "Win32";
+#else
+        result["nativeDomain"] = "errno";
+#endif
+    }
     return result;
 }
 
@@ -79,7 +87,7 @@ ValueMap SystemInfo::getCpu() {
 
 ValueMap SystemInfo::getOs() {
     return system_info::finish(system_info::readOs(), {"family", "name", "version", "marketingName",
-                                                        "build", "kernel", "architecture", "bits", "source"});
+                                                        "build", "kernel", "architecture", "architectureScope", "bits", "source"});
 }
 
 ValueMap SystemInfo::getMemoryUsage() {
@@ -110,13 +118,13 @@ ValueMap SystemInfo::getDiskSpace(std::string_view path) {
     if (ec) {
         const auto code = ec == std::errc::no_such_file_or_directory ? "notFound"
                         : ec == std::errc::permission_denied ? "permissionDenied" : "ioError";
-        return system_info::failure(code, "filesystem space", ec.value());
+        return system_info::failure(code, "filesystem space", ec.value(), ec.category().name());
     }
     ValueMap result;
-    result["capacity"] = static_cast<uint64_t>(space.capacity);
-    result["free"] = static_cast<uint64_t>(space.free);
-    result["available"] = static_cast<uint64_t>(space.available);
-    return system_info::finish(std::move(result), {});
+    if (space.capacity != uintmax_t(-1)) result["capacity"] = static_cast<uint64_t>(space.capacity);
+    if (space.free != uintmax_t(-1)) result["free"] = static_cast<uint64_t>(space.free);
+    if (space.available != uintmax_t(-1)) result["available"] = static_cast<uint64_t>(space.available);
+    return system_info::finish(std::move(result), {"capacity", "free", "available"});
 }
 
 } // namespace cc

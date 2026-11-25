@@ -14,13 +14,18 @@ public:
     explicit NetworkLease(bool watch) : active(watch) {
         if (active) {
             std::lock_guard lock(mutex);
-            if (users++ == 0) system_info::startNetworkEvents();
+            if (users++ == 0) {
+                // A platform can run out of OS listeners; timed refresh remains available.
+                try { system_info::startNetworkEvents(); } catch (const std::system_error&) {}
+            }
         }
     }
     ~NetworkLease() {
         if (active) {
             std::lock_guard lock(mutex);
-            if (--users == 0) system_info::stopNetworkEvents();
+            if (--users == 0) {
+                try { system_info::stopNetworkEvents(); } catch (const std::system_error&) {}
+            }
         }
     }
 private:

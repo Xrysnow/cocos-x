@@ -218,7 +218,8 @@ ValueMap readOs()
             result["bits"] = Value(32);
         else if (abi == "arm64-v8a" || abi == "x86_64" || abi == "riscv64")
             result["bits"] = Value(64);
-        result["source"] = Value("system");
+        result["architectureScope"] = Value("preferredSystemAbi");
+        result["source"] = Value("Build.VERSION / Build.SUPPORTED_ABIS / uname");
     }
     utsname info{};
     if (uname(&info) == 0)

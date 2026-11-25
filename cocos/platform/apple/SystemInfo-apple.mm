@@ -339,7 +339,7 @@ ValueMap readMemory()
         {
             const auto status = pageStatus != KERN_SUCCESS ? pageStatus : statsStatus;
             if (total == 0)
-                return failure("platformError", "Mach VM statistics", status);
+                return failure("platformError", "Mach VM statistics", status, "Mach");
         }
 #if TARGET_OS_SIMULATOR
         result["source"] = Value("simulatorHost");
@@ -361,7 +361,7 @@ ValueMap readUptime()
     if (auto boot = sysctlValue<timeval>("kern.boottime"); boot && boot->tv_sec > 0)
         result["bootTime"] = Value(static_cast<uint64_t>(boot->tv_sec));
     if (result.empty())
-        return failure("platformError", "mach_timebase_info / kern.boottime", status);
+        return failure("platformError", "mach_timebase_info / kern.boottime", status, "Mach");
 #if TARGET_OS_SIMULATOR
     result["source"] = Value("simulatorHost");
 #endif
