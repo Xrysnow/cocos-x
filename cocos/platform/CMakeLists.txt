@@ -26,6 +26,7 @@ if(ANDROID)
     # refer to target: cocos/platform/android/CMakeLists.txt
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/android/Application-android.cpp
+        platform/android/SystemInfo-android.cpp
         platform/android/Common-android.cpp
         platform/android/GLViewImpl-android.cpp
         platform/android/TextInput-android.cpp
@@ -45,6 +46,7 @@ elseif(WINDOWS)
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/win32/StdC-win32.cpp
+        platform/win32/SystemInfo-win32.cpp
         platform/win32/FileUtils-win32.cpp
         platform/win32/Common-win32.cpp
         platform/win32/Application-win32.cpp
@@ -62,6 +64,7 @@ elseif(APPLE)
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/apple/FileUtils-apple.mm
+        platform/apple/SystemInfo-apple.mm
         platform/apple/AppDirectories-apple.mm
         platform/apple/Device-apple.mm
         )
@@ -138,6 +141,7 @@ elseif(LINUX)
         )
     set(COCOS_PLATFORM_SPECIFIC_SRC
         platform/linux/FileUtils-linux.cpp
+        platform/linux/SystemInfo-linux.cpp
         platform/linux/Common-linux.cpp
         platform/linux/Application-linux.cpp
         platform/linux/Device-linux.cpp
@@ -147,6 +151,8 @@ elseif(LINUX)
 endif()
 
 set(COCOS_PLATFORM_HEADER
+    platform/SystemInfo.h
+    platform/SystemInfoInternal.h
     platform/FileDialog.h
     ${COCOS_PLATFORM_SPECIFIC_HEADER}
     platform/Application.h
@@ -175,6 +181,7 @@ set(COCOS_PLATFORM_HEADER
     )
 
 set(COCOS_PLATFORM_SRC
+    platform/SystemInfo.cpp
     platform/FileDialog.cpp
     ${COCOS_PLATFORM_SPECIFIC_SRC}
     platform/FileReadAdapter.cpp
@@ -190,6 +197,10 @@ set(COCOS_PLATFORM_SRC
     platform/TextInputIndex.cpp
     platform/TextInputService.cpp
     )
+
+if(APPLE)
+    set_property(SOURCE platform/apple/SystemInfo-apple.mm APPEND PROPERTY COMPILE_OPTIONS -fobjc-arc)
+endif()
 
 if(CC_ENABLE_FILE_DIALOG)
     if(WINDOWS)
