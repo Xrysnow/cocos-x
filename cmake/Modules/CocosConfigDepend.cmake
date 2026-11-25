@@ -12,8 +12,6 @@ macro(cocos2dx_depend)
         # use older cmake style on below linux libs
         cocos_find_package(Fontconfig FONTCONFIG REQUIRED)	
         cocos_find_package(GTK3 GTK3 REQUIRED)
-        cocos_find_package(ZLIB ZLIB REQUIRED)
-        cocos_find_package(PNG PNG REQUIRED)
         # cocos_find_package(GLEW GLEW REQUIRED)
         cocos_find_package(OpenGL OPENGL REQUIRED)
         # cocos_find_package(CURL CURL REQUIRED)
@@ -83,9 +81,7 @@ macro(cocos2dx_depend)
                  ${AV_FOUNDATION_LIBRARY}
                  ${WEBKIT_LIBRARY}
                  ${COCOS_APPLE_LIBS}
-                 # Bare names resolve against the iPhoneOS SDK's .tbd stubs;
-                 # absolute /usr/lib paths point at the macOS host.
-                 "z"
+                 # Resolve iconv against the selected iOS SDK's link stub.
                  "iconv"
                  )
         endif()
@@ -101,8 +97,6 @@ macro(use_cocos2dx_libs_depend target)
     if(LINUX)
         cocos_use_pkg(${target} FONTCONFIG)
         cocos_use_pkg(${target} GTK3)
-        cocos_use_pkg(${target} ZLIB)
-        cocos_use_pkg(${target} PNG)
         cocos_use_pkg(${target} GLEW)
         cocos_use_pkg(${target} OPENGL)
         cocos_use_pkg(${target} CURL)
