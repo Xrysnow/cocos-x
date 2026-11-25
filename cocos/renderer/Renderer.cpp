@@ -1241,6 +1241,8 @@ void Renderer::clear(ClearFlag flags, const Color4F& color, float depth, unsigne
         if (bitmask::any(flags, ClearFlag::STENCIL))
             descriptor.clearStencilValue = stencil;
 
+        // A clear can be the first pass after RenderTexture selects its viewport.
+        _commandBuffer->setViewport(_viewport.x, _viewport.y, _viewport.w, _viewport.h);
         _commandBuffer->beginRenderPass(_currentRT, descriptor);
         _commandBuffer->endRenderPass();
     };
