@@ -1,6 +1,8 @@
 #include "platform/SystemInfoInternal.h"
 
 #include <filesystem>
+#include <optional>
+#include <span>
 #include <system_error>
 
 namespace cc {
@@ -45,8 +47,34 @@ ValueMap SystemInfo::getComputer(bool identifiers) {
 }
 
 ValueMap SystemInfo::getCpu() {
-    return system_info::finish(system_info::readCpu(), {"vendor", "model", "physicalCores", "logicalCores",
-                                                         "packages", "clusters", "cores", "flags"});
+    auto result = system_info::readCpu();
+    for (auto group : {"cores", "clusters", "packages"}) {
+        const auto found = result.find(group);
+        if (found == result.end()) continue;
+        auto& entries = found->second.asValueVector();
+        std::optional<std::string> firstClass;
+        bool different = false, complete = !entries.empty();
+        for (auto& entry : entries) {
+            auto& row = entry.asValueMap();
+            auto kind = row.find("type");
+            if (kind == row.end()) kind = row.find("efficiencyClass");
+            if (kind == row.end()) complete = false;
+            else if (!firstClass) firstClass = kind->second.asString();
+            else if (*firstClass != kind->second.asString()) different = true;
+            static constexpr const char* coreFields[]{"id", "packageId", "threads", "logicalCpus", "type", "efficiencyClass",
+                "l1Data", "l1Instruction", "l2", "l3", "baseFrequency", "maxFrequency"};
+            static constexpr const char* groupFields[]{"id", "vendor", "model", "physicalCores", "logicalCores", "flags"};
+            using Fields = std::span<const char* const>;
+            const Fields fields = std::string_view(group) == "cores" ? Fields(coreFields) : Fields(groupFields);
+            for (auto field : fields)
+                if (!row.contains(field) && (!row.contains("missing") || !row.at("missing").asValueMap().contains(field)))
+                    system_info::missing(row, field, "unknown");
+        }
+        if (std::string_view(group) != "packages" && (different || (complete && !result.contains("heterogeneous"))))
+            result["heterogeneous"] = different;
+    }
+    return system_info::finish(std::move(result), {"vendor", "model", "physicalCores", "logicalCores",
+                                                   "packages", "clusters", "cores", "flags", "heterogeneous"});
 }
 
 ValueMap SystemInfo::getOs() {

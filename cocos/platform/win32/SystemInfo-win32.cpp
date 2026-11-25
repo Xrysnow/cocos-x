@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <winternl.h>
 #include <wbemidl.h>
+#include <powrprof.h>
 #include <wrl/client.h>
 #include <algorithm>
 #include <ctime>
@@ -10,6 +11,7 @@
 #pragma comment(lib, "wbemuuid.lib")
 #pragma comment(lib, "oleaut32.lib")
 #pragma comment(lib, "advapi32.lib")
+#pragma comment(lib, "powrprof.lib")
 
 namespace cc::system_info {
 namespace {
@@ -112,11 +114,18 @@ void topology(ValueMap& cpu) {
         }
         offset += item->Size;
     }
+    struct ProcessorPower { ULONG number, maxMhz, currentMhz, limitMhz, maxIdle, currentIdle; };
+    std::vector<ProcessorPower> frequencies(count);
+    const bool haveFrequencies = GetActiveProcessorGroupCount() == 1 && count &&
+        CallNtPowerInformation(ProcessorInformation, nullptr, 0, frequencies.data(),
+            static_cast<ULONG>(frequencies.size() * sizeof(ProcessorPower))) == 0;
     for (auto& core : cores) {
         auto& row = core.asValueMap();
         const auto& ids = row.at("logicalCpus").asValueVector();
         if (ids.empty()) continue;
         const unsigned id = ids.front().asUint();
+        if (haveFrequencies && id < frequencies.size() && frequencies[id].number == id && frequencies[id].maxMhz)
+            row["maxFrequency"] = uint64_t(frequencies[id].maxMhz) * 1000000;
         for (const auto& p : packages) {
             const auto& members = p.asValueMap().at("logicalCpus").asValueVector();
             if (std::find(members.begin(), members.end(), ids.front()) != members.end())
@@ -130,6 +139,19 @@ void topology(ValueMap& cpu) {
                 cache->Level == 1 && cache->Type == CacheInstruction ? "l1Instruction" : nullptr;
             if (key) row[key] = static_cast<uint64_t>(cache->CacheSize);
         }
+    }
+    for (auto& package : packages) {
+        auto& row = package.asValueMap();
+        row["logicalCores"] = row.at("threads");
+        unsigned physical = 0;
+        for (const auto& core : cores) {
+            const auto& info = core.asValueMap();
+            if (info.contains("packageId") && info.at("packageId") == row.at("id")) ++physical;
+        }
+        row["physicalCores"] = physical;
+        if (packages.size() == 1)
+            for (auto key : {"vendor", "model", "flags"})
+                if (cpu.contains(key)) row[key] = cpu.at(key);
     }
     cpu["logicalCores"] = count;
     cpu["physicalCores"] = static_cast<unsigned>(cores.size());
@@ -154,6 +176,7 @@ ValueMap readOs() {
     out["family"] = "Windows";
     out["name"] = "Windows";
     out["source"] = "RtlGetVersion / GetNativeSystemInfo";
+    out["architectureScope"] = "system";
     RTL_OSVERSIONINFOEXW info{};
     info.dwOSVersionInfoSize = sizeof(info);
     using VersionFn = LONG (WINAPI*)(PRTL_OSVERSIONINFOW);
@@ -183,13 +206,13 @@ ValueMap readCpu() {
     auto path = L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
     registryString(out, "model", path, L"ProcessorNameString");
     registryString(out, "vendor", path, L"VendorIdentifier");
-    topology(out);
     ValueVector flags;
     for (auto [feature, name] : {std::pair{PF_XMMI64_INSTRUCTIONS_AVAILABLE, "sse2"},
                                   {PF_SSE3_INSTRUCTIONS_AVAILABLE, "sse3"}, {PF_ARM_NEON_INSTRUCTIONS_AVAILABLE, "neon"},
                                   {PF_AVX_INSTRUCTIONS_AVAILABLE, "avx"}, {PF_AVX2_INSTRUCTIONS_AVAILABLE, "avx2"}})
         if (IsProcessorFeaturePresent(feature)) flags.emplace_back(name);
     out["flags"] = std::move(flags);
+    topology(out);
     out["source"] = "GetLogicalProcessorInformationEx / IsProcessorFeaturePresent / registry";
     return out;
 }

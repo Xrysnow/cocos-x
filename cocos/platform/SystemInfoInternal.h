@@ -16,4 +16,7 @@ ValueMap readNetwork();
 void startNetworkEvents();
 void stopNetworkEvents();
 void networkChanged();
+ValueMap readBattery();
+ValueMap readPowerProfile();
+ValueMap readLimits();
 } // namespace cc::system_info

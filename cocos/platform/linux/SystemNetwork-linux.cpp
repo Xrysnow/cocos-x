@@ -529,8 +529,28 @@ void watchKernel(std::stop_token stop, int wake)
 struct NetworkEvents
 {
     std::mutex mutex;
-    FileDescriptor wake{eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)};
+    std::optional<FileDescriptor> wake;
     std::jthread worker;
+
+    void start()
+    {
+        if (worker.joinable())
+            return;
+        wake.emplace(eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK));
+        if (wake->get() >= 0)
+        {
+            try
+            {
+                worker = std::jthread(watchKernel, wake->get());
+                return;
+            }
+            catch (const std::system_error&)
+            {
+                // The common subscription can still refresh by polling.
+            }
+        }
+        wake.reset();
+    }
 
     void stop()
     {
@@ -538,12 +558,12 @@ struct NetworkEvents
         {
             worker.request_stop();
             uint64_t event = 1;
-            auto written = write(wake.get(), &event, sizeof(event));
-            (void)written;
+            while (write(wake->get(), &event, sizeof(event)) < 0 && errno == EINTR)
+            {
+            }
             worker.join();
-            auto readEvent = read(wake.get(), &event, sizeof(event));
-            (void)readEvent;
         }
+        wake.reset();
     }
 
     ~NetworkEvents() { stop(); }
@@ -639,8 +659,7 @@ void startNetworkEvents()
 {
     auto& state = events();
     std::lock_guard lock(state.mutex);
-    if (!state.worker.joinable() && state.wake.get() >= 0)
-        state.worker = std::jthread(watchKernel, state.wake.get());
+    state.start();
 }
 
 void stopNetworkEvents()

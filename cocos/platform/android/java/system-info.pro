@@ -12,3 +12,8 @@
     static void stopEvents();
     static native void networkChanged();
 }
+
+-keep class org.cocos.lib.CocosSystemPower {
+    static java.lang.String[] battery();
+    static java.lang.String[] profile();
+}

@@ -9,11 +9,13 @@
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #else
+#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #if defined(__APPLE__)
+#include <TargetConditionals.h>
 #include <net/if_dl.h>
 #else
 #include <netpacket/packet.h>
@@ -140,6 +142,9 @@ ValueMap SystemInfo::getNetworkInterfaces(bool addresses) {
 #endif
     ValueMap result;
     result["interfaces"] = std::move(interfaces);
+#if defined(__APPLE__) && TARGET_OS_SIMULATOR
+    result["source"] = "simulatorHost";
+#endif
     return system_info::finish(std::move(result), {});
 }
 } // namespace cc
