@@ -1,3 +1,4 @@
+#include "platform/DisplayInternal.h"
 /****************************************************************************
 Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2013-2016 Chukong Technologies Inc.
@@ -181,44 +182,6 @@ const std::string GLViewImpl::EVENT_WINDOW_UNFOCUSED = "glview_window_unfocused"
 
 ////////////////////////////////////////////////////
 
-static GLFWmonitor* getCurrentMonitor(GLFWwindow* window) {
-#ifdef CC_GLFW_WAYLAND
-    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
-    {
-        // A Wayland client cannot query its window position.
-        auto* monitor = glfwGetWindowMonitor(window);
-        return monitor ? monitor : glfwGetPrimaryMonitor();
-    }
-#endif
-    int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-
-    int windowX, windowY, windowWidth, windowHeight;
-    glfwGetWindowPos(window, &windowX, &windowY);
-    glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-    const auto windowCenterX = windowX + windowWidth * 0.5f;
-    const auto windowCenterY = windowY + windowHeight * 0.5f;
-
-    for (int i = 0; i < monitorCount; i++) {
-        int monitorX, monitorY;
-        glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
-
-        int monitorWidth, monitorHeight;
-        glfwGetMonitorWorkarea(monitors[i],
-            &monitorX, &monitorY,
-            &monitorWidth, &monitorHeight);
-
-        if (windowCenterX >= monitorX &&
-            windowCenterX < (monitorX + monitorWidth) &&
-            windowCenterY >= monitorY &&
-            windowCenterY < (monitorY + monitorHeight)) {
-            return monitors[i];
-        }
-    }
-    return glfwGetPrimaryMonitor();
-}
-
 struct keyCodeItem
 {
     int glfwKeyCode;
@@ -396,6 +359,7 @@ GLViewImpl::~GLViewImpl()
     detail::destroyMacWindowBridge(_macBridge);
     _macBridge = nullptr;
 #endif
+    display::endSession();
     glfwTerminate();
 }
 
@@ -999,7 +963,11 @@ void GLViewImpl::setFullscreen(int w, int h, int refreshRate, bool exclusive)
 {
     auto monitor = glfwGetWindowMonitor(_mainWindow);
     if (!monitor)
-        monitor = getCurrentMonitor(_mainWindow);
+    {
+        if (auto info = getCurrentDisplayInfo())
+            monitor = resolveDisplayMonitor(info->id);
+        if (!monitor) monitor = glfwGetPrimaryMonitor();
+    }
     if (!monitor)
         return;
     this->setFullscreen(monitor, w, h, refreshRate, exclusive);
@@ -1089,6 +1057,8 @@ void GLViewImpl::setFullscreen(GLFWmonitor* monitor, int w, int h, int refreshRa
         SetDeviceFullScreenExclusiveMode(true);
 }
 
+namespace { std::optional<DisplayRect> placementRect(const GLViewImpl&); }
+
 void GLViewImpl::setWindowed(int width, int height)
 {
     if (width <= 0 || height <= 0)
@@ -1109,13 +1079,10 @@ void GLViewImpl::setWindowed(int width, int height)
         if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND)
 #endif
         {
-            auto* monitor = getCurrentMonitor(_mainWindow);
-            const auto* videoMode = monitor ? glfwGetVideoMode(monitor) : nullptr;
-            if (videoMode)
+            if (auto rect = placementRect(*this))
             {
-                glfwGetMonitorPos(monitor, &xpos, &ypos);
-                xpos += (videoMode->width - windowWidth) / 2;
-                ypos += (videoMode->height - windowHeight) / 2;
+                xpos = rect->x + (rect->width - windowWidth) / 2;
+                ypos = rect->y + (rect->height - windowHeight) / 2;
             }
             else
             {
@@ -1141,26 +1108,27 @@ int GLViewImpl::getMonitorCount() const
     return count;
 }
 
-Vec2 GLViewImpl::getMonitorSize() const
+namespace {
+std::optional<DisplayRect> placementRect(const GLViewImpl& view)
 {
-    GLFWmonitor* monitor = getMonitor();
-    if (monitor)
-    {
-        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
-        if (videoMode)
-            return { (float)videoMode->width, (float)videoMode->height };
-    }
-    return Vec2::ZERO;
+    auto info = view.getCurrentDisplayInfo();
+    if (!info) info = cc::Display::getPrimaryDisplayInfo();
+    if (!info) return {};
+    return info->availableGeometry ? info->availableGeometry : info->geometry;
+}
 }
 
-GLFWmonitor* GLViewImpl::getMonitor() const
+void GLViewImpl::centerWindowOnDisplay()
 {
-    GLFWmonitor* monitor = getCurrentMonitor(_mainWindow);
-    if (!monitor)
-    {
-        monitor = glfwGetWindowMonitor(getWindow());
+    if (!_mainWindow || isFullscreen()) return;
+#ifdef CC_GLFW_WAYLAND
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) return;
+#endif
+    if (auto rect = placementRect(*this)) {
+        int w, h;
+        glfwGetWindowSize(_mainWindow, &w, &h);
+        glfwSetWindowPos(_mainWindow, rect->x + (rect->width - w) / 2, rect->y + (rect->height - h) / 2);
     }
-    return monitor;
 }
 
 void GLViewImpl::setFrameSize(float width, float height)
@@ -1408,7 +1376,7 @@ void GLViewImpl::onGLFWWindowPosCallback(GLFWwindow* window, int x, int y)
     Director::getInstance()->setViewport();
     if (_monitor)
     {
-        _monitor = getCurrentMonitor(_mainWindow);
+        _monitor = glfwGetWindowMonitor(window);
     }
 }
 

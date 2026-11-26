@@ -76,6 +76,7 @@ public:
 
     bool windowShouldClose() override;
     void pollEvents() override;
+    std::optional<DisplayInfo> getCurrentDisplayInfo() const override;
     GLFWwindow* getWindow() const { return _mainWindow; }
 
     /* If exclusive fullscreen */
@@ -102,8 +103,8 @@ public:
     void setWindowed(int width, int height);
 
     int getMonitorCount() const;
-    Vec2 getMonitorSize() const;
-    GLFWmonitor* getMonitor() const;
+    static GLFWmonitor* resolveDisplayMonitor(DisplayId id);
+    void centerWindowOnDisplay();
 
     /* override functions */
     virtual bool isOpenGLReady() override;

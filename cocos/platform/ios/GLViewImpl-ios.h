@@ -63,6 +63,7 @@ public:
     virtual bool isRetinaDisplay() const override { return getContentScaleFactor() == 2.0; }
 
     /** returns the objective-c CCEAGLView instance */
+    std::optional<DisplayInfo> getCurrentDisplayInfo() const override;
     virtual void* getEAGLView() const override { return _eaglView; }
 
     // overrides

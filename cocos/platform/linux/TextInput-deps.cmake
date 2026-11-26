@@ -1,4 +1,6 @@
 if(GLFW_BUILD_X11)
+    find_package(X11 REQUIRED COMPONENTS Xrandr)
+    target_link_libraries(${COCOS_CORE_LIB} PRIVATE X11::X11 X11::Xrandr)
     # This adapter needs the same private platform definitions as GLFW itself.
     target_sources(glfw PRIVATE "${CMAKE_CURRENT_LIST_DIR}/TextInputX11-glfw.c")
     target_sources(${COCOS_CORE_LIB} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/TextInput-x11.cpp")

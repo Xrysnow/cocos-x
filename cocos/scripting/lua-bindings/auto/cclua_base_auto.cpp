@@ -1965,6 +1965,37 @@ extern int luaReg_Core_ccEventKeyboard(lua_State* lua_S);
 extern int luaReg_Core_ccComponent(lua_State* lua_S);
 extern int luaReg_Core_ccNode(lua_State* lua_S);
 extern int luaReg_Core_ccScene(lua_State* lua_S);
+int lua_cc_Display_getAllDisplayInfo(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Display", "cc.Display:getAllDisplayInfo");
+	LUA_TRY_INVOKE_R(0, &cc::Display::getAllDisplayInfo);
+	LUA_SINVOKE_FOOTER("0");
+}
+int lua_cc_Display_getDisplayInfo(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Display", "cc.Display:getDisplayInfo");
+	LUA_TRY_INVOKE_R(1, &cc::Display::getDisplayInfo);
+	LUA_SINVOKE_FOOTER("1");
+}
+int lua_cc_Display_getPrimaryDisplayInfo(lua_State* lua_S)
+{
+	LUA_SINVOKE_HEADER("cc.Display", "cc.Display:getPrimaryDisplayInfo");
+	LUA_TRY_INVOKE_R(0, &cc::Display::getPrimaryDisplayInfo);
+	LUA_SINVOKE_FOOTER("0");
+}
+int luaReg_Core_ccDisplay(lua_State* lua_S)
+{
+	LUA_ENTRY("cc");
+	LUA_CLS_DEF(cc::Display, "Display", "cc.Display",
+		nullptr, nullptr);
+	LUA_METHOD("getAllDisplayInfo", lua_cc_Display_getAllDisplayInfo);
+	LUA_METHOD("getDisplayInfo", lua_cc_Display_getDisplayInfo);
+	LUA_METHOD("getPrimaryDisplayInfo", lua_cc_Display_getPrimaryDisplayInfo);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+
 extern int luaReg_Core_ccGLView(lua_State* lua_S);
 extern int luaReg_Core_ccDirector(lua_State* lua_S);
 extern int luaReg_Core_ccTimer(lua_State* lua_S);
@@ -2241,6 +2272,7 @@ int register_all_cc_base(lua_State* lua_S)
 	luaReg_Core_ccComponent(lua_S);
 	luaReg_Core_ccNode(lua_S);
 	luaReg_Core_ccScene(lua_S);
+	luaReg_Core_ccDisplay(lua_S);
 	luaReg_Core_ccGLView(lua_S);
 	luaReg_Core_ccDirector(lua_S);
 	luaReg_Core_ccTimer(lua_S);

@@ -52,7 +52,25 @@ final class CocosRenderHost implements Choreographer.FrameCallback {
     private boolean callbackScheduled;
     private long lastFrameTime;
 
+    private final java.lang.ref.WeakReference<Activity> activity;
+
+    // Sample the identity and the owning surface together on the engine thread.
+    static int[] currentDisplayBinding() {
+        final CocosRenderHost host = engineOwner;
+        if (host == null || !host.isCurrent() || !host.surfaceAlive || !host.ready) return null;
+        final long generation = host.generation;
+        final Activity owner = host.activity.get();
+        if (owner == null || owner != CocosEngine.getActivity()) return null;
+        final android.view.Display display = android.os.Build.VERSION.SDK_INT >= 30
+                ? owner.getDisplay() : owner.getWindowManager().getDefaultDisplay();
+        if (display == null || !display.isValid() || !host.isCurrent() || !host.surfaceAlive
+                || !host.ready || generation != host.generation || generation != host.attachedGeneration) return null;
+        return new int[]{display.getDisplayId(), (int)host.session, (int)(host.session >>> 32),
+                (int)generation, (int)(generation >>> 32)};
+    }
+
     CocosRenderHost(Activity activity) {
+        this.activity = new java.lang.ref.WeakReference<>(activity);
         final CocosRenderHost previous = activeHost;
         if (previous != null) {
             previous.ready = false;

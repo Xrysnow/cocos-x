@@ -34,6 +34,12 @@ int lua_cc_GLView_getContentScaleFactor(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &cc::GLView::getContentScaleFactor);
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_cc_GLView_getCurrentDisplayInfo(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("cc.GLView", "cc.GLView:getCurrentDisplayInfo");
+	LUA_TRY_INVOKE_R(0, &cc::GLView::getCurrentDisplayInfo);
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_cc_GLView_getDesignResolutionSize(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("cc.GLView", "cc.GLView:getDesignResolutionSize");
@@ -230,6 +236,7 @@ int luaReg_Core_ccGLView(lua_State* lua_S)
 	LUA_METHOD("endToLua", lua_cc_GLView_endToLua);
 	LUA_METHOD("getAllTouches", lua_cc_GLView_getAllTouches);
 	LUA_METHOD("getContentScaleFactor", lua_cc_GLView_getContentScaleFactor);
+	LUA_METHOD("getCurrentDisplayInfo", lua_cc_GLView_getCurrentDisplayInfo);
 	LUA_METHOD("getDesignResolutionSize", lua_cc_GLView_getDesignResolutionSize);
 	LUA_METHOD("getFrameSize", lua_cc_GLView_getFrameSize);
 	LUA_METHOD("getFrameZoomFactor", lua_cc_GLView_getFrameZoomFactor);

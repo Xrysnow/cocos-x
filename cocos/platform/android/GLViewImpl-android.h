@@ -46,6 +46,7 @@ public:
     virtual Rect getSafeAreaRect() const override;
 
     // Engine-thread query of B2's physical Surface size, zero while detached.
+    std::optional<DisplayInfo> getCurrentDisplayInfo() const override;
     Size getNativeSurfaceSize() const;
 
     void attachTextInputWindow();

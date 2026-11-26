@@ -13,3 +13,4 @@
 #include "detail/cocos/assets_manager.hpp"
 #include "detail/cocos/app_directories.hpp"
 #include "detail/binding_macros.hpp"
+#include "detail/cocos/display.hpp"

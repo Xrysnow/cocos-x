@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "base/ccTypes.h"
 #include "base/EventTouch.h"
 #include "platform/TextInputService.h"
+#include "platform/Display.h"
 
 #include <vector>
 
@@ -122,6 +123,8 @@ public:
      * @lua NA
      */
     virtual ~GLView();
+
+    virtual std::optional<DisplayInfo> getCurrentDisplayInfo() const { return std::nullopt; }
 
     /** Force destroying EGL view, subclass must implement this method.
      *

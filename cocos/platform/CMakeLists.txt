@@ -30,6 +30,7 @@ if(ANDROID)
         platform/android/SystemNetwork-android.cpp
         platform/android/SystemPower-android.cpp
         platform/android/Common-android.cpp
+            platform/android/Display-android.cpp
         platform/android/GLViewImpl-android.cpp
         platform/android/TextInput-android.cpp
         platform/android/AndroidPackageReadAdapter.cpp
@@ -53,6 +54,7 @@ elseif(WINDOWS)
         platform/win32/SystemPower-win32.cpp
         platform/win32/FileUtils-win32.cpp
         platform/win32/Common-win32.cpp
+            platform/win32/Display-win32.cpp
         platform/win32/Application-win32.cpp
         platform/win32/Device-win32.cpp
         platform/win32/inet_pton_mingw.cpp
@@ -92,6 +94,7 @@ elseif(APPLE)
             platform/mac/GLViewImpl-desktop-mac.mm
             platform/mac/TextInput-mac.mm
             platform/mac/Common-mac.mm
+            platform/mac/Display-mac.mm
             platform/mac/Device-mac.mm
             )
         # Keep the shared implementation pure C++; native ownership stays in MRC.
@@ -116,6 +119,7 @@ elseif(APPLE)
             ${COCOS_PLATFORM_SPECIFIC_SRC}
             platform/ios/Application-ios.mm
             platform/ios/Common-ios.mm
+            platform/ios/Display-ios.mm
             platform/ios/Device-ios.mm
             platform/ios/DirectorCaller-ios.mm
             platform/ios/EAGLView-ios.mm
@@ -151,6 +155,7 @@ elseif(LINUX)
         platform/linux/SystemNetwork-linux.cpp
         platform/linux/SystemPower-linux.cpp
         platform/linux/Common-linux.cpp
+            platform/linux/Display-linux.cpp
         platform/linux/Application-linux.cpp
         platform/linux/Device-linux.cpp
         platform/desktop/GLViewImpl-desktop.cpp
@@ -159,6 +164,7 @@ elseif(LINUX)
 endif()
 
 set(COCOS_PLATFORM_HEADER
+    platform/Display.h
     platform/SystemInfo.h
     platform/SystemInfoInternal.h
     platform/FileDialog.h
@@ -189,6 +195,7 @@ set(COCOS_PLATFORM_HEADER
     )
 
 set(COCOS_PLATFORM_SRC
+    platform/Display.cpp
     platform/SystemInfo.cpp
     platform/SystemInterfaces.cpp
     platform/SystemNetwork.cpp

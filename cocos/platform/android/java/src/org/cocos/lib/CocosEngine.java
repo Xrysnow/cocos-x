@@ -99,7 +99,6 @@ public class CocosEngine {
     private static volatile int[] sSafeInsets = new int[4];
     private static volatile int[] sCornerRadii = new int[4];
     private static volatile int sDPI = -1;
-    private static volatile int[] sDisplayResolution = new int[2];
     private static volatile boolean sWindowVisible;
     private static volatile boolean sImeVisible;
     private static volatile ClipboardManager sClipboard;
@@ -151,7 +150,6 @@ public class CocosEngine {
         sActivityVisible = false;
         sSafeInsets = new int[4];
         sCornerRadii = new int[4];
-        sDisplayResolution = new int[2];
         sWindowVisible = false;
         sImeVisible = false;
         // Acquire services on the UI thread; clipboard calls themselves use Binder
@@ -200,7 +198,6 @@ public class CocosEngine {
         sActivity = null;
         sSafeInsets = new int[4];
         sCornerRadii = new int[4];
-        sDisplayResolution = new int[2];
         sWindowVisible = false;
         sImeVisible = false;
         sClipboard = null;
@@ -272,10 +269,44 @@ public class CocosEngine {
         return sActivityVisible;
     }
 
-    /** Nonblocking UI snapshots. Physical Surface size is owned by native RenderHost. */
-    public static int[] getDisplayResolution() {
-        return sDisplayResolution.clone();
+    private static android.hardware.display.DisplayManager displayManager() {
+        Activity activity = sActivity;
+        return activity == null ? null : activity.getSystemService(android.hardware.display.DisplayManager.class);
     }
+
+    public static int[] displayIds() {
+        android.hardware.display.DisplayManager manager = displayManager();
+        if (manager == null) return null;
+        Display[] displays = manager.getDisplays();
+        // A success marker distinguishes an empty enumeration from a failed JNI call.
+        int[] ids = new int[displays.length + 1];
+        for (int i = 0; i < displays.length; i++) ids[i + 1] = displays[i].getDisplayId();
+        return ids;
+    }
+
+    public static int[] currentDisplayBinding() { return CocosRenderHost.currentDisplayBinding(); }
+
+    public static String displayName(int id) {
+        android.hardware.display.DisplayManager manager = displayManager();
+        Display display = manager == null ? null : manager.getDisplay(id);
+        return display == null ? "" : display.getName();
+    }
+
+    public static int[] displayModeInfo(int id) {
+        Activity activity = sActivity;
+        android.hardware.display.DisplayManager manager = displayManager();
+        Display display = manager == null ? null : manager.getDisplay(id);
+        if (activity == null || display == null || !display.isValid()) return null;
+        Display.Mode mode = display.getMode();
+        int rotation = display.getRotation();
+        boolean swap = rotation == android.view.Surface.ROTATION_90 || rotation == android.view.Surface.ROTATION_270;
+        DisplayMetrics metrics = activity.createDisplayContext(display).getResources().getDisplayMetrics();
+        return display.isValid() ? new int[]{
+                swap ? mode.getPhysicalHeight() : mode.getPhysicalWidth(),
+                swap ? mode.getPhysicalWidth() : mode.getPhysicalHeight(),
+                Float.floatToIntBits(mode.getRefreshRate()), Float.floatToIntBits(metrics.density), metrics.densityDpi} : null;
+    }
+
 
     public static boolean isWindowVisible() {
         return sActivity != null && sActivityVisible && sWindowVisible;
@@ -747,10 +778,6 @@ public class CocosEngine {
                 && cutoutMode == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS));
         final View decor = window == null ? null : window.getDecorView();
         sWindowVisible = decor != null && decor.isShown() && decor.getWindowVisibility() == View.VISIBLE;
-        final Display display = decor == null ? null : decor.getDisplay();
-        final DisplayMetrics displayMetrics = new DisplayMetrics();
-        if (display != null) display.getRealMetrics(displayMetrics);
-        sDisplayResolution = new int[]{displayMetrics.widthPixels, displayMetrics.heightPixels};
         final WindowInsets insets = currentInsets != null ? currentInsets
                 : Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && decor != null ? decor.getRootWindowInsets() : null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets != null) {

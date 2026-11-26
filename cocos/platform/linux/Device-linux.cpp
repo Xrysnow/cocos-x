@@ -86,7 +86,7 @@ int Device::getDPI()
     static int dpi = -1;
     if (dpi == -1)
     {
-        Display* dpy;
+        ::Display* dpy;
         char* displayname = NULL;
         int scr           = 0; /* Screen number */
         dpy               = XOpenDisplay(displayname);
