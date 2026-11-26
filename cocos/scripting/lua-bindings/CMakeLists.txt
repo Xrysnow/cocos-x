@@ -10,6 +10,7 @@ set(lua_bindings_manual_headers
     manual/LuaBasicConversions.h
     manual/gamepad/cclua_gamepad.hpp
     manual/gamepad/cclua_gamepad_conversions.hpp
+    manual/cclua_system_info_conversions.hpp
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
     manual/lua_conversion/detail/base.hpp
@@ -79,6 +80,7 @@ set(lua_bindings_manual_files
 
 set(lua_bindings_auto_headers
     auto/cclua_gamepad_auto.hpp
+    auto/cclua_system_info_auto.hpp
     auto/cclua_3d_auto.hpp
     auto/cclua_geometry_auto.hpp
     auto/cclua_base_auto.hpp
@@ -92,6 +94,7 @@ set(lua_bindings_auto_headers
 
 set(lua_bindings_auto_files
     auto/cclua_gamepad_auto.cpp
+    auto/cclua_system_info_auto.cpp
     auto/cclua_3d_auto.cpp
     auto/cclua_geometry_auto.cpp
     auto/cclua_base_auto.cpp
