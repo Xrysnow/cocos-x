@@ -492,6 +492,7 @@ input::GamepadService& Director::getGamepads() const
 {
     return *_gamepads;
 }
+haptics::HapticService& Director::getHaptics() const { return _gamepads->getHaptics(); }
 
 void Director::updateGamepadFocus()
 {
@@ -1054,6 +1055,7 @@ void Director::restart()
 void Director::reset()
 {
     _gamepads->setFocused(false);
+    _gamepads->resetHapticScopes();
     dialog::stopSession();
     if (_openGLView)
         _openGLView->getTextInputService().reset();
@@ -1277,6 +1279,7 @@ void Director::resume()
 #endif
 
     _paused    = false;
+    updateGamepadFocus();
     _deltaTime = 0;
     // fix issue #3509, skip one fps to avoid incorrect time calculation.
     setNextDeltaTimeZero(true);
@@ -1587,6 +1590,7 @@ void Director::startAnimation(SetIntervalReason reason)
     _lastUpdate = std::chrono::steady_clock::now();
 
     _invalid = false;
+    updateGamepadFocus();
 
     _cocos2d_thread_id = std::this_thread::get_id();
 

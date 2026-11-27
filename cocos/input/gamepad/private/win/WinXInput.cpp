@@ -19,6 +19,7 @@ using Clock = std::chrono::steady_clock;
 using namespace std::chrono_literals;
 constexpr auto pollConnected = 4ms;
 constexpr auto pollEmpty = 1s;
+constexpr auto outputRetry = 40ms;
 constexpr std::size_t maxOutputCommands = 64;
 constexpr std::array<WORD, 10> buttonMasks{
     XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y,
@@ -104,6 +105,7 @@ EndpointDescriptor describe(XInputApi& api, DWORD index)
         const bool rumble = (caps.Flags & XINPUT_CAPS_FFB_SUPPORTED) != 0 ||
                             caps.Vibration.wLeftMotorSpeed != 0 || caps.Vibration.wRightMotorSpeed != 0;
         result.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble), rumble);
+        result.capabilities.acknowledgedBodyStop = rumble;
         if (caps.Flags & XINPUT_CAPS_WIRELESS)
             result.link = Link::Wireless;
     }
@@ -240,7 +242,7 @@ public:
                 return Error::Disconnected;
             if (!_active && rumble)
                 return Error::Busy;
-            if (_commands.size() >= maxOutputCommands)
+            if (_commands.size() >= maxOutputCommands + (stop ? outputStopReserve : 0))
                 return Error::QueueFull;
             _commands.push_back({key, command, _outputEpoch});
         }
@@ -252,6 +254,7 @@ private:
     struct Slot {
         std::uint64_t generation = 0, cursor = 0;
         bool connected = false;
+        bool neutralConfirmed = false;
         DWORD packet = 0;
         State state;
         Power power;
@@ -305,6 +308,7 @@ private:
             return;
         slot.stopDue = {};
         slot.connected = false;
+        slot.neutralConfirmed = false;
         publishGeneration(index, false);
         if (notify)
             _sink->detached(key(index));
@@ -315,8 +319,10 @@ private:
         auto& slot = _slots[index];
         if (slot.stopDue != Clock::time_point{})
         {
-            _api->vibrate(index, {});
-            slot.stopDue = {};
+            const auto status = xinputError(_api->vibrate(index, {}));
+            slot.neutralConfirmed = status == Error::None;
+            slot.stopDue = status == Error::None || status == Error::Disconnected
+                ? Clock::time_point{} : Clock::now() + outputRetry;
         }
     }
 
@@ -340,6 +346,7 @@ private:
         {
             stopMotor(index);
             slot.connected = true;
+            slot.neutralConfirmed = false;
             ++slot.generation;
             slot.cursor = 0;
             slot.packet = input.dwPacketNumber;
@@ -402,20 +409,27 @@ private:
                 currentEpoch = _outputEpoch;
                 active = _active && !_stopping;
             }
-            const auto* rumble = std::get_if<Rumble>(&command.effect.command);
-            if (rumble && (!active || currentEpoch != command.epoch))
+            if (!command.effect.canApply() ||
+                (std::holds_alternative<Rumble>(command.effect.command) && (!active || currentEpoch != command.epoch)))
                 result = Error::Busy;
             else
             {
+                const auto operation = command.effect.commandAt(nowNs());
+                const auto* rumble = std::get_if<Rumble>(&operation);
+                const auto start = Clock::now();
                 XINPUT_VIBRATION value{};
                 if (rumble)
                 {
                     const auto motor = [](float level) { return static_cast<WORD>(level * 65535.f + 0.5f); };
                     value = {motor(rumble->low), motor(rumble->high)};
                 }
-                result = xinputError(_api->vibrate(index, value));
+                const bool neutral = value.wLeftMotorSpeed == 0 && value.wRightMotorSpeed == 0;
+                // An earlier successful worker stop is valid until another
+                // write or a change of endpoint generation.
+                result = neutral && slot.neutralConfirmed ? Error::None : xinputError(_api->vibrate(index, value));
+                slot.neutralConfirmed = neutral && result == Error::None;
                 if (result == Error::None)
-                    slot.stopDue = rumble ? Clock::now() + rumble->duration : Clock::time_point{};
+                    slot.stopDue = neutral ? Clock::time_point{} : start + rumble->duration;
                 else if (result == Error::Disconnected)
                     close(index, true);
             }

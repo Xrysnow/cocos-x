@@ -18,11 +18,11 @@ public:
     RawBaseline baseline() const override { return {_raw, _cursor, {}}; }
     AttachedEndpoint snapshot() override;
     void setSensor(Sensor sensor, bool enabled) override;
-    Error submit(const OutputCommand& command) override;
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate = {}) override;
     Error startWaveform() override;
     void neutral() override;
     void tick(std::uint64_t now, bool active) override;
-    bool needsPolling() const override { return _output.hasTimedRumble(); }
+    bool needsPolling() const override { return _resetOutput || _output.hasTimedRumble(); }
 
 private:
     LinuxSonyHid(int fd, bool writable, SonyHidModel model, DualSenseTransport transport, EndpointKey key);
@@ -31,7 +31,7 @@ private:
     int _fd;
     bool _writable, _attached = false, _hasOutput = false, _enableRequested = false;
     bool _releaseLights;
-    bool _waveformMode = false;
+    bool _waveformMode = false, _resetOutput = false;
     std::string _association;
     DualSenseTransport _transport;
     EndpointKey _key;

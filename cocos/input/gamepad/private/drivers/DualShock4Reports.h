@@ -32,8 +32,8 @@ private:
 
 class DualShock4Output {
 public:
-    bool apply(const OutputCommand& command, std::uint64_t now);
-    bool expire(std::uint64_t now);
+    bool apply(const OutputCommand& command, std::uint64_t now, bool cancelBody = false);
+    bool expire(std::uint64_t now, bool cancelBody = false);
     bool hasTimedRumble() const noexcept { return _expires.has_value(); }
     std::span<const std::uint8_t> encode(DualShock4Transport transport, unsigned usbLength = 32,
                                          bool enableOnly = false);

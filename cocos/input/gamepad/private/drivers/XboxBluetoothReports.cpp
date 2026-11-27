@@ -313,20 +313,23 @@ void XboxRumbleState::Pair::set(float firstStrength, float secondStrength,
 
 bool XboxRumbleState::Pair::expire(std::uint64_t time)
 {
-    if (!deadline || *deadline > time)
+    if (!deadline || (*deadline > time && bodyGateOpen(gate)))
         return false;
     *this = {};
     return true;
 }
 
-bool XboxRumbleState::apply(const OutputCommand& command, std::uint64_t time)
+bool XboxRumbleState::apply(const OutputCommand& command, std::uint64_t time, const NativeBodyGate& gate)
 {
     if (const auto* body = std::get_if<Rumble>(&command))
     {
         if (!validRumble(body->low, body->high, body->duration))
             return false;
         expire(time);
+        if (!bodyGateOpen(gate))
+            return false;
         _body.set(body->low, body->high, body->duration, time);
+        _body.gate = _body.deadline ? gate : NativeBodyGate{};
         return true;
     }
     if (const auto* triggers = std::get_if<TriggerRumble>(&command))

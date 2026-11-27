@@ -49,6 +49,7 @@ public:
             queue.drain(batch);
             builder.consume(batch);
         }
+        output.publishBodyRoutes();
     }
 
     bool stage(std::shared_ptr<MappingDatabase> database)
@@ -86,6 +87,9 @@ GamepadService::GamepadService(std::unique_ptr<GamepadBackend> backend, std::siz
     : _impl(std::make_unique<Impl>(std::move(backend), reports, controls, startMode)) {}
 
 GamepadService::~GamepadService() = default;
+
+haptics::HapticService& GamepadService::getHaptics() const { return _impl->output.hapticsService(); }
+void GamepadService::resetHapticScopes() { _impl->output.resetScopes(); }
 
 Frame GamepadService::frame() const noexcept
 {

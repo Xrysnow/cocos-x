@@ -189,6 +189,7 @@ void LinuxSwitchHid::receive(std::span<const std::uint8_t> packet, ReportSink& s
     {
         auto& caps = _descriptor.capabilities;
         caps.features.set(static_cast<unsigned>(Feature::BodyRumble));
+        caps.acknowledgedBodyStop = true;
         caps.features.set(static_cast<unsigned>(Feature::PlayerLights));
         caps.playerLightMask = 0x0f;
         for (auto sensor : {Sensor::Accel, Sensor::Gyro})
@@ -260,7 +261,8 @@ void LinuxSwitchHid::updateImu(std::uint64_t now)
     }
     if (_imuAttemptsLeft && now >= _imuAt)
     {
-        if (write(_output.subcommand(imuRequest(enabled), _motors)))
+        const auto motors = bodyActive(now) ? _motors : SwitchNeutralRumble;
+        if (write(_output.subcommand(imuRequest(enabled), motors)))
             _imuWritten = enabled;
         --_imuAttemptsLeft;
         _imuAt = now + replyTimeout;
@@ -281,7 +283,7 @@ void LinuxSwitchHid::setSensor(Sensor sensor, bool enabled)
         _sensors.set(static_cast<unsigned>(sensor), enabled);
 }
 
-Error LinuxSwitchHid::submit(const OutputCommand& command)
+Error LinuxSwitchHid::submit(const OutputCommand& command, const NativeBodyGate& gate)
 {
     if (!_attached)
         return Error::Unsupported;
@@ -292,31 +294,39 @@ Error LinuxSwitchHid::submit(const OutputCommand& command)
     const bool stopBody = stop && (stop->channel == Channel::All || stop->channel == Channel::Body);
     const bool stopLights = stop && (stop->channel == Channel::All || stop->channel == Channel::Lights);
     const auto* rumble = std::get_if<Rumble>(&command);
+    const auto* lights = std::get_if<PlayerLights>(&command);
+    if (!rumble && !lights && !stopBody && !stopLights)
+        return Error::Unsupported;
+    if (rumble && !bodyGateOpen(gate))
+        return Error::Busy;
+    const bool expired = _rumbleEnd && !bodyActive(now);
     const auto motors = rumble ? encodeSwitchRumble(_model, rumble->low, rumble->high) :
-        stopBody ? SwitchNeutralRumble : _motors;
-    if (const auto* lights = std::get_if<PlayerLights>(&command); lights || (stopLights && _lights))
+        stopBody || expired ? SwitchNeutralRumble : _motors;
+    if (lights || (stopLights && _lights))
     {
         const auto mask = static_cast<std::uint8_t>(lights ? lights->mask & 0x0f : 0);
         if (!write(_output.subcommand({0x30, false, {mask}, 1}, motors)))
             return Error::BackendFailure;
         _lights = mask;
     }
-    else if (rumble || (stopBody && _rumbleEnd))
+    else if (rumble || stopBody || expired)
     {
         if (!write(_output.rumble(motors)))
             return Error::BackendFailure;
     }
-    else if (!stopBody && !stopLights)
-        return Error::Unsupported;
     _motors = motors;
     if (rumble)
     {
+        _bodyGate = gate;
         _rumbleEnd = now + static_cast<std::uint64_t>(
             std::chrono::duration_cast<std::chrono::nanoseconds>(rumble->duration).count());
         _rumbleAt = std::min(now + rumbleRefresh, _rumbleEnd);
     }
-    else if (stopBody)
+    else if (stopBody || expired)
+    {
         _rumbleEnd = 0;
+        _bodyGate.reset();
+    }
     return Error::None;
 }
 
@@ -348,7 +358,7 @@ void LinuxSwitchHid::tick(std::uint64_t now, bool active)
         neutral();
     if (!_stopPending && _rumbleEnd && now >= _rumbleAt)
     {
-        if (now >= _rumbleEnd)
+        if (!bodyActive(now))
         {
             if (submit(Stop{Channel::Body}) == Error::BackendFailure)
             {

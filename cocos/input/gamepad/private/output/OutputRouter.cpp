@@ -115,7 +115,39 @@ bool isStop(const OutputCommand& command)
 }
 
 OutputRouter::OutputRouter(DeviceRegistry& registry, ReportQueue& queue, GamepadBackend* backend)
-    : _registry(registry), _queue(queue), _backend(backend) {}
+    : _registry(registry), _queue(queue), _backend(backend),
+      _service(std::make_shared<haptics::detail::HapticControl>(backend,queue)),
+      _control(haptics::detail::HapticControl::get(_service)) {}
+
+void OutputRouter::publishBodyRoutes()
+{
+    std::map<DeviceId,EndpointKey> current;
+    std::erase_if(_unconfirmedBody,[&](auto id){return !_registry.find(id);});
+    std::erase_if(_retiredBody,[&](auto id){
+        if(_registry.find(id))return false;
+        _control.removeGamepad(id,true);
+        return true;
+    });
+    for (auto& [id,device] : _registry.devices()) {
+        auto key = _registry.owner(device,Feature::BodyRumble);
+        auto paired=_hapticRoutes.find(id);
+        if(paired!=_hapticRoutes.end() && device.endpoints.contains(paired->second.hid) &&
+           device.endpoints.at(paired->second.hid).descriptor.capabilities.features.test(static_cast<unsigned>(Feature::BodyRumble)))
+            key=paired->second.hid;
+        if(key && !_unconfirmedBody.contains(id) && device.endpoints.at(*key).descriptor.capabilities.acknowledgedBodyStop) {
+            current.emplace(id,*key);
+            _retiredBody.erase(id);
+            if(!_bodyRoutes.contains(id) || _bodyRoutes.at(id)!=*key)
+                _control.publishGamepad(id,*key);
+        }
+    }
+    for(auto& [id,key]:_bodyRoutes)if(!current.contains(id)){
+        bool disconnected=_registry.find(id)==nullptr;
+        _control.removeGamepad(id,disconnected);
+        if(!disconnected)_retiredBody.insert(id);
+    }
+    _bodyRoutes.swap(current);
+}
 
 Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command)
 {
@@ -127,7 +159,7 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
     const auto request = validate(command, device->view._caps);
     if (request.error != Error::None)
         return {{}, request.error};
-    if (_commandId == std::numeric_limits<std::uint32_t>::max())
+    if (_commandId >= 0x7fffffffu-channels.size())
         return {{}, Error::QueueFull};
 
     const bool stopping = isStop(command);
@@ -173,26 +205,34 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
     std::shared_future<bool> bodyReady;
     if (haptics != _haptics.end() && body != routes.end())
         bodyReady = ready.emplace().get_future().share();
-    std::set<EndpointKey> accepted, rejected;
+    std::map<CommandId,EndpointKey> accepted;
+    auto receiptLifetime=std::make_shared<int>(0);
+    std::set<Channel> acceptedChannels;
     Error error = Error::None;
     for (const auto& [channel, endpoint] : routes)
     {
-        if (accepted.contains(endpoint) || rejected.contains(endpoint))
-            continue;
-        const auto status = _backend->submit(endpoint, {commandId, operation, false,
-            ready && endpoint == body->second ? bodyReady : std::shared_future<bool>{}});
-        if (status == Error::None)
-            accepted.insert(endpoint);
+        auto ticket = accepted.empty() ? commandId : static_cast<CommandId>(++_commandId);
+        _queue.expectCompletion(endpoint,ticket,receiptLifetime);
+        auto part = stopping ? OutputCommand{Stop{channel}} : operation;
+        Error status;
+        if(channel==Channel::Body && _bodyRoutes.contains(id))
+            status=_control.legacy(id,part,stopping && std::holds_alternative<Rumble>(command),
+                [queue=&_queue,endpoint,ticket](Error e){queue->outputCompleted(endpoint,ticket,e);});
+        else if(channel==Channel::Body && _control.retiring(id))
+            status=Error::Busy;
         else
-        {
-            rejected.insert(endpoint);
-            error = status;
+            status=_backend->submit(endpoint,{ticket,part,false,
+                ready && channel==Channel::Body ? bodyReady : std::shared_future<bool>{}});
+        if(status==Error::None){
+            accepted.emplace(ticket,endpoint);acceptedChannels.insert(channel);
+            if(channel==Channel::Body && !_bodyRoutes.contains(id) && !stopping)_unconfirmedBody.insert(id);
         }
+        else error=status;
     }
     if (accepted.empty())
         return {{}, error};
 
-    if (ready && accepted.contains(body->second))
+    if (ready && acceptedChannels.contains(Channel::Body))
     {
         const auto session = haptics->second.session;
         const auto stopped = stopHaptics(*session, stopping ? HapticStopReason::Requested :
@@ -203,9 +243,10 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
     std::set<Channel> replaced;
     for (const auto& [channel, endpoint] : routes)
     {
-        if (!accepted.contains(endpoint))
+        if (!acceptedChannels.contains(channel))
             continue;
         replaced.insert(channel);
+        if(channel==Channel::Body && _bodyRoutes.contains(id))continue;
         const Route route{id, channel};
         if (auto previous = _effects.find(route); previous != _effects.end() &&
             previous->second.endpoint != endpoint)
@@ -215,12 +256,12 @@ Result<CommandId> OutputRouter::submit(DeviceId id, const OutputCommand& command
         else
         {
             const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(request.duration).count();
-            _effects[route] = {endpoint, ns == 0 ? 0 : nowNs() + static_cast<std::uint64_t>(ns)};
+            _effects[route] = {endpoint, ns == 0 ? 0 : nowNs() + static_cast<std::uint64_t>(ns), commandId};
         }
     }
     for (auto notice : finish(id, Completion::Superseded, replaced))
         _queue.outputNotice(notice);
-    _pending.emplace(commandId, Pending{id, std::move(accepted), std::move(replaced), error});
+    _pending.emplace(commandId, Pending{id, std::move(accepted), std::move(replaced), error,std::move(receiptLifetime)});
     return {commandId, Error::None};
 }
 
@@ -228,30 +269,35 @@ std::optional<OutputNotice> OutputRouter::complete(const NativeCompletion& compl
 {
     if (completeHaptics(completion))
         return std::nullopt;
-    const auto entry = _pending.find(completion.id);
-    if (entry == _pending.end() || !entry->second.endpoints.erase(completion.key))
+    auto entry = _pending.find(completion.id);
+    if(entry==_pending.end())entry=std::ranges::find_if(_pending,[&](const auto& p){return p.second.tickets.contains(completion.id);});
+    if (entry == _pending.end()) return {};
+    auto ticket=entry->second.tickets.find(completion.id);
+    if(ticket==entry->second.tickets.end() || ticket->second!=completion.key)
         return std::nullopt;
     auto& pending = entry->second;
+    pending.tickets.erase(ticket);
     if (completion.error != Error::None)
         pending.error = completion.error;
-    if (!pending.endpoints.empty())
+    if (!pending.tickets.empty())
         return std::nullopt;
     const auto error = pending.error;
     const OutputNotice notice{pending.device,
-        {completion.id, error == Error::None ? Completion::Applied : Completion::Failed, error}};
+        {entry->first, error == Error::None ? Completion::Applied : Completion::Failed, error}};
     _pending.erase(entry);
     return notice;
 }
 
 std::vector<OutputNotice> OutputRouter::finish(DeviceId id, Completion status,
                                                const std::set<Channel>& replaced,
-                                               std::optional<EndpointKey> endpoint)
+                                               std::optional<EndpointKey> endpoint, std::optional<CommandId> through)
 {
     std::vector<OutputNotice> notices;
     for (auto it = _pending.begin(); it != _pending.end();)
     {
         const auto& pending = it->second;
-        if (pending.device == id && (!endpoint || pending.endpoints.contains(*endpoint)) &&
+        if ((!through || it->first<=*through) && pending.device == id && (!endpoint || std::ranges::any_of(pending.tickets,[&](auto& p){return p.second==*endpoint;})) &&
+            (status!=Completion::Superseded || pending.channels.size()==1) &&
             (replaced.empty() || std::ranges::any_of(replaced, [&](Channel ch) { return pending.channels.contains(ch); })))
         {
             notices.push_back({id, {it->first, status, Error::None}});
@@ -277,9 +323,10 @@ std::vector<OutputNotice> OutputRouter::cancel(DeviceId id, std::optional<Endpoi
             rescanHaptics();
         }
     }
+    const auto through = reason==HapticStopReason::FocusLost ? std::optional{_focusCutoff} : std::nullopt;
     for (auto it = _effects.begin(); it != _effects.end();)
     {
-        if (it->first.first == id && (!endpoint || *endpoint == it->second.endpoint))
+        if ((!through || it->second.issued<=*through) && it->first.first == id && (!endpoint || *endpoint == it->second.endpoint))
         {
             if (_backend)
                 _backend->submit(it->second.endpoint, {CommandId{}, Stop{it->first.second}});
@@ -288,7 +335,7 @@ std::vector<OutputNotice> OutputRouter::cancel(DeviceId id, std::optional<Endpoi
         else
             ++it;
     }
-    return finish(id, Completion::Cancelled, {}, endpoint);
+    return finish(id, Completion::Cancelled, {}, endpoint, through);
 }
 
 void OutputRouter::expire(std::uint64_t now)
@@ -296,7 +343,7 @@ void OutputRouter::expire(std::uint64_t now)
     pollHaptics();
     for (auto it = _effects.begin(); it != _effects.end();)
     {
-        const auto& [endpoint, deadline] = it->second;
+        const auto& [endpoint, deadline, issued] = it->second;
         if (deadline != 0 && deadline <= now)
         {
             const auto result = _backend->submit(endpoint, {CommandId{}, Stop{it->first.second}});

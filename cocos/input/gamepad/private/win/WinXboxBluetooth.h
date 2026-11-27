@@ -11,7 +11,7 @@ public:
     ~WinXboxBluetooth();
 
     void decode(WinInputEndpoint& device, std::span<const std::uint8_t> packet, ReportSink& sink, ReportTime time);
-    Error submit(const OutputCommand& command);
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate = {});
     void stop();
     void poll();
 

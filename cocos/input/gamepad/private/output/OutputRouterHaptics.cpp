@@ -79,8 +79,8 @@ Result<HapticPlayback> OutputRouter::createHapticPlayback(DeviceId id, AudioSour
     auto playback = audio::detail::createManagedPlayback(source, route->second.endpoint);
     if (!playback)
         return {{}, mapAudioError(playback.error())};
-    auto session = std::make_shared<HapticSession>(HapticSession{std::move(playback).value(), id,
-        route->second.hid, route->second.endpoint, this, _hapticLifetime});
+    auto session = std::make_shared<HapticSession>(std::move(playback).value(), id,
+        route->second.hid, route->second.endpoint, this, _hapticLifetime);
     std::erase_if(_sessions, [](const auto& weak) { return weak.expired(); });
     _sessions.push_back(session);
     return {HapticPlayback(std::move(session)), Error::None};
@@ -100,10 +100,46 @@ Error OutputRouter::playHaptics(const std::shared_ptr<HapticSession>& session)
         return Error::Disconnected;
     if (!_focused)
         return Error::Busy;
+    if (_bodyRoutes.contains(id)) {
+        audio::detail::requireManagedStopEvidence(session->audio);
+        if(auto previous=session->managed.lock()) {
+            if(_control.ownsPcm(id,previous)) {
+                if(snapshot.state==AudioPlaybackState::Paused)return mapAudioError(session->audio.resume());
+                return Error::None;
+            }
+            return _control.playPcm(id,std::move(previous));
+        }
+        auto port=std::make_shared<haptics::detail::PcmSource>();
+        port->hid=session->hid;
+        port->enable=[session] {
+            auto e=session->audio.play();
+            if(e==AudioOutputError::None)e=audio::detail::setManagedPlaybackEnabled(session->audio,true);
+            if(e!=AudioOutputError::None)audio::detail::failManagedPlayback(session->audio,e);
+            return mapAudioError(e);
+        };
+        port->silence=[session](haptics::StopReason why) {
+            auto e=audio::detail::setManagedPlaybackEnabled(session->audio,false);
+            auto reason=why==haptics::StopReason::FocusLost ? HapticStopReason::FocusLost :
+                why==haptics::StopReason::Replaced ? HapticStopReason::Replaced :
+                why==haptics::StopReason::EndpointLost ? HapticStopReason::EndpointLost :
+                why==haptics::StopReason::Requested ? HapticStopReason::Requested : HapticStopReason::None;
+            if(why!=haptics::StopReason::None && session->audio.snapshot().state!=AudioPlaybackState::Closed){
+                const auto stopped=session->audio.stop();
+                if(e==AudioOutputError::None)e=stopped;
+            }
+            session->stopReason.store(reason);
+            return mapAudioError(e);
+        };
+        port->ended=[session]{auto state=session->audio.snapshot().state;
+            return state==AudioPlaybackState::Ended || state==AudioPlaybackState::Failed || state==AudioPlaybackState::Closed;};
+        session->managed=port;session->stopReason.store(HapticStopReason::None);
+        return _control.playPcm(id,std::move(port));
+    }
+    if(_control.retiring(id))return Error::Busy;
     const auto active = _haptics.find(id);
     if (active != _haptics.end() && active->second.session == session)
         return mapAudioError(session->audio.play());
-    if (_commandId == std::numeric_limits<std::uint32_t>::max())
+    if (_commandId >= 0x7fffffffu)
         return Error::QueueFull;
 
     const auto previous = _effects.find({id, Channel::Body});
@@ -141,12 +177,17 @@ Error OutputRouter::playHaptics(const std::shared_ptr<HapticSession>& session)
         _queue.outputNotice(notice);
     session->stopReason = HapticStopReason::None;
     _haptics.insert_or_assign(id, ActiveHaptics{session, commandEndpoint, command});
+    _unconfirmedBody.insert(id);
     ready.set_value(true);
     return Error::None;
 }
 
 Error OutputRouter::stopHaptics(HapticSession& session, HapticStopReason reason, bool neutralize)
 {
+    if(auto port=session.managed.lock()){
+        return _control.stopPcm(session.device,port,reason==HapticStopReason::Requested ? haptics::StopReason::Requested :
+                         reason==HapticStopReason::FocusLost ? haptics::StopReason::FocusLost : haptics::StopReason::EndpointLost);
+    }
     const auto active = _haptics.find(session.device);
     const bool ownsGrip = active != _haptics.end() && active->second.session.get() == &session;
     if (!ownsGrip && reason != HapticStopReason::Requested)
@@ -180,6 +221,7 @@ Error OutputRouter::stopHaptics(HapticSession& session, HapticStopReason reason,
 
 void OutputRouter::closeHaptics(HapticSession& session) noexcept
 {
+    if(auto port=session.managed.lock())_control.stopPcm(session.device,port,haptics::StopReason::Requested);
     const auto active = _haptics.find(session.device);
     if (active != _haptics.end() && active->second.session.get() == &session)
         stopHaptics(session, HapticStopReason::Requested);
@@ -331,8 +373,10 @@ bool OutputRouter::refreshHaptics()
 void OutputRouter::setFocused(bool focused)
 {
     _focused = focused;
+    _control.focused(focused);
     if (!_focused)
     {
+        _focusCutoff=static_cast<CommandId>(_commandId);
         while (!_haptics.empty())
         {
             const auto session = _haptics.begin()->second.session;
@@ -344,6 +388,7 @@ void OutputRouter::setFocused(bool focused)
 void OutputRouter::shutdownHaptics() noexcept
 {
     setFocused(false);
+    _control.shutdown();
     _hapticLifetime.reset();
     for (const auto& weak : _sessions)
         if (const auto session = weak.lock())

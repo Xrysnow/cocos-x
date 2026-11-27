@@ -78,6 +78,7 @@ void WinXboxBluetooth::decode(WinInputEndpoint& device, std::span<const std::uin
             auto& caps = device.descriptor.capabilities;
             caps.features.set(static_cast<unsigned>(Feature::BodyRumble));
             caps.features.set(static_cast<unsigned>(Feature::TriggerRumble));
+            caps.acknowledgedBodyStop = true;
             sink.capabilitiesChanged(device.key, caps);
         }
     }
@@ -94,15 +95,15 @@ void WinXboxBluetooth::decode(WinInputEndpoint& device, std::span<const std::uin
                                  power, ++device.cursor, time});
 }
 
-Error WinXboxBluetooth::submit(const OutputCommand& command)
+Error WinXboxBluetooth::submit(const OutputCommand& command, const NativeBodyGate& gate)
 {
     if (!_feedback)
         return Error::Unsupported;
     if (_stopPending && !std::holds_alternative<Stop>(command))
         return Error::Busy;
-    auto next = _rumble;
-    if (!next.apply(command, nowNs()))
-        return Error::Unsupported;
+    auto next = _stopPending ? XboxRumbleState{} : _rumble;
+    if (!next.apply(command, nowNs(), gate))
+        return bodyGateOpen(gate) ? Error::Unsupported : Error::Busy;
     if (!write(next))
         return Error::BackendFailure;
     _rumble = next;

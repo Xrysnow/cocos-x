@@ -57,7 +57,7 @@ public:
     void requestBaseline(EndpointKey key);
     void snapshot(std::vector<AttachedEndpoint>& endpoints);
     void setSensor(EndpointKey key, Sensor sensor, bool enabled);
-    Error submit(EndpointKey key, const OutputCommand& command);
+    Error submit(EndpointKey key, const NativeCommand& command);
     Error startWaveform(EndpointKey key);
     void stopOutputs();
     bool needsPolling() const;

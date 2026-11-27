@@ -189,7 +189,8 @@ public:
                 return Error::Disconnected;
             if (!_active && (command.waveformMode || !std::holds_alternative<Stop>(command.command)))
                 return Error::Busy;
-            if (_commands.size() >= maxOutputCommands && command.id != CommandId{})
+            const bool stop = !command.waveformMode && std::holds_alternative<Stop>(command.command);
+            if (_commands.size() >= maxOutputCommands + (stop ? outputStopReserve : 0) && command.id != CommandId{})
                 return Error::QueueFull;
             _commands.push_back({key, command, _outputEpoch});
             SetEvent(_wake);
@@ -221,7 +222,7 @@ private:
             else if (command.effect.waveformMode)
                 result = _raw->startWaveform(command.key);
             else
-                result = _raw->submit(command.key, command.effect.command);
+                result = _raw->submit(command.key, command.effect);
         }
         if (command.effect.id != CommandId{})
             sink.outputCompleted(command.key, command.effect.id, result);

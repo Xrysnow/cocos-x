@@ -20,6 +20,7 @@ AudioOutputError reserveManagedOutput(AudioEndpointId endpoint);
 AudioOutputError registerManagedOutput(AudioEndpointId endpoint);
 AudioResult<AudioDirectPlayback> createManagedPlayback(AudioSource& source, AudioEndpointId endpoint);
 AudioOutputError setManagedPlaybackEnabled(AudioDirectPlayback& playback, bool enabled);
+void requireManagedStopEvidence(AudioDirectPlayback& playback);
 void failManagedPlayback(AudioDirectPlayback& playback, AudioOutputError error);
 
 bool requiresFrontStereo(const std::string& mainDeviceName, bool useDefault);

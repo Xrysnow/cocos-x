@@ -9,6 +9,7 @@
 
 namespace cc {
 class Director;
+namespace haptics { class HapticService; }
 }
 
 namespace cc::input {
@@ -56,6 +57,10 @@ public:
     GamepadService& operator=(const GamepadService&) = delete;
 
     Frame frame() const noexcept;
+    /** Access the Body service shared by legacy and preset output.
+     * @return Borrowed service, valid for this GamepadService's lifetime.
+     */
+    haptics::HapticService& getHaptics() const;
     std::weak_ptr<const void> lifetimeToken() const noexcept;
     MappingResult setLocalBindings(DeviceId id, std::string_view layoutId,
                                    std::string_view bindingFields);
@@ -87,6 +92,7 @@ private:
     void maintain(bool paused);
     void publish();
     void setFocused(bool focused);
+    void resetHapticScopes();
 
     class Impl;
     std::unique_ptr<Impl> _impl;

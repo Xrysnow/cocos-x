@@ -421,6 +421,41 @@ public:
         return kick();
     }
 
+    Error stopWithEvidence() override
+    {
+        ALCint64SOFT stoppedAt = 0;
+        {
+            const auto context = current();
+            if (!context)
+                return Error::BackendFailure;
+            alSourceStop(_source);
+            if (alGetError() != AL_NO_ERROR)
+                return Error::BackendFailure;
+            if (!stillConnected(_connections, _endpoint.key))
+                return Error::Disconnected;
+            if (!_clock)
+                return Error::Unsupported;
+            alcGetError(_device.get());
+            _clock(_device.get(), ALC_DEVICE_CLOCK_SOFT, 1, &stoppedAt);
+            if (alcGetError(_device.get()) != ALC_NO_ERROR || stoppedAt < 0)
+                return Error::Unsupported;
+        }
+        const auto deadline = Clock::now() + std::chrono::milliseconds(200);
+        while (Clock::now() < deadline)
+        {
+            if (!stillConnected(_connections, _endpoint.key))
+                return Error::Disconnected;
+            ALCint64SOFT sample[2]{};
+            _clock(_device.get(), ALC_DEVICE_CLOCK_LATENCY_SOFT, 2, sample);
+            if (alcGetError(_device.get()) != ALC_NO_ERROR || sample[0] < stoppedAt || sample[1] <= 0)
+                return Error::Unsupported;
+            if (sample[0] - stoppedAt >= sample[1])
+                return Error::None;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+        return Error::Unsupported;
+    }
+
     Error drain() override
     {
         _draining = true;

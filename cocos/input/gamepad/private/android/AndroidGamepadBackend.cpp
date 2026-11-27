@@ -45,6 +45,7 @@ struct Device {
     RawState state;
     std::array<std::optional<Contact>, 2> fingers;
     std::unique_ptr<UsbState> usb;
+    std::map<jlong, NativeCommand> guardedOutputs;
     std::uint64_t cursor = 0;
     bool claimed = false;
     bool published = false;
@@ -57,6 +58,7 @@ struct Bridge {
     std::map<jint, Device> devices;
     ReportSink* sink = nullptr;
     jlong host = 0;
+    std::uint64_t nextOutput = 0;
     bool running = false;
     bool active = true;
 
@@ -219,6 +221,7 @@ public:
         {
             if (!device.published) continue;
             if (device.usb) b.cancelUsb(device);
+            device.guardedOutputs.clear();
             ++device.key.generation;
             device.claimed = false;
             device.fingers = {};
@@ -261,8 +264,12 @@ public:
 
     Error submit(EndpointKey key, const NativeCommand& command) override
     {
+        if (command.waveformMode || command.bodyReady.valid())
+            return Error::Unsupported;
+        jint operation = 0, value = 0;
+        jfloat amount = 0;
         auto& b = bridge();
-        jlong host;
+        jlong host, guard = 0;
         jint id;
         {
             std::lock_guard lock(b.mutex);
@@ -271,38 +278,50 @@ public:
             if (device->usb)
             {
                 auto& usb = *device->usb;
-                if (!b.active && !std::holds_alternative<Stop>(command.command)) return Error::Busy;
-                if (usb.pending.size() >= 32) return Error::Busy;
+                const bool stop = std::holds_alternative<Stop>(command.command);
+                if (!b.active && !stop) return Error::Busy;
+                if (usb.pending.size() >= 32 + (stop ? outputStopReserve : 0)) return Error::Busy;
                 usb.pending.push_back(command);
                 return Error::None;
             }
             host = b.host;
             id = device->id;
+            if (const auto* rumble = std::get_if<Rumble>(&command.command))
+            {
+                value = static_cast<jint>(rumble->duration.count());
+                amount = std::max(rumble->low, rumble->high);
+            }
+            else if (const auto* color = std::get_if<Rgb>(&command.command))
+            {
+                operation = 1;
+                value = static_cast<jint>(0xff000000u | (static_cast<unsigned>(color->r) << 16) |
+                    (static_cast<unsigned>(color->g) << 8) | color->b);
+            }
+            else if (const auto* stop = std::get_if<Stop>(&command.command))
+            {
+                if (stop->channel == Channel::Lights) operation = 2;
+                else if (stop->channel == Channel::All) operation = 3;
+                else if (stop->channel != Channel::Body) return Error::Unsupported;
+            }
+            else
+                return Error::Unsupported;
+            if (command.bodyGate || command.bodyDeadlineNs)
+            {
+                const bool stop = std::holds_alternative<Stop>(command.command);
+                if (device->guardedOutputs.size() >= 32 + (stop ? outputStopReserve : 0)) return Error::QueueFull;
+                guard = static_cast<jlong>(++b.nextOutput);
+                device->guardedOutputs.emplace(guard, command);
+            }
         }
-        jint operation = 0, value = 0;
-        jfloat amount = 0;
-        if (const auto* rumble = std::get_if<Rumble>(&command.command))
+        if (JniHelper::callStaticBooleanMethod(javaBridge, "queueOutput", host, id, static_cast<jlong>(key.endpoint),
+                static_cast<jlong>(key.generation), static_cast<jlong>(command.id), operation, value, amount, guard))
+            return Error::None;
+        if (guard)
         {
-            value = static_cast<jint>(rumble->duration.count());
-            amount = std::max(rumble->low, rumble->high);
+            std::lock_guard lock(b.mutex);
+            if (auto* device = b.find(key)) device->guardedOutputs.erase(guard);
         }
-        else if (const auto* color = std::get_if<Rgb>(&command.command))
-        {
-            operation = 1;
-            value = static_cast<jint>(0xff000000u | (static_cast<unsigned>(color->r) << 16) |
-                (static_cast<unsigned>(color->g) << 8) | color->b);
-        }
-        else if (const auto* stop = std::get_if<Stop>(&command.command))
-        {
-            if (stop->channel == Channel::Lights) operation = 2;
-            else if (stop->channel == Channel::All) operation = 3;
-            else if (stop->channel != Channel::Body) return Error::Unsupported;
-        }
-        else
-            return Error::Unsupported;
-        return JniHelper::callStaticBooleanMethod(javaBridge, "queueOutput", host, id, static_cast<jlong>(key.endpoint),
-                    static_cast<jlong>(key.generation), static_cast<jlong>(command.id), operation, value, amount)
-            ? Error::None : Error::Disconnected;
+        return Error::Disconnected;
     }
 
 private:
@@ -530,6 +549,23 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputDone(
     }
 }
 
+JNIEXPORT jint JNICALL Java_org_cocos_lib_CocosGamepads_nativeOutputAt(
+    JNIEnv*, jclass, jlong host, jint id, jlong endpoint, jlong generation, jlong guard, jint value)
+{
+    auto& b = bridge();
+    std::lock_guard lock(b.mutex);
+    auto* device = b.find(host, id, endpoint);
+    if (!device || device->key.generation != static_cast<std::uint64_t>(generation))
+        return -1;
+    if (!guard) return value;
+    auto request = device->guardedOutputs.extract(guard);
+    if (request.empty() || !request.mapped().canApply()) return -1;
+    const auto operation = request.mapped().commandAt(nowNs());
+    if (const auto* rumble = std::get_if<Rumble>(&operation))
+        return b.active ? static_cast<jint>(rumble->duration.count()) : -1;
+    return std::holds_alternative<Rumble>(request.mapped().command) ? 0 : value;
+}
+
 JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeOpen(
     JNIEnv* env, jclass, jlong host, jint id, jlong endpoint, jint product,
     jbyteArray calibration, jbyteArray firmware)
@@ -657,14 +693,19 @@ JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosSonyGamepadUsb_nativeNextOutp
     }
     else if (!usb.pending.empty())
     {
-        const auto command = usb.pending.front();
+        auto command = std::move(usb.pending.front());
         usb.pending.pop_front();
         write.id = command.id;
-        if (!write.output.apply(command.command, nowNs()))
+        const auto now = nowNs();
+        const auto status = !command.canApply() || (!b.active && !std::holds_alternative<Stop>(command.command))
+            ? Error::Busy : write.output.apply(command.commandAt(now), now, command.bodyGate)
+                ? Error::None : Error::InvalidArgument;
+        if (status != Error::None)
         {
             if (b.sink && command.id != CommandId{})
-                b.sink->outputCompleted(device->key, command.id, Error::InvalidArgument);
-            return false;
+                b.sink->outputCompleted(device->key, command.id, status);
+            if (!write.output.expire(now)) return false;
+            write.id = {};
         }
     }
     else if (!write.output.expire(nowNs())) return false;

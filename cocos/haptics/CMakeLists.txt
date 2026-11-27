@@ -1,0 +1,17 @@
+set(COCOS_HAPTICS_HEADER
+    haptics/HapticClip.h
+    haptics/HapticService.h
+)
+set(COCOS_HAPTICS_SRC
+    haptics/private/ClipData.h
+    haptics/private/Import.h
+    haptics/private/HapticClip.cpp
+    haptics/private/HapticClipFile.cpp
+    haptics/private/MetaHapticParser.cpp
+    haptics/private/AhapParser.cpp
+    haptics/private/HapticMixer.h
+    haptics/private/HapticMixer.cpp
+    haptics/private/HapticControl.h
+    haptics/private/HapticControl.cpp
+    haptics/private/HapticService.cpp
+)

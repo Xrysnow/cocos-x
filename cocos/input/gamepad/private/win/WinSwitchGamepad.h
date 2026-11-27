@@ -13,7 +13,7 @@ public:
     void decode(WinInputEndpoint& endpoint, std::span<const std::uint8_t> bytes, ReportSink& sink, ReportTime time);
     void setSensor(Sensor sensor, bool enabled);
     void poll();
-    Error submit(const OutputCommand& command);
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate = {});
     void stopOutput();
     void resetTopology();
 
@@ -22,6 +22,7 @@ private:
     void finishSetup(std::span<const std::uint8_t> reply);
     void updateCapabilities(WinInputEndpoint& endpoint, ReportSink& sink);
     void pollProtocol(std::uint64_t now);
+    bool bodyActive(std::uint64_t now) const { return _rumbleEnd > now && bodyGateOpen(_bodyGate); }
 
     HidHandle _writable, _written;
     const SwitchModel _model;
@@ -37,6 +38,7 @@ private:
     bool _stopping = false;
     std::uint8_t _lights = 0;
     SwitchMotors _motors = SwitchNeutralRumble;
+    NativeBodyGate _bodyGate;
 };
 
 } // namespace cc::input::detail

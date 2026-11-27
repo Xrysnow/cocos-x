@@ -563,17 +563,21 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     }
 
     static boolean queueOutput(long host, int id, long endpoint, long generation, long command,
-                               int operation, int value, float amount) {
+                               int operation, int value, float amount, long guard) {
         CocosGamepads collector = current;
         return collector != null && collector.host == host && collector.handler.post(() -> {
             Pad pad = collector.devices.get(id);
             if (collector != current || pad == null || pad.generation != endpoint) return;
+            int remaining = nativeOutputAt(host, id, endpoint, generation, guard, operation == 0 ? value : 0);
             int result = 0;
             try {
-                if (operation == 2 || operation == 3) {
+                if (remaining < 0) result = 1;
+                else if (operation == 2 || operation == 3) {
                     if (pad.extras != null) pad.extras.clearLight();
-                    if (operation == 3) cancel(pad);
-                } else if (operation == 0 && (value <= 0 || amount <= 0f)) cancel(pad);
+                    if (operation == 3 && pad.vibrator != null) pad.vibrator.cancel();
+                } else if (operation == 0 && (remaining == 0 || amount <= 0f)) {
+                    if (pad.vibrator != null) pad.vibrator.cancel();
+                }
                 else if (!collector.resumed || !collector.engineActive) result = 1;
                 else if (operation == 1) {
                     if (pad.extras == null || !pad.extras.setLight(value)) result = 3;
@@ -581,8 +585,8 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
                     if (Build.VERSION.SDK_INT >= 26) {
                         int amplitude = pad.vibrator.hasAmplitudeControl() ? Math.max(1, Math.round(amount * 255))
                             : VibrationEffect.DEFAULT_AMPLITUDE;
-                        pad.vibrator.vibrate(VibrationEffect.createOneShot(value, amplitude));
-                    } else pad.vibrator.vibrate(value);
+                        pad.vibrator.vibrate(VibrationEffect.createOneShot(remaining, amplitude));
+                    } else pad.vibrator.vibrate(remaining);
                 } else result = 3;
             } catch (SecurityException failure) { result = 2; }
             catch (RuntimeException failure) { result = 3; }
@@ -604,4 +608,5 @@ final class CocosGamepads implements InputManager.InputDeviceListener {
     private static native void nativeTouch(long host, int id, long generation,
         int first, float firstX, float firstY, int second, float secondX, float secondY, boolean cancelled, long timestamp);
     private static native void nativeOutputDone(long host, int id, long endpoint, long generation, long command, int status);
+    private static native int nativeOutputAt(long host, int id, long endpoint, long generation, long guard, int value);
 }

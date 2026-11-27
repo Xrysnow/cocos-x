@@ -68,6 +68,7 @@ namespace input
 {
 class CC_DLL GamepadService;
 }
+namespace haptics { class HapticService; }
 
 /**
  @brief Class that creates and handles the main Window and manages how
@@ -436,6 +437,10 @@ public:
 
     /** Returns the input service whose frame is published before EVENT_BEFORE_UPDATE. */
     input::GamepadService& getGamepads() const;
+    /** Access the current gamepad and handset haptics service.
+     * @return Borrowed service; a Director reset invalidates its scopes.
+     */
+    haptics::HapticService& getHaptics() const;
 
     /** Returns the Console associated with this director.
      * @since v3.0

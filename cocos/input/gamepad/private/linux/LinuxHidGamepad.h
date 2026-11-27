@@ -18,7 +18,7 @@ public:
     virtual RawBaseline baseline() const = 0;
     virtual AttachedEndpoint snapshot() = 0;
     virtual void setSensor(Sensor sensor, bool enabled) = 0;
-    virtual Error submit(const OutputCommand& command) = 0;
+    virtual Error submit(const OutputCommand& command, const NativeBodyGate& gate = {}) = 0;
     virtual Error startWaveform() { return Error::Unsupported; }
     virtual void neutral() = 0;
     virtual void tick(std::uint64_t now, bool active) = 0;

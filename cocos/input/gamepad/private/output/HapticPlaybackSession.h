@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../GamepadBackend.h"
+#include "haptics/private/HapticControl.h"
 
 namespace cc::input {
 
@@ -11,7 +12,11 @@ struct HapticPlayback::Session {
     AudioEndpointId endpoint;
     detail::OutputRouter* router;
     std::weak_ptr<int> lifetime;
-    HapticStopReason stopReason = HapticStopReason::None;
+    std::atomic<HapticStopReason> stopReason{HapticStopReason::None};
+    std::weak_ptr<haptics::detail::PcmSource> managed;
+    Session(AudioDirectPlayback audio, DeviceId device, detail::EndpointKey hid, AudioEndpointId endpoint,
+            detail::OutputRouter* router, std::weak_ptr<int> lifetime)
+        : audio(std::move(audio)),device(device),hid(hid),endpoint(endpoint),router(router),lifetime(std::move(lifetime)) {}
 };
 
 namespace detail {

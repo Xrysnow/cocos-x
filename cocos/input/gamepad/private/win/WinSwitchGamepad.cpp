@@ -82,7 +82,8 @@ void WinSwitchGamepad::updateCapabilities(WinInputEndpoint& endpoint, ReportSink
     auto& caps = endpoint.descriptor.capabilities;
     const auto body = static_cast<unsigned>(Feature::BodyRumble);
     const auto lights = static_cast<unsigned>(Feature::PlayerLights);
-    if (caps.features[lights] && caps.features[body] == _vibrationReady)
+    if (caps.features[lights] && caps.features[body] == _vibrationReady &&
+        caps.acknowledgedBodyStop == _vibrationReady)
         return;
     for (auto sensor : {Sensor::Accel, Sensor::Gyro})
     {
@@ -92,6 +93,7 @@ void WinSwitchGamepad::updateCapabilities(WinInputEndpoint& endpoint, ReportSink
     }
     caps.features.set(lights);
     caps.features.set(body, _vibrationReady);
+    caps.acknowledgedBodyStop = _vibrationReady;
     caps.playerLightMask = 0x0f;
     sink.capabilitiesChanged(endpoint.key, caps);
 }
@@ -187,7 +189,8 @@ void WinSwitchGamepad::pollProtocol(std::uint64_t now)
             return;
         }
         const auto& request = setup[_setupStep];
-        const bool written = write(request.usb ? _output.usb(request.id) : _output.subcommand(request, _motors));
+        const auto motors = bodyActive(now) ? _motors : SwitchNeutralRumble;
+        const bool written = write(request.usb ? _output.usb(request.id) : _output.subcommand(request, motors));
         if (_setupStep == ReportMode)
             _modeRequested |= written;
         if (_setupStep == ForceUsb && written)
@@ -212,13 +215,14 @@ void WinSwitchGamepad::pollProtocol(std::uint64_t now)
     if (_imuEnabled != enabled && _imuAttempts < maxAttempts)
     {
         ++_imuAttempts;
-        if (write(_output.subcommand(imuRequest(enabled), _motors)))
+        const auto motors = bodyActive(now) ? _motors : SwitchNeutralRumble;
+        if (write(_output.subcommand(imuRequest(enabled), motors)))
             _imuPending = enabled;
         _nextImu = now + replyTimeout;
     }
 }
 
-Error WinSwitchGamepad::submit(const OutputCommand& command)
+Error WinSwitchGamepad::submit(const OutputCommand& command, const NativeBodyGate& gate)
 {
     if (!writable() || !_lastFull || !_subcommandsReady)
         return Error::Unsupported;
@@ -228,16 +232,20 @@ Error WinSwitchGamepad::submit(const OutputCommand& command)
     const auto now = nowNs();
     const bool stopBody = stop && (stop->channel == Channel::All || stop->channel == Channel::Body);
     const bool stopLights = stop && (stop->channel == Channel::All || stop->channel == Channel::Lights);
-    auto motors = stopBody ? SwitchNeutralRumble : _motors;
-    auto deadline = stopBody ? 0 : _rumbleEnd;
-    if (const auto* rumble = std::get_if<Rumble>(&command))
+    const auto* rumble = std::get_if<Rumble>(&command);
+    const auto* lights = std::get_if<PlayerLights>(&command);
+    if (!rumble && !lights && !stopBody && !stopLights)
+        return Error::Unsupported;
+    auto deadline = stopBody || !bodyActive(now) ? 0 : _rumbleEnd;
+    auto motors = deadline ? _motors : SwitchNeutralRumble;
+    if (rumble)
     {
         if (!_vibrationReady) return Error::Unsupported;
+        if (!bodyGateOpen(gate)) return Error::Busy;
         motors = encodeSwitchRumble(_model, rumble->low, rumble->high);
         deadline = now + static_cast<std::uint64_t>(
             std::chrono::duration_cast<std::chrono::nanoseconds>(rumble->duration).count());
     }
-    const auto* lights = std::get_if<PlayerLights>(&command);
     if (lights || (stopLights && _lights))
     {
         const auto mask = static_cast<std::uint8_t>(lights ? lights->mask & 0x0f : 0);
@@ -245,16 +253,18 @@ Error WinSwitchGamepad::submit(const OutputCommand& command)
             return Error::BackendFailure;
         _lights = mask;
     }
-    else if ((stopBody && _rumbleEnd) || std::holds_alternative<Rumble>(command))
+    else if (rumble || (stopBody && _vibrationReady) || (!deadline && _rumbleEnd))
     {
         if (!write(_output.rumble(motors)))
             return Error::BackendFailure;
     }
-    else if (!stopBody && !stopLights)
-        return Error::Unsupported;
     _motors = motors;
     _rumbleEnd = deadline;
-    if (stopBody || std::holds_alternative<Rumble>(command))
+    if (rumble)
+        _bodyGate = gate;
+    else if (!_rumbleEnd)
+        _bodyGate.reset();
+    if (stopBody || rumble)
         _nextRumble = std::min(now + rumbleRefresh, _rumbleEnd);
     return Error::None;
 }
@@ -266,7 +276,7 @@ void WinSwitchGamepad::poll()
         stopOutput();
     if (!_stopping && _rumbleEnd && now >= _nextRumble)
     {
-        if (now >= _rumbleEnd)
+        if (!bodyActive(now))
         {
             if (submit(Stop{Channel::Body}) == Error::BackendFailure)
             {

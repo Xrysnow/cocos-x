@@ -35,6 +35,8 @@ public:
     virtual AudioOutputError submit(const std::int16_t* pcm, std::size_t frames) = 0;
     virtual AudioOutputError setPaused(bool paused) = 0;
     virtual AudioOutputError drain() = 0;
+    // Stop sample production and wait for the last possible device sample.
+    virtual AudioOutputError stopWithEvidence() { return AudioOutputError::Unsupported; }
     virtual AudioResult<OutputProgress> poll() = 0;
 };
 

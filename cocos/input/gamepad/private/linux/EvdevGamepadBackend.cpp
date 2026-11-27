@@ -168,7 +168,7 @@ struct Device {
     std::unique_ptr<LinuxXboxBluetooth> xbox;
     std::bitset<SensorCount> requestedMotion;
     std::uint64_t cursor = 0;
-    std::uint64_t evdevRumbleEnd = 0, xboxRetryAt = 0;
+    std::uint64_t evdevRumbleEnd = 0, evdevStopAt = 0, xboxRetryAt = 0;
     bool dropping = false;
     bool monotonic = false;
     bool evdevRumble = false;
@@ -201,16 +201,18 @@ struct Device {
 
     AttachedEndpoint attachment() const { return {key, descriptor, {state, cursor, {}}}; }
 
-    void neutralEvdev()
+    Error neutralEvdev()
     {
         if (effect >= 0)
         {
             input_event event{};
             event.type = EV_FF;
             event.code = static_cast<__u16>(effect);
-            if (::write(fd.get(), &event, sizeof(event)) == sizeof(event))
-                evdevRumbleEnd = 0;
+            if (::write(fd.get(), &event, sizeof(event)) != sizeof(event))
+                return Error::BackendFailure;
         }
+        evdevRumbleEnd = evdevStopAt = 0;
+        return Error::None;
     }
 
     void neutral()
@@ -230,7 +232,7 @@ struct Device {
                 return false;
             effect = -1;
         }
-        evdevRumbleEnd = 0;
+        evdevRumbleEnd = evdevStopAt = 0;
         return true;
     }
 
@@ -259,6 +261,8 @@ struct Device {
 
     void updateXbox(ReportSink& sink, std::uint64_t now, bool active)
     {
+        if (evdevStopAt && now >= evdevStopAt && neutralEvdev() != Error::None)
+            evdevStopAt = now + 40'000'000;
         if (!xbox)
         {
             if (xboxRetryAt)
@@ -276,11 +280,13 @@ struct Device {
         updatePower(sink, xbox->power().value_or(Power{}));
     }
 
-    Error applyOutput(const OutputCommand& command, std::uint64_t now, ReportSink& sink)
+    Error applyOutput(const NativeCommand& request, ReportSink& sink)
     {
+        const auto now = nowNs();
+        const auto command = request.commandAt(now);
         if (xbox && xbox->outputReady())
         {
-            const auto result = xbox->submit(command, now);
+            const auto result = xbox->submit(command, now, request.bodyGate);
             updateXboxCapabilities(sink);
             return result;
         }
@@ -288,17 +294,13 @@ struct Device {
         {
             if (stop->channel != Channel::All && stop->channel != Channel::Body)
                 return Error::Unsupported;
-            neutralEvdev();
-            return Error::None;
+            return neutralEvdev();
         }
         const auto* rumble = std::get_if<Rumble>(&command);
         if (!rumble || !evdevRumble)
             return Error::Unsupported;
         if (rumble->duration.count() == 0 || (rumble->low == 0.f && rumble->high == 0.f))
-        {
-            neutralEvdev();
-            return Error::None;
-        }
+            return neutralEvdev();
         ff_effect payload{};
         payload.type = FF_RUMBLE;
         payload.id = static_cast<__s16>(effect);
@@ -308,6 +310,12 @@ struct Device {
         if (::ioctl(fd.get(), EVIOCSFF, &payload) < 0)
             return Error::BackendFailure;
         effect = payload.id;
+        const bool permitted = request.canApply();
+        if (!permitted || std::holds_alternative<Stop>(request.commandAt(nowNs())))
+        {
+            const auto stopped = neutralEvdev();
+            return stopped == Error::None && !permitted ? Error::Busy : stopped;
+        }
         input_event event{};
         event.type = EV_FF;
         event.code = static_cast<__u16>(effect);
@@ -316,6 +324,7 @@ struct Device {
             return Error::BackendFailure;
         evdevRumbleEnd = nowNs() + static_cast<std::uint64_t>(
             std::chrono::duration_cast<std::chrono::nanoseconds>(rumble->duration).count());
+        evdevStopAt = request.bodyDeadlineNs ? std::min(request.bodyDeadlineNs, evdevRumbleEnd) : 0;
         return Error::None;
     }
 
@@ -606,6 +615,10 @@ std::optional<Device> openDevice(const std::string& path, bool joystick)
     {
         pad.evdevRumble = true;
         descriptor.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble));
+        // This family can switch from evdev to hidraw within one endpoint
+        // generation. The fallback's idle state cannot acknowledge hidraw.
+        descriptor.capabilities.acknowledgedBodyStop =
+            id.bustype != BUS_BLUETOOTH || pad.identity.hidParent.empty() || !xboxBluetoothModel(id.vendor, id.product);
     }
     auto clock = CLOCK_MONOTONIC;
     pad.monotonic = ::ioctl(fd, EVIOCSCLOCKID, &clock) == 0;
@@ -799,8 +812,8 @@ public:
     {
         {
             std::lock_guard lock(_mutex);
-            if (_commands.size() >= 256 &&
-                (command.waveformMode || !std::holds_alternative<Stop>(command.command)))
+            const bool stop = !command.waveformMode && std::holds_alternative<Stop>(command.command);
+            if (_commands.size() >= 256 + (stop ? outputStopReserve : 0))
                 return Error::QueueFull;
             _commands.emplace_back(key, command);
         }
@@ -1110,9 +1123,9 @@ private:
                 (command.waveformMode || !std::holds_alternative<Stop>(command.command)));
             if (hid != _hid.end())
                 status = blocked ? Error::Busy : command.waveformMode ? hid->second->startWaveform() :
-                    hid->second->submit(command.command);
+                    hid->second->submit(command.commandAt(nowNs()), command.bodyGate);
             else if (it != _devices.end()) status = blocked ? Error::Busy :
-                it->second.applyOutput(command.command, now, *_sink);
+                it->second.applyOutput(command, *_sink);
             if (command.id != CommandId{})
                 _sink->outputCompleted(key, command.id, status);
         }
@@ -1134,6 +1147,8 @@ private:
                 deadline = std::min(deadline, now + 4000000);
             for (const auto& [path, device] : _devices)
             {
+                if (device.evdevStopAt)
+                    deadline = std::min(deadline, device.evdevStopAt);
                 if (!device.xbox)
                     continue;
                 if (const auto output = device.xbox->nextDeadline())

@@ -16,6 +16,7 @@
 #include <map>
 #include <mutex>
 #include <string_view>
+#include <thread>
 
 namespace cc::audio::detail {
 namespace {
@@ -663,10 +664,52 @@ public:
         // stream on cancellation so an old callback can't finish a resumed drain.
         if (canceledDrain)
         {
+            // A later drain on the replacement cannot certify samples from the retired stream.
+            _uncertifiedStream = true;
             closeStream();
             return openLocked();
         }
         return Error::None;
+    }
+
+    Error stopWithEvidence() override
+    {
+        // Discard frames still owned by this producer. The native drain callback
+        // is scoped to this stream and covers the frames already handed to PipeWire.
+        {
+            const LoopLock lock(_monitor->loop);
+            if (!ready() || _failed)
+                return error();
+            if (_uncertifiedStream)
+                return Error::Unsupported;
+            if (_drained)
+                return Error::None;
+            _written = _submitted;
+            _drainRequested = true;
+            if (!_active)
+            {
+                _active = true;
+                if (pw_stream_set_active(_stream, true) < 0)
+                    return Error::BackendFailure;
+            }
+            const auto status = startDrain();
+            if (status != Error::None)
+                return status;
+        }
+        const auto deadline = Clock::now() + 200ms;
+        while (Clock::now() < deadline)
+        {
+            {
+                const LoopLock lock(_monitor->loop);
+                if (!ready() || _failed)
+                    return error();
+                if (_drained)
+                    return Error::None;
+            }
+            std::this_thread::sleep_for(2ms);
+        }
+        // Destroying a stalled stream stops further writes but supplies no drain evidence.
+        return Error::Unsupported;
     }
 
     Error drain() override
@@ -832,6 +875,7 @@ private:
     pw_stream_state _state = PW_STREAM_STATE_CONNECTING;
     bool _formatVerified = false, _active = false, _failed = false;
     bool _drainRequested = false, _draining = false, _drained = false;
+    bool _uncertifiedStream = false;
 };
 
 } // namespace

@@ -24,7 +24,7 @@ public:
     void probeOutput(bool canClaimOutput);
     bool outputReady() const { return _outputReady; }
     std::optional<std::uint64_t> nextDeadline() const { return _rumble.deadline(); }
-    Error submit(const OutputCommand& command, std::uint64_t now);
+    Error submit(const OutputCommand& command, std::uint64_t now, const NativeBodyGate& gate = {});
     void tick(std::uint64_t now);
     void neutral();
 

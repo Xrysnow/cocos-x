@@ -49,7 +49,7 @@ inline constexpr std::uint64_t XboxBluetoothRumbleIntervalNs = 50'000'000;
 
 class XboxRumbleState {
 public:
-    bool apply(const OutputCommand& command, std::uint64_t nowNs);
+    bool apply(const OutputCommand& command, std::uint64_t nowNs, const NativeBodyGate& gate = {});
     bool expire(std::uint64_t nowNs);
     XboxRumbleMotors motors() const;
     std::optional<std::uint64_t> deadline() const;
@@ -61,6 +61,7 @@ private:
         float first = 0;
         float second = 0;
         std::optional<std::uint64_t> deadline;
+        NativeBodyGate gate;
 
         void set(float first, float second, std::chrono::milliseconds duration, std::uint64_t nowNs);
         bool expire(std::uint64_t nowNs);

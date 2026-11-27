@@ -50,6 +50,9 @@ struct AudioDirectPlayback::Session {
     std::deque<DirectBlock> queued;
     bool closing = false;
     bool outputExited = false;
+    bool outputStarted = false;
+    bool requireStopEvidence = false;
+    Error stopEvidence = Error::None;
     bool running = false;
     bool paused = false;
     bool permitted = false;
@@ -87,7 +90,7 @@ struct AudioDirectPlayback::Session {
 
     void waitForOutput(std::unique_lock<std::mutex>& lock)
     {
-        if (output.joinable())
+        if (outputStarted)
             changed.wait(lock, [&] { return outputGeneration == generation || outputExited; });
     }
 
@@ -142,11 +145,14 @@ struct AudioDirectPlayback::Session {
                 catch (...) {
                     std::lock_guard lock(mutex);
                     outputExited = true;
+                    if (requireStopEvidence)
+                        stopEvidence = Error::BackendFailure;
                     if (!closing)
                         fail(Error::BackendFailure);
                     changed.notify_all();
                 }
             });
+            outputStarted = true;
             reader = std::thread([this] { readLoop(); });
             return true;
         }
@@ -158,7 +164,7 @@ struct AudioDirectPlayback::Session {
             if (output.joinable())
                 output.join();
             lock.lock();
-            closing = outputExited = false;
+            closing = outputExited = outputStarted = false;
             return false;
         }
     }
@@ -253,13 +259,20 @@ struct AudioDirectPlayback::Session {
         bool streamPaused = true;
         bool draining = false;
         std::unique_lock lock(mutex);
+        const auto releaseStream = [&] {
+            const bool proveStop = requireStopEvidence && stream && sent != 0;
+            lock.unlock();
+            const auto evidence = proveStop ? stream->stopWithEvidence() : Error::None;
+            stream.reset();
+            lock.lock();
+            if (evidence != Error::None)
+                stopEvidence = evidence;
+        };
         while (!closing)
         {
             if (outputGeneration != generation)
             {
-                lock.unlock();
-                stream.reset();
-                lock.lock();
+                releaseStream();
                 submitted.clear();
                 sent = 0;
                 started = draining = false;
@@ -399,6 +412,9 @@ struct AudioDirectPlayback::Session {
             }
             changed.wait_for(lock, pollInterval);
         }
+        releaseStream();
+        outputExited = true;
+        changed.notify_all();
     }
 };
 
@@ -500,14 +516,26 @@ struct DirectPlaybackAccess {
             endpoint.platform.isDefault) ? Error::None : Error::Unsupported;
     }
 
+    static void requireEvidence(AudioDirectPlayback& handle)
+    {
+        if (auto session = handle._session) {
+            std::lock_guard lock(session->mutex);
+            session->requireStopEvidence = true;
+        }
+    }
+
     static Error enable(AudioDirectPlayback& handle, bool enabled)
     {
         auto session = handle._session;
         if (!session || !session->managed)
             return Error::InvalidArgument;
         std::unique_lock lock(session->mutex);
-        if (session->closing)
-            return Error::InvalidArgument;
+        if (session->closing) {
+            if (enabled || !session->requireStopEvidence)
+                return Error::InvalidArgument;
+            session->changed.wait(lock, [&] { return !session->outputStarted || session->outputExited; });
+            return session->stopEvidence;
+        }
         if (enabled)
         {
             if (const auto error = session->canPlay(); error != Error::None)
@@ -522,7 +550,7 @@ struct DirectPlaybackAccess {
                 session->waitForOutput(lock);
         }
         session->changed.notify_all();
-        return Error::None;
+        return enabled ? Error::None : session->stopEvidence;
     }
 
     static void fail(AudioDirectPlayback& handle, Error error)
@@ -547,6 +575,11 @@ AudioResult<AudioDirectPlayback> createManagedPlayback(AudioSource& source, Audi
 AudioOutputError setManagedPlaybackEnabled(AudioDirectPlayback& playback, bool enabled)
 {
     return DirectPlaybackAccess::enable(playback, enabled);
+}
+
+void requireManagedStopEvidence(AudioDirectPlayback& playback)
+{
+    DirectPlaybackAccess::requireEvidence(playback);
 }
 
 void failManagedPlayback(AudioDirectPlayback& playback, AudioOutputError error)

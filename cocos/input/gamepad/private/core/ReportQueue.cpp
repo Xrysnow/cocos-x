@@ -177,8 +177,35 @@ void ReportQueue::detached(EndpointKey key)
 
 void ReportQueue::outputCompleted(EndpointKey key, CommandId id, Error error)
 {
-    if (id != CommandId{})
-        pushControl(NativeCompletion{key, id, error}, {}, true);
+    if (id == CommandId{}) return;
+    std::unique_lock lock(_mutex);
+    if (_closed) return;
+    if (static_cast<std::uint32_t>(id) & 0x80000000u) {
+        auto it = _bodyReceipts.find(id);
+        if (it != _bodyReceipts.end() && it->second.first == key) {
+            if (auto result = it->second.second.lock()) result->store(static_cast<int>(error));
+            _bodyReceipts.erase(it);
+        }
+        return;
+    }
+    auto reserved=_completionSlots.find(id);
+    if(reserved!=_completionSlots.end() && reserved->second.first==key) {
+        if(!reserved->second.second.expired())_overflow.push_back({++_seq,{},NativeCompletion{key,id,error}});
+        _completionSlots.erase(reserved);return;
+    }
+    lock.unlock();
+    pushControl(NativeCompletion{key,id,error},{},true);
+}
+void ReportQueue::expectCompletion(EndpointKey key,CommandId id,std::weak_ptr<void> lifetime){
+    std::lock_guard lock(_mutex);
+    std::erase_if(_completionSlots,[](const auto& p){return p.second.second.expired();});
+    _completionSlots.insert_or_assign(id,std::pair{key,std::move(lifetime)});
+}
+void ReportQueue::expectBody(EndpointKey key, CommandId id, const std::shared_ptr<std::atomic<int>>& result)
+{
+    std::lock_guard lock(_mutex);
+    std::erase_if(_bodyReceipts, [](const auto& item){return item.second.second.expired();});
+    _bodyReceipts.emplace(id,std::pair{key,std::weak_ptr(result)});
 }
 
 void ReportQueue::topology(std::vector<AttachedEndpoint> endpoints)

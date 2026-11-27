@@ -1,0 +1,59 @@
+#pragma once
+#include "haptics/HapticService.h"
+#include "input/gamepad/private/core/ReportQueue.h"
+#include <functional>
+
+namespace cc::haptics::detail
+{
+using Endpoint    = input::detail::EndpointKey;
+using NativeError = input::Error;
+struct PcmSource
+{
+    Endpoint hid;
+    std::function<NativeError()> enable;
+    std::function<NativeError(StopReason)> silence;
+    std::function<bool()> ended;
+};
+
+class HapticControl
+{
+public:
+    HapticControl(input::detail::GamepadBackend*, input::detail::ReportQueue&);
+    ~HapticControl();
+    static HapticControl& get(HapticService& service) { return *service._control; }
+    void shutdown();
+    void resetScopes();
+    void focused(bool active);
+    void publishGamepad(input::DeviceId, Endpoint);
+    void removeGamepad(input::DeviceId, bool disconnected);
+    void publishHandset(Endpoint, bool canInterrupt, bool canRelease);
+    // A finite native effect through the handset test/adapter port. Acceptance is restricted to the live Raw token.
+    Result<OperationId> submitRaw(const RawSession&, const input::Rumble&);
+    bool retiring(input::DeviceId) const;
+    NativeError legacy(
+        input::DeviceId, const input::OutputCommand&, bool zeroRumble, std::function<void(NativeError)> completed);
+    NativeError playPcm(input::DeviceId, std::shared_ptr<PcmSource>);
+    NativeError stopPcm(input::DeviceId, const std::shared_ptr<PcmSource>&, StopReason reason);
+    bool ownsPcm(input::DeviceId, const std::shared_ptr<PcmSource>&) const;
+
+    std::vector<TargetInfo> enumerate() const;
+    Result<TargetId> target(std::optional<input::DeviceId>) const;
+    Result<Capabilities> capabilities(TargetId) const;
+    HapticTime now() const;
+    Result<HapticScope> scope(std::weak_ptr<HapticControl>);
+    void close(std::uint64_t scope);
+    Result<PlaybackId> play(std::uint64_t, TargetId, const HapticClip&, const PlayOptions&);
+    Status stop(std::uint64_t, PlaybackId);
+    Result<PlaybackSnapshot> read(std::uint64_t, PlaybackId);
+    Result<OperationId> stopTarget(std::uint64_t, TargetId);
+    Result<OperationSnapshot> read(std::uint64_t, OperationId);
+    Result<RawSession> acquire(std::weak_ptr<HapticControl>, std::uint64_t, TargetId, AcquirePolicy);
+    RawSnapshot rawState(std::uint64_t) const;
+    Result<OperationId> cancelRaw(std::uint64_t);
+    void closeRaw(std::uint64_t);
+
+private:
+    struct State;
+    std::unique_ptr<State> _state;
+};
+}  // namespace cc::haptics::detail

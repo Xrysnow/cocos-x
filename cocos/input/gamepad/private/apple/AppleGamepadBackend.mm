@@ -386,22 +386,26 @@ struct Device {
                 controller.motion.sensorsActive = active && sensors.any();
     }
 
-    void stopRumble(bool release)
+    Error stopRumble(bool release)
     {
+        Error status = Error::None;
         if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
             for (unsigned i = 0; i < players.size(); ++i)
             {
-                [players[i] stopAtTime:0 error:nil];
+                const bool stopped = !players[i] || [players[i] stopAtTime:0 error:nil];
+                if (!stopped)
+                    status = Error::BackendFailure;
                 players[i] = nil;
-                if (release)
+                if (release || !stopped)
                 {
                     [engines[i] stopWithCompletionHandler:nil];
                     engines[i] = nil;
                 }
             }
+        return status;
     }
 
-    Error output(const OutputCommand& command)
+    Error output(const OutputCommand& command, const NativeCommand* request = nullptr)
     {
         if (@available(macOS 11.3, iOS 14.5, tvOS 14.5, *))
             if ([controller.extendedGamepad isKindOfClass:GCDualSenseGamepad.class])
@@ -424,10 +428,11 @@ struct Device {
             }
         if (const auto* stop = std::get_if<Stop>(&command))
         {
-            if (stop->channel == Channel::All || stop->channel == Channel::Body) stopRumble(false);
+            const auto body = stop->channel == Channel::All || stop->channel == Channel::Body
+                ? stopRumble(false) : Error::None;
             if (stop->channel == Channel::All || stop->channel == Channel::Lights)
                 output(Rgb{});
-            return Error::None;
+            return body;
         }
         if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
         {
@@ -438,7 +443,8 @@ struct Device {
             }
             if (const auto* rumble = std::get_if<Rumble>(&command); rumble && haptics[0])
             {
-                stopRumble(false);
+                if (const auto stopped = stopRumble(false); stopped != Error::None)
+                    return stopped;
                 if (rumble->duration.count() == 0)
                     return Error::None;
                 const std::array values{haptics[1] ? rumble->low : std::max(rumble->low, rumble->high), rumble->high};
@@ -454,16 +460,33 @@ struct Device {
                         stopRumble(true);
                         return Error::BackendFailure;
                     }
+                    const auto current = request ? request->commandAt(nowNs()) : command;
+                    const auto* currentRumble = std::get_if<Rumble>(&current);
+                    if (request && !request->canApply())
+                    {
+                        stopRumble(false);
+                        return Error::Busy;
+                    }
+                    if (!currentRumble)
+                        return stopRumble(false);
                     auto intensity = [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity value:values[i]];
                     auto event = [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
-                        parameters:@[intensity] relativeTime:0 duration:rumble->duration.count() / 1000.0];
+                        parameters:@[intensity] relativeTime:0 duration:currentRumble->duration.count() / 1000.0];
                     auto pattern = [[CHHapticPattern alloc] initWithEvents:@[event] parameters:@[] error:nil];
-                    players[i] = pattern ? [engine createPlayerWithPattern:pattern error:nil] : nil;
-                    if (![players[i] startAtTime:0 error:nil])
+                    auto player = pattern ? [engine createPlayerWithPattern:pattern error:nil] : nil;
+                    if (request && !request->canApply())
+                    {
+                        stopRumble(false);
+                        return Error::Busy;
+                    }
+                    if (request && std::holds_alternative<Stop>(request->commandAt(nowNs())))
+                        return stopRumble(false);
+                    if (![player startAtTime:0 error:nil])
                     {
                         stopRumble(true);
                         return Error::BackendFailure;
                     }
+                    players[i] = player;
                 }
                 return Error::None;
             }
@@ -1024,8 +1047,9 @@ public:
         dispatch_async(state->queue, ^{
             auto* device = state->find(key);
             const auto status = !device ? Error::Disconnected
-                : !state->active && !std::holds_alternative<Stop>(request.command) ? Error::Busy
-                : device->output(request.command);
+                : !request.canApply() || (!state->active && !std::holds_alternative<Stop>(request.command))
+                    ? Error::Busy
+                    : device->output(request.commandAt(nowNs()), &request);
             if (state->sink && request.id != CommandId{}) state->sink->outputCompleted(key, request.id, status);
         });
         return Error::None;

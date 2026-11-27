@@ -204,23 +204,26 @@ public:
                                        ++endpoint.cursor, time});
     }
 
-    Error submit(const OutputCommand& command)
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate)
     {
         if (!_written || (bluetooth() && !receivedFullInput()))
             return Error::Unsupported;
         const auto* stop = std::get_if<Stop>(&command);
         const bool stopAll = stop && stop->channel == Channel::All;
-        if (_resetOutput && !stopAll)
+        const bool stopBody = stop && stop->channel == Channel::Body;
+        if (_resetOutput && !stopAll && !stopBody)
             return Error::Busy;
         auto next = _output;
-        if (std::holds_alternative<Rumble>(command) || stopAll || (stop && stop->channel == Channel::Body))
+        const auto now = nowNs();
+        if (std::holds_alternative<Rumble>(command) || stopAll || stopBody)
             next.setHapticsMode(false);
-        if (!next.apply(command, nowNs()))
-            return Error::Unsupported;
+        const bool allNeutral = stopAll || _resetOutput;
+        if (!next.apply(allNeutral ? OutputCommand{Stop{}} : command, now, gate))
+            return bodyGateOpen(gate) ? Error::Unsupported : Error::Busy;
         if (!write(next))
             return Error::BackendFailure;
         _output = next;
-        _hasOutput = !stopAll && (_hasOutput || !stop);
+        _hasOutput = !allNeutral && (_hasOutput || !stop);
         _resetOutput = false;
         return Error::None;
     }
@@ -248,6 +251,7 @@ public:
         if (_resetOutput)
             return Error::Busy;
         auto next = _output;
+        next.expire(nowNs());
         if (!next.setHapticsMode(true) || !write(next))
             return Error::BackendFailure;
         _output = next;
@@ -282,7 +286,13 @@ public:
             {
                 _nextLightAttempt = now + 250000000;
                 if (write(_output, DualSenseOutputKind::ReleaseBluetoothLights))
-                    _lightsReleased = !_hasOutput || write(_output);
+                {
+                    auto next = _output;
+                    next.expire(nowNs());
+                    _lightsReleased = !_hasOutput || write(next);
+                    if (_lightsReleased)
+                        _output = next;
+                }
             }
         }
     }
@@ -305,6 +315,7 @@ private:
             return;
         for (auto feature : {Feature::BodyRumble, Feature::RgbLed})
             caps.features.set(static_cast<unsigned>(feature));
+        caps.acknowledgedBodyStop = true;
         if (isDualShock4())
             return;
         for (auto feature : {Feature::PlayerLights, Feature::AdaptiveLeft, Feature::AdaptiveRight})
@@ -1289,16 +1300,17 @@ void WinRawHid::setSensor(EndpointKey key, Sensor sensor, bool enabled)
     }
 }
 
-Error WinRawHid::submit(EndpointKey key, const OutputCommand& command)
+Error WinRawHid::submit(EndpointKey key, const NativeCommand& request)
 {
     const auto device = _impl->find(key);
     if (!device)
         return Error::Disconnected;
+    const auto command = request.commandAt(nowNs());
     if (device->xbox)
-        return device->xbox->submit(command);
+        return device->xbox->submit(command, request.bodyGate);
     if (device->nintendo)
-        return device->nintendo->submit(command);
-    return device->sony ? device->sony->submit(command) : Error::Unsupported;
+        return device->nintendo->submit(command, request.bodyGate);
+    return device->sony ? device->sony->submit(command, request.bodyGate) : Error::Unsupported;
 }
 
 Error WinRawHid::startWaveform(EndpointKey key)

@@ -140,13 +140,13 @@ bool LinuxXboxBluetooth::apply(const XboxRumbleState& next)
     return true;
 }
 
-Error LinuxXboxBluetooth::submit(const OutputCommand& command, std::uint64_t now)
+Error LinuxXboxBluetooth::submit(const OutputCommand& command, std::uint64_t now, const NativeBodyGate& gate)
 {
     if (!_outputReady)
         return Error::Unsupported;
     auto next = _rumble;
-    if (!next.apply(command, now))
-        return Error::Unsupported;
+    if (!next.apply(command, now, gate))
+        return bodyGateOpen(gate) ? Error::Unsupported : Error::Busy;
     return apply(next) ? Error::None : Error::BackendFailure;
 }
 

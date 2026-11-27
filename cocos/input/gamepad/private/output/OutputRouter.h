@@ -2,6 +2,7 @@
 
 #include "../core/DeviceRegistry.h"
 #include "../core/ReportQueue.h"
+#include "haptics/private/HapticControl.h"
 
 #include <set>
 
@@ -20,6 +21,9 @@ public:
     void rescanHaptics() { _nextPairScan = 0; }
     void setFocused(bool focused);
     void shutdownHaptics() noexcept;
+    void publishBodyRoutes();
+    haptics::HapticService& hapticsService() { return _service; }
+    void resetScopes() { _control.resetScopes(); }
 
 private:
     friend class ::cc::input::HapticPlayback;
@@ -41,16 +45,18 @@ private:
     struct Effect {
         EndpointKey endpoint;
         std::uint64_t deadline;
+        CommandId issued;
     };
     struct Pending {
         DeviceId device;
-        std::set<EndpointKey> endpoints;
+        std::map<CommandId,EndpointKey> tickets;
         std::set<Channel> channels;
         Error error = Error::None;
+        std::shared_ptr<void> receiptLifetime;
     };
 
     std::vector<OutputNotice> finish(DeviceId, Completion, const std::set<Channel>&,
-                                     std::optional<EndpointKey> endpoint = {});
+                                     std::optional<EndpointKey> endpoint = {}, std::optional<CommandId> through = {});
     Error playHaptics(const std::shared_ptr<HapticSession>&);
     Error stopHaptics(HapticSession&, HapticStopReason, bool neutralize = true);
     void closeHaptics(HapticSession&) noexcept;
@@ -61,7 +67,14 @@ private:
     DeviceRegistry& _registry;
     ReportQueue& _queue;
     GamepadBackend* _backend;
+    haptics::HapticService _service;
+    haptics::detail::HapticControl& _control;
+    std::map<DeviceId,EndpointKey> _bodyRoutes;
+    // A legacy-only endpoint cannot certify a handoff after it has driven this connection.
+    std::set<DeviceId> _unconfirmedBody;
+    std::set<DeviceId> _retiredBody;
     std::uint32_t _commandId = 0;
+    CommandId _focusCutoff{};
     std::map<Route, Effect> _effects;
     std::map<CommandId, Pending> _pending;
     std::map<DeviceId, HapticRoute> _hapticRoutes;

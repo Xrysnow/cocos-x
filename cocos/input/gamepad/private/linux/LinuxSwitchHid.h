@@ -21,7 +21,7 @@ public:
     RawBaseline baseline() const override { return {_raw, _cursor, _lastInput}; }
     AttachedEndpoint snapshot() override;
     void setSensor(Sensor sensor, bool enabled) override;
-    Error submit(const OutputCommand& command) override;
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate = {}) override;
     void neutral() override;
     void tick(std::uint64_t now, bool active) override;
     bool needsPolling() const override;
@@ -33,6 +33,7 @@ private:
     void configure(std::uint64_t now);
     void restoreReportMode();
     void updateImu(std::uint64_t now);
+    bool bodyActive(std::uint64_t now) const { return _rumbleEnd > now && bodyGateOpen(_bodyGate); }
 
     int _fd;
     EndpointKey _key;
@@ -54,6 +55,7 @@ private:
     unsigned _imuAttemptsLeft = 0;
     std::uint64_t _imuAt = 0;
     SwitchMotors _motors = SwitchNeutralRumble;
+    NativeBodyGate _bodyGate;
     std::uint8_t _lights = 0;
     bool _stopPending = false;
     std::uint64_t _rumbleEnd = 0, _rumbleAt = 0, _stopAt = 0;

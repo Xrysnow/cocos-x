@@ -3,6 +3,7 @@
 #include "../GamepadBackend.h"
 
 #include <algorithm>
+#include <atomic>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -96,6 +97,9 @@ public:
     void detached(EndpointKey) override;
     void topology(std::vector<AttachedEndpoint>) override;
     void outputCompleted(EndpointKey, CommandId, Error) override;
+    // High-bit IDs are private Body tickets. Native workers complete these even when the host does not drain frames.
+    void expectBody(EndpointKey, CommandId, const std::shared_ptr<std::atomic<int>>&);
+    void expectCompletion(EndpointKey,CommandId,std::weak_ptr<void> lifetime);
 
 private:
     struct EndpointProgress {
@@ -108,6 +112,8 @@ private:
     void loseTopology(ReportTime);
 
     std::mutex _mutex;
+    std::map<CommandId, std::pair<EndpointKey,std::weak_ptr<std::atomic<int>>>> _bodyReceipts;
+    std::map<CommandId,std::pair<EndpointKey,std::weak_ptr<void>>> _completionSlots;
     std::vector<Record> _records;
     std::vector<Record> _overflow;
     std::map<EndpointKey, EndpointProgress> _endpoints;

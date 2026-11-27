@@ -3,12 +3,24 @@
 #include "mapping/SdlMappingParser.h"
 #include "input/gamepad/GamepadFrame.h"
 
+#include <algorithm>
+#include <atomic>
 #include <bitset>
 #include <chrono>
 #include <compare>
 #include <future>
 
 namespace cc::input::detail {
+
+// Reserve space for native stops even when the output data queue is full.
+inline constexpr std::size_t outputStopReserve = 16;
+
+using NativeBodyGate = std::shared_ptr<const std::atomic_bool>;
+
+inline bool bodyGateOpen(const NativeBodyGate& gate) noexcept
+{
+    return !gate || gate->load(std::memory_order_acquire);
+}
 
 struct SdlAxisIndex {
     unsigned index;
@@ -52,6 +64,9 @@ struct EndpointCapabilities {
     std::array<std::optional<float>, SensorCount> nominalHz;
     std::array<std::optional<TriggerLimits>, 2> triggerLimits;
     std::uint32_t playerLightMask = 0;
+    // Body rumble expires without an engine frame, and a successful Body
+    // stop completion means the native output accepted the neutral state.
+    bool acknowledgedBodyStop = false;
 };
 
 struct HapticAudioIdentity {
@@ -115,11 +130,31 @@ struct NativeCommand {
     OutputCommand command;
     bool waveformMode = false;
     std::shared_future<bool> bodyReady{};
+    // Revoked before a replacement queues its stop on the same endpoint.
+    NativeBodyGate bodyGate{};
+    std::uint64_t bodyDeadlineNs = 0;
 
     bool canApply() const noexcept
     {
-        try { return !bodyReady.valid() || bodyReady.get(); }
+        try
+        {
+            return (!bodyReady.valid() || bodyReady.get()) && bodyGateOpen(bodyGate);
+        }
         catch (const std::future_error&) { return false; }
+    }
+
+    OutputCommand commandAt(std::uint64_t now) const
+    {
+        if (const auto* rumble = std::get_if<Rumble>(&command); rumble && bodyDeadlineNs)
+        {
+            // Round down so the native duration cannot extend the deadline.
+            const auto remainingMs = bodyDeadlineNs > now ? (bodyDeadlineNs - now) / 1'000'000 : 0;
+            if (!remainingMs)
+                return Stop{Channel::Body};
+            return Rumble{rumble->low, rumble->high,
+                std::min(rumble->duration, std::chrono::milliseconds(remainingMs))};
+        }
+        return command;
     }
 };
 
@@ -150,6 +185,8 @@ public:
     virtual Error setSensor(EndpointKey, Sensor, bool) { return Error::Unsupported; }
     virtual void setClaimed(EndpointKey, bool) {}
     // Queue promptly. Accepted operations complete through ReportSink.
+    // On a route with acknowledgedBodyStop, complete a Body stop successfully
+    // only after applying the native stop or establishing that Body is idle.
     virtual Error submit(EndpointKey, const NativeCommand&) = 0;
     // Unregister, wake workers, and wait for callbacks before returning.
     virtual void stop() noexcept = 0;

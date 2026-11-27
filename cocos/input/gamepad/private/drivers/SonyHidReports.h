@@ -144,14 +144,38 @@ public:
             output->configureRumble(dualSenseModelFor(model), transport, firmware);
     }
 
-    bool apply(const OutputCommand& command, std::uint64_t now)
+    bool apply(const OutputCommand& command, std::uint64_t now, const NativeBodyGate& gate = {})
     {
-        return std::visit([&](auto& output) { return output.apply(command, now); }, _state);
+        const bool rumble = std::holds_alternative<Rumble>(command);
+        if (rumble && !bodyGateOpen(gate))
+            return false;
+        const bool cancelBody = !rumble && !bodyGateOpen(_bodyGate);
+        if (auto* output = std::get_if<DualSenseOutput>(&_state))
+        {
+            if (!output->apply(command, now))
+                return false;
+            if (cancelBody)
+                output->apply(Stop{Channel::Body}, now);
+            else
+                output->expire(now);
+        }
+        else if (!std::get<DualShock4Output>(_state).apply(command, now, cancelBody))
+            return false;
+        if (!hasTimedRumble())
+            _bodyGate.reset();
+        else if (rumble)
+            _bodyGate = gate;
+        return true;
     }
 
     bool expire(std::uint64_t now)
     {
-        return std::visit([&](auto& output) { return output.expire(now); }, _state);
+        if (!bodyGateOpen(_bodyGate))
+            return apply(Stop{Channel::Body}, now);
+        const auto changed = std::visit([&](auto& output) { return output.expire(now); }, _state);
+        if (changed)
+            _bodyGate.reset();
+        return changed;
     }
 
     bool setHapticsMode(bool enabled)
@@ -160,6 +184,8 @@ public:
         if (!output)
             return false;
         output->setHapticsMode(enabled);
+        if (enabled)
+            _bodyGate.reset();
         return true;
     }
 
@@ -180,6 +206,7 @@ public:
 
 private:
     std::variant<DualSenseOutput, DualShock4Output> _state;
+    NativeBodyGate _bodyGate;
 };
 
 } // namespace cc::input::detail

@@ -255,19 +255,20 @@ struct Device : WinInputEndpoint {
         }
     }
 
-    Error submit(const OutputCommand& command)
+    Error submit(const OutputCommand& command, const NativeBodyGate& gate)
     {
         const auto* stop = std::get_if<Stop>(&command);
-        if (stoppingOutput && (!stop || stop->channel != Channel::All)) return Error::Busy;
+        if (stoppingOutput && (!stop || (stop->channel != Channel::All && stop->channel != Channel::Body)))
+            return Error::Busy;
         if (!descriptor.capabilities.features.test(static_cast<unsigned>(Feature::BodyRumble)))
             return Error::Unsupported;
         if ((std::holds_alternative<TriggerRumble>(command) || (stop && stop->channel == Channel::Triggers)) &&
             !descriptor.capabilities.features.test(static_cast<unsigned>(Feature::TriggerRumble)))
             return Error::Unsupported;
-        auto next = motors;
+        auto next = stoppingOutput ? XboxRumbleState{} : motors;
         const auto now = nowNs();
         next.expire(now);
-        if (!next.apply(command, now)) return Error::Unsupported;
+        if (!next.apply(command, now, gate)) return bodyGateOpen(gate) ? Error::Unsupported : Error::Busy;
         return write(next);
     }
 
@@ -376,6 +377,7 @@ std::optional<Device> openDevice(const WgiRuntime& runtime, ComPtr<wgi::IGamepad
     if (SUCCEEDED(result.gamepad->get_Vibration(&feedback)))
     {
         descriptor.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble));
+        descriptor.capabilities.acknowledgedBodyStop = true;
         descriptor.capabilities.features.set(static_cast<unsigned>(Feature::TriggerRumble), modernXbox(product));
     }
     result.state.buttons.resize(layout.buttonCount);
@@ -473,7 +475,7 @@ public:
             std::lock_guard lock(_mutex);
             if (_exit || !_published.contains(key)) return Error::Disconnected;
             if (!_active && !stop) return Error::Busy;
-            if (_commands.size() >= maxOutputCommands) return Error::QueueFull;
+            if (_commands.size() >= maxOutputCommands + (stop ? outputStopReserve : 0)) return Error::QueueFull;
             _commands.push_back({key, command, _outputEpoch});
         }
         _wake.notify_one();
@@ -559,8 +561,8 @@ private:
                 std::lock_guard lock(_mutex);
                 active = _active && !_exit && request.epoch == _outputEpoch;
             }
-            result = active || std::holds_alternative<Stop>(request.command.command)
-                ? destination->second.submit(request.command.command) : Error::Busy;
+            result = request.command.canApply() && (active || std::holds_alternative<Stop>(request.command.command))
+                ? destination->second.submit(request.command.commandAt(nowNs()), request.command.bodyGate) : Error::Busy;
         }
         if (request.command.id != CommandId{})
             sink.outputCompleted(request.key, request.command.id, result);

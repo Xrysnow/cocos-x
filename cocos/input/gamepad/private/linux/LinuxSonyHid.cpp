@@ -158,6 +158,7 @@ std::unique_ptr<LinuxSonyHid> LinuxSonyHid::open(const std::string& path, Endpoi
     if (writable)
     {
         caps.features.set(static_cast<unsigned>(Feature::BodyRumble));
+        caps.acknowledgedBodyStop = true;
         caps.features.set(static_cast<unsigned>(Feature::RgbLed));
         if (!ds4)
         {
@@ -202,11 +203,15 @@ bool LinuxSonyHid::read(ReportSink& sink, const std::function<void()>& beforeAtt
             const auto now = nowNs();
             if (_firstFull == 0) _firstFull = now;
             // DualSense must finish its Bluetooth light animation before accepting colors.
-            if (_hasOutput && now >= _retryLightsAt &&
+            if (_hasOutput && !_resetOutput && now >= _retryLightsAt &&
                 (sample->sensorTicks >= 10200000 || now - _firstFull >= 3400000000ULL))
             {
                 _retryLightsAt = now + 250000000;
-                _releaseLights = !write(_output, DualSenseOutputKind::ReleaseBluetoothLights) || !write(_output);
+                auto next = _output;
+                next.expire(now);
+                _releaseLights = !write(next, DualSenseOutputKind::ReleaseBluetoothLights) || !write(next);
+                if (!_releaseLights)
+                    _output = next;
             }
         }
         std::array<RawChange, DualSenseEdgeButtonCount + 7> changes{};
@@ -275,22 +280,28 @@ bool LinuxSonyHid::write(SonyHidOutput& state, DualSenseOutputKind kind)
     return !bytes.empty() && ::write(_fd, bytes.data(), bytes.size()) == static_cast<ssize_t>(bytes.size());
 }
 
-Error LinuxSonyHid::submit(const OutputCommand& command)
+Error LinuxSonyHid::submit(const OutputCommand& command, const NativeBodyGate& gate)
 {
     if (!_writable || !_attached)
         return Error::Unsupported;
     auto candidate = _output;
     const auto* stop = std::get_if<Stop>(&command);
+    const bool stopAll = stop && stop->channel == Channel::All;
+    const bool stopBody = stop && stop->channel == Channel::Body;
+    if (_resetOutput && !stopAll && !stopBody)
+        return Error::Busy;
+    const bool allNeutral = stopAll || _resetOutput;
     const bool stopsWaveform = std::holds_alternative<Rumble>(command) ||
-        (stop && (stop->channel == Channel::All || stop->channel == Channel::Body));
+        stopAll || stopBody;
     if (stopsWaveform)
         candidate.setHapticsMode(false);
-    if (!candidate.apply(command, nowNs()))
-        return Error::Unsupported;
+    if (!candidate.apply(allNeutral ? OutputCommand{Stop{}} : command, nowNs(), gate))
+        return bodyGateOpen(gate) ? Error::Unsupported : Error::Busy;
     if (!write(candidate))
         return Error::BackendFailure;
     _output = candidate;
-    _hasOutput = true;
+    _hasOutput = !allNeutral;
+    _resetOutput = false;
     if (stopsWaveform)
         _waveformMode = false;
     return Error::None;
@@ -300,6 +311,8 @@ Error LinuxSonyHid::startWaveform()
 {
     if (!_attached || !_writable || _descriptor.hapticAudio.usbPath.empty())
         return Error::Unsupported;
+    if (_resetOutput)
+        return Error::Busy;
     auto next = _output;
     if (!next.setHapticsMode(true) || !write(next))
         return Error::BackendFailure;
@@ -312,19 +325,18 @@ Error LinuxSonyHid::startWaveform()
 void LinuxSonyHid::neutral()
 {
     if (_hasOutput)
-    {
-        _output.setHapticsMode(false);
-        _output.apply(Stop{}, nowNs());
-        write(_output);
-        _hasOutput = false;
-        _waveformMode = false;
-    }
+        _resetOutput = submit(Stop{}) != Error::None;
     _fingers = {};
 }
 
 
 void LinuxSonyHid::tick(std::uint64_t now, bool)
 {
+    if (_resetOutput)
+    {
+        neutral();
+        return;
+    }
     auto candidate = _output;
     if (candidate.expire(now) && write(candidate))
         _output = candidate;

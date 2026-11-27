@@ -50,7 +50,14 @@ Error HapticPlayback::pause()
 
 Error HapticPlayback::resume()
 {
-    return _session ? detail::mapAudioError(_session->audio.resume()) : Error::Disconnected;
+    if (!_session || _session->lifetime.expired()) return Error::Disconnected;
+    const auto state = _session->audio.snapshot();
+    if (state.error != AudioOutputError::None) return detail::mapAudioError(state.error);
+    if(state.state != AudioPlaybackState::Playing && state.state != AudioPlaybackState::Buffering &&
+       state.state != AudioPlaybackState::Paused)return Error::InvalidArgument;
+    if(auto port=_session->managed.lock(); port && !_session->router->_control.ownsPcm(_session->device,port))
+        return Error::InvalidArgument;
+    return detail::mapAudioError(_session->audio.resume());
 }
 
 Error HapticPlayback::stop()
@@ -83,7 +90,7 @@ HapticPlaybackSnapshot HapticPlayback::snapshot() const
         return {};
     const auto snap = _session->audio.snapshot();
     const auto reason = snap.error == AudioOutputError::Disconnected &&
-        _session->stopReason != HapticStopReason::Disconnected ? HapticStopReason::EndpointLost : _session->stopReason;
+        _session->stopReason != HapticStopReason::Disconnected ? HapticStopReason::EndpointLost : _session->stopReason.load();
     return {snap.state, detail::mapAudioError(snap.error), snap.positionSeconds, snap.durationSeconds,
             snap.gain, snap.looping, snap.seekable, reason};
 }

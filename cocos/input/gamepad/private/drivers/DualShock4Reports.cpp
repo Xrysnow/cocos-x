@@ -221,7 +221,7 @@ void DualShock4SensorClock::reset() noexcept
     _ticks = 0;
 }
 
-bool DualShock4Output::apply(const OutputCommand& command, std::uint64_t now)
+bool DualShock4Output::apply(const OutputCommand& command, std::uint64_t now, bool cancelBody)
 {
     const auto unit = [](float value) { return std::isfinite(value) && 0 <= value && value <= 1; };
     if (const auto* rumble = std::get_if<Rumble>(&command))
@@ -242,7 +242,7 @@ bool DualShock4Output::apply(const OutputCommand& command, std::uint64_t now)
     else if (const auto* rgb = std::get_if<Rgb>(&command))
     {
         _rgb = *rgb;
-        _effectFlags = lightFlag;
+        _effectFlags = lightFlag | (expire(now, cancelBody) ? rumbleFlag : 0);
     }
     else if (const auto* stop = std::get_if<Stop>(&command))
     {
@@ -250,7 +250,7 @@ bool DualShock4Output::apply(const OutputCommand& command, std::uint64_t now)
         {
         case Channel::All: _effectFlags = rumbleFlag | lightFlag; break;
         case Channel::Body: _effectFlags = rumbleFlag; break;
-        case Channel::Lights: _effectFlags = lightFlag; break;
+        case Channel::Lights: _effectFlags = lightFlag | (expire(now, cancelBody) ? rumbleFlag : 0); break;
         default: return false;
         }
         if (_effectFlags & rumbleFlag)
@@ -266,9 +266,9 @@ bool DualShock4Output::apply(const OutputCommand& command, std::uint64_t now)
     return true;
 }
 
-bool DualShock4Output::expire(std::uint64_t now)
+bool DualShock4Output::expire(std::uint64_t now, bool cancelBody)
 {
-    if (!_expires || now < *_expires)
+    if (!_expires || (!cancelBody && now < *_expires))
         return false;
     _expires.reset();
     _low = _high = 0;
