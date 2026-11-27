@@ -36,7 +36,12 @@ struct Bounds
     Point lo{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
     Point hi{-lo.x, -lo.y};
     void add(Point p);
-    double distance2(const Bounds& other) const;
+    double distance2(const Bounds& other) const
+    {
+        const double x = std::max(std::max(0., lo.x - other.hi.x), other.lo.x - hi.x);
+        const double y = std::max(std::max(0., lo.y - other.hi.y), other.lo.y - hi.y);
+        return x * x + y * y;
+    }
 };
 
 // Roots in the open unit interval, sorted. Coefficients are in ascending power order.
@@ -70,14 +75,20 @@ struct Edge
         double distance, alignment, pseudo;
     };
     Hit nearest(Point q) const;
-    void crossings(double y, std::vector<std::pair<double, int>>& out) const;
+    double nearestDistance2(Point q) const;
+    // With halfIntegerSamples, x positions are accurate only for classification
+    // against half-integer sample centers. The crossing direction is unchanged.
+    void crossings(double y, std::vector<std::pair<double, int>>& out, bool halfIntegerSamples = false) const;
+
+private:
+    double nearestParameter(Point q) const;
 };
 
 struct Frame
 {
     int left, top, width, height;
     double range;
-    Point sample(int x, int y) const { return {left + x + 0.5, top - y - 0.5}; }
+    Point sample(int x, int y) const { return {left + 0.5 + x, top - 0.5 - y}; }
 };
 using Channels = std::array<float, 3>;
 inline float median(Channels v)
@@ -87,6 +98,7 @@ inline float median(Channels v)
 
 GlyphStatus validateFace(FT_Face face);
 GlyphStatus prepareBoundary(FT_Outline&, const RasterRequest&, Outline&);
+GlyphStatus prepareBoundary(FT_Outline&, const RasterRequest&, Outline&, double flatness);
 void colorEdges(Contour&);
 RasterResult rasterBitmap(FT_GlyphSlot, const RasterRequest&);
 RasterResult copyBitmap(const FT_Bitmap&, int left, int top);

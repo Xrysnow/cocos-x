@@ -79,7 +79,7 @@ struct Arc
 };
 constexpr size_t straight = size_t(-1);
 
-bool flat(const Curve& curve)
+bool flat(const Curve& curve, double flatness)
 {
     const Point span     = curve.end() - curve.start();
     const double length2 = span.length2();
@@ -106,12 +106,13 @@ bool flat(const Curve& curve)
 struct BoundaryBuilder
 {
     const std::vector<Curve>& curves;
+    double flatness;
     std::vector<Chord> chords;
     std::map<std::pair<int64_t, int64_t>, std::vector<size_t>> incident;
 
     bool flatten(const Curve& curve, size_t index, double from, double to, int depth, Path64& path)
     {
-        if (!flat(curve))
+        if (!flat(curve, flatness))
         {
             if (depth == 30)
                 return false;
@@ -231,6 +232,11 @@ struct BoundaryBuilder
 
 GlyphStatus prepareBoundary(FT_Outline& outline, const RasterRequest& req, Outline& result)
 {
+    return prepareBoundary(outline, req, result, flatness);
+}
+
+GlyphStatus prepareBoundary(FT_Outline& outline, const RasterRequest& req, Outline& result, double flatness)
+{
     if (FT_Outline_Check(&outline))
         return GlyphStatus::RasterError;
     OutlineReader input;
@@ -241,7 +247,7 @@ GlyphStatus prepareBoundary(FT_Outline& outline, const RasterRequest& req, Outli
     if (FT_Outline_Decompose(&outline, &functions, &input))
         return GlyphStatus::RasterError;
     input.starts.push_back(input.curves.size());
-    BoundaryBuilder builder{input.curves, {}, {}};
+    BoundaryBuilder builder{input.curves, flatness, {}, {}};
     Clipper2Lib::Paths64 paths;
     for (size_t c = 1; c < input.starts.size(); ++c)
     {

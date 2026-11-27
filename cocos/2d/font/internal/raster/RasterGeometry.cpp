@@ -14,13 +14,6 @@ void Bounds::add(Point p)
     hi = {std::max(hi.x, p.x), std::max(hi.y, p.y)};
 }
 
-double Bounds::distance2(const Bounds& box) const
-{
-    const double x = std::max({0., lo.x - box.hi.x, box.lo.x - hi.x});
-    const double y = std::max({0., lo.y - box.hi.y, box.lo.y - hi.y});
-    return x * x + y * y;
-}
-
 static double evaluate(const double* c, int degree, double t)
 {
     double value = c[degree];
@@ -183,7 +176,7 @@ Edge::Edge(const Curve& c, const Curve& previous, const Curve& next)
             stationary[i + j - 1] += power[i].dot(power[j]) * j;
 }
 
-Edge::Hit Edge::nearest(Point q) const
+double Edge::nearestParameter(Point q) const
 {
     double t       = 0;
     double squared = (q - curve.start()).length2();
@@ -212,6 +205,17 @@ Edge::Hit Edge::nearest(Point q) const
             }
         }
     }
+    return t;
+}
+
+double Edge::nearestDistance2(Point q) const
+{
+    return (q - curve.at(nearestParameter(q))).length2();
+}
+
+Edge::Hit Edge::nearest(Point q) const
+{
+    const double t  = nearestParameter(q);
     Point direction = startDir;
     if (t == 1)
         direction = endDir;
@@ -231,7 +235,7 @@ Edge::Hit Edge::nearest(Point q) const
     return {distance, alignment, extended ? normal : distance};
 }
 
-void Edge::crossings(double y, std::vector<std::pair<double, int>>& out) const
+void Edge::crossings(double y, std::vector<std::pair<double, int>>& out, bool halfIntegerSamples) const
 {
     if (y < bounds.lo.y || y >= bounds.hi.y)
         return;
@@ -244,21 +248,44 @@ void Edge::crossings(double y, std::vector<std::pair<double, int>>& out) const
     double knots[4]{};
     const int last = 1 + unitRoots(deriv, curve.degree - 1, knots + 1);
     knots[last]    = 1;
+    double maxDx = 0, slack = 0;
+    if (halfIntegerSamples)
+    {
+        double scale = std::max(1., std::abs(curve.start().x));
+        for (int i = 1; i <= curve.degree; ++i)
+        {
+            scale = std::max(scale, std::abs(curve.p[i].x));
+            maxDx = std::max(maxDx, std::abs(curve.p[i].x - curve.p[i - 1].x));
+        }
+        maxDx *= curve.degree;
+        slack = 64 * std::numeric_limits<double>::epsilon() * scale;
+    }
     for (int i = 0; i < last; ++i)
     {
         double a = knots[i], b = knots[i + 1];
         const double ya = curve.at(a).y, yb = curve.at(b).y;
         if (y < std::min(ya, yb) || y >= std::max(ya, yb))
             continue;
+        Point middle;
         for (int k = 0; k < 42; ++k)
         {
             const double mid = (a + b) * 0.5;
-            if ((curve.at(mid).y < y) == (ya < yb))
+            middle = curve.at(mid);
+            if (halfIntegerSamples && (k == 8 || k == 16 || k == 24))
+            {
+                const double cutoff = std::round(middle.x - 0.5) + 0.5;
+                // The derivative control points bound horizontal travel in this bracket.
+                if (std::abs(middle.x - cutoff) > maxDx * (b - a) * 0.5 + slack)
+                    break;
+            }
+            if ((middle.y < y) == (ya < yb))
                 a = mid;
             else
                 b = mid;
+            if (k == 41)
+                middle = curve.at((a + b) * 0.5);
         }
-        out.emplace_back(curve.at((a + b) * 0.5).x, ya < yb ? 1 : -1);
+        out.emplace_back(middle.x, ya < yb ? 1 : -1);
     }
 }
 }  // namespace cc::font::detail
