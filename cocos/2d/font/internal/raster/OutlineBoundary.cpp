@@ -1,7 +1,7 @@
 #include "RasterGeometry.h"
 #include "clipper2/clipper.h"
 #include FT_OUTLINE_H
-#include <map>
+#include <bit>
 
 namespace cc::font::detail
 {
@@ -71,6 +71,53 @@ struct Chord
     double from, to;
 };
 
+class ChordIndex
+{
+public:
+    static constexpr uint32_t none = std::numeric_limits<uint32_t>::max();
+
+    void build(std::span<const Chord> chords)
+    {
+        heads.assign(std::bit_ceil(std::max<size_t>(1, 4 * chords.size())), none);
+        links.resize(2 * chords.size());
+        // Reverse insertion makes each chain visit chords in the original order.
+        for (size_t i = links.size(); i > 0; --i)
+        {
+            const auto link = static_cast<uint32_t>(i - 1);
+            auto& head = heads[slot(chords, point(chords, link))];
+            links[link] = head;
+            head = link;
+        }
+    }
+
+    uint32_t first(std::span<const Chord> chords, Point64 key) const { return heads[slot(chords, key)]; }
+    uint32_t next(uint32_t link) const { return links[link]; }
+
+private:
+    static Point64 point(std::span<const Chord> chords, uint32_t link)
+    {
+        const auto& chord = chords[link >> 1];
+        return link & 1 ? chord.b : chord.a;
+    }
+
+    size_t slot(std::span<const Chord> chords, Point64 key) const
+    {
+        // Grid coordinates share many low bits. Mix both axes before masking.
+        uint64_t hash = uint64_t(key.x) * 0x9e3779b185ebca87ULL;
+        hash ^= std::rotl(uint64_t(key.y) * 0xc2b2ae3d27d4eb4fULL, 31);
+        hash ^= hash >> 33;
+        hash *= 0xff51afd7ed558ccdULL;
+        hash ^= hash >> 33;
+        const size_t mask = heads.size() - 1;
+        size_t i = hash & mask;
+        while (heads[i] != none && point(chords, heads[i]) != key)
+            i = (i + 1) & mask;
+        return i;
+    }
+
+    std::vector<uint32_t> heads, links;
+};
+
 struct Arc
 {
     Point64 a, b;
@@ -108,7 +155,7 @@ struct BoundaryBuilder
     const std::vector<Curve>& curves;
     double flatness;
     std::vector<Chord> chords;
-    std::map<std::pair<int64_t, int64_t>, std::vector<size_t>> incident;
+    ChordIndex incident;
 
     bool flatten(const Curve& curve, size_t index, double from, double to, int depth, Path64& path)
     {
@@ -127,8 +174,6 @@ struct BoundaryBuilder
         if (chords.size() >= maxBoundaryChords)
             return false;
         path.push_back(a);
-        incident[{a.x, a.y}].push_back(chords.size());
-        incident[{b.x, b.y}].push_back(chords.size());
         chords.push_back({a, b, index, from, to});
         return true;
     }
@@ -177,16 +222,12 @@ struct BoundaryBuilder
             result.source = chord.source;
             return true;
         };
-        for (auto end : {a, b})
-        {
-            const auto it = incident.find({end.x, end.y});
-            if (it != incident.end())
-                for (size_t i : it->second)
-                    if (match(i))
-                        return result;
-        }
-        // Two new intersections can lie on the same original chord.
-        if (!incident.contains({a.x, a.y}) && !incident.contains({b.x, b.y}))
+        const auto firstA = incident.first(chords, a), firstB = incident.first(chords, b);
+        for (auto first : {firstA, firstB})
+            for (auto link = first; link != ChordIndex::none; link = incident.next(link))
+                if (match(link >> 1))
+                    return result;
+        if (firstA == ChordIndex::none && firstB == ChordIndex::none)
             for (size_t i = 0; i < chords.size(); ++i)
                 if (match(i))
                     return result;
@@ -273,6 +314,7 @@ GlyphStatus prepareBoundary(FT_Outline& outline, const RasterRequest& req, Outli
         (outline.flags & FT_OUTLINE_EVEN_ODD_FILL) ? Clipper2Lib::FillRule::EvenOdd : Clipper2Lib::FillRule::NonZero;
     if (!clip.Execute(Clipper2Lib::ClipType::Union, rule, boundary))
         return GlyphStatus::RasterError;
+    builder.incident.build(builder.chords);
     size_t vertices = 0;
     for (const auto& path : boundary)
     {
