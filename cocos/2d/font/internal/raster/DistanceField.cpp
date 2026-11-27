@@ -1,5 +1,6 @@
 #include "RasterGeometry.h"
 #include FT_OUTLINE_H
+#include <ranges>
 
 namespace cc::font::detail
 {
@@ -54,6 +55,10 @@ struct Selector
             pseudo    = hit.pseudo;
         }
     }
+    bool improvesExtension(double d) const
+    {
+        return (d >= 0 && d < positive) || (d <= 0 && d > negative);
+    }
     void extend(double d)
     {
         if (d >= 0)
@@ -82,18 +87,20 @@ bool extensionInRange(Point point, Point direction, Point bisector, const Bounds
     return cosine <= 0 || endpoint.distance2(tile) * cosine * cosine <= limit;
 }
 
-void selectMsdfTile(std::vector<size_t>& indices, std::span<const Edge> edges, const Bounds& tile)
+template <typename Indices>
+void selectMsdfTile(std::vector<size_t>& indices, std::span<const Edge> edges, const Indices& source, const Bounds& tile)
 {
     indices.clear();
     std::array<double, 3> upper{infinity, infinity, infinity};
-    for (const auto& edge : edges)
+    for (size_t i : source)
     {
+        const auto& edge = edges[i];
         const double bound = std::min(upperBound2(edge.curve.start(), tile), upperBound2(edge.curve.end(), tile));
         for (int c = 0; c < 3; ++c)
             if (edge.curve.color & (1u << c))
                 upper[c] = std::min(upper[c], bound);
     }
-    for (size_t i = 0; i < edges.size(); ++i)
+    for (size_t i : source)
     {
         const auto& e = edges[i];
         double limit  = 0;
@@ -108,26 +115,58 @@ void selectMsdfTile(std::vector<size_t>& indices, std::span<const Edge> edges, c
     }
 }
 
-Channels sampleMsdf(std::span<const Edge> edges, std::span<const size_t> candidates, Point p)
+Channels sampleMsdf(std::span<const Edge> edges, std::span<const size_t> candidates, Point p, double slack2)
 {
     std::array<Selector, 3> selectors;
+    const Bounds sample{p, p};
     for (size_t i : candidates)
     {
         const Edge& edge = edges[i];
-        const auto hit   = edge.nearest(p);
+        const unsigned colors = edge.curve.color;
         const Point a = p - edge.curve.start(), b = p - edge.curve.end();
         const bool before = a.dot(edge.startBisector) > 0 && a.dot(edge.startDir) < 0;
         const bool after  = b.dot(edge.endBisector) < 0 && b.dot(edge.endDir) > 0;
+        const double start = before ? a.cross(edge.startDir) : infinity;
+        const double end   = after ? b.cross(edge.endDir) : infinity;
+
+        const double lower2 = edge.bounds.distance2(sample);
+        double active2 = 0;
         for (int c = 0; c < 3; ++c)
+            if (colors & (1u << c))
+                active2 = std::max(active2, selectors[c].nearest * selectors[c].nearest);
+
+        // Keep ties for alignment. Endpoint extensions may still win after
+        // the true distance has been ruled out in every relevant channel.
+        bool solve = lower2 <= active2 + slack2;
+        bool useStart = before && start * start + slack2 < lower2;
+        bool useEnd   = after && end * end + slack2 < lower2;
+        if (!solve)
+            for (int c = 0; c < 3; ++c)
+                if ((colors & (1u << c)) &&
+                    ((before && !useStart && selectors[c].improvesExtension(start)) ||
+                     (after && !useEnd && selectors[c].improvesExtension(end))))
+                {
+                    solve = true;
+                    break;
+                }
+        if (solve)
         {
-            if (!(edge.curve.color & (1u << c)))
-                continue;
-            selectors[c].consider(hit);
-            if (before && std::abs(a.cross(edge.startDir)) < std::abs(hit.distance))
-                selectors[c].extend(a.cross(edge.startDir));
-            if (after && std::abs(b.cross(edge.endDir)) < std::abs(hit.distance))
-                selectors[c].extend(b.cross(edge.endDir));
+            const auto hit = edge.nearest(p);
+            for (int c = 0; c < 3; ++c)
+                if (colors & (1u << c))
+                    selectors[c].consider(hit);
+            useStart = std::abs(start) < std::abs(hit.distance);
+            useEnd   = std::abs(end) < std::abs(hit.distance);
         }
+        if (useStart || useEnd)
+            for (int c = 0; c < 3; ++c)
+                if (colors & (1u << c))
+                {
+                    if (useStart)
+                        selectors[c].extend(start);
+                    if (useEnd)
+                        selectors[c].extend(end);
+                }
     }
     return {float(selectors[0].value()), float(selectors[1].value()), float(selectors[2].value())};
 }
@@ -142,13 +181,12 @@ void makeInsideRow(
     const Frame& frame,
     int y,
     std::vector<std::pair<double, int>>& crossings,
-    uint8_t* inside,
-    bool halfIntegerSamples)
+    uint8_t* inside)
 {
     crossings.clear();
     const double sampleY = frame.sample(0, y).y;
     for (const auto& edge : edges)
-        edge.crossings(sampleY, crossings, halfIntegerSamples);
+        edge.crossings(sampleY, crossings, true);
     std::sort(crossings.begin(), crossings.end());
     int winding = 0;
     size_t next = 0;
@@ -246,7 +284,7 @@ RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi
     std::vector<int8_t> signMatches(multi ? count : 0);
     std::vector<uint8_t> inside(tileSize * frame.width);
     std::vector<std::pair<double, int>> crossings;
-    std::vector<size_t> candidates;
+    std::vector<size_t> candidates, subCandidates;
     std::vector<SdfCandidate> sdfCandidates;
     // SDF encoding saturates at half the range. Keep a rounding margin for
     // edge bounds and squared-distance comparisons.
@@ -255,12 +293,15 @@ RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi
     const double scale  = std::max(std::abs(double(frame.left)), std::abs(double(frame.top))) + maxImageSide;
     const double margin = 1e-6 + 64 * std::numeric_limits<double>::epsilon() * scale;
     const double slack2 = margin * (2 * radius + margin);
+    const double msdfScale = std::max(std::abs(double(frame.left)), std::abs(double(frame.top))) +
+                             std::max(frame.width, frame.height);
+    const double msdfSlack2 = 128 * std::numeric_limits<double>::epsilon() * msdfScale * msdfScale;
     bool signChanged = false;
     for (int y0 = 0; y0 < frame.height; y0 += tileSize)
     {
         const int y1 = std::min(y0 + tileSize, frame.height);
         for (int y = y0; y < y1; ++y)
-            makeInsideRow(edges, frame, y, crossings, inside.data() + (y - y0) * frame.width, !multi);
+            makeInsideRow(edges, frame, y, crossings, inside.data() + (y - y0) * frame.width);
         for (int x0 = 0; x0 < frame.width; x0 += tileSize)
         {
             if (stopped(req))
@@ -281,26 +322,35 @@ RasterResult rasterField(FT_GlyphSlot slot, const RasterRequest& req, bool multi
                     }
                 continue;
             }
-            selectMsdfTile(candidates, edges, tile);
-            for (int y = y0; y < y1; ++y)
-                for (int k = 0; k < x1 - x0; ++k)
+            selectMsdfTile(candidates, edges, std::views::iota(size_t(0), edges.size()), tile);
+            constexpr int subtileSize = 4;
+            for (int sy = y0; sy < y1; sy += subtileSize)
+                for (int sx = x0; sx < x1; sx += subtileSize)
                 {
-                    const int x       = (y % 2) ? x1 - 1 - k : x0 + k;
-                    const auto index  = size_t(y) * frame.width + x;
-                    const bool filled = inside[(y - y0) * frame.width + x] != 0;
-                    auto values       = sampleMsdf(edges, candidates, frame.sample(x, y));
-                    const float center = median(values);
-                    if (center != 0)
-                    {
-                        const bool agrees  = (center > 0) == filled;
-                        signMatches[index] = agrees ? 1 : -1;
-                        if (!agrees)
+                    const int ex = std::min(sx + subtileSize, x1), ey = std::min(sy + subtileSize, y1);
+                    Bounds sub;
+                    sub.add(frame.sample(sx, sy));
+                    sub.add(frame.sample(ex - 1, ey - 1));
+                    selectMsdfTile(subCandidates, edges, candidates, sub);
+                    for (int y = sy; y < ey; ++y)
+                        for (int x = sx; x < ex; ++x)
                         {
-                            flip(values);
-                            signChanged = true;
+                            const auto index = size_t(y) * frame.width + x;
+                            const bool filled = inside[(y - y0) * frame.width + x] != 0;
+                            auto values = sampleMsdf(edges, subCandidates, frame.sample(x, y), msdfSlack2);
+                            const float center = median(values);
+                            if (center != 0)
+                            {
+                                const bool agrees = (center > 0) == filled;
+                                signMatches[index] = agrees ? 1 : -1;
+                                if (!agrees)
+                                {
+                                    flip(values);
+                                    signChanged = true;
+                                }
+                            }
+                            field[index] = values;
                         }
-                    }
-                    field[index] = values;
                 }
         }
     }

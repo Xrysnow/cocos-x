@@ -21,24 +21,45 @@ struct Interpolant
 double referenceDistance(Point p, std::span<const Edge> edges)
 {
     double nearest = std::numeric_limits<double>::infinity();
-    std::vector<std::pair<double, int>> crossings;
+    int winding = 0;
     for (const auto& edge : edges)
     {
         if (edge.bounds.distance2({p, p}) <= nearest * nearest)
             nearest = std::min(nearest, std::abs(edge.nearest(p).distance));
-        if (p.y >= edge.bounds.lo.y && p.y <= edge.bounds.hi.y && edge.bounds.lo.x <= p.x)
-            edge.crossings(p.y, crossings);
+        winding += edge.windingAt(p);
     }
-    int winding = 0;
-    for (auto [x, d] : crossings)
-        if (x <= p.x)
-            winding += d;
     return winding ? nearest : -nearest;
+}
+
+int artifactRoots(const double* c, double* roots, bool diagonal)
+{
+    if (!c[2])
+    {
+        if (!c[1])
+            return 0;
+        const double t = -c[0] / c[1];
+        if (!(t > 0 && t < 1))
+            return 0;
+        roots[0] = t;
+        return 1;
+    }
+    if (diagonal)
+    {
+        // A quadratic stays in the hull of its three Bernstein coefficients.
+        // Keep the same near-zero tolerance at stationary points as unitRoots.
+        const double margin = 32 * std::numeric_limits<double>::epsilon() *
+                              (std::abs(c[0]) + std::abs(c[1]) + std::abs(c[2]));
+        const double b0 = c[0], b1 = c[0] + 0.5 * c[1], b2 = (c[2] + c[1]) + c[0];
+        if ((b0 > margin && b1 > margin && b2 > margin) ||
+            (b0 < -margin && b1 < -margin && b2 < -margin))
+            return 0;
+    }
+    return unitRoots(c, 2, roots);
 }
 
 bool artifact(
     const Interpolant& f,
-    const Channels& last,
+    double ma, double mb,
     Point start,
     Point step,
     std::span<const Edge> edges,
@@ -46,10 +67,7 @@ bool artifact(
     bool useReference,
     bool diagonal)
 {
-    const double ma = median(f.a), mb = median(last);
-    if (std::abs(ma) < std::abs(mb) || (f.a[0] == f.a[1] && f.a[1] == f.a[2]))
-        return false;
-    const double span = std::sqrt(step.length2()) * 10. / 9.;
+    const double span = (diagonal ? std::sqrt(2.) : 1.) * 10. / 9.;
     auto check        = [&](double t) {
         const Channels rgb   = f.at(t);
         const double m       = median(rgb);
@@ -72,7 +90,7 @@ bool artifact(
     {
         const int k               = (c + 1) % 3;
         const double polynomial[] = {f.a[c] - f.a[k], f.linear[c] - f.linear[k], f.quadratic[c] - f.quadratic[k]};
-        const int n               = unitRoots(polynomial, 2, roots);
+        const int n               = artifactRoots(polynomial, roots, diagonal);
         for (int i = 0; i < n; ++i)
             if (check(roots[i]))
                 return true;
@@ -94,6 +112,8 @@ GlyphStatus correctMsdf(
     const RasterRequest& req,
     bool signChanged)
 {
+    const double halfRange = frame.range / 2;
+    const double byteStep  = (frame.range / 255) * (1 - 1e-12);
     std::vector<uint8_t> marks(field.size());
     for (const auto& edge : edges)
     {
@@ -115,6 +135,13 @@ GlyphStatus correctMsdf(
             const auto a     = field[index];
             if (a[0] == a[1] && a[1] == a[2])
                 continue;
+            // Marks are applied after all neighborhood tests. Skipping this texel
+            // changes at most one encoded level per channel if it would be marked.
+            const double lo = std::clamp<double>(std::min({a[0], a[1], a[2]}), -halfRange, halfRange);
+            const double hi = std::clamp<double>(std::max({a[0], a[1], a[2]}), -halfRange, halfRange);
+            if (hi - lo < byteStep)
+                continue;
+            const double ma = median(a);
             bool marked = false;
             for (int dy = -1; dy <= 1 && !marked; ++dy)
                 for (int dx = -1; dx <= 1 && !marked; ++dx)
@@ -124,6 +151,9 @@ GlyphStatus correctMsdf(
                     const bool diagonal = dx && dy;
                     const size_t row    = size_t(y + dy) * frame.width;
                     const Channels b    = field[row + x + dx];
+                    const double mb = median(b);
+                    if (std::abs(ma) < std::abs(mb))
+                        continue;
                     Interpolant f{a, {}, {}};
                     for (int c = 0; c < 3; ++c)
                     {
@@ -134,11 +164,11 @@ GlyphStatus correctMsdf(
                     }
                     marked = artifact(
                         f,
-                        b,
+                        ma, mb,
                         frame.sample(x, y),
                         {double(dx), double(-dy)},
                         edges,
-                        marks[index] == 1 || std::abs(median(a)) < 0.5,
+                        marks[index] == 1 || std::abs(ma) < 0.5,
                         !signChanged,
                         diagonal);
                 }

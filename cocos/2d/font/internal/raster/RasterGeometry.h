@@ -79,6 +79,7 @@ struct Edge
     // With halfIntegerSamples, x positions are accurate only for classification
     // against half-integer sample centers. The crossing direction is unchanged.
     void crossings(double y, std::vector<std::pair<double, int>>& out, bool halfIntegerSamples = false) const;
+    int windingAt(Point p) const;
 
 private:
     double nearestParameter(Point q) const;
