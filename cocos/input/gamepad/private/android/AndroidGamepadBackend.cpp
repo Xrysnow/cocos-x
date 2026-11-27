@@ -4,6 +4,7 @@
 #include "../mapping/DeviceGuid.h"
 
 #include "platform/android/jni/JniHelper.h"
+#include "haptics/private/MobileHaptics.h"
 
 #include <algorithm>
 #include <deque>
@@ -262,6 +263,13 @@ public:
             ? Error::None : Error::Disconnected;
     }
 
+    std::shared_ptr<haptics::detail::MobileOutput> mobileOutput(EndpointKey key) override
+    {
+        int id;
+        {auto& b=bridge();std::lock_guard lock(b.mutex);auto* device=b.find(key);
+         if(!device || device->usb || !device->published)return {};id=device->id;}
+        return haptics::detail::makeMobileOutput(id);
+    }
     Error submit(EndpointKey key, const NativeCommand& command) override
     {
         if (command.waveformMode || command.bodyReady.valid())
@@ -374,6 +382,7 @@ JNIEXPORT void JNICALL Java_org_cocos_lib_CocosGamepads_nativeAttach(
     if (descriptor.vendor && descriptor.product && isKnownXboxProduct(*descriptor.vendor, *descriptor.product))
         descriptor.controllerType = GamepadType::XboxCompatible;
     descriptor.capabilities.features.set(static_cast<unsigned>(Feature::BodyRumble), feedback);
+    descriptor.capabilities.mobileHaptics=feedback;
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Accel), (additional & 1) != 0);
     descriptor.capabilities.sensors.set(static_cast<unsigned>(Sensor::Gyro), (additional & 2) != 0);
     descriptor.capabilities.features.set(static_cast<unsigned>(Feature::RgbLed), (additional & 4) != 0);

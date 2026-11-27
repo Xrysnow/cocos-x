@@ -607,6 +607,11 @@ HapticMixer::HapticMixer(Calibration c) : _state(std::make_unique<State>())
     _state->calibration = c;
 }
 HapticMixer::~HapticMixer() = default;
+std::unique_ptr<HapticMixer> HapticMixer::checkpoint() const {
+    auto copy=std::make_unique<HapticMixer>(_state->calibration);
+    *copy->_state=*_state;
+    return copy;
+}
 Time HapticMixer::now() const
 {
     return _state->clock;

@@ -46,7 +46,6 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
-import android.os.Vibrator;
 import android.preference.PreferenceManager.OnActivityResultListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -107,7 +106,6 @@ public class CocosEngine {
     private static volatile boolean sHasSoftKeys = true;
     private static volatile CocosEngineListener sCocosEngineListener;
     private static Set<OnActivityResultListener> onActivityResultListeners = new LinkedHashSet<OnActivityResultListener>();
-    private static Vibrator sVibrateService = null;
 
     // The absolute path to the OBB if it exists, else the absolute path to the APK.
     private static String sAssetsPath = "";
@@ -168,7 +166,7 @@ public class CocosEngine {
         CocosEngine.nativeSetContext((Context)activity, CocosEngine.sAssetManager);
         prepareWritableDirectorySnapshot(activity.getApplicationContext());
         BitmapHelper.setContext(activity.getApplicationContext());
-        CocosEngine.sVibrateService = (Vibrator)activity.getSystemService(Context.VIBRATOR_SERVICE);
+        CocosHaptics.init(activity.getApplicationContext());
         // Sensor listeners retain their Activity; release them before rebinding.
         if (sAccelerometer != null) sAccelerometer.disable();
         sAccelerometer = null;
@@ -439,7 +437,7 @@ public class CocosEngine {
     }
 
     public static void vibrate(float duration) {
-        sVibrateService.vibrate((long)(duration * 1000));
+        CocosHaptics.nativeVibrate(duration);
     }
 
     public static void impactOccurred(int style) {
@@ -499,6 +497,7 @@ public class CocosEngine {
     }
 
     public static void onResume() {
+        CocosHaptics.focus(true);
         sActivityVisible = true;
         if (CocosEngine.sAccelerometerEnabled) {
             CocosEngine.getAccelerometer().enableAccel();
@@ -509,6 +508,7 @@ public class CocosEngine {
     }
 
     public static void onPause() {
+        CocosHaptics.focus(false);
         sActivityVisible = false;
         sImeVisible = false;
         if (sAccelerometer != null) sAccelerometer.disable();

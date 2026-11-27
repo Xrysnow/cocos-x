@@ -1,5 +1,5 @@
 #pragma once
-#include "haptics/HapticService.h"
+#include "haptics/private/MobileHaptics.h"
 #include "input/gamepad/private/core/ReportQueue.h"
 #include <functional>
 
@@ -24,6 +24,13 @@ public:
     void shutdown();
     void resetScopes();
     void focused(bool active);
+    void platformFocus(bool active);
+    void forwarding(bool enabled);
+    void compatVibrate(float seconds);
+    void publishMobile(std::shared_ptr<MobileOutput>, std::optional<input::DeviceId> device = {}, Endpoint key = {});
+    Result<OperationId> rawCommand(std::uint64_t lease, MobileCommand command);
+    Result<OperationId> stopPlayer(std::uint64_t lease, RawPlayerId player);
+    std::weak_ptr<HapticControl> weak(HapticService& service) { return service._control; }
     void publishGamepad(input::DeviceId, Endpoint);
     void removeGamepad(input::DeviceId, bool disconnected);
     void publishHandset(Endpoint, bool canInterrupt, bool canRelease);
@@ -49,7 +56,7 @@ public:
     Result<OperationSnapshot> read(std::uint64_t, OperationId);
     Result<RawSession> acquire(std::weak_ptr<HapticControl>, std::uint64_t, TargetId, AcquirePolicy);
     RawSnapshot rawState(std::uint64_t) const;
-    Result<OperationId> cancelRaw(std::uint64_t);
+    Result<OperationId> cancelRaw(std::uint64_t, std::optional<RawPlayerId> player = {});
     void closeRaw(std::uint64_t);
 
 private:

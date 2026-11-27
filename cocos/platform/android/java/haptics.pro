@@ -1,0 +1,2 @@
+-keep class org.cocos.lib.CocosHaptics { *; }
+-keep class org.cocos.lib.CocosHapticsEnvelope { *; }

@@ -1,5 +1,6 @@
 #pragma once
 #include "haptics/HapticClip.h"
+#include "haptics/MobileEffects.h"
 #include "input/gamepad/GamepadTypes.h"
 #include <compare>
 namespace cc::haptics
@@ -114,6 +115,12 @@ private:
     friend class detail::HapticControl;
     std::uint64_t scope{}, serial{};
 };
+/** Player identity and ticket returned by a native Apple pattern start. */
+struct RawPlayback
+{
+    RawPlayerId player{};   ///< Identity used for subsequent updates and stop.
+    OperationId operation;  ///< Start ticket read through the owning scope.
+};
 /** Monotonic instant issued by one service generation. */
 class CC_DLL HapticTime
 {
@@ -132,15 +139,17 @@ private:
 /** Preset admission settings. */
 struct PlayOptions
 {
-    Track track = Track::Normal;                  ///< Defaults to the normal voice pool.
-    std::optional<unsigned> priority;             ///< 0..255; defaults to 64 for Normal and 128 for Burst.
-    double gain         = 1;                      ///< Normalized total amplitude, 0..1.
-    double pan          = 0;                      ///< Position -1..1; low/high motor layouts fold pan.
-    double startAfterMs = 0;                      ///< Delay in milliseconds, up to 5000.
-    std::optional<HapticTime> startAt;            ///< Absolute time, exclusive with a nonzero delay.
-    StartPolicy startPolicy = StartPolicy::Auto;  ///< Immediate cold-start behavior.
-    unsigned iterations     = 1;                  ///< Finite total iterations, 1..65535; Burst requires one.
-    std::string mergeKey;                         ///< UTF-8 key up to 64 bytes. Empty disables merging.
+    Track track = Track::Normal;                      ///< Defaults to the normal voice pool.
+    std::optional<unsigned> priority;                 ///< 0..255; defaults to 64 for Normal and 128 for Burst.
+    double gain         = 1;                          ///< Normalized total amplitude, 0..1.
+    double pan          = 0;                          ///< Position -1..1; low/high motor layouts fold pan.
+    double startAfterMs = 0;                          ///< Delay in milliseconds, up to 5000.
+    std::optional<HapticTime> startAt;                ///< Absolute time, exclusive with a nonzero delay.
+    StartPolicy startPolicy     = StartPolicy::Auto;  ///< Immediate cold-start behavior.
+    unsigned iterations         = 1;                  ///< Finite total iterations, 1..65535; Burst requires one.
+    bool requireAmplitude       = false;              ///< Reject binary-only output.
+    bool requireNativeScheduled = false;              ///< Require native timed event scheduling.
+    std::string mergeKey;                             ///< UTF-8 key up to 64 bytes. Empty disables merging.
 };
 /** Successful call or a synchronous validation error. */
 struct Status
@@ -159,7 +168,13 @@ struct Capabilities
     Owner owner               = Owner::Idle;              ///< Writer holding the Body route, including during shutdown.
     Availability availability = Availability::Available;  ///< Readiness for new work.
     bool canInterruptPreset   = false;                    ///< The adapter can confirm a safe stop.
-    bool canReleaseRaw        = false;                    ///< The handset can safely relinquish raw ownership.
+    MobilePlatform platform   = MobilePlatform::None;     ///< Selected native mobile family.
+    bool amplitude            = true;                     ///< Can represent intermediate amplitudes.
+    bool nativeScheduled      = false;                    ///< Timed native events are supported.
+    bool envelope             = false;  ///< Optional native Android envelope path is present and supported.
+    bool canReleaseRaw        = false;  ///< The handset can safely relinquish raw ownership.
+    /** Android envelope availability: Available, NotBuilt, SystemTooOld, or DeviceUnsupported. Other routes use NotApplicable. */
+    std::string envelopeStatus = "NotApplicable";
 };
 /** Playback record. Times are microseconds on the service clock. */
 struct PlaybackSnapshot
@@ -183,9 +198,9 @@ struct OperationSnapshot
 /** Handset ownership snapshot. */
 struct RawSnapshot
 {
-    RawState state = RawState::Closed;  ///< Readiness of this lease.
-    std::optional<Error> error;         ///< Reason for failed acquisition.
-    StopReason reason = StopReason::None; ///< Cause of automatic lease closure.
+    RawState state = RawState::Closed;     ///< Readiness of this lease.
+    std::optional<Error> error;            ///< Reason for failed acquisition.
+    StopReason reason = StopReason::None;  ///< Cause of automatic lease closure.
 };
 /** Move-only raw handset lease. Destruction revokes only this handle's work. */
 class CC_DLL RawSession
@@ -206,6 +221,54 @@ public:
      * @return Current state and any failure.
      */
     RawSnapshot state() const;
+    /** Submit one finite Android pulse.
+     * @param pulse Duration and amplitude.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> oneShot(const AndroidOneShot& pulse);
+    /** Submit an Android waveform.
+     * @param waveform Ordered finite amplitude steps.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> waveform(const AndroidWaveform& waveform);
+    /** Submit an Android predefined effect.
+     * @param effect Effect with a known supported duration and safe output boundary.
+     * @return Native submission ticket or Unsupported.
+     */
+    Result<OperationId> predefined(AndroidEffect effect);
+    /** Submit an Android composition.
+     * @param composition Ordered, bounded primitive sequence.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> composition(const AndroidComposition& composition);
+    /** Submit an Android envelope.
+     * @param envelope Finite ordered transitions.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> envelope(const AndroidEnvelope& envelope);
+    /** Start a finite Core Haptics player.
+     * @param pattern Events, dynamic parameters and curves in seconds.
+     * @param replace Stop the current player before starting this one.
+     * @return Player identity and submission ticket, or an admission error.
+     */
+    Result<RawPlayback> playPattern(const ApplePattern& pattern, bool replace = false);
+    /** Schedule parameters on this lease's active Apple player.
+     * @param player Live identity from playPattern.
+     * @param parameters Ordered updates within the existing pattern.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> sendParameters(RawPlayerId player, const AppleParameters& parameters);
+    /** Schedule one bounded native curve.
+     * @param player Live identity from playPattern.
+     * @param curve At most sixteen ordered control points within the pattern.
+     * @return Native submission ticket or an admission error.
+     */
+    Result<OperationId> sendCurve(RawPlayerId player, const AppleParameterCurve& curve);
+    /** Stop this lease's identified Apple player.
+     * @param player Live identity from playPattern.
+     * @return Stop ticket completed after native confirmation.
+     */
+    Result<OperationId> stop(RawPlayerId player);
     /** Cancel the current effect, or withdraw a pending acquisition.
      * @return Stop ticket for the owning scope, or a handle error.
      */

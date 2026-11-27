@@ -134,7 +134,12 @@ void OutputRouter::publishBodyRoutes()
         if(paired!=_hapticRoutes.end() && device.endpoints.contains(paired->second.hid) &&
            device.endpoints.at(paired->second.hid).descriptor.capabilities.features.test(static_cast<unsigned>(Feature::BodyRumble)))
             key=paired->second.hid;
-        if(key && !_unconfirmedBody.contains(id) && device.endpoints.at(*key).descriptor.capabilities.acknowledgedBodyStop) {
+        if(key && !_unconfirmedBody.contains(id) && device.endpoints.at(*key).descriptor.capabilities.mobileHaptics){
+            if(_bodyRoutes.contains(id) && _bodyRoutes.at(id)==*key)current.emplace(id,*key);
+            else if(auto mobile=_backend->mobileOutput(*key)){
+                _control.publishMobile(std::move(mobile),id,*key);current.emplace(id,*key);_retiredBody.erase(id);
+            }
+        } else if(key && !_unconfirmedBody.contains(id) && device.endpoints.at(*key).descriptor.capabilities.acknowledgedBodyStop) {
             current.emplace(id,*key);
             _retiredBody.erase(id);
             if(!_bodyRoutes.contains(id) || _bodyRoutes.at(id)!=*key)

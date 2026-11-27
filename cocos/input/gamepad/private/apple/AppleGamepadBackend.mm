@@ -1,4 +1,5 @@
 #include "../PlatformGamepadBackend.h"
+#include "haptics/private/AppleHapticDriver.h"
 
 #import <Foundation/Foundation.h>
 #import <GameController/GameController.h>
@@ -15,6 +16,118 @@
 
 namespace cc::input::detail {
 namespace {
+
+namespace haptic = cc::haptics::detail;
+
+class ControllerHaptics final : public haptic::MobileDriver {
+public:
+    ControllerHaptics(std::unique_ptr<haptic::MobileDriver> left, std::unique_ptr<haptic::MobileDriver> right,
+                      std::shared_ptr<std::atomic_bool> connected, std::shared_ptr<std::atomic_bool> interrupted)
+        : _left(std::move(left)), _right(std::move(right)), _connected(std::move(connected)),
+          _interrupted(std::move(interrupted)) {}
+
+    Error prepare() override
+    {
+        if (!_connected->load(std::memory_order_acquire))
+            return Error::Disconnected;
+        if (_interrupted->load(std::memory_order_acquire))
+            return stopAfterError(Error::BackendFailure);
+        auto result = _left->prepare();
+        if (result == Error::None && _right)
+            result = _right->prepare();
+        if (_interrupted->load(std::memory_order_acquire))
+            result = Error::BackendFailure;
+        return stopAfterError(result);
+    }
+
+    Error execute(const haptic::MobileCommand& command) override
+    {
+        if (command.kind == haptic::MobileCommand::Kind::Stop)
+            return stop();
+        if (!_connected->load(std::memory_order_acquire))
+            return Error::Disconnected;
+        if (_interrupted->load(std::memory_order_acquire))
+            return stopAfterError(Error::BackendFailure);
+        auto result = _left->execute(command);
+        if (result == haptic::mobileNoOutput)
+            return result;
+        if (result == Error::None && _right)
+        {
+            if (command.kind == haptic::MobileCommand::Kind::Preset)
+            {
+                auto right = command;
+                for (auto& sample : right.packet.samples)
+                {
+                    sample.amplitude = sample.rightAmplitude;
+                    sample.sharpness = sample.rightSharpness;
+                }
+                right.packet.transients = std::move(right.packet.rightTransients);
+                result = _right->execute(right);
+            }
+            else
+                result = _right->execute(command);
+        }
+        if (_interrupted->load(std::memory_order_acquire))
+            result = Error::BackendFailure;
+        // Silence both sides if the second side expires after the first accepted output.
+        return stopAfterError(result == haptic::mobileNoOutput ? Error::BackendFailure : result);
+    }
+
+private:
+    Error stopAfterError(Error result)
+    {
+        return result != Error::None && stop() != Error::None ? Error::BackendFailure : result;
+    }
+
+    Error stop()
+    {
+        haptic::MobileCommand neutral;
+        neutral.kind = haptic::MobileCommand::Kind::Stop;
+        const auto left = _left->execute(neutral);
+        const auto right = _right ? _right->execute(neutral) : Error::None;
+        if (left == Error::None && right == Error::None)
+            _interrupted->store(false, std::memory_order_release);
+        return left != Error::None ? left : right;
+    }
+
+    std::unique_ptr<haptic::MobileDriver> _left, _right;
+    std::shared_ptr<std::atomic_bool> _connected;
+    std::shared_ptr<std::atomic_bool> _interrupted;
+};
+
+std::unique_ptr<ControllerHaptics> verifiedOutput(GCDeviceHaptics* haptics,
+    GCHapticsLocality leftLocality, GCHapticsLocality rightLocality, const std::shared_ptr<std::atomic_bool>& connected)
+    API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0))
+{
+    auto interrupted = std::make_shared<std::atomic_bool>(false);
+    const auto open = [&](GCHapticsLocality locality) {
+        return haptic::makeAppleHapticDriver([haptics, locality] { return [haptics createEngineWithLocality:locality]; },
+            [interrupted] { interrupted->store(true, std::memory_order_release); });
+    };
+    auto left = open(leftLocality);
+    auto right = rightLocality ? open(rightLocality) : nullptr;
+    if (!left || (rightLocality && !right))
+        return {};
+    auto driver = std::make_unique<ControllerHaptics>(std::move(left), std::move(right), connected, std::move(interrupted));
+    if (driver->prepare() != Error::None)
+        return {};
+
+    // Submit to both engines before stopping either one so split handles must work together.
+    haptic::MobileCommand silent;
+    silent.kind = haptic::MobileCommand::Kind::Apple;
+    silent.startUs = haptic::mobileNow();
+    silent.endUs = silent.startUs + 2'000'000;
+    silent.player = 1;
+    silent.raw = cc::haptics::ApplePattern{{{0, 1.0, 0, 0.5f}, {0.005, 0, 0, 0.5f}}, {}, {}};
+    const auto played = driver->execute(silent);
+
+    haptic::MobileCommand stop;
+    stop.kind = haptic::MobileCommand::Kind::Stop;
+    const auto stopped = driver->execute(stop);
+    if (played == Error::None && stopped == Error::None)
+        return driver;
+    return {};
+}
 
 constexpr auto appleId = std::uint64_t{0x4743};
 constexpr float gravity = 9.80665f;
@@ -67,6 +180,8 @@ struct Device {
     std::array<CHHapticEngine*, 2> engines{};
     std::array<id<CHHapticPatternPlayer>, 2> players{};
     std::array<GCHapticsLocality, 2> haptics{};
+    std::shared_ptr<std::atomic_bool> hapticConnected;
+    std::shared_ptr<haptic::MobileOutput> hapticOutput;
     dispatch_queue_t originalQueue;
     dispatch_queue_t originalPhysicalQueue = nil;
     NSInteger originalStateQueueDepth = 1;
@@ -173,6 +288,31 @@ struct Device {
         sample();
         if (auto value = power())
             descriptor.power = *value;
+    }
+
+    void prepareHaptics()
+    {
+        if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
+        {
+            auto deviceHaptics = controller.haptics;
+            if (!deviceHaptics || !haptics[0])
+                return;
+            auto connected = std::make_shared<std::atomic_bool>(true);
+            bool stereo = haptics[1] != nil;
+            auto driver = verifiedOutput(deviceHaptics, haptics[0], haptics[1], connected);
+            if (!driver && stereo)
+            {
+                stereo = false;
+                driver = verifiedOutput(deviceHaptics, GCHapticsLocalityDefault, nil, connected);
+            }
+            if (!driver)
+                return;
+            hapticConnected = std::move(connected);
+            haptic::MobileCapabilities caps{.platform = cc::haptics::MobilePlatform::Apple, .amplitude = true,
+                                            .canStop = true, .stereo = stereo};
+            hapticOutput = haptic::queueMobileDriver(caps, std::move(driver));
+            descriptor.capabilities.mobileHaptics = true;
+        }
     }
 
     void configureMfi()
@@ -388,6 +528,13 @@ struct Device {
 
     Error stopRumble(bool release)
     {
+        if (hapticOutput)
+        {
+            static const auto open = std::make_shared<const std::atomic_bool>(true);
+            haptic::MobileCommand stop;
+            stop.kind = haptic::MobileCommand::Kind::Stop;
+            return hapticOutput->submit(std::move(stop), open, std::make_shared<std::atomic<int>>(-1));
+        }
         Error status = Error::None;
         if (@available(macOS 11.0, iOS 14.0, tvOS 14.0, *))
             for (unsigned i = 0; i < players.size(); ++i)
@@ -428,8 +575,9 @@ struct Device {
             }
         if (const auto* stop = std::get_if<Stop>(&command))
         {
-            const auto body = stop->channel == Channel::All || stop->channel == Channel::Body
-                ? stopRumble(false) : Error::None;
+            Error body = Error::None;
+            if (stop->channel == Channel::All || stop->channel == Channel::Body)
+                body = hapticOutput ? (request ? Error::Busy : Error::None) : stopRumble(false);
             if (stop->channel == Channel::All || stop->channel == Channel::Lights)
                 output(Rgb{});
             return body;
@@ -443,6 +591,8 @@ struct Device {
             }
             if (const auto* rumble = std::get_if<Rumble>(&command); rumble && haptics[0])
             {
+                if (hapticOutput)
+                    return Error::Busy; // Managed Body commands go through the owning route.
                 if (const auto stopped = stopRumble(false); stopped != Error::None)
                     return stopped;
                 if (rumble->duration.count() == 0)
@@ -513,6 +663,8 @@ struct Device {
         controller.motion.valueChangedHandler = nil;
         controller.handlerQueue = originalQueue;
         activateSensors(false);
+        if (hapticConnected)
+            hapticConnected->store(false, std::memory_order_release);
         output(Stop{});
         stopRumble(true);
     }
@@ -828,6 +980,8 @@ struct State : std::enable_shared_from_this<State> {
         const auto key = identity(controller);
         if (devices.contains(key)) return;
         auto& device = devices.try_emplace(key, controller, EndpointKey{appleId, ++next, 1}).first->second;
+        if (active)
+            device.prepareHaptics();
         controller.handlerQueue = queue;
         const auto weak = weak_from_this();
         if (@available(macOS 14.0, iOS 17.0, tvOS 17.0, *))
@@ -970,7 +1124,12 @@ public:
                 for (auto& [id, device] : state->devices)
                 {
                     device.activateSensors(active);
-                    if (!active) { device.output(Stop{}); device.stopRumble(true); }
+                    if (!active)
+                    {
+                        device.output(Stop{});
+                        if (!device.hapticOutput)
+                            device.stopRumble(true);
+                    }
                 }
             });
     }
@@ -1053,6 +1212,18 @@ public:
             if (state->sink && request.id != CommandId{}) state->sink->outputCompleted(key, request.id, status);
         });
         return Error::None;
+    }
+
+    std::shared_ptr<haptic::MobileOutput> mobileOutput(EndpointKey key) override
+    {
+        auto state = _state;
+        if (!state) return {};
+        __block std::shared_ptr<haptic::MobileOutput> output;
+        dispatch_sync(state->queue, ^{
+            if (auto* device = state->find(key))
+                output = device->hapticOutput;
+        });
+        return output;
     }
 
 private:

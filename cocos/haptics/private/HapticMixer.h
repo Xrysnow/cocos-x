@@ -103,6 +103,8 @@ public:
     // The synchronous output consumer must not throw or reenter the mixer.
     void advance(Time until, const std::function<void(const Entry&)>& sink);
     Time now() const;
+    // Snapshot the stable bed before compiling a replaceable native batch.
+    std::unique_ptr<HapticMixer> checkpoint() const;
     std::vector<Terminal> takeTerminals();
 
 private:

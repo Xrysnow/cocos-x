@@ -47,7 +47,8 @@ enum class Error
     RecordGone,       ///< Terminal record was consumed or evicted.
     TimedOut,         ///< Expected native evidence did not arrive in time.
     BackendFailure,   ///< Native output failed.
-    Cancelled         ///< The pending transaction was withdrawn.
+    Cancelled,        ///< The pending transaction was withdrawn.
+    PermissionDenied  ///< The platform denied permission to use the actuator.
 };
 
 /** Field-level import observation. */

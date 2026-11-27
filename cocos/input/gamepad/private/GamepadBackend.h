@@ -10,6 +10,7 @@
 #include <compare>
 #include <future>
 
+namespace cc::haptics::detail { class MobileOutput; }
 namespace cc::input::detail {
 
 // Reserve space for native stops even when the output data queue is full.
@@ -67,6 +68,7 @@ struct EndpointCapabilities {
     // Body rumble expires without an engine frame, and a successful Body
     // stop completion means the native output accepted the neutral state.
     bool acknowledgedBodyStop = false;
+    bool mobileHaptics = false; ///< The selected endpoint provides a finite mobile output queue.
 };
 
 struct HapticAudioIdentity {
@@ -175,6 +177,7 @@ public:
 class GamepadBackend {
 public:
     virtual ~GamepadBackend() = default;
+    virtual std::shared_ptr<haptics::detail::MobileOutput> mobileOutput(EndpointKey) { return {}; }
     virtual Error start(ReportSink&) = 0;
     // Deactivation must interrupt output even with no further logic ticks.
     virtual void setActive(bool) = 0;

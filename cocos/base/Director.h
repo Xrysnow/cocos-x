@@ -676,6 +676,9 @@ private:
     bool _gamepadWindowFocused = true;
 
     friend class GLViewImpl;
+#if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+    friend class Application;
+#endif
 };
 
 // end of base group

@@ -30,6 +30,7 @@ THE SOFTWARE.
 // cocos2d includes
 #include "base/Director.h"
 #include "input/gamepad/GamepadService.h"
+#include "haptics/private/MobileHaptics.h"
 #include "input/gamepad/private/PlatformGamepadBackend.h"
 #include "platform/FileDialogInternal.h"
 
@@ -137,6 +138,9 @@ Director::Director()
 bool Director::init()
 {
     dialog::startSession();
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+    haptics::detail::attachMobileHost(getHaptics());
+#endif
     PoolManager::getInstance();
     setDefaultValues();
 

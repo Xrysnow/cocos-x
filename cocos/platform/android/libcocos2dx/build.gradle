@@ -4,12 +4,16 @@ android {
     namespace = 'org.cocos.lib'
     compileSdk = PROP_COMPILE_SDK_VERSION.toInteger()
 
+    buildFeatures { buildConfig = true }
+
     defaultConfig {
+        buildConfigField 'boolean', 'HAPTICS_ENVELOPE_BUILT', (PROP_COMPILE_SDK_VERSION.toInteger() >= 36).toString()
         minSdkVersion PROP_MIN_SDK_VERSION
         targetSdkVersion PROP_TARGET_SDK_VERSION
         consumerProguardFiles '../java/file-dialog.pro', '../java/text-input.pro'
         consumerProguardFiles '../java/gamepads.pro'
         consumerProguardFiles '../java/system-info.pro'
+        consumerProguardFiles '../java/haptics.pro'
         versionCode 1
         versionName "1.0"
     }
@@ -17,6 +21,9 @@ android {
     sourceSets.main {
         aidl.srcDir "../java/src"
         java.srcDir "../java/src"
+        if (PROP_COMPILE_SDK_VERSION.toInteger() >= 36) {
+            java.srcDir "../java/src-api36"
+        }
         manifest.srcFile "AndroidManifest.xml"
     }
 
@@ -25,6 +32,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', '../java/text-input.pro', '../java/gamepads.pro'
             proguardFiles '../java/system-info.pro'
+            proguardFiles '../java/haptics.pro'
         }
     }
 }

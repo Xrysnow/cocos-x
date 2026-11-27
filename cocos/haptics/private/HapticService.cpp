@@ -1,4 +1,5 @@
 #include "haptics/private/HapticControl.h"
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -133,6 +134,125 @@ Result<OperationId> RawSession::cancel()
 {
     if (auto control = _control.lock())
         return control->cancelRaw(_id);
+    return gone<Result<OperationId>>();
+}
+namespace
+{
+std::atomic_uint64_t nextPlayer{1};
+}
+Result<OperationId> RawSession::oneShot(const AndroidOneShot& pulse)
+{
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind = detail::MobileCommand::Kind::Android;
+        cmd.raw  = pulse;
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::waveform(const AndroidWaveform& waveform)
+{
+    if (waveform.steps.size() > 128)
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind = detail::MobileCommand::Kind::Android;
+        cmd.raw  = waveform;
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::predefined(AndroidEffect effect)
+{
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind = detail::MobileCommand::Kind::Android;
+        cmd.raw  = effect;
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::composition(const AndroidComposition& composition)
+{
+    if (composition.steps.size() > 16)
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind = detail::MobileCommand::Kind::Android;
+        cmd.raw  = composition;
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::envelope(const AndroidEnvelope& envelope)
+{
+    if (envelope.points.size() > 64)
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind = detail::MobileCommand::Kind::Android;
+        cmd.raw  = envelope;
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::sendParameters(RawPlayerId player, const AppleParameters& parameters)
+{
+    if (parameters.parameters.size() > 128)
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind   = detail::MobileCommand::Kind::Parameters;
+        cmd.raw    = parameters;
+        cmd.player = static_cast<std::uint64_t>(player);
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<OperationId> RawSession::sendCurve(RawPlayerId player, const AppleParameterCurve& curve)
+{
+    if (curve.points.size() > 16)
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind   = detail::MobileCommand::Kind::Curve;
+        cmd.raw    = curve;
+        cmd.player = static_cast<std::uint64_t>(player);
+        return c->rawCommand(_id, std::move(cmd));
+    }
+    return gone<Result<OperationId>>();
+}
+Result<RawPlayback> RawSession::playPattern(const ApplePattern& pattern, bool replace)
+{
+    if (pattern.events.size() > 128 || pattern.parameters.size() > 128 || pattern.curves.size() > 32 ||
+        std::ranges::any_of(pattern.curves, [](auto& c) { return c.points.size() > 16; }))
+        return {{}, ErrorInfo{Error::InvalidArgument, {}}};
+    if (auto c = _control.lock())
+    {
+        detail::MobileCommand cmd;
+        cmd.kind    = detail::MobileCommand::Kind::Apple;
+        cmd.raw     = pattern;
+        auto player = nextPlayer++;
+        cmd.player  = player;
+        cmd.replace = replace;
+        auto result = c->rawCommand(_id, std::move(cmd));
+        if (!result.value)
+            return {{}, result.error};
+        return {RawPlayback{static_cast<RawPlayerId>(player), *result.value}, {}};
+    }
+    return gone<Result<RawPlayback>>();
+}
+Result<OperationId> RawSession::stop(RawPlayerId player)
+{
+    if (auto c = _control.lock())
+        return c->stopPlayer(_id, player);
     return gone<Result<OperationId>>();
 }
 RawSnapshot RawSession::state() const
