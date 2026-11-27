@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <deque>
 #include <mutex>
+#include <set>
 #include <thread>
 
 namespace cc::font
@@ -46,12 +47,26 @@ private:
         GlyphKey key;
         Priority priority;
         std::chrono::steady_clock::time_point queued;
+        uint64_t sequence;
         std::shared_ptr<std::atomic_bool> cancel;
+
+        // A queued background job can age past newer foreground jobs.
+        auto deadline() const { return queued + std::chrono::milliseconds(100 * int(priority)); }
+    };
+    struct EarlierJob
+    {
+        bool operator()(const Job& a, const Job& b) const
+        {
+            return std::pair(a.deadline(), a.sequence) < std::pair(b.deadline(), b.sequence);
+        }
     };
     void run(std::shared_ptr<std::atomic_bool> quit);
+    bool idle() const { return _jobs.empty() && _running == 0; }  // _mutex held
     mutable std::mutex _mutex;
-    std::condition_variable _changed;
-    std::deque<Job> _jobs;
+    std::condition_variable _workAvailable;
+    std::condition_variable _resultsChanged;
+    std::set<Job, EarlierJob> _jobs;
+    uint64_t _nextSequence{};
     std::deque<Result> _results;
     struct Budget;
     std::shared_ptr<Budget> _budget;

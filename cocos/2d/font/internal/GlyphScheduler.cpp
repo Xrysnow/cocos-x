@@ -1,6 +1,8 @@
 #include "GlyphScheduler.h"
 #include "GlyphUpload.h"
 #include <algorithm>
+#include <iterator>
+#include <list>
 
 namespace cc::font
 {
@@ -9,20 +11,111 @@ namespace cc::font
 struct GlyphScheduler::Budget
 {
     std::mutex mutex;
-    std::condition_variable changed;
     size_t used{}, limit{32u << 20};
     bool stopping{};
+
+    enum class WaitState
+    {
+        Pending,
+        Granted,
+        Rejected
+    };
+    struct Waiter
+    {
+        size_t bytes;
+        unsigned bypasses{};
+        WaitState state{WaitState::Pending};
+        std::condition_variable ready;
+    };
+    static constexpr unsigned maxBypasses = 8;
+    std::list<Waiter*> waiters;
+
+    // All queue and credit changes use mutex. Notifying under it keeps the
+    // worker's stack-allocated waiter alive through the notification.
+    void finishWaiter(std::list<Waiter*>::iterator position, WaitState state)
+    {
+        auto& waiter = **position;
+        waiters.erase(position);
+        waiter.state = state;
+        waiter.ready.notify_one();
+    }
+
+    void grantWaiters()
+    {
+        while (!waiters.empty())
+        {
+            const size_t free = limit - used;
+            auto selected = waiters.begin();
+            auto& oldest = **selected;
+            if (oldest.bytes > free)
+            {
+                // Accumulate credit for the oldest request after bounded bypass.
+                if (oldest.bypasses == maxBypasses)
+                    return;
+                selected = std::find_if(std::next(selected), waiters.end(),
+                                        [free](const Waiter* waiter) { return waiter->bytes <= free; });
+                if (selected == waiters.end())
+                    return;
+                ++oldest.bypasses;
+            }
+            used += (*selected)->bytes;
+            finishWaiter(selected, WaitState::Granted);
+        }
+    }
+
+    bool acquire(std::unique_lock<std::mutex>& lock, size_t bytes)
+    {
+        if (stopping || bytes > limit)
+            return false;
+        // Any previously admissible waiter was granted on the last release or resize.
+        if (bytes <= limit - used && (waiters.empty() || waiters.front()->bypasses < maxBypasses))
+        {
+            if (!waiters.empty())
+                ++waiters.front()->bypasses;
+            used += bytes;
+            return true;
+        }
+        Waiter waiter{bytes};
+        waiters.push_back(&waiter);
+        waiter.ready.wait(lock, [&] { return waiter.state != WaitState::Pending; });
+        return waiter.state == WaitState::Granted;
+    }
+
+    void release(size_t bytes)
+    {
+        std::lock_guard lock(mutex);
+        used -= bytes;
+        grantWaiters();
+    }
+
+    void resize(size_t bytes)  // mutex held
+    {
+        limit = bytes;
+        for (auto it = waiters.begin(); it != waiters.end();)
+        {
+            const auto current = it++;
+            if ((*current)->bytes > limit)
+                finishWaiter(current, WaitState::Rejected);
+        }
+        grantWaiters();
+    }
+
+    void stop()
+    {
+        std::lock_guard lock(mutex);
+        stopping = true;
+        while (!waiters.empty())
+            finishWaiter(waiters.begin(), WaitState::Rejected);
+    }
+
     struct Reservation
     {
         std::shared_ptr<Budget> account;
         size_t bytes{};
         ~Reservation()
         {
-            {
-                std::lock_guard lock(account->mutex);
-                account->used -= bytes;
-            }
-            account->changed.notify_all();
+            if (bytes)
+                account->release(bytes);
         }
     };
 };
@@ -38,12 +131,8 @@ GlyphScheduler::~GlyphScheduler()
         for (auto& flag : _active)
             flag->store(true);
     }
-    {
-        std::lock_guard lock(_budget->mutex);
-        _budget->stopping = true;
-    }
-    _budget->changed.notify_all();
-    _changed.notify_all();
+    _budget->stop();
+    _workAvailable.notify_all();
     for (auto& w : _workers)
         w.thread.join();
 }
@@ -79,39 +168,52 @@ bool GlyphScheduler::configure(const FontCacheConfig& config)
         _workers.pop_back();
         worker.quit->store(true);
         lock.unlock();
-        _changed.notify_all();
+        _workAvailable.notify_all();
         worker.thread.join();
         lock.lock();
     }
     if (_workers.size() != n)
         return false;
-    _budget->limit = config.maxStagingBytes;
-    credits.unlock();
-    _budget->changed.notify_all();
+    _budget->resize(config.maxStagingBytes);
     return true;
 }
 bool GlyphScheduler::submit(const std::shared_ptr<Demand>& demand, Priority p, size_t limit)
 {
     {
-        std::lock_guard lock(_mutex);
+        std::unique_lock lock(_mutex);
         if (_jobs.size() + _running + _results.size() >= limit)
         {
             std::erase_if(_jobs, [](auto& job) { return job.demand.expired(); });
             std::erase_if(_results, [](const auto& r) { return r.demand.expired(); });
             if (_jobs.size() + _running + _results.size() >= limit)
+            {
+                const bool drained = idle();
+                lock.unlock();
+                if (drained)
+                    _resultsChanged.notify_all();
                 return false;
+            }
         }
-        _jobs.push_back({demand, demand->key, p, std::chrono::steady_clock::now(), demand->cancelled});
+        _jobs.insert(_jobs.end(), {demand, demand->key, p, std::chrono::steady_clock::now(), _nextSequence++,
+                                   demand->cancelled});
     }
-    _changed.notify_all();
+    _workAvailable.notify_one();
     return true;
 }
 void GlyphScheduler::promote(const Demand& demand, Priority p)
 {
     std::lock_guard lock(_mutex);
-    for (auto& job : _jobs)
-        if (job.key == demand.key)
-            job.priority = std::min(job.priority, p);
+    for (auto it = _jobs.begin(); it != _jobs.end();)
+    {
+        const auto current = it++;
+        if (current->key == demand.key && p < current->priority)
+        {
+            // The deadline only moves earlier, ahead of the remaining scan.
+            auto job = _jobs.extract(current);
+            job.value().priority = p;
+            _jobs.insert(std::move(job));
+        }
+    }
 }
 void GlyphScheduler::stats(FontCacheStats& s) const
 {
@@ -125,13 +227,13 @@ bool GlyphScheduler::take(Result& out, bool wait, size_t maxBytes)
 {
     std::unique_lock lock(_mutex);
     if (wait)
-        _changed.wait(lock, [&] { return !_results.empty() || (!_running && _jobs.empty()); });
+        _resultsChanged.wait(lock, [&] { return !_results.empty() || idle(); });
     if (_results.empty() || _results.front().raster.image.pixels.size() > maxBytes)
         return false;
-    out = std::move(_results.front());
+    auto result = std::move(_results.front());
     _results.pop_front();
     lock.unlock();
-    _changed.notify_all();
+    out = std::move(result);
     return true;
 }
 void GlyphScheduler::run(std::shared_ptr<std::atomic_bool> quit)
@@ -143,19 +245,16 @@ void GlyphScheduler::run(std::shared_ptr<std::atomic_bool> quit)
     for (;;)
     {
         std::unique_lock lock(_mutex);
-        _changed.wait(lock, [&] { return quit->load() || !_jobs.empty(); });
+        _workAvailable.wait(lock, [&] { return quit->load() || !_jobs.empty(); });
         if (quit->load())
             return;
-        const auto it = std::min_element(_jobs.begin(), _jobs.end(), [](const Job& a, const Job& b) {
-            // Bound starvation even when a foreground stream never empties.
-            auto deadline = [](const Job& j) { return j.queued + std::chrono::milliseconds(100 * int(j.priority)); };
-            return deadline(a) < deadline(b);
-        });
-        auto job      = std::move(*it);
-        _jobs.erase(it);
+        auto job = std::move(_jobs.extract(_jobs.begin()).value());
         if (job.demand.expired())
         {
-            _changed.notify_all();
+            const bool drained = idle();
+            lock.unlock();
+            if (drained)
+                _resultsChanged.notify_all();
             continue;
         }
         ++_running;
@@ -175,18 +274,15 @@ void GlyphScheduler::run(std::shared_ptr<std::atomic_bool> quit)
                 prepareUpload(result.image);
                 const size_t bytes = result.image.pixels.size();
                 std::unique_lock credits(_budget->mutex);
-                _budget->changed.wait(credits, [&] {
-                    return _budget->stopping || bytes > _budget->limit || _budget->used <= _budget->limit - bytes;
-                });
-                if (bytes > _budget->limit || quit->load())
-                    result = {GlyphStatus::TooLarge};
+                auto credit = std::make_shared<Budget::Reservation>();
+                credit->account = _budget;
+                if (_budget->acquire(credits, bytes))
+                    credit->bytes = bytes;
+                credits.unlock();
+                if (credit->bytes && !quit->load())
+                    reservation = std::move(credit);
                 else
-                {
-                    reservation           = std::make_shared<Budget::Reservation>();
-                    reservation->account  = _budget;
-                    reservation->bytes    = bytes;
-                    _budget->used        += bytes;
-                }
+                    result = {GlyphStatus::TooLarge};
             }
             catch (const std::bad_alloc&)
             {
@@ -198,12 +294,14 @@ void GlyphScheduler::run(std::shared_ptr<std::atomic_bool> quit)
         std::erase(_active, job.cancel);
         if (quit->load())
             return;
+        const bool wasEmpty = _results.empty();
         if (!job.demand.expired())
-        {
             _results.push_back({std::move(job.demand), std::move(result), std::move(reservation)});
-        }
+        // A waiting consumer may proceed on the first result or when work drains.
+        const bool wakeConsumer = (wasEmpty && !_results.empty()) || idle();
         lock.unlock();
-        _changed.notify_all();
+        if (wakeConsumer)
+            _resultsChanged.notify_all();
     }
 }
 }  // namespace cc::font
