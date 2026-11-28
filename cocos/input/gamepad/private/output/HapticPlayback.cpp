@@ -81,18 +81,23 @@ Error HapticPlayback::setIntensity(float intensity)
 {
     if (!std::isfinite(intensity) || intensity < 0 || intensity > 1)
         return Error::InvalidArgument;
-    return _session ? detail::mapAudioError(_session->audio.setGain(intensity)) : Error::Disconnected;
+    if (!_session) return Error::Disconnected;
+    std::lock_guard lock(_session->gainMutex);
+    auto status = _session->audio.setGain(intensity * _session->strength);
+    if (status == AudioOutputError::None) _session->intensity = intensity;
+    return detail::mapAudioError(status);
 }
 
 HapticPlaybackSnapshot HapticPlayback::snapshot() const
 {
     if (!_session)
         return {};
+    std::lock_guard lock(_session->gainMutex);
     const auto snap = _session->audio.snapshot();
     const auto reason = snap.error == AudioOutputError::Disconnected &&
         _session->stopReason != HapticStopReason::Disconnected ? HapticStopReason::EndpointLost : _session->stopReason.load();
     return {snap.state, detail::mapAudioError(snap.error), snap.positionSeconds, snap.durationSeconds,
-            snap.gain, snap.looping, snap.seekable, reason};
+            _session->intensity, snap.looping, snap.seekable, reason};
 }
 
 void HapticPlayback::close() noexcept

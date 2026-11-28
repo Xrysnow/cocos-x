@@ -38,6 +38,18 @@ Result<Capabilities> HapticService::capabilities(TargetId id) const
 {
     return _control->capabilities(id);
 }
+Status HapticService::setCalibration(TargetId target, const HapticCalibration& profile)
+{
+    return _control->setCalibration(target, profile);
+}
+Status HapticService::setOutputSettings(const OutputSettings& settings)
+{
+    return _control->setOutputSettings(settings);
+}
+std::weak_ptr<const void> HapticService::lifetimeToken() const
+{
+    return _control->lifetimeToken();
+}
 Status HapticService::preparePcm(TargetId target)
 {
     return _control->preparePcm(target);

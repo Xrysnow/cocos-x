@@ -7,6 +7,8 @@ namespace cc::input {
 
 struct HapticPlayback::Session {
     AudioDirectPlayback audio;
+    mutable std::mutex gainMutex;
+    float intensity = 1, strength = 1;
     DeviceId device;
     detail::EndpointKey hid;
     AudioEndpointId endpoint;

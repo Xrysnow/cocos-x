@@ -9,7 +9,9 @@ set(lua_bindings_manual_headers
     manual/LuaBridge.h
     manual/LuaBasicConversions.h
     manual/gamepad/cclua_gamepad.hpp
+    manual/haptics/cclua_haptics.hpp
     manual/gamepad/cclua_gamepad_conversions.hpp
+    manual/haptics/cclua_haptics_conversions.hpp
     manual/cclua_system_info_conversions.hpp
     manual/lua_conversion/lua_conversion.hpp
     manual/lua_conversion/lua_conversion_tolua.hpp
@@ -59,6 +61,7 @@ set(lua_bindings_manual_files
     manual/CcluaLoader.cpp
     manual/LuaBasicConversions.cpp
     manual/gamepad/cclua_gamepad.cpp
+    manual/haptics/cclua_haptics.cpp
     manual/lua_module_register.cpp
     manual/cclua_file_dialog.cpp
     manual/tolua_fix.cpp
@@ -80,6 +83,7 @@ set(lua_bindings_manual_files
 
 set(lua_bindings_auto_headers
     auto/cclua_gamepad_auto.hpp
+    auto/cclua_haptics_auto.hpp
     auto/cclua_system_info_auto.hpp
     auto/cclua_3d_auto.hpp
     auto/cclua_geometry_auto.hpp
@@ -94,6 +98,7 @@ set(lua_bindings_auto_headers
 
 set(lua_bindings_auto_files
     auto/cclua_gamepad_auto.cpp
+    auto/cclua_haptics_auto.cpp
     auto/cclua_system_info_auto.cpp
     auto/cclua_3d_auto.cpp
     auto/cclua_geometry_auto.cpp

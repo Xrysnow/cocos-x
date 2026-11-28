@@ -113,6 +113,11 @@ Error OutputRouter::playHaptics(const std::shared_ptr<HapticSession>& session)
         }
         auto port=std::make_shared<haptics::detail::PcmSource>();
         port->hid=session->hid;
+        port->setStrength=[session](float strength) {
+            std::lock_guard lock(session->gainMutex);
+            session->strength = strength;
+            session->audio.setGain(strength * session->intensity);
+        };
         port->enable=[session] {
             auto e=session->audio.play();
             if(e==AudioOutputError::None)e=audio::detail::setManagedPlaybackEnabled(session->audio,true);

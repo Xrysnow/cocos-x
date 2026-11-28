@@ -14,6 +14,7 @@ struct PcmSource
     std::function<NativeError()> enable;
     std::function<NativeError(StopReason)> silence;
     std::function<bool()> ended;
+    std::function<void(float)> setStrength;
 };
 
 class HapticControl
@@ -34,6 +35,9 @@ public:
     std::weak_ptr<HapticControl> weak(HapticService& service) { return service._control; }
     void publishGamepad(input::DeviceId, Endpoint);
     void pairPcm(input::DeviceId, std::optional<AudioEndpointId>);
+    Status setCalibration(TargetId, const HapticCalibration&);
+    Status setOutputSettings(const OutputSettings&);
+    std::weak_ptr<const void> lifetimeToken() const;
     Status preparePcm(TargetId);
     Status setPcmModeTiming(TargetId, const PcmModeTiming&);
     void removeGamepad(input::DeviceId, bool disconnected);

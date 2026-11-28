@@ -48,7 +48,8 @@ enum class Error
     TimedOut,         ///< Expected native evidence did not arrive in time.
     BackendFailure,   ///< Native output failed.
     Cancelled,        ///< The pending transaction was withdrawn.
-    PermissionDenied  ///< The platform denied permission to use the actuator.
+    PermissionDenied, ///< The platform denied permission to use the actuator.
+    Disabled          ///< Output is disabled or its global strength is zero.
 };
 
 /** Field-level import observation. */

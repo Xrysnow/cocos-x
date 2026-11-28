@@ -48,6 +48,7 @@ struct Calibration
     Channels channelGain{1, 1}, cap{1, 1};
     double totalCap = 1;
     Time pulseWidth = 1000;
+    double textureBias = 0, textureScale = 1;
 };
 struct Key
 {
@@ -96,6 +97,7 @@ public:
     Result<Id> submitAt(const HapticClip& clip, const Request& request, Time received, Time logicalStart);
     // Skip expired samples after a late wakeup, retaining the absolute source phase.
     void skipTo(Time time);
+    void recalibrate(Calibration calibration, Time now);
     void resumeOnMotors(Time now); // Preserve live voices and skip the elapsed PCM handoff.
     void sampleBlockStart(); // Sample the bed at the next unrendered device frame.
     bool stop(Id id);

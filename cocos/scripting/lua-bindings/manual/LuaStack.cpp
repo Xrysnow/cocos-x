@@ -50,6 +50,7 @@ extern "C" {
 #include "scripting/lua-bindings/auto/cclua_system_info_auto.hpp"
 #include "scripting/lua-bindings/manual/base/cclua_base_manual.hpp"
 #include "scripting/lua-bindings/manual/gamepad/cclua_gamepad.hpp"
+#include "scripting/lua-bindings/manual/haptics/cclua_haptics.hpp"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include "scripting/lua-bindings/auto/cclua_physics_auto.hpp"
 #include "scripting/lua-bindings/manual/physics/cclua_physics_manual.hpp"
@@ -152,6 +153,7 @@ bool LuaStack::init()
     g_luaType.clear();
     register_all_cc_base(_state);
     register_cc_gamepad(_state);
+    register_cc_haptics(_state);
     register_all_cc_system_info(_state);
     register_file_dialog(_state);
     register_all_cc_backend(_state);

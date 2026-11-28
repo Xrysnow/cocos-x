@@ -84,6 +84,7 @@ void mobileVibrate(float seconds);
 void mobileReset();
 void mobileForwarding(bool enabled);
 Time mobileNow();
+bool limitMobileEffect(MobileEffect& effect, MobileCapabilities caps, float ceiling);
 Result<Time> validateMobileEffect(const MobileEffect& effect, MobileCapabilities caps);
 MobilePacket mobilePacket(
     HapticMixer& mixer, Time begin, Time end, MobilePlatform platform, const std::function<void(Id)>& contributed);

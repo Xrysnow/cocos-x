@@ -242,6 +242,27 @@ void mobileVibrate(float seconds)
         control->compatVibrate(seconds);
 }
 
+bool limitMobileEffect(MobileEffect& effect, MobileCapabilities caps, float ceiling)
+{
+    if (!caps.amplitude || ceiling <= 0) return false;
+    auto amplitude = [ceiling](int& a) {
+        if (a < 0) return false; // The platform's default amplitude is unknown.
+        const int original = a;
+        a = static_cast<int>(a * ceiling);
+        return original == 0 || a > 0;
+    };
+    if (auto* pulse = std::get_if<AndroidOneShot>(&effect)) return amplitude(pulse->amplitude);
+    if (auto* waveform = std::get_if<AndroidWaveform>(&effect))
+        return std::ranges::all_of(waveform->steps, [&](auto& step) { return amplitude(step.amplitude); });
+    if (auto* composition = std::get_if<AndroidComposition>(&effect))
+        for (auto& step : composition->steps) step.scale *= ceiling;
+    if (auto* envelope = std::get_if<AndroidEnvelope>(&effect))
+        for (auto& point : envelope->points) point.amplitude *= ceiling;
+    if (auto* pattern = std::get_if<ApplePattern>(&effect))
+        for (auto& event : pattern->events) event.intensity *= ceiling;
+    // Apple dynamic parameters multiply event intensities that have already been bounded.
+    return !std::holds_alternative<AndroidEffect>(effect);
+}
 Result<Time> validateMobileEffect(const MobileEffect& effect, MobileCapabilities caps)
 {
     auto bad = [](Error e = Error::InvalidArgument) -> Result<Time> { return {{}, ErrorInfo{e, {}}}; };

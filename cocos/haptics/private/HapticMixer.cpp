@@ -78,13 +78,13 @@ bool canMerge(const Voice& v, const Voice& incoming)
 Channels project(const Calibration& c, Sample sample, const Request& r, bool pulse)
 {
     auto input       = std::clamp(sample.amplitude * r.gain, 0., 1.);
-    double amplitude = std::pow(input * c.gain * (pulse ? c.transientGain : c.continuousGain), c.gamma);
+    double amplitude = c.strength * std::pow(input * c.gain * (pulse ? c.transientGain : c.continuousGain), c.gamma);
     double balance   = 0;
     if (c.layout == Layout::LeftRight)
         balance = (r.pan + 1) * .5;
     if (c.layout == Layout::LowHigh)
     {
-        double u = std::clamp((sample.texture - .25) * 2, 0., 1.);
+        double u = std::clamp((sample.texture * c.textureScale + c.textureBias - .25) * 2, 0., 1.);
         balance  = u * u * (3 - 2 * u);
     }
     return {amplitude * std::sqrt(1 - balance) * c.channelGain[0], amplitude * std::sqrt(balance) * c.channelGain[1]};
@@ -216,6 +216,7 @@ struct HapticMixer::State
 {
     Calibration calibration;
     Time clock{}, next = Never, lastSample{};
+    std::optional<Time> restartAt;
     double duck{}, duckTarget{};
     Id sequence{};
     std::vector<Voice> active, pending;
@@ -380,7 +381,15 @@ void HapticMixer::State::plan(Time at, const std::function<void(const Entry&)>& 
     std::erase_if(held, [&](auto& p) { return p.end <= at; });
     std::erase_if(fades, [&](auto& f) { return f.start + FadeTime <= at; });
     std::erase_if(reservations, [&](auto& r) { return r.end <= at; });
-    const auto& c = calibration;
+    auto c = calibration;
+    if (restartAt)
+    {
+        // Old native output is already silent. Bring the new projection up over
+        // the same short fade used for voice handoff, under its new hard limits.
+        const Time elapsed = std::max<Time>(0, at - *restartAt);
+        if (elapsed < FadeTime) c.strength *= double(elapsed) / FadeTime;
+        else restartAt.reset();
+    }
     Budget remaining{
         {std::pow(c.cap[0] * c.strength, 2), std::pow(c.cap[1] * c.strength, 2)}, std::pow(c.totalCap * c.strength, 2)};
     const double total = remaining.total;
@@ -452,7 +461,7 @@ void HapticMixer::State::plan(Time at, const std::function<void(const Entry&)>& 
                 true,
                 project(c, sample, v.request, true),
                 Reason::None,
-                sample.texture};
+                std::clamp(sample.texture * c.textureScale + c.textureBias, 0., 1.)};
             auto matches   = [&](const Candidate& candidate) { return candidate.key == e.key; };
             bool submitted = std::any_of(reservations.begin(), reservations.end(), [&](const Reservation& r) {
                 return r.sourceIsPulse && r.source == e.key && r.begin <= at;
@@ -512,7 +521,7 @@ void HapticMixer::State::plan(Time at, const std::function<void(const Entry&)>& 
                 e.amplitude = project(c, s, v.request, false);
                 for (double& a : e.amplitude)
                     a *= fadeIn;
-                e.texture  = s.texture;
+                e.texture  = std::clamp(s.texture * c.textureScale + c.textureBias, 0., 1.);
                 auto level = unreserved(e.amplitude, e.key, false);
                 if (power(e.amplitude) > 0 && !power(level))
                     e.reason = Reason::Locked;
@@ -582,6 +591,7 @@ void HapticMixer::State::plan(Time at, const std::function<void(const Entry&)>& 
     };
     // The validity of a bed also ends at a newly submitted pulse's release.
     next = nextBoundary(at);
+    if (restartAt) next = std::min(next, std::min(*restartAt + FadeTime, at + 1000));
     for (auto& batch : bursts)
         for (auto& e : batch.pulses)
             if (power(e.amplitude) > 0)
@@ -621,6 +631,16 @@ Result<Id> HapticMixer::submit(const HapticClip& clip, const Request& r)
 {
     if (r.startAt && *r.startAt < now()) return {{},ErrorInfo{Error::InvalidArgument,{}}};
     return submitAt(clip, r, now(), r.startAt.value_or(now()));
+}
+void HapticMixer::recalibrate(Calibration calibration, Time now)
+{
+    _state->calibration = calibration;
+    _state->restartAt = now;
+    _state->held.clear();
+    _state->reservations.clear();
+    _state->fades.clear();
+    skipTo(now);
+    _state->change();
 }
 void HapticMixer::resumeOnMotors(Time now)
 {

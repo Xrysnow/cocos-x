@@ -128,6 +128,8 @@ struct Target
     std::shared_ptr<PcmSource> pcm;
     std::optional<AudioEndpointId> paired;
     PcmModeTiming timing;
+    HapticCalibration profile;
+    bool reproject{};
     std::optional<PcmOutputTrace> trace;
     bool pcmUnavailable{}, pcmLive{};
     std::shared_ptr<audio::detail::RealtimeHaptics> realtime, warm;
@@ -175,6 +177,9 @@ struct HapticControl::State
     std::condition_variable changed;
     bool active = true, closing = false;
     bool applicationActive = true, directorActive = true;
+    OutputSettings settings;
+    std::shared_ptr<const void> lifetime = std::make_shared<int>(0);
+    bool enabled() const { return settings.enabled && settings.strength > 0; }
     std::uint64_t compatScope{};
     std::uint64_t generation = nextIdentity++;
     std::uint32_t sequence   = 0x80000000u;
@@ -267,6 +272,13 @@ struct HapticControl::State
         t.gate->store(false);
         if (t.write && t.write->receipt->load() == int(NativeError::None))
             recordSubmission(*t.write);
+        if (why == StopReason::Reconfigured && t.stableCheckpoint && t.mixer->now() > clockUs())
+        {
+            // A mobile batch may have rendered past the wall clock and retired a
+            // still-playing voice. Reproject from its last uncommitted timeline.
+            t.mixer = std::move(t.stableCheckpoint);
+            std::erase_if(t.ends, [&](const auto& end) { return end.at > t.mixer->now(); });
+        }
         if (!resumeOnMotors) endVoices(t, why);
         t.stableCheckpoint.reset();
         t.frame.reset();
@@ -381,8 +393,17 @@ struct HapticControl::State
     }
     std::pair<Receipt, NativeError> motorWrite(Target& t, const Rumble& r, Time deadline)
     {
+        auto scaled = r;
+        const auto peak = static_cast<float>(settings.strength * t.profile.peakCap);
+        const auto powerBound = static_cast<float>(settings.strength * std::sqrt(t.profile.energyCap));
+        const auto length = std::hypot(r.low, r.high);
+        auto scale = static_cast<float>(settings.strength);
+        if (length > 0 && (settings.strength < 1 || t.profile.energyCap < 1))
+            scale = std::min(scale, powerBound / length);
+        scaled.low = std::min(peak, r.low * scale);
+        scaled.high = std::min(peak, r.high * scale);
         if (!t.mobile)
-            return send(t.writer, r, t.gate, deadline);
+            return send(t.writer, scaled, t.gate, deadline);
         MobileCommand cmd;
         cmd.startUs        = clockUs();
         cmd.endUs          = std::min(deadline, cmd.startUs + Second);
@@ -390,7 +411,7 @@ struct HapticControl::State
         t.legacyEffect     = r;
         t.legacyNext       = cmd.endUs;
         auto duration      = static_cast<unsigned>(std::max<Time>(1, (cmd.endUs - cmd.startUs + 999) / 1000));
-        cmd.packet.samples.push_back({duration, t.caps.stereo ? r.low : std::max(r.low, r.high), 0.5f, r.high, 0.5f});
+        cmd.packet.samples.push_back({duration, t.caps.stereo ? scaled.low : std::max(scaled.low, scaled.high), 0.5f, scaled.high, 0.5f});
         return mobileWrite(t, std::move(cmd));
     }
     void install(Target& t, Handover next, Time now)
@@ -418,7 +439,10 @@ struct HapticControl::State
             bool pcm = next.mode == Owner::LegacyPcm;
             t.pcm    = next.pcm;
             if (pcm)
+            {
                 t.writer = t.pcm->hid;
+                if (t.pcm->setStrength) t.pcm->setStrength(nativeCeiling(t));
+            }
             else
                 t.expires = now + next.rumble.duration.count() * 1000;
             auto [receipt, e] =
@@ -554,8 +578,13 @@ struct HapticControl::State
             }
             if (now < f.exitReady) return;
         }
-        bool resume = f.resumeOnMotors && active && t.published && !t.fault && !f.disconnected &&
-                      (!f.needsNative || (f.receipt && f.receipt->load() == int(NativeError::None)));
+        // A finite mobile preset may replace itself on the same vibrator after
+        // cancellation, even where physical silence cannot be certified to Raw.
+        const bool samePreset = f.reason == StopReason::Reconfigured && f.mobile &&
+                                t.restricted == Owner::Preset && t.owner == Owner::Preset &&
+                                f.receipt && f.receipt->load() == int(NativeError::Unsupported);
+        bool resume = f.resumeOnMotors && enabled() && active && t.published && !t.fault && !f.disconnected &&
+                      (!f.needsNative || samePreset || (f.receipt && f.receipt->load() == int(NativeError::None)));
         if (f.resumeOnMotors && !resume)
         {
             endVoices(t, StopReason::EndpointLost);
@@ -582,17 +611,18 @@ struct HapticControl::State
         t.owner   = Owner::Idle;
         t.fault   = false;
         t.written = false;
-        if (resume)
+        if (resume && !t.reproject)
         {
             if (t.mixer) t.mixer->resumeOnMotors(now);
             t.nextGrid = t.mixer ? t.mixer->now() : 0;
             install(t, Handover{Owner::Preset}, now);
         }
+        t.reproject = resume && t.reproject;
         if (t.successor)
         {
             auto next = std::move(*t.successor);
             t.successor.reset();
-            if (active && t.published)
+            if (enabled() && active && t.published)
                 install(t, std::move(next), now);
         }
     }
@@ -633,6 +663,50 @@ struct HapticControl::State
             }
             it = t.ends.erase(it);
         }
+    }
+    Calibration calibration(const Target& t, bool pcm) const
+    {
+        Calibration c;
+        const auto& p = t.profile;
+        c.layout = pcm || (t.mobile && t.caps.stereo) ? Layout::LeftRight :
+                   t.mobile || !t.info.device ? Layout::Mono : Layout::LowHigh;
+        c.gain = p.gain;
+        c.gamma = p.gamma;
+        c.continuousGain = p.continuousGain;
+        c.transientGain = p.transientGain;
+        c.strength = settings.strength;
+        c.textureBias = p.textureBias;
+        c.textureScale = p.textureScale;
+        c.channelGain = c.layout == Layout::Mono ? Channels{p.monoGain, 0} : Channels{p.leftGain, p.rightGain};
+        c.cap = {p.peakCap, p.peakCap};
+        c.totalCap = std::sqrt(p.energyCap);
+        c.pulseWidth = t.mobile ? 1000 : GridUs;
+        return c;
+    }
+    float nativeCeiling(const Target& t) const
+    {
+        return static_cast<float>(settings.strength * std::min(t.profile.peakCap, std::sqrt(t.profile.energyCap)));
+    }
+    void refreshSettings(Target& t)
+    {
+        if (!enabled())
+        {
+            if (t.warmGate) t.warmGate->store(false);
+            dropScheduled(t, StopReason::Disabled);
+            revokePending(t, leases, Error::Disabled);
+            if (t.owner != Owner::Idle || t.fence) startStop(t, StopReason::Disabled);
+        }
+        else if (t.owner == Owner::Preset && !t.fence)
+        {
+            // Revoke immutable batches first, then continue the surviving mixer at
+            // its absolute logical time. A real stop or focus loss cancels the resume.
+            t.reproject = true;
+            startStop(t, StopReason::Reconfigured, true);
+        }
+        else if (t.owner != Owner::Idle && !t.fence)
+            startStop(t, StopReason::Reconfigured);
+        if (t.successor && !enabled()) revokePending(t, leases, Error::Disabled);
+        wake.notify_one();
     }
     void setFocus(bool value, bool platform)
     {
@@ -723,13 +797,10 @@ void HapticControl::State::render(Target& t, Time now)
     if ((!window && t.nextGrid > now + lookAhead) || t.frame)
         return;
     if (!t.mixer)
-    {
-        Calibration c;
-        c.layout     = window ? Layout::LeftRight : t.mobile ? (t.caps.stereo ? Layout::LeftRight : Layout::Mono)
-                                : (t.info.device ? Layout::LowHigh : Layout::Mono);
-        c.pulseWidth = t.mobile ? 1000 : GridUs;
-        t.mixer      = std::make_unique<HapticMixer>(c);
-    }
+        t.mixer = std::make_unique<HapticMixer>(calibration(t, window.has_value()));
+    else if (t.reproject)
+        t.mixer->recalibrate(calibration(t, window.has_value()), now);
+    t.reproject = false;
     Time begin = t.nextGrid ? t.nextGrid : now;
     if (window)
         begin = t.audioEpochUs + Time(window->firstFrame - *t.firstAudioFrame) * Second / 48000;
@@ -824,13 +895,8 @@ void HapticControl::State::render(Target& t, Time now)
                 return;
             end = begin + 1;
         }
-        if (constant && end - begin > 200000)
-        {
-            t.stableCheckpoint = t.mixer->checkpoint();
-            t.stableStart      = begin;
-        }
-        else
-            t.stableCheckpoint.reset();
+        t.stableCheckpoint = t.mixer->checkpoint();
+        t.stableStart = begin;
         std::vector<PlaybackId> contributors;
         auto packet = mobilePacket(*t.mixer, begin, end, t.caps.platform, [&](Id id) {
             if (auto v = t.voices.find(id);
@@ -1090,7 +1156,7 @@ void HapticControl::State::runTarget(Target& t, Time now)
         startStop(t, StopReason::IdleExpired);
         return;
     }
-    if (due && t.owner == Owner::Idle)
+    if ((due || (t.reproject && !t.voices.empty())) && t.owner == Owner::Idle && enabled())
     {
         install(t, Handover{Owner::Preset}, now);
         t.nextGrid = 0;
@@ -1211,6 +1277,7 @@ void HapticControl::shutdown()
                 t.fence->gate->store(false);
         }
         s.closing = true;
+        s.lifetime.reset();
         s.scopes.clear();
         s.wake.notify_all();
         s.changed.notify_all();
@@ -1241,6 +1308,14 @@ void HapticControl::resetScopes()
 {
     auto& s = *_state;
     std::lock_guard lock(s.mutex);
+    for (auto& [id, t] : s.targets)
+    {
+        if (t.warmGate) t.warmGate->store(false);
+        s.dropScheduled(t, StopReason::FocusLost);
+        revokePending(t, s.leases, Error::NotFocused);
+        if (t.owner != Owner::Idle || t.fence) s.startStop(t, StopReason::FocusLost);
+    }
+    s.wake.notify_one();
     s.scopes.clear();
     s.compatScope = 0;
     s.plays.clear();
@@ -1248,6 +1323,7 @@ void HapticControl::resetScopes()
     s.terminalOrder.clear();
     s.leases.clear();
     s.generation = nextIdentity++;
+    s.lifetime = std::make_shared<int>(0);
     // Keep outstanding stop fences while invalidating the previous Director's target handles.
     std::map<TargetId, Target> refreshed;
     for (auto& [id, t] : s.targets)
@@ -1326,7 +1402,7 @@ void HapticControl::compatVibrate(float seconds)
     auto& s = *_state;
     std::lock_guard lock(s.mutex);
     auto it = s.routes.find(std::nullopt);
-    if (!s.active || s.closing || it == s.routes.end())
+    if (!s.enabled() || !s.active || s.closing || it == s.routes.end())
         return;
     auto& t = s.targets.at(it->second);
     if (!t.mobile || t.owner != Owner::Idle || t.fence || t.fault || s.conflicts(t) || !t.scheduled.empty() ||
@@ -1413,6 +1489,38 @@ Status HapticControl::setPcmModeTiming(TargetId id, const PcmModeTiming& timing)
     t.pcmUnavailable = false;
     return {};
 }
+std::weak_ptr<const void> HapticControl::lifetimeToken() const
+{
+    std::lock_guard lock(_state->mutex);
+    return _state->lifetime;
+}
+Status HapticControl::setCalibration(TargetId id, const HapticCalibration& p)
+{
+    auto within = [](double x, double lo, double hi) { return x >= lo && x <= hi; };
+    if (p.version != 1 || !within(p.gain,0,4) || !within(p.gamma,.5,2.5) ||
+        !within(p.continuousGain,0,4) || !within(p.transientGain,0,4) || !within(p.leftGain,0,4) ||
+        !within(p.rightGain,0,4) || !within(p.monoGain,0,4) || !within(p.textureBias,-1,1) ||
+        !within(p.textureScale,0,4) || !within(p.peakCap,0,1) || !within(p.energyCap,0,1))
+        return {ErrorInfo{Error::InvalidArgument,{}}};
+    auto& s = *_state;
+    std::lock_guard lock(s.mutex);
+    auto it = s.targets.find(id);
+    if (it == s.targets.end() || !it->second.published) return {ErrorInfo{Error::StaleTarget,{}}};
+    if (it->second.profile == p) return {};
+    it->second.profile = p;
+    s.refreshSettings(it->second);
+    return {};
+}
+Status HapticControl::setOutputSettings(const OutputSettings& settings)
+{
+    if (!(settings.strength >= 0 && settings.strength <= 1)) return {ErrorInfo{Error::InvalidArgument,{}}};
+    auto& s = *_state;
+    std::lock_guard lock(s.mutex);
+    if (s.settings.enabled == settings.enabled && s.settings.strength == settings.strength) return {};
+    s.settings = settings;
+    for (auto& [id,t] : s.targets) s.refreshSettings(t);
+    return {};
+}
 Status HapticControl::preparePcm(TargetId id)
 {
     auto& s = *_state;
@@ -1420,6 +1528,7 @@ Status HapticControl::preparePcm(TargetId id)
     const auto it = s.targets.find(id);
     if (it == s.targets.end() || !it->second.published) return {ErrorInfo{Error::StaleTarget,{}}};
     auto& t = it->second;
+    if (!s.enabled()) return {ErrorInfo{Error::Disabled,{}}};
     if (!s.active) return {ErrorInfo{Error::NotFocused,{}}};
     if (!t.paired || !t.timing.enterMs || t.pcmUnavailable) return {ErrorInfo{Error::Unsupported,{}}};
     if (t.owner != Owner::Idle || t.fence || !t.scheduled.empty() || (t.warm && !t.warmGate->load()))
@@ -1500,6 +1609,7 @@ Result<Capabilities> HapticControl::capabilities(TargetId id) const
         Capabilities{
             t.owner,
             t.fault     ? Availability::RouteFault
+            : !s.enabled() ? Availability::Disabled
             : !s.active ? Availability::NotFocused
             : t.fence   ? Availability::Stopping
                         : Availability::Available,
@@ -1539,6 +1649,7 @@ Result<PlaybackId> HapticControl::play(
     std::lock_guard lock(s.mutex);
     if (!s.scopes.contains(scope))
         return fail<PlaybackId>(Error::NotFound);
+    if (!s.enabled()) return fail<PlaybackId>(Error::Disabled);
     if (!s.active)
         return fail<PlaybackId>(Error::NotFocused);
     auto it = s.targets.find(target);
@@ -1685,6 +1796,7 @@ Result<RawSession> HapticControl::acquire(
     std::lock_guard lock(s.mutex);
     if (!s.scopes.contains(scope))
         return fail<RawSession>(Error::NotFound);
+    if (!s.enabled()) return fail<RawSession>(Error::Disabled);
     if (!s.active)
         return fail<RawSession>(Error::NotFocused);
     auto it = s.targets.find(id);
@@ -1784,6 +1896,10 @@ Result<OperationId> HapticControl::rawCommand(std::uint64_t lease, MobileCommand
     auto valid = validateMobileEffect(cmd.raw, t.caps);
     if (!valid.value)
         return {{}, valid.error};
+    const auto ceiling = s.nativeCeiling(t);
+    if (!s.enabled()) return fail<OperationId>(Error::Disabled);
+    if (ceiling < 1 && !limitMobileEffect(cmd.raw, t.caps, ceiling))
+        return fail<OperationId>(Error::Unsupported);
     if (t.fence || t.write || !s.active || t.raw != lease)
         return fail<OperationId>(Error::Busy);
     auto now    = clockUs();
@@ -1913,7 +2029,7 @@ NativeError HapticControl::legacy(DeviceId id, const input::OutputCommand& cmd, 
     if (it == s.routes.end())
         return NativeError::Unsupported;
     auto& t = s.targets.at(it->second);
-    if (!s.active)
+    if ((!s.enabled() && !std::holds_alternative<Stop>(cmd)) || !s.active)
         return NativeError::Busy;
     if (!std::holds_alternative<Stop>(cmd) &&
         (s.conflicts(t) || (t.restricted && *t.restricted != Owner::LegacyRumble) ||
@@ -1999,7 +2115,7 @@ NativeError HapticControl::playPcm(DeviceId id, std::shared_ptr<PcmSource> pcm)
     auto& t = s.targets.at(it->second);
     if (s.active && !t.fault && t.successor && t.successor->pcm == pcm)
         return NativeError::None;
-    if (!s.active || t.fence || t.fault)
+    if (!s.enabled() || !s.active || t.fence || t.fault)
         return NativeError::Busy;
     if (t.pcm == pcm)
         return NativeError::None;

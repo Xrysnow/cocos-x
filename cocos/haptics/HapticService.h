@@ -37,6 +37,7 @@ enum class Availability
     Stopping,    ///< Waiting for the previous writer to become silent.
     RouteFault,  ///< Stop evidence is missing.
     NotFocused,  ///< Application output is suspended.
+    Disabled,    ///< User settings suppress all Body output.
 };
 /** Observable playback lifecycle. */
 enum class PlaybackState
@@ -60,6 +61,8 @@ enum class StopReason
     EndpointLost,  ///< Device or selected route changed.
     Replaced,      ///< Another writer took over.
     IdleExpired,   ///< A ready handset lease was idle for two seconds.
+    Disabled,      ///< User disabled all output.
+    Reconfigured,  ///< A new output ceiling required stopping the previous write.
 };
 /** Stop transaction progress. */
 enum class OperationState
@@ -161,6 +164,33 @@ struct TargetInfo
 {
     TargetId target{};                      ///< Connection-scoped target.
     std::optional<input::DeviceId> device;  ///< Gamepad connection; absent for a handset.
+};
+/** Local version-one preset calibration. Gains are applied before the hard output budgets. */
+struct HapticCalibration
+{
+    /** Compare every versioned calibration field.
+     * @param other Profile for comparison.
+     * @return True when the profiles apply identical settings.
+     */
+    bool operator==(const HapticCalibration& other) const = default;
+    unsigned version = 1;      ///< Schema version; only 1 is supported.
+    double gain = 1;           ///< Overall preset gain, 0..4.
+    double continuousGain = 1; ///< Continuous-layer gain, 0..4.
+    double transientGain = 1;  ///< Impulse gain, 0..4.
+    double gamma = 1;          ///< Amplitude response exponent, 0.5..2.5.
+    double leftGain = 1;       ///< Left grip or low motor gain, 0..4.
+    double rightGain = 1;      ///< Right grip or high motor gain, 0..4.
+    double monoGain = 1;       ///< Single actuator gain, 0..4.
+    double textureBias = 0;    ///< Offset after scaling normalized texture, -1..1.
+    double textureScale = 1;   ///< Multiplier for normalized texture, 0..4.
+    double peakCap = 1;        ///< Maximum normalized amplitude per channel, 0..1.
+    double energyCap = 1;      ///< Maximum sum of squared channel amplitudes, 0..1.
+};
+/** Service-wide preferences applied after local calibration. */
+struct OutputSettings
+{
+    bool enabled = true; ///< False revokes queued and active Body output.
+    double strength = 1; ///< Global normalized gain, 0..1. Zero also revokes output.
 };
 /** Measured USB waveform-mode guard intervals for this connection and audio endpoint. */
 struct PcmModeTiming
@@ -411,6 +441,21 @@ public:
      * Poll pcmPreparing and pcmPrepared in Capabilities. Playback acquires the HID mode separately.
      */
     Status preparePcm(TargetId target);
+    /** Replace the current connection's complete local calibration.
+     * @param target Live connection identity.
+     * @param profile Version-one profile. Omitted fields use the documented defaults.
+     * @return Success or a validation or target error.
+     */
+    Status setCalibration(TargetId target, const HapticCalibration& profile);
+    /** Apply global output preferences and revoke incompatible native writes.
+     * @param settings Enable flag and normalized strength. Re-enabling accepts new requests.
+     * @return Success or InvalidArgument for an invalid strength.
+     */
+    Status setOutputSettings(const OutputSettings& settings);
+    /** Obtain a weak lifetime for borrowing this service across a Director reset.
+     * @return Token expiring before this generation can be used again.
+     */
+    std::weak_ptr<const void> lifetimeToken() const;
     /** Sample the service clock.
      * @return Monotonic time suitable for startAt.
      */
