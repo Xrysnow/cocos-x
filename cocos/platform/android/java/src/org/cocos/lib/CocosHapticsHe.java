@@ -3,12 +3,16 @@ package org.cocos.lib;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-/** Optional, finite HE v1 preset adapter. All methods run on the actuator's serial worker. */
+/** Optional, finite HE preset adapter. All methods run on the actuator's serial worker. */
 final class CocosHapticsHe
 {
     private final Method create, start, stop, setSource;
     private final Constructor<?> constructor;
+    // A player may enqueue start and ignore stop until its worker has begun processing it.
+    // Keep an early cancellation on the original handle, entirely on the actuator worker.
+    private static final long START_SETTLE_MS = 125;
     private Object playing;
+    private long startedAt;
 
     private CocosHapticsHe(Class<?> player, Class<?> effect) throws ReflectiveOperationException
     {
@@ -40,7 +44,7 @@ final class CocosHapticsHe
 
     // Sample boundary minima ensure the linear HE curve stays inside each mixed step.
     // Emit only corners, reserving one sample for each end ramp. Frequency is relative to 50.
-    static String encode(long[] times, int[] amps, float[] texture)
+    static String encode(long[] times, int[] amps, float[] texture, boolean allowV2)
     {
         if (times.length != amps.length || amps.length != texture.length)
             return null;
@@ -56,8 +60,17 @@ final class CocosHapticsHe
             java.util.Arrays.fill(frequency, size, end, Math.round(texture[i] * 100) - 50);
             size = end;
         }
-        StringBuilder json = new StringBuilder("{\"Metadata\":{\"Version\":1},\"Pattern\":[");
-        int events = 0;
+        // Count quantized positive runs. V2 groups only at an existing hard silence.
+        int runs = 0;
+        for (int i = 0; i < size; ++i)
+            if (level[i] > 0 && (i == 0 || level[i - 1] == 0))
+                ++runs;
+        if (runs == 0 || runs > (allowV2 ? 32 : 16))
+            return null;
+        boolean v2 = runs > 16;
+        StringBuilder json = new StringBuilder(v2 ? "{\"Metadata\":{\"Version\":2},\"PatternList\":["
+                                                  : "{\"Metadata\":{\"Version\":1},\"Pattern\":[");
+        int events = 0, origin = 0;
         for (int begin = 0; begin < size;)
         {
             if (level[begin] == 0)
@@ -69,11 +82,20 @@ final class CocosHapticsHe
             while (end < size && level[end] > 0)
                 ++end;
             int length = end - begin;
-            if (length < 3 || ++events > 16)
+            if (length < 3)
                 return null;
-            if (events > 1)
+            if (v2 && events % 16 == 0)
+            {
+                if (events > 0) json.append("]},");
+                origin = begin;
+                json.append("{\"AbsoluteTime\":").append(origin).append(",\"Pattern\":[");
+            }
+            else if (events > 0)
                 json.append(',');
-            json.append("{\"Event\":{\"Type\":\"continuous\",\"RelativeTime\":").append(begin)
+            ++events;
+            json.append("{\"Event\":{\"Type\":\"continuous\",");
+            if (v2) json.append("\"Index\":0,");
+            json.append("\"RelativeTime\":").append(begin - origin)
                 .append(",\"Duration\":").append(length)
                 .append(",\"Parameters\":{\"Intensity\":100,\"Frequency\":50,\"Curve\":[");
             int points = 0;
@@ -96,7 +118,8 @@ final class CocosHapticsHe
             json.append("]}}}");
             begin = end;
         }
-        return events == 0 ? null : json.append("]}").toString();
+        if (v2) json.append("]}");
+        return json.append("]}").toString();
     }
 
     Object prepare(String json) throws ReflectiveOperationException
@@ -117,15 +140,26 @@ final class CocosHapticsHe
     {
         // Keep the handle even if start throws after handing the effect to the service.
         playing = player;
+        startedAt = android.os.SystemClock.elapsedRealtime();
         start.invoke(player, 1, 0, 255);
     }
 
-    void stop() throws ReflectiveOperationException
+    // Returns true if the caller's precomputed replacement aged while cancellation was pending.
+    boolean stop() throws ReflectiveOperationException
     {
-        if (playing != null)
+        if (playing == null)
+            return false;
+        long settleAt = startedAt + START_SETTLE_MS;
+        boolean early = android.os.SystemClock.elapsedRealtime() < settleAt;
+        stop.invoke(playing);
+        if (early)
         {
+            long remaining = settleAt - android.os.SystemClock.elapsedRealtime();
+            if (remaining > 0)
+                android.os.SystemClock.sleep(remaining);
             stop.invoke(playing);
-            playing = null;
         }
+        playing = null;
+        return early;
     }
 }

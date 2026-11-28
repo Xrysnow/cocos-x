@@ -38,6 +38,7 @@ public final class CocosHaptics
     // Reserve 30 ms for a 12 ms pulse, including stretching observed in system playback history.
     private static final int BINARY_ON_BUDGET_MS = 30;
     private boolean delivered, standardActive, heFailed;
+    private boolean heV2Allowed;
     private String lastRoute;
 
     private void route(String name)
@@ -64,17 +65,26 @@ public final class CocosHaptics
         }
     }
 
-    private static CocosHapticsHe openHe(Context app)
+    private static boolean includesBuild(android.os.Bundle metadata, String key, String build)
+    {
+        String builds = metadata == null ? null : metadata.getString(key);
+        return builds != null && Arrays.asList(builds.split(";")).contains(build);
+    }
+
+    private CocosHapticsHe openHe(Context app)
     {
         // Hosts opt in by firmware AND target SDK, then may disable it between sessions.
         try
         {
             android.content.pm.ApplicationInfo info = app.getPackageManager().getApplicationInfo(
                     app.getPackageName(), android.content.pm.PackageManager.GET_META_DATA);
-            String builds = info.metaData == null ? null : info.metaData.getString("org.cocos.lib.haptics.heBuilds");
-            if (builds == null || !Arrays.asList(builds.split(";")).contains(Build.FINGERPRINT + "|" + info.targetSdkVersion)
+            String build = Build.FINGERPRINT + "|" + info.targetSdkVersion;
+            if (!includesBuild(info.metaData, "org.cocos.lib.haptics.heBuilds", build)
                     || !app.getSharedPreferences("cocos_haptics", Context.MODE_PRIVATE).getBoolean("he_enabled", false))
                 return null;
+            // Qualify formats independently. Existing v1-only hosts keep their tested capabilities.
+            heV2Allowed = includesBuild(info.metaData, "org.cocos.lib.haptics.heV2Builds", build)
+                    && app.getSharedPreferences("cocos_haptics", Context.MODE_PRIVATE).getBoolean("he_v2_enabled", true);
             CocosHapticsHe adapter = CocosHapticsHe.open();
             android.util.Log.i("CocosHaptics", "HE probe=" + (adapter == null ? "unavailable" : "available"));
             return adapter;
@@ -372,22 +382,19 @@ public final class CocosHaptics
             }
             if (kind == 0 && he != null && !standardActive)
             {
-                Object next = null;
-                String json = !heFailed && permitsHe(context) ? CocosHapticsHe.encode(durations, amplitudes, values) : null;
-                if (json != null)
-                {
-                    try
-                    {
-                        next = he.prepare(json);
-                    }
-                    catch (ReflectiveOperationException | RuntimeException | LinkageError unavailable)
-                    {
-                        route("HE construction failed");
-                    }
-                }
+                long batchStart = SystemClock.elapsedRealtime();
+                Object next = !heFailed && permitsHe(context)
+                        ? prepareHe(durations, amplitudes, values, 0) : null;
                 if (next != null)
                 {
-                    he.stop();
+                    if (he.stop())
+                    {
+                        // Cancellation can occupy part of the new batch. Only submit its live suffix.
+                        requirePermit();
+                        next = prepareHe(durations, amplitudes, values, SystemClock.elapsedRealtime() - batchStart);
+                        if (next == null)
+                            return SILENT;
+                    }
                     requirePermit();
                     delivered = true;
                     he.start(next);
@@ -482,6 +489,34 @@ public final class CocosHaptics
             return FAILED;
         }
     }
+    private Object prepareHe(long[] times, int[] amplitudes, float[] texture, long elapsed)
+    {
+        if (elapsed > 0)
+        {
+            int first = 0;
+            while (first < times.length && elapsed >= times[first])
+                elapsed -= times[first++];
+            if (first == times.length)
+                return null;
+            times = Arrays.copyOfRange(times, first, times.length);
+            times[0] -= elapsed;
+            amplitudes = Arrays.copyOfRange(amplitudes, first, amplitudes.length);
+            texture = Arrays.copyOfRange(texture, first, texture.length);
+        }
+        String json = CocosHapticsHe.encode(times, amplitudes, texture, heV2Allowed);
+        if (json == null)
+            return null;
+        try
+        {
+            return he.prepare(json);
+        }
+        catch (ReflectiveOperationException | RuntimeException | LinkageError unavailable)
+        {
+            route("HE construction failed");
+            return null;
+        }
+    }
+
     int stop()
     {
         try
