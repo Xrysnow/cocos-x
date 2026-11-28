@@ -348,9 +348,9 @@ Result<Time> validateMobileEffect(const MobileEffect& effect, MobileCapabilities
             end = std::max(end, c.time + c.points.back().time);
         }
     }
-    else if (auto p = std::get_if<AppleParameters>(&effect))
+    else if (auto parameters = std::get_if<AppleParameters>(&effect))
     {
-        if (p->parameters.empty() || !params(p->parameters))
+        if (parameters->parameters.empty() || !params(parameters->parameters))
             return bad();
     }
     else if (auto c = std::get_if<AppleParameterCurve>(&effect))

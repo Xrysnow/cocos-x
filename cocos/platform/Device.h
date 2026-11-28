@@ -85,11 +85,10 @@ public:
     static void setKeepScreenOn(bool keepScreenOn);
 
     /**
-     * Vibrate for the specified amount of time.
-     * If vibrate is not supported, then invoking this method has no effect.
-     * Some platforms limit to a maximum duration of 5 seconds.
-     * Duration is ignored on iOS due to API limitations.
-     * @param duration The duration in seconds.
+     * @deprecated Use Director::getHaptics() and HapticScope::play for cancellable presets.
+     * Submit a compatibility pulse on the idle handset. Android limits it to 30 seconds.
+     * iOS plays one transient. Unsupported or occupied routes ignore the request.
+     * @param duration Positive number of seconds on Android.
      */
     static void vibrate(float duration);
 

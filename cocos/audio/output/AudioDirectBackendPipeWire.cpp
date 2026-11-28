@@ -3,6 +3,7 @@
 #include <AL/alc.h>
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
+#include <spa/node/io.h>
 #include <spa/param/audio/format-utils.h>
 #include <spa/utils/json.h>
 
@@ -13,6 +14,7 @@
 #include <chrono>
 #include <cstring>
 #include <filesystem>
+#include <limits>
 #include <map>
 #include <mutex>
 #include <string_view>
@@ -517,11 +519,24 @@ class PipeWireOutput final : public OutputStream {
         std::uint64_t frames, validFrames;
     };
 
+    struct RealtimeTiming {
+        std::uint64_t observedNs;
+        std::uint64_t ticks;
+        std::uint64_t deviceFrame;
+        std::uint64_t nativeTailFrames;
+    };
+
 public:
     PipeWireOutput(std::shared_ptr<Monitor> monitor, const DirectEndpoint& endpoint,
-                   unsigned node, std::uint64_t serial)
+                   unsigned node, std::uint64_t serial, bool realtime)
         : _monitor(std::move(monitor)), _endpoint(endpoint), _targetNode(node), _targetSerial(serial),
-          _pcm((queueFrames + endpoint.sampleRate) * endpoint.channels.size()) {}
+          _generation(realtime ? nextRealtimeClockGeneration() : 0),
+          _pcm((queueFrames + endpoint.sampleRate) * endpoint.channels.size())
+    {
+        if (realtime)
+            _front = {static_cast<unsigned>(std::ranges::find(endpoint.channels, Position::FrontLeft) - endpoint.channels.begin()),
+                static_cast<unsigned>(std::ranges::find(endpoint.channels, Position::FrontRight) - endpoint.channels.begin())};
+    }
 
     ~PipeWireOutput() override
     {
@@ -536,6 +551,8 @@ public:
     }
 
 private:
+    bool gateOpen() const { return _gate && _gate->load(std::memory_order_acquire); }
+
     void closeStream()
     {
         if (!_stream)
@@ -546,6 +563,7 @@ private:
         _listener = {};
         _state = PW_STREAM_STATE_CONNECTING;
         _formatVerified = false;
+        _graphPosition = nullptr;
     }
 
     Error openLocked()
@@ -558,6 +576,12 @@ private:
             PW_KEY_NODE_LATENCY, latency.c_str(), nullptr);
         if (!props)
             return Error::BackendFailure;
+        if (_generation)
+        {
+            const auto ceiling = std::to_string(realtimeMaxQuantumFrames) + "/" + std::to_string(_endpoint.sampleRate);
+            pw_properties_set(props, PW_KEY_NODE_MAX_LATENCY, ceiling.c_str());
+            pw_properties_set(props, PW_KEY_NODE_RATE, "1/48000");
+        }
         _stream = pw_stream_new(_monitor->core, "Cocos direct audio", props);
         if (!_stream)
             return Error::BackendFailure;
@@ -578,6 +602,11 @@ private:
                     pw_thread_loop_signal(self._monitor->loop, false);
                 }
             };
+            value.io_changed = [](void* data, std::uint32_t id, void* area, std::uint32_t size) {
+                auto& self = *static_cast<PipeWireOutput*>(data);
+                if (id == SPA_IO_Position)
+                    self._graphPosition = size >= sizeof(spa_io_position) ? static_cast<spa_io_position*>(area) : nullptr;
+            };
             value.process = [](void* data) { static_cast<PipeWireOutput*>(data)->process(); };
             value.drained = [](void* data) {
                 auto& self = *static_cast<PipeWireOutput*>(data);
@@ -585,6 +614,12 @@ private:
                 {
                     self._consumed = self._written;
                     self._drained = true;
+                    if (self._discarded)
+                    {
+                        if (const auto timing = self.realtimeTiming())
+                            self._drainedDeviceFrame = timing->deviceFrame;
+                    }
+                    pw_thread_loop_signal(self._monitor->loop, false);
                 }
             };
             return value;
@@ -610,20 +645,34 @@ private:
         timespec until{};
         if (pw_thread_loop_get_time(_monitor->loop, &until, 650'000'000) < 0)
             return Error::BackendFailure;
-        while (!ready())
+        while (!ready() || (_generation && !_quantumObserved))
         {
             if (_monitor->failed || !_monitor->contains(_targetNode, _targetSerial))
                 return Error::Disconnected;
             if (_state == PW_STREAM_STATE_ERROR || pw_thread_loop_timed_wait_full(_monitor->loop, &until) < 0)
                 return Error::Unsupported;
         }
-        return pw_stream_set_active(_stream, false) < 0 ? Error::BackendFailure : Error::None;
+        if (pw_stream_set_active(_stream, false) < 0)
+            return Error::BackendFailure;
+        _realtimeOpened = _generation != 0;
+        return Error::None;
     }
 
 public:
     Error submit(const std::int16_t* pcm, std::size_t frames) override
     {
         const LoopLock lock(_monitor->loop);
+        if (_discarded)
+            return Error::Busy;
+        if (_generation)
+        {
+            if (_incompatibleQuantum)
+                return Error::Unsupported;
+            if (!validRealtimeBlock(pcm, frames, !_active, _front))
+                return Error::InvalidArgument;
+            if (!gateOpen() && !validRealtimeBlock(pcm, frames, true, _front))
+                return Error::Busy;
+        }
         if (available() == 0)
             return Error::QueueFull;
         const auto width = _endpoint.channels.size();
@@ -639,10 +688,14 @@ public:
     Error setPaused(bool paused) override
     {
         const LoopLock lock(_monitor->loop);
+        if (_discarded)
+            return Error::Busy;
         if (!ready())
             return error();
         if (paused == !_active)
             return Error::None;
+        if (_generation && paused)
+            return Error::Unsupported;
         if (!paused)
         {
             _active = true;
@@ -712,6 +765,70 @@ public:
         return Error::Unsupported;
     }
 
+    void setRealtimeGate(std::shared_ptr<const std::atomic_bool> gate) override
+    {
+        const LoopLock lock(_monitor->loop);
+        _gate = std::move(gate);
+    }
+
+    AudioResult<RealtimeOutputStop> discardRealtime() override
+    {
+        std::optional<std::uint64_t> tail;
+        {
+            const LoopLock lock(_monitor->loop);
+            if (!_generation || _discarded)
+                return Error::Unsupported;
+            _discarded = true;
+            _written = _submitted;
+            if (const auto timing = realtimeTiming())
+                tail = timing->deviceFrame + timing->nativeTailFrames;
+            else if (!_everSubmitted)
+                tail = 0;
+        }
+        const auto status = stopWithEvidence();
+        if (status != Error::None)
+            return status;
+        const LoopLock lock(_monitor->loop);
+        if (_everSubmitted && (!_drainedDeviceFrame || _incompatibleQuantum))
+            return Error::Unsupported;
+        if (_drainedDeviceFrame)
+            tail = std::max(tail.value_or(0), *_drainedDeviceFrame);
+        if (!tail)
+            return Error::Unsupported;
+        return RealtimeOutputStop{_generation, *tail};
+    }
+
+    AudioResult<RealtimeOutputProgress> pollRealtime() override
+    {
+        const LoopLock lock(_monitor->loop);
+        if (!_generation || _discarded || _incompatibleQuantum)
+            return Error::Unsupported;
+        if (!ready() || _failed)
+            return error();
+        auto progress = RealtimeOutputProgress{static_cast<unsigned>(_written - _submitted), available(), {}};
+        if (!_active)
+            return progress;
+        if (const auto timing = realtimeTiming())
+        {
+            if (_lastTick && timing->ticks < *_lastTick)
+                return Error::Unsupported;
+            if (!_lastTick || timing->ticks > *_lastTick)
+            {
+                _clockAdvanced = _lastTick.has_value();
+                _lastTick = timing->ticks;
+                _ticksMovedAt = timing->observedNs;
+            }
+            if (!_clockAdvanced || timing->observedNs - _ticksMovedAt > realtimeClockTimeoutNs ||
+                timing->deviceFrame < _lastDeviceFrame)
+                return progress;
+            updateConsumed(timing->nativeTailFrames);
+            _lastDeviceFrame = timing->deviceFrame;
+            progress.clock = RealtimeOutputClock{_generation, timing->observedNs, timing->deviceFrame,
+                timing->deviceFrame + timing->nativeTailFrames + progress.queuedFrames, _consumed};
+        }
+        return progress;
+    }
+
     Error drain() override
     {
         const LoopLock lock(_monitor->loop);
@@ -763,7 +880,8 @@ private:
         const auto capacity = _pcm.size() / _endpoint.channels.size();
         const auto space = capacity - (_written - _consumed);
         const auto pending = _written - _submitted;
-        const auto queueSpace = queueFrames - std::min<std::uint64_t>(pending, queueFrames);
+        const auto limit = _generation ? realtimeQueueFrames : queueFrames;
+        const auto queueSpace = limit - std::min<std::uint64_t>(pending, limit);
         return static_cast<unsigned>(std::min(space, queueSpace) / outputBlockFrames);
     }
 
@@ -776,6 +894,40 @@ private:
                 return Error::BackendFailure;
         }
         return Error::None;
+    }
+
+    std::optional<RealtimeTiming> realtimeTiming() const
+    {
+        if (_state != PW_STREAM_STATE_STREAMING)
+            return {};
+        pw_time time{};
+        constexpr std::uint64_t nsPerSecond = 1'000'000'000;
+        constexpr auto maxTailFrames = realtimeMaxTailNs * realtimeSampleRate / nsPerSecond;
+        if (pw_stream_get_time_n(_stream, &time, sizeof(time)) < 0 ||
+            time.now <= 0 || time.delay <= 0 || static_cast<std::uint64_t>(time.delay) > maxTailFrames ||
+            !time.rate.num || static_cast<std::uint64_t>(time.rate.num) * realtimeSampleRate != time.rate.denom ||
+            time.queued > maxTailFrames || time.buffered > maxTailFrames)
+            return {};
+
+        // PipeWire's sample timestamp uses CLOCK_MONOTONIC. Keep both the
+        // timing estimate and its age in that clock before publishing it.
+        timespec now{};
+        if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+            return {};
+        const auto ns = static_cast<std::uint64_t>(now.tv_sec) * nsPerSecond + static_cast<std::uint64_t>(now.tv_nsec);
+        const auto sampled = static_cast<std::uint64_t>(time.now);
+        if (ns < sampled || ns - sampled > realtimeClockTimeoutNs)
+            return {};
+        const auto elapsed = (ns - sampled) * realtimeSampleRate / nsPerSecond;
+        const auto graphDelay = static_cast<std::uint64_t>(time.delay);
+        const auto tail = time.queued + time.buffered + graphDelay - std::min(graphDelay, elapsed);
+        if (tail > maxTailFrames ||
+            time.ticks > std::numeric_limits<std::uint64_t>::max() - elapsed - tail - realtimeQueueFrames)
+            return {};
+        const auto observed = Clock::now();
+        return RealtimeTiming{static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(observed.time_since_epoch()).count()),
+            time.ticks, time.ticks + elapsed, tail};
     }
 
     void updateProgress()
@@ -792,6 +944,11 @@ private:
         const auto delay = static_cast<double>(time.delay) * time.rate.num / time.rate.denom;
         const auto graphFrames = static_cast<std::uint64_t>(std::max(0.0, delay - elapsed) * _endpoint.sampleRate);
         const auto queued = time.queued + time.buffered + graphFrames;
+        updateConsumed(queued);
+    }
+
+    void updateConsumed(std::uint64_t queued)
+    {
         _devicePlayed = std::max(_devicePlayed, _deviceWritten - std::min(_deviceWritten, queued));
         while (_historySize != 0)
         {
@@ -825,38 +982,73 @@ private:
             _failed = true;
             return;
         }
-        updateProgress();
+        if (!_generation)
+            updateProgress();
         const auto width = _endpoint.channels.size();
         const auto stride = width * sizeof(std::int16_t);
         const auto requested = packet->requested ? packet->requested : outputBlockFrames;
         const auto capacity = std::min<std::uint64_t>(data.maxsize / stride, requested);
-        const bool routed = ready() && _active && !_failed;
+        if (_generation && packet->requested)
+        {
+            const auto* clock = _graphPosition && _graphPosition->clock.duration ? &_graphPosition->clock : nullptr;
+            const auto quantum = clock ? clock->duration : packet->requested;
+            const bool graphChanged = _realtimeOpened && clock && _graphClockId && *_graphClockId != clock->id;
+            const bool incompatible = quantum > realtimeMaxQuantumFrames || graphChanged ||
+                packet->requested > realtimeQueueFrames || capacity != packet->requested;
+            if (clock)
+                _graphClockId = clock->id;
+            if (!_realtimeOpened && _quantumObserved != !incompatible)
+            {
+                // The running graph may need a cycle to adopt our latency hint.
+                _quantumObserved = !incompatible;
+                pw_thread_loop_signal(_monitor->loop, false);
+            }
+            if (_realtimeOpened && incompatible && !_incompatibleQuantum)
+            {
+                _incompatibleQuantum = true;
+                pw_thread_loop_signal(_monitor->loop, false);
+            }
+        }
+        const bool routed = ready() && _active && !_failed &&
+            (!_generation || (packet->requested && !_incompatibleQuantum));
         const auto valid = routed ? std::min(capacity, _written - _submitted) : 0;
         const auto frames = !_active || _draining ? 0 : routed && _drainRequested ? valid : capacity;
         auto* output = static_cast<std::int16_t*>(data.data);
-        const auto offset = (_submitted * width) % _pcm.size();
-        const auto first = std::min(valid * width, _pcm.size() - offset);
-        std::copy_n(_pcm.data() + offset, first, output);
-        std::copy_n(_pcm.data(), valid * width - first, output + first);
-        std::fill_n(output + valid * width, (frames - valid) * width, std::int16_t{0});
+        if (!_generation || gateOpen())
+        {
+            const auto offset = (_submitted * width) % _pcm.size();
+            const auto first = std::min(valid * width, _pcm.size() - offset);
+            std::copy_n(_pcm.data() + offset, first, output);
+            std::copy_n(_pcm.data(), valid * width - first, output + first);
+            std::fill_n(output + valid * width, (frames - valid) * width, std::int16_t{0});
+        }
+        else
+            std::fill_n(output, frames * width, std::int16_t{0});
 
         if (frames)
         {
-            if (_historySize == historyEntries)
+            const bool record = !_generation || valid != 0;
+            if (record && _historySize == historyEntries)
                 _failed = true;
             else
             {
-                const auto tail = (_historyHead + _historySize) % historyEntries;
-                _history[tail] = {_deviceWritten, _submitted, frames, valid};
-                ++_historySize;
+                if (record)
+                {
+                    const auto tail = (_historyHead + _historySize) % historyEntries;
+                    _history[tail] = {_deviceWritten, _submitted, frames, valid};
+                    ++_historySize;
+                }
                 _deviceWritten += frames;
                 _submitted += valid;
+                _everSubmitted |= valid != 0;
             }
         }
         data.chunk->offset = 0;
         data.chunk->size = static_cast<std::uint32_t>(frames * stride);
         data.chunk->stride = static_cast<std::int32_t>(stride);
         packet->size = frames;
+        if (_generation && !gateOpen())
+            std::fill_n(output, frames * width, std::int16_t{0});
         if (pw_stream_queue_buffer(_stream, packet) < 0 || startDrain() != Error::None)
             _failed = true;
     }
@@ -865,17 +1057,28 @@ private:
     DirectEndpoint _endpoint;
     unsigned _targetNode;
     std::uint64_t _targetSerial;
+    const std::uint64_t _generation;
+    std::shared_ptr<const std::atomic_bool> _gate;
+    std::array<unsigned, 2> _front{};
     std::vector<std::int16_t> _pcm;
     std::array<Segment, historyEntries> _history{};
     std::size_t _historyHead = 0, _historySize = 0;
     std::uint64_t _written = 0, _submitted = 0, _consumed = 0;
     std::uint64_t _deviceWritten = 0, _devicePlayed = 0;
+    std::uint64_t _lastDeviceFrame = 0;
+    std::optional<std::uint64_t> _lastTick;
+    std::uint64_t _ticksMovedAt = 0;
+    std::optional<std::uint64_t> _drainedDeviceFrame;
     pw_stream* _stream = nullptr;
+    spa_io_position* _graphPosition = nullptr;
+    std::optional<unsigned> _graphClockId;
     spa_hook _listener{};
     pw_stream_state _state = PW_STREAM_STATE_CONNECTING;
     bool _formatVerified = false, _active = false, _failed = false;
     bool _drainRequested = false, _draining = false, _drained = false;
     bool _uncertifiedStream = false;
+    bool _discarded = false, _everSubmitted = false;
+    bool _realtimeOpened = false, _quantumObserved = false, _incompatibleQuantum = false, _clockAdvanced = false;
 };
 
 } // namespace
@@ -905,8 +1108,13 @@ AudioResult<std::vector<DirectEndpoint>> enumeratePlatformEndpoints()
     return endpoints;
 }
 
-AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoint& endpoint)
+namespace {
+
+AudioResult<std::unique_ptr<OutputStream>> openOutput(const DirectEndpoint& endpoint, bool realtime)
 {
+    if (realtime && (endpoint.sampleRate != realtimeSampleRate ||
+        !std::ranges::is_permutation(endpoint.channels, realtimeChannels)))
+        return Error::Unsupported;
     const auto server = monitor();
     if (!server)
         return Error::Disconnected;
@@ -923,10 +1131,22 @@ AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoi
             !endpoint.sampleRate || endpoint.sampleRate > 384000)
             return Error::Unsupported;
     }
-    auto stream = std::make_unique<PipeWireOutput>(server, endpoint, target->first, target->second);
+    auto stream = std::make_unique<PipeWireOutput>(server, endpoint, target->first, target->second, realtime);
     if (const auto error = stream->open(); error != Error::None)
         return error;
     return std::unique_ptr<OutputStream>(std::move(stream));
+}
+
+} // namespace
+
+AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoint& endpoint)
+{
+    return openOutput(endpoint, false);
+}
+
+AudioResult<std::unique_ptr<OutputStream>> openPlatformRealtimeOutput(const DirectEndpoint& endpoint)
+{
+    return openOutput(endpoint, true);
 }
 
 void shutdownPlatformOutput() noexcept

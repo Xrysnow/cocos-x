@@ -234,6 +234,22 @@ struct AudioDirectPlayback::Session {
     Error submit(OutputStream& stream, const DirectBlock& block)
     {
         std::array<std::int16_t, outputBlockFrames * 8> samples{};
+        if (managed) {
+            auto& safety = *endpoint.status->grip;
+            std::lock_guard guard(safety.mutex);
+            const auto before = safety.limiter.checkpoint(block.count);
+            for (unsigned frame = 0; frame < block.count; ++frame) {
+                const auto& in = block.frames[frame].sample;
+                auto out = safety.limiter.process(in[routes[0].input] * snapshot.gain / 32768.f,
+                                                  in[routes[1].input] * snapshot.gain / 32768.f);
+                for (unsigned side = 0; side < 2; ++side)
+                    samples[frame * channelCount + routes[side].slot] = out[side];
+            }
+            const auto result = stream.submit(samples.data(), block.count);
+            if (result == Error::QueueFull)
+                safety.limiter.restore(before);
+            return result;
+        }
         for (unsigned frame = 0; frame < block.count; ++frame)
         {
             for (const auto& route : routes)
@@ -264,6 +280,8 @@ struct AudioDirectPlayback::Session {
             lock.unlock();
             const auto evidence = proveStop ? stream->stopWithEvidence() : Error::None;
             stream.reset();
+            if (managed && sent && endpoint.status->grip)
+                endpoint.status->grip->discarded();
             lock.lock();
             if (evidence != Error::None)
                 stopEvidence = evidence;
@@ -369,7 +387,7 @@ struct AudioDirectPlayback::Session {
                 continue;
             }
 
-            unsigned capacity = progress.value().availableBlocks;
+            unsigned capacity = managed && !endpoint.status->grip->ready() ? 0 : progress.value().availableBlocks;
             while (enabled && capacity && !queued.empty() && submitted.size() < 2 * outputQueueBlocks)
             {
                 if (canPlay() != Error::None)
@@ -610,6 +628,7 @@ AudioOutputError registerManagedOutput(AudioEndpointId id)
     auto probe = openPlatformOutput(info.platform);
     if (!probe)
         return probe.error();
+    std::call_once(info.status->initializeGrip, [&] { info.status->grip = gripSafetyFor(info.platform); });
     info.status->managedReady = true;
     return Error::None;
 }

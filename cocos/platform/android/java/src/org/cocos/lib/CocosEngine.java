@@ -436,6 +436,8 @@ public class CocosEngine {
         ((CocosActivity)sActivity).setKeepScreenOn(value);
     }
 
+    /** @deprecated Use the engine haptic service for new game effects. */
+    @Deprecated
     public static void vibrate(float duration) {
         CocosHaptics.nativeVibrate(duration);
     }

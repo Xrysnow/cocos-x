@@ -96,6 +96,8 @@ public:
     Result<Id> submitAt(const HapticClip& clip, const Request& request, Time received, Time logicalStart);
     // Skip expired samples after a late wakeup, retaining the absolute source phase.
     void skipTo(Time time);
+    void resumeOnMotors(Time now); // Preserve live voices and skip the elapsed PCM handoff.
+    void sampleBlockStart(); // Sample the bed at the next unrendered device frame.
     bool stop(Id id);
     bool reserve(const Reservation& reservation);
     // Commit [now(), until) on the absolute control grid and exact source boundaries.

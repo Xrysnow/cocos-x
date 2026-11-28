@@ -38,6 +38,14 @@ Result<Capabilities> HapticService::capabilities(TargetId id) const
 {
     return _control->capabilities(id);
 }
+Status HapticService::preparePcm(TargetId target)
+{
+    return _control->preparePcm(target);
+}
+Status HapticService::setPcmModeTiming(TargetId target, const PcmModeTiming& timing)
+{
+    return _control->setPcmModeTiming(target, timing);
+}
 HapticTime HapticService::now() const
 {
     return _control->now();

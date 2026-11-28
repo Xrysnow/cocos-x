@@ -24,8 +24,10 @@ AudioOutputError waveformError(Error error)
 
 bool matches(const HapticAudioIdentity& hid, const audio::detail::OutputIdentity& endpoint)
 {
-    return (!hid.containerId.empty() && hid.containerId == endpoint.containerId) ||
-           (!hid.usbPath.empty() && hid.usbPath == endpoint.usbPath);
+    const bool container = !hid.containerId.empty() && !endpoint.containerId.empty();
+    const bool usb = !hid.usbPath.empty() && !endpoint.usbPath.empty();
+    return (container || usb) && (!container || hid.containerId == endpoint.containerId) &&
+           (!usb || hid.usbPath == endpoint.usbPath);
 }
 
 const audio::detail::OutputIdentity* pairedOutput(const HapticAudioIdentity& hid,
@@ -324,7 +326,7 @@ bool OutputRouter::refreshHaptics()
                         ? AudioOutputError::None : audio::detail::registerManagedOutput(paired->id);
                     if (identity.writable && paired->supportsBodyOutput && error == AudioOutputError::None)
                     {
-                        if (route && route->endpoint != paired->id)
+                        if (route && (route->endpoint != paired->id || route->hid != key))
                         {
                             route.reset();
                             break;

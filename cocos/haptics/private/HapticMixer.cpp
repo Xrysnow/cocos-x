@@ -622,6 +622,18 @@ Result<Id> HapticMixer::submit(const HapticClip& clip, const Request& r)
     if (r.startAt && *r.startAt < now()) return {{},ErrorInfo{Error::InvalidArgument,{}}};
     return submitAt(clip, r, now(), r.startAt.value_or(now()));
 }
+void HapticMixer::resumeOnMotors(Time now)
+{
+    _state->calibration.layout = Layout::LowHigh;
+    _state->held.clear();
+    _state->reservations.clear();
+    skipTo(now);
+    _state->change();
+}
+void HapticMixer::sampleBlockStart()
+{
+    _state->next = _state->clock;
+}
 void HapticMixer::skipTo(Time t)
 {
     if (t <= _state->clock) return;

@@ -52,6 +52,7 @@ set(COCOS_AUDIO_SRC
     audio/openal/AudioALSupport.cpp
     audio/openal/AudioPool.cpp
     audio/output/AudioDirectPlayback.cpp
+    audio/output/RealtimeHaptics.cpp
     audio/output/AudioDirectRenderer.cpp
     audio/output/AudioOutputEndpoints.cpp
 )

@@ -162,6 +162,25 @@ struct TargetInfo
     TargetId target{};                      ///< Connection-scoped target.
     std::optional<input::DeviceId> device;  ///< Gamepad connection; absent for a handset.
 };
+/** Measured USB waveform-mode guard intervals for this connection and audio endpoint. */
+struct PcmModeTiming
+{
+    unsigned enterMs{}; ///< Milliseconds after the HID mode write, 1..200. Two zeros disable realtime PCM.
+    unsigned exitMs{};  ///< Milliseconds after the neutral HID write, 1..200.
+};
+/** Timing and queue evidence for the most recent synthesized USB stream. Host times are monotonic microseconds. */
+struct PcmOutputTrace
+{
+    unsigned peakQueuedFrames{}; ///< Maximum submitted software water level, including silent prefill.
+    std::uint64_t generation{}; ///< Device clock identity for both frame positions.
+    std::optional<std::uint64_t> lastNonzeroFrame; ///< Last potentially nonzero frame offered to this stream (inclusive).
+    std::optional<std::uint64_t> discardBound; ///< Native discard/drain bound in device frames (exclusive).
+    std::optional<std::int64_t> modeWriteUs; ///< Entry-mode HID write acknowledged by the host.
+    std::optional<std::int64_t> firstSubmitUs; ///< First successful nonzero rear PCM submission.
+    std::optional<std::int64_t> discardUs; ///< Device drain evidence received.
+    std::optional<std::int64_t> exitWriteUs; ///< Exit-mode HID write acknowledged by the host.
+    std::optional<std::int64_t> silentUs; ///< Ownership released after the exit guard.
+};
 /** Snapshot of the selected physical route at query time. */
 struct Capabilities
 {
@@ -175,6 +194,11 @@ struct Capabilities
     bool canReleaseRaw        = false;  ///< The handset can safely relinquish raw ownership.
     /** Android envelope availability: Available, NotBuilt, SystemTooOld, or DeviceUnsupported. Other routes use NotApplicable. */
     std::string envelopeStatus = "NotApplicable";
+    bool pcmCandidate = false; ///< A writable HID endpoint is uniquely paired with 48 kHz quad output.
+    bool pcmPrepared = false;  ///< A silent, clock-validated PCM stream is ready on this target.
+    bool realtimePcm = false;  ///< The current preset has passed its mode and device-clock gates.
+    std::optional<PcmOutputTrace> pcmTrace; ///< Current or most recently closed realtime USB stream on this target.
+    bool pcmPreparing = false; ///< An idle preparation request is still waiting for its clock or safety window.
 };
 /** Playback record. Times are microseconds on the service clock. */
 struct PlaybackSnapshot
@@ -187,6 +211,7 @@ struct PlaybackSnapshot
     std::optional<std::int64_t> logicalStartUs;      ///< Logical start including leading silence.
     std::optional<std::int64_t> firstSubmitUs;       ///< First acknowledged nonzero native write.
     std::optional<PlaybackId> mergedInto;            ///< Surviving playback for a coalesced request.
+    bool usedRealtimePcm = false;                    ///< A nonzero synthesized rear-channel block was accepted.
 };
 /** Result of an asynchronous stop. */
 struct OperationSnapshot
@@ -374,6 +399,18 @@ public:
      * @return Snapshot or StaleTarget.
      */
     Result<Capabilities> capabilities(TargetId target) const;
+    /** Apply verified waveform-mode timing to the current idle USB controller connection.
+     * @param target Target with a uniquely paired four-channel audio endpoint.
+     * @param timing Measured entry and exit guards, or two zeros to select ordinary rumble.
+     * @return Success, Busy for an occupied target, or a target, capability or validation error.
+     */
+    Status setPcmModeTiming(TargetId target, const PcmModeTiming& timing);
+    /** Prepare a silent USB stream for up to two seconds while the Body remains idle.
+     * @param target Idle, paired target with measured mode timing.
+     * @return Request acceptance or a target, focus, capability or occupancy error.
+     * Poll pcmPreparing and pcmPrepared in Capabilities. Playback acquires the HID mode separately.
+     */
+    Status preparePcm(TargetId target);
     /** Sample the service clock.
      * @return Monotonic time suitable for startAt.
      */

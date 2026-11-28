@@ -13,6 +13,7 @@ struct Endpoints {
     std::mutex refreshMutex;
     std::mutex mutex;
     std::unordered_map<std::string, OutputEndpoint> current;
+    std::unordered_map<std::string, std::weak_ptr<GripSafety>> gripHistory;
     std::uint64_t nextId = 0;
 };
 
@@ -27,6 +28,21 @@ Endpoints& endpoints()
 bool isRearChannel(AudioChannelPosition position)
 {
     return position == AudioChannelPosition::RearLeft || position == AudioChannelPosition::RearRight;
+}
+
+std::shared_ptr<GripSafety> gripSafetyFor(const DirectEndpoint& device)
+{
+    auto& registry = endpoints();
+    std::lock_guard lock(registry.mutex);
+    std::erase_if(registry.gripHistory, [](const auto& entry) { return entry.second.expired(); });
+    // Backend endpoint keys can change while the previous stream still owns its stop fence.
+    const auto key = !device.containerId.empty() ? "container/" + device.containerId :
+                     !device.usbPath.empty() ? "usb/" + device.usbPath : "endpoint/" + device.key;
+    auto& history = registry.gripHistory[key];
+    if (auto retained = history.lock()) return retained;
+    auto fresh = std::make_shared<GripSafety>();
+    history = fresh;
+    return fresh;
 }
 
 bool hasBodyLayout(const DirectEndpoint& endpoint)
@@ -61,6 +77,17 @@ AudioResult<std::vector<OutputEndpoint>> refreshOutputEndpoints()
         if (entry.key.empty() || current.find(entry.key) != current.end())
             continue;
         auto found = registry.current.find(entry.key);
+        if (found != registry.current.end())
+        {
+            const auto& old = found->second.platform;
+            if (entry.containerId != old.containerId || entry.usbPath != old.usbPath ||
+                entry.sampleRate != old.sampleRate || entry.channels != old.channels || entry.canRoute != old.canRoute)
+            {
+                // An endpoint key can survive a profile switch or device replacement.
+                found->second.status->connected = false;
+                found = registry.current.end();
+            }
+        }
         OutputEndpoint endpoint = found == registry.current.end()
             ? OutputEndpoint{AudioEndpointId{++registry.nextId}, entry, std::make_shared<EndpointStatus>()}
             : OutputEndpoint{found->second.id, entry, found->second.status};

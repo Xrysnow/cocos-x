@@ -144,6 +144,8 @@ void OutputRouter::publishBodyRoutes()
             _retiredBody.erase(id);
             if(!_bodyRoutes.contains(id) || _bodyRoutes.at(id)!=*key)
                 _control.publishGamepad(id,*key);
+            _control.pairPcm(id, paired != _hapticRoutes.end() && paired->second.hid == *key
+                                     ? std::optional{paired->second.endpoint} : std::nullopt);
         }
     }
     for(auto& [id,key]:_bodyRoutes)if(!current.contains(id)){

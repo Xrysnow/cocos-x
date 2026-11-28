@@ -1,5 +1,6 @@
 #include "HapticControl.h"
 #include "AndroidWriteBudget.h"
+#include "GripSynth.h"
 #include "haptics/private/HapticMixer.h"
 #include <algorithm>
 #include <atomic>
@@ -63,7 +64,9 @@ struct Write
     Time at{};
     Done done;
     std::vector<PlaybackId> contributors;
+    bool pcmSamples{};
     Time rawSpan{};  // Raw patterns use the native start receipt as their lifetime anchor.
+    std::shared_ptr<std::atomic<Time>> pcmSubmittedAt;
 };
 struct Handover
 {
@@ -84,6 +87,9 @@ struct Fence
     bool audioStopped{};
     bool audioFault{};
     bool disconnected{};
+    bool resumeOnMotors{};
+    unsigned exitMs{};
+    Time exitReady{};
     StopReason reason{};
     std::optional<OperationId> operation;
     std::shared_ptr<MobileOutput> mobile;
@@ -120,6 +126,17 @@ struct Target
     Time nextGrid{}, lastWrite{}, expires{};
     Channels last{};
     std::shared_ptr<PcmSource> pcm;
+    std::optional<AudioEndpointId> paired;
+    PcmModeTiming timing;
+    std::optional<PcmOutputTrace> trace;
+    bool pcmUnavailable{}, pcmLive{};
+    std::shared_ptr<audio::detail::RealtimeHaptics> realtime, warm;
+    Gate warmGate;
+    Time warmUntil{};
+    std::shared_ptr<GripSynth> synth;
+    Receipt modeWrite;
+    Time modeReady{}, audioEpochUs{};
+    std::optional<std::uint64_t> firstAudioFrame;
     std::future<NativeError> audioJob;
     bool enabling = false;
     std::uint64_t raw{};
@@ -222,22 +239,35 @@ struct HapticControl::State
             if (auto it = plays.find(id); it != plays.end())
             {
                 it->second.submitted = true;
+                it->second.usedRealtimePcm |= write.pcmSamples;
                 if (!it->second.firstSubmitUs)
-                    it->second.firstSubmitUs = write.at;
+                    it->second.firstSubmitUs = write.pcmSubmittedAt ? write.pcmSubmittedAt->load() : write.at;
             }
     }
-    void startStop(Target& t, StopReason why)
+    void endVoices(Target& t, StopReason why)
     {
-        if (t.fence)
-            return;
-        t.gate->store(false);
-        if (t.write && t.write->receipt->load() == int(NativeError::None))
-            recordSubmission(*t.write);
         for (auto& [key, v] : t.voices)
             finish(v.id, why == StopReason::Replaced ? PlaybackState::Preempted : PlaybackState::Stopped, why);
         t.voices.clear();
         t.ends.clear();
         t.mixer.reset();
+    }
+    void startStop(Target& t, StopReason why, bool resumeOnMotors = false)
+    {
+        if (t.fence)
+        {
+            if (t.fence->resumeOnMotors && !resumeOnMotors)
+            {
+                t.fence->resumeOnMotors = false;
+                endVoices(t, why);
+            }
+            return;
+        }
+        if (t.warmGate) t.warmGate->store(false);
+        t.gate->store(false);
+        if (t.write && t.write->receipt->load() == int(NativeError::None))
+            recordSubmission(*t.write);
+        if (!resumeOnMotors) endVoices(t, why);
         t.stableCheckpoint.reset();
         t.frame.reset();
         if (t.write && t.write->done)
@@ -255,6 +285,13 @@ struct HapticControl::State
         f.deadline    = clockUs() + StopUs;
         f.needsNative = t.written;
         f.reason      = why;
+        f.resumeOnMotors = resumeOnMotors;
+        if (t.pcm && t.written)
+        {
+            f.exitMs = t.timing.exitMs;
+            f.deadline += Time(t.timing.enterMs + f.exitMs) * 1000;
+        }
+        t.pcmLive = false;
         t.fence       = std::move(f);
         wake.notify_one();
     }
@@ -358,6 +395,7 @@ struct HapticControl::State
     }
     void install(Target& t, Handover next, Time now)
     {
+        if (next.mode != Owner::Preset && t.warmGate) t.warmGate->store(false);
         t.gate      = std::make_shared<std::atomic_bool>(true);
         t.owner     = next.mode;
         t.writer    = t.route;
@@ -401,6 +439,12 @@ struct HapticControl::State
         t.fault = true;
         if (t.fence)
         {
+            if (t.fence->resumeOnMotors)
+            {
+                t.fence->resumeOnMotors = false;
+                endVoices(t, StopReason::EndpointLost);
+                dropScheduled(t, StopReason::EndpointLost);
+            }
             finishOp(t.fence->operation, error);
             if (t.fence->done)
             {
@@ -501,17 +545,49 @@ struct HapticControl::State
                 }
             }
         }
+        if (f.exitMs && !f.disconnected)
+        {
+            if (!f.exitReady) {
+                f.exitReady = now + Time(f.exitMs) * 1000;
+                if (t.realtime && t.trace && f.receipt && f.receipt->load() == int(NativeError::None))
+                    t.trace->exitWriteUs = now;
+            }
+            if (now < f.exitReady) return;
+        }
+        bool resume = f.resumeOnMotors && active && t.published && !t.fault && !f.disconnected &&
+                      (!f.needsNative || (f.receipt && f.receipt->load() == int(NativeError::None)));
+        if (f.resumeOnMotors && !resume)
+        {
+            endVoices(t, StopReason::EndpointLost);
+            dropScheduled(t, StopReason::EndpointLost);
+        }
         f.gate->store(false);
         finishOp(f.operation);
         if (f.done)
             f.done(NativeError::None);
         t.fence.reset();
         t.pcm.reset();
+        if (t.realtime && t.trace)
+        {
+            copyAudioTrace(t);
+            if (!t.fault && t.trace->exitWriteUs) t.trace->silentUs = now;
+        }
+        t.realtime.reset();
+        t.synth.reset();
+        t.modeWrite.reset();
+        t.modeReady = 0;
+        t.firstAudioFrame.reset();
         t.raw     = 0;
         t.player  = 0;
         t.owner   = Owner::Idle;
         t.fault   = false;
         t.written = false;
+        if (resume)
+        {
+            if (t.mixer) t.mixer->resumeOnMotors(now);
+            t.nextGrid = t.mixer ? t.mixer->now() : 0;
+            install(t, Handover{Owner::Preset}, now);
+        }
         if (t.successor)
         {
             auto next = std::move(*t.successor);
@@ -568,6 +644,7 @@ struct HapticControl::State
         if (!active)
             for (auto& [id, t] : targets)
             {
+                if (t.warmGate) t.warmGate->store(false);
                 dropScheduled(t, StopReason::FocusLost);
                 revokePending(t, leases, Error::NotFocused);
                 if (t.owner != Owner::Idle)
@@ -575,6 +652,17 @@ struct HapticControl::State
             }
         wake.notify_one();
     }
+    static void copyAudioTrace(Target& t)
+    {
+        auto src = t.realtime->poll().trace;
+        t.trace->peakQueuedFrames = src.peakQueuedFrames;
+        t.trace->generation = src.generation;
+        t.trace->lastNonzeroFrame = src.lastNonzeroFrame;
+        t.trace->discardBound = src.discardBound;
+        t.trace->firstSubmitUs = src.firstSubmitUs;
+        t.trace->discardUs = src.discardUs;
+    }
+    bool readyPcm(Target& t, Time now);
     void render(Target& t, Time now);
     void runTarget(Target& t, Time now);
     void run()
@@ -587,7 +675,7 @@ struct HapticControl::State
             for (auto& [id, t] : targets)
             {
                 runTarget(t, now);
-                work |= t.owner != Owner::Idle || t.fence.has_value() || !t.scheduled.empty();
+                work |= t.owner != Owner::Idle || t.fence.has_value() || !t.scheduled.empty() || t.warm != nullptr;
             }
             std::erase_if(targets, [&](const auto& p) {
                 if (p.second.published || p.second.fence || p.second.owner != Owner::Idle)
@@ -611,6 +699,17 @@ void HapticControl::State::render(Target& t, Time now)
     // Leave the next mix interval unconsumed while another writer uses the vibrator budget.
     if (t.caps.platform == MobilePlatform::Android && t.writeBudget.availableAt(now) > now)
         return;
+    std::optional<audio::detail::GripWindow> window;
+    if (t.realtime)
+    {
+        window = t.realtime->poll().window;
+        if (!window || t.write) return;
+        if (!t.firstAudioFrame)
+        {
+            t.firstAudioFrame = window->firstFrame;
+            t.audioEpochUs = window->startUs;
+        }
+    }
     bool replacement = false;
     if (t.stableCheckpoint && now >= t.stableStart + 200000 && now < t.nextGrid &&
         std::ranges::any_of(t.scheduled, [&](auto& v) { return v.due <= now; }))
@@ -621,27 +720,30 @@ void HapticControl::State::render(Target& t, Time now)
         replacement = true;
     }
     const Time lookAhead = t.caps.platform == MobilePlatform::Apple ? 20000 : 0;
-    if (t.nextGrid > now + lookAhead || t.frame)
+    if ((!window && t.nextGrid > now + lookAhead) || t.frame)
         return;
     if (!t.mixer)
     {
         Calibration c;
-        c.layout     = t.mobile ? (t.caps.stereo ? Layout::LeftRight : Layout::Mono)
+        c.layout     = window ? Layout::LeftRight : t.mobile ? (t.caps.stereo ? Layout::LeftRight : Layout::Mono)
                                 : (t.info.device ? Layout::LowHigh : Layout::Mono);
         c.pulseWidth = t.mobile ? 1000 : GridUs;
         t.mixer      = std::make_unique<HapticMixer>(c);
     }
     Time begin = t.nextGrid ? t.nextGrid : now;
-    if (now - begin > 8000)
+    if (window)
+        begin = t.audioEpochUs + Time(window->firstFrame - *t.firstAudioFrame) * Second / 48000;
+    else if (now - begin > 8000)
         begin = now;
     for (auto& s : t.scheduled)
-        if (s.due <= now && !s.immediate && !t.nextGrid)
+        if (!window && s.due <= now && !s.immediate && !t.nextGrid)
             begin = std::min(begin, std::max(now - 8000, s.due));
     t.mixer->skipTo(begin);
+    if (window) t.mixer->sampleBlockStart();
     bool immediateStart = false;
     for (auto it = t.scheduled.begin(); it != t.scheduled.end();)
     {
-        if (it->due > now)
+        if (it->due > (window ? begin + 5333 : now))
         {
             ++it;
             continue;
@@ -668,6 +770,39 @@ void HapticControl::State::render(Target& t, Time now)
         else
             finish(it->id, PlaybackState::Failed, {}, accepted.error->code);
         it = t.scheduled.erase(it);
+    }
+    if (window)
+    {
+        if (t.voices.empty()) return;
+        const Time end = t.audioEpochUs + Time(window->firstFrame - *t.firstAudioFrame + 256) * Second / 48000;
+        std::vector<Entry> entries;
+        std::vector<Id> activeVoices;
+        std::vector<PlaybackId> contributors;
+        for (auto& [voice, rec] : t.voices) activeVoices.push_back(voice);
+        t.mixer->advance(end, [&](const Entry& entry) {
+            if (entry.reason != Reason::None || (entry.amplitude[0] == 0 && entry.amplitude[1] == 0)) return;
+            entries.push_back(entry);
+            if (auto found = t.voices.find(entry.key.playback); found != t.voices.end() &&
+                std::find(contributors.begin(), contributors.end(), found->second.id) == contributors.end())
+                contributors.push_back(found->second.id);
+        });
+        auto receipt = std::make_shared<std::atomic<int>>(-1);
+        auto submittedAt = std::make_shared<std::atomic<Time>>(0);
+        t.realtime->supply(*window,
+            [synth=t.synth, first=window->firstFrame, begin, entries=std::move(entries), active=std::move(activeVoices)] {
+                return synth->render(first, begin, entries, active);
+            }, [receipt, submittedAt](AudioOutputError e, bool sound) {
+                if (e == AudioOutputError::None && sound) submittedAt->store(clockUs());
+                receipt->store(e == AudioOutputError::None ? int(sound ? NativeError::None : mobileNoOutput)
+                                                            : int(NativeError::BackendFailure));
+            });
+        t.write = Write{receipt, now, {}, std::move(contributors)};
+        t.write->pcmSamples = true;
+        t.write->pcmSubmittedAt = std::move(submittedAt);
+        t.nextGrid = end;
+        auto ends = t.mixer->takeTerminals();
+        t.ends.insert(t.ends.end(), ends.begin(), ends.end());
+        return;
     }
     if (t.mobile)
     {
@@ -784,11 +919,80 @@ void HapticControl::State::render(Target& t, Time now)
     t.ends.insert(t.ends.end(), ends.begin(), ends.end());
 }
 
+bool HapticControl::State::readyPcm(Target& t, Time now)
+{
+    auto status = t.realtime->poll();
+    if (status.error != AudioOutputError::None)
+    {
+        t.pcmUnavailable = true;
+        if (!t.written)
+        {
+            // Only silence reached the audio endpoint. The same request can use the ordinary motor.
+            t.realtime.reset();
+            t.pcm.reset();
+            t.synth.reset();
+            return true;
+        }
+        startStop(t, StopReason::EndpointLost, true);
+        return false;
+    }
+    if (!t.pcmLive && now - t.prepareAt > 500000)
+    {
+        t.pcmUnavailable = true;
+        startStop(t, StopReason::EndpointLost, true);
+        return false;
+    }
+    if (!status.prepared) return false;
+    if (!t.modeWrite)
+    {
+        auto [receipt, rc] = send(t.writer, Stop{Channel::Body}, t.gate, 0, true);
+        if (rc == NativeError::QueueFull || rc == NativeError::Busy) return false;
+        if (rc != NativeError::None)
+        {
+            t.pcmUnavailable = true;
+            startStop(t, StopReason::EndpointLost, true);
+            return false;
+        }
+        t.written = true;
+        t.modeWrite = std::move(receipt);
+        return false;
+    }
+    if (t.pcmLive) return true;
+    const int result = t.modeWrite->load();
+    if (result < 0) return false;
+    if (result != int(NativeError::None))
+    {
+        t.pcmUnavailable = true;
+        startStop(t, StopReason::EndpointLost, true);
+        return false;
+    }
+    if (!t.modeReady)
+    {
+        t.modeReady = now + Time(t.timing.enterMs) * 1000;
+        t.trace->modeWriteUs = now;
+    }
+    if (now < t.modeReady) return false;
+    t.realtime->enable();
+    t.pcmLive = true;
+    return true;
+}
 void HapticControl::State::runTarget(Target& t, Time now)
 {
+    if (t.warm)
+    {
+        if (now >= t.warmUntil) t.warmGate->store(false);
+        const auto status = t.warm->poll();
+        if (status.finished)
+        {
+            if (t.warmGate->load() && status.error != AudioOutputError::None) t.pcmUnavailable = true;
+            t.warm.reset();
+            t.warmGate.reset();
+        }
+    }
     if (t.fence)
         fenceStep(t, now);
     bool due = std::any_of(t.scheduled.begin(), t.scheduled.end(), [&](auto& s) { return s.due <= now; });
+    if (t.fence && t.fence->resumeOnMotors) return;
     if (due && (t.fence || conflicts(t) || (t.restricted && *t.restricted != Owner::Preset) ||
                 (t.owner != Owner::Idle && t.owner != Owner::Preset)))
     {
@@ -823,13 +1027,20 @@ void HapticControl::State::runTarget(Target& t, Time now)
                 recordSubmission(w);
             if (error != NativeError::None || now - w.at > 500000)
             {
-                stopAfterWriteError(t, error, error == NativeError::None ? Error::TimedOut : Error::BackendFailure);
+                if (t.realtime)
+                {
+                    t.pcmUnavailable = true;
+                    startStop(t, StopReason::EndpointLost, true);
+                }
+                else
+                    stopAfterWriteError(t, error, error == NativeError::None ? Error::TimedOut : Error::BackendFailure);
                 return;
             }
             if (t.owner == Owner::LegacyPcm && t.pcm)
             {
                 t.enabling = true;
-                t.audioJob = std::async(std::launch::async, [pcm = t.pcm, gate = t.gate] {
+                t.audioJob = std::async(std::launch::async, [pcm = t.pcm, gate = t.gate, guard = t.timing.enterMs] {
+                    if (guard) std::this_thread::sleep_for(std::chrono::milliseconds(guard));
                     return gate->load() ? pcm->enable() : NativeError::Busy;
                 });
             }
@@ -883,6 +1094,26 @@ void HapticControl::State::runTarget(Target& t, Time now)
     {
         install(t, Handover{Owner::Preset}, now);
         t.nextGrid = 0;
+        if (t.paired && t.timing.enterMs && !t.pcmUnavailable)
+        {
+            if (t.warm && t.warmGate->load())
+            {
+                t.realtime = std::move(t.warm);
+                t.gate = std::move(t.warmGate);
+            }
+            else
+                t.realtime = audio::detail::prepareRealtimeHaptics(*t.paired, t.gate, wake);
+            t.trace.emplace();
+            t.synth = std::make_shared<GripSynth>();
+            t.pcm = std::make_shared<PcmSource>();
+            t.pcm->hid = t.route;
+            t.pcm->silence = [stream=t.realtime](StopReason) {
+                auto rc = stream->stop();
+                return rc == AudioOutputError::None ? NativeError::None :
+                       rc == AudioOutputError::Disconnected ? NativeError::Disconnected : NativeError::BackendFailure;
+            };
+            t.prepareAt = now;
+        }
         if (t.mobile)
         {
             t.preparing = std::make_shared<std::atomic<int>>(-1);
@@ -894,6 +1125,7 @@ void HapticControl::State::runTarget(Target& t, Time now)
     }
     if (t.owner != Owner::Preset)
         return;
+    if (t.realtime && !readyPcm(t, now)) return;
     if (t.preparing)
     {
         auto rc = t.preparing->load();
@@ -973,6 +1205,7 @@ void HapticControl::shutdown()
             return;
         for (auto& [id, t] : s.targets)
         {
+            if (t.warmGate) t.warmGate->store(false);
             t.gate->store(false);
             if (t.fence)
                 t.fence->gate->store(false);
@@ -1143,10 +1376,62 @@ void HapticControl::publishGamepad(DeviceId device, Endpoint key)
     t.mobile.reset();
     t.caps = {};
 }
-void HapticControl::publishHandset(Endpoint key, bool interrupt, bool release)
+void HapticControl::pairPcm(DeviceId device, std::optional<AudioEndpointId> endpoint)
 {
-    std::lock_guard lock(_state->mutex);
-    _state->publish({}, key, interrupt, release);
+    auto& s = *_state;
+    std::lock_guard lock(s.mutex);
+    auto it = s.routes.find(device);
+    if (it == s.routes.end()) return;
+    auto& t = s.targets.at(it->second);
+    if (t.paired == endpoint) return;
+    if (t.warmGate) t.warmGate->store(false);
+    if (t.realtime)
+        s.startStop(t, StopReason::EndpointLost, true);
+    else if (t.pcm)
+    {
+        s.dropScheduled(t, StopReason::EndpointLost);
+        revokePending(t, s.leases, Error::StaleTarget);
+        s.startStop(t, StopReason::EndpointLost);
+    }
+    t.paired = endpoint;
+    t.timing = {};
+    t.pcmUnavailable = false;
+}
+Status HapticControl::setPcmModeTiming(TargetId id, const PcmModeTiming& timing)
+{
+    auto& s = *_state;
+    std::lock_guard lock(s.mutex);
+    auto it = s.targets.find(id);
+    if (it == s.targets.end() || !it->second.published) return {ErrorInfo{Error::StaleTarget,{}}};
+    auto& t = it->second;
+    if (!t.paired) return {ErrorInfo{Error::Unsupported,{}}};
+    if (timing.enterMs > 200 || timing.exitMs > 200 || bool(timing.enterMs) != bool(timing.exitMs))
+        return {ErrorInfo{Error::InvalidArgument,{}}};
+    if (t.owner != Owner::Idle || t.fence || !t.scheduled.empty()) return {ErrorInfo{Error::Busy,{}}};
+    if (t.warmGate) t.warmGate->store(false);
+    t.timing = timing;
+    t.pcmUnavailable = false;
+    return {};
+}
+Status HapticControl::preparePcm(TargetId id)
+{
+    auto& s = *_state;
+    std::lock_guard lock(s.mutex);
+    const auto it = s.targets.find(id);
+    if (it == s.targets.end() || !it->second.published) return {ErrorInfo{Error::StaleTarget,{}}};
+    auto& t = it->second;
+    if (!s.active) return {ErrorInfo{Error::NotFocused,{}}};
+    if (!t.paired || !t.timing.enterMs || t.pcmUnavailable) return {ErrorInfo{Error::Unsupported,{}}};
+    if (t.owner != Owner::Idle || t.fence || !t.scheduled.empty() || (t.warm && !t.warmGate->load()))
+        return {ErrorInfo{Error::Busy,{}}};
+    if (!t.warm)
+    {
+        t.warmGate = std::make_shared<std::atomic_bool>(true);
+        t.warm = audio::detail::prepareRealtimeHaptics(*t.paired, t.warmGate, s.wake);
+    }
+    t.warmUntil = clockUs() + 2 * Second;
+    s.wake.notify_one();
+    return {};
 }
 bool HapticControl::retiring(DeviceId device) const
 {
@@ -1198,6 +1483,19 @@ Result<Capabilities> HapticControl::capabilities(TargetId id) const
     if (it == s.targets.end() || !it->second.published)
         return fail<Capabilities>(Error::StaleTarget);
     auto& t = it->second;
+    if (t.realtime && t.trace) State::copyAudioTrace(t);
+    auto trace = t.trace;
+    bool prepared = t.realtime && t.realtime->poll().prepared;
+    bool preparing = false;
+    if (t.warm && t.warmGate->load())
+    {
+        const auto warm = t.warm->poll();
+        trace.emplace();
+        trace->generation = warm.trace.generation;
+        trace->peakQueuedFrames = warm.trace.peakQueuedFrames;
+        prepared = warm.prepared;
+        preparing = !prepared && !warm.finished;
+    }
     return {
         Capabilities{
             t.owner,
@@ -1211,7 +1509,8 @@ Result<Capabilities> HapticControl::capabilities(TargetId id) const
             t.caps.platform == MobilePlatform::Apple,
             t.caps.envelope,
             t.rawCapable,
-            t.caps.envelope ? "Available" : t.caps.envelopeStatus},
+            t.caps.envelope ? "Available" : t.caps.envelopeStatus,
+            t.paired.has_value(), prepared, t.pcmLive, std::move(trace), preparing},
         {}};
 }
 HapticTime HapticControl::now() const
@@ -1554,44 +1853,6 @@ Result<OperationId> HapticControl::rawCommand(std::uint64_t lease, MobileCommand
         },
         {}};
     t.write->rawSpan = update ? 0 : *valid.value;
-    s.wake.notify_one();
-    return {op, {}};
-}
-Result<OperationId> HapticControl::submitRaw(const RawSession& session, const Rumble& r)
-{
-    auto& s = *_state;
-    std::lock_guard lock(s.mutex);
-    if (session._control.lock().get() != this || !s.leases.contains(session._id))
-        return fail<OperationId>(Error::NotFound);
-    auto& lease = s.leases.at(session._id);
-    if (lease.snap.state == RawState::Pending)
-        return fail<OperationId>(Error::Busy);
-    if (lease.snap.state != RawState::Ready || !s.targets.contains(lease.target))
-        return fail<OperationId>(Error::NotFound);
-    auto& t = s.targets.at(lease.target);
-    if (!s.active || t.raw != session._id || t.fence || t.write)
-        return fail<OperationId>(Error::Busy);
-    if (!(r.low >= 0 && r.low <= 1 && r.high >= 0 && r.high <= 1) || (r.low == 0 && r.high == 0) ||
-        r.duration.count() <= 0 || r.duration.count() > 1000)
-        return fail<OperationId>(Error::InvalidArgument);
-    auto now              = clockUs();
-    auto deadline         = now + r.duration.count() * 1000;
-    auto [receipt, error] = s.send(t.writer, r, t.gate, deadline);
-    if (error != NativeError::None)
-        return fail<OperationId>(error == NativeError::QueueFull ? Error::QueueFull : Error::BackendFailure);
-    OperationId op;
-    op.scope  = lease.scope;
-    op.serial = ++s.scopes.at(lease.scope).operation;
-    s.operations.emplace(op, OperationSnapshot{});
-    t.written = true;
-    t.expires = deadline;
-    t.write   = Write{
-        receipt,
-        now,
-        [&s, op](NativeError e) {
-            s.finishOp(op, e == NativeError::None ? std::nullopt : std::optional{Error::Cancelled});
-        },
-        {}};
     s.wake.notify_one();
     return {op, {}};
 }

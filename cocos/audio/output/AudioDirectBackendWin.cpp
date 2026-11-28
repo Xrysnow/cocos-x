@@ -311,9 +311,15 @@ private:
 class OpenAlOutput final : public OutputStream {
     static constexpr std::size_t capacity = outputQueueBlocks;
 
+    struct DeviceTiming {
+        std::uint64_t clockNs;
+        std::uint64_t latencyNs;
+    };
+
 public:
-    OpenAlOutput(const DirectEndpoint& endpoint, std::shared_ptr<Connections> connections)
-        : _endpoint(endpoint), _layout(directLayout(endpoint.channels)), _connections(std::move(connections)) {}
+    OpenAlOutput(const DirectEndpoint& endpoint, std::shared_ptr<Connections> connections, bool realtime)
+        : _endpoint(endpoint), _layout(directLayout(endpoint.channels)), _connections(std::move(connections)),
+          _generation(realtime ? nextRealtimeClockGeneration() : 0) {}
 
     ~OpenAlOutput() override
     {
@@ -373,6 +379,14 @@ public:
         if (alcIsExtensionPresent(_device.get(), "ALC_SOFT_device_clock"))
             _clock = reinterpret_cast<LPALCGETINTEGER64VSOFT>(
                 alcGetProcAddress(_device.get(), "alcGetInteger64vSOFT"));
+        if (_generation)
+        {
+            if (!_clock || !realtimeQuantumSupported())
+                return Error::Unsupported;
+            _sourceClock = reinterpret_cast<LPALGETSOURCEI64VSOFT>(alGetProcAddress("alGetSourcei64vSOFT"));
+            if (!_sourceClock)
+                return Error::Unsupported;
+        }
         if (!stillConnected(_connections, _endpoint.key))
             return Error::Disconnected;
         return alGetError() == AL_NO_ERROR ? Error::None : Error::BackendFailure;
@@ -380,9 +394,20 @@ public:
 
     Error submit(const std::int16_t* pcm, std::size_t frames) override
     {
+        if (_discarded)
+            return Error::Busy;
+        if (_generation && !validRealtimeBlock(pcm, frames, _paused))
+            return Error::InvalidArgument;
         const auto lock = current();
         if (!lock)
             return Error::BackendFailure;
+        if (_generation)
+        {
+            if (!recycle())
+                return Error::BackendFailure;
+            if (queuedBlocks() >= realtimeQueueFrames / outputBlockFrames)
+                return Error::QueueFull;
+        }
         auto slot = std::ranges::find(_frames, std::size_t{0});
         if (slot == _frames.end())
             return Error::QueueFull;
@@ -400,6 +425,8 @@ public:
                 return Error::BackendFailure;
             alSourceRewind(_source);
         }
+        if (_generation && !gateOpen() && !validRealtimeBlock(pcm, frames, true))
+            return Error::Busy;
         alSourceQueueBuffers(_source, 1, &buffer);
         if (alGetError() != AL_NO_ERROR)
             return Error::BackendFailure;
@@ -409,6 +436,10 @@ public:
 
     Error setPaused(bool paused) override
     {
+        if (_discarded)
+            return Error::Busy;
+        if (_generation && paused && !_paused)
+            return Error::Unsupported;
         const auto lock = current();
         if (!lock)
             return Error::BackendFailure;
@@ -423,37 +454,77 @@ public:
 
     Error stopWithEvidence() override
     {
-        ALCint64SOFT stoppedAt = 0;
+        return stopAtDeviceClock().error();
+    }
+
+    void setRealtimeGate(std::shared_ptr<const std::atomic_bool> gate) override
+    {
+        _gate = std::move(gate);
+    }
+
+    AudioResult<RealtimeOutputStop> discardRealtime() override
+    {
+        if (!_generation || _discarded)
+            return Error::Unsupported;
+        _discarded = true;
+        auto stopped = stopAtDeviceClock();
+        if (!stopped)
+            return stopped.error();
+        return RealtimeOutputStop{_generation, frameAt(stopped.value(), true)};
+    }
+
+    AudioResult<RealtimeOutputProgress> pollRealtime() override
+    {
+        if (!_generation || _discarded)
+            return Error::Unsupported;
+        if (!connected())
+            return Error::Disconnected;
+        const auto lock = current();
+        if (!lock || !recycle())
+            return Error::BackendFailure;
+        const auto queued = queuedBlocks() * outputBlockFrames;
+        auto progress = RealtimeOutputProgress{queued, (realtimeQueueFrames - queued) / outputBlockFrames, {}};
+        if (_paused)
+            return progress;
+
+        const auto before = Clock::now();
+        ALint64SOFT source[2]{};
+        _sourceClock(_source, AL_SAMPLE_OFFSET_CLOCK_SOFT, source);
+        if (alGetError() != AL_NO_ERROR || source[0] < 0 || source[1] < 0)
+            return Error::BackendFailure;
+        const auto timing = deviceTiming();
+        const auto now = Clock::now();
+        const auto observed = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count());
+        const auto sourceNs = static_cast<std::uint64_t>(source[1]);
+        if (!timing || sourceNs > timing->clockNs || timing->clockNs - sourceNs > realtimeClockTimeoutNs ||
+            now - before > std::chrono::nanoseconds(realtimeClockTimeoutNs))
+            return progress;
+        if (_lastMixerNs && timing->clockNs < *_lastMixerNs)
+            return Error::Unsupported;
+        if (!_lastMixerNs || timing->clockNs > *_lastMixerNs)
         {
-            const auto context = current();
-            if (!context)
-                return Error::BackendFailure;
-            alSourceStop(_source);
-            if (alGetError() != AL_NO_ERROR)
-                return Error::BackendFailure;
-            if (!stillConnected(_connections, _endpoint.key))
-                return Error::Disconnected;
-            if (!_clock)
-                return Error::Unsupported;
-            alcGetError(_device.get());
-            _clock(_device.get(), ALC_DEVICE_CLOCK_SOFT, 1, &stoppedAt);
-            if (alcGetError(_device.get()) != ALC_NO_ERROR || stoppedAt < 0)
-                return Error::Unsupported;
+            _clockAdvanced = _lastMixerNs.has_value();
+            _lastMixerNs = timing->clockNs;
+            _clockMovedAt = now;
         }
-        const auto deadline = Clock::now() + std::chrono::milliseconds(200);
-        while (Clock::now() < deadline)
-        {
-            if (!stillConnected(_connections, _endpoint.key))
-                return Error::Disconnected;
-            ALCint64SOFT sample[2]{};
-            _clock(_device.get(), ALC_DEVICE_CLOCK_LATENCY_SOFT, 2, sample);
-            if (alcGetError(_device.get()) != ALC_NO_ERROR || sample[0] < stoppedAt || sample[1] <= 0)
-                return Error::Unsupported;
-            if (sample[0] - stoppedAt >= sample[1])
-                return Error::None;
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        }
-        return Error::Unsupported;
+        if (!_clockAdvanced || now - _clockMovedAt > std::chrono::nanoseconds(realtimeClockTimeoutNs))
+            return progress;
+
+        const auto offset = std::min(static_cast<unsigned>(source[0] >> 32), queued);
+        progress.queuedFrames = queued - offset;
+        const auto deviceNs = timing->clockNs - std::min(timing->clockNs, timing->latencyNs);
+        const auto deviceFrame = frameAt(deviceNs);
+        const auto appendFrame = std::max(frameAt(timing->clockNs, true),
+            frameAt(sourceNs, true) + progress.queuedFrames);
+        const auto mixed = _processed + offset;
+        const auto consumed = mixed - std::min(mixed, frameAt(timing->latencyNs, true));
+        if (deviceFrame < _lastDeviceFrame)
+            return progress;
+        _lastDeviceFrame = deviceFrame;
+        _presented = std::max(_presented, consumed);
+        progress.clock = RealtimeOutputClock{_generation, observed, deviceFrame, appendFrame, _presented};
+        return progress;
     }
 
     Error drain() override
@@ -464,9 +535,7 @@ public:
 
     AudioResult<OutputProgress> poll() override
     {
-        ALCint connected = 0;
-        alcGetIntegerv(_device.get(), ALC_CONNECTED, 1, &connected);
-        if (connected != ALC_TRUE || !stillConnected(_connections, _endpoint.key))
+        if (!connected())
             return Error::Disconnected;
         const auto lock = current();
         if (!lock)
@@ -479,7 +548,7 @@ public:
         if (alGetError() != AL_NO_ERROR)
             return Error::BackendFailure;
         auto consumed = _processed + static_cast<unsigned>(std::max(offset, 0));
-        const auto available = static_cast<unsigned>(std::ranges::count(_frames, std::size_t{0}));
+        const auto available = static_cast<unsigned>(capacity) - queuedBlocks();
         bool drained = false;
         if (_draining && available == capacity && !_paused)
         {
@@ -499,6 +568,120 @@ public:
 
 private:
     CurrentContext current() const { return {_set, _get, _context}; }
+
+    bool gateOpen() const { return _gate && _gate->load(std::memory_order_acquire); }
+
+    bool connected() const
+    {
+        ALCint active = 0;
+        alcGetIntegerv(_device.get(), ALC_CONNECTED, 1, &active);
+        return active == ALC_TRUE && stillConnected(_connections, _endpoint.key);
+    }
+
+    unsigned queuedBlocks() const
+    {
+        return static_cast<unsigned>(capacity - std::ranges::count(_frames, std::size_t{0}));
+    }
+
+    static std::uint64_t frameAt(std::uint64_t ns, bool roundUp = false)
+    {
+        constexpr std::uint64_t nsPerSecond = 1'000'000'000;
+        return (ns / nsPerSecond) * realtimeSampleRate +
+            ((ns % nsPerSecond) * realtimeSampleRate + (roundUp ? nsPerSecond - 1 : 0)) / nsPerSecond;
+    }
+
+    std::optional<DeviceTiming> deviceTiming() const
+    {
+        ALCint64SOFT sample[2]{};
+        _clock(_device.get(), ALC_DEVICE_CLOCK_LATENCY_SOFT, 2, sample);
+        if (alcGetError(_device.get()) != ALC_NO_ERROR || sample[0] < 0 || sample[1] <= 0 ||
+            (_generation && static_cast<std::uint64_t>(sample[1]) > realtimeMaxTailNs))
+            return {};
+        return DeviceTiming{static_cast<std::uint64_t>(sample[0]), static_cast<std::uint64_t>(sample[1])};
+    }
+
+    bool realtimeQuantumSupported() const
+    {
+        ALCint refresh = 0;
+        alcGetIntegerv(_device.get(), ALC_REFRESH, 1, &refresh);
+        if (alcGetError(_device.get()) != ALC_NO_ERROR || refresh <= 0)
+            return false;
+        // OpenAL Soft truncates sampleRate/updateSize. At 48 kHz, 93 Hz
+        // includes periods on both sides of the 512-frame prefill limit.
+        const auto wholeRefresh = static_cast<unsigned>(refresh);
+        const auto minimum = realtimeSampleRate / (wholeRefresh + 1) + 1;
+        const auto maximum = realtimeSampleRate / wholeRefresh;
+        if (maximum <= realtimeMaxQuantumFrames)
+            return true;
+        if (minimum > realtimeMaxQuantumFrames)
+            return false;
+
+        ALCint64SOFT previous = -1;
+        unsigned agreeing = 0;
+        std::uint64_t observed = 0;
+        const auto deadline = Clock::now() + std::chrono::nanoseconds(realtimeClockTimeoutNs);
+        while (Clock::now() < deadline)
+        {
+            ALCint64SOFT clock = 0;
+            _clock(_device.get(), ALC_DEVICE_CLOCK_SOFT, 1, &clock);
+            if (alcGetError(_device.get()) != ALC_NO_ERROR || clock < 0 || clock < previous)
+                return false;
+            if (previous >= 0 && clock > previous)
+            {
+                constexpr auto halfFrameNs = 1'000'000'000 / (realtimeSampleRate * 2);
+                const auto frames = frameAt(static_cast<std::uint64_t>(clock - previous) + halfFrameNs);
+                if (frames >= minimum && frames <= maximum)
+                {
+                    if (frames > realtimeMaxQuantumFrames)
+                        return false;
+                    agreeing = frames == observed ? agreeing + 1 : 1;
+                    observed = frames;
+                    if (agreeing == 2)
+                        return true;
+                }
+            }
+            previous = clock;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        return false;
+    }
+
+    AudioResult<std::uint64_t> stopAtDeviceClock()
+    {
+        ALCint64SOFT stoppedAt = 0;
+        {
+            const auto context = current();
+            if (!context)
+                return Error::BackendFailure;
+            alSourceStop(_source);
+            if (alGetError() != AL_NO_ERROR)
+                return Error::BackendFailure;
+            if (_generation && !recycle())
+                return Error::BackendFailure;
+            if (!connected())
+                return Error::Disconnected;
+            if (!_clock)
+                return Error::Unsupported;
+            alcGetError(_device.get());
+            _clock(_device.get(), ALC_DEVICE_CLOCK_SOFT, 1, &stoppedAt);
+            if (alcGetError(_device.get()) != ALC_NO_ERROR || stoppedAt < 0)
+                return Error::Unsupported;
+        }
+        const auto deadline = Clock::now() + std::chrono::milliseconds(200);
+        while (Clock::now() < deadline)
+        {
+            if (!connected())
+                return Error::Disconnected;
+            const auto sample = deviceTiming();
+            const auto stopNs = static_cast<std::uint64_t>(stoppedAt);
+            if (!sample || sample->clockNs < stopNs)
+                return Error::Unsupported;
+            if (sample->clockNs - stopNs >= sample->latencyNs)
+                return stopNs;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+        return Error::Unsupported;
+    }
 
     bool recycle(ALint leave = 0)
     {
@@ -543,14 +726,22 @@ private:
     PFNALCSETTHREADCONTEXTPROC _set = nullptr;
     PFNALCGETTHREADCONTEXTPROC _get = nullptr;
     LPALCGETINTEGER64VSOFT _clock = nullptr;
+    LPALGETSOURCEI64VSOFT _sourceClock = nullptr;
     ALuint _source = 0;
     std::array<ALuint, capacity> _buffers{};
     std::array<std::size_t, capacity> _frames{};
     std::uint64_t _processed = 0;
     std::uint64_t _consumed = 0;
+    const std::uint64_t _generation;
+    std::shared_ptr<const std::atomic_bool> _gate;
+    std::optional<std::uint64_t> _lastMixerNs;
+    std::uint64_t _lastDeviceFrame = 0, _presented = 0;
+    Clock::time_point _clockMovedAt{};
     Clock::time_point _tailUntil;
     bool _paused = true;
     bool _draining = false;
+    bool _discarded = false;
+    bool _clockAdvanced = false;
 };
 
 } // namespace
@@ -646,8 +837,12 @@ AudioResult<std::vector<DirectEndpoint>> enumeratePlatformEndpoints()
     return result;
 }
 
-AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoint& endpoint)
+namespace {
+
+AudioResult<std::unique_ptr<OutputStream>> openOutput(const DirectEndpoint& endpoint, bool realtime)
 {
+    if (realtime && (endpoint.sampleRate != realtimeSampleRate || !std::ranges::equal(endpoint.channels, realtimeChannels)))
+        return Error::Unsupported;
     const auto current = enumeratePlatformEndpoints();
     if (!current)
         return current.error();
@@ -657,10 +852,22 @@ AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoi
         return Error::Disconnected;
     if (match->sampleRate != endpoint.sampleRate || match->channels != endpoint.channels)
         return Error::Unsupported;
-    auto stream = std::make_unique<OpenAlOutput>(*match, monitor()->connections);
+    auto stream = std::make_unique<OpenAlOutput>(*match, monitor()->connections, realtime);
     if (const auto error = stream->open(); error != Error::None)
         return error;
     return std::unique_ptr<OutputStream>(std::move(stream));
+}
+
+} // namespace
+
+AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoint& endpoint)
+{
+    return openOutput(endpoint, false);
+}
+
+AudioResult<std::unique_ptr<OutputStream>> openPlatformRealtimeOutput(const DirectEndpoint& endpoint)
+{
+    return openOutput(endpoint, true);
 }
 
 void shutdownPlatformOutput() noexcept

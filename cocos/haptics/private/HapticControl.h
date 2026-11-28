@@ -1,6 +1,7 @@
 #pragma once
 #include "haptics/private/MobileHaptics.h"
 #include "input/gamepad/private/core/ReportQueue.h"
+#include "audio/output/RealtimeHaptics.h"
 #include <functional>
 
 namespace cc::haptics::detail
@@ -32,10 +33,10 @@ public:
     Result<OperationId> stopPlayer(std::uint64_t lease, RawPlayerId player);
     std::weak_ptr<HapticControl> weak(HapticService& service) { return service._control; }
     void publishGamepad(input::DeviceId, Endpoint);
+    void pairPcm(input::DeviceId, std::optional<AudioEndpointId>);
+    Status preparePcm(TargetId);
+    Status setPcmModeTiming(TargetId, const PcmModeTiming&);
     void removeGamepad(input::DeviceId, bool disconnected);
-    void publishHandset(Endpoint, bool canInterrupt, bool canRelease);
-    // A finite native effect through the handset test/adapter port. Acceptance is restricted to the live Raw token.
-    Result<OperationId> submitRaw(const RawSession&, const input::Rumble&);
     bool retiring(input::DeviceId) const;
     NativeError legacy(
         input::DeviceId, const input::OutputCommand&, bool zeroRumble, std::function<void(NativeError)> completed);
