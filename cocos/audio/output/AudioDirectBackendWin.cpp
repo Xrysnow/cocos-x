@@ -1,12 +1,12 @@
 #include "AudioDirectBackend.h"
 
 #include <Windows.h>
+#include <initguid.h>
 #include <audioclient.h>
 #include <mmdeviceapi.h>
 #include <objbase.h>
 #include <propsys.h>
 #include <wrl/client.h>
-#include <initguid.h>
 #include <devpkey.h>
 
 #include <AL/al.h>
@@ -18,6 +18,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstring>
 #include <latch>
 #include <map>
 #include <mutex>
@@ -294,6 +295,188 @@ Layout directLayout(const std::vector<Position>& channels)
         return {ALC_SURROUND_7_1_SOFT, AL_FORMAT_71CHN16};
     return {};
 }
+
+// The grip worker writes bounded blocks straight to the shared Windows endpoint.
+// The ordinary game mix remains on its existing render client.
+class WasapiGripOutput final : public OutputStream {
+public:
+    WasapiGripOutput(std::shared_ptr<Connections> connections, std::string key)
+        : _connections(std::move(connections)), _key(std::move(key)) {}
+
+    Error open(const DirectEndpoint& endpoint)
+    {
+        std::wstring selector;
+        {
+            const std::lock_guard lock(_connections->mutex);
+            const auto it = std::ranges::find_if(_connections->active,
+                [&](const auto& item) { return item.second.key == _key; });
+            if (it == _connections->active.end()) return Error::Disconnected;
+            selector = it->first;
+        }
+        const auto enumerator = _com.available() ? makeEnumerator() : nullptr;
+        ComPtr<IMMDevice> device;
+        if (!enumerator || FAILED(enumerator->GetDevice(selector.c_str(), &device))) return Error::Disconnected;
+        ComPtr<IPropertyStore> properties;
+        DWORD state{};
+        if (FAILED(device->GetState(&state)) || state != DEVICE_STATE_ACTIVE ||
+            FAILED(device->OpenPropertyStore(STGM_READ, &properties)) || endpoint.containerId.empty() ||
+            containerOf(properties.Get()) != endpoint.containerId)
+            return Error::Disconnected;
+        if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, nullptr,
+                                    reinterpret_cast<void**>(_client.GetAddressOf()))))
+            return Error::Unsupported;
+        // The raw hardware cursor counts device frames, which can differ from the mix rate.
+        PropValue deviceFormat;
+        if (FAILED(properties->GetValue(PKEY_AudioEngine_DeviceFormat, &deviceFormat.value)) ||
+            deviceFormat.value.vt != VT_BLOB || !deviceFormat.value.blob.pBlobData ||
+            deviceFormat.value.blob.cbSize < sizeof(WAVEFORMATEX))
+            return Error::Unsupported;
+        WAVEFORMATEX hardware{};
+        std::memcpy(&hardware, deviceFormat.value.blob.pBlobData, sizeof(hardware));
+        if (hardware.nSamplesPerSec != realtimeSampleRate) return Error::Unsupported;
+
+        WAVEFORMATEX* raw = nullptr;
+        if (FAILED(_client->GetMixFormat(&raw)) || !raw) return Error::Unsupported;
+        const ComMemory<WAVEFORMATEX> format(raw, CoTaskMemFree);
+        if (raw->wFormatTag != WAVE_FORMAT_EXTENSIBLE || raw->cbSize < sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX))
+            return Error::Unsupported;
+        const auto& mix = *reinterpret_cast<const WAVEFORMATEXTENSIBLE*>(raw);
+        if (raw->nChannels != 4 || raw->nSamplesPerSec != realtimeSampleRate ||
+            raw->wBitsPerSample != 32 || raw->nBlockAlign != 4 * sizeof(float) ||
+            mix.Samples.wValidBitsPerSample != 32 || mix.SubFormat != KSDATAFORMAT_SUBTYPE_IEEE_FLOAT ||
+            mix.dwChannelMask != (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT))
+            return Error::Unsupported;
+
+        REFERENCE_TIME period{}, latency{};
+        if (FAILED(_client->GetDevicePeriod(&period, nullptr)) || period <= 0 ||
+            period * realtimeSampleRate > 10'000'000LL * realtimeMaxQuantumFrames ||
+            FAILED(_client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST, 0, 0, raw, nullptr)) ||
+            FAILED(_client->GetBufferSize(&_capacity)) || _capacity < realtimePrefillFrames ||
+            FAILED(_client->GetStreamLatency(&latency)) || latency < 0 ||
+            static_cast<std::uint64_t>(latency) > realtimeMaxTailNs / 100 ||
+            FAILED(_client->GetService(IID_PPV_ARGS(&_render))) || FAILED(_client->GetService(IID_PPV_ARGS(&_clock))) ||
+            FAILED(_clock.As(&_hardwareClock)) || FAILED(_clock->GetFrequency(&_frequency)) || !_frequency)
+            return Error::Unsupported;
+        _tailFrames = (std::max(period, latency) * realtimeSampleRate + 9'999'999) / 10'000'000;
+        return stillConnected(_connections, _key) ? Error::None : Error::Disconnected;
+    }
+
+    void setRealtimeGate(std::shared_ptr<const std::atomic_bool> permit) override { _permit = std::move(permit); }
+
+    Error submit(const std::int16_t* pcm, std::size_t frames) override
+    {
+        if (_closed) return Error::Busy;
+        if (!validRealtimeBlock(pcm, frames, !_started)) return Error::InvalidArgument;
+        UINT32 pending{};
+        if (FAILED(_client->GetCurrentPadding(&pending))) return Error::Disconnected;
+        if (pending + frames > std::min<UINT32>(_capacity, realtimeQueueFrames)) return Error::QueueFull;
+        BYTE* bytes{};
+        const HRESULT rc = _render->GetBuffer(static_cast<UINT32>(frames), &bytes);
+        if (rc == AUDCLNT_E_BUFFER_TOO_LARGE) return Error::QueueFull;
+        if (FAILED(rc)) return Error::BackendFailure;
+        auto* dst = reinterpret_cast<float*>(bytes);
+        for (size_t i = 0; i < 4 * frames; ++i) dst[i] = pcm[i] / 32768.f;
+        const bool permitted = !_permit || _permit->load();
+        if (FAILED(_render->ReleaseBuffer(static_cast<UINT32>(frames), permitted ? 0 : AUDCLNT_BUFFERFLAGS_SILENT)))
+            return Error::BackendFailure;
+        _endFrame = std::max(_endFrame, _nextFrame) + frames;
+        _submitted += frames;
+        return permitted ? Error::None : Error::Busy;
+    }
+
+    Error setPaused(bool paused) override
+    {
+        if (_closed || paused || _started) return Error::InvalidArgument;
+        if (FAILED(_client->Start())) return Error::BackendFailure;
+        _started = true;
+        return Error::None;
+    }
+
+    AudioResult<RealtimeOutputProgress> pollRealtime() override
+    {
+        UINT32 pending{};
+        if (!stillConnected(_connections, _key) || FAILED(_client->GetCurrentPadding(&pending)))
+            return Error::Disconnected;
+        if (_closed || pending > std::min<UINT32>(_capacity, realtimeQueueFrames)) return Error::BackendFailure;
+        RealtimeOutputProgress progress{pending, (std::min<UINT32>(_capacity, realtimeQueueFrames) - pending) / outputBlockFrames, {}};
+        if (!_started) return progress;
+        UINT64 position{}, qpc{}, device{}, hwQpc{};
+        const auto sourceResult = _clock->GetPosition(&position, &qpc);
+        const auto deviceResult = _hardwareClock->GetDevicePosition(&device, &hwQpc);
+        if (FAILED(sourceResult) || FAILED(deviceResult)) return Error::Disconnected;
+        if (sourceResult != S_OK || deviceResult != S_OK || !device || !qpc || !hwQpc)
+            return progress;
+        const auto nowNs = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count());
+        const auto oldest = std::min(qpc, hwQpc) * 100;
+        if (std::max(qpc, hwQpc) * 100 > nowNs || nowNs - oldest > realtimeClockTimeoutNs ||
+            device < _deviceFrame) return progress;
+        if (device > _deviceFrame) {
+            _deviceFrame = device;
+            _advancedAt = nowNs;
+        }
+        if (nowNs - _advancedAt > realtimeClockTimeoutNs) return progress;
+
+        // The stream clock counts source frames presented, including the silent prefills.
+        // The hardware clock continues over underruns even after the stream clock stalls.
+        const auto presented = position / _frequency * realtimeSampleRate +
+                               position % _frequency * realtimeSampleRate / _frequency;
+        if (presented > _submitted || presented < _presented) return Error::BackendFailure;
+        // Once the initial prefill is mapped, queued samples keep their frame
+        // grid. The raw device cursor steps by a whole engine period while the
+        // source cursor interpolates within it. Adding their difference on every
+        // poll would move a still-writable block by an artificial 10 ms.
+        if (!_mapped) {
+            _endFrame = device + (_submitted - presented);
+            _mapped = true;
+        }
+        _presented = presented;
+        _nextFrame = std::max(_endFrame, device);
+        progress.clock = RealtimeOutputClock{_generation, hwQpc * 100, device, _nextFrame, presented};
+        return progress;
+    }
+
+    AudioResult<RealtimeOutputStop> discardRealtime() override
+    {
+        // Empty client padding alone says nothing about presentation. Wait for the
+        // stream cursor to play every released frame, then for the hardware cursor
+        // to cross the frame bound by at least one endpoint period.
+        const auto deadline = Clock::now() + std::chrono::nanoseconds(realtimeMaxTailNs) + std::chrono::milliseconds(20);
+        std::optional<std::uint64_t> bound;
+        while (_started && Clock::now() < deadline) {
+            const auto state = pollRealtime();
+            if (!state) return state.error();
+            if (!state.value().queuedFrames && state.value().clock && _presented == _submitted) {
+                const auto frame = state.value().clock->deviceFrame;
+                if (!bound) bound = std::max(frame, _endFrame) + _tailFrames;
+                if (frame >= *bound) {
+                    if (FAILED(_client->Stop())) return Error::BackendFailure;
+                    _closed = true;
+                    return RealtimeOutputStop{_generation, *bound};
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        return Error::Unsupported;
+    }
+    Error drain() override { return Error::Unsupported; }
+    AudioResult<OutputProgress> poll() override { return Error::Unsupported; }
+
+private:
+    ComApartment _com;
+    std::shared_ptr<Connections> _connections;
+    std::string _key;
+    ComPtr<IAudioClient> _client;
+    ComPtr<IAudioRenderClient> _render;
+    ComPtr<IAudioClock> _clock;
+    ComPtr<IAudioClock2> _hardwareClock;
+    std::shared_ptr<const std::atomic_bool> _permit;
+    const std::uint64_t _generation = nextRealtimeClockGeneration();
+    UINT64 _frequency{};
+    UINT32 _capacity{};
+    std::uint64_t _deviceFrame{}, _advancedAt{}, _tailFrames{}, _endFrame{}, _nextFrame{}, _submitted{}, _presented{};
+    bool _started{}, _closed{}, _mapped{};
+};
 
 class CurrentContext {
 public:
@@ -867,6 +1050,13 @@ AudioResult<std::unique_ptr<OutputStream>> openPlatformOutput(const DirectEndpoi
 
 AudioResult<std::unique_ptr<OutputStream>> openPlatformRealtimeOutput(const DirectEndpoint& endpoint)
 {
+    if (endpoint.sampleRate != realtimeSampleRate || !std::ranges::equal(endpoint.channels, realtimeChannels))
+        return Error::Unsupported;
+    auto native = std::make_unique<WasapiGripOutput>(monitor()->connections, endpoint.key);
+    const auto rc = native->open(endpoint);
+    if (rc == Error::None) return std::unique_ptr<OutputStream>(std::move(native));
+    if (rc != Error::Unsupported) return rc;
+    native.reset();
     return openOutput(endpoint, true);
 }
 
