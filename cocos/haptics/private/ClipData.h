@@ -37,6 +37,7 @@ struct Layer
     Time start{}, end{}, tail{};
     unsigned ordinal{};
     std::optional<double> intensity, sharpness, attack, decay, release, sustained;
+    Curve textureOffset;  // HE frequency offset, interpolated before saturation.
     Curve envelope;  // Compiled AHAP envelope including release.
 };
 struct Pulse
@@ -49,6 +50,9 @@ struct ClipData
 {
     AssetFormat format{};
     ImportPolicy policy{};
+    std::string sourceJson; // Original UTF-8 document, shared with active players through the clip.
+    bool nativeEligible{};  // Lossless source semantics and supported document shape.
+    bool heFitsPlayer{true}; // Firmware limits apply only to original submission.
     Time duration{}, renderEnd{};
     unsigned nodes{};
     Curve amplitude, frequency;

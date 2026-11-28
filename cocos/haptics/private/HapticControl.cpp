@@ -92,6 +92,8 @@ struct Fence
     Time exitReady{};
     StopReason reason{};
     std::optional<OperationId> operation;
+    bool uncertainOriginal{};
+    std::optional<Write> originalWrite; // Collect the last in-flight start outcome before releasing its writer.
     std::shared_ptr<MobileOutput> mobile;
     Done done;
 };
@@ -119,7 +121,8 @@ struct Target
     std::optional<Write> write;
     std::optional<MotorFrame> frame;
     std::unique_ptr<HapticMixer> mixer, stableCheckpoint;
-    Time stableStart{};
+    Time stableStart{}, heDrainUntil{};
+    std::optional<PlaybackId> original; // Owns this generation's pending or started native document.
     std::vector<Scheduled> scheduled;
     std::map<Id, VoiceRecord> voices;
     std::vector<Terminal> ends;
@@ -268,9 +271,16 @@ struct HapticControl::State
             }
             return;
         }
+        // The service may begin HE after start() returns. Let an uncontested
+        // finite effect drain before issuing a natural stop, which would otherwise
+        // cut off its last event. A real interruption always stops immediately.
+        // This grace is not silence evidence: the ordinary stop fence still follows.
+        if (why == StopReason::None && clockUs() < t.heDrainUntil) return;
+        t.heDrainUntil = 0;
         if (t.warmGate) t.warmGate->store(false);
         t.gate->store(false);
-        if (t.write && t.write->receipt->load() == int(NativeError::None))
+        if (t.write && (t.write->receipt->load() == int(NativeError::None) ||
+                        t.write->receipt->load() == int(mobileHeSubmitted)))
             recordSubmission(*t.write);
         if (why == StopReason::Reconfigured && t.stableCheckpoint && t.mixer->now() > clockUs())
         {
@@ -287,11 +297,13 @@ struct HapticControl::State
             auto rc = t.write->receipt->load();
             t.write->done(rc < 0 ? NativeError::Busy : static_cast<NativeError>(rc));
         }
+        Fence f;
+        if (t.original && t.write) f.originalWrite = std::move(t.write);
+        t.original.reset();
         t.write.reset();
         t.preparing.reset();
         if (t.raw && leases.contains(t.raw))
             leases.at(t.raw).snap = {RawState::Closed, {}, why};
-        Fence f;
         f.endpoint    = t.writer;
         f.mobile      = t.mobile;
         f.deadline    = clockUs() + StopUs;
@@ -512,6 +524,15 @@ struct HapticControl::State
                 return;
             }
         }
+        if (f.originalWrite)
+        {
+            const int rc = f.originalWrite->receipt->load();
+            if (rc < 0 && !f.disconnected && now < f.deadline) return;
+            if (rc == int(mobileOriginalDeclined)) f.needsNative = false;
+            f.uncertainOriginal = rc < 0 || rc == int(NativeError::BackendFailure);
+            if (rc == int(NativeError::None) || rc == int(mobileHeSubmitted)) recordSubmission(*f.originalWrite);
+            f.originalWrite.reset();
+        }
         if (f.needsNative)
         {
             if (!f.receipt)
@@ -552,6 +573,10 @@ struct HapticControl::State
                 {
                     // Cancellation has reached the platform, but it cannot prove silence to another owner.
                     t.restricted = t.owner;
+                    // A possibly started author player has no reliable phase or
+                    // cancellation boundary. Even a same-owner rewrite must wait
+                    // for silence or disconnect. The ordinary fence deadline faults it.
+                    if (f.uncertainOriginal && !f.disconnected) return;
                     finishOp(f.operation, Error::Unsupported);
                     if (f.done)
                     {
@@ -812,6 +837,9 @@ void HapticControl::State::render(Target& t, Time now)
     t.mixer->skipTo(begin);
     if (window) t.mixer->sampleBlockStart();
     bool immediateStart = false;
+    // A candidate exists only in the admission pass that consumes its Scheduled record.
+    // Restoring a mixer checkpoint therefore cannot retry an original.
+    std::optional<HapticClip> candidate;
     for (auto it = t.scheduled.begin(); it != t.scheduled.end();)
     {
         if (it->due > (window ? begin + 5333 : now))
@@ -835,7 +863,27 @@ void HapticControl::State::render(Target& t, Time now)
             bool constant = t.mobile && clip.pulses.empty() && clip.layers.size() == 1 &&
                             clip.layers.front().start == 0 && clip.layers.front().end == clip.duration &&
                             flat(clip.amplitude) && flat(clip.frequency) && flat(clip.layers.front().envelope) &&
+                            flat(clip.layers.front().textureOffset) &&
                             std::ranges::all_of(clip.controls, [](const auto& v) { return v.empty(); });
+            if (t.mobile && !t.info.device && !t.written && !replacement && t.voices.empty() &&
+                !t.nextGrid && it->immediate && logical == begin && it->options.gain == 1 &&
+                it->options.pan == 0 && it->options.iterations == 1 && it->options.track == Track::Normal &&
+                settings.strength == 1 && t.profile == HapticCalibration{} && clip.nativeEligible)
+            {
+                const bool he = clip.heFitsPlayer && !t.caps.envelope &&
+                    ((clip.format == AssetFormat::RichTapHeV1 && t.caps.heV1) ||
+                     (clip.format == AssetFormat::RichTapHeV2 && t.caps.heV2));
+                // Native transients have device-specific tails. Overlapping native
+                // layers may sum differently from the portable power allocator.
+                bool apple = clip.format == AssetFormat::AppleAhap && t.caps.ahap && clip.pulses.empty();
+                Time previousEnd = 0;
+                for (const auto& layer : clip.layers)
+                {
+                    apple &= layer.start >= previousEnd;
+                    previousEnd = layer.tail;
+                }
+                if (he || apple) candidate = it->clip;
+            }
             t.voices.emplace(*accepted.value, VoiceRecord{it->id, logical + it->span, constant});
         }
         else
@@ -885,10 +933,11 @@ void HapticControl::State::render(Target& t, Time now)
         bool constant = t.voices.size() == 1 && t.voices.begin()->second.constant;
         // A constant loop can span many source iterations in one finite native effect.
         Time width = constant ? Second : (t.caps.platform == MobilePlatform::Apple ? 40000 : t.batchUs);
-        Time end   = std::min(begin + width, lastEnd);
+        Time writableEnd = begin + width;
         for (auto& future : t.scheduled)
             if (future.due > begin)
-                end = std::min(end, future.due);
+                writableEnd = std::min(writableEnd, future.due);
+        Time end = std::min(writableEnd, lastEnd);
         if (end <= begin)
         {
             if (begin > now)
@@ -910,6 +959,16 @@ void HapticControl::State::render(Target& t, Time now)
         if (nonzero)
         {
             MobileCommand cmd;
+            // Reserve the start jitter as well as the content. A late native call
+            // must neither truncate its tail nor extend into the next voice's window.
+            const Time startSlack = std::min({Time(8000), writableEnd - lastEnd, end - begin});
+            if (candidate && t.voices.size() == 1 && contributors.size() == 1 && startSlack > 0)
+            {
+                cmd.original = std::move(candidate);
+                cmd.player = contributors.front().serial;
+                cmd.latestOriginalStartUs = begin + startSlack;
+                t.original = contributors.front();
+            }
             cmd.packet         = std::move(packet);
             cmd.startUs        = begin;
             cmd.endUs          = end;
@@ -920,7 +979,16 @@ void HapticControl::State::render(Target& t, Time now)
             {
                 t.write   = Write{receipt, now, {}, std::move(contributors)};
                 t.written = true;
-                t.expires = end;
+                t.expires = t.original ? end + startSlack : end;
+            }
+            else if (t.original)
+            {
+                t.original.reset();
+                t.mixer = std::move(t.stableCheckpoint);
+                t.nextGrid = now;
+                if (e != NativeError::QueueFull && e != NativeError::Busy)
+                    stopAfterWriteError(t, e, Error::BackendFailure);
+                return;
             }
             else if (e != NativeError::QueueFull && e != NativeError::Busy)
             {
@@ -1080,6 +1148,35 @@ void HapticControl::State::runTarget(Target& t, Time now)
             auto w = std::move(*t.write);
             t.write.reset();
             auto error = static_cast<NativeError>(rc);
+            if (error == mobileHeSubmitted)
+            {
+                // Match the handset profile's 125 ms asynchronous startup allowance.
+                // Retain the current Preset writer, so incoming voices can still
+                // render or interrupt at their ordinary admission boundary.
+                t.heDrainUntil = now + (t.nextGrid - t.stableStart) + 125000;
+                error = NativeError::None;
+            }
+            if (t.original && error == mobileOriginalDeclined)
+            {
+                // Construction or policy checks failed before start. The first
+                // writable suffix belongs to the same logical voice.
+                t.original.reset();
+                t.written = false;
+                t.mixer = std::move(t.stableCheckpoint);
+                t.ends.clear(); // The original was the only voice in this interval.
+                t.nextGrid = now;
+                t.expires = 0;
+                error = mobileNoOutput;
+            }
+            else if (t.original && error == NativeError::BackendFailure)
+            {
+                t.reproject = true;
+                startStop(t, StopReason::Reconfigured, true);
+                t.fence->uncertainOriginal = true;
+                return;
+            }
+            if (t.original && error == NativeError::None)
+                t.expires = std::min(t.expires, now + t.nextGrid - t.stableStart);
             if (error == NativeError::None && w.rawSpan)
             {
                 t.playerOrigin = now;
@@ -1206,6 +1303,26 @@ void HapticControl::State::runTarget(Target& t, Time now)
             startStop(t, StopReason::EndpointLost);
             return;
         }
+    }
+    if (t.original && !t.write)
+    {
+        if (now < t.expires)
+        {
+            if (due)
+            {
+                t.reproject = true;
+                startStop(t, StopReason::Reconfigured, true);
+            }
+            return;
+        }
+        // The full mixer interval was already consumed. Complete this generation
+        // and release its finite player before dequeuing another preset.
+        finish(*t.original, PlaybackState::Completed);
+        t.voices.clear();
+        if (!due && now < t.heDrainUntil) return;
+        t.reproject = !t.scheduled.empty();
+        startStop(t, t.reproject ? StopReason::Reconfigured : StopReason::None, t.reproject);
+        return;
     }
     if (!t.write)
         retire(t, now);
@@ -1686,7 +1803,8 @@ Result<PlaybackId> HapticControl::play(
     auto valid = validator.submitAt(clip, request, now, due);
     if (!valid.value)
         return {{}, valid.error};
-    if (t.fence || (due <= now && t.owner != Owner::Idle && t.owner != Owner::Preset))
+    const bool resumingPreset = t.fence && t.fence->resumeOnMotors && t.fence->reason == StopReason::Reconfigured;
+    if ((t.fence && !resumingPreset) || (due <= now && t.owner != Owner::Idle && t.owner != Owner::Preset))
         return fail<PlaybackId>(Error::Busy);
     if (t.scheduled.size() >= 32 || s.scopes.at(scope).play == UINT64_MAX)
         return fail<PlaybackId>(Error::QueueFull);
@@ -1699,6 +1817,11 @@ Result<PlaybackId> HapticControl::play(
     id.serial = ++s.scopes.at(scope).play;
     t.scheduled.push_back({id, clip, std::move(request), now, due, end + (opt.iterations - 1) * d.duration, immediate});
     s.plays[id].requestedUs = now;
+    if (t.original && due < t.expires && (due <= now || (t.write && t.write->receipt->load() < 0)))
+    {
+        t.reproject = true;
+        s.startStop(t, StopReason::Reconfigured, true);
+    }
     s.wake.notify_one();
     return {id, {}};
 }
@@ -1724,6 +1847,11 @@ Status HapticControl::stop(std::uint64_t scope, PlaybackId id)
             }
         if (affected && t.owner == Owner::Preset && t.voices.empty() && t.scheduled.empty())
             s.startStop(t, StopReason::Requested);
+        else if (affected && t.original == id)
+        {
+            t.reproject = true;
+            s.startStop(t, StopReason::Reconfigured, true);
+        }
     }
     s.finish(id, PlaybackState::Stopped, StopReason::Requested);
     s.wake.notify_one();
@@ -2013,6 +2141,11 @@ void HapticControl::close(std::uint64_t scope)
         if ((t.raw && s.leases.contains(t.raw) && s.leases.at(t.raw).scope == scope) ||
             (t.owner == Owner::Preset && t.voices.empty() && t.scheduled.empty()))
             s.startStop(t, StopReason::Requested);
+        else if (t.original && t.original->scope == scope)
+        {
+            t.reproject = true;
+            s.startStop(t, StopReason::Reconfigured, true);
+        }
     }
     std::erase_if(s.leases, [&](auto& p) { return p.second.scope == scope; });
     std::erase_if(s.plays, [&](auto& p) { return p.first.scope == scope; });

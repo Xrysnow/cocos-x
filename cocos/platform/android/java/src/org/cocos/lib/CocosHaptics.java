@@ -22,7 +22,7 @@ import java.util.Arrays;
 public final class CocosHaptics
 {
     private static final int OK = 0, UNSUPPORTED = 1, DISCONNECTED = 2, BUSY = 3, DENIED = 4, INVALID = 5, FAILED = 7,
-                             SILENT        = 256;
+                             SILENT        = 256, ORIGINAL_DECLINED = 257;
     private static final int HANDSET       = -1;
     private static final String FORWARDING = "vibrate_input_devices";
     private static final AudioAttributes GAME =
@@ -227,7 +227,8 @@ public final class CocosHaptics
         int envelopeFlags = !BuildConfig.HAPTICS_ENVELOPE_BUILT ? 16 : Build.VERSION.SDK_INT < 36 ? 32
                 : envelope("limits", new Class[] {Vibrator.class}, vibrator) != null ? 2 : 64;
         return (Build.VERSION.SDK_INT >= 26 && vibrator.hasAmplitudeControl() ? 1 : 0) | envelopeFlags
-                | (deviceId == HANDSET && forwarding() ? 4 : 0) | (stopBoundMs > 0 ? 8 : 0);
+                | (deviceId == HANDSET && forwarding() ? 4 : 0) | (stopBoundMs > 0 ? 8 : 0)
+                | (he != null ? 128 : 0) | (he != null && heV2Allowed ? 256 : 0);
     }
     // Store the time of each approved on-millisecond across native batch boundaries.
     private long[] binary(long[] durations, int[] amps)
@@ -301,6 +302,13 @@ public final class CocosHaptics
             vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_MEDIA));
         else
             vibrator.vibrate(effect, GAME);
+    }
+    // The controller retains the writer while a finite asynchronous HE effect
+    // drains. Public waveforms need no additional HE startup allowance.
+    int executeQueued(int kind, long[] durations, int[] amplitudes, float[] values)
+    {
+        int result = execute(kind, durations, amplitudes, values);
+        return result == OK && kind == 0 && he != null && he.playing() ? 258 : result;
     }
     // kind 0 is a mixed preset; 1-4 preserve native Raw input exactly.
     int execute(int kind, long[] durations, int[] amplitudes, float[] values)
@@ -383,19 +391,21 @@ public final class CocosHaptics
             if (kind == 0 && he != null && !standardActive)
             {
                 long batchStart = SystemClock.elapsedRealtime();
-                Object next = !heFailed && permitsHe(context)
-                        ? prepareHe(durations, amplitudes, values, 0) : null;
+                boolean allowV2 = v2Enabled();
+                Object next = !heFailed && hePermitted(1)
+                        ? prepareHe(durations, amplitudes, values, 0, allowV2) : null;
                 if (next != null)
                 {
                     if (he.stop())
                     {
                         // Cancellation can occupy part of the new batch. Only submit its live suffix.
                         requirePermit();
-                        next = prepareHe(durations, amplitudes, values, SystemClock.elapsedRealtime() - batchStart);
+                        next = prepareHe(durations, amplitudes, values, SystemClock.elapsedRealtime() - batchStart, allowV2);
                         if (next == null)
                             return SILENT;
                     }
                     requirePermit();
+                    if (!hePermitted(allowV2 ? 2 : 1)) return SILENT;
                     delivered = true;
                     he.start(next);
                     route("HE");
@@ -489,7 +499,51 @@ public final class CocosHaptics
             return FAILED;
         }
     }
-    private Object prepareHe(long[] times, int[] amplitudes, float[] texture, long elapsed)
+    private boolean v2Enabled()
+    {
+        return heV2Allowed && context.getSharedPreferences("cocos_haptics", Context.MODE_PRIVATE)
+                .getBoolean("he_v2_enabled", true);
+    }
+
+    private boolean hePermitted(int version)
+    {
+        return context.getSharedPreferences("cocos_haptics", Context.MODE_PRIVATE).getBoolean("he_enabled", false)
+                && (version == 1 || v2Enabled()) && permitsHe(context) && active && nativePermitted();
+    }
+
+    // Construction is reversible. Once start is invoked, keep this exact handle
+    // until the same serialized stop path runs, including on ambiguous failure.
+    int executeOriginal(byte[] bytes, int version)
+    {
+        if (he == null || heFailed || standardActive || he.playing() || (version != 1 && version != 2)
+                || !hePermitted(version))
+            return ORIGINAL_DECLINED;
+        Object player;
+        try
+        {
+            String json = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+            player = he.prepare(json);
+        }
+        catch (ReflectiveOperationException | RuntimeException | LinkageError unavailable)
+        {
+            return ORIGINAL_DECLINED;
+        }
+        if (player == null || !hePermitted(version))
+            return ORIGINAL_DECLINED;
+        try
+        {
+            delivered = true;
+            he.start(player);
+            route("HE author v" + version);
+            return OK;
+        }
+        catch (ReflectiveOperationException | RuntimeException | LinkageError unknown)
+        {
+            heFailed = true;
+            return FAILED;
+        }
+    }
+    private Object prepareHe(long[] times, int[] amplitudes, float[] texture, long elapsed, boolean allowV2)
     {
         if (elapsed > 0)
         {
@@ -503,7 +557,7 @@ public final class CocosHaptics
             amplitudes = Arrays.copyOfRange(amplitudes, first, amplitudes.length);
             texture = Arrays.copyOfRange(texture, first, texture.length);
         }
-        String json = CocosHapticsHe.encode(times, amplitudes, texture, heV2Allowed);
+        String json = CocosHapticsHe.encode(times, amplitudes, texture, allowV2);
         if (json == null)
             return null;
         try

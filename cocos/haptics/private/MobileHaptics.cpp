@@ -50,7 +50,7 @@ class OutputQueue final : public MobileOutput
             const bool rawStart =
                 job.command.kind == MobileCommand::Kind::Android || job.command.kind == MobileCommand::Kind::Apple;
             job.command.gate = job.gate;
-            Native result    = Native::Busy;
+            Native result    = job.command.original ? mobileOriginalDeclined : Native::Busy;
             if (job.command.kind == MobileCommand::Kind::Prepare)
             {
                 job.receipt->store(int(job.gate->load() ? driver->prepare() : Native::Busy));
@@ -70,14 +70,14 @@ class OutputQueue final : public MobileOutput
                     lock.unlock();
                     if (shutdown || !job.gate->load())
                     {
-                        job.receipt->store(int(Native::Busy));
+                        job.receipt->store(int(result));
                         continue;
                     }
                     now = mobileNow();
                 }
                 if (now >= job.command.endUs && !(job.command.immediateStart && now - job.command.startUs < 8000))
                 {
-                    job.receipt->store(int(mobileNoOutput));
+                    job.receipt->store(int(job.command.original ? mobileOriginalDeclined : mobileNoOutput));
                     continue;
                 }
             }
@@ -86,7 +86,8 @@ class OutputQueue final : public MobileOutput
                  (job.command.immediateStart && now - job.command.startUs < 8000)))
             {
                 if (!stopping && caps.platform == MobilePlatform::Android && writeBudget.availableAt(now) > now)
-                    result = job.command.kind == MobileCommand::Kind::Preset ? mobileNoOutput : Native::QueueFull;
+                    result = job.command.original ? mobileOriginalDeclined :
+                             job.command.kind == MobileCommand::Kind::Preset ? mobileNoOutput : Native::QueueFull;
                 else
                 {
                     result = driver->execute(job.command);
@@ -97,7 +98,7 @@ class OutputQueue final : public MobileOutput
                     if (stopping)
                         needsStop =
                             result != Native::None && result != Native::Unsupported && result != Native::Disconnected;
-                    else if (result == Native::None || result == Native::BackendFailure)
+                    else if (result == Native::None || result == mobileHeSubmitted || result == Native::BackendFailure)
                         needsStop = true;
                 }
             }

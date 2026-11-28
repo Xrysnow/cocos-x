@@ -12,6 +12,7 @@ Field Field::member(std::string_view key) const
 
 void Importer::warn(const Field& f, std::string code, std::string message, bool loss)
 {
+    if (loss) clip.nativeEligible = false;
     if (loss && clip.policy == ImportPolicy::Strict)
         f.fail(std::move(message), Error::InvalidAsset, std::move(code));
     warnings.push_back({f.path, std::move(code), std::move(message)});
@@ -26,10 +27,10 @@ void Importer::fields(const Field& f, std::initializer_list<std::string_view> kn
         bool recognized = std::find(known.begin(), known.end(), key) != known.end();
         if (recognized && !seen.insert(key).second)
             f.member(key).fail("Duplicate field", Error::InvalidAsset, "DuplicateKey");
-        if (!recognized && clip.format == AssetFormat::AppleAhap)
+        if (!recognized && clip.format != AssetFormat::MetaHaptic)
         {
             // Reference the current value directly. A lookup here would scan a large object for every unknown key.
-            warn({&it->value, f.path + "." + std::string(key)}, "UnknownField", "Unknown AHAP playback field", true);
+            warn({&it->value, f.path + "." + std::string(key)}, "UnknownField", "Unknown playback field", true);
         }
     }
 }
@@ -71,7 +72,7 @@ Sample ClipData::sample(const Layer& l, Time at) const
         return {interpolate(amplitude, at, 0), interpolate(frequency, at, .5)};
     return {
         l.intensity.value_or(1) * control(Intensity, at) * interpolate(l.envelope, at, 1),
-        std::clamp(l.sharpness.value_or(.5) + control(Sharpness, at), 0., 1.)};
+        std::clamp(l.sharpness.value_or(.5) + interpolate(l.textureOffset, at, 0) + control(Sharpness, at), 0., 1.)};
 }
 Sample ClipData::sample(const Pulse& p) const
 {
@@ -86,13 +87,15 @@ Result<ImportResult> failure(Error code, std::string message, std::string path)
 {
     return {{}, ErrorInfo{code, {{std::move(path), "ImportError", std::move(message)}}}};
 }
-Result<ImportResult> compile(std::string_view bytes, const ImportOptions& options, AssetFormat extension)
+Result<ImportResult> compile(std::string_view bytes, const ImportOptions& options, AssetFormat extension,
+                             bool heExtension, std::string* ownedBytes)
 {
     if (bytes.empty() || bytes.size() > ByteLimit || bytes.find('\0') != bytes.npos)
         return failure(Error::InvalidAsset, "Expected 1..1048576 bytes of UTF-8 JSON without raw NUL");
     if ((options.policy != ImportPolicy::Compatible && options.policy != ImportPolicy::Strict) ||
         (options.format != AssetFormat::Auto && options.format != AssetFormat::AppleAhap &&
-         options.format != AssetFormat::MetaHaptic))
+         options.format != AssetFormat::MetaHaptic && options.format != AssetFormat::RichTapHeV1 &&
+         options.format != AssetFormat::RichTapHeV2))
         return failure(Error::InvalidArgument, "Unknown import setting");
     // Protect the JSON reader itself before allocating or descending into a nested container.
     int depth   = 0;
@@ -129,17 +132,53 @@ Result<ImportResult> compile(std::string_view bytes, const ImportOptions& option
     {
         Field root{&doc, "$"};
         bool meta  = bool(root.member("version")) || bool(root.member("signals"));
-        bool apple = bool(root.member("Version")) || bool(root.member("Pattern"));
-        if (meta == apple)
+        auto metadata = root.member("Metadata");
+        Field heVersion{nullptr, "$.Metadata.Version"};
+        if (metadata && metadata.json->IsObject())
+            heVersion = metadata.member("Version");
+        auto pattern = root.member("Pattern");
+        auto groups = root.member("PatternList");
+        auto appleVersion = root.member("Version");
+        bool he = heVersion || groups;
+        // Version-less Apple documents are supported. HE-shaped events must never
+        // disappear as "unknown" Apple events, even in a mixed or malformed file.
+        if (pattern && pattern.json->IsArray())
+            for (unsigned i = 0; i < pattern.size(); ++i)
+            {
+                auto event = pattern.index(i).member("Event");
+                if (event && (event.member("Type") || event.member("RelativeTime")))
+                    he = true;
+            }
+        if ((meta && (pattern || groups || appleVersion || he)) || (he && appleVersion) ||
+            (groups && pattern) || (!meta && !he && !appleVersion && !pattern))
             root.fail("Expected one unambiguous preset root");
-        auto data    = std::make_shared<ClipData>();
-        data->format = apple ? AssetFormat::AppleAhap : AssetFormat::MetaHaptic;
+        auto data = std::make_shared<ClipData>();
+        if (he)
+        {
+            if (extension != AssetFormat::Auto || options.format == AssetFormat::AppleAhap ||
+                options.format == AssetFormat::MetaHaptic)
+                root.fail("Preset format mismatch");
+            if (!heVersion || !heVersion.json->IsUint())
+                heVersion.fail("Expected integer HE version");
+            const auto version = heVersion.json->GetUint();
+            if (version != 1 && version != 2)
+                heVersion.fail("Unsupported HE version " + std::to_string(version), Error::Unsupported, "UnsupportedVersion");
+            data->format = version == 1 ? AssetFormat::RichTapHeV1 : AssetFormat::RichTapHeV2;
+        }
+        else
+        {
+            if (heExtension) root.fail("Expected HE document");
+            data->format = meta ? AssetFormat::MetaHaptic : AssetFormat::AppleAhap;
+        }
         if ((extension != AssetFormat::Auto && extension != data->format) ||
             (options.format != AssetFormat::Auto && options.format != data->format))
             root.fail("Preset format mismatch");
         data->policy = options.policy;
         Importer importer{*data, diagnostics};
-        if (apple)
+        data->nativeEligible = !meta;
+        if (he)
+            importer.he(root);
+        else if (!meta)
             importer.apple(root);
         else
             importer.meta(root);
@@ -155,6 +194,7 @@ Result<ImportResult> compile(std::string_view bytes, const ImportOptions& option
         {
             boundaries.insert(boundaries.end(), {l.start, l.end, l.tail});
             addCurve(l.envelope);
+            addCurve(l.textureOffset);
         }
         for (auto& list : data->controls)
             for (auto& command : list)
@@ -163,6 +203,7 @@ Result<ImportResult> compile(std::string_view bytes, const ImportOptions& option
             boundaries.push_back(p.at);
         std::sort(boundaries.begin(), boundaries.end());
         boundaries.erase(std::unique(boundaries.begin(), boundaries.end()), boundaries.end());
+        if (!meta) data->sourceJson = ownedBytes ? std::move(*ownedBytes) : std::string(bytes);
         return {ImportResult{ClipAccess::make(std::move(data)), std::move(diagnostics)}, {}};
     }
     catch (Failure& f)

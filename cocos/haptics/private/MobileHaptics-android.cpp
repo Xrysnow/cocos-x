@@ -7,6 +7,7 @@ namespace cc::haptics::detail
 {
 // Java performs its final gate check on this same attached output thread.
 thread_local MobileGate currentVibrationGate;
+thread_local Time originalDeadline; // Checked again by Java after constructing the author player.
 namespace
 {
 using E                      = input::Error;
@@ -35,10 +36,11 @@ struct Payload
 class AndroidDriver final : public MobileDriver
 {
     jobject actuator;
-    jmethodID executeMethod, stopMethod;
+    jmethodID executeMethod, originalMethod, stopMethod;
 
 public:
-    AndroidDriver(jobject ref, jmethodID run, jmethodID stop) : actuator(ref), executeMethod(run), stopMethod(stop) {}
+    AndroidDriver(jobject ref, jmethodID run, jmethodID original, jmethodID stop)
+        : actuator(ref), executeMethod(run), originalMethod(original), stopMethod(stop) {}
     ~AndroidDriver() override
     {
         if (auto* env = JniHelper::getEnv())
@@ -58,6 +60,31 @@ public:
                 return E::BackendFailure;
             }
             return static_cast<E>(e);
+        }
+        if (cmd.original)
+        {
+            const auto& clip = ClipAccess::get(*cmd.original);
+            // NewStringUTF expects modified UTF-8 and would corrupt supplementary Unicode.
+            auto bytes = env->NewByteArray(static_cast<jsize>(clip.sourceJson.size()));
+            E result = mobileOriginalDeclined;
+            if (bytes)
+            {
+                env->SetByteArrayRegion(bytes, 0, static_cast<jsize>(clip.sourceJson.size()),
+                                        reinterpret_cast<const jbyte*>(clip.sourceJson.data()));
+                if (!env->ExceptionCheck())
+                {
+                    currentVibrationGate = cmd.gate;
+                    originalDeadline = cmd.originalDeadline();
+                    result = static_cast<E>(env->CallIntMethod(actuator, originalMethod, bytes,
+                        jint(clip.format == AssetFormat::RichTapHeV1 ? 1 : 2)));
+                    originalDeadline = 0;
+                    currentVibrationGate.reset();
+                    if (env->ExceptionCheck()) result = E::BackendFailure;
+                }
+                env->DeleteLocalRef(bytes);
+            }
+            if (env->ExceptionCheck()) env->ExceptionClear();
+            return result == E::None ? mobileHeSubmitted : result;
         }
         Payload p;
         if (cmd.kind == MobileCommand::Kind::Preset)
@@ -152,17 +179,19 @@ std::shared_ptr<MobileOutput> makeMobileOutput(int id)
     if (local && !env->ExceptionCheck())
     {
         auto caps = env->GetMethodID(info.classID, "capabilities", "()I");
-        auto run  = env->GetMethodID(info.classID, "execute", "(I[J[I[F)I");
+        auto run  = env->GetMethodID(info.classID, "executeQueued", "(I[J[I[F)I");
         auto stop = env->GetMethodID(info.classID, "stop", "()I");
-        if (caps && run && stop)
+        auto original = env->GetMethodID(info.classID, "executeOriginal", "([BI)I");
+        if (caps && run && stop && original)
         {
             int flags = env->CallIntMethod(local, caps);
             if (!env->ExceptionCheck())
                 if (auto ref = env->NewGlobalRef(local))
                     port = queueMobileDriver(
                         {MobilePlatform::Android, bool(flags & 1), bool(flags & 2), bool(flags & 8), bool(flags & 4),
-                         false, (flags & 16) ? "NotBuilt" : (flags & 32) ? "SystemTooOld" : "DeviceUnsupported"},
-                        std::make_unique<AndroidDriver>(ref, run, stop));
+                         false, (flags & 16) ? "NotBuilt" : (flags & 32) ? "SystemTooOld" : "DeviceUnsupported",
+                         bool(flags & 128), bool(flags & 256)},
+                        std::make_unique<AndroidDriver>(ref, run, original, stop));
         }
     }
     if (env->ExceptionCheck())
@@ -176,7 +205,8 @@ extern "C" {
 JNIEXPORT jboolean JNICALL Java_org_cocos_lib_CocosHaptics_nativePermitted(JNIEnv*, jclass)
 {
     auto& gate = cc::haptics::detail::currentVibrationGate;
-    return gate && gate->load();
+    return gate && gate->load() && (!cc::haptics::detail::originalDeadline ||
+        cc::haptics::detail::mobileNow() < cc::haptics::detail::originalDeadline);
 }
 JNIEXPORT void JNICALL Java_org_cocos_lib_CocosHaptics_nativeFocus(JNIEnv*, jclass, jboolean active)
 {

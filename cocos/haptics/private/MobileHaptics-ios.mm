@@ -1,4 +1,5 @@
 #include "AppleHapticDriver.h"
+#import <Foundation/Foundation.h>
 #import <dispatch/dispatch.h>
 #include <algorithm>
 #include <cmath>
@@ -113,6 +114,28 @@ class AppleDriver final : public MobileDriver
     std::vector<Player> presetPlayers;
     std::optional<Player> raw;
     std::uint64_t rawId{};
+    E playOriginal(const MobileCommand& cmd)
+    {
+        const auto& bytes = ClipAccess::get(*cmd.original).sourceJson;
+        NSData* data = [NSData dataWithBytesNoCopy:const_cast<char*>(bytes.data())
+                                           length:bytes.size() freeWhenDone:NO];
+        id dictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        if (![dictionary isKindOfClass:[NSDictionary class]]) return mobileOriginalDeclined;
+        CHHapticPattern* pattern = [[CHHapticPattern alloc] initWithDictionary:dictionary error:nil];
+        const double span = double(cmd.endUs - cmd.startUs) / Second;
+        if (!pattern || !std::isfinite(pattern.duration) || pattern.duration > span + 0.0000005)
+            return mobileOriginalDeclined;
+        auto player = [engine createAdvancedPlayerWithPattern:pattern error:nil];
+        if (!player) return mobileOriginalDeclined;
+        auto finished = std::make_shared<std::atomic_bool>(false);
+        player.completionHandler = ^(NSError*) { finished->store(true); };
+        player.loopEnabled = NO;
+        if (!state->valid.load() || (cmd.gate && !cmd.gate->load()) || mobileNow() >= cmd.originalDeadline())
+            return mobileOriginalDeclined;
+        const double origin = engine.currentTime;
+        presetPlayers.push_back({player, origin, finished});
+        return [player startAtTime:origin error:nil] ? E::None : E::BackendFailure;
+    }
     E start()
     {
         if (engine && state->valid.load())
@@ -228,6 +251,8 @@ public:
             if (e != E::None)
                 return e;
             const auto now = mobileNow();
+            std::erase_if(presetPlayers, [](const Player& p) { return p.finished->load(); });
+            if (cmd.original) return playOriginal(cmd);
             if (cmd.gate && !cmd.gate->load())
                 return E::Busy;
             if (cmd.kind == K::Apple && now - cmd.startUs >= 500000)
@@ -235,7 +260,6 @@ public:
             if (cmd.kind != K::Apple && now >= cmd.endUs && !(cmd.immediateStart && now - cmd.startUs < 8000))
                 return mobileNoOutput;
             const double origin = engine.currentTime + std::max<Time>(0, cmd.startUs - now) / double(Second);
-            std::erase_if(presetPlayers, [](const Player& p) { return p.finished->load(); });
             if (cmd.kind == K::Apple)
             {
                 raw   = play(std::get<ApplePattern>(cmd.raw), origin, cmd.gate);
@@ -293,7 +317,7 @@ std::shared_ptr<MobileOutput> makeMobileOutput(int id)
     if (id != -1 || ![[CHHapticEngine capabilitiesForHardware] supportsHaptics])
         return {};
     return queueMobileDriver(
-        {MobilePlatform::Apple, true, false, true, false},
+        {MobilePlatform::Apple, true, false, true, false, false, "NotApplicable", false, false, true},
         makeAppleHapticDriver([] { return [[CHHapticEngine alloc] initAndReturnError:nil]; }, mobileReset));
 }
 #endif

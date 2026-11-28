@@ -9,7 +9,8 @@ namespace cc::haptics::detail
 {
 constexpr size_t ByteLimit = 1 << 20;
 Result<ImportResult> failure(Error code, std::string message, std::string path = "$");
-Result<ImportResult> compile(std::string_view bytes, const ImportOptions& options, AssetFormat extension);
+Result<ImportResult> compile(std::string_view bytes, const ImportOptions& options, AssetFormat extension, bool heExtension = false,
+                             std::string* ownedBytes = nullptr);
 struct Failure
 {
     Diagnostic diagnostic;
@@ -78,6 +79,7 @@ struct Importer
     void fields(const Field& object, std::initializer_list<std::string_view> known);
     double ranged(const Field& field, double lo, double hi);
     void meta(const Field& root);
+    void he(const Field& root);
     void apple(const Field& root);
 };
 }  // namespace cc::haptics::detail

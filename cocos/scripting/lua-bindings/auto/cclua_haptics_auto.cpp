@@ -17,6 +17,8 @@ int luaReg_cc_haptics_cchapticsAssetFormat(lua_State* lua_S)
 	LUA_ENUM_ENTRY("Auto", cc::haptics::AssetFormat::Auto);
 	LUA_ENUM_ENTRY("MetaHaptic", cc::haptics::AssetFormat::MetaHaptic);
 	LUA_ENUM_ENTRY("AppleAhap", cc::haptics::AssetFormat::AppleAhap);
+	LUA_ENUM_ENTRY("RichTapHeV1", cc::haptics::AssetFormat::RichTapHeV1);
+	LUA_ENUM_ENTRY("RichTapHeV2", cc::haptics::AssetFormat::RichTapHeV2);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(2);
 	return 0;

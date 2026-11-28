@@ -1,5 +1,6 @@
 #pragma once
 #include "haptics/private/HapticMixer.h"
+#include <algorithm>
 #include <atomic>
 #include <variant>
 
@@ -10,6 +11,7 @@ struct MobileCapabilities
     MobilePlatform platform = MobilePlatform::None;
     bool amplitude{}, envelope{}, canStop{}, conflictsWithGamepads{}, stereo{};
     const char* envelopeStatus = "NotApplicable";  // Static route diagnostic for the public snapshot.
+    bool heV1{}, heV2{}, ahap{};
 };
 struct MobileSample
 {
@@ -45,14 +47,22 @@ struct MobileCommand
     };
     Kind kind = Kind::Preset;
     MobilePacket packet;
+    std::optional<HapticClip> original; // Present only for the first, exclusive preset submission.
     MobileEffect raw;
     std::uint64_t player{};
     Time startUs{}, endUs{};
     bool replace{};
     bool immediateStart{};
+    Time latestOriginalStartUs{}; // Exclusive, bounded by the complete native span and the writable window.
+    Time originalDeadline() const
+    {
+        return latestOriginalStartUs ? latestOriginalStartUs : std::min(endUs, startUs + 8000);
+    }
     std::shared_ptr<const std::atomic_bool> gate;  // Recheck after a cold native start or replacement.
 };
 inline constexpr auto mobileNoOutput = static_cast<input::Error>(256);  // No nonzero native call was made.
+inline constexpr auto mobileOriginalDeclined = static_cast<input::Error>(257); // Proven not started.
+inline constexpr auto mobileHeSubmitted = static_cast<input::Error>(258); // Finite, asynchronous handset HE start.
 using MobileGate                     = std::shared_ptr<const std::atomic_bool>;
 using MobileReceipt                  = std::shared_ptr<std::atomic<int>>;
 class MobileOutput

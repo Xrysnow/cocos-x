@@ -246,7 +246,10 @@ void Importer::apple(const Field& root)
     fields(root, {"Version", "Pattern", "Metadata"});
     auto version = root.member("Version");
     if (!version)
+    {
+        clip.nativeEligible = false;
         warn(version, "MissingVersion", "Assuming AHAP version 1");
+    }
     else if (version.number() != 1)
         version.fail(
             "Unsupported AHAP version " + std::to_string(version.number()), Error::Unsupported, "UnsupportedVersion");

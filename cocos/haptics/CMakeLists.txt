@@ -9,6 +9,7 @@ set(COCOS_HAPTICS_SRC
     haptics/private/HapticClip.cpp
     haptics/private/HapticClipFile.cpp
     haptics/private/MetaHapticParser.cpp
+    haptics/private/HeParser.cpp
     haptics/private/AhapParser.cpp
     haptics/private/HapticMixer.h
     haptics/private/HapticMixer.cpp

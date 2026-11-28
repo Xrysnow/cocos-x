@@ -19,10 +19,14 @@ enum class AssetFormat
     /** Meta Studio 1.0.x amplitude and frequency envelopes. */
     MetaHaptic,
     /** Apple Haptic and Audio Pattern version 1. */
-    AppleAhap
+    AppleAhap,
+    /** RichTap HE version 1, with one event pattern. */
+    RichTapHeV1,
+    /** RichTap HE version 2, with absolute-time pattern groups. */
+    RichTapHeV2
 };
 
-/** Treatment of lossy AHAP features. */
+/** Treatment of lossy preset features. */
 enum class ImportPolicy
 {
     /** Clamp or skip recognized losses with field diagnostics (default). */
@@ -79,7 +83,7 @@ struct Result
 struct ImportOptions
 {
     AssetFormat format  = AssetFormat::Auto;         ///< Default infers the input format.
-    ImportPolicy policy = ImportPolicy::Compatible;  ///< Default permits documented AHAP approximations.
+    ImportPolicy policy = ImportPolicy::Compatible;  ///< Default permits documented portable approximations.
 };
 
 namespace detail
@@ -104,13 +108,13 @@ public:
     HapticClip& operator=(const HapticClip& other) = default;
     /** Release this reference. Other handles and active voices keep the timeline alive. */
     ~HapticClip() = default;
-    /** Read a complete preset synchronously through the engine resource system.
+    /** Read a complete .haptic, .ahap or .he preset synchronously through the engine resource system.
      * @param path Nonempty resource path. A recognized extension must match the content.
      * @param options Optional format and import policy, compatible by default.
      * @return Imported clip and diagnostics, or a resource access, format or validation error.
      */
     static Result<ImportResult> load(std::string_view path, const ImportOptions& options = {});
-    /** Compile length-delimited UTF-8 bytes. Embedded NUL bytes are invalid.
+    /** Compile Meta, AHAP or HE from length-delimited UTF-8 bytes. Embedded NUL bytes are invalid.
      * @param bytes Complete JSON document of at most 1 MiB, borrowed only during this call.
      * @param options Optional format and import policy, compatible by default.
      * @return Imported clip and diagnostics, or a field-specific validation error.

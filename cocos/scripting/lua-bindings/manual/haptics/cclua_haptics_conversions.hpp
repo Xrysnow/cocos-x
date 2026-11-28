@@ -50,7 +50,9 @@ template<> struct Names<h::AssetFormat> {
     static constexpr std::pair<E, std::string_view> values[]{
         {E::Auto, "auto"},
         {E::MetaHaptic, "metaHaptic"},
-        {E::AppleAhap, "appleAhap"}
+        {E::AppleAhap, "appleAhap"},
+        {E::RichTapHeV1, "richTapHeV1"},
+        {E::RichTapHeV2, "richTapHeV2"}
     };
 };
 template<> struct Names<h::ImportPolicy> {
