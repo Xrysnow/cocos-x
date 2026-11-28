@@ -1,5 +1,6 @@
 package org.cocos.lib;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.media.AudioAttributes;
@@ -33,7 +34,58 @@ public final class CocosHaptics
     private final int deviceId;
     private final String descriptor;
     private final int stopBoundMs;
-    private boolean delivered;
+    private final CocosHapticsHe he;
+    // Reserve 30 ms for a 12 ms pulse, including stretching observed in system playback history.
+    private static final int BINARY_ON_BUDGET_MS = 30;
+    private boolean delivered, standardActive, heFailed;
+    private String lastRoute;
+
+    private void route(String name)
+    {
+        if (!name.equals(lastRoute))
+        {
+            android.util.Log.i("CocosHaptics", "preset route=" + name);
+            lastRoute = name;
+        }
+    }
+
+    // HE exposes no usage parameter. Respect the public feedback switch and interruption filter.
+    private static boolean permitsHe(Context app)
+    {
+        try
+        {
+            NotificationManager notifications = app.getSystemService(NotificationManager.class);
+            return notifications != null && notifications.getCurrentInterruptionFilter() == NotificationManager.INTERRUPTION_FILTER_ALL
+                    && Settings.System.getInt(app.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) != 0;
+        }
+        catch (RuntimeException unavailable)
+        {
+            return false;
+        }
+    }
+
+    private static CocosHapticsHe openHe(Context app)
+    {
+        // Hosts opt in by firmware AND target SDK, then may disable it between sessions.
+        try
+        {
+            android.content.pm.ApplicationInfo info = app.getPackageManager().getApplicationInfo(
+                    app.getPackageName(), android.content.pm.PackageManager.GET_META_DATA);
+            String builds = info.metaData == null ? null : info.metaData.getString("org.cocos.lib.haptics.heBuilds");
+            if (builds == null || !Arrays.asList(builds.split(";")).contains(Build.FINGERPRINT + "|" + info.targetSdkVersion)
+                    || !app.getSharedPreferences("cocos_haptics", Context.MODE_PRIVATE).getBoolean("he_enabled", false))
+                return null;
+            CocosHapticsHe adapter = CocosHapticsHe.open();
+            android.util.Log.i("CocosHaptics", "HE probe=" + (adapter == null ? "unavailable" : "available"));
+            return adapter;
+        }
+        catch (android.content.pm.PackageManager.NameNotFoundException | ReflectiveOperationException
+                | RuntimeException | LinkageError unavailable)
+        {
+            android.util.Log.i("CocosHaptics", "HE probe unavailable: " + unavailable.getClass().getSimpleName());
+            return null;
+        }
+    }
     private final ArrayDeque<Long> binaryOn = new ArrayDeque<>();
     private long nextBinaryOn;
     private CocosHaptics(Vibrator v, int id, String name)
@@ -41,7 +93,8 @@ public final class CocosHaptics
         vibrator    = v;
         deviceId    = id;
         descriptor  = name;
-        stopBoundMs = verifiedStopBound(id == HANDSET ? "handset" : name);
+        he = id == HANDSET ? openHe(context) : null;
+        stopBoundMs = he == null ? verifiedStopBound(id == HANDSET ? "handset" : name) : 0;
     }
     // App-packaged measurements name an exact OS build and actuator. A build
     // update or an unknown controller therefore falls back to preset-only output.
@@ -176,11 +229,13 @@ public final class CocosHaptics
                 throw new IllegalArgumentException();
             size += (int) d;
         }
+        int pulseBudget = deviceId == HANDSET ? BINARY_ON_BUDGET_MS : 12;
         boolean[] on  = new boolean[size];
         long origin   = SystemClock.elapsedRealtime();
         int cursor    = 0;
         double credit = 0;
         boolean above = false;
+        int expansionMs = 0;
         for (int i = 0; i < amps.length; i++)
         {
             int a        = amps[i] < 0 ? 255 : amps[i];
@@ -193,18 +248,19 @@ public final class CocosHaptics
                     credit = 0;
                     continue;
                 }
-                credit   = Math.min(24, credit + level * level);
-                long now = origin + cursor;
+                credit   = Math.min(Math.max(24, pulseBudget), credit + level * level);
+                long now = origin + cursor + expansionMs;
                 while (!binaryOn.isEmpty() && binaryOn.peekFirst() <= now - 250) binaryOn.removeFirst();
-                if (credit >= 12 && now >= nextBinaryOn && durations[i] - j >= 12 && binaryOn.size() + 12 <= 80)
+                if (credit >= pulseBudget && now >= nextBinaryOn
+                        && durations[i] - j >= expansionMs + pulseBudget && binaryOn.size() + pulseBudget <= 80)
                 {
                     for (int k = 0; k < 12; k++)
-                    {
                         on[cursor + k] = true;
+                    for (int k = 0; k < pulseBudget; ++k)
                         binaryOn.addLast(now + k);
-                    }
-                    credit       -= 12;
-                    nextBinaryOn  = now + 28;
+                    credit -= pulseBudget;
+                    expansionMs += pulseBudget - 12;
+                    nextBinaryOn = now + pulseBudget + 16;
                 }
             }
         }
@@ -230,6 +286,7 @@ public final class CocosHaptics
     {
         requirePermit();
         delivered = true;
+        standardActive = true;
         if (Build.VERSION.SDK_INT >= 33)
             vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_MEDIA));
         else
@@ -296,7 +353,8 @@ public final class CocosHaptics
             // An open-ended bed may continue in the next batch. Its native envelope would force a dip to zero.
             boolean openBed = kind == 0 && amplitudes.length > 0 && amplitudes[amplitudes.length - 1] > 0
                     && Build.VERSION.SDK_INT >= 26 && vibrator.hasAmplitudeControl();
-            if (kind == 0 && BuildConfig.HAPTICS_ENVELOPE_BUILT && Build.VERSION.SDK_INT >= 36 && !openBed)
+            if (kind == 0 && (he == null || !he.playing()) && BuildConfig.HAPTICS_ENVELOPE_BUILT
+                    && Build.VERSION.SDK_INT >= 36 && !openBed)
             {
                 VibrationEffect effect = (VibrationEffect) envelope(
                         "build",
@@ -307,10 +365,44 @@ public final class CocosHaptics
                         values);
                 if (effect != null)
                 {
+                    route("envelope");
                     play(effect);
                     return OK;
                 }
             }
+            if (kind == 0 && he != null && !standardActive)
+            {
+                Object next = null;
+                String json = !heFailed && permitsHe(context) ? CocosHapticsHe.encode(durations, amplitudes, values) : null;
+                if (json != null)
+                {
+                    try
+                    {
+                        next = he.prepare(json);
+                    }
+                    catch (ReflectiveOperationException | RuntimeException | LinkageError unavailable)
+                    {
+                        route("HE construction failed");
+                    }
+                }
+                if (next != null)
+                {
+                    he.stop();
+                    requirePermit();
+                    delivered = true;
+                    he.start(next);
+                    route("HE");
+                    return OK;
+                }
+                if (he.playing())
+                {
+                    // The previous batch may still be audible. End it and decline this replacement.
+                    he.stop();
+                    return SILENT;
+                }
+            }
+            if (kind == 0)
+                route(Build.VERSION.SDK_INT >= 26 && vibrator.hasAmplitudeControl() ? "amplitude" : "binary");
             if (kind == 1)
             {
                 if (Build.VERSION.SDK_INT >= 26)
@@ -358,6 +450,21 @@ public final class CocosHaptics
             }
             return OK;
         }
+        catch (ReflectiveOperationException | LinkageError unknown)
+        {
+            // Later requests use the public route once the pending handle has stopped.
+            heFailed = true;
+            try
+            {
+                if (he != null) he.stop();
+            }
+            catch (ReflectiveOperationException | RuntimeException | LinkageError stopFailed)
+            {
+                android.util.Log.w("CocosHaptics", "HE stop pending", stopFailed);
+            }
+            android.util.Log.w("CocosHaptics", "HE delivery unknown", unknown);
+            return FAILED;
+        }
         catch (java.util.concurrent.CancellationException e)
         {
             return BUSY;
@@ -381,12 +488,24 @@ public final class CocosHaptics
         {
             if (!delivered)
                 return OK;
-            vibrator.cancel();
+            if (he != null && he.playing())
+            {
+                he.stop();
+                route("HE stopped");
+            }
+            else
+                vibrator.cancel();
+            standardActive = false;
             if (stopBoundMs == 0)
                 return UNSUPPORTED;
             SystemClock.sleep(stopBoundMs);
             delivered = false;
             return OK;
+        }
+        catch (ReflectiveOperationException | LinkageError e)
+        {
+            heFailed = true;
+            return FAILED;
         }
         catch (SecurityException e)
         {
