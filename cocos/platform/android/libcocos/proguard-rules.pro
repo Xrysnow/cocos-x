@@ -1,6 +1,6 @@
 # Add project specific ProGuard rules here.
 # By default, the flags in this file are appended to flags specified
-# in ${ANDROID_SDK_ROOT}/tools/proguard/proguard-android.txt
+# in the default file selected in build.gradle.
 # You can edit the include path and order by changing the proguardFiles
 # directive in build.gradle.
 #
@@ -16,6 +16,7 @@
 #   public *;
 #}
 
+-dontoptimize
 -dontobfuscate
 
 -keep public class org.cocos.lib.**

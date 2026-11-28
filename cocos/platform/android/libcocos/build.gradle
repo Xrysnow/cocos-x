@@ -3,13 +3,16 @@ apply plugin: 'com.android.library'
 android {
     namespace = 'org.cocos.lib'
     compileSdk = PROP_COMPILE_SDK_VERSION.toInteger()
+    def buildTools = project.providers.gradleProperty('PROP_BUILD_TOOLS_VERSION').orNull
+    if (buildTools != null) {
+        buildToolsVersion = buildTools
+    }
 
     buildFeatures { buildConfig = true }
 
     defaultConfig {
         buildConfigField 'boolean', 'HAPTICS_ENVELOPE_BUILT', (PROP_COMPILE_SDK_VERSION.toInteger() >= 36).toString()
-        minSdkVersion PROP_MIN_SDK_VERSION
-        targetSdkVersion PROP_TARGET_SDK_VERSION
+        minSdk = PROP_MIN_SDK_VERSION.toInteger()
         consumerProguardFiles '../java/file-dialog.pro', '../java/text-input.pro'
         consumerProguardFiles '../java/gamepads.pro'
         consumerProguardFiles '../java/system-info.pro'
@@ -30,7 +33,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', '../java/text-input.pro', '../java/gamepads.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', '../java/text-input.pro', '../java/gamepads.pro'
             proguardFiles '../java/system-info.pro'
             proguardFiles '../java/haptics.pro'
         }

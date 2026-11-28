@@ -2,13 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'org.cocos.demo'
-    compileSdk PROP_COMPILE_SDK_VERSION.toInteger()
+    compileSdk = PROP_COMPILE_SDK_VERSION.toInteger()
+    buildToolsVersion = PROP_BUILD_TOOLS_VERSION
     ndkVersion '30.0.16248370'
 
     defaultConfig {
         applicationId 'org.cocos.demo'
-        minSdkVersion PROP_MIN_SDK_VERSION.toInteger()
-        targetSdkVersion PROP_TARGET_SDK_VERSION.toInteger()
+        minSdk = PROP_MIN_SDK_VERSION.toInteger()
+        targetSdk = PROP_TARGET_SDK_VERSION.toInteger()
         versionCode 1
         versionName '1.0'
         ndk {
@@ -58,5 +59,5 @@ android {
 }
 
 dependencies {
-    implementation project(':libcocos2dx')
+    implementation project(':libcocos')
 }

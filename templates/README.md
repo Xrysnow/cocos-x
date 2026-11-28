@@ -113,8 +113,10 @@ files and trees keep their URI grants for the session. An app using a custom
 Activity should preserve the CocosActivity result and lifecycle hooks. No broad
 storage permission is required for the picker.
 
-Open `templates/proj.android` in Android Studio or run its Gradle wrapper with a
-JDK 17+ and installed SDK 35, NDK `30.0.16248370`, and CMake `4.1.2`:
+Open `templates/proj.android` in Android Studio or use its Gradle Wrapper
+(`9.3.1`, with AGP `9.1.1`). Install JDK 17 or later, the Android 17 SDK platform
+(`platforms;android-37.0`), SDK Build Tools `37.0.0`, NDK `30.0.16248370`, and
+CMake `4.1.2`. The demo uses `compileSdk = 37`, `targetSdk = 37`, and `minSdk = 24`.
 
 ```sh
 cd templates/proj.android
@@ -124,6 +126,7 @@ sh ./gradlew :app:assembleDebug
 
 Set `sdk.dir` in the ignored `local.properties` or use `ANDROID_HOME`.
 `PROP_APP_ABI` defaults to `arm64-v8a`; colon-separated ABIs are supported.
+The demo uses the `:libcocos` Android library module.
 Gradle enables `CC_BUILD_DEMO=ON` and builds `libcocos_demo.so` through the root
 cocos-x CMake project. JNI glue is retained with whole-archive linking; the
 manifest library name matches the CMake target. The APK packages `Resources/`

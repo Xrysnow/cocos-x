@@ -7,6 +7,6 @@ pluginManagement {
 }
 
 rootProject.name = 'cocos-x-demo'
-include ':app', ':libcocos2dx'
-project(':libcocos2dx').projectDir = new File(settingsDir,
-        '../../cocos/platform/android/libcocos2dx')
+include ':app', ':libcocos'
+project(':libcocos').projectDir = new File(settingsDir,
+        '../../cocos/platform/android/libcocos')
